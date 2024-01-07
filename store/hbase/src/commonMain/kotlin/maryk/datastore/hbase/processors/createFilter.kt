@@ -1,6 +1,9 @@
 package maryk.datastore.hbase.processors
 
+import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
+import maryk.core.processors.datastore.matchers.QualifierExactMatcher
+import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -23,6 +26,7 @@ import maryk.datastore.hbase.softDeleteIndicator
 import maryk.datastore.hbase.trueIndicator
 import maryk.datastore.shared.TypeIndicator
 import org.apache.hadoop.hbase.CompareOperator
+import org.apache.hadoop.hbase.filter.BinaryComparator
 import org.apache.hadoop.hbase.filter.BinaryPrefixComparator
 import org.apache.hadoop.hbase.filter.Filter
 import org.apache.hadoop.hbase.filter.FilterList
@@ -95,32 +99,40 @@ internal fun createContentFilter(filter: IsFilter?, isNot: Boolean = false): Fil
         }.singleOrFilterList()
         is Prefix -> buildList {
             filter.referenceValuePairs.forEach {
-                val ref = it.reference.toStorageByteArray()
+                val matcher = it.reference.toQualifierMatcher()
+                if (matcher !is QualifierExactMatcher) {
+                    throw StorageException("Fuzzy filters are not supported by this storage engine yet")
+                }
+                val refAsBytes = matcher.qualifier
                 val value = it.value
 
                 @Suppress("UNCHECKED_CAST")
                 val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
-                add(SingleColumnValueFilter(dataColumnFamily, ref, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, BinaryPrefixComparator(valueBytes)).apply {
+                add(SingleColumnValueFilter(dataColumnFamily, refAsBytes, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, BinaryPrefixComparator(valueBytes)).apply {
                     filterIfMissing = true
                 })
             }
         }.singleOrFilterList()
         is Range -> buildList {
             filter.referenceValuePairs.forEach { (reference, range) ->
-                val ref = reference.toStorageByteArray()
+                val matcher = reference.toQualifierMatcher()
+                if (matcher !is QualifierExactMatcher) {
+                    throw StorageException("Fuzzy filters are not supported by this storage engine yet")
+                }
+                val refAsBytes = matcher.qualifier
 
                 @Suppress("UNCHECKED_CAST")
                 val propertyDefinition = reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>
 
                 val fromBytes = propertyDefinition.toStorageBytes(range.from, TypeIndicator.NoTypeIndicator.byte)
                 val fromOperator = if (isNot) { if (range.inclusiveFrom) CompareOperator.LESS else CompareOperator.LESS_OR_EQUAL } else { if (range.inclusiveFrom) CompareOperator.GREATER_OR_EQUAL else CompareOperator.GREATER }
-                val fromFilter = SingleColumnValueFilter(dataColumnFamily, ref, fromOperator, BinaryPrefixComparator(fromBytes)).apply {
+                val fromFilter = SingleColumnValueFilter(dataColumnFamily, refAsBytes, fromOperator, BinaryPrefixComparator(fromBytes)).apply {
                     filterIfMissing = true
                 }
 
                 val toOperator = if (isNot) { if (range.inclusiveFrom) CompareOperator.GREATER else CompareOperator.GREATER_OR_EQUAL } else { if (range.inclusiveFrom) CompareOperator.LESS_OR_EQUAL else CompareOperator.LESS }
                 val toBytes = propertyDefinition.toStorageBytes(range.to, TypeIndicator.NoTypeIndicator.byte)
-                val toFilter = SingleColumnValueFilter(dataColumnFamily, ref, toOperator, BinaryPrefixComparator(toBytes)).apply {
+                val toFilter = SingleColumnValueFilter(dataColumnFamily, refAsBytes, toOperator, BinaryPrefixComparator(toBytes)).apply {
                     filterIfMissing = true
                 }
 
@@ -134,19 +146,27 @@ internal fun createContentFilter(filter: IsFilter?, isNot: Boolean = false): Fil
         }.singleOrFilterList()
         is RegEx -> buildList {
             filter.referenceValuePairs.forEach { (reference, regex) ->
-                val ref = reference.toStorageByteArray()
+                val matcher = reference.toQualifierMatcher()
+                if (matcher !is QualifierExactMatcher) {
+                    throw StorageException("Fuzzy filters are not supported by this storage engine yet")
+                }
+                val refAsBytes = matcher.qualifier
                 val prefixedRegex = if (regex.pattern.startsWith("^")) {
                     regex.pattern.replace("^", "^\u0001")
                 } else "\u0001${regex.pattern}"
 
-                add(SingleColumnValueFilter(dataColumnFamily, ref, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, RegexStringComparator(prefixedRegex)).apply {
+                add(SingleColumnValueFilter(dataColumnFamily, refAsBytes, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, RegexStringComparator(prefixedRegex)).apply {
                     filterIfMissing = true
                 })
             }
         }.singleOrFilterList()
         is ValueIn -> buildList<Filter> {
             filter.referenceValuePairs.map {
-                val refAsBytes = it.reference.toStorageByteArray()
+                val matcher = it.reference.toQualifierMatcher()
+                if (matcher !is QualifierExactMatcher) {
+                    throw StorageException("Fuzzy filters are not supported by this storage engine yet")
+                }
+                val refAsBytes = matcher.qualifier
                 buildList<Filter> {
                     it.values.forEach { value ->
                         @Suppress("UNCHECKED_CAST")
@@ -183,12 +203,20 @@ private fun <E: IsFilter> List<E>.singleOrFilterList(operator: FilterList.Operat
 }
 
 private fun convertToSingleColumnValueFilter(it: ReferenceValuePair<Any>, compareOperator: CompareOperator): SingleColumnValueFilter {
-    val ref = it.reference.toStorageByteArray()
-    val value = it.value
+    val matcher = it.reference.toQualifierMatcher()
 
-    @Suppress("UNCHECKED_CAST")
-    val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
-    return SingleColumnValueFilter(dataColumnFamily, ref, compareOperator, valueBytes).apply {
-        filterIfMissing = true
+    when (matcher) {
+        is QualifierExactMatcher -> {
+            val ref = matcher.qualifier
+            val value = it.value
+
+            @Suppress("UNCHECKED_CAST")
+            val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
+            return SingleColumnValueFilter(dataColumnFamily, ref, compareOperator, BinaryComparator(valueBytes)).apply {
+                filterIfMissing = true
+            }
+        }
+        is QualifierFuzzyMatcher -> throw StorageException("Fuzzy filters are not supported by this storage engine yet")
+        else -> throw StorageException("Unknown matcher type")
     }
 }

@@ -51,6 +51,9 @@ class HbaseDataStore(
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val tableNameByDataModelName = mutableMapOf<String, TableName>()
 
+    override val supportsFuzzyQualifierFiltering: Boolean = false
+    override val supportsSubReferenceFiltering: Boolean = false
+
     init {
         runBlocking {
             launch(Dispatchers.IO) {

@@ -16,6 +16,9 @@ interface IsDataStore {
     val dataModelIdsByString: Map<String, UInt>
     val keepAllVersions: Boolean
 
+    val supportsFuzzyQualifierFiltering: Boolean
+    val supportsSubReferenceFiltering: Boolean
+
     /** Execute a single store [request] and retrieve response */
     suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ

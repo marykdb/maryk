@@ -44,7 +44,7 @@ class DataStoreFilterTest(
     override val allTests = mapOf(
         "doExistsFilter" to ::doExistsFilter,
         "doEqualsFilter" to ::doEqualsFilter,
-//        "doComplexMapListSetFilter" to ::doComplexMapListSetFilter,
+        "doComplexMapListSetFilter" to ::doComplexMapListSetFilter,
         "doPrefixFilter" to ::doPrefixFilter,
         "doLessThanFilter" to ::doLessThanFilter,
         "doLessThanEqualsFilter" to ::doLessThanEqualsFilter,
@@ -56,7 +56,7 @@ class DataStoreFilterTest(
         "doNotFilter" to ::doNotFilter,
         "doAndFilter" to ::doAndFilter,
         "doOrFilter" to ::doOrFilter,
-//        "doReferencedEqualsFilter" to ::doReferencedEqualsFilter
+        "doReferencedEqualsFilter" to ::doReferencedEqualsFilter
     )
 
     private val dataObject = TestMarykModel(
@@ -214,33 +214,36 @@ class DataStoreFilterTest(
             )
         }
 
-        assertTrue {
-            filterMatches(
-                Equals(TestMarykModel { map.refToAny() } with "haha10")
-            )
-        }
-
-        if (dataStore.keepAllVersions) {
-            assertFalse {
-                filterMatches(
-                    Equals(TestMarykModel { map.refToAny() } with "haha10"),
-                    HLC(lastVersions.first() - 1u)
-                )
-            }
-
+        if (dataStore.supportsFuzzyQualifierFiltering) {
             assertTrue {
                 filterMatches(
-                    Equals(TestMarykModel { map.refToAny() } with "haha10"),
-                    HLC(lastVersions.last() + 1u)
+                    Equals(TestMarykModel { map.refToAny() } with "haha10")
                 )
             }
-        }
 
-        assertFalse {
-            filterMatches(
-                Equals(TestMarykModel { map.refToAny() } with "haha11"),
-                null
-            )
+
+            if (dataStore.keepAllVersions) {
+                assertFalse {
+                    filterMatches(
+                        Equals(TestMarykModel { map.refToAny() } with "haha10"),
+                        HLC(lastVersions.first() - 1u)
+                    )
+                }
+
+                assertTrue {
+                    filterMatches(
+                        Equals(TestMarykModel { map.refToAny() } with "haha10"),
+                        HLC(lastVersions.last() + 1u)
+                    )
+                }
+            }
+
+            assertFalse {
+                filterMatches(
+                    Equals(TestMarykModel { map.refToAny() } with "haha11"),
+                    null
+                )
+            }
         }
 
         assertFalse {
@@ -261,16 +264,18 @@ class DataStoreFilterTest(
             )
         }
 
-        assertTrue {
-            filterMatches(
-                Equals(TestMarykModel { list.refToAny() } with 6)
-            )
-        }
+        if (dataStore.supportsFuzzyQualifierFiltering) {
+            assertTrue {
+                filterMatches(
+                    Equals(TestMarykModel { list.refToAny() } with 6)
+                )
+            }
 
-        assertFalse {
-            filterMatches(
-                Equals(TestMarykModel { list.refToAny() } with 2)
-            )
+            assertFalse {
+                filterMatches(
+                    Equals(TestMarykModel { list.refToAny() } with 2)
+                )
+            }
         }
 
         assertTrue {
@@ -498,35 +503,35 @@ class DataStoreFilterTest(
     }
 
     private suspend fun doReferencedEqualsFilter() {
-        assertTrue {
-            filterMatches(
-                Equals(TestMarykModel { reference { string::ref } } with "haha2")
-            )
-        }
-
-        if (dataStore.keepAllVersions) {
-            assertFalse {
-                filterMatches(
-                    Equals(TestMarykModel { reference { string::ref } } with "haha2"),
-                    HLC(lastVersions.first() - 1u)
-                )
-            }
-
-            // With higher version it should be found
+        if (dataStore.supportsSubReferenceFiltering) {
             assertTrue {
                 filterMatches(
-                    Equals(TestMarykModel { reference { string::ref } } with "haha2"),
-                    HLC(lastVersions.last() + 1u)
+                    Equals(TestMarykModel { reference { string::ref } } with "haha2")
+                )
+            }
+
+            if (dataStore.keepAllVersions) {
+                assertFalse {
+                    filterMatches(
+                        Equals(TestMarykModel { reference { string::ref } } with "haha2"),
+                        HLC(lastVersions.first() - 1u)
+                    )
+                }
+
+                // With higher version it should be found
+                assertTrue {
+                    filterMatches(
+                        Equals(TestMarykModel { reference { string::ref } } with "haha2"),
+                        HLC(lastVersions.last() + 1u)
+                    )
+                }
+            }
+
+            assertFalse {
+                filterMatches(
+                    Equals(TestMarykModel { reference { string::ref } } with "wrong")
                 )
             }
         }
-
-        assertFalse {
-            filterMatches(
-                Equals(TestMarykModel { reference { string::ref } } with "wrong")
-            )
-        }
-
-        println("pass")
     }
 }

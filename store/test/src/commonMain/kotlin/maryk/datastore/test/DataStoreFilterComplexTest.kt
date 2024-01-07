@@ -119,10 +119,12 @@ class DataStoreFilterComplexTest(
             }
         }
 
-        assertTrue {
-            filterMatches(
-                Equals(ComplexModel { mapStringString.refToAny() } with "v2")
-            )
+        if (dataStore.supportsFuzzyQualifierFiltering) {
+            assertTrue {
+                filterMatches(
+                    Equals(ComplexModel { mapStringString.refToAny() } with "v2")
+                )
+            }
         }
     }
 }

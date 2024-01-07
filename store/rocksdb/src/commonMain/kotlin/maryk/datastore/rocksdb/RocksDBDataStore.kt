@@ -97,6 +97,9 @@ class RocksDBDataStore(
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
 
+    override val supportsFuzzyQualifierFiltering: Boolean = true
+    override val supportsSubReferenceFiltering: Boolean = true
+
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
     private val ownRocksDBOptions: DBOptions? =
         if (rocksDBOptions == null) {

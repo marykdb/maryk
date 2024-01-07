@@ -1,6 +1,5 @@
 package maryk.datastore.memory
 
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
@@ -58,6 +57,9 @@ class InMemoryDataStore(
     override val keepAllVersions: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>
 ) : AbstractDataStore(dataModelsById) {
+    override val supportsFuzzyQualifierFiltering: Boolean = true
+    override val supportsSubReferenceFiltering: Boolean = true
+
     init {
         startFlows()
     }

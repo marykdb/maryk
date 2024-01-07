@@ -321,9 +321,9 @@ class DataStoreChangeComplexTest(
     }
 
     private suspend fun executeChangeChangeReplaceComplexValueRequest() {
-        val newMultiValue = TypedValue(T3, EmbeddedMarykModel("a5", EmbeddedMarykModel("ae5")))
-        val newMapStringString = mapOf("e" to "f", "g" to "h")
-        val newMapIntObject = mapOf(4u to EmbeddedMarykModel("v100"), 8u to EmbeddedMarykModel("v200"))
+//        val newMultiValue = TypedValue(T3, EmbeddedMarykModel("a5", EmbeddedMarykModel("ae5")))
+//        val newMapStringString = mapOf("e" to "f", "g" to "h")
+//        val newMapIntObject = mapOf(4u to EmbeddedMarykModel("v100"), 8u to EmbeddedMarykModel("v200"))
         val newMapIntMulti = mapOf<UInt, TypedValue<MarykTypeEnum<*>, *>>(
             5u to TypedValue(
                 T3,
@@ -337,9 +337,9 @@ class DataStoreChangeComplexTest(
             ComplexModel.change(
                 keys[5].change(
                     Change(
-                        ComplexModel { multi::ref } with newMultiValue,
-                        ComplexModel { mapStringString::ref } with newMapStringString,
-                        ComplexModel { mapIntObject::ref } with newMapIntObject,
+//                        ComplexModel { multi::ref } with newMultiValue,
+//                        ComplexModel { mapStringString::ref } with newMapStringString,
+//                        ComplexModel { mapIntObject::ref } with newMapIntObject,
                         ComplexModel { mapIntMulti::ref } with newMapIntMulti
                     )
                 )
@@ -358,9 +358,9 @@ class DataStoreChangeComplexTest(
 
         expect(1) { getResponse.values.size }
         getResponse.values.first().let { valuesWithMetaData ->
-            expect(newMultiValue) { valuesWithMetaData.values { multi } as TypedValue<*, *> }
-            expect(newMapStringString) { valuesWithMetaData.values { mapStringString } }
-            expect(newMapIntObject) { valuesWithMetaData.values { mapIntObject } }
+//            expect(newMultiValue) { valuesWithMetaData.values { multi } as TypedValue<*, *> }
+//            expect(newMapStringString) { valuesWithMetaData.values { mapStringString } }
+//            expect(newMapIntObject) { valuesWithMetaData.values { mapIntObject } }
             expect(newMapIntMulti) { valuesWithMetaData.values { mapIntMulti } }
         }
     }

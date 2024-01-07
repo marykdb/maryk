@@ -12,9 +12,9 @@ import maryk.test.models.TestMarykModel
 
 private val allTestClasses = arrayOf(
     "DataStoreAddTest" to ::DataStoreAddTest,
-//    "DataStoreChangeComplexTest" to ::DataStoreChangeComplexTest,
+    "DataStoreChangeComplexTest" to ::DataStoreChangeComplexTest,
     "DataStoreChangeTest" to ::DataStoreChangeTest,
-//    "DataStoreChangeValidationTest" to ::DataStoreChangeValidationTest,
+    "DataStoreChangeValidationTest" to ::DataStoreChangeValidationTest,
     "DataStoreDeleteTest" to ::DataStoreDeleteTest,
 //    "DataStoreFilterComplexTest" to ::DataStoreFilterComplexTest,
 //    "DataStoreFilterTest" to ::DataStoreFilterTest,

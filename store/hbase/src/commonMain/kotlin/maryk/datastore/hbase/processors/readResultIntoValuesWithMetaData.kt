@@ -22,6 +22,7 @@ import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.hbase.helpers.readCountValue
 import maryk.datastore.hbase.helpers.readValue
 import maryk.datastore.hbase.trueIndicator
+import maryk.datastore.shared.TypeIndicator
 import org.apache.hadoop.hbase.Cell
 import org.apache.hadoop.hbase.client.Result
 
@@ -103,7 +104,7 @@ internal fun <DM : IsRootDataModel> DM.readResultIntoValuesWithMetaData(
                                 ListSize -> cell.readCountValue()
                                 SetSize -> cell.readCountValue()
                                 MapSize -> cell.readCountValue()
-                                Embed -> Unit
+                                Embed -> if (cell.valueLength == 1 && cell.valueArray[cell.valueOffset] == TypeIndicator.DeletedIndicator.byte) null else Unit
                                 TypeValue -> throw StorageException("Not used in direct encoding")
                             }
                         }

@@ -72,7 +72,7 @@ import maryk.datastore.hbase.helpers.countValueAsBytes
 import maryk.datastore.hbase.helpers.createCellFilterWithPrefix
 import maryk.datastore.hbase.helpers.createCountUpdater
 import maryk.datastore.hbase.helpers.deleteByReference
-import maryk.datastore.hbase.helpers.doesCellsContainQualifierAndValue
+import maryk.datastore.hbase.helpers.doesCurrentNotContainExactQualifierAndValue
 import maryk.datastore.hbase.helpers.getCurrentIncMapKey
 import maryk.datastore.hbase.helpers.getList
 import maryk.datastore.hbase.helpers.readValue
@@ -210,7 +210,7 @@ internal suspend fun <DM : IsRootDataModel> processChange(
         changes,
         updateSharedFlow
     ).also {
-        if (!put.isEmpty) {
+        if (!put.isEmpty && it is ChangeSuccess<*>) {
             rowMutations.add(put as Mutation)
         }
     }
@@ -280,7 +280,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { mapReference }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCellsContainQualifierAndValue(currentValues))
+                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
 
                                     writeMapToStorage(
                                         reference.calculateStorageByteLength(),
@@ -291,7 +291,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     )
 
                                     // Delete unneeded old values
-                                    currentValues.forEach(unsetNonChangedCells(qualifiersToKeep, put))
+                                    unsetNonChangedCells(currentValues, qualifiersToKeep, put)
                                 }
                                 is List<*> -> {
                                     @Suppress("UNCHECKED_CAST")
@@ -309,7 +309,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCellsContainQualifierAndValue(currentValues))
+                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
 
                                     writeListToStorage(
                                         reference.calculateStorageByteLength(),
@@ -320,7 +320,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     )
 
                                     // Delete unneeded old values
-                                    currentValues.forEach(unsetNonChangedCells(qualifiersToKeep, put))
+                                    unsetNonChangedCells(currentValues, qualifiersToKeep, put)
                                 }
                                 is Set<*> -> {
                                     @Suppress("UNCHECKED_CAST")
@@ -338,7 +338,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCellsContainQualifierAndValue(currentValues))
+                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
 
                                     writeSetToStorage(
                                         reference.calculateStorageByteLength(),
@@ -349,7 +349,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     )
 
                                     // Delete unneeded old values
-                                    currentValues.forEach(unsetNonChangedCells(qualifiersToKeep, put))
+                                    unsetNonChangedCells(currentValues, qualifiersToKeep, put)
                                 }
                                 is TypedValue<*, *> -> {
                                     if (reference.propertyDefinition !is IsMultiTypeDefinition<*, *, *>) {
@@ -376,7 +376,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { multiTypeReference }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCellsContainQualifierAndValue(emptyList()))
+                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(emptyList()))
 
                                     writeTypedValueToStorage(
                                         reference.calculateStorageByteLength(),
@@ -409,7 +409,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { valuesReference }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCellsContainQualifierAndValue(currentValues))
+                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
 
                                     // Write complex values existence indicator
                                     // Write parent value with Unit, so it knows this one is not deleted. So possible lingering old types are not read.
@@ -427,7 +427,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     )
 
                                     // Delete unneeded old values
-                                    currentValues.forEach(unsetNonChangedCells(qualifiersToKeep, put))
+                                    unsetNonChangedCells(currentValues, qualifiersToKeep, put)
                                 }
                                 else -> {
                                     try {
@@ -585,7 +585,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         try {
                                             setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
 
-                                            val referenceAsBytes = setReference.toStorageByteArray()
+                                            val referenceAsBytes = setItemRef.toStorageByteArray()
 
                                             // Check if previous value exists and raise count change if it does not
                                             currentRowResult.getColumnLatestCell(dataColumnFamily, referenceAsBytes)?.let {
@@ -596,7 +596,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                             @Suppress("UNCHECKED_CAST")
                                             val valueBytes = (setItemRef.propertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
-                                            put.addColumn(dataColumnFamily, setItemRef.toStorageByteArray(), valueBytes)
+                                            put.addColumn(dataColumnFamily, referenceAsBytes, valueBytes)
                                             setChanged(true)
                                         } catch (e: ValidationException) {
                                             addException(e)
@@ -792,7 +792,7 @@ private fun createValueWriter(
                 put.addColumn(dataColumnFamily, reference, valueBytes)
             }
         }
-        StorageTypeEnum.TypeValue -> setTypedValue(value, definition, put, reference)
+        StorageTypeEnum.TypeValue -> setTypedValue(value, definition, put, reference, qualifiersToKeep, shouldWrite)
         StorageTypeEnum.Embed -> {
             // Indicates value exists and is an embed
             // Is for the root of embed

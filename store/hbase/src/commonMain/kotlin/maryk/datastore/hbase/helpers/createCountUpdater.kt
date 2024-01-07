@@ -19,7 +19,11 @@ internal fun <T : Any> createCountUpdater(
 ) {
     val referenceToCompareTo = reference.toStorageByteArray()
 
-    val previousCount = currentRowResult.getColumnLatestCell(dataColumnFamily, referenceToCompareTo)?.readCountValue() ?: 0
+    // First try to read from put, then from previous values, then default to 0
+    val previousCount = put.get(dataColumnFamily, referenceToCompareTo)?.lastOrNull()?.readCountValue()
+        ?: currentRowResult.getColumnLatestCell(dataColumnFamily, referenceToCompareTo)?.readCountValue()
+        ?: 0
+
     val newCount = maxOf(0, previousCount + countChange)
 
     sizeValidator(newCount.toUInt())

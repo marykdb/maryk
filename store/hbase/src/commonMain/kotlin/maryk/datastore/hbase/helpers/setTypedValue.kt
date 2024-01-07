@@ -17,6 +17,8 @@ internal fun setTypedValue(
     definition: IsPropertyDefinition<*>,
     put: Put,
     reference: ByteArray,
+    qualifiersToKeep: MutableList<ByteArray>? = null,
+    shouldWrite: ((referenceBytes: ByteArray, valueBytes: ByteArray) -> Boolean)? = null,
 ) {
     val properValue = if (value is MultiTypeEnum<*>) {
         TypedValue(value, Unit)
@@ -31,7 +33,10 @@ internal fun setTypedValue(
         val valueBytes = ByteArray(typedValue.type.index.calculateVarIntWithExtraInfoByteSize())
         typedValue.type.index.writeVarIntWithExtraInfo(TypeIndicator.ComplexTypeIndicator.byte) { valueBytes[index++] = it }
 
-        put.addColumn(dataColumnFamily, reference, valueBytes)
+        qualifiersToKeep?.add(reference)
+        if (shouldWrite?.invoke(reference, valueBytes) != false) {
+            put.addColumn(dataColumnFamily, reference, valueBytes)
+        }
     } else {
         val typeValueDefinition = typeDefinition.definition(typedValue.type) as IsSimpleValueDefinition<Any, *>
         val valueBytes = ByteArray(
@@ -43,6 +48,9 @@ internal fun setTypedValue(
         typedValue.type.index.writeVarIntWithExtraInfo(TypeIndicator.SimpleTypeIndicator.byte, writer)
         typeValueDefinition.writeStorageBytes(typedValue.value, writer)
 
-        put.addColumn(dataColumnFamily, reference, valueBytes)
+        qualifiersToKeep?.add(reference)
+        if (shouldWrite?.invoke(reference, valueBytes) != false) {
+            put.addColumn(dataColumnFamily, reference, valueBytes)
+        }
     }
 }

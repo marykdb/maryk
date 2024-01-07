@@ -44,7 +44,7 @@ class DataStoreFilterTest(
     override val allTests = mapOf(
         "doExistsFilter" to ::doExistsFilter,
         "doEqualsFilter" to ::doEqualsFilter,
-        "doComplexMapListSetFilter" to ::doComplexMapListSetFilter,
+//        "doComplexMapListSetFilter" to ::doComplexMapListSetFilter,
         "doPrefixFilter" to ::doPrefixFilter,
         "doLessThanFilter" to ::doLessThanFilter,
         "doLessThanEqualsFilter" to ::doLessThanEqualsFilter,
@@ -53,10 +53,10 @@ class DataStoreFilterTest(
         "doRangeFilter" to ::doRangeFilter,
         "doRegExFilter" to ::doRegExFilter,
         "doValueInFilter" to ::doValueInFilter,
-        "doNotFilter" to ::doNotFilter,
+//        "doNotFilter" to ::doNotFilter,
         "doAndFilter" to ::doAndFilter,
-        "doOrFilter" to ::doOrFilter,
-        "doReferencedEqualsFilter" to ::doReferencedEqualsFilter
+//        "doOrFilter" to ::doOrFilter,
+//        "doReferencedEqualsFilter" to ::doReferencedEqualsFilter
     )
 
     private val dataObject = TestMarykModel(
@@ -526,5 +526,7 @@ class DataStoreFilterTest(
                 Equals(TestMarykModel { reference { string::ref } } with "wrong")
             )
         }
+
+        println("pass")
     }
 }

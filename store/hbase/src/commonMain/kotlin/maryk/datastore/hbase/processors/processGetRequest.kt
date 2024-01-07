@@ -45,6 +45,7 @@ internal suspend fun <DM : IsRootDataModel> processGetRequest(
         Get(it.bytes).apply {
             addFamily(metaColumnFamily)
             addFamily(dataColumnFamily)
+            setFilter(getRequest.createFilter())
             readVersions(1)
             getRequest.toVersion?.let { toVersion ->
                 setTimeRange(0, toVersion.toLong())
@@ -60,12 +61,6 @@ internal suspend fun <DM : IsRootDataModel> processGetRequest(
         }
         val key = Key<DM>(result.row)
         val creationVersion = result.getColumnLatestCell(metaColumnFamily, MetaColumns.CreatedVersion.byteArray).timestamp.toULong()
-
-        if (
-            getRequest.shouldBeFiltered(result, result.row, 0, result.row.size, creationVersion, getRequest.toVersion)
-        ) {
-            continue@keyWalk
-        }
 
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
             cache.readValue(dbIndex, key, reference, version, valueReader)

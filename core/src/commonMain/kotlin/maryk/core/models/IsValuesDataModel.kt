@@ -38,9 +38,16 @@ interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel<Any> {
 internal fun <DM: IsValuesDataModel> DM.validate(
     values: Values<DM>,
     refGetter: () -> IsPropertyReference<Values<DM>, IsPropertyDefinition<Values<DM>>, *>? = { null },
+    failOnUnknownProperties: Boolean = true,
+    failOnMissingRequiredValues: Boolean = true,
 ) {
     @Suppress("UNCHECKED_CAST")
-    (this as IsTypedValuesDataModel<DM>).validate(values, refGetter)
+    (this as IsTypedValuesDataModel<DM>).validate(
+        values = values,
+        refGetter = refGetter,
+        failOnUnknownProperties = failOnUnknownProperties,
+        failOnMissingRequiredValues = failOnMissingRequiredValues
+    )
 }
 
 /** Create a Values object with given [createMap] function */

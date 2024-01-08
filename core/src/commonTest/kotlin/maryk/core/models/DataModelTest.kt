@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
+import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
@@ -141,9 +142,34 @@ internal class DataModelTest {
                 TestMarykModel.run {
                     create(
                         string with "wrong",
-                        int with 999
+                        int with 999,
+                        uint with 53u,
                     )
-                }
+                },
+            )
+        }
+
+        expect(5) { e.exceptions.size }
+
+        assertIs<InvalidValueException>(e.exceptions[0])
+        assertIs<OutOfRangeException>(e.exceptions[1])
+        assertIs<RequiredException>(e.exceptions[2])
+        assertIs<RequiredException>(e.exceptions[3])
+        assertIs<RequiredException>(e.exceptions[4])
+    }
+
+    @Test
+    fun failValidationWithIncorrectValuesInMapWithoutRequired() {
+        val e = assertFailsWith<ValidationUmbrellaException> {
+            TestMarykModel.validate(
+                TestMarykModel.run {
+                    create(
+                        string with "wrong",
+                        int with 999,
+                        uint with 53u,
+                    )
+                },
+                failOnMissingRequiredValues = false,
             )
         }
 

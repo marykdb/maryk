@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.models.serializers.DataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
@@ -33,11 +34,18 @@ abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(
 
     override fun validate(
         values: Values<DM>,
-        refGetter: () -> IsPropertyReference<Values<DM>, IsPropertyDefinition<Values<DM>>, *>?
+        refGetter: () -> IsPropertyReference<Values<DM>, IsPropertyDefinition<Values<DM>>, *>?,
+        failOnUnknownProperties: Boolean,
+        failOnMissingRequiredValues: Boolean,
     ) {
         createValidationUmbrellaException(refGetter) { addException ->
             for ((index, orgValue) in values.values) {
-                val definition = this[index] ?: continue
+                val definition = this[index] ?:
+                    if (failOnUnknownProperties) {
+                        addException(InvalidValueException(null, "Unknown index in Values: $index"))
+                        continue
+                    } else continue
+
                 val value = values.process<Any?>(definition, orgValue, true) { true } ?: continue // skip empty values
                 try {
                     definition.validate(
@@ -46,6 +54,17 @@ abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(
                     )
                 } catch (e: ValidationException) {
                     addException(e)
+                }
+            }
+            if (failOnMissingRequiredValues) {
+                for (def in this) {
+                    if (values.original(def.index) == null) {
+                        try {
+                            def.validate(newValue = null, parentRefFactory = refGetter)
+                        } catch (e: ValidationException) {
+                            addException(e)
+                        }
+                    }
                 }
             }
         }

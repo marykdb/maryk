@@ -11,6 +11,8 @@ interface IsTypedValuesDataModel<DM: IsValuesDataModel>: IsValuesDataModel {
      */
     fun validate(
         values: Values<DM>,
-        refGetter: () -> IsPropertyReference<Values<DM>, IsPropertyDefinition<Values<DM>>, *>? = { null }
+        refGetter: () -> IsPropertyReference<Values<DM>, IsPropertyDefinition<Values<DM>>, *>? = { null },
+        failOnUnknownProperties: Boolean = true,
+        failOnMissingRequiredValues: Boolean = true,
     )
 }

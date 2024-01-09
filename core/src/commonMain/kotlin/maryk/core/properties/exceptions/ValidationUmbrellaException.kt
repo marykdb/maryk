@@ -60,8 +60,12 @@ fun createValidationUmbrellaException(
 
     exceptionCollector {
         when (val ex = exceptions) {
-            null -> exceptions = mutableListOf(it)
-            else -> ex.add(it)
+            null -> exceptions = if (it is ValidationUmbrellaException) it.exceptions.toMutableList() else mutableListOf(it)
+            else -> if (it is ValidationUmbrellaException) {
+                ex.addAll(it.exceptions)
+            } else {
+                ex.add(it)
+            }
         }
     }
 

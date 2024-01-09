@@ -19,7 +19,7 @@ data class Delete internal constructor(
 ) : IsChange {
     override val changeType = ChangeType.Delete
 
-    constructor(vararg reference: AnyPropertyReference) : this(reference.toList())
+    constructor(vararg reference: AnyPropertyReference?) : this(reference.filterNotNull())
 
     override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): Delete? {
         val filtered = references.filter {

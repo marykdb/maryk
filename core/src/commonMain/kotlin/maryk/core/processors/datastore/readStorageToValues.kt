@@ -166,7 +166,7 @@ private fun readQualifierOfType(
                 @Suppress("UNCHECKED_CAST")
                 when (val value = readValueFromStorage(Value, reference)) {
                     null -> // Ensure that next potential embedded values will not be read because is deleted
-                        addToCache(partOffset) { _, _ ->
+                        addToCache(currentOffset - 1) { _, _ ->
                             // Ignore reading and return
                         }
                     is TypeEnum<Any> -> readTypedValue(
@@ -204,7 +204,7 @@ private fun readQualifierOfType(
                 val embedValue = readValueFromStorage(Embed, reference)
                 if (embedValue == null) {
                     // Ensure that next embedded values will not be read
-                    addToCache(partOffset) { _, _ ->
+                    addToCache(currentOffset - 1) { _, _ ->
                         // Ignore reading and return
                     }
                 } else null // unknown value so ignore
@@ -237,14 +237,14 @@ private fun readQualifierOfType(
                     val listValueAdder: AddToValues = { i, value -> list.add(i.toInt(), value) }
 
                     // Add value processor to cache starting after list item
-                    addToCache(partOffset) { qr, l ->
+                    addToCache(currentOffset - 1) { qr, l ->
                         readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, reference, listValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, list)
                 } else {
                     // Ensure that next list values will not be read
-                    addToCache(partOffset) { _, _ ->
+                    addToCache(currentOffset - 1) { _, _ ->
                         // Ignore reading and return
                     }
                 }
@@ -277,14 +277,14 @@ private fun readQualifierOfType(
                     val set = LinkedHashSet<Any>(setSize)
                     val setValueAdder: AddToValues = { _, value -> set += value }
 
-                    addToCache(partOffset) { qr, l ->
+                    addToCache(currentOffset - 1) { qr, l ->
                         readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, reference, setValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, set)
                 } else {
                     // Ensure that next set values will not be read
-                    addToCache(partOffset) { _, _ ->
+                    addToCache(currentOffset - 1) { _, _ ->
                         // Ignore reading and return
                     }
                 }
@@ -323,14 +323,14 @@ private fun readQualifierOfType(
                     }
 
                     // For later map items the above map value adder will be used
-                    addToCache(partOffset) { qr, l ->
+                    addToCache(currentOffset - 1) { qr, l ->
                         readQualifierOfType(qr, l, currentOffset, partOffset, definition, index, refStoreType, select, reference, mapValueAdder, readValueFromStorage, addToCache)
                     }
 
                     addValueToOutput(index, map)
                 } else {
                     // Ensure that next map values will not be read
-                    addToCache(partOffset) { _, _ ->
+                    addToCache(currentOffset - 1) { _, _ ->
                         // Ignore reading and return
                     }
                 }

@@ -35,7 +35,7 @@ fun processQualifiers(
                 lastReader, lastQualifierLength,
                 qualifierReader, currentQualifierLength
             )
-            for (i in (processorStack.size - 1 downTo 0)) {
+            for (i in (processorStack.lastIndex downTo 0)) {
                 if (processorStack[i].first >= nonMatchIndex) {
                     processorStack.removeAt(i)
                 }

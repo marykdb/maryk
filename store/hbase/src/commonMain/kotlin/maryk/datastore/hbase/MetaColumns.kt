@@ -7,5 +7,5 @@ enum class MetaColumns(byte: Byte) {
     CreatedVersion(0),
     LatestVersion(1);
 
-    val byteArray = byteArrayOf(byte)
+    val byteArray = byteArrayOf(0, byte)
 }

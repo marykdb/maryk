@@ -14,7 +14,6 @@ import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
-import maryk.datastore.hbase.metaColumnFamily
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
@@ -43,7 +42,6 @@ internal suspend fun <DM : IsRootDataModel> processGetRequest(
 
     val gets = getRequest.keys.map {
         Get(it.bytes).apply {
-            addFamily(metaColumnFamily)
             addFamily(dataColumnFamily)
             setFilter(getRequest.createFilter())
             readVersions(1)
@@ -60,7 +58,7 @@ internal suspend fun <DM : IsRootDataModel> processGetRequest(
             continue@keyWalk
         }
         val key = Key<DM>(result.row)
-        val creationVersion = result.getColumnLatestCell(metaColumnFamily, MetaColumns.CreatedVersion.byteArray).timestamp.toULong()
+        val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray).timestamp.toULong()
 
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
             cache.readValue(dbIndex, key, reference, version, valueReader)

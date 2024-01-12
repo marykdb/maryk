@@ -79,7 +79,6 @@ import maryk.datastore.hbase.helpers.readValue
 import maryk.datastore.hbase.helpers.setListValue
 import maryk.datastore.hbase.helpers.setTypedValue
 import maryk.datastore.hbase.helpers.unsetNonChangedCells
-import maryk.datastore.hbase.metaColumnFamily
 import maryk.datastore.hbase.trueIndicator
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
@@ -115,7 +114,6 @@ internal suspend fun <DM : IsRootDataModel> processChange(
 
     val currentRowResult = table.get(Get(key.bytes).apply {
         addFamily(dataColumnFamily)
-        addFamily(metaColumnFamily)
         val orFilters = mutableListOf<Filter>()
 
         for (change in changes) {
@@ -141,20 +139,10 @@ internal suspend fun <DM : IsRootDataModel> processChange(
                     }
                 }
                 is ListChange -> change.listValueChanges.forEach {
-                    val reference = it.reference
-                    orFilters += if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference.parentReference != null) {
-                        ColumnPrefixFilter(reference.parentReference!!.toStorageByteArray())
-                    } else {
-                        ColumnPrefixFilter(it.reference.toStorageByteArray())
-                    }
+                    orFilters += ColumnPrefixFilter(it.reference.toStorageByteArray())
                 }
                 is SetChange -> change.setValueChanges.forEach {
-                    val reference = it.reference
-                    orFilters += if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference.parentReference != null) {
-                        ColumnPrefixFilter(reference.parentReference!!.toStorageByteArray())
-                    } else {
-                        ColumnPrefixFilter(it.reference.toStorageByteArray())
-                    }
+                    orFilters += ColumnPrefixFilter(it.reference.toStorageByteArray())
                 }
                 is Delete -> change.references.forEach {
                     orFilters += ColumnPrefixFilter(it.toStorageByteArray())
@@ -167,22 +155,21 @@ internal suspend fun <DM : IsRootDataModel> processChange(
             }
         }
 
+        orFilters += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(MetaColumns.CreatedVersion.byteArray))
         orFilters += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(MetaColumns.LatestVersion.byteArray))
 
         setFilter(FilterList(FilterList.Operator.MUST_PASS_ONE, orFilters))
-
-        addColumn(metaColumnFamily, MetaColumns.LatestVersion.byteArray)
     }).await()
 
-    val lastVersionBytes = currentRowResult.getValue(metaColumnFamily, MetaColumns.LatestVersion.byteArray)
+    val lastVersionBytes = currentRowResult.getValue(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
         ?: return DoesNotExist(key)
 
     // Exists check in change
-    conditionalFilters += SingleColumnValueFilter(metaColumnFamily, MetaColumns.CreatedVersion.byteArray, CompareOperator.NOT_EQUAL, NullComparator())
+    conditionalFilters += SingleColumnValueFilter(dataColumnFamily, MetaColumns.CreatedVersion.byteArray, CompareOperator.NOT_EQUAL, NullComparator())
 
     // Add expected version check with row which it validated against. Change will fail if newer.
     // This will also guarantee that any checks are done on the correct data
-    conditionalFilters += SingleColumnValueFilter(metaColumnFamily, MetaColumns.LatestVersion.byteArray, CompareOperator.EQUAL, BinaryComparator(lastVersionBytes))
+    conditionalFilters += SingleColumnValueFilter(dataColumnFamily, MetaColumns.LatestVersion.byteArray, CompareOperator.EQUAL, BinaryComparator(lastVersionBytes))
 
     // Check if version is expected last version
     if (lastVersion != null) {
@@ -688,7 +675,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
 
         if (isChanged) {
             // Set latest version
-            put.addColumn(metaColumnFamily, MetaColumns.LatestVersion.byteArray, HLC.toStorageBytes(version))
+            put.addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray, HLC.toStorageBytes(version))
         }
 
         @Suppress("CanBeVal")

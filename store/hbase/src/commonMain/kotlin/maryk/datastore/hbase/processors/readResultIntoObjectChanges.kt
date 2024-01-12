@@ -17,7 +17,6 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.VersionedChanges
-import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.hbase.helpers.readCountValue
 import maryk.datastore.hbase.helpers.readValue
 import maryk.datastore.hbase.trueIndicator
@@ -38,9 +37,7 @@ internal fun <DM : IsRootDataModel> DM.readResultIntoObjectChanges(
 
     var currentVersion: ULong = creationVersion
 
-    val allCellIterator = result.listCells().filter {
-        it.familyArray[it.familyOffset] == dataColumnFamily.first()
-    }.iterator()
+    val allCellIterator = result.listCells().iterator()
 
     var currentCell: Cell? = null
 

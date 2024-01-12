@@ -18,7 +18,7 @@ internal fun getCurrentIncMapKey(
     var currentCell: Cell?
     do {
         currentCell = cellIterator.next()
-    } while (cellIterator.hasNext() && currentCell != null && referenceAsBytes.compareToWithOffsetLength(currentCell.qualifierArray, currentCell.qualifierOffset, currentCell.qualifierLength) < 0)
+    } while (cellIterator.hasNext() && currentCell != null && referenceAsBytes.compareToWithOffsetLength(currentCell.qualifierArray, currentCell.qualifierOffset, currentCell.qualifierLength) > 0)
 
     if (currentCell != null) {
         // goto first content item

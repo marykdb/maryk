@@ -24,7 +24,6 @@ import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.hbase.helpers.countValueAsBytes
 import maryk.datastore.hbase.helpers.setTypedValue
-import maryk.datastore.hbase.metaColumnFamily
 import maryk.datastore.hbase.trueIndicator
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
@@ -57,8 +56,8 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         val put = Put(key.bytes).setTimestamp(version.timestamp.toLong())
 
         // Store first and last version
-        put.addColumn(metaColumnFamily, MetaColumns.CreatedVersion.byteArray, version.timestamp.toLong(), versionBytes)
-        put.addColumn(metaColumnFamily, MetaColumns.LatestVersion.byteArray, version.timestamp.toLong(), versionBytes)
+        put.addColumn(dataColumnFamily, MetaColumns.CreatedVersion.byteArray, version.timestamp.toLong(), versionBytes)
+        put.addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray, version.timestamp.toLong(), versionBytes)
 
 //            // Find new index values to write
 //            dataModel.Meta.indices?.forEach { indexDefinition ->
@@ -128,7 +127,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         val response = withContext(Dispatchers.IO) {
             table.checkAndMutate(
                 CheckAndMutate.newBuilder(key.bytes).apply {
-                    ifNotExists(metaColumnFamily, MetaColumns.CreatedVersion.byteArray)
+                    ifNotExists(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)
                 }.build(put)
             ).await()
         }

@@ -12,7 +12,6 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
-import maryk.datastore.hbase.metaColumnFamily
 import maryk.datastore.hbase.softDeleteIndicator
 import maryk.datastore.hbase.trueIndicator
 import maryk.datastore.shared.Cache
@@ -101,7 +100,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
             } else {
                 val put = Put(key.bytes)
 
-                put.addColumn(metaColumnFamily, MetaColumns.LatestVersion.byteArray, version.timestamp.toLong(), versionBytes)
+                put.addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray, version.timestamp.toLong(), versionBytes)
                 put.addColumn(dataColumnFamily, softDeleteIndicator, version.timestamp.toLong(), trueIndicator)
 
                 table.put(put).await()

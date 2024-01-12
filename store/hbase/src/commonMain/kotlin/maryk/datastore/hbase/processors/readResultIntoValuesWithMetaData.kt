@@ -18,7 +18,6 @@ import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
-import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.hbase.helpers.readCountValue
 import maryk.datastore.hbase.helpers.readValue
 import maryk.datastore.hbase.trueIndicator
@@ -46,9 +45,7 @@ internal fun <DM : IsRootDataModel> DM.readResultIntoValuesWithMetaData(
     } else {
         var currentVersion = 0uL
 
-        val allCellIterator = result.rawCells().filter {
-            it.familyArray[it.familyOffset] == dataColumnFamily.first()
-        }.iterator()
+        val allCellIterator = result.rawCells().iterator()
 
         if (!allCellIterator.hasNext()) {
             this.values(null) { EmptyValueItems }
@@ -91,7 +88,9 @@ internal fun <DM : IsRootDataModel> DM.readResultIntoValuesWithMetaData(
                                         isDeleted = cell.valueArray[cell.valueOffset] == trueIndicator.first()
                                         isDeleted
                                     } else {
-                                        currentVersion = 0uL
+                                        if (cell.qualifierLength == 1) {
+                                            currentVersion = 0uL
+                                        }
                                         null
                                     }
                                 }

@@ -10,7 +10,6 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.TableMetaColumns
 import maryk.datastore.hbase.dataColumnFamily
-import maryk.datastore.hbase.metaColumnFamily
 import org.apache.hadoop.hbase.client.AsyncAdmin
 import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder
 import org.apache.hadoop.hbase.client.TableDescriptor
@@ -65,12 +64,6 @@ suspend fun HbaseDataStore.storeModelDefinition(
     } else {
         println("Creating table ${dataModel.Meta.name}")
         newTableDescriptor.setColumnFamilies(listOf(
-            ColumnFamilyDescriptorBuilder.newBuilder(metaColumnFamily).apply {
-                if (keepAllVersions) {
-                    setMaxVersions(Int.MAX_VALUE)
-                    setNewVersionBehavior(true)
-                }
-            }.build(),
             ColumnFamilyDescriptorBuilder.newBuilder(dataColumnFamily).apply {
                 if (keepAllVersions) {
                     setMaxVersions(Int.MAX_VALUE)

@@ -13,9 +13,9 @@ interface IsIndexable {
     val referenceStorageByteArray: Bytes
 
     /** Convert indexable to a ByteArray so it can be referenced */
-    fun toStorageByteArrayForIndex(values: IsValuesGetter, key: ByteArray) = try {
+    fun toStorageByteArrayForIndex(values: IsValuesGetter, key: ByteArray? = null) = try {
         var index = 0
-        ByteArray(this.calculateStorageByteLengthForIndex(values, key.size)).also { bytes ->
+        ByteArray(this.calculateStorageByteLengthForIndex(values, key?.size ?: 0)).also { bytes ->
             this.writeStorageBytesForIndex(values, key) { bytes[index++] = it }
         }
     } catch (e: RequiredException) {
@@ -29,14 +29,14 @@ interface IsIndexable {
     fun writeReferenceStorageBytes(writer: (Byte) -> Unit)
 
     /** Calculates the byte size of the storage bytes for index for [values] and [keySize] */
-    fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int): Int
+    fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int? = null): Int
 
     /**
      * Write bytes for storage of indexable for [values] to [writer]
      * Adds lengths and [key] to the end
      * Throws RequiredException if values are missing
      */
-    fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray, writer: (byte: Byte) -> Unit)
+    fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray?, writer: (byte: Byte) -> Unit)
 
     /**
      * Write bytes for storage of indexable for [values] to [writer]

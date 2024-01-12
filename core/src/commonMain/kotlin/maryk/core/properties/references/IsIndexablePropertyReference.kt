@@ -19,17 +19,17 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsStorageBytesEnc
      */
     fun isForPropertyReference(propertyReference: AnyPropertyReference): Boolean
 
-    override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int): Int {
+    override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int?): Int {
         val value = this.getValue(values)
         val length = this.calculateStorageByteLength(value)
-        return length + length.calculateVarByteLength() + keySize
+        return length + length.calculateVarByteLength() + (keySize ?: 0)
     }
 
-    override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray, writer: (byte: Byte) -> Unit) {
+    override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray?, writer: (byte: Byte) -> Unit) {
         val value = this.getValue(values)
         this.writeStorageBytes(value, writer)
         this.calculateStorageByteLength(value).writeVarBytes(writer) // write value length
-        key.forEach(writer) // write key to end
+        key?.forEach(writer) // write key to end
     }
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {

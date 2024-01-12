@@ -53,15 +53,17 @@ private fun createReason(reference: AnyPropertyReference?, exceptions: List<Vali
 
 /** Convenience method to create a new ValidationUmbrellaException */
 fun createValidationUmbrellaException(
-    refGetter: () -> AnyPropertyReference?,
+    refGetter: () -> AnyPropertyReference? = { null },
     exceptionCollector: (exceptionAdder: (e: ValidationException) -> Unit) -> Unit
 ) {
     var exceptions: MutableList<ValidationException>? = null
 
+    val ref = refGetter()
+
     exceptionCollector {
         when (val ex = exceptions) {
-            null -> exceptions = if (it is ValidationUmbrellaException) it.exceptions.toMutableList() else mutableListOf(it)
-            else -> if (it is ValidationUmbrellaException) {
+            null -> exceptions = if (it is ValidationUmbrellaException && it.reference == ref) it.exceptions.toMutableList() else mutableListOf(it)
+            else -> if (it is ValidationUmbrellaException && it.reference == ref) {
                 ex.addAll(it.exceptions)
             } else {
                 ex.add(it)
@@ -71,6 +73,6 @@ fun createValidationUmbrellaException(
 
     // If set throw umbrella exception
     exceptions?.let {
-        throw ValidationUmbrellaException(refGetter(), it)
+        throw ValidationUmbrellaException(ref, it)
     }
 }

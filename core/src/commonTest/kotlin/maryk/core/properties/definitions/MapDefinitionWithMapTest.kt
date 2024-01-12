@@ -65,19 +65,24 @@ internal class MapDefinitionWithMapTest {
                 )
             )
         }
-        expect(4) { e.exceptions.size }
+        expect(2) { e.exceptions.size }
 
-        expect("@12.@40") {
-            assertIs<InvalidValueException>(e.exceptions[0]).reference!!.completeName
+        assertIs<ValidationUmbrellaException>(e.exceptions[0]).let { se ->
+            expect("@12.@40") {
+                assertIs<InvalidValueException>(se.exceptions[0]).reference!!.completeName
+            }
+            expect("@12.#1323") {
+                assertIs<OutOfRangeException>(se.exceptions[1]).reference!!.completeName
+            }
+            expect("@12.#2938") {
+                assertIs<OutOfRangeException>(se.exceptions[2]).reference!!.completeName
+            }
         }
-        expect("@12.#1323") {
-            assertIs<OutOfRangeException>(e.exceptions[1]).reference!!.completeName
-        }
-        expect("@12.#2938") {
-            assertIs<OutOfRangeException>(e.exceptions[2]).reference!!.completeName
-        }
-        expect("@13.@41") {
-            assertIs<InvalidValueException>(e.exceptions[3]).reference!!.completeName
+
+        assertIs<ValidationUmbrellaException>(e.exceptions[1]).apply {
+            expect("@13.@41") {
+                assertIs<InvalidValueException>(exceptions[0]).reference!!.completeName
+            }
         }
     }
 

@@ -7,7 +7,7 @@ import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
  */
 abstract class ScanRanges internal constructor(
     val ranges: List<ScanRange>,
-    private val partialMatches: List<IsIndexPartialToMatch>? = null
+    val partialMatches: List<IsIndexPartialToMatch>? = null
 ) {
     /** Checks if [key] matches the partial matches for this scan range */
     open fun matchesPartials(key: ByteArray, offset: Int = 0, length: Int = key.size - offset): Boolean {

@@ -24,7 +24,7 @@ sealed class IsIndexPartialToMatch {
 }
 
 /** Matcher for exact matches */
-internal class IndexPartialToMatch(
+class IndexPartialToMatch(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
@@ -37,7 +37,7 @@ internal class IndexPartialToMatch(
 }
 
 /** Matcher for regex matches */
-internal class IndexPartialToRegexMatch(
+class IndexPartialToRegexMatch(
     override val indexableIndex: Int,
     override val keySize: Int,
     val regex: Regex
@@ -60,7 +60,7 @@ internal class IndexPartialToRegexMatch(
 }
 
 /** Size matcher for exact matches in partials */
-internal class IndexPartialSizeToMatch(
+class IndexPartialSizeToMatch(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
@@ -73,7 +73,7 @@ internal class IndexPartialSizeToMatch(
 }
 
 /** Partial [toBeSmaller] for indexable part from [fromByteIndex]. If [inclusive] then include value itself too  */
-internal class IndexPartialToBeBigger(
+class IndexPartialToBeBigger(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
@@ -97,7 +97,7 @@ internal class IndexPartialToBeBigger(
 }
 
 /** Partial [toBeBigger] for indexable part from [fromByteIndex]. If [inclusive] then include value itself too */
-internal class IndexPartialToBeSmaller(
+class IndexPartialToBeSmaller(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
@@ -121,7 +121,7 @@ internal class IndexPartialToBeSmaller(
 }
 
 /** Partial for indexable to be one of given bytearrays. [toBeOneOf] needs to be sorted */
-internal class IndexPartialToBeOneOf(
+class IndexPartialToBeOneOf(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,

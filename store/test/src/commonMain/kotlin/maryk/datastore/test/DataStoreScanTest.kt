@@ -207,7 +207,7 @@ class DataStoreScanTest(
         val scanResponse = dataStore.execute(
             Log.scan(
                 where = Equals(
-                    Log.severity.ref() with DEBUG
+                    Log.message.ref() with "Something else happened"
                 )
             )
         )

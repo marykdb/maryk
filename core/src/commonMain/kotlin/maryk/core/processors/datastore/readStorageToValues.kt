@@ -6,6 +6,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
@@ -111,7 +112,9 @@ private fun <DM : IsValuesDataModel> DM.readQualifier(
         } else {
             when (val refStoreType = referenceStorageTypeOf(type)) {
                 DELETE -> {
-                    readValueFromStorage(ObjectDelete, ObjectDeleteReference)
+                    if (qualifierLength == 1) {
+                        readValueFromStorage(ObjectDelete, ObjectDeleteReference)
+                    } else Unit
                 }
                 else -> {
                     val definition = this[index]

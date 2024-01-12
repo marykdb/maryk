@@ -215,11 +215,13 @@ private fun <DM : IsDataModel> DM.readQualifier(
         } else {
             when (val refStoreType = referenceStorageTypeOf(type)) {
                 DELETE -> {
-                    readValueFromStorage(ObjectDelete, ObjectDeleteReference) { version, value ->
-                        if (value != null) {
-                            addChangeToOutput(version, OBJECT_DELETE, value)
+                    if (qualifierLength == 1) {
+                        readValueFromStorage(ObjectDelete, ObjectDeleteReference) { version, value ->
+                            if (value != null) {
+                                addChangeToOutput(version, OBJECT_DELETE, value)
+                            }
                         }
-                    }
+                    } else Unit
                 }
                 else -> {
                     val definition = this[index]

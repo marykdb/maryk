@@ -14,6 +14,9 @@ import org.apache.hadoop.hbase.client.AsyncAdmin
 import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder
 import org.apache.hadoop.hbase.client.TableDescriptor
 import org.apache.hadoop.hbase.client.TableDescriptorBuilder
+import org.slf4j.LoggerFactory
+
+private val logger = LoggerFactory.getLogger("HbaseDataStore")
 
 suspend fun HbaseDataStore.storeModelDefinition(
     admin: AsyncAdmin,
@@ -62,7 +65,7 @@ suspend fun HbaseDataStore.storeModelDefinition(
     if (tableDescriptor != null) {
         admin.modifyTable(newTableDescriptor.build()).await()
     } else {
-        println("Creating table ${dataModel.Meta.name}")
+        logger.info("Creating table ${dataModel.Meta.name}")
         newTableDescriptor.setColumnFamilies(listOf(
             ColumnFamilyDescriptorBuilder.newBuilder(dataColumnFamily).apply {
                 if (keepAllVersions) {

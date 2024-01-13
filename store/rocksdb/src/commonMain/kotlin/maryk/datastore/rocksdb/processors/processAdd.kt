@@ -92,7 +92,6 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                             val uniqueReference = byteArrayOf(*reference, *valueBytes)
 
                             checksBeforeWrite.add {
-                                // Since it is an addition we only need to check the current uniques
                                 val uniqueCount =
                                     dataStore.db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
                                 if (uniqueCount != RocksDB.NOT_FOUND) {

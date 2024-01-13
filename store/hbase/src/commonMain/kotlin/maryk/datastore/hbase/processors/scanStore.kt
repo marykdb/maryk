@@ -27,6 +27,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     processStoreValue: (Key<DM>, ULong, Result, ByteArray?) -> Unit
 ) {
     val scan = Scan().apply {
+        addFamily(dataColumnFamily)
         withStartRow(scanRange.startKey, scanRange.includeStart)
         if (direction == ASC) {
             val last = scanRange.ranges.last()

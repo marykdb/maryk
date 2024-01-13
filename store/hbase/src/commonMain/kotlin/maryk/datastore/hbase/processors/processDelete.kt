@@ -4,26 +4,41 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.future.await
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
-import maryk.datastore.hbase.HbaseDataStore
+import maryk.core.values.IsValuesGetter
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
+import maryk.datastore.hbase.helpers.readValue
+import maryk.datastore.hbase.helpers.toFamilyName
 import maryk.datastore.hbase.softDeleteIndicator
 import maryk.datastore.hbase.trueIndicator
+import maryk.datastore.hbase.uniquesColumnFamily
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
+import org.apache.hadoop.hbase.CompareOperator
+import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
+import org.apache.hadoop.hbase.client.AsyncTable
 import org.apache.hadoop.hbase.client.Delete
 import org.apache.hadoop.hbase.client.Get
+import org.apache.hadoop.hbase.client.Mutation
 import org.apache.hadoop.hbase.client.Put
+import org.apache.hadoop.hbase.filter.BinaryComparator
+import org.apache.hadoop.hbase.filter.Filter
+import org.apache.hadoop.hbase.filter.FilterList
+import org.apache.hadoop.hbase.filter.QualifierFilter
 
 internal suspend fun <DM : IsRootDataModel> processDelete(
-    dataStore: HbaseDataStore,
+    table: AsyncTable<AdvancedScanResultConsumer>,
     dataModel: DM,
+    uniqueReferences: List<ByteArray>,
     key: Key<DM>,
     version: HLC,
     dbIndex: UInt,
@@ -31,79 +46,78 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
     cache: Cache,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsDeleteResponseStatus<DM> = try {
-    val table = dataStore.getTable(dataModel)
-
     val exists = table.exists(Get(key.bytes)).await()
 
     when {
         exists -> {
             // Create version bytes
             val versionBytes = HLC.toStorageBytes(version)
+            val indexDeletes = mutableListOf<Mutation>()
 
-//                for (reference in dataStore.getUniqueIndices(
-//                    dbIndex, columnFamilies.unique
-//                )) {
-//                    val referenceAndKey = byteArrayOf(*key.bytes, *reference)
-//                    val valueLength = transaction.get(
-//                        columnFamilies.table,
-//                        dataStore.defaultReadOptions,
-//                        referenceAndKey,
-//                        recyclableByteArray
-//                    )
-//
-//                    if (valueLength != RocksDB.NOT_FOUND) {
-//                        val value = if (valueLength > recyclableByteArray.size) {
-//                            // Large value which did not fit in recyclableByteArray
-//                            transaction.get(columnFamilies.table, dataStore.defaultReadOptions, referenceAndKey)!!
-//                        } else recyclableByteArray
-//
-//                        deleteUniqueIndexValue(
-//                            transaction,
-//                            columnFamilies,
-//                            reference,
-//                            value,
-//                            VERSION_BYTE_SIZE,
-//                            valueLength - VERSION_BYTE_SIZE,
-//                            versionBytes,
-//                            hardDelete
-//                        )
-//                    }
-//                }
-//
-//                // Delete indexed values
-//                dataModel.Meta.indices?.let { indices ->
-//                    val valuesGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
-//                    valuesGetter.moveToKey(key.bytes, transaction)
-//
-//                    indices.forEach { indexable ->
-//                        val indexReference = indexable.referenceStorageByteArray.bytes
-//                        val valueAndKeyBytes = indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
-//                            ?: return@forEach // skip if no complete values to index are found
-//
-//                        deleteIndexValue(
-//                            transaction,
-//                            columnFamilies,
-//                            indexReference,
-//                            valueAndKeyBytes,
-//                            versionBytes,
-//                            hardDelete
-//                        )
-//                    }
-//                }
+            val currentValues = table.get(Get(key.bytes).apply {
+                addFamily(dataColumnFamily)
+
+                val orFilters = buildList<Filter> {
+                    uniqueReferences.forEach {
+                        this += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it))
+                    }
+
+                    dataModel.Meta.indices?.forEach { indexable ->
+                        if (indexable is Multiple) {
+                            indexable.references.forEach {
+                                this += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it.referenceStorageByteArray.bytes))
+                            }
+                        } else {
+                            this += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(indexable.referenceStorageByteArray.bytes))
+                        }
+                    }
+                }
+
+                if (orFilters.isNotEmpty()) {
+                    filter = FilterList(FilterList.Operator.MUST_PASS_ONE, orFilters)
+                }
+            }).await()
+
+            val valuesGetter = object : IsValuesGetter {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? =
+                    currentValues.getColumnLatestCell(dataColumnFamily, propertyReference.toStorageByteArray())?.readValue(propertyReference.propertyDefinition) as T?
+            }
+
+            uniqueReferences.forEach { uniqueReference ->
+                val uniqueValue = currentValues.getValue(dataColumnFamily, uniqueReference)
+                if (uniqueValue != null) {
+                    indexDeletes.add(
+                        Put(uniqueReference).setTimestamp(version.timestamp.toLong()).addColumn(uniquesColumnFamily, uniqueValue, softDeleteIndicator)
+                    )
+                }
+            }
+
+            // Delete indexed values
+            dataModel.Meta.indices?.let { indices ->
+                indices.forEach { indexable ->
+                    val valueBytes = indexable.toStorageByteArrayForIndex(valuesGetter)
+                        ?: return@forEach // skip if no complete values to index are found
+
+                    indexDeletes.add(
+                        Put(valueBytes).setTimestamp(version.timestamp.toLong()).addColumn(indexable.toFamilyName(), key.bytes, softDeleteIndicator)
+                    )
+                }
+            }
 
             if (hardDelete) {
                 cache.delete(dbIndex, key)
 
                 val delete = Delete(key.bytes).setTimestamp(version.timestamp.toLong())
 
-                table.delete(delete).await()
+                table.batchAll<Any>(indexDeletes + delete).await()
             } else {
                 val put = Put(key.bytes)
 
                 put.addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray, version.timestamp.toLong(), versionBytes)
                 put.addColumn(dataColumnFamily, softDeleteIndicator, version.timestamp.toLong(), trueIndicator)
 
-                table.put(put).await()
+                table.batchAll<Any>(indexDeletes + put).await()
             }
 
             updateSharedFlow.emit(

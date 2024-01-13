@@ -7,10 +7,12 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
+import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 import org.apache.hadoop.hbase.client.CheckAndMutate
+import org.apache.hadoop.hbase.client.Put
 import org.apache.hadoop.hbase.client.RowMutations
 import org.apache.hadoop.hbase.filter.Filter
 import org.apache.hadoop.hbase.filter.FilterList
@@ -30,15 +32,14 @@ internal suspend fun <DM : IsRootDataModel> processChangeRequest(
     val statuses = ArrayList<IsChangeResponseStatus<DM>>(changeRequest.objects.size)
 
     if (changeRequest.objects.isNotEmpty()) {
-        val dbIndex = dataStore.getDataModelId(changeRequest.dataModel)
-
         val table = dataStore.getTable(changeRequest.dataModel)
-        val allCheckAndMutations = ArrayList<Pair<List<Filter>, RowMutations>>(changeRequest.objects.size)
+        val allCheckAndMutations = ArrayList<Triple<List<Filter>, RowMutations, MutableList<Put>>>(changeRequest.objects.size)
 
         for (objectChange in changeRequest.objects) {
             val conditionalFilters = mutableListOf<Filter>()
             val rowMutations = RowMutations(objectChange.key.bytes)
-            allCheckAndMutations += conditionalFilters to rowMutations
+            val dependentPuts = mutableListOf<Put>()
+            allCheckAndMutations += Triple(conditionalFilters, rowMutations, dependentPuts)
 
             statuses += processChange(
                 dataStore = dataStore,
@@ -46,21 +47,33 @@ internal suspend fun <DM : IsRootDataModel> processChangeRequest(
                 key = objectChange.key,
                 lastVersion = objectChange.lastVersion,
                 changes = objectChange.changes,
-                dbIndex = dbIndex,
                 version = version,
                 conditionalFilters = conditionalFilters,
                 rowMutations = rowMutations,
+                dependentPuts = dependentPuts,
                 updateSharedFlow = updateSharedFlow
             )
         }
 
-        table.checkAndMutateAll(
+        val results = table.checkAndMutateAll(
             allCheckAndMutations.mapNotNull { (checks, mutations) ->
                 if (mutations.mutations.isNotEmpty()) {
                     CheckAndMutate.newBuilder(mutations.row).apply {
                         ifMatches(FilterList(checks))
                     }.build(mutations)
                 } else null
+            }
+        ).await()
+
+        // Do index changes for all successful changes
+        table.batchAll<Any>(
+            results.flatMapIndexed { index, result ->
+                if (result.isSuccess) {
+                    allCheckAndMutations[index].third
+                } else {
+                    statuses[index] = ServerFail("Check failed, likely because there was another change in the meantime")
+                    emptyList()
+                }
             }
         ).await()
     }

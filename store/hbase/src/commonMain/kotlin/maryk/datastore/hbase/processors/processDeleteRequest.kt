@@ -7,9 +7,11 @@ import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.datastore.hbase.HbaseDataStore
+import maryk.datastore.hbase.uniquesColumnFamily
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
+import org.apache.hadoop.hbase.client.Scan
 
 internal typealias DeleteStoreAction<DM> = StoreAction<DM, DeleteRequest<DM>, DeleteResponse<DM>>
 internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootDataModel>
@@ -27,11 +29,21 @@ internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
 
     if (deleteRequest.keys.isNotEmpty()) {
         val dbIndex = dataStore.getDataModelId(deleteRequest.dataModel)
+        val table = dataStore.getTable(deleteRequest.dataModel)
+
+        // Fetch all row keys in column family
+        val uniqueReferences = table.getScanner(Scan().apply {
+            addFamily(uniquesColumnFamily)
+            maxResultsPerColumnFamily = 1
+        }).use { scanner ->
+            scanner.iterator().asSequence().map { it.row }.toList()
+        }
 
         for (key in deleteRequest.keys) {
             statuses += processDelete(
-                dataStore,
+                table,
                 deleteRequest.dataModel,
+                uniqueReferences,
                 key,
                 version,
                 dbIndex,

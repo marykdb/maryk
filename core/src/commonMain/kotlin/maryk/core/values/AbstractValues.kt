@@ -297,7 +297,7 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
         else -> try {
             this.fromSerializable?.invoke(Unit, value as? T?) ?: value as? TO?
         } catch (e: Throwable) {
-            println(e)
+            e.printStackTrace()
             value as? TO?
         }
     }

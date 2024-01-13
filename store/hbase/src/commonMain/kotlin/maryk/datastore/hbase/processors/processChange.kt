@@ -1,5 +1,3 @@
-@file:Suppress("UNUSED_PARAMETER")
-
 package maryk.datastore.hbase.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -19,6 +17,7 @@ import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -26,6 +25,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -45,6 +45,7 @@ import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
@@ -54,6 +55,8 @@ import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IncMapKeyAdditions
 import maryk.core.query.changes.IndexChange
+import maryk.core.query.changes.IndexDelete
+import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.changes.ListChange
@@ -64,10 +67,12 @@ import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.EmptyValueItems
+import maryk.core.values.IsValuesGetter
 import maryk.core.values.Values
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
+import maryk.datastore.hbase.helpers.UniqueCheck
 import maryk.datastore.hbase.helpers.countValueAsBytes
 import maryk.datastore.hbase.helpers.createCellFilterWithPrefix
 import maryk.datastore.hbase.helpers.createCountUpdater
@@ -78,13 +83,17 @@ import maryk.datastore.hbase.helpers.getList
 import maryk.datastore.hbase.helpers.readValue
 import maryk.datastore.hbase.helpers.setListValue
 import maryk.datastore.hbase.helpers.setTypedValue
+import maryk.datastore.hbase.helpers.toFamilyName
 import maryk.datastore.hbase.helpers.unsetNonChangedCells
+import maryk.datastore.hbase.softDeleteIndicator
 import maryk.datastore.hbase.trueIndicator
+import maryk.datastore.hbase.uniquesColumnFamily
 import maryk.datastore.shared.TypeIndicator
-import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
 import org.apache.hadoop.hbase.CompareOperator
+import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
+import org.apache.hadoop.hbase.client.AsyncTable
 import org.apache.hadoop.hbase.client.Get
 import org.apache.hadoop.hbase.client.Mutation
 import org.apache.hadoop.hbase.client.Put
@@ -104,10 +113,10 @@ internal suspend fun <DM : IsRootDataModel> processChange(
     key: Key<DM>,
     lastVersion: ULong?,
     changes: List<IsChange>,
-    dbIndex: UInt,
     version: HLC,
     conditionalFilters: MutableList<Filter>,
     rowMutations: RowMutations,
+    dependentPuts: MutableList<Put>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsChangeResponseStatus<DM> {
     val table = dataStore.getTable(dataModel)
@@ -115,6 +124,16 @@ internal suspend fun <DM : IsRootDataModel> processChange(
     val currentRowResult = table.get(Get(key.bytes).apply {
         addFamily(dataColumnFamily)
         val orFilters = mutableListOf<Filter>()
+
+        // Fetch all data needed to reconstruct an index if it is a Multiple
+        // Single data indices should already be fetched by the change
+        dataModel.Meta.indices?.forEach { indexable ->
+            if (indexable is Multiple) {
+                indexable.references.forEach {
+                    orFilters += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it.referenceStorageByteArray.bytes))
+                }
+            }
+        }
 
         for (change in changes) {
             // Get all values needed to process the change
@@ -184,23 +203,17 @@ internal suspend fun <DM : IsRootDataModel> processChange(
         }
     }
 
-    val put = Put(key.bytes).setTimestamp(version.timestamp.toLong())
-
     return applyChanges(
+        table,
         dataModel,
-        dataStore,
-        dbIndex,
         currentRowResult,
-        put,
+        rowMutations,
+        dependentPuts,
         version,
         key,
         changes,
         updateSharedFlow
-    ).also {
-        if (!put.isEmpty && it is ChangeSuccess<*>) {
-            rowMutations.add(put as Mutation)
-        }
-    }
+    )
 }
 
 
@@ -208,18 +221,20 @@ internal suspend fun <DM : IsRootDataModel> processChange(
  * Apply [changes] and record them as [version]
  */
 private suspend fun <DM : IsRootDataModel> applyChanges(
+    table: AsyncTable<AdvancedScanResultConsumer>,
     dataModel: DM,
-    dataStore: HbaseDataStore,
-    dbIndex: UInt,
     currentRowResult: Result,
-    put: Put,
+    rowMutations: RowMutations,
+    dependentPuts: MutableList<Put>,
     version: HLC,
     key: Key<DM>,
     changes: List<IsChange>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsChangeResponseStatus<DM> {
     try {
+        val put = Put(key.bytes).setTimestamp(version.timestamp.toLong())
         var validationExceptions: MutableList<ValidationException>? = null
+        val uniqueChecksAndChangesBeforeWrite = mutableListOf<UniqueCheck<DM>>()
 
         fun addValidationFail(ve: ValidationException) {
             if (validationExceptions == null) {
@@ -267,7 +282,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { mapReference }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
+                                    val valueWriter = createValueWriter(dataModel, put, uniqueChecksAndChangesBeforeWrite::add, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
 
                                     writeMapToStorage(
                                         reference.calculateStorageByteLength(),
@@ -296,7 +311,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
+                                    val valueWriter = createValueWriter(dataModel, put, uniqueChecksAndChangesBeforeWrite::add, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
 
                                     writeListToStorage(
                                         reference.calculateStorageByteLength(),
@@ -325,7 +340,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
+                                    val valueWriter = createValueWriter(dataModel, put, uniqueChecksAndChangesBeforeWrite::add, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
 
                                     writeSetToStorage(
                                         reference.calculateStorageByteLength(),
@@ -363,7 +378,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { multiTypeReference }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(emptyList()))
+                                    val valueWriter = createValueWriter(dataModel, put, uniqueChecksAndChangesBeforeWrite::add, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(emptyList()))
 
                                     writeTypedValueToStorage(
                                         reference.calculateStorageByteLength(),
@@ -396,7 +411,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     ) { valuesReference }
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
-                                    val valueWriter = createValueWriter(put, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
+                                    val valueWriter = createValueWriter(dataModel, put, uniqueChecksAndChangesBeforeWrite::add, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues))
 
                                     // Write complex values existence indicator
                                     // Write parent value with Unit, so it knows this one is not deleted. So possible lingering old types are not read.
@@ -474,7 +489,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                             refGetter = { reference }
                                         )
 
-                                        val valueWriter = createValueWriter(put)
+                                        val valueWriter = createValueWriter(dataModel, put, uniqueChecksAndChangesBeforeWrite::add)
 
                                         valueWriter(StorageTypeEnum.Value, referenceAsBytes, reference.comparablePropertyDefinition, value)
                                         setChanged(true)
@@ -619,7 +634,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     incMapReference
                                 )
 
-                                val valueWriter = createValueWriter(put)
+                                val valueWriter = createValueWriter(dataModel, put, uniqueChecksAndChangesBeforeWrite::add)
 
                                 val addedKeys = writeIncMapAdditionsToStorage(
                                     currentIncMapKey,
@@ -652,16 +667,55 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                 }
             } catch (e: ValidationException) {
                 addValidationFail(e)
-            } catch (ue: UniqueException) {
-                var index = 0
-                val ref = dataModel.getPropertyReferenceByStorageBytes(
-                    ue.reference.size,
-                    { ue.reference[index++] }
-                )
+            }
+        }
 
-                addValidationFail(
-                    AlreadyExistsException(ref, ue.key)
-                )
+        if (uniqueChecksAndChangesBeforeWrite.isNotEmpty()) {
+            var foundExistingUnique = false
+
+            // Check if ref and value duplicates are present in uniqueChecksAndChangesBeforeWrite
+            if (uniqueChecksAndChangesBeforeWrite.size > 1) {
+                uniqueChecksAndChangesBeforeWrite.forEach { check ->
+                    if (
+                        uniqueChecksAndChangesBeforeWrite.indexOfFirst {
+                            it != check && it.reference.contentEquals(check.reference) && it.value.contentEquals(check.value)
+                        } != -1
+                    ) {
+                        addValidationFail(
+                            check.exceptionCreator(Key(check.value))
+                        )
+                    }
+                }
+            }
+
+            table.getAll(
+                uniqueChecksAndChangesBeforeWrite.map {
+                    Get(it.reference).addColumn(uniquesColumnFamily, it.value)
+                }
+            ).await().forEachIndexed { index, result ->
+                val value = uniqueChecksAndChangesBeforeWrite[index].value
+                if (!result.isEmpty && (result.getColumnLatestCell(uniquesColumnFamily, value)?.valueLength ?: 0) > 1) {
+                    foundExistingUnique = true
+                    val check = uniqueChecksAndChangesBeforeWrite[index]
+                    addValidationFail(check.exceptionCreator(
+                        Key(result.getValue(uniquesColumnFamily, check.value))
+                    ))
+                }
+            }
+
+            if(!foundExistingUnique) {
+                // delete previous value from unique if exists
+                for (check in uniqueChecksAndChangesBeforeWrite) {
+                    val uniquePut = Put(check.reference).setTimestamp(version.timestamp.toLong())
+                    val prevValue = currentRowResult.getValue(dataColumnFamily, check.reference)
+                    if (prevValue != null) {
+                        uniquePut.addColumn(uniquesColumnFamily, prevValue, softDeleteIndicator)
+                    }
+                    // add new value to unique
+                    uniquePut.addColumn(uniquesColumnFamily, check.value, key.bytes)
+
+                    dependentPuts += uniquePut
+                }
             }
         }
 
@@ -678,45 +732,52 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
             put.addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray, HLC.toStorageBytes(version))
         }
 
-        @Suppress("CanBeVal")
-        var indexUpdates: MutableList<IsIndexUpdate>? = null
+        // Process indices
+        dataModel.Meta.indices?.let { indices ->
+            val indexUpdates = mutableListOf<IsIndexUpdate>()
 
-//        // Process indices
-//        dataModel.Meta.indices?.let { indices ->
-//            indexUpdates = mutableListOf()
-//
-//            val storeGetter = StoreValuesGetter(key.bytes, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
-//            val transactionGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
-//            transactionGetter.moveToKey(key.bytes, transaction)
-//
-//            for (index in indices) {
-//                val oldKeyAndValue = index.toStorageByteArrayForIndex(storeGetter, key.bytes)
-//                val newKeyAndValue = index.toStorageByteArrayForIndex(transactionGetter, key.bytes)
-//
-//                if (newKeyAndValue == null) {
-//                    if (oldKeyAndValue != null) {
-//                        deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes)
-//                        indexUpdates!!.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldKeyAndValue)))
-//                    } // else ignore since did not exist
-//                } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
-//                    if (oldKeyAndValue != null) {
-//                        deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes)
-//                    }
-//                    setIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, newKeyAndValue, versionBytes)
-//                    indexUpdates!!.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newKeyAndValue), oldKeyAndValue?.let { Bytes(oldKeyAndValue) }))
-//                }
-//            }
-//        }
+            val currentValuesGetter = object : IsValuesGetter {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>) =
+                    currentRowResult.getColumnLatestCell(dataColumnFamily, propertyReference.toStorageByteArray())?.readValue(propertyReference.propertyDefinition) as T?
+            }
+            val newValuesGetter = object : IsValuesGetter {
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>) =
+                    put.get(dataColumnFamily, propertyReference.toStorageByteArray())?.lastOrNull()?.readValue(propertyReference.propertyDefinition) as T? ?: currentValuesGetter[propertyReference]
+            }
 
-        indexUpdates?.let {
-            if (it.isNotEmpty()) {
-                outChanges += IndexChange(it)
+            for (index in indices) {
+                val family = index.toFamilyName()
+                val oldValue = index.toStorageByteArrayForIndex(currentValuesGetter)
+                val newValue = index.toStorageByteArrayForIndex(newValuesGetter)
+
+                if (newValue == null) {
+                    if (oldValue != null) {
+                        dependentPuts += Put(oldValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, softDeleteIndicator)
+                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldValue)))
+                    } // else ignore since did not exist
+                } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
+                    if (oldValue != null) {
+                        dependentPuts += Put(oldValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, softDeleteIndicator)
+                    }
+                    dependentPuts += Put(newValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, trueIndicator)
+                    indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newValue), oldValue?.let { Bytes(oldValue) }))
+                }
+            }
+
+            if(indexUpdates.isNotEmpty()) {
+                outChanges += IndexChange(indexUpdates)
             }
         }
 
         updateSharedFlow.emit(
             Update.Change(dataModel, key, version.timestamp, changes + outChanges)
         )
+
+        if (!put.isEmpty) {
+            rowMutations.add(put as Mutation)
+        }
 
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)
@@ -728,8 +789,10 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
 /**
  * Create a ValueWriter into [put]
  */
-private fun createValueWriter(
+private fun <DM: IsRootDataModel> createValueWriter(
+    dataModel: DM,
     put: Put,
+    addUniqueCheckAndChange: (UniqueCheck<DM>) -> Boolean,
     qualifiersToKeep: MutableList<ByteArray>? = null,
     shouldWrite: ((referenceBytes: ByteArray, valueBytes: ByteArray) -> Boolean)? = null,
 ): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
@@ -740,30 +803,16 @@ private fun createValueWriter(
             val valueBytes = storableDefinition.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
             // If a unique index, check if exists, and then write
-//            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-//                val uniqueReference = byteArrayOf(*reference, *valueBytes)
-//
-//                // Since it is an addition we only need to check the current uniques
-//                transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
-//                    throw UniqueException(
-//                        reference,
-//                        Key<IsValuesDataModel>(
-//                            // Get the key at the end of the stored unique index value
-//                            it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
-//                        )
-//                    )
-//                }
-//
-//                // we need to delete the old value if present
-//                transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, byteArrayOf(*key.bytes, *reference)) { b, o, l ->
-//                    deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
-//                }
-//
-//                // Creates index reference on the table if it not exists so delete can find
-//                // what values to delete from the unique indices.
-//                dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
-//                setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
-//            }
+            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                addUniqueCheckAndChange(UniqueCheck(reference, valueBytes) { key ->
+                    var index = 0
+                    val ref = dataModel.getPropertyReferenceByStorageBytes(
+                        reference.size,
+                        { reference[index++] }
+                    )
+                    AlreadyExistsException(ref, key)
+                })
+            }
 
             qualifiersToKeep?.add(reference)
             if (shouldWrite?.invoke(reference, valueBytes) != false) {

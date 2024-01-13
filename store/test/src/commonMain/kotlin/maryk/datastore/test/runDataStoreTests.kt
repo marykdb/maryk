@@ -33,7 +33,7 @@ private val allTestClasses = arrayOf(
 //    "DataStoreScanUpdatesWithLogTest" to ::DataStoreScanUpdatesWithLogTest,
 //    "DataStoreScanWithFilterTest" to ::DataStoreScanWithFilterTest,
 //    "DataStoreScanWithMutableValueIndexTest" to ::DataStoreScanWithMutableValueIndexTest,
-//    "UniqueTest" to ::UniqueTest,
+    "UniqueTest" to ::UniqueTest,
 )
 
 val dataModelsForTests = mapOf(

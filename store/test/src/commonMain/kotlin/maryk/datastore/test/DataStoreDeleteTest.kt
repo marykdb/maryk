@@ -52,11 +52,7 @@ class DataStoreDeleteTest(
         )
 
         expect(1) { deleteResponse.statuses.size }
-        expect(DELETE_SUCCESS) { deleteResponse.statuses[0].statusType }
-        with(deleteResponse.statuses[0]) {
-            expect(DELETE_SUCCESS) { statusType }
-            assertIs<DeleteSuccess<SimpleMarykModel>>(this)
-        }
+        assertStatusIs<DeleteSuccess<SimpleMarykModel>>(deleteResponse.statuses[0])
 
         val getResponse = dataStore.execute(
             SimpleMarykModel.get(keys[0])

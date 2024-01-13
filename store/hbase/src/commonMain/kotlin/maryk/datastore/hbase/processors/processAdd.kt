@@ -1,9 +1,7 @@
 package maryk.datastore.hbase.processors
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum
@@ -24,6 +22,7 @@ import maryk.core.values.Values
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
+import maryk.datastore.hbase.helpers.UniqueCheck
 import maryk.datastore.hbase.helpers.countValueAsBytes
 import maryk.datastore.hbase.helpers.setTypedValue
 import maryk.datastore.hbase.helpers.toFamilyName
@@ -52,8 +51,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
     return try {
         objectToAdd.validate()
 
-        class UniqueCheck(val reference: ByteArray, val value: ByteArray, val exceptionCreator: (key: Key<DM>) -> ValidationException)
-        val uniqueChecksBeforeWrite = mutableListOf<UniqueCheck>()
+        val uniqueChecksBeforeWrite = mutableListOf<UniqueCheck<DM>>()
 
         // Create version bytes and last version ref
         val versionBytes = HLC.toStorageBytes(version)
@@ -72,7 +70,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                 ?: return@forEach // skip if no complete values to index are found
 
             indexPuts.add(
-                Put(valueBytes).addColumn(indexFamily, key.bytes, version.timestamp.toLong(), trueIndicator)
+                Put(valueBytes).setTimestamp(version.timestamp.toLong()).addColumn(indexFamily, key.bytes, trueIndicator)
             )
         }
 
@@ -96,9 +94,8 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                         }
 
                         indexPuts.add(
-                            Put(reference).addColumn(uniquesColumnFamily, valueBytes, version.timestamp.toLong(), key.bytes)
+                            Put(reference).setTimestamp(version.timestamp.toLong()).addColumn(uniquesColumnFamily, valueBytes, key.bytes)
                         )
-                        put.addColumn(uniquesColumnFamily, reference, version.timestamp.toLong(), key.bytes)
                     }
 
                     put.addColumn(dataColumnFamily, reference, version.timestamp.toLong(), valueBytes)
@@ -127,8 +124,8 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
             createValidationUmbrellaException { addException ->
                 results.forEachIndexed { index, result ->
-                    if (!result.isEmpty) {
-                        val check = uniqueChecksBeforeWrite.get(index)
+                    val check = uniqueChecksBeforeWrite[index]
+                    if (!result.isEmpty && (result.getColumnLatestCell(uniquesColumnFamily, check.value)?.valueLength ?:0) > 1) {
                         addException(check.exceptionCreator(
                             Key(result.getValue(uniquesColumnFamily, check.value))
                         ))
@@ -137,15 +134,17 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
             }
         }
 
-        val response = withContext(Dispatchers.IO) {
-            table.checkAndMutate(
-                CheckAndMutate.newBuilder(key.bytes).apply {
-                    ifNotExists(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)
-                }.build(put)
-            ).await()
-        }
+        val response = table.checkAndMutate(
+            CheckAndMutate.newBuilder(key.bytes).apply {
+                ifNotExists(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)
+            }.build(put)
+        ).await()
 
         if (response.isSuccess) {
+            if (indexPuts.isNotEmpty()) {
+                table.putAll(indexPuts).await()
+            }
+
             val changes = emptyList<IsChange>()
 
             updateSharedFlow.emit(

@@ -744,7 +744,6 @@ private fun createValueWriter(
             if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                 val uniqueReference = byteArrayOf(*reference, *valueBytes)
 
-                // Since it is an addition we only need to check the current uniques
                 transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
                     throw UniqueException(
                         reference,

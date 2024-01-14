@@ -13,6 +13,7 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.NotInRange
@@ -64,7 +65,9 @@ class DataStoreScanUpdatesWithLogTest(
     override suspend fun resetData() {
         dataStore.execute(
             Log.delete(*testKeys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE

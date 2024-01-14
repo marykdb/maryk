@@ -14,12 +14,12 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
-import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreGetChangesComplexTest(
@@ -60,7 +60,7 @@ class DataStoreGetChangesComplexTest(
             )
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<ComplexModel>>(status)
+            val response = assertStatusIs<AddSuccess<ComplexModel>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -72,7 +72,9 @@ class DataStoreGetChangesComplexTest(
     override suspend fun resetData() {
         dataStore.execute(
             ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }

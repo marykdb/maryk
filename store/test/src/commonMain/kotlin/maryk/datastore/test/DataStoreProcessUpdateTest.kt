@@ -65,7 +65,9 @@ class DataStoreProcessUpdateTest(
     override suspend fun resetData() {
         dataStore.execute(
             Log.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
     }
 
     private suspend fun executeProcessAddRequest() {
@@ -85,7 +87,7 @@ class DataStoreProcessUpdateTest(
 
         assertIs<AddResponse<*>>(addResponse.result).apply {
             assertEquals(1, statuses.size)
-            assertIs<AddSuccess<*>>(statuses.first())
+            assertStatusIs<AddSuccess<*>>(statuses.first())
         }
 
         val getResponse = dataStore.execute(
@@ -128,7 +130,7 @@ class DataStoreProcessUpdateTest(
 
         assertIs<ChangeResponse<*>>(changeResponse.result).apply {
             assertEquals(1, statuses.size)
-            assertIs<ChangeSuccess<*>>(statuses.first())
+            assertStatusIs<ChangeSuccess<*>>(statuses.first())
         }
 
         val getResponse = dataStore.execute(
@@ -160,7 +162,7 @@ class DataStoreProcessUpdateTest(
 
         assertIs<AddResponse<*>>(changeResponse.result).apply {
             assertEquals(1, statuses.size)
-            assertIs<AddSuccess<*>>(statuses.first())
+            assertStatusIs<AddSuccess<*>>(statuses.first())
         }
 
         val getResponse = dataStore.execute(
@@ -213,7 +215,7 @@ class DataStoreProcessUpdateTest(
 
         assertIs<DeleteResponse<*>>(hardRemovalUpdate.result).apply {
             assertEquals(1, statuses.size)
-            assertIs<DeleteSuccess<*>>(statuses.first())
+            assertStatusIs<DeleteSuccess<*>>(statuses.first())
         }
 
         val getResponse1 = dataStore.execute(
@@ -235,7 +237,7 @@ class DataStoreProcessUpdateTest(
 
         assertIs<DeleteResponse<*>>(softRemovalUpdate.result).apply {
             assertEquals(1, statuses.size)
-            assertIs<DeleteSuccess<*>>(statuses.first())
+            assertStatusIs<DeleteSuccess<*>>(statuses.first())
         }
 
         val getResponse2 = dataStore.execute(
@@ -297,8 +299,8 @@ class DataStoreProcessUpdateTest(
 
         assertIs<AddOrChangeResponse<*>>(changeResponse.result).apply {
             assertEquals(2, statuses.size)
-            assertIs<ChangeSuccess<*>>(statuses[0])
-            assertIs<AddSuccess<*>>(statuses[1])
+            assertStatusIs<ChangeSuccess<*>>(statuses[0])
+            assertStatusIs<AddSuccess<*>>(statuses[1])
         }
 
         val getResponse = dataStore.execute(

@@ -13,7 +13,6 @@ import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
-import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -32,7 +31,7 @@ class DataStoreDeleteTest(
             addRequest
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<SimpleMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<SimpleMarykModel>>(status)
             keys.add(response.key)
         }
     }
@@ -40,7 +39,9 @@ class DataStoreDeleteTest(
     override suspend fun resetData() {
         dataStore.execute(
             SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
     }
 
@@ -84,6 +85,8 @@ class DataStoreDeleteTest(
             expect(1) { it.changes.size }
             expect(ObjectSoftDeleteChange(true)) { it.changes.first() }
         }
+
+        keys.removeAt(0)
     }
 
     private suspend fun processHardDeleteRequest() {
@@ -97,12 +100,14 @@ class DataStoreDeleteTest(
         expect(1) { deleteResponse.statuses.size }
         expect(DELETE_SUCCESS) { deleteResponse.statuses[0].statusType }
         with(deleteResponse.statuses[0]) {
-            assertIs<DeleteSuccess<SimpleMarykModel>>(this)
+            assertStatusIs<DeleteSuccess<SimpleMarykModel>>(this)
         }
 
         val getResponse = dataStore.execute(
             SimpleMarykModel.get(keys[1])
         )
         assertTrue { getResponse.values.isEmpty() }
+
+        keys.removeAt(1)
     }
 }

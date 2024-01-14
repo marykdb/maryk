@@ -8,6 +8,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Log
@@ -38,7 +39,9 @@ class DataStoreAddTest(
     override suspend fun resetData() {
         dataStore.execute(
             Log.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
     }
 

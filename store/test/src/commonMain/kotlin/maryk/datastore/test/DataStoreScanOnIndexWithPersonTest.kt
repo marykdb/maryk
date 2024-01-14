@@ -7,9 +7,9 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Person
-import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanOnIndexWithPersonTest(
@@ -34,7 +34,7 @@ class DataStoreScanOnIndexWithPersonTest(
             Person.add(*persons)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Person>>(status)
+            val response = assertStatusIs<AddSuccess<Person>>(status)
             keys.add(response.key)
             if (response.version > highestCreationVersion) {
                 // Add lowest version for scan test
@@ -46,7 +46,9 @@ class DataStoreScanOnIndexWithPersonTest(
     override suspend fun resetData() {
         dataStore.execute(
             Person.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         highestCreationVersion = ULong.MIN_VALUE
     }

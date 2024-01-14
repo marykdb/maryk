@@ -9,10 +9,10 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.ComplexModel
 import kotlin.test.assertFalse
-import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class DataStoreFilterComplexTest(
@@ -42,7 +42,7 @@ class DataStoreFilterComplexTest(
         )
 
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<ComplexModel>>(status)
+            val response = assertStatusIs<AddSuccess<ComplexModel>>(status)
             keys.add(response.key)
             lastVersions.add(response.version)
         }
@@ -53,7 +53,9 @@ class DataStoreFilterComplexTest(
     override suspend fun resetData() {
         dataStore.execute(
             ComplexModel.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         lastVersions.clear()
     }

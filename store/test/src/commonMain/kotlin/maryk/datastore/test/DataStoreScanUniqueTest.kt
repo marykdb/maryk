@@ -20,7 +20,6 @@ import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
-import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanUniqueTest(
@@ -99,7 +98,7 @@ class DataStoreScanUniqueTest(
             )
         )
 
-        assertIs<ChangeSuccess<*>>(changeResponse.statuses[0])
+        assertStatusIs<ChangeSuccess<*>>(changeResponse.statuses[0])
 
         val scanResponseForLatest = dataStore.execute(
             CompleteMarykModel.scan(

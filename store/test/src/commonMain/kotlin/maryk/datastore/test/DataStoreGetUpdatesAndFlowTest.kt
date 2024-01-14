@@ -13,6 +13,7 @@ import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.getUpdates
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
@@ -59,7 +60,7 @@ class DataStoreGetUpdatesAndFlowTest(
             )
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<SimpleMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<SimpleMarykModel>>(status)
             testKeys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -74,7 +75,9 @@ class DataStoreGetUpdatesAndFlowTest(
     override suspend fun resetData() {
         dataStore.execute(
             SimpleMarykModel.delete(*testKeys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE

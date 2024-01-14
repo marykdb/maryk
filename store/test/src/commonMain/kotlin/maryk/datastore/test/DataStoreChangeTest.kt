@@ -23,6 +23,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
@@ -131,7 +132,9 @@ class DataStoreChangeTest(
     override suspend fun resetData() {
         dataStore.execute(
             TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         lastVersions.clear()
     }
@@ -167,13 +170,13 @@ class DataStoreChangeTest(
         }
 
         changeResponse.statuses[1].let { status ->
-            val validationFail = assertIs<ValidationFail<*>>(status)
+            val validationFail = assertStatusIs<ValidationFail<*>>(status)
             expect(1) { validationFail.exceptions.size }
             assertIs<InvalidValueException>(validationFail.exceptions[0])
         }
 
         changeResponse.statuses[2].let { status ->
-            val validationFail = assertIs<ValidationFail<*>>(status)
+            val validationFail = assertStatusIs<ValidationFail<*>>(status)
             expect(1) { validationFail.exceptions.size }
             assertIs<InvalidValueException>(validationFail.exceptions[0])
         }

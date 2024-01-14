@@ -13,11 +13,11 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import kotlin.test.assertFailsWith
-import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreGetChangesTest(
@@ -39,7 +39,7 @@ class DataStoreGetChangesTest(
             addRequest
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<SimpleMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<SimpleMarykModel>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -51,7 +51,9 @@ class DataStoreGetChangesTest(
     override suspend fun resetData() {
         dataStore.execute(
             SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }
@@ -65,7 +67,7 @@ class DataStoreGetChangesTest(
 
         var versionAfterChange = 0uL
         for (status in changeResult.statuses) {
-            assertIs<ChangeSuccess<SimpleMarykModel>>(status).apply {
+            assertStatusIs<ChangeSuccess<SimpleMarykModel>>(status).apply {
                 versionAfterChange = this.version
             }
         }
@@ -160,7 +162,7 @@ class DataStoreGetChangesTest(
                     keys[1].change(change1)
                 )
             ).also {
-                assertIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                assertStatusIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
@@ -171,7 +173,7 @@ class DataStoreGetChangesTest(
                     keys[1].change(change2)
                 )
             ).also {
-                assertIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                assertStatusIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }
@@ -182,7 +184,7 @@ class DataStoreGetChangesTest(
                     keys[1].change(change3)
                 )
             ).also {
-                assertIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
+                assertStatusIs<ChangeSuccess<SimpleMarykModel>>(it.statuses.first()).apply {
                     collectedVersions.add(version)
                 }
             }

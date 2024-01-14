@@ -10,6 +10,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
@@ -46,7 +47,9 @@ class DataStoreGetTest(
     override suspend fun resetData() {
         dataStore.execute(
             SimpleMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }

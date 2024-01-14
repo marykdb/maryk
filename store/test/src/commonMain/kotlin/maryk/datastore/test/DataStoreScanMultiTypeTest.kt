@@ -11,6 +11,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.LengthMeasurement
 import maryk.test.models.Measurement
@@ -76,7 +77,9 @@ class DataStoreScanMultiTypeTest(
     override suspend fun resetData() {
         dataStore.execute(
             Measurement.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }

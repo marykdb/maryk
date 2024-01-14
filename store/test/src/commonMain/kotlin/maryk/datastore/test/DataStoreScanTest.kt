@@ -17,13 +17,13 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Log
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
 import kotlin.test.assertFailsWith
-import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanTest(
@@ -56,7 +56,7 @@ class DataStoreScanTest(
             Log.add(*logs)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<Log>>(status)
+            val response = assertStatusIs<AddSuccess<Log>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -68,7 +68,9 @@ class DataStoreScanTest(
     override suspend fun resetData() {
         dataStore.execute(
             Log.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }

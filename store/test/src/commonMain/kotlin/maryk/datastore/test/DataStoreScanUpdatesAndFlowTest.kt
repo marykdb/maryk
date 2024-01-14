@@ -21,6 +21,7 @@ import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
@@ -120,7 +121,9 @@ class DataStoreScanUpdatesAndFlowTest(
     override suspend fun resetData() {
         dataStore.execute(
             TestMarykModel.delete(*testKeys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE

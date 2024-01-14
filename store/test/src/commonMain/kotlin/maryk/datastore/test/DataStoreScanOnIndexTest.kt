@@ -17,6 +17,7 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Log
 import maryk.test.models.Log.message
@@ -72,7 +73,9 @@ class DataStoreScanOnIndexTest(
     override suspend fun resetData() {
         dataStore.execute(
             Log.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         highestCreationVersion = ULong.MIN_VALUE
     }

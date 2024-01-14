@@ -11,6 +11,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
 import kotlin.test.assertIs
@@ -47,7 +48,9 @@ class UniqueTest(
     override suspend fun resetData() {
         dataStore.execute(
             UniqueModel.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         this.keys.clear()
     }
 

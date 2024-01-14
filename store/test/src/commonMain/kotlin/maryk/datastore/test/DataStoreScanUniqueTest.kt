@@ -13,6 +13,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnumEmbedded.E1
@@ -53,7 +54,7 @@ class DataStoreScanUniqueTest(
             CompleteMarykModel.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertIs<AddSuccess<CompleteMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<CompleteMarykModel>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -65,7 +66,9 @@ class DataStoreScanUniqueTest(
     override suspend fun resetData() {
         dataStore.execute(
             CompleteMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
-        )
+        ).statuses.forEach {
+            assertStatusIs<DeleteSuccess<*>>(it)
+        }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
     }

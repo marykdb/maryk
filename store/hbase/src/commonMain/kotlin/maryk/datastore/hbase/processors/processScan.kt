@@ -15,6 +15,7 @@ import maryk.datastore.hbase.uniquesColumnFamily
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
+import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
@@ -53,7 +54,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
                     @Suppress("UNCHECKED_CAST")
                     val value = firstMatcher.value as Comparable<Any>
                     @Suppress("UNCHECKED_CAST")
-                    val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>).toStorageBytes(value)
+                    val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
                     table.get(Get(uniqueReference).apply {
                         addColumn(uniquesColumnFamily, valueBytes)

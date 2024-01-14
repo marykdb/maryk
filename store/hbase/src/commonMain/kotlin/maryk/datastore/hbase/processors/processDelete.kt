@@ -81,7 +81,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
             val valuesGetter = object : IsValuesGetter {
                 @Suppress("UNCHECKED_CAST")
                 override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? =
-                    currentValues.getColumnLatestCell(dataColumnFamily, propertyReference.toStorageByteArray())?.readValue(propertyReference.propertyDefinition) as T?
+                    currentValues.getColumnLatestCell(dataColumnFamily, propertyReference.toStorageByteArray())?.readValue(propertyReference.comparablePropertyDefinition) as T?
             }
 
             uniqueReferences.forEach { uniqueReference ->

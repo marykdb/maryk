@@ -125,7 +125,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
             createValidationUmbrellaException { addException ->
                 results.forEachIndexed { index, result ->
                     val check = uniqueChecksBeforeWrite[index]
-                    if (!result.isEmpty && (result.getColumnLatestCell(uniquesColumnFamily, check.value)?.valueLength ?:0) > 1) {
+                    if (!result.isEmpty && (result.getColumnLatestCell(uniquesColumnFamily, check.value)?.valueLength ?: 0) > 1) {
                         addException(check.exceptionCreator(
                             Key(result.getValue(uniquesColumnFamily, check.value))
                         ))

@@ -153,7 +153,7 @@ internal fun createContentFilter(filter: IsFilter?, isNot: Boolean = false): Fil
                 val refAsBytes = matcher.qualifier
                 val prefixedRegex = if (regex.pattern.startsWith("^")) {
                     regex.pattern.replace("^", "^\u0001")
-                } else "\u0001${regex.pattern}"
+                } else regex.pattern
 
                 add(SingleColumnValueFilter(dataColumnFamily, refAsBytes, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, RegexStringComparator(prefixedRegex)).apply {
                     filterIfMissing = true

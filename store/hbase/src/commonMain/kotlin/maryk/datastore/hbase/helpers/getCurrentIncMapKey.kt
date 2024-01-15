@@ -30,6 +30,6 @@ internal fun getCurrentIncMapKey(
     }
 
     // If nothing was found create a new reference
-    val mapKeySize  = reference.propertyDefinition.definition.keyDefinition.byteSize
-    return ByteArray(mapKeySize) { if (it == 0) mapKeySize.toByte() else 0xFF.toByte() }
+    val mapKeySize = reference.propertyDefinition.definition.keyDefinition.byteSize
+    return ByteArray(mapKeySize + 1 + referenceAsBytes.size) { if(it < referenceAsBytes.size) referenceAsBytes[it] else if (it == referenceAsBytes.size) mapKeySize.toByte() else 0xFF.toByte() }
 }

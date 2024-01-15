@@ -16,7 +16,7 @@ class IncMapAddIndexReference<K : Any, V : Any, CX : IsPropertyContext> internal
     val index: Int,
     mapDefinition: IsMapDefinition<K, V, CX>,
     parentReference: CanContainMapItemReference<*, *, *>?
-) : CanHaveSimpleChildReference<V, IsPropertyDefinition<V>, CanContainMapItemReference<*, *, *>, Map<K, V>>(
+) : CanHaveComplexChildReference<V, IsPropertyDefinition<V>, CanContainMapItemReference<*, *, *>, Map<K, V>>(
         mapDefinition.valueDefinition, parentReference
     ),
     CanContainMapItemReference<V, IsPropertyDefinition<V>, Map<K, V>>,

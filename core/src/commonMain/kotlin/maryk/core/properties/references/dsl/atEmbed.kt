@@ -1,10 +1,11 @@
 package maryk.core.properties.references.dsl
 
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.invoke
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.IsPropertyReference
@@ -13,7 +14,7 @@ import kotlin.jvm.JvmName
 
 /** Specific extension to support fetching deeper references on Map values by [key] */
 @JvmName("atEmbed")
-fun <K : Any, V : Values<DM>, DM : IsValuesDataModel, T : Any, W : IsDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> IsMapDefinition<K, V, *>.at(
+fun <K : Any, V : Values<DM>, DM : IsValuesDataModel, T : Any, D : IsPropertyDefinition<T>, R : IsPropertyReference<T, D, *>> IsMapDefinition<K, V, *>.at(
     key: K,
     referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
 ): (AnyOutPropertyReference?) -> R =

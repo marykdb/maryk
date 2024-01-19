@@ -21,7 +21,6 @@ import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.checkToVersion
 import org.apache.hadoop.hbase.client.Get
-import org.apache.hadoop.hbase.client.Result
 
 internal typealias GetUpdatesStoreAction<DM> = StoreAction<DM, GetUpdatesRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootDataModel>
@@ -105,21 +104,8 @@ internal suspend fun <DM : IsRootDataModel> processGetUpdatesRequest(
             cache.readValue(dbIndex, key, reference, version, valueReader)
         }
 
-        val filteredResultOnStartVersion = Result.create(
-            result.rawCells().filter {
-                it.timestamp.toULong() >= getRequest.fromVersion
-            },
-            result.exists,
-            result.isStale,
-            result.mayHaveMoreCellsInRow(),
-        )
-
-        if (filteredResultOnStartVersion.isEmpty) {
-            continue@keyWalk
-        }
-
         getRequest.dataModel.readResultIntoObjectChanges(
-            filteredResultOnStartVersion,
+            result,
             createdVersion,
             key,
             getRequest.select,

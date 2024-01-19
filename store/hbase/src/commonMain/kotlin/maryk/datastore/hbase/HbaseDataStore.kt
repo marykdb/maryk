@@ -19,6 +19,7 @@ import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.GetRequest
+import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.datastore.hbase.model.checkModelIfMigrationIsNeeded
@@ -28,6 +29,7 @@ import maryk.datastore.hbase.processors.AnyChangeStoreAction
 import maryk.datastore.hbase.processors.AnyDeleteStoreAction
 import maryk.datastore.hbase.processors.AnyGetChangesStoreAction
 import maryk.datastore.hbase.processors.AnyGetStoreAction
+import maryk.datastore.hbase.processors.AnyGetUpdatesStoreAction
 import maryk.datastore.hbase.processors.AnyScanChangesStoreAction
 import maryk.datastore.hbase.processors.AnyScanStoreAction
 import maryk.datastore.hbase.processors.processAddRequest
@@ -35,6 +37,7 @@ import maryk.datastore.hbase.processors.processChangeRequest
 import maryk.datastore.hbase.processors.processDeleteRequest
 import maryk.datastore.hbase.processors.processGetChangesRequest
 import maryk.datastore.hbase.processors.processGetRequest
+import maryk.datastore.hbase.processors.processGetUpdatesRequest
 import maryk.datastore.hbase.processors.processScanChangesRequest
 import maryk.datastore.hbase.processors.processScanRequest
 import maryk.datastore.shared.AbstractDataStore
@@ -145,8 +148,8 @@ class HbaseDataStore(
                             processGetRequest(storeAction as AnyGetStoreAction, this@HbaseDataStore, cache)
                         is GetChangesRequest<*> ->
                             processGetChangesRequest(storeAction as AnyGetChangesStoreAction, this@HbaseDataStore, cache)
-//                        is GetUpdatesRequest<*> ->
-//                            processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, this@HbaseDataStore, cache)
+                        is GetUpdatesRequest<*> ->
+                            processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, this@HbaseDataStore, cache)
                         is ScanRequest<*> ->
                             processScanRequest(storeAction as AnyScanStoreAction, this@HbaseDataStore, cache)
                         is ScanChangesRequest<*> ->

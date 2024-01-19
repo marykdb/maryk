@@ -24,7 +24,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     table: AsyncTable<AdvancedScanResultConsumer>,
     scanRequest: IsScanRequest<DM, *>,
     scanRange: KeyScanRanges,
-    processStoreValue: (Key<DM>, ULong, Result, ByteArray?) -> Unit
+    processStoreValue: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
 ) {
     val scan = Scan().apply {
         addFamily(dataColumnFamily)
@@ -76,7 +76,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
             val key = scanRequest.dataModel.key(result.row)
 
-            val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray).timestamp.toULong()
+            val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)?.timestamp?.toULong()
 
             processStoreValue(key, creationVersion, result, null)
 

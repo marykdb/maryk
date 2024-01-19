@@ -28,17 +28,16 @@ internal suspend fun <DM : IsRootDataModel> processScanChangesRequest(
     processScan(
         scanRequest,
         dataStore,
-    ) { key, creationVersion, result, sortingKey ->
+    ) { key, createdVersion, result, sortingKey ->
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
             cache.readValue(dbIndex, key, reference, version, valueReader)
         }
 
         scanRequest.dataModel.readResultIntoObjectChanges(
             result = result,
-            creationVersion = creationVersion,
             key = key,
+            creationVersion = createdVersion,
             select = scanRequest.select,
-            fromVersion = scanRequest.fromVersion,
             sortingKey = sortingKey,
             cachedRead = cacheReader
         )?.also {

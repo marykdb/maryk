@@ -30,7 +30,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
     scanRequest: IsScanRequest<DM, *>,
     dataStore: HbaseDataStore,
     scanSetup: ((ScanType) -> Unit)? = null,
-    processRecord: (Key<DM>, ULong, Result, ByteArray?) -> Unit
+    processRecord: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
 ) {
     val table = dataStore.getTable(scanRequest.dataModel)
 
@@ -107,7 +107,7 @@ private suspend fun <DM : IsRootDataModel> getByKey(
     table: AsyncTable<AdvancedScanResultConsumer>,
     keyBytes: ByteArray,
     scanRequest: IsScanRequest<DM, *>,
-    processRecord: (Key<DM>, ULong, Result, ByteArray?) -> Unit
+    processRecord: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
 ) {
     table.get(Get(keyBytes).apply {
         addFamily(dataColumnFamily)
@@ -117,7 +117,7 @@ private suspend fun <DM : IsRootDataModel> getByKey(
     }).let { resultFuture ->
         val result = resultFuture.await()
         if (!result.isEmpty) {
-            val createdVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray).timestamp.toULong()
+            val createdVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)?.timestamp?.toULong()
             processRecord(scanRequest.dataModel.key(keyBytes), createdVersion, result, null)
         }
     }

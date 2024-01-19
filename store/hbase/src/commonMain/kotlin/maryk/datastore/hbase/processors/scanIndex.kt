@@ -36,7 +36,7 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
     table: AsyncTable<AdvancedScanResultConsumer>,
     scanRequest: IsScanRequest<DM, *>,
     keyScanRange: KeyScanRanges,
-    processStoreValue: (Key<DM>, ULong, Result, ByteArray?) -> Unit
+    processStoreValue: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
 ) {
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
@@ -143,7 +143,7 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
                     continue
                 }
                 val key = scanRequest.dataModel.key(result.row)
-                val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray).timestamp.toULong()
+                val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)?.timestamp?.toULong()
                 processStoreValue(key, creationVersion, result, null)
 
                 count++

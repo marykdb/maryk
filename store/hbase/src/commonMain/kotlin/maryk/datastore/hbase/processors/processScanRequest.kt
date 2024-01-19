@@ -44,7 +44,7 @@ internal suspend fun <DM : IsRootDataModel> processScanRequest(
 
         val valuesWithMetaData = scanRequest.dataModel.readResultIntoValuesWithMetaData(
             result,
-            creationVersion,
+            creationVersion!!,
             key,
             scanRequest.select,
             cacheReader

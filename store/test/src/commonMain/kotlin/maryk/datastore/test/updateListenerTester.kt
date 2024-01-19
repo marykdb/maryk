@@ -45,7 +45,13 @@ suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
     val successfullyDone = CompletableDeferred<Boolean>()
 
     val changeJob = GlobalScope.launch {
-        changeBlock(responses)
+        try {
+            changeBlock(responses)
+        } catch (e: Throwable) {
+            successfullyDone.complete(false)
+            e.printStackTrace()
+            throw e
+        }
 
         successfullyDone.complete(true)
     }

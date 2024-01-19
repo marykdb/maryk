@@ -52,7 +52,7 @@ internal suspend fun <DM : IsRootDataModel> processGetChangesRequest(
         }
         val key = Key<DM>(result.row)
 
-        val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray).timestamp.toULong()
+        val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)?.timestamp?.toULong()
 
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
             cache.readValue(dbIndex, key, reference, version, valueReader)
@@ -60,10 +60,9 @@ internal suspend fun <DM : IsRootDataModel> processGetChangesRequest(
 
         getRequest.dataModel.readResultIntoObjectChanges(
             result = result,
-            creationVersion = creationVersion,
             key = key,
+            creationVersion = creationVersion,
             select = getRequest.select,
-            fromVersion = getRequest.fromVersion,
             sortingKey = null,
             cachedRead = cacheReader
         )?.also {

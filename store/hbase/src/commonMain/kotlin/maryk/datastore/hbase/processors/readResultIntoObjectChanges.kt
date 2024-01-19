@@ -26,16 +26,15 @@ import org.apache.hadoop.hbase.client.Result
 /** Process values for [key] from result to a DataObjectWithChanges object */
 internal fun <DM : IsRootDataModel> DM.readResultIntoObjectChanges(
     result: Result,
-    creationVersion: ULong,
+    creationVersion: ULong?,
     key: Key<DM>,
     select: RootPropRefGraph<DM>?,
-    fromVersion: ULong,
     sortingKey: ByteArray?,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
 ): DataObjectVersionedChange<DM>? {
     val changes: List<VersionedChanges>
 
-    var currentVersion: ULong = creationVersion
+    var currentVersion: ULong? = creationVersion // Should always be set with getQualifier before use
 
     val allCellIterator = result.listCells().iterator()
 
@@ -62,9 +61,9 @@ internal fun <DM : IsRootDataModel> DM.readResultIntoObjectChanges(
     changes = this.readStorageToChanges(
         getQualifier = getQualifier,
         select = select,
-        creationVersion = if (creationVersion > fromVersion) creationVersion else null,
+        creationVersion = creationVersion,
         processValue = { storageType, reference, valueWithVersionReader ->
-            val value = cachedRead(reference, currentVersion) {
+            val value = cachedRead(reference, currentVersion!!) {
                 val cell = currentCell
                 if (cell == null) {
                     null
@@ -89,7 +88,7 @@ internal fun <DM : IsRootDataModel> DM.readResultIntoObjectChanges(
                     }
                 }
             }
-            valueWithVersionReader(currentVersion, value)
+            valueWithVersionReader(currentVersion!!, value)
         }
     )
 

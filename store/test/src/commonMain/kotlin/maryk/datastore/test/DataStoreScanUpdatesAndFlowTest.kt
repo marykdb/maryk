@@ -323,6 +323,9 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
             }
+
+            // Delete all keys of removed items
+            testKeys.removeAt(2)
         }
     }
 
@@ -523,6 +526,8 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(newDataObject, values)
                 assertEquals(3, insertionIndex)
             }
+
+            testKeys.removeAt(2)
         }
     }
 

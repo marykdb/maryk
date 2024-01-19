@@ -7,10 +7,10 @@ import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.requests.IsScanRequest
-import maryk.core.query.requests.ScanChangesRequest
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.hbase.helpers.createPartialsFilter
+import maryk.datastore.hbase.helpers.setTimeRange
 import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
 import org.apache.hadoop.hbase.client.AsyncTable
 import org.apache.hadoop.hbase.client.Result
@@ -58,11 +58,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
         readVersions(1)
 
-        if (scanRequest is ScanChangesRequest && scanRequest.fromVersion != 0uL) {
-            setTimeRange(scanRequest.fromVersion.toLong(), scanRequest.toVersion?.toLong() ?: Long.MAX_VALUE)
-        } else if (scanRequest.toVersion != null) {
-            setTimeRange(0, scanRequest.toVersion!!.toLong())
-        }
+        setTimeRange(scanRequest)
 
         maxResultSize = scanRequest.limit.toLong()
         caching = maxResultSize.toInt()

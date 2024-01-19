@@ -14,6 +14,7 @@ import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
+import maryk.datastore.hbase.helpers.setTimeRange
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
@@ -45,9 +46,7 @@ internal suspend fun <DM : IsRootDataModel> processGetRequest(
             addFamily(dataColumnFamily)
             setFilter(getRequest.createFilter())
             readVersions(1)
-            getRequest.toVersion?.let { toVersion ->
-                setTimeRange(0, toVersion.toLong())
-            }
+            setTimeRange(getRequest)
         }
     }
 

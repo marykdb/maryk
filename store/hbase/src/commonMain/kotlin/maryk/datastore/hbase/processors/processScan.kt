@@ -11,6 +11,7 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
+import maryk.datastore.hbase.helpers.setTimeRange
 import maryk.datastore.hbase.uniquesColumnFamily
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
@@ -59,9 +60,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
                     table.get(Get(uniqueReference).apply {
                         addColumn(uniquesColumnFamily, valueBytes)
                         readVersions(1)
-                        scanRequest.toVersion?.let { toVersion ->
-                            setTimeRange(0, toVersion.toLong())
-                        }
+                        setTimeRange(scanRequest)
                     }).let { resultFuture ->
                         val result = resultFuture.await()
                         if (!result.isEmpty) {
@@ -91,7 +90,6 @@ internal suspend fun <DM : IsRootDataModel> processScan(
                     )
                 }
                 is IndexScan -> {
-                    TODO()
 //                    scanIndex(
 //                        dataStore,
 //                        dbAccessor,
@@ -117,9 +115,7 @@ private suspend fun <DM : IsRootDataModel> getByKey(
         addFamily(dataColumnFamily)
         setFilter(scanRequest.createFilter())
         readVersions(1)
-        scanRequest.toVersion?.let { toVersion ->
-            setTimeRange(0, toVersion.toLong())
-        }
+        setTimeRange(scanRequest)
     }).let { resultFuture ->
         val result = resultFuture.await()
         if (!result.isEmpty) {

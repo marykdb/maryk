@@ -10,6 +10,7 @@ import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
+import maryk.datastore.hbase.helpers.setTimeRange
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
@@ -36,7 +37,7 @@ internal suspend fun <DM : IsRootDataModel> processGetChangesRequest(
             addFamily(dataColumnFamily)
             setFilter(getRequest.createFilter())
             readVersions(getRequest.maxVersions.toInt())
-            setTimeRange(getRequest.fromVersion.toLong(), getRequest.toVersion?.toLong() ?: Long.MAX_VALUE)
+            setTimeRange(getRequest)
         }
     }
 

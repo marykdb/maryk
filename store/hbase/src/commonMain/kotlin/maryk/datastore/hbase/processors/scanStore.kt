@@ -4,13 +4,13 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.properties.types.Key
-import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
-import maryk.datastore.hbase.helpers.createPartialsFilter
+import maryk.datastore.hbase.helpers.createPartialsRowKeyFilter
 import maryk.datastore.hbase.helpers.setTimeRange
+import maryk.datastore.shared.ScanType
 import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
 import org.apache.hadoop.hbase.client.AsyncTable
 import org.apache.hadoop.hbase.client.Result
@@ -20,16 +20,16 @@ import org.apache.hadoop.hbase.filter.MultiRowRangeFilter
 import org.apache.hadoop.hbase.filter.MultiRowRangeFilter.RowRange
 
 internal fun <DM : IsRootDataModel> scanStore(
+    tableScan: ScanType.TableScan,
     table: AsyncTable<AdvancedScanResultConsumer>,
     scanRequest: IsScanRequest<DM, *>,
-    direction: Direction,
     scanRange: KeyScanRanges,
     processStoreValue: (Key<DM>, ULong, Result, ByteArray?) -> Unit
 ) {
     val scan = Scan().apply {
         addFamily(dataColumnFamily)
         withStartRow(scanRange.startKey, scanRange.includeStart)
-        if (direction == ASC) {
+        if (tableScan.direction == ASC) {
             val last = scanRange.ranges.last()
             withStopRow(last.end, last.endInclusive)
         } else {
@@ -50,7 +50,7 @@ internal fun <DM : IsRootDataModel> scanStore(
             )
         }
 
-        scanRange.createPartialsFilter()?.let(multiFilter::addFilter)
+        scanRange.createPartialsRowKeyFilter()?.let(multiFilter::addFilter)
 
         scanRequest.createFilter()?.let(multiFilter::addFilter)
 

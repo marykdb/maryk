@@ -25,8 +25,8 @@ private val allTestClasses = arrayOf(
 //    "DataStoreProcessUpdateTest" to ::DataStoreProcessUpdateTest,
 //    "DataStoreScanChangesTest" to ::DataStoreScanChangesTest,
 //    "DataStoreScanMultiTypeTest" to ::DataStoreScanMultiTypeTest,
-//    "DataStoreScanOnIndexTest" to ::DataStoreScanOnIndexTest,
-//    "DataStoreScanOnIndexWithPersonTest" to ::DataStoreScanOnIndexWithPersonTest,
+    "DataStoreScanOnIndexTest" to ::DataStoreScanOnIndexTest,
+    "DataStoreScanOnIndexWithPersonTest" to ::DataStoreScanOnIndexWithPersonTest,
     "DataStoreScanTest" to ::DataStoreScanTest,
     "DataStoreScanUniqueTest" to ::DataStoreScanUniqueTest,
 //    "DataStoreScanUpdatesAndFlowTest" to ::DataStoreScanUpdatesAndFlowTest,
@@ -55,25 +55,31 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
         val testClass = testClassConstructor(dataStore)
 
         println(testClassName)
-        try {
-            for ((testName, test) in testClass.allTests) {
-                if (runOnlyTest != null && testName != runOnlyTest) {
-                    continue
-                }
-                println("- $testName")
-
-                testClass.initData()
-
-                try {
-                    test()
-                } catch (throwable: Throwable) {
-                    exceptionList["$testClassName.$testName"] = throwable
-                }
-
-                testClass.resetData()
+        for ((testName, test) in testClass.allTests) {
+            if (runOnlyTest != null && testName != runOnlyTest) {
+                continue
             }
-        } catch (throwable: Throwable) {
-            exceptionList["$testClassName:initData"] = throwable
+            println("- $testName")
+
+            var phase = "init"
+            try {
+                testClass.initData()
+                phase = "test"
+                test()
+            } catch (throwable: Throwable) {
+                println("  FAILED $phase")
+                exceptionList["$testClassName.$testName.$phase"] = throwable
+                throwable.printStackTrace()
+            }
+
+            phase = "reset"
+            try {
+                testClass.resetData()
+            } catch (throwable: Throwable) {
+                println("  FAILED $phase")
+                exceptionList["$testClassName.$testName.$phase"] = throwable
+                throwable.printStackTrace()
+            }
         }
     }
     if (exceptionList.isNotEmpty()) {
@@ -85,6 +91,6 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
             }
             messages += "\t$name: $exception\n"
         }
-        throw RuntimeException("$messages]", firstThrowable)
+        throw RuntimeException("$messages]")
     }
 }

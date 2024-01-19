@@ -82,23 +82,21 @@ internal suspend fun <DM : IsRootDataModel> processScan(
             when (processedScanIndex) {
                 is TableScan -> {
                     scanStore(
+                        processedScanIndex,
                         table,
                         scanRequest,
-                        processedScanIndex.direction,
                         keyScanRange,
                         processRecord
                     )
                 }
                 is IndexScan -> {
-//                    scanIndex(
-//                        dataStore,
-//                        dbAccessor,
-//                        columnFamilies,
-//                        scanRequest,
-//                        processedScanIndex,
-//                        keyScanRange,
-//                        processRecord
-//                    )
+                    scanIndex(
+                        processedScanIndex,
+                        table,
+                        scanRequest,
+                        keyScanRange,
+                        processRecord
+                    )
                 }
             }
         }

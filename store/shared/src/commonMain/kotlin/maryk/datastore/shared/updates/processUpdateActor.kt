@@ -2,7 +2,6 @@ package maryk.datastore.shared.updates
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import maryk.core.models.IsRootDataModel
@@ -36,7 +35,6 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
                     } catch (e: Throwable) {
                         throw RuntimeException(e)
                     }
-
                 }
                 is AddUpdateListenerAction -> {
                     val dataModelListeners =

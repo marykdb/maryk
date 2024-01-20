@@ -21,6 +21,7 @@ import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -197,7 +198,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change = Change(TestMarykModel { string::ref } with "ha new message for values")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate = responses[1].await()
             assertIs<ChangeUpdate<*>>(changeUpdate).apply {
@@ -223,7 +226,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change1 = Change(TestMarykModel { string::ref } with "ha new message for change")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate1 = responses[1].await()
             assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
@@ -268,7 +273,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate1 = responses[3].await()
             assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
@@ -282,7 +289,9 @@ class DataStoreScanUpdatesAndFlowTest(
                 testKeys[0].change(
                     Change(TestMarykModel { string::ref } with "ha newer message 3")
                 )
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val change2 = Change(TestMarykModel { string::ref } with "ha newer message 3")
             dataStore.execute(TestMarykModel.change(
@@ -296,7 +305,9 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(1, index)
             }
 
-            dataStore.execute(TestMarykModel.delete(testKeys[2], hardDelete = true))
+            dataStore.execute(TestMarykModel.delete(testKeys[2], hardDelete = true)).also {
+                assertStatusIs<DeleteSuccess<*>>(it.statuses.first())
+            }
 
             val removalUpdate1 = responses[5].await()
             assertIs<RemovalUpdate<*>>(removalUpdate1).apply {
@@ -315,7 +326,9 @@ class DataStoreScanUpdatesAndFlowTest(
 
             dataStore.execute(TestMarykModel.add(
                 newDataObject
-            ))
+            )).also {
+                assertStatusIs<AddSuccess<*>>(it.statuses.first())
+            }
 
             val additionUpdate = responses[6].await()
             assertIs<AdditionUpdate<TestMarykModel>>(additionUpdate).apply {
@@ -347,7 +360,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change1 = Change(TestMarykModel { string::ref } with "ha filtered message")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate1 = responses[1].await()
             assertIs<RemovalUpdate<*>>(changeUpdate1).apply {
@@ -389,7 +404,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate1 = responses[5].await()
             assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
@@ -422,7 +439,9 @@ class DataStoreScanUpdatesAndFlowTest(
             )
             dataStore.execute(TestMarykModel.change(
                 testKeys[1].change(change1)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate1 = responses[1].await()
             assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
@@ -445,7 +464,9 @@ class DataStoreScanUpdatesAndFlowTest(
                         TestMarykModel { double::ref } with 2.5
                     )
                 )
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             // No update should be handled, otherwise crashes since there is only 1 response slot, and it has been used
         }
@@ -469,7 +490,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change1)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate1 = responses[1].await()
             assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
@@ -484,12 +507,16 @@ class DataStoreScanUpdatesAndFlowTest(
                 testKeys[4].change(
                     Change(TestMarykModel { string::ref } with "ha new message 3")
                 )
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val change2 = Change(TestMarykModel { string::ref } with "ha new message 3")
             dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change2)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate2 = responses[2].await()
             assertIs<ChangeUpdate<*>>(changeUpdate2).apply {
@@ -498,7 +525,9 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(1, index)
             }
 
-            dataStore.execute(TestMarykModel.delete(testKeys[2], hardDelete = true))
+            dataStore.execute(TestMarykModel.delete(testKeys[2], hardDelete = true)).also {
+                assertStatusIs<DeleteSuccess<*>>(it.statuses.first())
+            }
 
             val removalUpdate1 = responses[3].await()
             assertIs<RemovalUpdate<*>>(removalUpdate1).apply {
@@ -518,7 +547,9 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
-                testKeys.add((it.statuses[0] as AddSuccess<TestMarykModel>).key)
+                assertStatusIs<AddSuccess<TestMarykModel>>(it.statuses.first()).also { success ->
+                    testKeys.add(success.key)
+                }
             }
 
             val additionUpdate = responses[4].await()
@@ -527,7 +558,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(3, insertionIndex)
             }
 
-            testKeys.removeAt(2)
+            testKeys.remove(testKeys[2])
         }
     }
 
@@ -553,7 +584,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change1)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate1 = responses[1].await()
             assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
@@ -572,7 +605,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change2 = Change(TestMarykModel { string::ref } with "ha new new message 3")
             dataStore.execute(TestMarykModel.change(
                 testKeys[0].change(change2)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate2 = responses[2].await()
             assertIs<ChangeUpdate<*>>(changeUpdate2).apply {
@@ -580,7 +615,9 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(listOf(change2), changes)
             }
 
-            dataStore.execute(TestMarykModel.delete(testKeys[0]))
+            dataStore.execute(TestMarykModel.delete(testKeys[0])).also {
+                assertStatusIs<DeleteSuccess<*>>(it.statuses.first())
+            }
 
             val removalUpdate1 = responses[3].await()
             assertIs<RemovalUpdate<*>>(removalUpdate1).apply {
@@ -605,6 +642,7 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
+                assertStatusIs<AddSuccess<*>>(it.statuses.first())
                 testKeys.add((it.statuses[0] as AddSuccess<TestMarykModel>).key)
             }
 
@@ -622,14 +660,17 @@ class DataStoreScanUpdatesAndFlowTest(
             // New object is added within range in already full list, so we expect an add and a delete
             dataStore.execute(TestMarykModel.add(
                 newDataObject2
-            ))
+            )).also {
+                assertStatusIs<AddSuccess<*>>(it.statuses.first())
+            }
 
             val additionUpdate = responses[5].await()
             assertIs<AdditionUpdate<TestMarykModel>>(additionUpdate).apply {
-                assertEquals(values, newDataObject2)
+                assertEquals(newDataObject2, values)
                 assertEquals(1, insertionIndex)
                 testKeys.add(key)
             }
+
 
             val removalUpdate2 = responses[6].await()
             assertIs<RemovalUpdate<TestMarykModel>>(removalUpdate2).apply {
@@ -641,7 +682,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change3 = Change(TestMarykModel { int::ref } with 0)
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change3)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate3 = responses[7].await()
             assertIs<ChangeUpdate<*>>(changeUpdate3).apply {
@@ -669,7 +712,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change4 = Change(TestMarykModel { int::ref } with 5)
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change4)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val removalUpdate3 = responses[8].await()
             assertIs<RemovalUpdate<*>>(removalUpdate3).apply {
@@ -688,7 +733,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change5 = Change(TestMarykModel { int::ref } with -1)
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change5)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val removalUpdate4 = responses[10].await()
             assertIs<RemovalUpdate<*>>(removalUpdate4).apply {
@@ -726,7 +773,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change1 = Change(TestMarykModel { string::ref } with "ha new message 1")
             dataStore.execute(TestMarykModel.change(
                 testKeys[2].change(change1)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate1 = responses[1].await()
             assertIs<ChangeUpdate<*>>(changeUpdate1).apply {
@@ -740,7 +789,9 @@ class DataStoreScanUpdatesAndFlowTest(
                 testKeys[4].change(
                     Change(TestMarykModel { string::ref } with "ha new message 3")
                 )
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val change2 = Change(TestMarykModel { string::ref } with "ha new message 3")
             dataStore.execute(TestMarykModel.change(
@@ -753,7 +804,9 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(listOf(change2), changes)
             }
 
-            dataStore.execute(TestMarykModel.delete(testKeys[0]))
+            dataStore.execute(TestMarykModel.delete(testKeys[0])).also {
+                assertStatusIs<DeleteSuccess<*>>(it.statuses.first())
+            }
 
             val removalUpdate1 = responses[3].await()
             assertIs<RemovalUpdate<*>>(removalUpdate1).apply {
@@ -778,7 +831,9 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore.execute(TestMarykModel.add(
                 newDataObject
             )).also {
-                testKeys.add((it.statuses[0] as AddSuccess<TestMarykModel>).key)
+                assertStatusIs<AddSuccess<TestMarykModel>>(it.statuses.first()).also { success ->
+                    testKeys.add(success.key)
+                }
             }
 
             // no updates because is outside the limit otherwise next one will not match
@@ -795,7 +850,9 @@ class DataStoreScanUpdatesAndFlowTest(
             // New object is added within range in already full list, so we expect an add and a delete
             dataStore.execute(TestMarykModel.add(
                 newDataObject2
-            ))
+            )).also {
+                assertStatusIs<AddSuccess<*>>(it.statuses.first())
+            }
 
             val additionUpdate = responses[5].await()
             assertIs<AdditionUpdate<TestMarykModel>>(additionUpdate).apply {
@@ -814,7 +871,9 @@ class DataStoreScanUpdatesAndFlowTest(
             val change3 = Change(TestMarykModel { int::ref } with -3)
             dataStore.execute(TestMarykModel.change(
                 testKeys[3].change(change3)
-            ))
+            )).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
 
             val changeUpdate3 = responses[7].await()
             assertIs<ChangeUpdate<*>>(changeUpdate3).apply {

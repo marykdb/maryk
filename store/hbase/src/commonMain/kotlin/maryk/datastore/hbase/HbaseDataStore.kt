@@ -22,6 +22,7 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.datastore.hbase.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.hbase.model.storeModelDefinition
 import maryk.datastore.hbase.processors.AnyAddStoreAction
@@ -32,6 +33,7 @@ import maryk.datastore.hbase.processors.AnyGetStoreAction
 import maryk.datastore.hbase.processors.AnyGetUpdatesStoreAction
 import maryk.datastore.hbase.processors.AnyScanChangesStoreAction
 import maryk.datastore.hbase.processors.AnyScanStoreAction
+import maryk.datastore.hbase.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.hbase.processors.processAddRequest
 import maryk.datastore.hbase.processors.processChangeRequest
 import maryk.datastore.hbase.processors.processDeleteRequest
@@ -40,6 +42,7 @@ import maryk.datastore.hbase.processors.processGetRequest
 import maryk.datastore.hbase.processors.processGetUpdatesRequest
 import maryk.datastore.hbase.processors.processScanChangesRequest
 import maryk.datastore.hbase.processors.processScanRequest
+import maryk.datastore.hbase.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import org.apache.hadoop.hbase.NamespaceDescriptor
@@ -154,8 +157,8 @@ class HbaseDataStore(
                             processScanRequest(storeAction as AnyScanStoreAction, this@HbaseDataStore, cache)
                         is ScanChangesRequest<*> ->
                             processScanChangesRequest(storeAction as AnyScanChangesStoreAction, this@HbaseDataStore, cache)
-//                        is ScanUpdatesRequest<*> ->
-//                            processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@HbaseDataStore, cache)
+                        is ScanUpdatesRequest<*> ->
+                            processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@HbaseDataStore, cache)
 //                        is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
 //                            is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
 //                            is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)

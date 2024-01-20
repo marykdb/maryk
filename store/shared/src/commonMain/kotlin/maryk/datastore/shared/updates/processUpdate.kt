@@ -111,7 +111,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> Update<DM
                     }
                 } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, *> && updateListener.indexScanRange != null) {
                     val lastKey = currentKeys.last()
-                    val lastSortedKey = updateListener.sortedValues?.value?.last()
+                    val lastSortedKey = updateListener.sortedValues?.value?.lastOrNull()
 
                     // Only process further if order has changed to move this value into range
                     updateListener.changeOrder(this@process) { newIndex, _ ->

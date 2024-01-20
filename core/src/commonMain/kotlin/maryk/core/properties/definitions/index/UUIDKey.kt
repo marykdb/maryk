@@ -4,14 +4,14 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initLong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.DefinitionModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.values
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
-import maryk.core.models.values
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.IsValuesGetter
@@ -35,6 +35,7 @@ object UUIDKey : IsFixedBytesPropertyReference<Pair<Long, Long>> {
     )
 
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) = false
+    override fun toQualifierStorageByteArray() = null
 
     override fun writeStorageBytes(value: Pair<Long, Long>, writer: (byte: Byte) -> Unit) {
         value.first.writeBytes(writer)

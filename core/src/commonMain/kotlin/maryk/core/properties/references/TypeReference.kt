@@ -64,6 +64,8 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
         return propertyReference == this
     }
 
+    override fun toQualifierStorageByteArray() = this.toStorageByteArray()
+
     override fun calculateReferenceStorageByteLength(): Int {
         val refLength = this.parentReference?.calculateStorageByteLength() ?: 0
         return refLength.calculateVarIntWithExtraInfoByteSize() + refLength

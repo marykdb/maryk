@@ -27,13 +27,13 @@ import org.apache.hadoop.hbase.client.Result
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
 internal suspend fun <DM : IsRootDataModel> processScan(
+    table: AsyncTable<AdvancedScanResultConsumer>,
     scanRequest: IsScanRequest<DM, *>,
     dataStore: HbaseDataStore,
     scanSetup: ((ScanType) -> Unit)? = null,
-    processRecord: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
+    scanLatestUpdate: Boolean = false,
+    processRecord: (Key<DM>, ULong?, Result, ByteArray?) -> Unit,
 ) {
-    val table = dataStore.getTable(scanRequest.dataModel)
-
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
@@ -41,7 +41,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
     when {
         // If hard key match then quit with direct record
         keyScanRange.isSingleKey() -> {
-            getByKey(table, keyScanRange.ranges.first().start, scanRequest, processRecord)
+            getByKey(table, keyScanRange.ranges.first().start, scanRequest, processRecord, scanLatestUpdate)
         }
         else -> {
             // Process uniques as a fast path
@@ -60,7 +60,14 @@ internal suspend fun <DM : IsRootDataModel> processScan(
                     table.get(Get(uniqueReference).apply {
                         addColumn(uniquesColumnFamily, valueBytes)
                         readVersions(1)
-                        setTimeRange(scanRequest)
+                        if (scanLatestUpdate) {
+                            if (scanRequest.toVersion != null) {
+                                setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
+                            }
+                            addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
+                        } else {
+                            setTimeRange(scanRequest)
+                        }
                     }).let { resultFuture ->
                         val result = resultFuture.await()
                         if (!result.isEmpty) {
@@ -86,6 +93,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
                         table,
                         scanRequest,
                         keyScanRange,
+                        scanLatestUpdate,
                         processRecord
                     )
                 }
@@ -95,6 +103,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
                         table,
                         scanRequest,
                         keyScanRange,
+                        scanLatestUpdate,
                         processRecord
                     )
                 }
@@ -107,13 +116,21 @@ private suspend fun <DM : IsRootDataModel> getByKey(
     table: AsyncTable<AdvancedScanResultConsumer>,
     keyBytes: ByteArray,
     scanRequest: IsScanRequest<DM, *>,
-    processRecord: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
+    processRecord: (Key<DM>, ULong?, Result, ByteArray?) -> Unit,
+    scanLatestUpdate: Boolean = false
 ) {
     table.get(Get(keyBytes).apply {
         addFamily(dataColumnFamily)
         setFilter(scanRequest.createFilter())
         readVersions(1)
-        setTimeRange(scanRequest)
+        if (scanLatestUpdate) {
+            if (scanRequest.toVersion != null) {
+                setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
+            }
+            addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
+        } else {
+            setTimeRange(scanRequest)
+        }
     }).let { resultFuture ->
         val result = resultFuture.await()
         if (!result.isEmpty) {

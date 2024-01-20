@@ -27,4 +27,6 @@ open class ValueWithFlexBytesPropertyReference<
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
     override fun isCompatibleWithModel(dataModel: IsRootDataModel) =
         dataModel.compatibleWithReference(this)
+
+    override fun toQualifierStorageByteArray() = this.toStorageByteArray()
 }

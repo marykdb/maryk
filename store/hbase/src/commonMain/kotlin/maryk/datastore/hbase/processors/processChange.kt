@@ -130,7 +130,7 @@ internal suspend fun <DM : IsRootDataModel> processChange(
         dataModel.Meta.indices?.forEach { indexable ->
             if (indexable is Multiple) {
                 indexable.references.forEach {
-                    orFilters += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it.referenceStorageByteArray.bytes))
+                    orFilters += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it.toQualifierStorageByteArray()))
                 }
             }
         }
@@ -755,14 +755,14 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                 if (newValue == null) {
                     if (oldValue != null) {
                         dependentPuts += Put(oldValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, softDeleteIndicator)
-                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldValue)))
+                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(byteArrayOf(*oldValue, *key.bytes))))
                     } // else ignore since did not exist
                 } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
                     if (oldValue != null) {
                         dependentPuts += Put(oldValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, softDeleteIndicator)
                     }
                     dependentPuts += Put(newValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, trueIndicator)
-                    indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newValue), oldValue?.let { Bytes(oldValue) }))
+                    indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(byteArrayOf(*newValue, *key.bytes)), oldValue?.let { Bytes(byteArrayOf(*oldValue, *key.bytes)) }))
                 }
             }
 

@@ -61,4 +61,6 @@ open class ObjectReferencePropertyReference<
 
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) =
         propertyReference == this
+
+    override fun toQualifierStorageByteArray() = this.toStorageByteArray()
 }

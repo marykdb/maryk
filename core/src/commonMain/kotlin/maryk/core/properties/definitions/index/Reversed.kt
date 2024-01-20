@@ -46,7 +46,6 @@ data class Reversed<T : Any>(
     override fun isForPropertyReference(propertyReference: AnyPropertyReference) =
         this.reference == propertyReference
 
-
     override fun calculateReferenceStorageByteLength(): Int {
         val refLength = this.reference.calculateStorageByteLength()
         return refLength.calculateVarIntWithExtraInfoByteSize() + refLength
@@ -62,6 +61,8 @@ data class Reversed<T : Any>(
 
     override fun isCompatibleWithModel(dataModel: IsRootDataModel): Boolean =
         reference.isCompatibleWithModel(dataModel)
+
+    override fun toQualifierStorageByteArray() = this.reference.toStorageByteArray()
 
     internal object Model :
         SingleTypedValueDataModel<AnyPropertyReference, Reversed<out Any>, Model, DefinitionsConversionContext>(

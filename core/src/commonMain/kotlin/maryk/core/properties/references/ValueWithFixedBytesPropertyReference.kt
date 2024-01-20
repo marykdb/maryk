@@ -56,6 +56,8 @@ open class ValueWithFixedBytesPropertyReference<
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) =
         propertyReference == this
 
+    override fun toQualifierStorageByteArray() = this.toStorageByteArray()
+
     override fun isCompatibleWithModel(dataModel: IsRootDataModel) =
         dataModel.compatibleWithReference(this)
 }

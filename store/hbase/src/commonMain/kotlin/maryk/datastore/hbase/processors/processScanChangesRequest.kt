@@ -25,7 +25,10 @@ internal suspend fun <DM : IsRootDataModel> processScanChangesRequest(
 
     scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
+    val table = dataStore.getTable(scanRequest.dataModel)
+
     processScan(
+        table,
         scanRequest,
         dataStore,
     ) { key, createdVersion, result, sortingKey ->

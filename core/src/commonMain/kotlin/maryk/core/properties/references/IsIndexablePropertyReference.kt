@@ -36,4 +36,6 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsStorageBytesEnc
         val value = this.getValue(values)
         this.writeStorageBytes(value, writer)
     }
+
+    fun toQualifierStorageByteArray(): ByteArray?
 }

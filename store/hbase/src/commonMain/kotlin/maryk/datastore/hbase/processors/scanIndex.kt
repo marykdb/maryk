@@ -36,6 +36,7 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
     table: AsyncTable<AdvancedScanResultConsumer>,
     scanRequest: IsScanRequest<DM, *>,
     keyScanRange: KeyScanRanges,
+    scanLatestUpdate: Boolean,
     processStoreValue: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
 ) {
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
@@ -89,7 +90,13 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
 
         readVersions(1)
 
-        setTimeRange(scanRequest)
+        if (scanLatestUpdate) {
+            if (scanRequest.toVersion != null) {
+                setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
+            }
+        } else {
+            setTimeRange(scanRequest)
+        }
 
         setCaching(scanRequest.limit.toInt())
         caching = maxResultSize.toInt()
@@ -108,7 +115,11 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
                 break
             }
 
+            val sortingKeys = mutableListOf<ByteArray>()
+            var currentRowKey: ByteArray? = null
+
             val gets = results.flatMap { result ->
+                currentRowKey = result.row
                 result.rawCells().let {
                     if (indexScan.direction == ASC) it.toList() else it.reversed()
                 }
@@ -116,12 +127,19 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
                 if (shouldSkipTillStartKey) {
                     if (scanRequest.startKey!!.bytes.compareToWithOffsetLength(it.qualifierArray, it.qualifierOffset, it.qualifierLength) == 0) {
                         shouldSkipTillStartKey = false
+
+                        if (!scanRequest.includeStart) {
+                            // Skip start key as it is not included
+                            return@mapNotNull null
+                        }
                     } else {
                         return@mapNotNull null
                     }
                 }
 
                 Get(it.qualifierArray, it.qualifierOffset, it.qualifierLength).apply {
+                    sortingKeys.add(byteArrayOf(*currentRowKey!!, *this.row))
+
                     addFamily(dataColumnFamily)
                     readVersions(1)
 
@@ -132,19 +150,26 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
                         setFilter(allFilters)
                     }
 
-                    setTimeRange(scanRequest)
+                    if (scanLatestUpdate) {
+                        if (scanRequest.toVersion != null) {
+                            setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
+                        }
+                        addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
+                    } else {
+                        setTimeRange(scanRequest)
+                    }
                 }
             }
 
             val getResults = table.getAll(gets).await()
 
-            for (result in getResults) {
+            for ((index, result) in getResults.withIndex()) {
                 if (result == null || result.isEmpty) {
                     continue
                 }
                 val key = scanRequest.dataModel.key(result.row)
                 val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)?.timestamp?.toULong()
-                processStoreValue(key, creationVersion, result, null)
+                processStoreValue(key, creationVersion, result, sortingKeys[index])
 
                 count++
                 if (count >= limit) {

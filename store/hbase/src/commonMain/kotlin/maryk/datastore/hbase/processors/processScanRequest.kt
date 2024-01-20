@@ -34,7 +34,10 @@ internal suspend fun <DM : IsRootDataModel> processScanRequest(
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
 
+    val table = dataStore.getTable(scanRequest.dataModel)
+
     processScan(
+        table,
         scanRequest,
         dataStore,
     ) { key, creationVersion, result, _ ->

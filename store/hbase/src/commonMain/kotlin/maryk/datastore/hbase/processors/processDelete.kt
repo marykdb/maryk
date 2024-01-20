@@ -6,6 +6,7 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -65,10 +66,11 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                     dataModel.Meta.indices?.forEach { indexable ->
                         if (indexable is Multiple) {
                             indexable.references.forEach {
-                                this += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it.referenceStorageByteArray.bytes))
+                                it.toQualifierStorageByteArray()
+                                this += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it.toQualifierStorageByteArray()))
                             }
-                        } else {
-                            this += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(indexable.referenceStorageByteArray.bytes))
+                        } else if (indexable is IsIndexablePropertyReference<*>) {
+                            this += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(indexable.toQualifierStorageByteArray()))
                         }
                     }
                 }

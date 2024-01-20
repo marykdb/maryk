@@ -24,6 +24,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     table: AsyncTable<AdvancedScanResultConsumer>,
     scanRequest: IsScanRequest<DM, *>,
     scanRange: KeyScanRanges,
+    scanLatestUpdate: Boolean,
     processStoreValue: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
 ) {
     val scan = Scan().apply {
@@ -58,7 +59,14 @@ internal fun <DM : IsRootDataModel> scanStore(
 
         readVersions(1)
 
-        setTimeRange(scanRequest)
+        if (scanLatestUpdate) {
+            if (scanRequest.toVersion != null) {
+                setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
+            }
+            addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
+        } else {
+            setTimeRange(scanRequest)
+        }
 
         maxResultSize = scanRequest.limit.toLong()
         caching = maxResultSize.toInt()

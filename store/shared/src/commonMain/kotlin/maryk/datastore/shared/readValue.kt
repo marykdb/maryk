@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.enum.TypeEnum
@@ -28,7 +29,11 @@ fun readValue(
             TypeIndicator.NoTypeIndicator.byte -> {
                 val valueDefinition = if (definition is IsCollectionDefinition<*, *, *, *>) {
                     definition.valueDefinition
-                } else definition
+                } else if (definition is IsDefinitionWrapper<*, *, *, *>) {
+                    definition.definition
+                } else {
+                    definition
+                }
                 Value.castDefinition(valueDefinition).readStorageBytes(
                     valueBytesLeft(),
                     reader

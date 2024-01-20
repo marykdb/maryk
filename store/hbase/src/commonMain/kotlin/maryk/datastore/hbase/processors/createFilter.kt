@@ -160,8 +160,8 @@ internal fun createContentFilter(filter: IsFilter?, isNot: Boolean = false): Fil
                 })
             }
         }.singleOrFilterList()
-        is ValueIn -> buildList<Filter> {
-            filter.referenceValuePairs.map {
+        is ValueIn -> buildList {
+            addAll(filter.referenceValuePairs.mapNotNull {
                 val matcher = it.reference.toQualifierMatcher()
                 if (matcher !is QualifierExactMatcher) {
                     throw StorageException("Fuzzy filters are not supported by this storage engine yet")
@@ -171,12 +171,12 @@ internal fun createContentFilter(filter: IsFilter?, isNot: Boolean = false): Fil
                     it.values.forEach { value ->
                         @Suppress("UNCHECKED_CAST")
                         val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
-                        return SingleColumnValueFilter(dataColumnFamily, refAsBytes, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, valueBytes).apply {
+                        add(SingleColumnValueFilter(dataColumnFamily, refAsBytes, if (isNot) CompareOperator.NOT_EQUAL else CompareOperator.EQUAL, valueBytes).apply {
                             filterIfMissing = true
-                        }
+                        })
                     }
                 }.singleOrFilterList(if (isNot) FilterList.Operator.MUST_PASS_ALL else FilterList.Operator.MUST_PASS_ONE)
-            }
+            })
         }.singleOrFilterList()
         else -> throw Exception("Unknown $filter")
     }

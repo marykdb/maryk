@@ -9,7 +9,7 @@ open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDat
     override infix fun compareTo(other: ValueDataObject) = _bytes compareTo other._bytes
 
     @OptIn(ExperimentalEncodingApi::class)
-    fun toBase64(): String = Base64.UrlSafe.encode(this._bytes).removeSuffix("==").removeSuffix("=")
+    fun toBase64(): String = Base64.UrlSafe.encode(this._bytes).trimEnd('=')
 
     fun toByteArray() = this._bytes
 

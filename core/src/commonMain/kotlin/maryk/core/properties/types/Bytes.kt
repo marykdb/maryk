@@ -29,7 +29,7 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
     operator fun get(index: Int) = bytes[index]
 
     @OptIn(ExperimentalEncodingApi::class)
-    override fun toString() = Base64.UrlSafe.encode(bytes).removeSuffix("==").removeSuffix("=")
+    override fun toString() = Base64.UrlSafe.encode(bytes).trimEnd('=')
 
     override infix fun compareTo(other: Bytes) = bytes compareTo other.bytes
 

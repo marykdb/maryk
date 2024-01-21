@@ -1,10 +1,15 @@
 package maryk.datastore.hbase.processors
 
 import maryk.core.exceptions.StorageException
+import maryk.core.extensions.bytes.calculateVarIntWithExtraInfoByteSize
+import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.core.properties.enum.MultiTypeEnum
+import maryk.core.properties.references.TypeReference
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Exists
@@ -211,8 +216,25 @@ private fun convertToSingleColumnValueFilter(it: ReferenceValuePair<Any>, compar
             val value = it.value
 
             @Suppress("UNCHECKED_CAST")
-            val valueBytes = (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
-            return SingleColumnValueFilter(dataColumnFamily, ref, compareOperator, BinaryComparator(valueBytes)).apply {
+            val valueComparator = when (it.reference) {
+                is TypeReference<*, *, *> -> {
+                    var index = 0
+                    val type = value as MultiTypeEnum<*>
+                    val isSimple = value.definition is IsSimpleValueDefinition<*, *>
+                    val valueBytes = ByteArray(type.index.calculateVarIntWithExtraInfoByteSize()).also {  valueBytes ->
+                        type.index.writeVarIntWithExtraInfo(
+                            if (isSimple) TypeIndicator.SimpleTypeIndicator.byte
+                            else TypeIndicator.ComplexTypeIndicator.byte
+                        ) { valueBytes[index++] = it }
+                    }
+                    if (isSimple) BinaryPrefixComparator(valueBytes) else BinaryComparator(valueBytes)
+                }
+                else -> BinaryComparator(
+                    (it.reference.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
+                )
+            }
+
+            return SingleColumnValueFilter(dataColumnFamily, ref, compareOperator, valueComparator).apply {
                 filterIfMissing = true
             }
         }

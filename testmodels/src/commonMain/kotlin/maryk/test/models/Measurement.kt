@@ -17,7 +17,6 @@ import maryk.core.properties.types.numeric.UInt16
 import maryk.core.values.Values
 import maryk.test.models.Measurement.timestamp
 
-
 object WeightMeasurement : DataModel<WeightMeasurement>() {
     val weightInKg by number(index = 1u, type = UInt16)
 }

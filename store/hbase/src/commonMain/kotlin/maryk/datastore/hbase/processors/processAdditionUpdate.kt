@@ -1,4 +1,4 @@
-package maryk.datastore.rocksdb.processors
+package maryk.datastore.hbase.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
@@ -8,8 +8,7 @@ import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ProcessResponse
-import maryk.datastore.rocksdb.RocksDBDataStore
-import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 
@@ -19,7 +18,7 @@ internal typealias AnyProcessUpdateResponseStoreAction = ProcessUpdateResponseSt
 /** Processes an Addition Update in a [storeAction] into [dataStore] */
 internal suspend fun <DM : IsRootDataModel> processAdditionUpdate(
     storeAction: StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>,
-    dataStore: RocksDBDataStore,
+    dataStore: HbaseDataStore,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
@@ -31,21 +30,18 @@ internal suspend fun <DM : IsRootDataModel> processAdditionUpdate(
     }
 
     val dbIndex = dataStore.getDataModelId(dataModel)
-    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+    val table = dataStore.getTable(dataModel)
 
-    val result = Transaction(dataStore).use { transaction ->
-        processAdd(
-            dataStore,
-            dataModel,
-            transaction,
-            columnFamilies,
-            dbIndex,
-            update.key,
-            HLC(update.version),
-            update.values,
-            updateSharedFlow
-        )
-    }
+    val result = processAdd(
+        dataStore,
+        dataModel,
+        dbIndex,
+        table,
+        update.key,
+        HLC(update.version),
+        update.values,
+        updateSharedFlow
+    )
 
     storeAction.response.complete(
         ProcessResponse(

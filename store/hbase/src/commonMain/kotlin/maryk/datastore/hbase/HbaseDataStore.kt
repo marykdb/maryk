@@ -6,6 +6,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
+import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationException
@@ -23,6 +24,13 @@ import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.hbase.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.hbase.model.storeModelDefinition
 import maryk.datastore.hbase.processors.AnyAddStoreAction
@@ -31,15 +39,20 @@ import maryk.datastore.hbase.processors.AnyDeleteStoreAction
 import maryk.datastore.hbase.processors.AnyGetChangesStoreAction
 import maryk.datastore.hbase.processors.AnyGetStoreAction
 import maryk.datastore.hbase.processors.AnyGetUpdatesStoreAction
+import maryk.datastore.hbase.processors.AnyProcessUpdateResponseStoreAction
 import maryk.datastore.hbase.processors.AnyScanChangesStoreAction
 import maryk.datastore.hbase.processors.AnyScanStoreAction
 import maryk.datastore.hbase.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.hbase.processors.processAddRequest
+import maryk.datastore.hbase.processors.processAdditionUpdate
 import maryk.datastore.hbase.processors.processChangeRequest
+import maryk.datastore.hbase.processors.processChangeUpdate
 import maryk.datastore.hbase.processors.processDeleteRequest
+import maryk.datastore.hbase.processors.processDeleteUpdate
 import maryk.datastore.hbase.processors.processGetChangesRequest
 import maryk.datastore.hbase.processors.processGetRequest
 import maryk.datastore.hbase.processors.processGetUpdatesRequest
+import maryk.datastore.hbase.processors.processInitialChangesUpdate
 import maryk.datastore.hbase.processors.processScanChangesRequest
 import maryk.datastore.hbase.processors.processScanRequest
 import maryk.datastore.hbase.processors.processScanUpdatesRequest
@@ -159,15 +172,15 @@ class HbaseDataStore(
                             processScanChangesRequest(storeAction as AnyScanChangesStoreAction, this@HbaseDataStore, cache)
                         is ScanUpdatesRequest<*> ->
                             processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@HbaseDataStore, cache)
-//                        is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
-//                            is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
-//                            is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
-//                            is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, cache, updateSharedFlow)
-//                            is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
-//                            is InitialValuesUpdate<*> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
-//                            is OrderedKeysUpdate<*> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
-//                            else -> throw TypeException("Unknown update type $update for datastore processing")
-//                        }
+                        is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
+                            is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
+                            is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
+                            is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, cache, updateSharedFlow)
+                            is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
+                            is InitialValuesUpdate<*> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
+                            is OrderedKeysUpdate<*> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
+                            else -> throw TypeException("Unknown update type $update for datastore processing")
+                        }
                         else -> throw TypeException("Unknown request type ${storeAction.request}")
                     }
                 } catch (e: Throwable) {

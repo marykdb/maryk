@@ -3,6 +3,7 @@ package maryk.datastore.test
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.models.key
+import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate
@@ -29,6 +30,7 @@ import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
+import maryk.test.models.Severity.INFO
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -49,22 +51,32 @@ class DataStoreProcessUpdateTest(
     )
 
     private val logs = arrayOf(
-        Log("Something happened", timestamp = LocalDateTime(2018, 11, 14, 11, 22, 33, 40000000)),
-        Log("Something else happened", timestamp = LocalDateTime(2018, 11, 14, 12, 0, 0, 0)),
-        Log("Something REALLY happened", timestamp = LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)),
-        Log("WRONG", ERROR, LocalDateTime(2018, 11, 14, 13, 0, 2, 0))
+        Log("Something happened", timestamp = LocalDateTime(2011, 11, 14, 11, 22, 33, 40000000)),
+        Log("Something else happened", timestamp = LocalDateTime(2011, 11, 14, 12, 0, 0, 0)),
+        Log("Something REALLY happened", timestamp = LocalDateTime(2011, 11, 14, 12, 33, 22, 111000000)),
+        Log("WRONG", ERROR, LocalDateTime(2011, 11, 14, 13, 0, 2, 0)),
+        Log("Another Log", INFO, LocalDateTime(2011, 11, 14, 15, 0, 2, 0)),
+        Log("Another other Log", INFO, LocalDateTime(2011, 11, 14, 16, 0, 2, 0)),
+        Log("Mother Log", INFO, LocalDateTime(2011, 11, 14, 17, 0, 2, 0)),
     )
 
     private val keys = listOf(
         Log.key(logs[0]),
         Log.key(logs[1]),
         Log.key(logs[2]),
-        Log.key(logs[3])
+        Log.key(logs[3]),
+        Log.key(logs[4]),
+        Log.key(logs[5]),
+        Log.key(logs[6]),
     )
+
+    private val keysToDelete = mutableListOf<Key<Log>>()
 
     override suspend fun resetData() {
         dataStore.execute(
-            Log.delete(*keys.toTypedArray(), hardDelete = true)
+            Log.delete(*keysToDelete.toTypedArray(), hardDelete = true).also {
+                keysToDelete.clear()
+            }
         ).statuses.forEach {
             assertStatusIs<DeleteSuccess<*>>(it)
         }
@@ -85,6 +97,8 @@ class DataStoreProcessUpdateTest(
             )
         )
 
+        keysToDelete.add(keys[0])
+
         assertIs<AddResponse<*>>(addResponse.result).apply {
             assertEquals(1, statuses.size)
             assertStatusIs<AddSuccess<*>>(statuses.first())
@@ -103,7 +117,7 @@ class DataStoreProcessUpdateTest(
             UpdateResponse(
                 dataModel = Log,
                 update = AdditionUpdate(
-                    key = keys[0],
+                    key = keys[1],
                     version = 1234uL,
                     firstVersion = 1234uL,
                     insertionIndex = 1,
@@ -113,12 +127,14 @@ class DataStoreProcessUpdateTest(
             )
         )
 
+        keysToDelete.add(keys[1])
+
         val editedMessage = "Edited message"
         val changeResponse = dataStore.processUpdate(
             UpdateResponse(
                 dataModel = Log,
                 update = ChangeUpdate(
-                    key = keys[0],
+                    key = keys[1],
                     version = 1235uL,
                     index = 1,
                     changes = listOf(
@@ -134,7 +150,7 @@ class DataStoreProcessUpdateTest(
         }
 
         val getResponse = dataStore.execute(
-            Log.get(keys[0])
+            Log.get(keys[1])
         )
 
         expect(1) { getResponse.values.size }
@@ -147,7 +163,7 @@ class DataStoreProcessUpdateTest(
             UpdateResponse(
                 dataModel = Log,
                 update = ChangeUpdate(
-                    key = keys[0],
+                    key = keys[2],
                     version = 1234uL,
                     index = 1,
                     changes = listOf(
@@ -160,13 +176,15 @@ class DataStoreProcessUpdateTest(
             )
         )
 
+        keysToDelete.add(keys[2])
+
         assertIs<AddResponse<*>>(changeResponse.result).apply {
             assertEquals(1, statuses.size)
             assertStatusIs<AddSuccess<*>>(statuses.first())
         }
 
         val getResponse = dataStore.execute(
-            Log.get(keys[0])
+            Log.get(keys[2])
         )
 
         expect(1) { getResponse.values.size }
@@ -178,7 +196,7 @@ class DataStoreProcessUpdateTest(
             UpdateResponse(
                 dataModel = Log,
                 update = AdditionUpdate(
-                    key = keys[0],
+                    key = keys[3],
                     version = 1234uL,
                     firstVersion = 1234uL,
                     insertionIndex = 1,
@@ -192,7 +210,7 @@ class DataStoreProcessUpdateTest(
             UpdateResponse(
                 dataModel = Log,
                 update = AdditionUpdate(
-                    key = keys[1],
+                    key = keys[4],
                     version = 1234uL,
                     firstVersion = 1234uL,
                     insertionIndex = 1,
@@ -202,11 +220,13 @@ class DataStoreProcessUpdateTest(
             )
         )
 
+        keysToDelete.add(keys[4])
+
         val hardRemovalUpdate = dataStore.processUpdate(
             UpdateResponse(
                 dataModel = Log,
                 update = RemovalUpdate(
-                    key = keys[0],
+                    key = keys[3],
                     version = 1235uL,
                     reason = HardDelete
                 )
@@ -219,7 +239,7 @@ class DataStoreProcessUpdateTest(
         }
 
         val getResponse1 = dataStore.execute(
-            Log.get(keys[0])
+            Log.get(keys[3])
         )
 
         expect(0) { getResponse1.values.size }
@@ -228,7 +248,7 @@ class DataStoreProcessUpdateTest(
             UpdateResponse(
                 dataModel = Log,
                 update = RemovalUpdate(
-                    key = keys[1],
+                    key = keys[4],
                     version = 1235uL,
                     reason = SoftDelete
                 )
@@ -241,7 +261,7 @@ class DataStoreProcessUpdateTest(
         }
 
         val getResponse2 = dataStore.execute(
-            Log.get(keys[1], filterSoftDeleted = false)
+            Log.get(keys[4], filterSoftDeleted = false)
         )
 
         expect(1) { getResponse2.values.size }
@@ -253,7 +273,7 @@ class DataStoreProcessUpdateTest(
             UpdateResponse(
                 dataModel = Log,
                 update = AdditionUpdate(
-                    key = keys[0],
+                    key = keys[5],
                     version = 1234uL,
                     firstVersion = 1234uL,
                     insertionIndex = 1,
@@ -262,6 +282,8 @@ class DataStoreProcessUpdateTest(
                 )
             )
         )
+
+        keysToDelete.add(keys[5])
 
         val newMessage = "New message"
         val editedMessage = "Initially edited message"
@@ -272,7 +294,7 @@ class DataStoreProcessUpdateTest(
                     version = 1234uL,
                     changes = listOf(
                         DataObjectVersionedChange(
-                            key = keys[0],
+                            key = keys[5],
                             changes = listOf(VersionedChanges(
                                 version = 1234uL,
                                 changes = listOf(
@@ -281,7 +303,7 @@ class DataStoreProcessUpdateTest(
                             ))
                         ),
                         DataObjectVersionedChange(
-                            key = keys[1],
+                            key = keys[6],
                             changes = listOf(VersionedChanges(
                                 version = 1234uL,
                                 changes = listOf(
@@ -297,6 +319,8 @@ class DataStoreProcessUpdateTest(
             )
         )
 
+        keysToDelete.add(keys[6])
+
         assertIs<AddOrChangeResponse<*>>(changeResponse.result).apply {
             assertEquals(2, statuses.size)
             assertStatusIs<ChangeSuccess<*>>(statuses[0])
@@ -304,7 +328,7 @@ class DataStoreProcessUpdateTest(
         }
 
         val getResponse = dataStore.execute(
-            Log.get(keys[0], keys[1])
+            Log.get(keys[5], keys[6])
         )
 
         expect(2) { getResponse.values.size }

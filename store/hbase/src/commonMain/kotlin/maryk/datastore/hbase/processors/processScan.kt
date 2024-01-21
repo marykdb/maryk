@@ -7,6 +7,7 @@ import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.types.Key
+import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
@@ -59,7 +60,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
 
                     table.get(Get(uniqueReference).apply {
                         addColumn(uniquesColumnFamily, valueBytes)
-                        readVersions(1)
+                        readVersions(if (scanRequest is IsChangesRequest<*, *>) scanRequest.maxVersions.toInt() else 1)
                         if (scanLatestUpdate) {
                             if (scanRequest.toVersion != null) {
                                 setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
@@ -122,7 +123,7 @@ private suspend fun <DM : IsRootDataModel> getByKey(
     table.get(Get(keyBytes).apply {
         addFamily(dataColumnFamily)
         setFilter(scanRequest.createFilter())
-        readVersions(1)
+        readVersions(if (scanRequest is IsChangesRequest<*, *>) scanRequest.maxVersions.toInt() else 1)
         if (scanLatestUpdate) {
             if (scanRequest.toVersion != null) {
                 setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)

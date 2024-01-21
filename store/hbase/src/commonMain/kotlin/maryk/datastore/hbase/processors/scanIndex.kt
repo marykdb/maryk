@@ -7,6 +7,7 @@ import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
+import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
@@ -116,47 +117,54 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
             }
 
             val sortingKeys = mutableListOf<ByteArray>()
-            var currentRowKey: ByteArray? = null
 
-            val gets = results.flatMap { result ->
-                currentRowKey = result.row
-                result.rawCells().let {
-                    if (indexScan.direction == ASC) it.toList() else it.reversed()
-                }
-            }.mapNotNull {
-                if (shouldSkipTillStartKey) {
-                    if (scanRequest.startKey!!.bytes.compareToWithOffsetLength(it.qualifierArray, it.qualifierOffset, it.qualifierLength) == 0) {
-                        shouldSkipTillStartKey = false
-
-                        if (!scanRequest.includeStart) {
-                            // Skip start key as it is not included
-                            return@mapNotNull null
-                        }
+            val gets = buildList {
+                for (result in results) {
+                    val cells = result.rawCells()
+                    val range = if (indexScan.direction == ASC) {
+                        cells.indices
                     } else {
-                        return@mapNotNull null
+                        cells.indices.reversed()
                     }
-                }
+                    for (cellIndex in range) {
+                        val cell = cells[cellIndex]
+                        if (shouldSkipTillStartKey) {
+                            if (scanRequest.startKey!!.bytes.compareToWithOffsetLength(cell.qualifierArray, cell.qualifierOffset, cell.qualifierLength) == 0) {
+                                shouldSkipTillStartKey = false
 
-                Get(it.qualifierArray, it.qualifierOffset, it.qualifierLength).apply {
-                    sortingKeys.add(byteArrayOf(*currentRowKey!!, *this.row))
-
-                    addFamily(dataColumnFamily)
-                    readVersions(1)
-
-                    val allFilters = FilterList(FilterList.Operator.MUST_PASS_ALL)
-                    keyScanRange.createPartialsRowKeyFilter()?.let(allFilters::addFilter)
-                    scanRequest.createFilter()?.let(allFilters::addFilter)
-                    if (allFilters.filters.isNotEmpty()) {
-                        setFilter(allFilters)
-                    }
-
-                    if (scanLatestUpdate) {
-                        if (scanRequest.toVersion != null) {
-                            setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
+                                if (!scanRequest.includeStart) {
+                                    // Skip start key as it is not included
+                                    continue
+                                }
+                            } else {
+                                continue
+                            }
                         }
-                        addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
-                    } else {
-                        setTimeRange(scanRequest)
+
+                        add(
+                            Get(cell.qualifierArray, cell.qualifierOffset, cell.qualifierLength).apply {
+                                sortingKeys.add(byteArrayOf(*result.row, *this.row))
+
+                                addFamily(dataColumnFamily)
+                                readVersions(if (scanRequest is IsChangesRequest<*, *>) scanRequest.maxVersions.toInt() else 1)
+
+                                val allFilters = FilterList(FilterList.Operator.MUST_PASS_ALL)
+                                keyScanRange.createPartialsRowKeyFilter()?.let(allFilters::addFilter)
+                                scanRequest.createFilter()?.let(allFilters::addFilter)
+                                if (allFilters.filters.isNotEmpty()) {
+                                    setFilter(allFilters)
+                                }
+
+                                if (scanLatestUpdate) {
+                                    if (scanRequest.toVersion != null) {
+                                        setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
+                                    }
+                                    addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
+                                } else {
+                                    setTimeRange(scanRequest)
+                                }
+                            }
+                        )
                     }
                 }
             }

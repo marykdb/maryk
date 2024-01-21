@@ -5,6 +5,7 @@ import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
+import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
@@ -69,7 +70,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
         setFilter(multiFilter)
 
-        readVersions(1)
+        readVersions(if (scanRequest is IsChangesRequest<*, *>) scanRequest.maxVersions.toInt() else 1)
 
         maxResultSize = scanRequest.limit.toLong()
         caching = maxResultSize.toInt()

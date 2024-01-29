@@ -137,13 +137,13 @@ data class PersonRoleInPeriod(
     val startDate: Date,
     val endDate: Date
 ) : ValueDataObject(toBytes(person, role, startDate, stopDate)) {
-    companion object: ValueModel<TestValueObject, Companion>(ValueModel::class) {
-        val person by reference(1u, dataModel = { Person })
-        val role by enum(2u, enum = Role)
-        val startDate by date(3u)
-        val endDate by date(4u)
+    companion object: ValueDataModel<PersonRoleInPeriod, Companion>(PersonRoleInPeriod::class) {
+        val person by reference(1u, dataModel = { Person }, getter = PersonRoleInPeriod::person)
+        val role by enum(2u, enum = Role, getter = PersonRoleInPeriod::role)
+        val startDate by date(3u, getter = PersonRoleInPeriod::startDate)
+        val endDate by date(4u, getter = PersonRoleInPeriod::endDate)
         
-        override fun invoke(values: ObjectValues<TestValueObject, Companion>) = TestValueObject(
+        override fun invoke(values: ObjectValues<PersonRoleInPeriod, Companion>) = PersonRoleInPeriod(
             person = values(person.index),
             role = values(role.index),
             startDate = values(startDate.index),

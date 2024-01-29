@@ -23,7 +23,7 @@ fun IsValueDataModel<*, *>.generateKotlin(
     data class ${Meta.name}(
         ${propertiesKotlin.generateObjectValuesForProperties().prependIndent().prependIndent().trimStart()}
     ) : ValueDataObject(toBytes(${propertiesKotlin.generatePropertyNamesForConstructor()})) {
-        companion object : ValueModel<${Meta.name}, Companion>(${Meta.name}::class) {
+        companion object : ValueDataModel<${Meta.name}, Companion>(${Meta.name}::class) {
             ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = Meta.name, addImport = addImport).prependIndent().trimStart()}
 
             override fun invoke(values: ObjectValues<${Meta.name}, Companion>) = ${Meta.name}(

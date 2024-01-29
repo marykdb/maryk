@@ -19,7 +19,7 @@ data class ValueMarykObject(
     val int: Int = 5,
     val date: LocalDate = LocalDate(2000, 5, 12)
 ) : ValueDataObject(toBytes(int, date)) {
-    companion object : ValueModel<ValueMarykObject, Companion>(ValueMarykObject::class) {
+    companion object : ValueDataModel<ValueMarykObject, Companion>(ValueMarykObject::class) {
         val int by number(
             index = 1u,
             getter = ValueMarykObject::int,

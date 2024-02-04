@@ -107,7 +107,7 @@ suspend fun HbaseDataStore.storeModelDefinition(
     }
 }
 
-private fun createFamilyDescriptor(
+fun createFamilyDescriptor(
     familyName: ByteArray,
     keepAllVersions: Boolean
 ): ColumnFamilyDescriptor? =

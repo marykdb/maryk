@@ -31,6 +31,8 @@ import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.datastore.hbase.helpers.deleteCompleteIndexContents
+import maryk.datastore.hbase.helpers.walkDataRecordsAndFillIndex
 import maryk.datastore.hbase.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.hbase.model.storeModelDefinition
 import maryk.datastore.hbase.processors.AnyAddStoreAction
@@ -62,6 +64,7 @@ import org.apache.hadoop.hbase.NamespaceDescriptor
 import org.apache.hadoop.hbase.NamespaceNotFoundException
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
+import org.apache.hadoop.hbase.client.AsyncAdmin
 import org.apache.hadoop.hbase.client.AsyncConnection
 import org.apache.hadoop.hbase.client.AsyncTable
 
@@ -113,7 +116,7 @@ class HbaseDataStore(
                             }
                         }
                         is MigrationStatus.NewIndicesOnExistingProperties -> {
-                            fillIndex(migrationStatus.indicesToIndex)
+                            fillIndex(admin, dataModel, migrationStatus.indicesToIndex)
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                                 storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
@@ -128,7 +131,7 @@ class HbaseDataStore(
                             }
 
                             migrationStatus.indicesToIndex?.let {
-                                fillIndex(it)
+                                fillIndex(admin, dataModel, it)
                             }
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
@@ -207,14 +210,18 @@ class HbaseDataStore(
         connection.getTable(getTableName(dataModel))
 
     /** Walk all current values and fill [indicesToIndex] */
-    @Suppress("UNUSED_PARAMETER")
-    private fun fillIndex(
+    private suspend fun fillIndex(
+        admin: AsyncAdmin,
+        dataModel: IsRootDataModel,
         indicesToIndex: List<IsIndexable>,
     ) {
-//        for (indexable in indicesToIndex) {
-//            deleteCompleteIndexContents(this.db, tableColumnFamilies, indexable)
-//        }
+        val tableName = getTableName(dataModel)
 
-//        walkDataRecordsAndFillIndex(this, tableColumnFamilies, indicesToIndex)
+        for (indexable in indicesToIndex) {
+            deleteCompleteIndexContents(admin, tableName, indexable)
+        }
+
+        val table = getTable(dataModel)
+        walkDataRecordsAndFillIndex(admin, table, keepAllVersions, indicesToIndex)
     }
 }

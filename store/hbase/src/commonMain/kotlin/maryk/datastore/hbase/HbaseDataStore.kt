@@ -59,6 +59,7 @@ import maryk.datastore.hbase.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import org.apache.hadoop.hbase.NamespaceDescriptor
+import org.apache.hadoop.hbase.NamespaceNotFoundException
 import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
 import org.apache.hadoop.hbase.client.AsyncConnection
@@ -67,7 +68,7 @@ import org.apache.hadoop.hbase.client.AsyncTable
 class HbaseDataStore(
     override val keepAllVersions: Boolean = true,
     val connection: AsyncConnection,
-    val namespace: ByteArray? = NamespaceDescriptor.DEFAULT_NAMESPACE_NAME,
+    val namespace: ByteArray = NamespaceDescriptor.DEFAULT_NAMESPACE_NAME,
     dataModelsById: Map<UInt, IsRootDataModel>,
     private val onlyCheckModelVersion: Boolean = false,
     val migrationHandler: MigrationHandler<HbaseDataStore>? = null,
@@ -83,6 +84,15 @@ class HbaseDataStore(
         runBlocking {
             launch(Dispatchers.IO) {
                 val admin = connection.admin
+
+                val namespaceAsString = namespace.decodeToString()
+                try {
+                    admin.getNamespaceDescriptor(namespaceAsString).await()
+                } catch (e: NamespaceNotFoundException) {
+                    admin.createNamespace(
+                        NamespaceDescriptor.create(namespaceAsString).build()
+                    ).await()
+                }
 
                 for (dataModel in dataModelsById.values) {
                     val tableName = getTableName(dataModel)

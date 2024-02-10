@@ -7,6 +7,7 @@ import maryk.core.models.serializers.ReferenceMappedDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -27,6 +28,13 @@ data class ListChange internal constructor(
             select.contains(it.reference)
         }
         return if (filtered.isEmpty()) null else ListChange(filtered)
+    }
+
+    override fun validate(addException: (e: ValidationException) -> Unit) {
+        val typedListValueChanges = listValueChanges.filterIsInstance<SetValueChanges<Any>>()
+        typedListValueChanges.forEach {
+            it.reference.comparablePropertyDefinition.validateWithRef(null, it.addValues, { it.reference })
+        }
     }
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {

@@ -6,7 +6,9 @@ import maryk.core.models.QueryModel
 import maryk.core.models.serializers.ReferenceMappedDataModelSerializer
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -28,6 +30,31 @@ data class IncMapAddition(
             select.contains(it.reference)
         }
         return if (filtered.isEmpty()) null else IncMapAddition(filtered)
+    }
+
+    override fun validate(addException: (e: ValidationException) -> Unit) {
+        additions.forEach { (reference, addedKeys, addedValues) ->
+            @Suppress("UNCHECKED_CAST")
+            val mapDefinition = reference.comparablePropertyDefinition as IncMapDefinitionWrapper<Comparable<Any>, Any, *, *, *>
+            if (addedKeys != null && addedValues != null) {
+                for ((index, key) in addedKeys.withIndex()) {
+                    try {
+                        mapDefinition.keyDefinition.validateWithRef(null, key) {
+                            mapDefinition.keyRef(key, reference)
+                        }
+                    } catch (e: ValidationException) {
+                        addException(e)
+                    }
+                    try {
+                        mapDefinition.valueDefinition.validateWithRef(null, addedValues[index]) {
+                            mapDefinition.valueRef(key, reference)
+                        }
+                    } catch (e: ValidationException) {
+                        addException(e)
+                    }
+                }
+            }
+        }
     }
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {

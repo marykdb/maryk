@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.contextual.ContextualReferenceDefinitio
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.wrapper.contextual
+import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt64
@@ -32,6 +33,14 @@ data class DataObjectChange<out DM : IsRootDataModel> internal constructor(
     val changes: List<IsChange>,
     val lastVersion: ULong? = null
 ) {
+    fun validate() {
+        createValidationUmbrellaException { addException ->
+            changes.forEach {
+                it.validate(addException)
+            }
+        }
+    }
+
     companion object : QueryModel<DataObjectChange<*>, Companion>() {
         val key by contextual(
             index = 1u,

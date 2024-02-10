@@ -3,6 +3,7 @@ package maryk.core.query.changes
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.ReferenceValuePairsDataModel
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -23,6 +24,16 @@ data class Change internal constructor(
             select.contains(it.reference)
         }
         return if (filtered.isEmpty()) null else Change(filtered)
+    }
+
+    override fun validate(addException: (e: ValidationException) -> Unit) {
+        for ((reference, value) in referenceValuePairs) {
+            try {
+                reference.comparablePropertyDefinition.validateWithRef(null, value, { reference })
+            } catch (e: ValidationException) {
+                addException(e)
+            }
+        }
     }
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {

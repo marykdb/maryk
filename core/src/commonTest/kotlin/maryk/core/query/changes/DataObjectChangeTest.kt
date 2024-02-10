@@ -26,7 +26,7 @@ class DataObjectChangeTest {
 
     private val dataObjectChange = key1.change(
         Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
-        Delete(EmbeddedMarykModel(subModel) { value::ref }),
+        Delete(EmbeddedMarykModel(subModel) { model::ref }),
         Check(EmbeddedMarykModel(subModel) { value::ref } with "current"),
         ObjectSoftDeleteChange(true),
         ObjectCreate,
@@ -46,6 +46,11 @@ class DataObjectChangeTest {
         ),
         dataModel = TestMarykModel
     )
+
+    @Test
+    fun validateTest() {
+        this.dataObjectChange.validate()
+    }
 
     @Test
     fun convertToProtoBufAndBack() {
@@ -75,7 +80,7 @@ class DataObjectChangeTest {
             changes:
             - !Change
               embeddedValues.value: new
-            - !Delete embeddedValues.value
+            - !Delete embeddedValues.model
             - !Check
               embeddedValues.value: current
             - !ObjectDelete

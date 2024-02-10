@@ -2,6 +2,7 @@ package maryk.core.query.changes
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
 
@@ -14,6 +15,9 @@ interface IsChange {
 
     /** Changes values with [objectChanger] */
     fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit)
+
+    /** Validates the change and [addException] if it is not valid */
+    fun validate(addException: (e: ValidationException) -> Unit)
 }
 
 internal val mapOfChangeDefinitions = mapOf(

@@ -5,6 +5,7 @@ import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
@@ -24,6 +25,10 @@ data class IndexChange(
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {
         // Do nothing since it cannot operate on object itself
+    }
+
+    override fun validate(addException: (e: ValidationException) -> Unit) {
+        // Always valid
     }
 
     @Suppress("UNCHECKED_CAST")

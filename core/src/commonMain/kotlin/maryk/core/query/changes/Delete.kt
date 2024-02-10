@@ -5,11 +5,16 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.BaseDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.ReferencesDataModel
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
+import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 
@@ -26,6 +31,13 @@ data class Delete internal constructor(
             select.contains(it)
         }
         return if (filtered.isEmpty()) null else Delete(filtered)
+    }
+
+    override fun validate(addException: (e: ValidationException) -> Unit) {
+        references.forEach { reference ->
+            @Suppress("UNCHECKED_CAST")
+            (reference.comparablePropertyDefinition as IsPropertyDefinition<Any>).validateWithRef(null, null, { reference as TypedPropertyReference<Any> })
+        }
     }
 
     override fun changeValues(objectChanger: (IsPropertyReferenceForValues<*, *, *, *>, (Any?, Any?) -> Any?) -> Unit) {

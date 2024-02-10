@@ -389,7 +389,6 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                             continue
                                         }
 
-
                                         if (previousValue == null) {
                                             // Check if parent exists before trying to change
                                             if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {

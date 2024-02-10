@@ -199,7 +199,7 @@ private fun <DM : IsDataModel> DM.readQualifier(
     qualifierLength: Int,
     offset: Int,
     select: IsPropRefGraph<*>?,
-    parentReference: IsPropertyReference<*, *, *>?,
+    parentReference: AnyPropertyReference?,
     addChangeToOutput: ChangeAdder,
     readValueFromStorage: ValueWithVersionReader,
     addToCache: CacheProcessor
@@ -207,25 +207,23 @@ private fun <DM : IsDataModel> DM.readQualifier(
     var currentOffset = offset
 
     initUIntByVarWithExtraInfo({ qualifierReader(currentOffset++) }) { index, type ->
-        val subSelect = select?.selectNodeOrNull(index)
-
-        if (select != null && subSelect == null) {
-            // Return null if not selected within select
-            null
-        } else {
-            when (val refStoreType = referenceStorageTypeOf(type)) {
-                DELETE -> {
-                    if (qualifierLength == 1) {
-                        readValueFromStorage(ObjectDelete, ObjectDeleteReference) { version, value ->
-                            if (value != null) {
-                                addChangeToOutput(version, OBJECT_DELETE, value)
-                            }
+        when (val refStoreType = referenceStorageTypeOf(type)) {
+            DELETE -> {
+                if (qualifierLength == 1) {
+                    readValueFromStorage(ObjectDelete, ObjectDeleteReference) { version, value ->
+                        if (value != null) {
+                            addChangeToOutput(version, OBJECT_DELETE, value)
                         }
-                    } else Unit
-                }
-                else -> {
-                    val definition = this[index]
-                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
+                    }
+                } else Unit
+            }
+            else -> {
+                val definition = this[index]
+                    ?: throw DefNotFoundException("No definition for $index in $this at $index")
+
+                if (select?.contains(definition.ref(parentReference)) == false) {
+                    null // Skip since not in select
+                } else {
                     readQualifierOfType(
                         qualifierReader,
                         qualifierLength,

@@ -156,6 +156,7 @@ class DataStoreScanMultiTypeTest(
             expect(
                 Measurement.run { create(
                     measurement with MeasurementType.Weight(WeightMeasurement.run { create(
+                        weightInKg with 78u,
                     ) }),
                 ) }
             ) { it.values }

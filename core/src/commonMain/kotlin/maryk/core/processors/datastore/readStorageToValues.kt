@@ -104,22 +104,19 @@ private fun <DM : IsValuesDataModel> DM.readQualifier(
     var currentOffset = offset
 
     initUIntByVarWithExtraInfo({ qualifierReader(currentOffset++) }) { index, type ->
-        val subSelect = select?.selectNodeOrNull(index)
+        when (val refStoreType = referenceStorageTypeOf(type)) {
+            DELETE -> {
+                if (qualifierLength == 1) {
+                    readValueFromStorage(ObjectDelete, ObjectDeleteReference)
+                } else Unit
+            }
+            else -> {
+                val definition = this[index]
+                    ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
-        if (select != null && subSelect == null) {
-            // Return null if not selected within select
-            null
-        } else {
-            when (val refStoreType = referenceStorageTypeOf(type)) {
-                DELETE -> {
-                    if (qualifierLength == 1) {
-                        readValueFromStorage(ObjectDelete, ObjectDeleteReference)
-                    } else Unit
-                }
-                else -> {
-                    val definition = this[index]
-                        ?: throw DefNotFoundException("No definition for $index in $this at $index")
-
+                if (select?.contains(definition.ref(parentReference)) == false) {
+                    null // Skip since not in select
+                } else {
                     readQualifierOfType(
                         qualifierReader,
                         qualifierLength,

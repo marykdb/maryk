@@ -40,14 +40,15 @@ interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         if (definition is IsSetDefinition<*, *>) {
             compatible = isCompatible(definition, addIncompatibilityReason) && compatible
 
-            compatible = valueDefinition.compatibleWith(definition.valueDefinition) { addIncompatibilityReason?.invoke("Value: $it") } && compatible
+            compatible = valueDefinition.compatibleWith(definition.valueDefinition, checkedDataModelNames) { addIncompatibilityReason?.invoke("Value: $it") } && compatible
         }
 
         return compatible

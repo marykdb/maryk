@@ -204,15 +204,16 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
-        addIncompatibilityReason: ((String) -> Unit)?
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?,
     ): Boolean {
-        var compatible = super.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         if (definition is IsMapDefinition<*, *, *>) {
             compatible = isCompatible(definition, addIncompatibilityReason) && compatible
 
-            compatible = keyDefinition.compatibleWith(definition.keyDefinition) { addIncompatibilityReason?.invoke("Key: $it") } && compatible
-            compatible = valueDefinition.compatibleWith(definition.valueDefinition) { addIncompatibilityReason?.invoke("Value: $it") } && compatible
+            compatible = keyDefinition.compatibleWith(definition.keyDefinition, checkedDataModelNames) { addIncompatibilityReason?.invoke("Key: $it") } && compatible
+            compatible = valueDefinition.compatibleWith(definition.valueDefinition, checkedDataModelNames) { addIncompatibilityReason?.invoke("Value: $it") } && compatible
         }
 
         return compatible

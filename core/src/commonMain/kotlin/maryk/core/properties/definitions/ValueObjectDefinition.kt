@@ -102,12 +102,13 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsComparableDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? ValueObjectDefinition<*, *>)?.let {
-            compatible = this.compatibleWithDefinitionWithDataModel(definition, addIncompatibilityReason) && compatible
+            compatible = this.compatibleWithDefinitionWithDataModel(definition, addIncompatibilityReason, checkedDataModelNames) && compatible
         }
 
         return compatible

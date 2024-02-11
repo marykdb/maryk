@@ -50,12 +50,13 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsMultiTypeDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsMultiTypeDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         if (definition is MultiTypeDefinition<*, *>) {
-            compatible = typeEnum.compatibleWith(definition.typeEnum, addIncompatibilityReason) && compatible
+            compatible = typeEnum.compatibleWith(definition.typeEnum, checkedDataModelNames, addIncompatibilityReason) && compatible
         }
 
         return compatible

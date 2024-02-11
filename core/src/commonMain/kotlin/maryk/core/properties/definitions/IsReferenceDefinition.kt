@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.types.Key
 
 /** Interface for property definitions containing references to data objects of model [DM] and context [CX]. */
@@ -17,9 +17,10 @@ interface IsReferenceDefinition<DM : IsRootDataModel, CX : IsPropertyContext> :
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsComparableDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? IsReferenceDefinition<*, *>)?.let {
             if (definition.dataModel.Meta.name != this.dataModel.Meta.name || definition.dataModel.Meta.keyDefinition != this.dataModel.Meta.keyDefinition) {

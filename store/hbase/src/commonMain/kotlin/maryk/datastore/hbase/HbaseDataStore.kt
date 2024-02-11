@@ -101,7 +101,7 @@ class HbaseDataStore(
                     val tableName = getTableName(dataModel)
                     val tableDescriptor = admin.getDescriptor(tableName)
                     when (val migrationStatus = checkModelIfMigrationIsNeeded(tableDescriptor, dataModel, onlyCheckModelVersion)) {
-                        MigrationStatus.UpToDate -> Unit // Do nothing since no work is needed
+                        MigrationStatus.UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                         MigrationStatus.NewModel -> {
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this@HbaseDataStore, null, dataModel)

@@ -16,6 +16,7 @@ import maryk.lib.synchronizedIteration
  */
 internal fun IsStorableDataModel<*>.checkProperties(
     storedDataModel: IsStorableDataModel<*>,
+    checkedDataModelNames: MutableList<String>?,
     handleMigrationReason: (String) -> Unit
 ): Boolean {
     var hasNewProperties = false
@@ -28,7 +29,7 @@ internal fun IsStorableDataModel<*>.checkProperties(
             newValue.index compareTo storedValue.index
         },
         { newProp, storedProp ->
-            newProp.compatibleWith(storedProp, handleMigrationReason)
+            newProp.compatibleWith(storedProp, checkedDataModelNames, handleMigrationReason)
         },
         { newProp ->
             hasNewProperties = true

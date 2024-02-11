@@ -11,6 +11,9 @@ sealed class MigrationStatus {
     /** There is no existing model so the model is to be added as new. */
     object NewModel: MigrationStatus()
 
+    /** The model has already been processed and migration depends on the other result */
+    object AlreadyProcessed: MigrationStatus()
+
     /** The model is up-to-date and needs no migration */
     object UpToDate: MigrationStatus()
 

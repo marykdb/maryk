@@ -117,12 +117,13 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
-        addIncompatibilityReason: ((String) -> Unit)?
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?,
     ): Boolean {
-        var compatible = super<IsSerializableFixedBytesEncodable>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsSerializableFixedBytesEncodable>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         if (definition is EnumDefinition) {
-            compatible = enum.compatibleWith(definition.enum, addIncompatibilityReason) && compatible
+            compatible = enum.compatibleWith(definition.enum, checkedDataModelNames, addIncompatibilityReason) && compatible
         }
 
         return compatible

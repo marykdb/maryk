@@ -13,6 +13,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationHandler
+import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.models.migration.MigrationStatus.NewModel
@@ -163,7 +164,7 @@ class RocksDBDataStore(
                         columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
                             tableColumnFamilies.model.let { modelColumnFamily ->
                                 when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion)) {
-                                    UpToDate -> Unit // Do nothing since no work is needed
+                                    UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                                     NewModel -> {
                                         scheduledVersionUpdateHandlers.add {
                                             versionUpdateHandler?.invoke(this@RocksDBDataStore, null, dataModel)

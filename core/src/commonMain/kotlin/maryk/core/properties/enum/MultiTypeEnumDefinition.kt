@@ -243,8 +243,13 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
         return result
     }
 
-    override fun enumTypeIsCompatible(storedEnum: E, newEnum: E, addIncompatibilityReason: ((String) -> Unit)?): Boolean {
-        return newEnum.definition!!.compatibleWith(storedEnum.definition!!, addIncompatibilityReason)
+    override fun enumTypeIsCompatible(
+        storedEnum: E,
+        newEnum: E,
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        return newEnum.definition!!.compatibleWith(storedEnum.definition!!, checkedDataModelNames, addIncompatibilityReason)
     }
 }
 

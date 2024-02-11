@@ -13,9 +13,10 @@ interface IsTimeDefinition<T : Comparable<T>> :
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsComparableDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsComparableDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? IsTimeDefinition<*>)?.let {
             if (definition.precision != this.precision) {

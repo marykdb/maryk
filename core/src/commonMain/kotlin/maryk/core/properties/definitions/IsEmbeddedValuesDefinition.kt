@@ -1,7 +1,7 @@
 package maryk.core.properties.definitions
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.values.Values
 
 /** Interface for property definitions containing embedded Values of model [DM] and context [CX]. */
@@ -15,12 +15,13 @@ interface IsEmbeddedValuesDefinition<DM : IsValuesDataModel, CX : IsPropertyCont
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
-        addIncompatibilityReason: ((String) -> Unit)?
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?,
     ): Boolean {
-        var compatible = super<IsValueDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsValueDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? IsEmbeddedValuesDefinition<*, *>)?.let {
-            compatible = this.compatibleWithDefinitionWithDataModel(definition, addIncompatibilityReason) && compatible
+            compatible = this.compatibleWithDefinitionWithDataModel(definition, addIncompatibilityReason, checkedDataModelNames) && compatible
         }
 
         return compatible

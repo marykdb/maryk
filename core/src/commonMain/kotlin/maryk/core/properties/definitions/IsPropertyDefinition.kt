@@ -45,7 +45,8 @@ interface IsPropertyDefinition<T : Any> {
      */
     fun compatibleWith(
         definition: IsPropertyDefinition<*>,
-        addIncompatibilityReason: ((String) -> Unit)? = null
+        checkedDataModelNames: MutableList<String>? = null,
+        addIncompatibilityReason: ((String) -> Unit)? = null,
     ): Boolean {
         var compatible = true
         if (!this::class.isInstance(definition) && !definition::class.isInstance(this)) {

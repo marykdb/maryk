@@ -18,13 +18,19 @@ interface IsStorableDataModel<DO: Any>: IsTypedDataModel<DO> {
      */
     fun isMigrationNeeded(
         storedDataModel: IsStorableDataModel<*>,
-        migrationReasons: MutableList<String> = mutableListOf()
+        checkedDataModelNames: MutableList<String>? = mutableListOf(),
+        migrationReasons: MutableList<String> = mutableListOf(),
     ): MigrationStatus {
+        if (checkedDataModelNames?.contains(this.Meta.name) == true) {
+            return MigrationStatus.AlreadyProcessed
+        }
+        checkedDataModelNames?.add(this.Meta.name)
+
         if (storedDataModel.Meta.name != this.Meta.name) {
             migrationReasons += "Names of models did not match: ${storedDataModel.Meta.name} -> ${this.Meta.name}"
         }
 
-        val hasNewProperties = this.checkProperties(storedDataModel) {
+        val hasNewProperties = this.checkProperties(storedDataModel, checkedDataModelNames) {
             migrationReasons += it
         }
 

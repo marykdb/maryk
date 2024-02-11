@@ -80,7 +80,8 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
 
     override fun isMigrationNeeded(
         storedDataModel: IsStorableDataModel<*>,
-        migrationReasons: MutableList<String>
+        checkedDataModelNames: MutableList<String>?,
+        migrationReasons: MutableList<String>,
     ): MigrationStatus {
         val indicesToIndex = mutableListOf<IsIndexable>()
         if (storedDataModel is IsRootDataModel) {
@@ -123,9 +124,15 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
             migrationReasons += "Stored model is not a root data model"
         }
 
-        val parentResult = super<TypedValuesDataModel>.isMigrationNeeded(storedDataModel, migrationReasons)
+        val parentResult = super<TypedValuesDataModel>.isMigrationNeeded(
+            storedDataModel = storedDataModel,
+            checkedDataModelNames = checkedDataModelNames,
+            migrationReasons = migrationReasons
+        )
 
-        return if (indicesToIndex.isEmpty()) {
+        return if (parentResult == MigrationStatus.AlreadyProcessed) {
+            return parentResult
+        } else if (indicesToIndex.isEmpty()) {
             parentResult
         } else when (parentResult) {
             is MigrationStatus.NeedsMigration -> MigrationStatus.NeedsMigration(

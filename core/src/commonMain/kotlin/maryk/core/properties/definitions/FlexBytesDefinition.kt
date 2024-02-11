@@ -1,9 +1,9 @@
 package maryk.core.properties.definitions
 
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.PropertyDefinitionType.FlexBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
@@ -67,9 +67,10 @@ data class FlexBytesDefinition(
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsSerializableFlexBytesEncodable>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsSerializableFlexBytesEncodable>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
         if (definition is FlexBytesDefinition) {
             compatible = this.isCompatible(definition, addIncompatibilityReason) && compatible
         }

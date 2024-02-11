@@ -52,9 +52,10 @@ data class FixedBytesDefinition(
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,
-        addIncompatibilityReason: ((String) -> Unit)?
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?,
     ): Boolean {
-        var compatible = super<IsNumericDefinition>.compatibleWith(definition, addIncompatibilityReason)
+        var compatible = super<IsNumericDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? FixedBytesDefinition)?.let {
             if (definition.byteSize != this.byteSize) {

@@ -98,8 +98,11 @@ object DependentModel : DataModel<DependentModel>() {
     val selfEmbed by embed(index = 4u, dataModel = { DependentModel })
 }
 
-object ModelWithDependents : RootDataModel<ModelV2ReservedNamesAndIndices>(
+object ModelWithDependents : RootDataModel<ModelWithDependents>(
     version = Version(1, 0),
+    indices = { listOf(
+        ModelWithDependents { dep { value::ref } }
+    ) }
 ) {
     val dep by embed(index = 1u, dataModel = { DependentModel })
     val enum by enum(index = 2u, enum = Option)

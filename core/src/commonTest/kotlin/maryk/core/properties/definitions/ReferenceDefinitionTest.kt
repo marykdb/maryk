@@ -11,7 +11,6 @@ import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
-import maryk.test.models.ModelV1_1WrongKey
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -117,12 +116,6 @@ internal class ReferenceDefinitionTest {
         assertTrue {
             ReferenceDefinition(dataModel = { ModelV1 }).compatibleWith(
                 ReferenceDefinition(dataModel = { ModelV1_1 }),
-            )
-        }
-
-        assertFalse {
-            ReferenceDefinition(dataModel = { ModelV1 }).compatibleWith(
-                ReferenceDefinition(dataModel = { ModelV1_1WrongKey })
             )
         }
 

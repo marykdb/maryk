@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.DefinitionModel
@@ -11,6 +10,7 @@ import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -22,7 +22,6 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
-import maryk.lib.safeLazy
 
 /** Definition for a reference to another DataObject*/
 class ReferenceDefinition<DM : IsRootDataModel>(
@@ -32,15 +31,32 @@ class ReferenceDefinition<DM : IsRootDataModel>(
     override val minValue: Key<DM>? = null,
     override val maxValue: Key<DM>? = null,
     override val default: Key<DM>? = null,
-    dataModel: Unit.() -> DM
-) :
-    IsReferenceDefinition<DM, IsPropertyContext> {
+    internal val dataModelReference: () -> IsDataModelReference<DM>,
+) : IsReferenceDefinition<DM, IsPropertyContext> {
+
+    constructor(
+        required: Boolean = true,
+        final: Boolean = false,
+        unique: Boolean = false,
+        minValue: Key<DM>? = null,
+        maxValue: Key<DM>? = null,
+        default: Key<DM>? = null,
+        dataModel: Unit.() -> DM
+    ) : this(required, final, unique, minValue, maxValue, default, dataModelReference = {
+        val dm = dataModel(Unit)
+        DataModelReference(dm.Meta.name) { dm } }
+    )
+
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = LENGTH_DELIMITED
     override val byteSize get() = dataModel.Meta.keyByteSize
 
-    private val internalDataModel = safeLazy(dataModel)
-    override val dataModel: DM get() = internalDataModel.value
+    override val internalDataModelReference by lazy {
+        dataModelReference.invoke()
+    }
+    override val dataModel: DM by lazy {
+        internalDataModelReference.get(Unit)
+    }
 
     override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize
 
@@ -54,12 +70,6 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         dataModel.key(string)
     } catch (e: Throwable) {
         throw ParseException(string, e)
-    }
-
-    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
-        if (!dependencySet.contains(dataModel as MarykPrimitive)) {
-            dependencySet += dataModel as MarykPrimitive
-        }
     }
 
     override fun fromNativeType(value: Any) =
@@ -79,7 +89,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         if (minValue != other.minValue) return false
         if (maxValue != other.maxValue) return false
         if (default != other.default) return false
-        if (dataModel.Meta.name != other.dataModel.Meta.name) return false
+        if (internalDataModelReference.name != other.internalDataModelReference.name) return false
 
         return true
     }
@@ -91,7 +101,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         result = 31 * result + (minValue?.hashCode() ?: 0)
         result = 31 * result + (maxValue?.hashCode() ?: 0)
         result = 31 * result + (default?.hashCode() ?: 0)
-        result = 31 * result + dataModel.Meta.name.hashCode()
+        result = 31 * result + internalDataModelReference.name.hashCode()
         return result
     }
 
@@ -114,19 +124,18 @@ class ReferenceDefinition<DM : IsRootDataModel>(
                 }
             ),
             getter = {
-                { it.dataModel }
+                @Suppress("UNCHECKED_CAST")
+                it.dataModelReference as () -> IsDataModelReference<IsRootDataModel>
             },
-            toSerializable = { value: (Unit.() -> IsRootDataModel)?, _ ->
-                value?.invoke(Unit)?.let { model: IsRootDataModel ->
-                    DataModelReference(model.Meta.name) { model }
-                }
+            toSerializable = { value, _ ->
+                value?.invoke()
             },
             fromSerializable = {
-                it?.get
+                { it!! }
             },
-            capturer = { context, dataModel ->
-                if (!context.dataModels.containsKey(dataModel.name)) {
-                    context.dataModels[dataModel.name] = dataModel.get
+            capturer = { context, dataModelRef ->
+                if (!context.dataModels.containsKey(dataModelRef.name)) {
+                    context.dataModels[dataModelRef.name] = dataModelRef.get
                 }
             }
         )
@@ -136,21 +145,15 @@ class ReferenceDefinition<DM : IsRootDataModel>(
             final = values(2u),
             unique = values(3u),
             minValue = values<Bytes?>(4u)?.let {
-                Key(
-                    it.bytes
-                )
+                Key(it.bytes)
             },
             maxValue = values<Bytes?>(5u)?.let {
-                Key(
-                    it.bytes
-                )
+                Key(it.bytes)
             },
             default = values<Bytes?>(6u)?.let {
-                Key(
-                    it.bytes
-                )
+                Key(it.bytes)
             },
-            dataModel = values(7u)
+            dataModelReference = values(7u),
         )
     }
 }
@@ -210,7 +213,7 @@ fun <DM: IsRootDataModel, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataM
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        ReferenceDefinition(required, final, unique, minValue, maxValue, default, dataModel),
+        ReferenceDefinition(required, final, unique, minValue, maxValue, default, dataModel = dataModel),
         alternativeNames,
         getter = getter,
         capturer = capturer,

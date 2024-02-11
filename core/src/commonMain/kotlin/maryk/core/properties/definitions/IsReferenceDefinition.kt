@@ -2,6 +2,7 @@ package maryk.core.properties.definitions
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.types.Key
 
 /** Interface for property definitions containing references to data objects of model [DM] and context [CX]. */
@@ -11,6 +12,7 @@ interface IsReferenceDefinition<DM : IsRootDataModel, CX : IsPropertyContext> :
     IsTransportablePropertyDefinitionType<Key<DM>>,
     HasDefaultValueDefinition<Key<DM>> {
     val dataModel: DM
+    val internalDataModelReference: IsDataModelReference<DM>
 
     override fun calculateStorageByteLength(value: Key<DM>)=
         super.calculateStorageByteLength(value)
@@ -28,7 +30,7 @@ interface IsReferenceDefinition<DM : IsRootDataModel, CX : IsPropertyContext> :
                 return compatible
             }
 
-            if (definition.dataModel.Meta.name != this.dataModel.Meta.name || definition.dataModel.Meta.keyDefinition != this.dataModel.Meta.keyDefinition) {
+            if (definition.internalDataModelReference.name != this.internalDataModelReference.name) {
                 addIncompatibilityReason?.invoke("Data models are not the same comparing reference properties: $dataModel != ${definition.dataModel}")
                 compatible = false
             }

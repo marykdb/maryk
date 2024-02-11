@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.TypeException
+import maryk.core.models.IsDataModel
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.definitions.ValueDataModelDefinition
@@ -15,6 +16,7 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IsIndexedEnumDefinition
@@ -163,7 +165,7 @@ internal fun generateKotlinValue(
     else -> {
         when (definition) {
             is ContextualModelReferenceDefinition<*, *, *> -> {
-                when (val model = (value as? Unit.() -> Any)?.invoke(Unit)) {
+                when (val model = (value as? Unit.() -> Any)?.invoke(Unit) ?: (value as? () -> DataModelReference<IsDataModel>)?.invoke()?.get?.invoke(Unit)) {
                     is IsValuesDataModel ->
                         """{ ${model.Meta.name} }"""
                     null ->

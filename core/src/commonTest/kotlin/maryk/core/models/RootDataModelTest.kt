@@ -746,7 +746,7 @@ internal class RootDataModelTest {
         val list = mutableListOf<MarykPrimitive>()
         TestMarykModel.getAllDependencies(list)
 
-        assertEquals(4, list.size)
-        assertEquals(mutableListOf(TestValueObject, EmbeddedMarykModel, TestMarykModel, SimpleMarykTypeEnum), list)
+        assertEquals(5, list.size)
+        assertEquals(mutableListOf(Option, TestValueObject, EmbeddedMarykModel, TestMarykModel, SimpleMarykTypeEnum), list)
     }
 }

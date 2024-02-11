@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.DefinitionModel
@@ -53,6 +54,12 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         dataModel.key(string)
     } catch (e: Throwable) {
         throw ParseException(string, e)
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        if (!dependencySet.contains(dataModel as MarykPrimitive)) {
+            dependencySet += dataModel as MarykPrimitive
+        }
     }
 
     override fun fromNativeType(value: Any) =

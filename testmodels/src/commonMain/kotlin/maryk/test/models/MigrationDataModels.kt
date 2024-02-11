@@ -7,6 +7,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.SInt32
@@ -102,4 +103,5 @@ object ModelWithDependents : RootDataModel<ModelV2ReservedNamesAndIndices>(
 ) {
     val dep by embed(index = 1u, dataModel = { DependentModel })
     val enum by enum(index = 2u, enum = Option)
+    val selfRef by reference(index = 3u, dataModel = { ModelWithDependents })
 }

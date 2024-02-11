@@ -131,7 +131,7 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
 
     override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
         if (!dependencySet.contains(enum)) {
-            enum
+            dependencySet += enum
         }
     }
 

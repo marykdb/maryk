@@ -23,6 +23,11 @@ interface IsReferenceDefinition<DM : IsRootDataModel, CX : IsPropertyContext> :
         var compatible = super<IsComparableDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? IsReferenceDefinition<*, *>)?.let {
+            // Make sure references to self are not in eternal loop
+            if (checkedDataModelNames?.contains(definition.dataModel.Meta.name) == true) {
+                return compatible
+            }
+
             if (definition.dataModel.Meta.name != this.dataModel.Meta.name || definition.dataModel.Meta.keyDefinition != this.dataModel.Meta.keyDefinition) {
                 addIncompatibilityReason?.invoke("Data models are not the same comparing reference properties: $dataModel != ${definition.dataModel}")
                 compatible = false

@@ -33,9 +33,7 @@ class LazyDataModelReference<DM : IsDataModel>(
     override val name: String,
     getLater: () -> Unit.() -> DM
 ) : IsDataModelReference<DM> {
-    private val internal = lazy {
-        getLater()
-    }
+    private val internal = lazy(getLater)
 
     override val get: Unit.() -> DM = {
         internal.value(Unit)

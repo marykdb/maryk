@@ -9,7 +9,6 @@ import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
-import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.enum.TypeEnum
@@ -55,9 +54,9 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
     }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
-        if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *>) {
+        if (this.propertyDefinition is IsEmbeddedDefinition<*>) {
             return this.propertyDefinition.resolveReference(reader, this)
-        } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
+        } else throw DefNotFoundException("Type reference can only contain embedded references (${type.name})")
     }
 
     override fun getEmbeddedStorageRef(
@@ -66,9 +65,9 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
         referenceType: ReferenceType,
         isDoneReading: () -> Boolean
     ): AnyPropertyReference {
-        return if (this.propertyDefinition is IsEmbeddedObjectDefinition<*, *, *, *>) {
+        return if (this.propertyDefinition is IsEmbeddedDefinition<*>) {
             this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
-        } else throw DefNotFoundException("Type reference can not contain embedded index references (${type.name})")
+        } else throw DefNotFoundException("Type reference can only contain embedded references (${type.name})")
     }
 
     /** Convenience infix method to create reference [value] pairs */

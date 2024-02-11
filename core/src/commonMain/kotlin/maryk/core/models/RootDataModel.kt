@@ -117,7 +117,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 migrationReasons += "Major version was increased: ${storedDataModel.Meta.version} -> ${this.Meta.version}"
             }
 
-            if (storedDataModel.Meta.keyDefinition !== this.Meta.keyDefinition) {
+            if (storedDataModel.Meta.keyDefinition != this.Meta.keyDefinition) {
                 migrationReasons += "Key definition was not the same"
             }
         } else {

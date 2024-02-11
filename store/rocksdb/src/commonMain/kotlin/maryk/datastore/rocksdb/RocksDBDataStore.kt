@@ -22,6 +22,7 @@ import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -160,10 +161,12 @@ class RocksDBDataStore(
 
             runBlocking {
                 launch(Dispatchers.IO) {
+                    val conversionContext = DefinitionsConversionContext()
+
                     for ((index, dataModel) in dataModelsById) {
                         columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
                             tableColumnFamilies.model.let { modelColumnFamily ->
-                                when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion)) {
+                                when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion, conversionContext)) {
                                     UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                                     NewModel -> {
                                         scheduledVersionUpdateHandlers.add {

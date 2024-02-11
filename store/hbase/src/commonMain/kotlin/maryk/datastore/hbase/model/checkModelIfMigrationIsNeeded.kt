@@ -18,7 +18,8 @@ import java.util.concurrent.CompletableFuture
 suspend fun checkModelIfMigrationIsNeeded(
     tableDescriptorFuture: CompletableFuture<TableDescriptor>,
     dataModel: IsRootDataModel,
-    onlyCheckVersion: Boolean
+    onlyCheckVersion: Boolean,
+    conversionContext: DefinitionsConversionContext,
 ): MigrationStatus {
     val tableDescriptor = try {
         tableDescriptorFuture.await()
@@ -38,12 +39,11 @@ suspend fun checkModelIfMigrationIsNeeded(
 
     return when {
         dataModel.Meta.version != version || !onlyCheckVersion -> {
-            val context = DefinitionsConversionContext()
 
             // Read currently stored dependent model
             tableDescriptor.getValue(TableMetaColumns.Dependents.byteArray)?.let { dependentModelBytes ->
                 var readIndex = 0
-                Definitions.Serializer.readProtoBuf(dependentModelBytes.size, { dependentModelBytes[readIndex++] }, context).toDataObject()
+                Definitions.Serializer.readProtoBuf(dependentModelBytes.size, { dependentModelBytes[readIndex++] }, conversionContext).toDataObject()
             }
 
             // Read currently stored model
@@ -51,7 +51,8 @@ suspend fun checkModelIfMigrationIsNeeded(
                 ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.Meta.name}")
 
             var readIndex = 0
-            val storedDataModel = RootDataModel.Model.Serializer.readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, context).toDataObject()
+            val storedDataModel = RootDataModel.Model.Serializer.readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, conversionContext).toDataObject()
+            conversionContext.dataModels[dataModel.Meta.name] = { storedDataModel }
 
             // Check by comparing the data models for if migration is needed
             return dataModel.isMigrationNeeded(storedDataModel)

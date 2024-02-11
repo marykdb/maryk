@@ -15,6 +15,7 @@ import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -97,10 +98,12 @@ class HbaseDataStore(
                     ).await()
                 }
 
+                val conversionContext = DefinitionsConversionContext()
+
                 for (dataModel in dataModelsById.values) {
                     val tableName = getTableName(dataModel)
                     val tableDescriptor = admin.getDescriptor(tableName)
-                    when (val migrationStatus = checkModelIfMigrationIsNeeded(tableDescriptor, dataModel, onlyCheckModelVersion)) {
+                    when (val migrationStatus = checkModelIfMigrationIsNeeded(tableDescriptor, dataModel, onlyCheckModelVersion, conversionContext)) {
                         MigrationStatus.UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                         MigrationStatus.NewModel -> {
                             scheduledVersionUpdateHandlers.add {

@@ -221,7 +221,9 @@ private fun <DM : IsDataModel> DM.readQualifier(
                 val definition = this[index]
                     ?: throw DefNotFoundException("No definition for $index in $this at $index")
 
-                if (select?.contains(definition.ref(parentReference)) == false) {
+                val ref = definition.ref(parentReference)
+
+                if (select?.contains(ref) == false) {
                     null // Skip since not in select
                 } else {
                     readQualifierOfType(
@@ -232,7 +234,7 @@ private fun <DM : IsDataModel> DM.readQualifier(
                         refStoreType,
                         index,
                         select,
-                        definition.ref(parentReference),
+                        ref,
                         addChangeToOutput,
                         readValueFromStorage,
                         addToCache

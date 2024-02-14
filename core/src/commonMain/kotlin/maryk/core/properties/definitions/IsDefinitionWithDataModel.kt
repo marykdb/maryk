@@ -24,7 +24,7 @@ interface IsDefinitionWithDataModel<out DM : IsTypedDataModel<*>> {
             return false
         }
 
-        return when (val migrationStatus = (this.dataModel as? IsStorableDataModel<*>)?.isMigrationNeeded(definition.dataModel as IsStorableDataModel<*>, checkedDataModelNames = checkedDataModelNames)) {
+        return when (val migrationStatus = (this.dataModel as? IsStorableDataModel<*>)?.isMigrationNeeded(comparisonDataModel, checkedDataModelNames = checkedDataModelNames)) {
             null -> {
                 addIncompatibilityReason?.invoke("current DataModel not Serializable")
                 false

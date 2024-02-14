@@ -9,7 +9,7 @@ fun <T> synchronizedIteration(
     iterator1: Iterator<T>,
     iterator2: Iterator<T>,
     comparator: Comparator<T>,
-    processBoth: (T, T) -> Unit = { _, _ -> Unit},
+    processBoth: (T, T) -> Unit = { _, _ -> },
     processOnlyOnIterator1: (T) -> Unit = {},
     processOnlyOnIterator2: (T) -> Unit = {}
 ) {
@@ -41,9 +41,9 @@ fun <T> synchronizedIteration(
                 val result = comparator.compare(val1, val2)
                 when {
                     result == 0 -> {
-                        processBoth(val2, val1)
-                        value2 = if (iterator2.hasNext()) iterator2.next() else null
+                        processBoth(val1, val2)
                         value1 = if (iterator1.hasNext()) iterator1.next() else null
+                        value2 = if (iterator2.hasNext()) iterator2.next() else null
                     }
                     result > 0 ->
                         if (iterator1.hasNext()) process1(val1) else process2(val2)

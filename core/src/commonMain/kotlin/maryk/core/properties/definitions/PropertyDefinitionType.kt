@@ -108,6 +108,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
     PropertyDefinitionType.Enum to createFixedBytesWrapper,
     PropertyDefinitionType.FixedBytes to createFixedBytesWrapper,
     PropertyDefinitionType.FlexBytes to createFlexBytesWrapper,
+    PropertyDefinitionType.GeoPoint to createFixedBytesWrapper,
     PropertyDefinitionType.IncMap to { index, name, altNames, definition ->
         @Suppress("UNCHECKED_CAST")
         MapDefinitionWrapper(

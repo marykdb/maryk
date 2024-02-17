@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 fun <DM : IsDataModel, CX : IsPropertyContext> ContextualModelReferenceDefinition(
-    contextualResolver: Unit.(context: CX?, name: String) -> Unit.() -> DM
+    contextualResolver: Unit.(context: CX?, name: String) -> IsDataModelReference<DM>
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it
 }
@@ -28,7 +28,7 @@ fun <DM : IsDataModel, CX : IsPropertyContext> ContextualModelReferenceDefinitio
  * Has a [contextTransformer] to transform context.
  */
 data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsPropertyContext, CXI : IsPropertyContext>(
-    val contextualResolver: Unit.(context: CXI?, name: String) -> Unit.() -> DM,
+    val contextualResolver: Unit.(context: CXI?, name: String) -> IsDataModelReference<DM>,
     val contextTransformer: Unit.(CX?) -> CXI?
 ) : IsValueDefinition<IsDataModelReference<DM>, CX>, IsContextualEncodable<IsDataModelReference<DM>, CX> {
     override val required = true
@@ -78,12 +78,14 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
 
     private fun resolveContext(context: CXI?, name: String): IsDataModelReference<DM> {
         try {
-            this.contextualResolver(Unit, context, name).let {
-                return DataModelReference(name, it)
-            }
+            return this.contextualResolver(Unit, context, name)
         } catch (e: DefNotFoundException) {
             return LazyDataModelReference(name) {
-                this.contextualResolver(Unit, context, name)
+                this.contextualResolver(Unit, context, name).also {
+                    if (it is LazyDataModelReference<*>) {
+                        throw DefNotFoundException("Could not resolve DataModel $name, was it processed before or provided in dependents in the context?")
+                    }
+                }.get
             }
         }
     }

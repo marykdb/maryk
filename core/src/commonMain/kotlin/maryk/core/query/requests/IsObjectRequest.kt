@@ -6,6 +6,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.IsResponse
@@ -24,7 +25,7 @@ internal fun <DM : IsStoreRequest<*, *>> IsObjectDataModel<DM>.addDataModel(
             contextualResolver = { context, modelName ->
                 context?.let {
                     @Suppress("UNCHECKED_CAST")
-                    it.dataModels[modelName]?.get as? (Unit.() -> IsRootDataModel)?
+                    it.dataModels[modelName] as? IsDataModelReference<IsRootDataModel>
                         ?: throw DefNotFoundException("DataModel of name $modelName not found on dataModels")
                 } ?: throw ContextNotFoundException()
             }

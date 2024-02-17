@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.statuses.AddSuccess
@@ -45,7 +46,7 @@ internal fun <DM : IsDataModelResponse<*>> IsObjectDataModel<DM>.addDataModel(
             contextualResolver = { context, name ->
                 context?.let {
                     @Suppress("UNCHECKED_CAST")
-                    it.dataModels[name]?.get as? (Unit.() -> IsRootDataModel)?
+                    it.dataModels[name] as? IsDataModelReference<IsRootDataModel>
                         ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                 } ?: throw ContextNotFoundException()
             }

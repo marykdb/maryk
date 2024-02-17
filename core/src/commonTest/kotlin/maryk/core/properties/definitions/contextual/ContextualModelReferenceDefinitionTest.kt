@@ -22,7 +22,10 @@ class ContextualModelReferenceDefinitionTest {
     )
 
     private val def = ContextualModelReferenceDefinition<IsDataModel, RequestContext>(
-        contextualResolver = { context, name -> context!!.dataModels[name]?.get as Unit.() -> IsDataModel }
+        contextualResolver = { context, name ->
+            @Suppress("UNCHECKED_CAST")
+            context!!.dataModels[name] as IsDataModelReference<IsDataModel>
+        }
     )
 
     private val context = RequestContext(

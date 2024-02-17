@@ -15,7 +15,6 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
 import maryk.core.properties.definitions.contextual.embedContextual
-import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -156,7 +155,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
     ) {
         val required by boolean(1u, EmbeddedValuesDefinition<*>::required, default = true)
         val final by boolean(2u, EmbeddedValuesDefinition<*>::final, default = false)
-        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValuesDataModel>, Unit.() -> IsValuesDataModel, ModelContext, ContextualModelReferenceDefinition<IsValuesDataModel, ModelContext, ContainsDefinitionsContext>, EmbeddedValuesDefinition<*>> by contextual(
+        val dataModel by contextual(
             index = 3u,
             definition = ContextualModelReferenceDefinition(
                 contextTransformer = { context: ModelContext? ->
@@ -165,7 +164,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
                 contextualResolver = { context: ContainsDefinitionsContext?, name ->
                     context?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name]?.get as? Unit.() -> IsValuesDataModel
+                        it.dataModels[name] as? IsDataModelReference<IsValuesDataModel>
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }

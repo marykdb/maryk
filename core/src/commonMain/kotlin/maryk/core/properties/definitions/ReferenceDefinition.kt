@@ -118,7 +118,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
                 contextualResolver = { context: ContainsDefinitionsContext?, name ->
                     context?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name]?.get as? (Unit.() -> IsRootDataModel)?
+                        it.dataModels[name] as? IsDataModelReference<IsRootDataModel>
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }

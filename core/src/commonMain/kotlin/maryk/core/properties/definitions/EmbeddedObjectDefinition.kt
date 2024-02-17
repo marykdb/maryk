@@ -151,7 +151,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
                 contextualResolver = { context: ModelContext?, name ->
                     context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name]?.get as? Unit.() -> IsTypedObjectDataModel<*, *, *, *>
+                        it.dataModels[name] as? IsDataModelReference<IsTypedObjectDataModel<*, *, *, *>>
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }

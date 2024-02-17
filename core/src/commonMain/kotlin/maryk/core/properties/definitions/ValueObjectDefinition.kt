@@ -16,7 +16,6 @@ import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefi
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.contextual.ModelContext
-import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -127,14 +126,14 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
         val required by boolean(1u, ValueObjectDefinition<*, *>::required, default = true)
         val final by boolean(2u, ValueObjectDefinition<*, *>::final, default = false)
         val unique by boolean(3u, ValueObjectDefinition<*, *>::unique, default = false)
-        val dataModel: ContextualDefinitionWrapper<IsDataModelReference<IsValueDataModel<*, *>>, IsValueDataModel<*, *>, ModelContext, ContextualModelReferenceDefinition<IsValueDataModel<*, *>, ModelContext, ModelContext>, ValueObjectDefinition<*, *>> by contextual(
+        val dataModel by contextual(
             index = 4u,
             getter = ValueObjectDefinition<*, *>::dataModel,
             definition = ContextualModelReferenceDefinition(
                 contextualResolver = { context, name ->
                     context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name]?.get as? (Unit.() -> IsValueDataModel<*, *>)?
+                        it.dataModels[name] as? IsDataModelReference<IsValueDataModel<*, *>>
                             ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -147,15 +146,15 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
             fromSerializable = {
                 it?.get?.invoke(Unit)
             },
-            capturer = { context, dataModel ->
+            capturer = { context, dataModelRef ->
                 context.let {
                     context.definitionsContext?.let { modelContext ->
-                        if (!modelContext.dataModels.containsKey(dataModel.name)) {
-                            modelContext.dataModels[dataModel.name] = dataModel
+                        if (!modelContext.dataModels.containsKey(dataModelRef.name)) {
+                            modelContext.dataModels[dataModelRef.name] = dataModelRef
                         }
                     } ?: throw ContextNotFoundException()
 
-                    context.model = dataModel.get
+                    context.model = dataModelRef.get
                 }
             }
         )

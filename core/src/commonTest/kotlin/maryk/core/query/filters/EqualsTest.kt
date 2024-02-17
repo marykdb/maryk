@@ -3,7 +3,7 @@ package maryk.core.query.filters
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.TestMarykModel
@@ -20,7 +20,7 @@ class EqualsTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel
     )

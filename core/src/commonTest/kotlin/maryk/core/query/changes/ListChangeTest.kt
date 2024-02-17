@@ -4,7 +4,7 @@ import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.values.div
 import maryk.test.models.EmbeddedMarykModel
@@ -24,7 +24,7 @@ class ListChangeTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel
     )

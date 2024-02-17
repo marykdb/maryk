@@ -1,7 +1,6 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.checkProtoBufConversion
-import maryk.core.extensions.toUnitLambda
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsStorableDataModel
 import maryk.core.query.RequestContext
@@ -23,15 +22,15 @@ class ContextualModelReferenceDefinitionTest {
     )
 
     private val def = ContextualModelReferenceDefinition<IsDataModel, RequestContext>(
-        contextualResolver = { context, name -> context!!.dataModels[name] as Unit.() -> IsDataModel }
+        contextualResolver = { context, name -> context!!.dataModels[name]?.get as Unit.() -> IsDataModel }
     )
 
     private val context = RequestContext(
         dataModels = mapOf(
-            TestMarykObject.Meta.name toUnitLambda { TestMarykObject },
-            EmbeddedMarykObject.Meta.name toUnitLambda { EmbeddedMarykObject },
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel },
-            EmbeddedMarykModel.Meta.name toUnitLambda { EmbeddedMarykModel }
+            TestMarykObject.Meta.name to DataModelReference(TestMarykObject),
+            EmbeddedMarykObject.Meta.name to DataModelReference(EmbeddedMarykObject),
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
+            EmbeddedMarykModel.Meta.name to DataModelReference(EmbeddedMarykModel),
         )
     )
 

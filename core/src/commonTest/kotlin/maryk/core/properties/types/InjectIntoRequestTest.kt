@@ -3,11 +3,11 @@ package maryk.core.properties.types
 import maryk.checkJsonConversion
 import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.models.asValues
 import maryk.core.models.graph
 import maryk.core.models.key
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -25,8 +25,8 @@ import kotlin.test.assertFails
 import kotlin.test.expect
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel },
-    ReferencesModel.Meta.name toUnitLambda { ReferencesModel }
+    SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel),
+    ReferencesModel.Meta.name to DataModelReference(ReferencesModel),
 )).apply {
     addToCollect("keysToInject", ValuesResponse)
     addToCollect("referencedKeys", ValuesResponse)

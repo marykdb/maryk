@@ -4,7 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.RequestException
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Order.Companion.ascending
@@ -22,8 +22,8 @@ import kotlin.test.expect
 
 class ScanChangesRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel },
-        TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+        SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel),
+        TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
     ))
 
     @Test

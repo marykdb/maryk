@@ -5,7 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.Sum
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -23,7 +23,7 @@ class TypesTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel
     )

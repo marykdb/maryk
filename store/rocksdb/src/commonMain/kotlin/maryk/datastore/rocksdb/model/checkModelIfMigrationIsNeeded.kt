@@ -7,6 +7,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.UpToDate
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
 import org.rocksdb.ColumnFamilyHandle
@@ -43,7 +44,7 @@ fun checkModelIfMigrationIsNeeded(
 
             var readIndex = 0
             val storedDataModel = RootDataModel.Model.Serializer.readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, conversionContext).toDataObject()
-            conversionContext.dataModels[dataModel.Meta.name] = { storedDataModel }
+            conversionContext.dataModels[dataModel.Meta.name] = DataModelReference(storedDataModel)
 
             // Check by comparing the data models for if migration is needed
             return dataModel.isMigrationNeeded(storedDataModel)

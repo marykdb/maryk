@@ -6,7 +6,7 @@ import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.invoke
 import maryk.core.query.RequestContext
 import maryk.core.values.div
@@ -31,7 +31,7 @@ class DeleteTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel
     )

@@ -5,9 +5,9 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.ValueCountResponse
-import maryk.core.extensions.toUnitLambda
 import maryk.core.models.asValues
 import maryk.core.models.key
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.test.models.SimpleMarykModel
@@ -37,7 +37,7 @@ class ValuesResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))
 
     @Test

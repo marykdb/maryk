@@ -3,8 +3,8 @@ package maryk.core.query.responses
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
 import maryk.core.models.key
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.query.RequestContext
@@ -44,7 +44,7 @@ class AddResponseTest {
     )
 
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))
 
     @Test

@@ -21,6 +21,7 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
@@ -636,9 +637,9 @@ internal class RootDataModelTest {
         val reader = MarykYamlReader(simpleYaml)
 
         val newContext = DefinitionsConversionContext()
-        newContext.dataModels["TestMarykModel"] = { TestMarykModel }
-        newContext.dataModels["TestValueObject"] = { TestValueObject }
-        newContext.dataModels["EmbeddedMarykModel"] = { EmbeddedMarykModel }
+        newContext.dataModels["TestMarykModel"] = DataModelReference(TestMarykModel)
+        newContext.dataModels["TestValueObject"] = DataModelReference(TestValueObject)
+        newContext.dataModels["EmbeddedMarykModel"] = DataModelReference(EmbeddedMarykModel)
 
         RootDataModel.Model.Serializer.readJson(reader, newContext).toDataObject().apply {
             assertEquals("SimpleModel", this.Meta.name)

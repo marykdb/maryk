@@ -5,9 +5,9 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
-import maryk.core.extensions.toUnitLambda
 import maryk.core.models.graph
 import maryk.core.models.values
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.yaml.MarykYamlReader
@@ -19,7 +19,7 @@ import kotlin.test.expect
 
 class GetRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))
 
     @Test

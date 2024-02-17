@@ -1,6 +1,9 @@
 package maryk.core.properties.definitions.contextual
 
 import maryk.core.models.IsDataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsStorableDataModel
+import maryk.core.models.IsValuesDataModel
 
 interface IsDataModelReference<DM : IsDataModel> {
     val name: String
@@ -12,6 +15,9 @@ class DataModelReference<DM : IsDataModel>(
     override val name: String,
     override val get: Unit.() -> DM
 ) : IsDataModelReference<DM> {
+
+    constructor(dataModel: DM) : this((dataModel as? IsStorableDataModel<*>)?.Meta?.name ?: dataModel::class.simpleName!!, { dataModel })
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is IsDataModelReference<*>) return false

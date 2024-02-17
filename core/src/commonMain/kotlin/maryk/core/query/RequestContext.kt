@@ -3,9 +3,10 @@ package maryk.core.query
 import maryk.core.exceptions.RequestException
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
-import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsDataModel
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.changes.IncMapChange
@@ -31,7 +32,7 @@ class RequestContext(
 ) : ContainsDataModelContext<IsDataModel>, ContainsDefinitionsContext by definitionsContext {
     /** For test use */
     internal constructor(
-        dataModels: Map<String, Unit.() -> IsDataModel>,
+        dataModels: Map<String, IsDataModelReference<*>>,
         dataModel: IsDataModel? = null,
         reference: IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>? = null
     ) : this(

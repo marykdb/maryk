@@ -165,7 +165,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
                 contextualResolver = { context: ContainsDefinitionsContext?, name ->
                     context?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as? Unit.() -> IsValuesDataModel
+                        it.dataModels[name]?.get as? Unit.() -> IsValuesDataModel
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -184,7 +184,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
             capturer = { context: ModelContext, dataModel: IsDataModelReference<IsValuesDataModel> ->
                 context.definitionsContext?.let {
                     if (!it.dataModels.containsKey(dataModel.name)) {
-                        it.dataModels[dataModel.name] = dataModel.get
+                        it.dataModels[dataModel.name] = dataModel
                     }
                 } ?: throw ContextNotFoundException()
 

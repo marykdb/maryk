@@ -3,13 +3,13 @@ package maryk.core.properties.types
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
 import maryk.core.inject.Inject
 import maryk.core.models.asValues
 import maryk.core.models.key
 import maryk.core.models.testExtendedMarykModelObject
 import maryk.core.models.testMarykModelObject
 import maryk.core.models.values
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
@@ -29,7 +29,7 @@ import kotlin.test.expect
 class InjectTest {
     private val definitionsContext = DefinitionsContext(
         dataModels = mutableMapOf(
-            EmbeddedMarykModel.Meta.name toUnitLambda { EmbeddedMarykModel }
+            EmbeddedMarykModel.Meta.name to DataModelReference(EmbeddedMarykModel),
         )
     )
 

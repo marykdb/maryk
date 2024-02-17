@@ -4,7 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.DefNotFoundException
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.exceptions.AlreadySetException
@@ -63,7 +63,7 @@ internal class MultiTypeDefinitionTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            EmbeddedMarykModel.Meta.name toUnitLambda { EmbeddedMarykModel }
+            EmbeddedMarykModel.Meta.name to DataModelReference(EmbeddedMarykModel),
         )
     )
 

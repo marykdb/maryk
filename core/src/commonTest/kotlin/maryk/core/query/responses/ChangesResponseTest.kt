@@ -3,8 +3,8 @@ package maryk.core.query.responses
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
 import maryk.core.models.key
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
@@ -61,8 +61,8 @@ class ChangesResponseTest {
 
     private val context = RequestContext(
         dataModels = mapOf(
-            EmbeddedMarykModel.Meta.name toUnitLambda { EmbeddedMarykModel },
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+            EmbeddedMarykModel.Meta.name to DataModelReference(EmbeddedMarykModel),
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel
     )

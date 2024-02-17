@@ -3,7 +3,7 @@ package maryk.core.query.requests
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.scanUpdatesMaxRequest
@@ -13,7 +13,7 @@ import kotlin.test.expect
 
 class ScanUpdatesRequestTest {
     private val context = RequestContext(mapOf(
-        SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
+        SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))
 
     @Test

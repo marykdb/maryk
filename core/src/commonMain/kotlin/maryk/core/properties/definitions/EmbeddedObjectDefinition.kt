@@ -151,7 +151,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
                 contextualResolver = { context: ModelContext?, name ->
                     context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as? Unit.() -> IsTypedObjectDataModel<*, *, *, *>
+                        it.dataModels[name]?.get as? Unit.() -> IsTypedObjectDataModel<*, *, *, *>
                             ?: throw DefNotFoundException("ObjectDataModel of name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -167,14 +167,14 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
             fromSerializable = { ref ->
                 ref?.get
             },
-            capturer = { context: ModelContext, dataModel: IsDataModelReference<IsTypedObjectDataModel<*, *, *, *>> ->
+            capturer = { context: ModelContext, dataModelRef: IsDataModelReference<IsTypedObjectDataModel<*, *, *, *>> ->
                 context.definitionsContext?.let {
-                    if (!it.dataModels.containsKey(dataModel.name)) {
-                        it.dataModels[dataModel.name] = dataModel.get
+                    if (!it.dataModels.containsKey(dataModelRef.name)) {
+                        it.dataModels[dataModelRef.name] = dataModelRef
                     }
                 } ?: throw ContextNotFoundException()
 
-                context.model = dataModel.get
+                context.model = dataModelRef.get
             }
         )
 

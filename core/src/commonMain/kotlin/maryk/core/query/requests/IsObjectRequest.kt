@@ -24,7 +24,7 @@ internal fun <DM : IsStoreRequest<*, *>> IsObjectDataModel<DM>.addDataModel(
             contextualResolver = { context, modelName ->
                 context?.let {
                     @Suppress("UNCHECKED_CAST")
-                    it.dataModels[modelName] as (Unit.() -> IsRootDataModel)?
+                    it.dataModels[modelName]?.get as? (Unit.() -> IsRootDataModel)?
                         ?: throw DefNotFoundException("DataModel of name $modelName not found on dataModels")
                 } ?: throw ContextNotFoundException()
             }

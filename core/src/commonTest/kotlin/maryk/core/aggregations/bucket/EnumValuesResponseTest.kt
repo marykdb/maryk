@@ -6,7 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.AverageResponse
 import maryk.core.aggregations.metric.SumResponse
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.test.models.Option.V1
 import maryk.test.models.Option.V2
@@ -53,7 +53,7 @@ class EnumValuesResponseTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel
     )

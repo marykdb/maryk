@@ -11,7 +11,7 @@ import maryk.core.aggregations.metric.Max
 import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.ValueCount
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.DateUnit
 import maryk.core.query.RequestContext
 import maryk.test.models.TestMarykModel
@@ -49,7 +49,7 @@ class AggregationsTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel
     )

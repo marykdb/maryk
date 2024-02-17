@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.properties.definitions.contextual.ContextCaptureDefinition
 import maryk.core.properties.definitions.contextual.ContextValueTransformDefinition
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.list
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnumDefinition
@@ -56,7 +57,7 @@ data class Definitions(
                         ),
                         capturer = { context, model ->
                             context?.let {
-                                it.dataModels[model.Meta.name] = { model }
+                                it.dataModels[model.Meta.name] = DataModelReference(model)
                             } ?: throw ContextNotFoundException()
                         }
                     ),
@@ -66,7 +67,7 @@ data class Definitions(
                         ),
                         capturer = { context, model ->
                             context?.let {
-                                it.dataModels[model.Meta.name] = { model }
+                                it.dataModels[model.Meta.name] = DataModelReference(model)
                             } ?: throw ContextNotFoundException()
                         }
                     ),
@@ -76,7 +77,7 @@ data class Definitions(
                         ),
                         capturer = { context: ContainsDefinitionsContext?, model ->
                             context?.let {
-                                it.dataModels[model.Meta.name] = { model }
+                                it.dataModels[model.Meta.name] = DataModelReference(model)
                             } ?: throw ContextNotFoundException()
                         }
                     ),

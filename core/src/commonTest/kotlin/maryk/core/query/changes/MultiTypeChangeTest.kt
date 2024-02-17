@@ -3,7 +3,7 @@ package maryk.core.query.changes
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.withType
 import maryk.test.models.SimpleMarykTypeEnum.S3
@@ -20,7 +20,7 @@ class MultiTypeChangeTest {
 
     private val context = RequestContext(
         mapOf(
-            TestMarykModel.Meta.name toUnitLambda { TestMarykModel }
+            TestMarykModel.Meta.name to DataModelReference(TestMarykModel),
         ),
         dataModel = TestMarykModel,
         reference = TestMarykModel { multi::ref }

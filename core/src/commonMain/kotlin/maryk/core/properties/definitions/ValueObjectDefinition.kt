@@ -134,7 +134,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
                 contextualResolver = { context, name ->
                     context?.definitionsContext?.let {
                         @Suppress("UNCHECKED_CAST")
-                        it.dataModels[name] as (Unit.() -> IsValueDataModel<*, *>)?
+                        it.dataModels[name]?.get as? (Unit.() -> IsValueDataModel<*, *>)?
                             ?: throw DefNotFoundException("DataModel with name $name not found on dataModels")
                     } ?: throw ContextNotFoundException()
                 }
@@ -151,7 +151,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
                 context.let {
                     context.definitionsContext?.let { modelContext ->
                         if (!modelContext.dataModels.containsKey(dataModel.name)) {
-                            modelContext.dataModels[dataModel.name] = dataModel.get
+                            modelContext.dataModels[dataModel.name] = dataModel
                         }
                     } ?: throw ContextNotFoundException()
 

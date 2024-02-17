@@ -3,8 +3,8 @@ package maryk.core.query.responses
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
 import maryk.core.models.key
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
@@ -27,7 +27,7 @@ class UpdateResponseTest {
 
     private val context = RequestContext(
         DefinitionsContext(mutableMapOf(
-            SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
+            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
         )),
         dataModel = SimpleMarykModel
     )

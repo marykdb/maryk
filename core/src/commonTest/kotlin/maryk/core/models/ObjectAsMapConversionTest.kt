@@ -3,7 +3,7 @@ package maryk.core.models
 import maryk.checkJsonConversion
 import maryk.checkProtoBufObjectValuesConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.query.requests.GetRequest
@@ -16,7 +16,7 @@ private val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
 private val key2 = SimpleMarykModel.key("Vc4WgX_mQHYCSEoLtfLSUQ")
 
 private val context = RequestContext(mapOf(
-    SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
+    SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
 ))
 
 class ObjectAsMapConversionTest {

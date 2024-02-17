@@ -3,8 +3,8 @@ package maryk.core.query.responses.updates
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.extensions.toUnitLambda
 import maryk.core.models.key
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Bytes
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
@@ -24,7 +24,7 @@ internal class OrderedKeysUpdateTest {
 
     private val context = RequestContext(
         mapOf(
-            SimpleMarykModel.Meta.name toUnitLambda { SimpleMarykModel }
+            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel),
         ),
         dataModel = SimpleMarykModel
     )

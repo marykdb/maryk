@@ -35,8 +35,15 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
     override val final = true
     override val wireType = LENGTH_DELIMITED
 
-    override fun asString(value: IsDataModelReference<DM>, context: CX?) =
-        value.name
+    override fun asString(value: IsDataModelReference<DM>, context: CX?): String {
+        return value.name.let {
+            if (value.keyLength != null) {
+                "$it(${value.keyLength})"
+            } else {
+                it
+            }
+        }
+    }
 
     override fun fromString(string: String, context: CX?) =
         resolveContext(contextTransformer(Unit, context), string)
@@ -77,11 +84,19 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
         resolveContext(contextTransformer(Unit, context), initString(length, reader))
 
     private fun resolveContext(context: CXI?, name: String): IsDataModelReference<DM> {
+        // read and remove keyLength from name
+        val value = name.split("(")
+        val keyLength = if (value.size > 1) {
+            value[1].removeSuffix(")").toInt()
+        } else {
+            null
+        }
+        val onlyName = value[0]
         try {
-            return this.contextualResolver(Unit, context, name)
+            return this.contextualResolver(Unit, context, onlyName)
         } catch (e: DefNotFoundException) {
-            return LazyDataModelReference(name) {
-                this.contextualResolver(Unit, context, name).also {
+            return LazyDataModelReference(onlyName, keyLength) {
+                this.contextualResolver(Unit, context, onlyName).also {
                     if (it is LazyDataModelReference<*>) {
                         throw DefNotFoundException("Could not resolve DataModel $name, was it processed before or provided in dependents in the context?")
                     }

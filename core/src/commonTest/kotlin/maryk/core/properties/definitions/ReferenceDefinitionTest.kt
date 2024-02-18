@@ -103,7 +103,7 @@ internal class ReferenceDefinitionTest {
             minValue: AAAAAAAAAA
             maxValue: _________w
             default: AQEBAQEBAQ
-            dataModel: TestMarykModel
+            dataModel: TestMarykModel(7)
 
             """.trimIndent()
         ) {

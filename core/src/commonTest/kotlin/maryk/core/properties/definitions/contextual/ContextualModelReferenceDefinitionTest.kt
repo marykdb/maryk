@@ -2,7 +2,6 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.checkProtoBufConversion
 import maryk.core.models.IsDataModel
-import maryk.core.models.IsStorableDataModel
 import maryk.core.query.RequestContext
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
@@ -43,7 +42,7 @@ class ContextualModelReferenceDefinitionTest {
         for (value in modelsToTest) {
             checkProtoBufConversion(
                 bc,
-                DataModelReference((value as IsStorableDataModel<*>).Meta.name) { value },
+                DataModelReference(value),
                 this.def,
                 this.context
             ) { converted, original ->
@@ -55,7 +54,7 @@ class ContextualModelReferenceDefinitionTest {
     @Test
     fun convertString() {
         for (namedDataModel in modelsToTest) {
-            val b = def.asString(DataModelReference((namedDataModel as IsStorableDataModel<*>).Meta.name) { namedDataModel }, this.context)
+            val b = def.asString(DataModelReference(namedDataModel), this.context)
             expect(namedDataModel) { def.fromString(b, this.context).get.invoke(Unit) }
         }
     }

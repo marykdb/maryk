@@ -307,7 +307,7 @@ class DefinitionsTest {
                 required: false
                 final: false
                 unique: false
-                dataModel: TestMarykModel
+                dataModel: TestMarykModel(7)
               ? 15: listOfString
               : !List
                 required: false
@@ -324,7 +324,7 @@ class DefinitionsTest {
                 required: false
                 final: false
                 unique: false
-                dataModel: TestMarykModel
+                dataModel: TestMarykModel(7)
               ? 17: setOfString
               : !Set
                 required: false

@@ -43,13 +43,12 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         default: Key<DM>? = null,
         dataModel: Unit.() -> DM
     ) : this(required, final, unique, minValue, maxValue, default, dataModelReference = {
-        val dm = dataModel(Unit)
-        DataModelReference(dm.Meta.name) { dm } }
-    )
+        DataModelReference(dataModel(Unit))
+    })
 
     override val propertyDefinitionType = PropertyDefinitionType.Reference
     override val wireType = LENGTH_DELIMITED
-    override val byteSize get() = dataModel.Meta.keyByteSize
+    override val byteSize get() = internalDataModelReference.keyLength ?: dataModel.Meta.keyByteSize
 
     override val internalDataModelReference by lazy {
         dataModelReference.invoke()

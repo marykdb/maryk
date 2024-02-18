@@ -295,7 +295,7 @@ internal class RootDataModelTest {
                   "required": false,
                   "final": false,
                   "unique": false,
-                  "dataModel": "TestMarykModel"
+                  "dataModel": "TestMarykModel(7)"
                 }]
               }, {
                 "index": 15,
@@ -319,7 +319,7 @@ internal class RootDataModelTest {
                   "required": false,
                   "final": false,
                   "unique": false,
-                  "dataModel": "TestMarykModel"
+                  "dataModel": "TestMarykModel(7)"
                 }]
               }, {
                 "index": 17,
@@ -509,7 +509,7 @@ internal class RootDataModelTest {
               required: false
               final: false
               unique: false
-              dataModel: TestMarykModel
+              dataModel: TestMarykModel(7)
             ? 15: listOfString
             : !List
               required: false
@@ -526,7 +526,7 @@ internal class RootDataModelTest {
               required: false
               final: false
               unique: false
-              dataModel: TestMarykModel
+              dataModel: TestMarykModel(7)
             ? 17: setOfString
             : !Set
               required: false

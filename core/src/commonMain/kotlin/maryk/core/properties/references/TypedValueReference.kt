@@ -28,9 +28,12 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
     val type: E,
     multiTypeDefinition: IsMultiTypeDefinition<E, T, CX>,
     parentReference: CanHaveComplexChildReference<*, *, *, *>?
-) : CanHaveComplexChildReference<T, IsSubDefinition<T, CX>,
-    CanHaveComplexChildReference<*, *, *, *>,
-    TypedValue<E, T>>(
+) : CanHaveComplexChildReference<
+        T,
+        IsSubDefinition<T, CX>,
+        CanHaveComplexChildReference<*, *, *, *>,
+        TypedValue<E, T>
+    >(
         multiTypeDefinition.definition(type) as IsSubDefinition<T, CX>,
         parentReference
     ),
@@ -44,8 +47,10 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
             "${it.completeName}.*${type.name}"
         } ?: "*${type.name}"
 
-    override fun resolveFromAny(value: Any) = (value as? TypedValue<*, *>)?.value
-        ?: throw UnexpectedValueException("Expected typed value to get value by reference")
+    override fun resolveFromAny(value: Any) = (value as? TypedValue<*, *>)?.let {
+        @Suppress("UNCHECKED_CAST")
+        if (it.type == type) it.value as T? else null
+    } ?: throw UnexpectedValueException("Expected value to be a TypedValue of type $type but was $value")
 
     override fun getEmbedded(name: String, context: IsPropertyContext?): IsPropertyReference<Any, *, *> {
         return if (this.propertyDefinition is IsEmbeddedDefinition<*>) {
@@ -96,5 +101,5 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
         )
     }
 
-    override fun resolve(values: TypedValue<E, T>): T = values.value
+    override fun resolve(values: TypedValue<E, T>): T? = if (values.type == type) values.value else null
 }

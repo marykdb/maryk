@@ -24,9 +24,15 @@ class TypedValueReferenceTest {
 
     @Test
     fun getValueFromMap() {
-        val typedValue = T1("string")
+        val typedValueWrong = T1("string")
 
-        expect("string") { this.typedValueReference.resolveFromAny(typedValue) }
+        assertFailsWith<UnexpectedValueException> {
+            this.typedValueReference.resolveFromAny(typedValueWrong)
+        }
+
+        val typedValue = S2(15.toShort())
+
+        expect(15.toShort()) { this.typedValueReference.resolveFromAny(typedValue) }
 
         assertFailsWith<UnexpectedValueException> {
             this.typedValueReference.resolveFromAny("wrongInput")

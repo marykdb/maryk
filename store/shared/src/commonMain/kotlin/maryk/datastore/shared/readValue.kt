@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IsIndexedEnumDefinition
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.invoke
@@ -40,12 +41,16 @@ fun readValue(
                 )
             }
             TypeIndicator.SimpleTypeIndicator.byte -> {
-                val typeDefinition =
-                    TypeValue.castDefinition(definition)
-                val valueDefinition = typeDefinition.definition(type) as? IsSimpleValueDefinition<*, *>
-                    ?: throw StorageException("Unknown type $type for $typeDefinition. Was it added to the EnumDefinition?")
-                val typeEnum = typeDefinition.typeEnum.resolve(type)
-                    ?: throw StorageException("Unknown type $type for $typeDefinition")
+                fun resolveType(enumDef: IsIndexedEnumDefinition<*>): MultiTypeEnum<*> =
+                    enumDef.resolve(type) as? MultiTypeEnum<*> ?: throw StorageException("Unknown type $type for $enumDef")
+
+                val typeEnum = when (definition) {
+                    is IsMultiTypeDefinition<*, *, *> -> resolveType(TypeValue.castDefinition(definition).typeEnum)
+                    is MultiTypeEnumDefinition<*> -> resolveType(definition)
+                    else -> throw StorageException("Unknown type $type for $definition")
+                }
+                val valueDefinition = typeEnum.definition as? IsSimpleValueDefinition<*, *>
+                    ?: throw StorageException("Unknown type $type for $typeEnum. Was it added to the EnumDefinition?")
                 val value = valueDefinition.readStorageBytes(valueBytesLeft(), reader)
                 typeEnum.invoke(value)
             }

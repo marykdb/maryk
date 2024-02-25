@@ -19,6 +19,7 @@ import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ReferenceType.TYPE
+import maryk.core.properties.references.SimpleTypedValueReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
@@ -65,6 +66,13 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     fun typedValueRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
         TypedValueReference(type, this, parentReference)
 
+    /**
+     * Creates a reference referring to a value of [type] of multi type below [parentReference]
+     * so reference can be strongly typed
+     */
+    fun simpleTypedValueRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
+        SimpleTypedValueReference(type, this, parentReference)
+
     /** Creates a reference referring to any type of multi type below [parentReference] */
     @Suppress("UNCHECKED_CAST")
     fun typeRef(parentReference: AnyOutPropertyReference? = null) =
@@ -79,13 +87,17 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
     ): IsPropertyReference<Any, *, *> {
         val index = initIntByVar(reader)
-        if (index != 0) throw UnexpectedValueException("Index in multi type reference other than 0 ($index) is not supported")
+        // index value 8 means it is a VarInt with tag 1
+        if (index != 0 && index != 8) throw UnexpectedValueException("Index in multi type reference other than 0/8 ($index) is not supported")
         val typeIndex = initUIntByVar(reader)
         @Suppress("UNCHECKED_CAST")
         return if (typeIndex == 0u) {
             this.typeRef(
                 parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
             ) as IsPropertyReference<Any, *, *>
+        } else if (index == 8) {
+            val type = this.typeEnum.resolve(typeIndex) ?: throw UnexpectedValueException("Type $typeIndex is not known")
+            simpleTypedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
         } else {
             val type = this.typeEnum.resolve(typeIndex) ?: throw UnexpectedValueException("Type $typeIndex is not known")
             typedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
@@ -130,6 +142,16 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                     ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
                 @Suppress("UNCHECKED_CAST")
                 typedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
+            }
+        }
+        '>' -> {
+            if (name.length == 1) {
+                throw ParseException("Not supported")
+            } else {
+                val type = this.typeEnum.resolve(name.substring(1))
+                    ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
+                @Suppress("UNCHECKED_CAST")
+                simpleTypedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
             }
         }
         else -> throw ParseException("Unknown Type type $name[0]")

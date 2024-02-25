@@ -142,11 +142,13 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
 
         val resultingMatcher = if (fuzzyMatchers.isEmpty()) {
             QualifierExactMatcher(
+                reference = this,
                 qualifier = bytes.toByteArray(),
                 referencedQualifierMatcher = childMatcher
             )
         } else {
             QualifierFuzzyMatcher(
+                reference = this,
                 qualifierParts = byteArrays,
                 fuzzyMatchers = fuzzyMatchers,
                 referencedQualifierMatcher = childMatcher

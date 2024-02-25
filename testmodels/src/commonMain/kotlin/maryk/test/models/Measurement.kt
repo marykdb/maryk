@@ -4,6 +4,7 @@ import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsUsableInMultiType
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
@@ -28,10 +29,11 @@ sealed class MeasurementType<T: Any>(index: UInt, override val definition: IsUsa
     MultiTypeEnum<T> {
     object Weight : MeasurementType<Values<WeightMeasurement>>(1u, EmbeddedValuesDefinition(dataModel = { WeightMeasurement }))
     object Length : MeasurementType<Values<LengthMeasurement>>(2u, EmbeddedValuesDefinition(dataModel = { LengthMeasurement }))
+    object Number : MeasurementType<UShort>(3u, NumberDefinition(type = UInt16))
 
     companion object : MultiTypeEnumDefinition<MeasurementType<out Any>>(
         MeasurementType::class,
-        values = { listOf(Weight, Length) },
+        values = { listOf(Weight, Length, Number) },
     )
 }
 
@@ -39,7 +41,12 @@ object Measurement : RootDataModel<Measurement>(
     keyDefinition = {
         Multiple(
             Reversed(timestamp.ref()),
-            timestamp.ref()
+        )
+    },
+    indices = {
+        listOf(
+            Measurement { measurement.withType(MeasurementType.Length) { lengthInCm::ref } },
+            Measurement { measurement simpleRefAtType MeasurementType.Number }
         )
     },
 ) {

@@ -3,6 +3,7 @@ package maryk.core.processors.datastore.matchers
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
+import maryk.core.properties.references.IsPropertyReference
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 
 /** Defines a matcher for a qualifier. */
@@ -13,6 +14,7 @@ sealed class IsQualifierMatcher
  * Optionally set [referencedQualifierMatcher] to match values behind a reference
  */
 class QualifierExactMatcher(
+    val reference: IsPropertyReference<*, *, *>?,
     val qualifier: ByteArray,
     val referencedQualifierMatcher: ReferencedQualifierMatcher? = null
 ) : IsQualifierMatcher() {
@@ -30,6 +32,7 @@ enum class FuzzyMatchResult {
  * Optionally set [referencedQualifierMatcher] to match values behind a reference
  */
 class QualifierFuzzyMatcher(
+    val reference: IsPropertyReference<*, *, *>?,
     val qualifierParts: List<ByteArray>,
     val fuzzyMatchers: List<IsFuzzyMatcher>,
     val referencedQualifierMatcher: ReferencedQualifierMatcher? = null

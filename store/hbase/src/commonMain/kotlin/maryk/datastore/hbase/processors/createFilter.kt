@@ -9,6 +9,7 @@ import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.enum.MultiTypeEnum
+import maryk.core.properties.references.SimpleTypedValueReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -216,7 +217,14 @@ private fun convertToSingleColumnValueFilter(it: ReferenceValuePair<Any>, compar
             val value = it.value
 
             @Suppress("UNCHECKED_CAST")
-            val valueComparator = when (it.reference) {
+            val valueComparator = when (val comparedRef = it.reference) {
+                is SimpleTypedValueReference<*, *, *> -> {
+                    val prependBytes = ByteArray(comparedRef.type.index.calculateVarIntWithExtraInfoByteSize())
+                    var writeIndex = 0
+                    comparedRef.type.index.writeVarIntWithExtraInfo(TypeIndicator.SimpleTypeIndicator.byte) { prependBytes[writeIndex++] = it }
+                    val valueBytes = (comparedRef.comparablePropertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, *prependBytes)
+                    BinaryComparator(valueBytes)
+                }
                 is TypeReference<*, *, *> -> {
                     var index = 0
                     val type = value as MultiTypeEnum<*>

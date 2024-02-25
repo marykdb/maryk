@@ -31,6 +31,7 @@ class DataStoreScanMultiTypeTest(
         "executeScanRequestWithLimit" to ::executeScanRequestWithLimit,
         "executeScanRequestWithSelect" to ::executeScanRequestWithSelect,
         "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
+        "executeScanOnTypeIndexRequest" to ::executeScanOnTypeIndexRequest
     )
 
     private val measurements = arrayOf(
@@ -57,6 +58,14 @@ class DataStoreScanMultiTypeTest(
             this.measurement with MeasurementType.Length(LengthMeasurement.run { create(
                 lengthInCm with 180u,
             ) }),
+        ) },
+        Measurement.run { create(
+            this.timestamp with LocalDateTime(2023, 11, 14, 14, 0, 2, 0),
+            this.measurement with MeasurementType.Number(220u),
+        ) },
+        Measurement.run { create(
+            this.timestamp with LocalDateTime(2023, 11, 14, 15, 0, 2, 0),
+            this.measurement with MeasurementType.Number(231u),
         ) },
     )
 
@@ -106,13 +115,12 @@ class DataStoreScanMultiTypeTest(
         }
     }
 
-
     private suspend fun executeSimpleScanRequestReverseOrder() {
         val scanResponse = dataStore.execute(
             Measurement.scan(startKey = keys[2], order = descending)
         )
 
-        expect(2) { scanResponse.values.size }
+        expect(4) { scanResponse.values.size }
 
         // Mind that Measurement is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -122,6 +130,32 @@ class DataStoreScanMultiTypeTest(
         scanResponse.values[1].let {
             expect(measurements[3]) { it.values }
             expect(keys[3]) { it.key }
+        }
+        scanResponse.values[2].let {
+            expect(measurements[4]) { it.values }
+            expect(keys[4]) { it.key }
+        }
+        scanResponse.values[3].let {
+            expect(measurements[5]) { it.values }
+            expect(keys[5]) { it.key }
+        }
+    }
+
+    private suspend fun executeScanOnTypeIndexRequest() {
+        val scanResponse = dataStore.execute(
+            Measurement.scan(
+                where = Equals(
+                    Measurement { measurement.simpleRefAtType(MeasurementType.Number) } with 220u.toUShort()
+                )
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+
+        // Mind that Measurement is sorted in reverse, so it goes back in time going forward
+        scanResponse.values[0].let {
+            expect(measurements[4]) { it.values }
+            expect(keys[4]) { it.key }
         }
     }
 

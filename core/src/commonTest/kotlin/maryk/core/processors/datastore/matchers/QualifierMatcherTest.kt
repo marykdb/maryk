@@ -12,6 +12,7 @@ class QualifierMatcherTest {
     @Test
     fun exactMatch() {
         val qualifierMatcher = QualifierExactMatcher(
+            reference = null,
             initByteArrayByHex("BBBB")
         )
         expect(0) { qualifierMatcher.compareTo(initByteArrayByHex("BBBB"), 0) }
@@ -23,6 +24,7 @@ class QualifierMatcherTest {
     @Test
     fun fuzzyMatch() {
         val qualifierMatcher = QualifierFuzzyMatcher(
+            reference = null,
             listOf(
                 initByteArrayByHex("bbbb"),
                 initByteArrayByHex("cccc")

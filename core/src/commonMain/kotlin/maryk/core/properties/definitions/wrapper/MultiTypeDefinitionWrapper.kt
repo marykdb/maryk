@@ -14,6 +14,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MultiTypePropertyReference
+import maryk.core.properties.references.SimpleTypedValueReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
@@ -45,6 +46,8 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
         atomic(null)
     val typeValueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
         atomic(null)
+    val simpleTypeValueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
+        atomic(null)
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         MultiTypePropertyReference(this, parentRef)
@@ -62,9 +65,20 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
         }
     }
 
+    private fun simpleTypedValueReference(type: E, parentReference: AnyPropertyReference?): SimpleTypedValueReference<E, T, CX> = this.ref(parentReference).let { ref ->
+        cacheRef(ref, simpleTypeValueRefCache, { (it.parentReference as MultiTypePropertyReference<*, *, *, *, *>).parentReference === parentReference && it.type == type}) {
+            super.simpleTypedValueRef(type, ref)
+        }
+    }
+
     /** For quick notation to get a [type] reference */
     infix fun refAtType(type: E): (AnyOutPropertyReference?) -> TypedValueReference<E, T, CX> =
         { this.typedValueReference(type, it) }
+
+
+    /** For quick notation to get a [type] reference */
+    infix fun simpleRefAtType(type: E): (AnyOutPropertyReference?) -> SimpleTypedValueReference<E, T, CX> =
+        { this.simpleTypedValueReference(type, it as? CanHaveComplexChildReference<*, *, *, *>) }
 
     /** For quick notation to get an any type reference */
     fun refToType(): (AnyOutPropertyReference?) -> TypeReference<E, T, CX> = {

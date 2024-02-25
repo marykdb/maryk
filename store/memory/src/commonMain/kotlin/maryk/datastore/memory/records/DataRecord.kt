@@ -1,16 +1,19 @@
 package maryk.datastore.memory.records
 
 import maryk.core.clock.HLC
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
 import maryk.core.processors.datastore.matchers.IsQualifierMatcher
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.SimpleTypedValueReference
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.TypedValue
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.processors.changers.getValueAtIndex
@@ -51,7 +54,7 @@ internal data class DataRecord<DM : IsRootDataModel>(
     ): Boolean {
         when (qualifierMatcher) {
             is QualifierExactMatcher -> {
-                val value = get<T>(qualifierMatcher.qualifier, toVersion)
+                val value = get<T>(qualifierMatcher.reference, qualifierMatcher.qualifier, toVersion)
                     ?: return matcher(null)
 
                 return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
@@ -107,9 +110,21 @@ internal data class DataRecord<DM : IsRootDataModel>(
 
     /** Get value by [reference] */
     operator fun <T : Any> get(reference: IsPropertyReference<T, *, *>, toVersion: HLC? = null): T? =
-        get(reference.toStorageByteArray(), toVersion)
+        get(reference, reference.toStorageByteArray(), toVersion)
 
     /** Get value by [reference] */
-    operator fun <T : Any> get(reference: ByteArray, toVersion: HLC? = null): T? =
-        getValue<T>(this.values, reference, toVersion)?.value
+    operator fun <T : Any> get(orgReference: AnyPropertyReference?, reference: ByteArray, toVersion: HLC? = null): T? =
+        getValue<Any>(this.values, reference, toVersion)?.value?.let {
+            @Suppress("UNCHECKED_CAST")
+            if (orgReference is SimpleTypedValueReference<*, *, *>) {
+                val typedValue = it as TypedValue<*, *>
+                if (it.type == orgReference.type) {
+                    typedValue.value as T
+                } else {
+                    null
+                }
+            } else {
+                it as T
+            }
+        }
 }

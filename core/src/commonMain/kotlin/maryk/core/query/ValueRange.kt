@@ -1,15 +1,15 @@
 package maryk.core.query
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.QueryModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.values
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
-import maryk.core.models.values
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -25,7 +25,7 @@ import maryk.yaml.YamlWriter
  * Defines a range of [from] until [to] of type [T].
  * With [inclusiveFrom] and [inclusiveTo] set to true (default) it will include [from] or [to]
  */
-data class ValueRange<T : Comparable<T>> internal constructor(
+data class ValueRange<T : Comparable<T>>(
     val from: T,
     val to: T,
     val inclusiveFrom: Boolean = true,

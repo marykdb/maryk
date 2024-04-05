@@ -7,6 +7,7 @@ import maryk.core.values.Values
 /** Interface for property definitions containing embedded Values of model [DM] and context [CX]. */
 interface IsEmbeddedValuesDefinition<DM : IsValuesDataModel, CX : IsPropertyContext> :
     IsValueDefinition<Values<DM>, CX>,
+    IsChangeableValueDefinition<Values<DM>, CX>,
     HasDefaultValueDefinition<Values<DM>>,
     IsEmbeddedDefinition<DM>,
     IsUsableInMultiType<Values<DM>, CX>,

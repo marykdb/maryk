@@ -42,7 +42,7 @@ data class IncMapChange internal constructor(
                     try {
                         mapDefinition.valueDefinition.validateWithRef(null, value) {
                             @Suppress("UNCHECKED_CAST")
-                            mapDefinition.anyValueRef(reference) as IsPropertyReferenceForValues<Any, *, *, *>
+                            mapDefinition.anyValueRef(reference) as? IsPropertyReferenceForValues<Any, *, *, *>
                         }
                     } catch (e: ValidationException) {
                         addException(e)

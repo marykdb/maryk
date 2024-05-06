@@ -6,6 +6,7 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.invoke
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -39,6 +40,7 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
 ) :
     AbstractDefinitionWrapper(index, name),
     IsMultiTypeDefinition<E, T, CX> by definition,
+    IsChangeableValueDefinition<TypedValue<E, T>, CX>,
     IsDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
     override val graphType = PropRef
 

@@ -4,6 +4,9 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
+import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.ValueWriter
 import maryk.core.processors.datastore.writeIncMapAdditionsToStorage
@@ -13,8 +16,6 @@ import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -43,7 +44,6 @@ import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.models.values
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.Delete
@@ -335,10 +335,17 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                                             @Suppress("UNCHECKED_CAST")
                                             val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
-                                            dataStore.validateUniqueNotExists(comparableValue, objectToChange)
-                                            when (uniquesToIndex) {
-                                                null -> uniquesToIndex = mutableMapOf(comparableValue to previousValue)
-                                                else -> uniquesToIndex!![comparableValue] = previousValue
+                                            try {
+                                                dataStore.validateUniqueNotExists(comparableValue, objectToChange)
+                                                when (uniquesToIndex) {
+                                                    null -> uniquesToIndex = mutableMapOf(comparableValue to previousValue)
+                                                    else -> uniquesToIndex!![comparableValue] = previousValue
+                                                }
+                                            } catch (e: UniqueException) {
+                                                // Only throw if key is not equal otherwise ignore as it is the same as existing key
+                                                if (e.key != objectToChange.key) {
+                                                    throw e
+                                                }
                                             }
                                         }
 

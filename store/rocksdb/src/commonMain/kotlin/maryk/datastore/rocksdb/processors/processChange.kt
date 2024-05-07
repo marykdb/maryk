@@ -743,25 +743,38 @@ private fun createValueWriter(
             if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                 val uniqueReference = byteArrayOf(*reference, *valueBytes)
 
-                transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)?.let {
-                    throw UniqueException(
-                        reference,
-                        Key<IsValuesDataModel>(
-                            // Get the key at the end of the stored unique index value
-                            it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
-                        )
-                    )
-                }
+                try {
+                    transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)
+                        ?.let {
+                            throw UniqueException(
+                                reference,
+                                Key<IsValuesDataModel>(
+                                    // Get the key at the end of the stored unique index value
+                                    it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
+                                )
+                            )
+                        }
 
-                // we need to delete the old value if present
-                transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, byteArrayOf(*key.bytes, *reference)) { b, o, l ->
-                    deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
-                }
+                    // we need to delete the old value if present
+                    transaction.getValue(
+                        columnFamilies,
+                        dataStore.defaultReadOptions,
+                        null,
+                        byteArrayOf(*key.bytes, *reference)
+                    ) { b, o, l ->
+                        deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
+                    }
 
-                // Creates index reference on the table if it not exists so delete can find
-                // what values to delete from the unique indices.
-                dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
-                setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
+                    // Creates index reference on the table if it not exists so delete can find
+                    // what values to delete from the unique indices.
+                    dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
+                    setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
+                } catch (e: UniqueException) {
+                    // Only throw if key is not equal otherwise ignore as it is the same as existing key
+                    if (e.key != key) {
+                        throw e
+                    }
+                }
             }
 
             setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)

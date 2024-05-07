@@ -697,9 +697,12 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                 if (!result.isEmpty && (result.getColumnLatestCell(uniquesColumnFamily, value)?.valueLength ?: 0) > 1) {
                     foundExistingUnique = true
                     val check = uniqueChecksAndChangesBeforeWrite[index]
-                    addValidationFail(check.exceptionCreator(
-                        Key(result.getValue(uniquesColumnFamily, check.value))
-                    ))
+                    val foundKey = Key<DM>(result.getValue(uniquesColumnFamily, check.value))
+                    if (foundKey != key) {
+                        addValidationFail(
+                            check.exceptionCreator(foundKey)
+                        )
+                    }
                 }
             }
 

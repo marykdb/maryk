@@ -23,6 +23,7 @@ import maryk.core.processors.datastore.writeSetToStorage
 import maryk.core.processors.datastore.writeToStorage
 import maryk.core.processors.datastore.writeTypedValueToStorage
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -230,6 +231,8 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
 
+                                    checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
+
                                     writeMapToStorage(
                                         reference.calculateStorageByteLength(),
                                         reference::writeStorageBytes,
@@ -259,6 +262,8 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
 
+                                    checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
+
                                     writeListToStorage(
                                         reference.calculateStorageByteLength(),
                                         reference::writeStorageBytes,
@@ -287,6 +292,8 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     val valueWriter = createValueWriter(
                                         dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
+
+                                    checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
 
                                     writeSetToStorage(
                                         reference.calculateStorageByteLength(),
@@ -322,6 +329,8 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     val valueWriter = createValueWriter(
                                         dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
                                     )
+
+                                    checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
 
                                     writeTypedValueToStorage(
                                         reference.calculateStorageByteLength(),
@@ -366,6 +375,8 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         Unit
                                     )
 
+                                    checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
+
                                     value.writeToStorage(
                                         reference.calculateStorageByteLength(),
                                         reference::writeStorageBytes,
@@ -399,41 +410,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                             }
 
                                             // Extra validations based on reference type
-                                            when (reference) {
-                                                is ListItemReference<*, *> -> throw RequestException("ListItem can only be changed if it exists. To add a new one use ListChange.")
-                                                is MapValueReference<*, *, *> -> {
-                                                    @Suppress("UNCHECKED_CAST")
-                                                    val mapDefinition =
-                                                        reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
-                                                    @Suppress("UNCHECKED_CAST")
-                                                    mapDefinition.keyDefinition.validateWithRef(
-                                                        reference.key,
-                                                        reference.key
-                                                    ) {
-                                                        mapDefinition.keyRef(
-                                                            reference.key,
-                                                            reference.parentReference as MapReference<Any, Any, IsPropertyContext>
-                                                        )
-                                                    }
-
-                                                    createCountUpdater(
-                                                        transaction,
-                                                        columnFamilies,
-                                                        dataStore.defaultReadOptions,
-                                                        key,
-                                                        reference.parentReference as IsPropertyReference<*, *, *>,
-                                                        versionBytes,
-                                                        1
-                                                    ) {
-                                                        @Suppress("UNCHECKED_CAST")
-                                                        (reference as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
-                                                    }
-                                                }
-                                                is SetItemReference<*, *> -> throw RequestException("Not allowed to add with a Set Item reference, use SetChange instead")
-                                                is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to add with a Map key, use Map value instead")
-                                                is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to add Map with any key reference")
-                                                is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to add List with any item reference")
-                                            }
+                                            checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
                                         }
 
                                         reference.propertyDefinition.validateWithRef(
@@ -718,6 +695,52 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
         return ChangeSuccess(version.timestamp, outChanges)
     } catch (e: Throwable) {
         return ServerFail(e.toString(), e)
+    }
+}
+
+private fun <DM : IsRootDataModel> checkParentReference(
+    reference: IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
+    transaction: Transaction,
+    columnFamilies: TableColumnFamilies,
+    dataStore: RocksDBDataStore,
+    key: Key<DM>,
+    versionBytes: ByteArray
+) {
+    when (reference) {
+        is ListItemReference<*, *> -> throw RequestException("ListItem can only be changed if it exists. To add a new one use ListChange.")
+        is MapValueReference<*, *, *> -> {
+            @Suppress("UNCHECKED_CAST")
+            val mapDefinition =
+                reference.mapDefinition as IsMapDefinition<Any, Any, IsPropertyContext>
+            @Suppress("UNCHECKED_CAST")
+            mapDefinition.keyDefinition.validateWithRef(
+                reference.key,
+                reference.key
+            ) {
+                mapDefinition.keyRef(
+                    reference.key,
+                    reference.parentReference as MapReference<Any, Any, IsPropertyContext>
+                )
+            }
+
+            createCountUpdater(
+                transaction,
+                columnFamilies,
+                dataStore.defaultReadOptions,
+                key,
+                reference.parentReference as IsPropertyReference<*, *, *>,
+                versionBytes,
+                1
+            ) {
+                @Suppress("UNCHECKED_CAST")
+                (reference as MapValueReference<Any, Any, IsPropertyContext>).mapDefinition.validateSize(it) { reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *> }
+            }
+        }
+
+        is SetItemReference<*, *> -> throw RequestException("Not allowed to add with a Set Item reference, use SetChange instead")
+        is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to add with a Map key, use Map value instead")
+        is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to add Map with any key reference")
+        is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to add List with any item reference")
     }
 }
 

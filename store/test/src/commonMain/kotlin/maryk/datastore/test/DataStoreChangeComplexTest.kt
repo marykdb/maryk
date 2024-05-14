@@ -41,6 +41,7 @@ class DataStoreChangeComplexTest(
         "executeChangeDeleteMapSubValueRequest" to ::executeChangeDeleteMapSubValueRequest,
         "executeChangeDeleteMapTypedSubValueRequest" to ::executeChangeDeleteMapTypedSubValueRequest,
         "executeChangeChangeValueRequest" to ::executeChangeChangeValueRequest,
+        "executeChangeInsertValueRequest" to ::executeChangeInsertValueRequest,
         "executeChangeChangeReplaceComplexValueRequest" to ::executeChangeChangeReplaceComplexValueRequest,
         "executeChangeIncMapRequest" to ::executeChangeIncMapRequest
     )
@@ -117,6 +118,9 @@ class DataStoreChangeComplexTest(
                         1u to EmbeddedMarykModel("v1"),
                         2u to EmbeddedMarykModel("v2")
                     )
+                ),
+                ComplexModel(
+                    mapStringString = mapOf("a" to "b", "c" to "d"),
                 )
             )
         )
@@ -319,6 +323,37 @@ class DataStoreChangeComplexTest(
 
             expect(TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("multi sub changed")))) {
                 valuesWithMetaData.values { multi } as TypedValue<*, *>
+            }
+        }
+    }
+
+    private suspend fun executeChangeInsertValueRequest() {
+        val changeResponse = dataStore.execute(
+            ComplexModel.change(
+                keys[7].change(
+                    Change(
+                        ComplexModel { mapIntObject refAt 5u } with EmbeddedMarykModel("v5"),
+                    )
+                )
+            )
+        )
+
+        expect(1) { changeResponse.statuses.size }
+        changeResponse.statuses[0].let { status ->
+            val success = assertStatusIs<ChangeSuccess<*>>(status)
+            assertRecent(success.version, 1000uL)
+        }
+
+        val getResponse = dataStore.execute(
+            ComplexModel.get(keys[7])
+        )
+
+        expect(1) { getResponse.values.size }
+        getResponse.values.first().let { valuesWithMetaData ->
+            valuesWithMetaData.values { mapIntObject }.let { mapIntObject ->
+                assertNotNull(mapIntObject)
+                expect(1) { mapIntObject.size }
+                expect(EmbeddedMarykModel("v5")) { mapIntObject[5u] }
             }
         }
     }

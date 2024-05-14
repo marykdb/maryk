@@ -6,13 +6,13 @@ gradle = { id = "gradle", version = "8.5.0" }
 
 com-google-protobuf = { id = "com.google.protobuf", version = "0.9.4" }
 
-org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.22" }
+org-jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version = "1.9.24" }
 
-org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version = "1.9.22" }
+org-jetbrains-kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version = "1.9.24" }
 
 [versions]
 
-kotlin = "1.9.22"
+kotlin = "1.9.24"
 
 [libraries]
 

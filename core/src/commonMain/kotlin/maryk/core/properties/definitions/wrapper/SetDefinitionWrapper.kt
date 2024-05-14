@@ -3,6 +3,7 @@ package maryk.core.properties.definitions.wrapper
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -31,6 +32,7 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
 ) :
     AbstractDefinitionWrapper(index, name),
     IsSetDefinition<T, CX> by definition,
+    IsChangeableValueDefinition<Set<T>, CX>,
     IsDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
     override val graphType = PropRef
 

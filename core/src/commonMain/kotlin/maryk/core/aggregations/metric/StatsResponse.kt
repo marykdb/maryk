@@ -58,7 +58,7 @@ data class StatsResponse<T: Comparable<T>>(
         )
         val sum by contextual(
             index = 6u,
-            getter = StatsResponse<*>::sum,
+            getter = { it.sum },
             definition = contextualValueDefinition
         )
 

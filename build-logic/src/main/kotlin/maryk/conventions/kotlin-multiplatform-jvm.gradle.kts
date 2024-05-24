@@ -1,6 +1,6 @@
 package maryk.conventions
 
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
 
 /** conventions for a Kotlin/JVM subproject */
 
@@ -10,10 +10,8 @@ plugins {
 
 kotlin {
     jvm {
-        compilations.configureEach {
-            compilerOptions.configure {
-                jvmTarget.set(JvmTarget.JVM_17)
-            }
+        compilerOptions {
+            jvmTarget = JVM_17
         }
     }
 }

@@ -1,13 +1,16 @@
 package maryk.core.properties
 
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsTypedDataModel
 import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.wrapper.AnyTypedDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.DefinitionsConversionContext
 
 /**
@@ -31,4 +34,17 @@ data class PropertiesCollectionDefinitionWrapper<DO : Any>(
     override val capturer: (Unit.(DefinitionsConversionContext, IsTypedDataModel<DO>) -> Unit)? = null
 
     override fun ref(parentRef: AnyPropertyReference?) = throw NotImplementedError()
+
+    override fun validateWithRef(
+        previousValue: IsTypedDataModel<DO>?,
+        newValue: IsTypedDataModel<DO>?,
+        refGetter: () -> IsPropertyReference<IsTypedDataModel<DO>, IsPropertyDefinition<IsTypedDataModel<DO>>, *>?
+    ) {
+        super<IsDefinitionWrapper>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsCollectionDefinition>.validateWithRef(previousValue, newValue, refGetter)
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        super<IsCollectionDefinition>.getAllDependencies(dependencySet)
+    }
 }

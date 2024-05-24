@@ -2,8 +2,10 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -56,5 +58,30 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
     }
 
     // For delegation in definition
+    @Suppress("unused")
     operator fun getValue(thisRef: Any, property: KProperty<*>) = this
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        return super<IsSetDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason) &&
+            super<IsChangeableValueDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason) &&
+            super<IsDefinitionWrapper>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+    }
+
+    override fun validateWithRef(
+        previousValue: Set<T>?,
+        newValue: Set<T>?,
+        refGetter: () -> IsPropertyReference<Set<T>, IsPropertyDefinition<Set<T>>, *>?
+    ) {
+        super<IsSetDefinition>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsChangeableValueDefinition>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsDefinitionWrapper>.validateWithRef(previousValue, newValue, refGetter)
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        super<IsSetDefinition>.getAllDependencies(dependencySet)
+    }
 }

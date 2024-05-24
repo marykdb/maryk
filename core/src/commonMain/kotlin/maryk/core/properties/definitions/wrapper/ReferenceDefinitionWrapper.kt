@@ -1,12 +1,12 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.invoke
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.models.invoke
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -50,5 +50,28 @@ data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsR
         }
 
     // For delegation in definition
+    @Suppress("unused")
     operator fun getValue(thisRef: Any, property: KProperty<*>) = this
+
+    override fun calculateStorageByteLength(value: Key<DM>): Int {
+        return super<IsReferenceDefinition>.calculateStorageByteLength(value)
+    }
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        return super<IsReferenceDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason) &&
+                super<IsValueDefinitionWrapper>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+    }
+
+    override fun validateWithRef(
+        previousValue: Key<DM>?,
+        newValue: Key<DM>?,
+        refGetter: () -> IsPropertyReference<Key<DM>, IsPropertyDefinition<Key<DM>>, *>?
+    ) {
+        super<IsValueDefinitionWrapper>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsReferenceDefinition>.validateWithRef(previousValue, newValue, refGetter)
+    }
 }

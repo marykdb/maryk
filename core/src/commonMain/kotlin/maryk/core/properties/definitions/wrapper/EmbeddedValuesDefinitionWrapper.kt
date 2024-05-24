@@ -67,5 +67,14 @@ data class EmbeddedValuesDefinitionWrapper<
         { this.definition.dataModel(this.ref(it), referenceGetter) }
 
     // For delegation in definition
+    @Suppress("unused")
     operator fun getValue(thisRef: Any, property: KProperty<*>) = this
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        return super<IsDefinitionWrapper>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason) && super<IsEmbeddedValuesDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+    }
 }

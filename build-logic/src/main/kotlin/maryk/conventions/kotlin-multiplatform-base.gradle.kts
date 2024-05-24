@@ -1,9 +1,7 @@
 package maryk.conventions
 
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_1_9
 import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_0
 
 /**
  * Base configuration for all Kotlin/Multiplatform conventions.
@@ -35,14 +33,11 @@ kotlin {
             }
         }
     }
-}
 
-tasks.withType<KotlinJvmCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(JVM_17)
-        apiVersion.set(KOTLIN_1_9)
-        languageVersion.set(KOTLIN_1_9)
+        apiVersion = KOTLIN_2_0
+        languageVersion = KOTLIN_2_0
+        allWarningsAsErrors = true
         freeCompilerArgs.addAll("-progressive")
-        allWarningsAsErrors.set(true)
     }
 }

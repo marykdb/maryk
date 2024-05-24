@@ -165,15 +165,22 @@ internal fun generateKotlinValue(
     else -> {
         when (definition) {
             is ContextualModelReferenceDefinition<*, *, *> -> {
-                when (val model = (value as? Unit.() -> Any)?.invoke(Unit) ?: (value as? () -> DataModelReference<IsDataModel>)?.invoke()?.get?.invoke(Unit)) {
+                when (val model =
+                    (value as? IsValueDataModel<*, *>) ?:
+                    (value as? Unit.() -> Any)?.invoke(Unit)?.let {
+                        // Fix for JS comparison issue
+                        if (it is DataModelReference<*>)  {
+                            it.get.invoke(Unit)
+                        } else it
+                    } ?:
+                    (value as? () -> DataModelReference<IsDataModel>)?.invoke()?.get?.invoke(Unit)
+                ) {
                     is IsValuesDataModel ->
                         """{ ${model.Meta.name} }"""
-                    null ->
-                        if (value is IsValueDataModel<*, *>) {
-                            value.Meta.name
-                        } else throw TypeException("NamedDataModel $value has to be a function which returns a IsValuesPropertyDefinitions or IsNamedDataModel ")
+                    is IsValueDataModel<*, *> ->
+                        model.Meta.name
                     else ->
-                        throw TypeException("NamedDataModel $value has to be a function which returns a IsValuesPropertyDefinitions or IsNamedDataModel ")
+                        throw TypeException("NamedDataModel $model has to be a function which returns a DataModelReference or IsValuesDataModel or IsValueDataModel")
                 }
             }
             is EmbeddedValuesDefinition<*> ->

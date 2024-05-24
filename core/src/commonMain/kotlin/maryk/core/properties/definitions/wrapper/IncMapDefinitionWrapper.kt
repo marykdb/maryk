@@ -2,10 +2,12 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.BaseDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IncrementingMapDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
@@ -60,5 +62,28 @@ data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : Is
         )
 
     // For delegation in definition
+    @Suppress("unused")
     operator fun getValue(thisRef: BaseDataModel<DO>, property: KProperty<*>) = this
+
+    override fun validateWithRef(
+        previousValue: Map<K, V>?,
+        newValue: Map<K, V>?,
+        refGetter: () -> IsPropertyReference<Map<K, V>, IsPropertyDefinition<Map<K, V>>, *>?
+    ) {
+        super<IsMapDefinitionWrapper>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsMapDefinition>.validateWithRef(previousValue, newValue, refGetter)
+    }
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ): Boolean {
+        return super<IsMapDefinitionWrapper>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason) &&
+                super<IsMapDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+    }
+
+    override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
+        super<IsMapDefinition>.getAllDependencies(dependencySet)
+    }
 }

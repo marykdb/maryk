@@ -8,6 +8,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
@@ -104,5 +105,16 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
         }
 
     // For delegation in definition
+    @Suppress("unused")
     operator fun getValue(thisRef: Any, property: KProperty<*>) = this
+
+    override fun validateWithRef(
+        previousValue: TypedValue<E, T>?,
+        newValue: TypedValue<E, T>?,
+        refGetter: () -> IsPropertyReference<TypedValue<E, T>, IsPropertyDefinition<TypedValue<E, T>>, *>?
+    ) {
+        super<IsDefinitionWrapper>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsChangeableValueDefinition>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsMultiTypeDefinition>.validateWithRef(previousValue, newValue, refGetter)
+    }
 }

@@ -7,12 +7,7 @@ protobuf {
     protoc {
         artifact = "com.google.protobuf:protoc:_"
     }
-//    generatedFilesBaseDir = "$projectDir/gen"
 }
-
-//tasks.clean {
-//    delete(protobuf.generatedFilesBaseDir)
-//}
 
 dependencies {
     api(projects.generator)

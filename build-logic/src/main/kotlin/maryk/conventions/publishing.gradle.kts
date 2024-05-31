@@ -18,13 +18,13 @@ plugins {
 
 
 //region Publication Properties
-// can be set in `$GRADLE_USER_HOME/gradle.properties`, e.g. `maryk_ossrhPassword=123`
-// or environment variables, e.g. `ORG_GRADLE_PROJECT_maryk_ossrhUsername=abc`
-val ossrhUsername = providers.gradleProperty("maryk_ossrhUsername")
-val ossrhPassword = providers.gradleProperty("maryk_ossrhPassword")
+// can be set in `$GRADLE_USER_HOME/gradle.properties`, e.g. `MARYK_OSSRHUSERNAME=123`
+// or environment variables, e.g. `ORG_GRADLE_PROJECT_MARYK_OSSRHUSERNAME=abc`
+val ossrhUsername = providers.gradleProperty("MARYK_OSSRHUSERNAME")
+val ossrhPassword = providers.gradleProperty("MARYK_OSSRHPASSWORD")
 
-val signingKey = providers.gradleProperty("maryk_signing_key")
-val signingPassword = providers.gradleProperty("maryk_signing_password")
+val signingKey = providers.gradleProperty("MARYK_SIGNING_KEY")
+val signingPassword = providers.gradleProperty("MARYK_SIGNING_PASSWORD")
 
 val isReleaseVersion = provider { !version.toString().endsWith("-SNAPSHOT") }
 

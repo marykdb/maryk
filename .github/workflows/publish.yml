@@ -44,7 +44,7 @@ jobs:
           # Maven Central _really_ doesn't like parallel uploads, so disable parallelization
           arguments: publish --no-configuration-cache --no-parallel
         env:
-          ORG_GRADLE_PROJECT_maryk_ossrhUsername: ${{secrets.MARYK_OSSRHUSERNAME}}
-          ORG_GRADLE_PROJECT_maryk_ossrhPassword: ${{secrets.MARYK_OSSRHPASSWORD}}
-          ORG_GRADLE_PROJECT_maryk_signing_key: ${{secrets.MARYK_SIGNING_KEY}}
-          ORG_GRADLE_PROJECT_maryk_signing_password: ${{secrets.MARYK_SIGNING_PASSWORD}}
+          ORG_GRADLE_PROJECT_MARYK_OSSRHUSERNAME: ${{secrets.MARYK_OSSRHUSERNAME}}
+          ORG_GRADLE_PROJECT_MARYK_OSSRHPASSWORD: ${{secrets.MARYK_OSSRHPASSWORD}}
+          ORG_GRADLE_PROJECT_MARYK_SIGNING_KEY: ${{secrets.MARYK_SIGNING_KEY}}
+          ORG_GRADLE_PROJECT_MARYK_SIGNING_PASSWORD: ${{secrets.MARYK_SIGNING_PASSWORD}}

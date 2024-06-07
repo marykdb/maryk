@@ -64,6 +64,7 @@ include(
     ":json",
     ":yaml",
     ":core",
+    ":dataframe",
     ":query",
     ":testmodels",
     ":generator",

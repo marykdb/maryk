@@ -115,6 +115,7 @@ All core projects are multi-platform kotlin projects, and most support JS, macOS
 - [generator](generator/README.md) - A code generator for Kotlin and protobuf schemas from YAML Models.
 - [test library](testlib/README.md) - A library to assist with writing tests.
 - [test models](testmodels/README.md) - Maryk Models useful in testing library code.
+- [dataframe](dataframe/README.md) - Provides DataFrame helper functions for Maryk objects
 - Stores
   - [Shared](store/shared/README.md) - Shared code that is useful in building Maryk stores.
   - [Memory](store/memory/README.md) - An in-memory store implementation, useful for testing purposes.

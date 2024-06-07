@@ -2,32 +2,48 @@ package maryk.dataframe.values
 
 import maryk.core.query.ValuesWithMetaData
 import org.jetbrains.kotlinx.dataframe.AnyFrame
+import org.jetbrains.kotlinx.dataframe.DataFrame
 import org.jetbrains.kotlinx.dataframe.api.columnOf
+import org.jetbrains.kotlinx.dataframe.api.concat
 import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
 import org.jetbrains.kotlinx.dataframe.api.emptyDataFrame
 
 fun ValuesWithMetaData<*>.toDataFrame(): AnyFrame {
-    val headers = mutableMapOf(0u to "Key", 1u to "Values", 2u to "IsDeleted", 3u to "FirstVersion", 4u to "LastVersion")
-    val dfValues = mutableMapOf<UInt, Any?>(0u to key.toString(), 1u to values.toDataFrame(), 2u to isDeleted, 3u to firstVersion, 4u to lastVersion)
+    val key by columnOf(key.toString())
+    val values by columnOf(
+        this.values.toDataFrame().columns()
+    )
+    val isDeleted by columnOf(isDeleted)
+    val firstVersion by columnOf(firstVersion)
+    val lastVersion by columnOf(lastVersion)
 
-    return dataFrameOf(headers.values)(dfValues.values.map {
-        columnOf(it)
-    })
+    return dataFrameOf(key, values, isDeleted, firstVersion, lastVersion)
 }
 
 fun List<ValuesWithMetaData<*>>.toDataFrame(): AnyFrame {
     if (this.isEmpty()) return emptyDataFrame<Any>()
 
     val headers = mutableMapOf(0u to "Key", 1u to "Values", 2u to "IsDeleted", 3u to "FirstVersion", 4u to "LastVersion")
-    val dfValues = mutableMapOf<UInt, MutableList<Any?>>(0u to mutableListOf(), 1u to mutableListOf(), 2u to mutableListOf(), 3u to mutableListOf(), 4u to mutableListOf())
+    val keys = ArrayList<String>(this.size)
+    val values = ArrayList<DataFrame<*>>(this.size)
+    val isDeleteds = ArrayList<Boolean>(this.size)
+    val firstVersions = ArrayList<ULong>(this.size)
+    val lastVersions = ArrayList<ULong>(this.size)
+
 
     this.forEach { valuesWithMeta ->
-        dfValues.getOrPut(0u, ::mutableListOf).add(valuesWithMeta.key.toString())
-        dfValues.getOrPut(1u, ::mutableListOf).add(valuesWithMeta.values.toDataFrame())
-        dfValues.getOrPut(2u, ::mutableListOf).add(valuesWithMeta.isDeleted)
-        dfValues.getOrPut(3u, ::mutableListOf).add(valuesWithMeta.firstVersion)
-        dfValues.getOrPut(4u, ::mutableListOf).add(valuesWithMeta.lastVersion)
+        keys.add(valuesWithMeta.key.toString())
+        values.add(valuesWithMeta.values.toDataFrame())
+        isDeleteds.add(valuesWithMeta.isDeleted)
+        firstVersions.add(valuesWithMeta.firstVersion)
+        lastVersions.add(valuesWithMeta.lastVersion)
     }
 
-    return dataFrameOf(headers.values)(dfValues.values.map { columnOf(it) })
+    return dataFrameOf(headers.values)(listOf(
+        columnOf(*keys.toTypedArray()),
+        columnOf(values.concat().columns()),
+        columnOf(*isDeleteds.toTypedArray()),
+        columnOf(*firstVersions.toTypedArray()),
+        columnOf(*lastVersions.toTypedArray())
+    ))
 }

@@ -37,8 +37,8 @@ class ValueWithMetaDataToDataFrameTest {
         assertEquals(5, dataFrameTest.columns().size)
         assertEquals(
             """
-            |          Key                                     Data IsDeleted FirstVersion LastVersion
-            | 0 AAAANQEAAQ [1 x 7] { string:haas, int:4, uint:53...     false            0           3
+            |          key                                   values isDeleted firstVersion lastVersion
+            | 0 AAAANQEAAQ { string:haas, int:4, uint:53, double...     false            0           3
             |
             """.trimMargin("|"),
             dataFrameTest.toString()
@@ -90,8 +90,10 @@ class ValueWithMetaDataToDataFrameTest {
         assertEquals(5, dataFrameTest.columns().size)
         assertEquals(
             """
-            |                                        Key                                   Values             IsDeleted FirstVersion LastVersion
-            | 0 [20YT3ZPVQa4HyI01mEbRhgABAX__ucg, 8sn... [   string number boolean enum       ... [false, false, false]    [5, 5, 5]   [8, 8, 8]
+            |                               Key                                   Values IsDeleted FirstVersion LastVersion
+            | 0 20YT3ZPVQa4HyI01mEbRhgABAX__ucg { string:Arend, number:2, boolean:tru...     false            5           8
+            | 1 8snIHM7kQBApBRl-NiCXiwACAH__tUM { string:Jan, number:4, boolean:true,...     false            5           8
+            | 2 a8QqUwtIQvACmV_yygoLpAABAX__0gk { string:Marlies, number:100, boolean...     false            5           8
             |
             """.trimMargin("|"),
             dataFrameTest.toString()

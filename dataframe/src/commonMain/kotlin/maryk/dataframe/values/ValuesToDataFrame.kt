@@ -2,7 +2,9 @@ package maryk.dataframe.values
 
 import maryk.core.values.Values
 import org.jetbrains.kotlinx.dataframe.AnyFrame
+import org.jetbrains.kotlinx.dataframe.DataFrame
 import org.jetbrains.kotlinx.dataframe.api.columnOf
+import org.jetbrains.kotlinx.dataframe.api.concat
 import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
 import org.jetbrains.kotlinx.dataframe.api.emptyDataFrame
 
@@ -16,7 +18,9 @@ fun Values<*>.toDataFrame(): AnyFrame {
     }
 
     return dataFrameOf(headers.values)(values.values.map {
-        columnOf(it)
+        if (it is DataFrame<*>) {
+            columnOf(it.columns())
+        } else columnOf(it)
     })
 }
 
@@ -26,13 +30,20 @@ fun List<Values<*>>.toDataFrame(): AnyFrame {
     val dataModel = this.first().dataModel
     val dfValues = mutableMapOf<UInt, MutableList<Any?>>()
 
-    this.forEach { values ->
+    this.forEachIndexed { i, values ->
         values.forEach { (index, value) ->
-            dfValues.getOrPut(index, ::mutableListOf).add(convertValueToDataFrame(value))
+            dfValues.getOrPut(index) { MutableList(this.size) { null } }[i] = convertValueToDataFrame(value)
         }
     }
 
     val headers = dfValues.keys.map { dataModel[it]?.name ?: "" }
 
-    return dataFrameOf(headers)(dfValues.values.map { columnOf(it) })
+    return dataFrameOf(headers)(dfValues.values.map { value ->
+        if (value.isNotEmpty() && value.first() is DataFrame<*>) {
+            @Suppress("UNCHECKED_CAST")
+            columnOf((value as List<DataFrame<*>>).concat().columns())
+        } else {
+            columnOf(*value.toTypedArray())
+        }
+    })
 }

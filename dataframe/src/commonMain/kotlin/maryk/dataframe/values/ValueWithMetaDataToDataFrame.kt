@@ -30,7 +30,6 @@ fun List<ValuesWithMetaData<*>>.toDataFrame(): AnyFrame {
     val firstVersions = ArrayList<ULong>(this.size)
     val lastVersions = ArrayList<ULong>(this.size)
 
-
     this.forEach { valuesWithMeta ->
         keys.add(valuesWithMeta.key.toString())
         values.add(valuesWithMeta.values.toDataFrame())

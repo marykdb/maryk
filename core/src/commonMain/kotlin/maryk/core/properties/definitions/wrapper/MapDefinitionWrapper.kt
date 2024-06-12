@@ -5,6 +5,7 @@ import kotlinx.atomicfu.atomic
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.BaseDataModel
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
@@ -32,6 +33,7 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
 ) :
     AbstractDefinitionWrapper(index, name),
     IsMapDefinition<K, V, CX> by definition,
+    IsChangeableValueDefinition<Map<K, V>, CX>,
     IsMapDefinitionWrapper<K, V, TO, CX, DO> {
     override val graphType = PropRef
 

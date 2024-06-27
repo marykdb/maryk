@@ -1,13 +1,11 @@
 package maryk.core.properties.definitions.wrapper
 
-import kotlinx.atomicfu.AtomicRef
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
-import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.ListReference
@@ -23,9 +21,6 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
     CacheableReferenceCreator {
     override val definition: LD
 
-    val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
-    val listItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
-
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         ListReference(
@@ -35,12 +30,12 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
     }
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
-    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) = cacheRef(parentRef, listItemRefCache, { "${it?.completeName}.@$index" }) {
+    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) = cacheRef(parentRef, { "${it?.completeName}.@$index" }) {
         this.definition.itemRef(index, this.ref(parentRef))
     }
 
     /** Get a reference to a specific list item at any index with optional [parentRef] */
-    fun getAnyItemRef(parentRef: AnyPropertyReference? = null): ListAnyItemReference<T, CX> = cacheRef(parentRef, anyItemRefCache) {
+    fun getAnyItemRef(parentRef: AnyPropertyReference? = null): ListAnyItemReference<T, CX> = cacheRef(parentRef, { "${it?.completeName}.*" }) {
         this.definition.anyItemRef(this.ref(parentRef))
     }
 

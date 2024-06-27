@@ -12,22 +12,21 @@ interface CacheableReferenceCreator {
     @Suppress("UNCHECKED_CAST")
     fun <T: Any, R: IsPropertyReference<T, IsPropertyDefinition<T>, *>> cacheRef(
         parentRef: AnyPropertyReference?,
-        cache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> = this.refCache,
         keyGenerator: (AnyPropertyReference?) -> String = { it?.completeName ?: "-" },
         creator: () -> R
     ): R {
         val key = keyGenerator(parentRef)
 
-        cache.value[key]?.let {
+        refCache.value[key]?.let {
             return it as R
         }
 
         return creator().also { created ->
             while (true) {
-                val currentCache = cache.value
+                val currentCache = refCache.value
                 currentCache[key]?.let { return it as R }
                 val newCache = currentCache + (key to created)
-                if (cache.compareAndSet(currentCache, newCache)) {
+                if (refCache.compareAndSet(currentCache, newCache)) {
                     break
                 }
             }

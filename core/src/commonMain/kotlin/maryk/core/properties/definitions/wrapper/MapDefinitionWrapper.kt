@@ -1,7 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import kotlinx.atomicfu.AtomicRef
-import kotlinx.atomicfu.atomic
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.BaseDataModel
 import maryk.core.properties.IsPropertyContext
@@ -37,15 +35,8 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
     IsMapDefinitionWrapper<K, V, TO, CX, DO> {
     override val graphType = PropRef
 
-    override val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-    override val keyRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-    override val valueRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-
     @Suppress("UNCHECKED_CAST")
-    override fun ref(parentRef: AnyPropertyReference?): MapReference<K, V, CX> = cacheRef(parentRef, anyItemRefCache) {
+    override fun ref(parentRef: AnyPropertyReference?): MapReference<K, V, CX> = cacheRef(parentRef) {
         MapReference(
             this as MapDefinitionWrapper<K, V, Any, CX, *>,
             parentRef as CanHaveComplexChildReference<*, *, *, *>?

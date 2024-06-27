@@ -1,7 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import kotlinx.atomicfu.AtomicRef
-import kotlinx.atomicfu.atomic
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
@@ -38,19 +36,15 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
     IsDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
     override val graphType = PropRef
 
-    private val setItemRefCache : AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
     }
 
     /** Get a reference to a specific set item by [value] with optional [parentRef] */
-    private fun itemRef(value: T, parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let { ref ->
-        cacheRef(ref, setItemRefCache, { "${it?.completeName}.#$value" }) {
+    private fun itemRef(value: T, parentRef: AnyPropertyReference? = null) =
+        this.ref(parentRef).let { ref ->
             this.definition.itemRef(value, ref)
         }
-    }
 
     /** For quick notation to get a set [item] reference */
     infix fun refAt(item: T): (AnyOutPropertyReference?) -> SetItemReference<T, *> {

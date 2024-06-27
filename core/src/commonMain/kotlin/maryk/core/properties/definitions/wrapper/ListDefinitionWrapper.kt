@@ -1,11 +1,8 @@
 package maryk.core.properties.definitions.wrapper
 
-import kotlinx.atomicfu.AtomicRef
-import kotlinx.atomicfu.atomic
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.graph.PropRefGraphType.PropRef
-import maryk.core.properties.references.IsPropertyReference
 import kotlin.reflect.KProperty
 
 /**
@@ -28,12 +25,6 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, DO :
     IsListDefinition<T, CX> by definition,
     IsListDefinitionWrapper<T, TO, IsListDefinition<T, CX>, CX, DO> {
     override val graphType = PropRef
-
-    override val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-
-    override val listItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
 
     // For delegation in definition
     operator fun getValue(thisRef: Any, property: KProperty<*>) = this

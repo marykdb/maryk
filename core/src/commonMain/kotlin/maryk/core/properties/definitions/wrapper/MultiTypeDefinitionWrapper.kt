@@ -1,7 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import kotlinx.atomicfu.AtomicRef
-import kotlinx.atomicfu.atomic
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.invoke
 import maryk.core.properties.IsPropertyContext
@@ -45,31 +43,24 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     IsDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
     override val graphType = PropRef
 
-    val typeRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-    val typeValueRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-    val simpleTypeValueRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         MultiTypePropertyReference(this, parentRef)
     }
 
     override fun typeRef(parentReference: AnyOutPropertyReference?) = this.ref(parentReference).let { parentRef ->
-        cacheRef(parentRef, typeRefCache) {
+        cacheRef(parentRef) {
             this.definition.typeRef(parentRef)
         }
     }
 
     private fun typedValueReference(type: E, parentReference: AnyPropertyReference?) = this.ref(parentReference).let { ref ->
-        cacheRef(ref, typeValueRefCache, { "${it?.completeName}.*$type" }) {
+        cacheRef(ref, { "${it?.completeName}.*$type" }) {
             super.typedValueRef(type, ref)
         }
     }
 
     private fun simpleTypedValueReference(type: E, parentReference: AnyPropertyReference?): SimpleTypedValueReference<E, T, CX> = this.ref(parentReference).let { ref ->
-        cacheRef(ref, simpleTypeValueRefCache, { "${it?.completeName}.>$type" }) {
+        cacheRef(ref, { "${it?.completeName}.>$type" }) {
             super.simpleTypedValueRef(type, ref)
         }
     }

@@ -1,7 +1,5 @@
 package maryk.core.properties.definitions.wrapper
 
-import kotlinx.atomicfu.AtomicRef
-import kotlinx.atomicfu.atomic
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.invoke
@@ -41,11 +39,6 @@ data class ObjectListDefinitionWrapper<
     IsListDefinition<ODO, CX> by definition,
     IsListDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
     override val graphType = PropRef
-
-    override val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
-    override val listItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
-        atomic(emptyMap())
 
     /** Get sub reference below an index */
     @Suppress("UNCHECKED_CAST")

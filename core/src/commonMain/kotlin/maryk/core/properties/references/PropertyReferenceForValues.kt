@@ -18,4 +18,6 @@ open class PropertyReferenceForValues<
 ) : PropertyReference<T, D, P, AbstractValues<*, *>>(propertyDefinition, parentReference),
     IsPropertyReferenceForValues<T, TO, D, P> {
     override val name = this.propertyDefinition.name
+
+    override val completeName by lazy(this::generateCompleteName)
 }

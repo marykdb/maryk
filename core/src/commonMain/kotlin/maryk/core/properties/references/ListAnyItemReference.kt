@@ -68,10 +68,11 @@ class ListAnyItemReference<T : Any, CX : IsPropertyContext> internal constructor
         }
     }
 
-    override val completeName: String
-        get() = this.parentReference?.let {
+    override val completeName: String by lazy {
+        this.parentReference?.let {
             "${it.completeName}.*"
         } ?: "*"
+    }
 
     override fun fuzzyMatcher() = FuzzyExactLengthMatch(4)
 

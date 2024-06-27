@@ -28,12 +28,6 @@ interface IsPropertyReferenceForValues<
     override val index get() = this.propertyDefinition.index
     override val graphType get() = PropRef
 
-    /** The name of property which is referenced */
-    override val completeName: String
-        get() = this.parentReference?.let {
-            "${it.completeName}.$name"
-        } ?: name
-
     /** Calculate the transport length of encoding this reference and cache length with [cacher] */
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
@@ -66,3 +60,8 @@ interface IsPropertyReferenceForValues<
             ?: throw UnexpectedValueException("Not Found ${this.propertyDefinition.index}/${this.propertyDefinition.name} on Values")
     }
 }
+
+internal fun IsPropertyReferenceForValues<*, *, *, *>.generateCompleteName(): String =
+    this.parentReference?.let {
+        "${it.completeName}.$name"
+    } ?: name

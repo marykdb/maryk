@@ -23,8 +23,8 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
     CacheableReferenceCreator {
     override val definition: LD
 
-    val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
-    val listItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
+    val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
+    val listItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
@@ -35,12 +35,12 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
     }
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
-    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) = cacheRef(parentRef, listItemRefCache, { (it.parentReference as ListReference<*, *>).parentReference === parentRef && it.index == index }) {
+    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) = cacheRef(parentRef, listItemRefCache, { "${it?.completeName}.@$index" }) {
         this.definition.itemRef(index, this.ref(parentRef))
     }
 
     /** Get a reference to a specific list item at any index with optional [parentRef] */
-    fun getAnyItemRef(parentRef: AnyPropertyReference? = null): ListAnyItemReference<T, CX> = cacheRef(parentRef, anyItemRefCache, { (it.parentReference as ListReference<*, *>).parentReference === parentRef }) {
+    fun getAnyItemRef(parentRef: AnyPropertyReference? = null): ListAnyItemReference<T, CX> = cacheRef(parentRef, anyItemRefCache) {
         this.definition.anyItemRef(this.ref(parentRef))
     }
 

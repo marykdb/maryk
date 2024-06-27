@@ -29,11 +29,11 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, DO :
     IsListDefinitionWrapper<T, TO, IsListDefinition<T, CX>, CX, DO> {
     override val graphType = PropRef
 
-    override val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
+    override val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
 
-    override val listItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
+    override val listItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
 
     // For delegation in definition
     operator fun getValue(thisRef: Any, property: KProperty<*>) = this

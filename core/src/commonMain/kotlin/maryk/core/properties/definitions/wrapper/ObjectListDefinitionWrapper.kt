@@ -42,10 +42,10 @@ data class ObjectListDefinitionWrapper<
     IsListDefinitionWrapper<ODO, TO, ListDefinition<ODO, CX>, CX, DO> {
     override val graphType = PropRef
 
-    override val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
-    override val listItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
+    override val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
+    override val listItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
 
     /** Get sub reference below an index */
     @Suppress("UNCHECKED_CAST")

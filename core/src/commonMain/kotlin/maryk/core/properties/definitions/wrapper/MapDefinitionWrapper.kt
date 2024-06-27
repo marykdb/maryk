@@ -37,12 +37,12 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
     IsMapDefinitionWrapper<K, V, TO, CX, DO> {
     override val graphType = PropRef
 
-    override val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
-    override val keyRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
-    override val valueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
+    override val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
+    override val keyRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
+    override val valueRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
 
     @Suppress("UNCHECKED_CAST")
     override fun ref(parentRef: AnyPropertyReference?): MapReference<K, V, CX> = cacheRef(parentRef, anyItemRefCache) {

@@ -46,10 +46,11 @@ class SimpleTypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     override val indexKeyPartType = IndexKeyPartType.Reference
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
-    override val completeName: String
-        get() = this.parentReference?.let {
+    override val completeName: String by lazy {
+        this.parentReference?.let {
             "${it.completeName}.>${type.name}"
         } ?: ">${type.name}"
+    }
 
     override fun resolveFromAny(value: Any) = (value as? TypedValue<*, *>)?.let {
         @Suppress("UNCHECKED_CAST")

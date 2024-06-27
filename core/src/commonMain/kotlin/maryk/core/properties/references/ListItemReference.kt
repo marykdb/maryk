@@ -72,10 +72,11 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         }
     }
 
-    override val completeName: String
-        get() = this.parentReference?.let {
+    override val completeName: String by lazy {
+        this.parentReference?.let {
             "${it.completeName}.@$index"
         } ?: "@$index"
+    }
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = parentReference?.calculateTransportByteLength(cacher) ?: 0

@@ -40,7 +40,7 @@ data class EmbeddedValuesDefinitionWrapper<
     IsDefinitionWrapper<Values<DM>, Values<DM>, CX, Any> {
     override val graphType = PropRef
 
-    override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef, refCache) {
+    override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         EmbeddedValuesPropertyRef(
             this,
             parentRef?.let {

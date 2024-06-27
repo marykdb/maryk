@@ -19,10 +19,11 @@ class MapKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal constru
     ),
     CanContainMapItemReference<K, IsPropertyDefinition<K>, Map<K, V>>,
     IsPropertyReferenceWithParent<K, IsPropertyDefinition<K>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
-    override val completeName
-        get() = this.parentReference?.let {
+    override val completeName by lazy {
+        this.parentReference?.let {
             "${it.completeName}.#$key"
         } ?: "#$key"
+    }
 
     override fun resolveFromAny(value: Any): Any {
         @Suppress("UNCHECKED_CAST")

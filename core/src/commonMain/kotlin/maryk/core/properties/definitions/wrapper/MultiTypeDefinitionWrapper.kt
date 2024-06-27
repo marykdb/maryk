@@ -45,12 +45,12 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     IsDefinitionWrapper<TypedValue<E, T>, TO, CX, DO> {
     override val graphType = PropRef
 
-    val typeRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
-    val typeValueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
-    val simpleTypeValueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
+    val typeRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
+    val typeValueRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
+    val simpleTypeValueRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         MultiTypePropertyReference(this, parentRef)
@@ -63,13 +63,13 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     }
 
     private fun typedValueReference(type: E, parentReference: AnyPropertyReference?) = this.ref(parentReference).let { ref ->
-        cacheRef(ref, typeValueRefCache, { (it.parentReference as MultiTypePropertyReference<*, *, *, *, *>).parentReference === parentReference && it.type == type}) {
+        cacheRef(ref, typeValueRefCache, { "${it?.completeName}.*$type" }) {
             super.typedValueRef(type, ref)
         }
     }
 
     private fun simpleTypedValueReference(type: E, parentReference: AnyPropertyReference?): SimpleTypedValueReference<E, T, CX> = this.ref(parentReference).let { ref ->
-        cacheRef(ref, simpleTypeValueRefCache, { (it.parentReference as MultiTypePropertyReference<*, *, *, *, *>).parentReference === parentReference && it.type == type}) {
+        cacheRef(ref, simpleTypeValueRefCache, { "${it?.completeName}.>$type" }) {
             super.simpleTypedValueRef(type, ref)
         }
     }

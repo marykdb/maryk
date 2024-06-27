@@ -3,8 +3,8 @@ package maryk.core.properties.references
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.writeVarIntWithExtraInfo
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.references.ReferenceType.EMBED
@@ -27,6 +27,8 @@ class EmbeddedValuesPropertyRef<
 ), HasEmbeddedPropertyReference<Values<DM>>,
     IsPropertyReferenceForValues<Values<DM>, Values<DM>, EmbeddedValuesDefinitionWrapper<DM, CX>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
+
+    override val completeName by lazy(this::generateCompleteName)
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         if (this.propertyDefinition.definition is ContextualEmbeddedValuesDefinition<*> && context is ContainsDataModelContext<*>) {

@@ -27,6 +27,8 @@ class EmbeddedObjectPropertyRef<
     IsPropertyReferenceForValues<DO, TO, EmbeddedObjectDefinitionWrapper<DO, TO, DM, CXI, CX, *>, CanHaveComplexChildReference<*, *, *, *>> {
     override val name = this.propertyDefinition.name
 
+    override val completeName by lazy(this::generateCompleteName)
+
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         this.propertyDefinition.definition.dataModel[name]?.ref(this)
             ?: throw DefNotFoundException("Embedded Definition with $name not found")

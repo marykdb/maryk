@@ -21,10 +21,11 @@ class IncMapAddIndexReference<K : Any, V : Any, CX : IsPropertyContext> internal
     ),
     CanContainMapItemReference<V, IsPropertyDefinition<V>, Map<K, V>>,
     IsPropertyReferenceWithParent<V, IsPropertyDefinition<V>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
-    override val completeName
-        get() = this.parentReference?.let {
+    override val completeName by lazy {
+        this.parentReference?.let {
             "${it.completeName}.#$index"
         } ?: "^$index"
+    }
 
     override fun resolveFromAny(value: Any): Any {
         throw RequestException("Cannot be resolved on the map itself. Should be on the incrementing map change addition list")

@@ -22,10 +22,11 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         setDefinition.valueDefinition, parentReference
     ),
     IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, CanContainSetItemReference<*, *, *>, Set<T>> {
-    override val completeName: String
-        get() = this.parentReference?.let {
+    override val completeName: String by lazy {
+        this.parentReference?.let {
             "${it.completeName}.#$value"
         } ?: "#$value"
+    }
 
     override fun resolveFromAny(value: Any) =
         if (value is Set<*> && value.contains(this.value)) {

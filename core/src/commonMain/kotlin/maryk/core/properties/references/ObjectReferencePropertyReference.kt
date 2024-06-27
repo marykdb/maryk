@@ -33,6 +33,7 @@ open class ObjectReferencePropertyReference<
     IsFixedBytesPropertyReference<Key<DM>>,
     IsFixedStorageBytesEncodable<Key<DM>> by propertyDefinition {
     override val name = propertyDefinition.name
+    override val completeName by lazy(this::generateCompleteName)
     override val byteSize = propertyDefinition.byteSize
     override val indexKeyPartType = IndexKeyPartType.Reference
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }

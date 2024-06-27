@@ -38,8 +38,8 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
     IsDefinitionWrapper<Set<T>, Set<T>, CX, DO> {
     override val graphType = PropRef
 
-    private val setItemRefCache : AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
+    private val setItemRefCache : AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         SetReference(this, parentRef as CanHaveComplexChildReference<*, *, *, *>?)
@@ -47,7 +47,7 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
 
     /** Get a reference to a specific set item by [value] with optional [parentRef] */
     private fun itemRef(value: T, parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let { ref ->
-        cacheRef(ref, setItemRefCache, { (it.parentReference as SetReference<*, *>).parentReference === parentRef && it.value == value}) {
+        cacheRef(ref, setItemRefCache, { "${it?.completeName}.#$value" }) {
             this.definition.itemRef(value, ref)
         }
     }

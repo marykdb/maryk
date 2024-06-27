@@ -10,27 +10,26 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
-import maryk.core.properties.references.PropertyReferenceForValues
 
 interface IsMapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyContext, in DO : Any> :
     IsDefinitionWrapper<Map<K, V>, TO, CX, DO>,
     CacheableReferenceCreator {
     override val definition: IsMapDefinition<K, V, CX>
 
-    val anyItemRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
-    val keyRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
-    val valueRefCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
+    val anyItemRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
+    val keyRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
+    val valueRefCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
 
     /** Get a reference to a specific map [key] with optional [parentRef] */
     private fun keyRef(key: K, parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let { ref ->
-        cacheRef(ref, keyRefCache, { (it.parentReference as PropertyReferenceForValues<*, *, *, *>).parentReference === parentRef && it.key == key }) {
+        cacheRef(ref, keyRefCache, { "${it?.completeName}.#$key" }) {
             this.definition.keyRef(key, ref as CanContainMapItemReference<*, *, *>)
         }
     }
 
     /** Get a reference to a specific map value by [key] with optional [parentRef] */
     private fun valueRef(key: K, parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let { ref ->
-        cacheRef(ref, valueRefCache, { (it.parentReference as PropertyReferenceForValues<*, *, *, *>).parentReference === parentRef && it.key == key }) {
+        cacheRef(ref, valueRefCache, { "${it?.completeName}.@$key" }) {
             this.definition.valueRef(key, ref as CanContainMapItemReference<*, *, *>)
         }
     }

@@ -4,34 +4,33 @@ import kotlinx.atomicfu.AtomicRef
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.properties.references.IsPropertyReferenceWithParent
 
 /** To save creation of new references to same fields, the references are cached. */
 interface CacheableReferenceCreator {
-    val refCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?>
+    val refCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
 
+    @Suppress("UNCHECKED_CAST")
     fun <T: Any, R: IsPropertyReference<T, IsPropertyDefinition<T>, *>> cacheRef(
         parentRef: AnyPropertyReference?,
-        cache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> = this.refCache,
-        matcher: (R) -> Boolean = createParentMatcher(parentRef),
+        cache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> = this.refCache,
+        keyGenerator: (AnyPropertyReference?) -> String = { it?.completeName ?: "-" },
         creator: () -> R
     ): R {
-        @Suppress("UNCHECKED_CAST")
-        (cache.value as Array<R>?)?.firstOrNull(matcher)?.let {
-            return it
+        val key = keyGenerator(parentRef)
+
+        cache.value[key]?.let {
+            return it as R
         }
 
         return creator().also { created ->
-            val newArray = cache.value?.let { arrayOf(created, *it) } ?: arrayOf<IsPropertyReference<*, *, *>>(created)
-            cache.value = newArray
+            while (true) {
+                val currentCache = cache.value
+                currentCache[key]?.let { return it as R }
+                val newCache = currentCache + (key to created)
+                if (cache.compareAndSet(currentCache, newCache)) {
+                    break
+                }
+            }
         }
-    }
-}
-
-internal fun createParentMatcher(parentRef: AnyPropertyReference?): (IsPropertyReference<*, *, *>) -> Boolean = {
-    when (it) {
-        is IsPropertyReferenceWithParent<*, *, *, *> ->
-            it.parentReference == parentRef
-        else -> parentRef == null
     }
 }

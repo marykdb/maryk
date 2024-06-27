@@ -27,10 +27,11 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
         ListDefinition(valueDefinition = mapDefinition.valueDefinition as IsValueDefinition<V, CX>),
         parentReference
     ) {
-    override val completeName
-        get() = this.parentReference?.let {
+    override val completeName by lazy {
+        this.parentReference?.let {
             "${it.completeName}.*"
         } ?: "*"
+    }
 
     /** Convenience infix method to create Reference [value] pairs */
     @Suppress("UNCHECKED_CAST")

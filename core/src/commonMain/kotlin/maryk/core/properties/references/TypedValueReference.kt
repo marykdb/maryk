@@ -42,10 +42,11 @@ class TypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> in
     CanContainMapItemReference<T, IsSubDefinition<T, CX>, TypedValue<E, T>>,
     IsPropertyReferenceWithParent<T, IsSubDefinition<T, CX>, CanHaveComplexChildReference<*, *, *, *>, TypedValue<E, T>>,
     HasEmbeddedPropertyReference<Any> {
-    override val completeName: String
-        get() = this.parentReference?.let {
+    override val completeName: String by lazy {
+        this.parentReference?.let {
             "${it.completeName}.*${type.name}"
         } ?: "*${type.name}"
+    }
 
     override fun resolveFromAny(value: Any) = (value as? TypedValue<*, *>)?.let {
         @Suppress("UNCHECKED_CAST")

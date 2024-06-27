@@ -25,6 +25,7 @@ open class MultiTypePropertyReference<
     parentReference
 ), IsPropertyReferenceForValues<TypedValue<E, T>, TO, D, P>, HasEmbeddedPropertyReference<TypedValue<E, T>> {
     override val name = this.propertyDefinition.name
+    override val completeName by lazy(this::generateCompleteName)
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         this.propertyDefinition.resolveReferenceByName(name, this)

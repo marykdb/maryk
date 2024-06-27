@@ -25,10 +25,11 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     CanContainListItemReference<V, IsSubDefinition<V, CX>, Map<K, V>>,
     CanContainSetItemReference<V, IsSubDefinition<V, CX>, Map<K, V>>,
     IsPropertyReferenceWithParent<V, IsSubDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
-    override val completeName
-        get() = this.parentReference?.let {
+    override val completeName by lazy {
+        this.parentReference?.let {
             "${it.completeName}.@$key"
         } ?: "@$key"
+    }
 
     /** Convenience infix method to create Reference [value] pairs */
     @Suppress("UNCHECKED_CAST")

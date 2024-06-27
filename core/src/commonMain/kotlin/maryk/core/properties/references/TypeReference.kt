@@ -37,10 +37,11 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
     override val propertyDefinition = multiTypeDefinition.typeEnum
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
-    override val completeName
-        get() = this.parentReference?.let {
+    override val completeName by lazy {
+        this.parentReference?.let {
             "${it.completeName}.*"
         } ?: "*"
+    }
 
     override fun resolveFromAny(value: Any): Any {
         @Suppress("UNCHECKED_CAST")

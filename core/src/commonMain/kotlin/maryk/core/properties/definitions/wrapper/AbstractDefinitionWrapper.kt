@@ -18,6 +18,6 @@ abstract class AbstractDefinitionWrapper(
     }
 
     /** Cache for all references, so they are not created over and over */
-    override val refCache: AtomicRef<Array<IsPropertyReference<*, *, *>>?> =
-        atomic(null)
+    override val refCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>> =
+        atomic(emptyMap())
 }

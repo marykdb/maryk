@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.runBlocking
 import maryk.core.aggregations.Aggregator
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -47,9 +48,12 @@ internal fun <DM : IsRootDataModel> processScanRequest(
             columnFamilies,
             dataStore.defaultReadOptions
         ) { key, creationVersion, _ ->
-            val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                cache.readValue(dbIndex, key, reference, version, valueReader)
-            }
+            val cacheReader =
+                { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                    runBlocking {
+                        cache.readValue(dbIndex, key, reference, version, valueReader)
+                    }
+                }
 
             val valuesWithMetaData = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                 iterator,

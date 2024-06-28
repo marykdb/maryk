@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
 import maryk.core.properties.definitions.index.IsIndexable
@@ -106,7 +107,9 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
 
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                cache.readValue(dbIndex, key, reference, version, valueReader)
+                runBlocking {
+                    cache.readValue(dbIndex, key, reference, version, valueReader)
+                }
             }
 
             scanRequest.dataModel.readTransactionIntoObjectChanges(
@@ -204,7 +207,9 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                         val createdVersion = recyclableByteArray.readVersionBytes()
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                            cache.readValue(dbIndex, addedKey, reference, version, valueReader)
+                            runBlocking {
+                                cache.readValue(dbIndex, addedKey, reference, version, valueReader)
+                            }
                         }
 
                         getSingleValues(addedKey, createdVersion, cacheReader)?.let { valuesWithMeta ->

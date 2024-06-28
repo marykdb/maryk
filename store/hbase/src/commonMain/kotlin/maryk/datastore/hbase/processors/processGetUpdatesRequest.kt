@@ -1,6 +1,7 @@
 package maryk.datastore.hbase.processors
 
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
 import maryk.core.properties.references.IsPropertyReferenceForCache
@@ -101,7 +102,9 @@ internal suspend fun <DM : IsRootDataModel> processGetUpdatesRequest(
         insertionIndex++
 
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-            cache.readValue(dbIndex, key, reference, version, valueReader)
+            runBlocking {
+                cache.readValue(dbIndex, key, reference, version, valueReader)
+            }
         }
 
         getRequest.dataModel.readResultIntoObjectChanges(

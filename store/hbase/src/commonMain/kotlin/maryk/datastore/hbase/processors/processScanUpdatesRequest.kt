@@ -1,6 +1,7 @@
 package maryk.datastore.hbase.processors
 
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
 import maryk.core.properties.definitions.index.IsIndexable
@@ -109,7 +110,9 @@ internal suspend fun <DM : IsRootDataModel> processScanUpdatesRequest(
 
         val key = keys[index]
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-            cache.readValue(dbIndex, key, reference, version, valueReader)
+            runBlocking {
+                cache.readValue(dbIndex, key, reference, version, valueReader)
+            }
         }
 
         val createdVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)?.timestamp?.toULong()
@@ -217,7 +220,9 @@ internal suspend fun <DM : IsRootDataModel> processScanUpdatesRequest(
                     val addedKey = Key<DM>(addedResult.row)
 
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        cache.readValue(dbIndex, addedKey, reference, version, valueReader)
+                        runBlocking {
+                            cache.readValue(dbIndex, addedKey, reference, version, valueReader)
+                        }
                     }
 
                     getSingleValues(addedKey, createdVersion, cacheReader, addedResult)?.let { valuesWithMeta ->

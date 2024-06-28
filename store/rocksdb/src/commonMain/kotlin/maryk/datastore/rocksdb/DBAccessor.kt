@@ -12,7 +12,7 @@ open class DBAccessor(
     open fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray, offset: Int, len: Int, value: ByteArray, vOffset: Int = 0, vLen: Int = value.size) =
         dataStore.db.get(columnFamilyHandle, readOptions, key, offset, len, value, vOffset, vLen)
 
-    open fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray) =
+    open fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray): ByteArray? =
         dataStore.db.get(columnFamilyHandle, readOptions, key)
 
     open fun getIterator(readOptions: ReadOptions, columnFamilyHandle: ColumnFamilyHandle) =

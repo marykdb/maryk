@@ -68,7 +68,7 @@ open class DBIterator(
      *
      * @return key for the current entry.
      */
-    open fun key() = rocksIterator.key()
+    open fun key(): ByteArray = rocksIterator.key()
 
     /**
      * Return the value for the current entry.  The underlying storage for
@@ -78,7 +78,7 @@ open class DBIterator(
      * REQUIRES: !AtEnd() &amp;&amp; !AtStart()
      * @return value for the current entry.
      */
-    open fun value() = rocksIterator.value()
+    open fun value(): ByteArray = rocksIterator.value()
 
     override fun close() {
         rocksIterator.close()

@@ -1,6 +1,7 @@
 package maryk.datastore.hbase.processors
 
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.runBlocking
 import maryk.core.aggregations.Aggregator
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -59,8 +60,10 @@ internal suspend fun <DM : IsRootDataModel> processGetRequest(
         val key = Key<DM>(result.row)
         val creationVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray).timestamp.toULong()
 
-        val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-            cache.readValue(dbIndex, key, reference, version, valueReader)
+        val cacheReader= { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+            runBlocking {
+                cache.readValue(dbIndex, key, reference, version, valueReader)
+            }
         }
 
         val valuesWithMetaData = getRequest.dataModel.readResultIntoValuesWithMetaData(

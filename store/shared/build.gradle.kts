@@ -10,8 +10,8 @@ kotlin {
         commonMain {
             dependencies {
                 api(KotlinX.coroutines.core)
-
                 api(projects.core)
+                implementation("com.mayakapps.kache:kache:_")
             }
         }
         commonTest {

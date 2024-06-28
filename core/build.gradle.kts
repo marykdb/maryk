@@ -11,6 +11,7 @@ kotlin {
             dependencies {
                 api(projects.yaml)
                 api("org.jetbrains.kotlinx:atomicfu:_")
+                implementation(KotlinX.collections.immutable)
             }
         }
         commonTest {

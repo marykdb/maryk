@@ -1,13 +1,15 @@
 package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
+import kotlinx.collections.immutable.PersistentMap
+import kotlinx.collections.immutable.persistentMapOf
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 
 /** To save creation of new references to same fields, the references are cached. */
 interface CacheableReferenceCreator {
-    val refCache: AtomicRef<Map<String, IsPropertyReference<*, *, *>>>
+    val refCache: AtomicRef<PersistentMap<String, IsPropertyReference<*, *, *>>?>
 
     @Suppress("UNCHECKED_CAST")
     fun <T: Any, R: IsPropertyReference<T, IsPropertyDefinition<T>, *>> cacheRef(
@@ -17,18 +19,20 @@ interface CacheableReferenceCreator {
     ): R {
         val key = keyGenerator(parentRef)
 
-        refCache.value[key]?.let {
-            return it as R
-        }
+        while (true) {
+            val currentCache = refCache.value
 
-        return creator().also { created ->
-            while (true) {
-                val currentCache = refCache.value
-                currentCache[key]?.let { return it as R }
-                val newCache = currentCache + (key to created)
-                if (refCache.compareAndSet(currentCache, newCache)) {
-                    break
-                }
+            // Try to get from cache first
+            currentCache?.get(key)?.let {
+                return it as R
+            }
+
+            // If not in cache, create new reference
+            val newRef = creator()
+            val newCache = currentCache?.put(key, newRef) ?: persistentMapOf(key to newRef)
+
+            if (refCache.compareAndSet(currentCache, newCache)) {
+                return newRef
             }
         }
     }

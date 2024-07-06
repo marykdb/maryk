@@ -12,10 +12,15 @@ import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ValueWithMetaDataToDataFrameTest {
+    init {
+        Locale.setDefault(Locale.US)
+    }
+
     @Test
     fun testToDataFrame() {
         val data = TestMarykModel(

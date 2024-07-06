@@ -2,9 +2,14 @@ package maryk.dataframe.models
 
 import maryk.test.models.TestMarykModel
 import org.junit.jupiter.api.Assertions.assertEquals
+import java.util.*
 import kotlin.test.Test
 
 class DataModelToDataFrameTest {
+    init {
+        Locale.setDefault(Locale.US)
+    }
+
     @Test
     fun testToDataFrame() {
         val dataFrameTest = TestMarykModel.toDataFrame()

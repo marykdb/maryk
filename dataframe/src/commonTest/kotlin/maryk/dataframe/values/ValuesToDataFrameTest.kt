@@ -11,10 +11,15 @@ import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
+import java.util.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ValuesToDataFrameTest {
+    init {
+        Locale.setDefault(Locale.US)
+    }
+
     @Test
     fun testToDataFrame() {
         val dataFrameTest = TestMarykModel(
@@ -31,7 +36,7 @@ class ValuesToDataFrameTest {
         assertEquals(
             """
             |   string int uint double         dateTime bool enum embeddedValues
-            | 0   haas   4   53 3,5555 2017-12-05T12:40 true   V1 { value:haas }
+            | 0   haas   4   53 3.5555 2017-12-05T12:40 true   V1 { value:haas }
             |
             """.trimMargin("|"),
             dataFrameTest.toString()

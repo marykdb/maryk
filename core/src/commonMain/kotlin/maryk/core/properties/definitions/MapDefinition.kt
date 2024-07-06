@@ -37,7 +37,6 @@ data class MapDefinition<K : Any, V : Any, CX : IsPropertyContext> internal cons
 
     init {
         require(keyDefinition.required) { "Definition for key should be required on map" }
-        require(valueDefinition.required) { "Definition for value should be required on map" }
     }
 
     constructor(

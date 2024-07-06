@@ -23,7 +23,6 @@ interface IsChange {
 internal val mapOfChangeDefinitions = mapOf(
     ChangeType.Change to EmbeddedObjectDefinition(dataModel = { Change }),
     ChangeType.Check to EmbeddedObjectDefinition(dataModel = { Check }),
-    ChangeType.Delete to EmbeddedObjectDefinition(dataModel = { Delete }),
     ChangeType.ObjectCreate to EmbeddedObjectDefinition(dataModel = { ObjectCreate.Model }),
     ChangeType.ObjectDelete to EmbeddedObjectDefinition(dataModel = { ObjectSoftDeleteChange }),
     ChangeType.ListChange to EmbeddedObjectDefinition(dataModel = { ListChange }),

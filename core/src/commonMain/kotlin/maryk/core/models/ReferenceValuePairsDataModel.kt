@@ -65,12 +65,13 @@ abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsData
                 )
                 pairModel.reference.capture(context, it.reference)
 
-                pairModel.value.writeJsonValue(
-                    pairModel.value.getPropertyAndSerialize(it, context)
-                        ?: throw SerializationException("No pair value defined on $it"),
-                    this,
-                    context
-                )
+                pairModel.value.getPropertyAndSerialize(it, context)?.let { value ->
+                    pairModel.value.writeJsonValue(
+                        value,
+                        this,
+                        context
+                    )
+                } ?: writeNull()
             }
             writeEndObject()
         }
@@ -96,10 +97,14 @@ abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsData
                         val reference = pairModel.reference.definition.fromString(refName, context)
                         pairModel.reference.capture(context, reference)
 
-                        reader.nextToken()
+                        val nextToken = reader.nextToken()
 
                         @Suppress("UNCHECKED_CAST")
-                        val value = pairModel.value.readJson(reader, context) as TO?
+                        val value = if (nextToken == JsonToken.NullValue) {
+                            null
+                        } else {
+                            pairModel.value.readJson(reader, context) as TO?
+                        }
 
                         listOfTypePairs.add(
                             model.pairModel.values {

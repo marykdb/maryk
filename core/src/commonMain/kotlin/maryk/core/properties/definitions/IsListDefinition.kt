@@ -11,6 +11,7 @@ import maryk.core.properties.references.ListReference
 /** Defines a List definition */
 interface IsListDefinition<T : Any, CX : IsPropertyContext> :
     IsCollectionDefinition<T, List<T>, CX, IsSubDefinition<T, CX>>,
+    IsChangeableValueDefinition<List<T>, CX>,
     HasDefaultValueDefinition<List<T>> {
     /** Get a reference to a specific list item on [parentList] by [index]. */
     fun itemRef(index: UInt, parentList: CanContainListItemReference<*, *, *>?) =
@@ -46,7 +47,7 @@ interface IsListDefinition<T : Any, CX : IsPropertyContext> :
         checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?,
     ): Boolean {
-        var compatible = super.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+        var compatible = super<IsCollectionDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         if (definition is IsListDefinition<*, *>) {
             compatible = isCompatible(definition, addIncompatibilityReason) && compatible

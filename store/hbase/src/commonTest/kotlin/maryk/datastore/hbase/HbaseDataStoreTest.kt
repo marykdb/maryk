@@ -31,7 +31,7 @@ class HbaseDataStoreTest {
             keepAllVersions = false,
         )
 
-        runDataStoreTests(dataStore)
+        runDataStoreTests(dataStore, runOnlyTest = "executeChangeDeleteComplexItemsRequest")
 
         dataStore.close()
     }

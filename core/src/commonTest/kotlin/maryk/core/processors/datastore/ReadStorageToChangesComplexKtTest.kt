@@ -6,7 +6,6 @@ import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.SetChange
@@ -130,17 +129,15 @@ class ReadStorageToChangesComplexKtTest {
                             ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST"),
                             ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(0u) } } } with "a",
                             ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(1u) } } } with "b",
+                            ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(2u) } } } with null,
                             ComplexModel { mapIntMulti.at(9u) { atType(T6) { refAt(5u) } } } with "e",
                             ComplexModel { mapIntMulti.at(9u) { atType(T6) { refAt(6u) }  } } with "f",
                             ComplexModel { mapIntMulti.at(10u) { atType(T7) { atType(S3) { value::ref } } } } with "g",
                             ComplexModel { mapWithList.at("a") { refAt(0u) } } with "a1",
                             ComplexModel { mapWithList.at("a") { refAt(1u) } } with "a2",
-                            ComplexModel { mapWithMap.at("c") { refAt("c1")  }} with "c2"
-                        ),
-                        Delete(
-                            ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(2u) } } },
-                            ComplexModel { mapWithList.at("a") { refAt(2u) } },
-                            ComplexModel { mapWithSet.at("b") { refAt("b3") } }
+                            ComplexModel { mapWithList.at("a") { refAt(2u) } } with null,
+                            ComplexModel { mapWithSet.at("b") { refAt("b3") } } with null,
+                            ComplexModel { mapWithMap.at("c") { refAt("c1")  }} with "c2",
                         ),
                         SetChange(
                             ComplexModel { mapIntMulti.at(8u) { refAtType(T5) } }.change(

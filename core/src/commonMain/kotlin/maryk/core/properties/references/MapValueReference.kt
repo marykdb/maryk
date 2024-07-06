@@ -11,7 +11,9 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.pairs.ReferenceValuePair
+import kotlin.js.JsName
 
 /** Reference to map value [V] below [key] of [K] contained in map referred by [parentReference] */
 class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
@@ -35,6 +37,15 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     @Suppress("UNCHECKED_CAST")
     infix fun <T : Any> with(value: T) =
         ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+
+    @JsName("withValueOrNull")
+    infix fun <T : Any> with(value: T?) =
+        @Suppress("UNCHECKED_CAST")
+        if (value == null) {
+            ReferenceNullPair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>)
+        } else {
+            ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+        }
 
     override fun resolveFromAny(value: Any): Any {
         @Suppress("UNCHECKED_CAST")

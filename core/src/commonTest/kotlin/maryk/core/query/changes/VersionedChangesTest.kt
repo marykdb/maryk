@@ -18,7 +18,7 @@ class VersionedChangesTest {
         219674127uL,
         listOf(
             Change(subModelValue with "new"),
-            Delete(subModelValue),
+            Change(subModelValue  with null),
             Check(subModelValue with "current"),
             ObjectSoftDeleteChange(true),
             ListChange(TestMarykModel { list::ref }.change()),
@@ -53,7 +53,8 @@ class VersionedChangesTest {
             changes:
             - !Change
               embeddedValues.value: new
-            - !Delete embeddedValues.value
+            - !Change
+              embeddedValues.value: null
             - !Check
               embeddedValues.value: current
             - !ObjectDelete

@@ -9,7 +9,6 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IncMapKeyAdditions
@@ -272,7 +271,7 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
-                    Delete(TestMarykModel { reference::ref })
+                    Change(TestMarykModel { reference::ref } with null)
                 )
             )
         )
@@ -295,10 +294,10 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[3].change(
-                    Delete(TestMarykModel { map::ref }),
-                    Delete(TestMarykModel { listOfString::ref }),
-                    Delete(TestMarykModel { set::ref }),
-                    Delete(TestMarykModel { multi::ref })
+                    Change(TestMarykModel { map::ref } with null),
+                    Change(TestMarykModel { listOfString::ref } with null),
+                    Change(TestMarykModel { set::ref } with null),
+                    Change(TestMarykModel { multi::ref } with null)
                 )
             )
         )
@@ -324,9 +323,9 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[4].change(
-                    Delete(TestMarykModel { map refAt LocalTime(3, 3, 3) }),
-                    Delete(TestMarykModel { listOfString refAt 1u }),
-                    Delete(TestMarykModel { set refAt LocalDate(2001, 1, 1) })
+                    Change(TestMarykModel { map refAt LocalTime(3, 3, 3) } with null),
+                    Change(TestMarykModel { listOfString refAt 1u } with null),
+                    Change(TestMarykModel { set refAt LocalDate(2001, 1, 1) } with null)
                 )
             )
         )
@@ -364,7 +363,7 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[4].change(
-                    Delete(TestMarykModel { multi refAtType S1 })
+                    Change(TestMarykModel { multi refAtType S1 } with null)
                 )
             )
         )
@@ -377,8 +376,8 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[0].change(
-                    Delete(
-                        TestMarykModel { listOfString.refAt(1u) }
+                    Change(
+                        TestMarykModel { listOfString.refAt(1u) } with null
                     ),
                     ListChange(
                         TestMarykModel { listOfString::ref }.change(
@@ -411,8 +410,8 @@ class DataStoreChangeTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[1].change(
-                    Delete(
-                        TestMarykModel { set.refAt(LocalDate(2018, 11, 25)) }
+                    Change(
+                        TestMarykModel { set.refAt(LocalDate(2018, 11, 25)) } with null
                     ),
                     SetChange(
                         TestMarykModel { set::ref }.change(
@@ -445,8 +444,8 @@ class DataStoreChangeTest(
                         TestMarykModel { map.refAt(LocalTime(1, 2, 3)) } with "test1",
                         TestMarykModel { map.refAt(LocalTime(2, 3, 4)) } with "test2"
                     ),
-                    Delete(
-                        TestMarykModel { map.refAt(LocalTime(12, 33, 45)) }
+                    Change(
+                        TestMarykModel { map.refAt(LocalTime(12, 33, 45)) } with null
                     )
                 )
             )
@@ -479,8 +478,8 @@ class DataStoreChangeTest(
                     Change(
                         TestMarykModel { incMap.refAt(1u) } with "newA"
                     ),
-                    Delete(
-                        TestMarykModel { incMap.refAt(2u) }
+                    Change(
+                        TestMarykModel { incMap.refAt(2u) } with null
                     ),
                     IncMapChange(
                         TestMarykModel { incMap::ref }.change(

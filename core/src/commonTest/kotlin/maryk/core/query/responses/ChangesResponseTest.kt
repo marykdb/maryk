@@ -9,7 +9,6 @@ import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.DataObjectVersionedChange
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.ObjectCreate
@@ -50,7 +49,7 @@ class ChangesResponseTest {
                         listOf(
                             ObjectCreate,
                             Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
-                            Delete(EmbeddedMarykModel(subModel) { value::ref }),
+                            Change(EmbeddedMarykModel(subModel) { value::ref }  with null),
                             Check(EmbeddedMarykModel(subModel) { value::ref } with "current")
                         )
                     )
@@ -100,7 +99,8 @@ class ChangesResponseTest {
                 - !ObjectCreate
                 - !Change
                   embeddedValues.value: new
-                - !Delete embeddedValues.value
+                - !Change
+                  embeddedValues.value: null
                 - !Check
                   embeddedValues.value: current
 

@@ -5,7 +5,6 @@ import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IncMapKeyAdditions
@@ -146,7 +145,7 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[0].change(
-                    Delete(ComplexModel { multi::ref })
+                    Change(ComplexModel { multi::ref } with null)
                 )
             )
         )
@@ -170,7 +169,7 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[2].change(
-                    Delete(ComplexModel { mapIntObject::ref })
+                    Change(ComplexModel { mapIntObject::ref } with null)
                 )
             )
         )
@@ -193,7 +192,7 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[6].change(
-                    Delete(ComplexModel { mapIntObject refAt 2u })
+                    Change(ComplexModel { mapIntObject refAt 2u } with null)
                 )
             )
         )
@@ -220,7 +219,7 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[3].change(
-                    Delete(ComplexModel { mapIntObject.at(1u) { model::ref } })
+                    Change(ComplexModel { mapIntObject.at(1u) { model::ref } } with null)
                 )
             )
         )
@@ -247,11 +246,11 @@ class DataStoreChangeComplexTest(
         val changeResponse = dataStore.execute(
             ComplexModel.change(
                 keys[4].change(
-                    Delete(
+                    Change(
                         ComplexModel {
                             mapIntMulti.at(1u) { atType(T3) { model { model::ref } } }
-                        },
-                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model::ref } } }
+                        } with null,
+                        ComplexModel { mapIntMulti.at(3u) { atType(T3) { model::ref } } } with null
                     )
                 )
             )
@@ -410,8 +409,8 @@ class DataStoreChangeComplexTest(
                     Change(
                         ComplexModel { incMap.refAt(1u) } with EmbeddedMarykModel("n")
                     ),
-                    Delete(
-                        ComplexModel { incMap.refAt(2u) }
+                    Change(
+                        ComplexModel { incMap.refAt(2u) } with null
                     ),
                     IncMapChange(
                         ComplexModel { incMap::ref }.change(

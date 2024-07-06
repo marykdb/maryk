@@ -47,7 +47,6 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IncMapKeyAdditions
@@ -407,31 +406,6 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     }.also(setChanged)
                                 }
                             }
-                        }
-                    }
-                    is Delete -> {
-                        for (reference in change.references) {
-                            @Suppress("UNCHECKED_CAST")
-                            val ref =
-                                reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>
-                            deleteByReference(newValueList, ref, version, keepAllVersions) { _, previousValue ->
-                                try {
-                                    ref.propertyDefinition.validateWithRef(
-                                        previousValue = previousValue,
-                                        newValue = null,
-                                        refGetter = { ref }
-                                    )
-
-                                    // Extra validations based on reference type
-                                    when (ref) {
-                                        is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
-                                        is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to delete Map with any key reference, delete by map reference instead")
-                                        is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to delete List with any item reference, delete by list reference instead")
-                                    }
-                                } catch (e: ValidationException) {
-                                    addValidationFail(e)
-                                }
-                            }.also(setChanged)
                         }
                     }
                     is ListChange -> {

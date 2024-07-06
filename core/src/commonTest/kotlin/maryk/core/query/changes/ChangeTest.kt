@@ -19,6 +19,7 @@ import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.expect
 
 class ChangeTest {
@@ -181,5 +182,103 @@ class ChangeTest {
                 )
             )
         }
+    }
+
+    @Test
+    fun changeValuesRemoveTest() {
+        val original = TestMarykModel(
+            string = "hello world",
+            int = 5,
+            uint = 3u,
+            double = 2.3,
+            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
+            multi = S1( "world"),
+            list = listOf(3, 4, 5),
+            set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
+            map = mapOf(
+                LocalTime(12, 0) to "Hi",
+                LocalTime(1, 2) to "Hoi"
+            ),
+            embeddedValues = EmbeddedMarykModel(
+                value = "hi",
+                model = EmbeddedMarykModel(
+                    value = "bye"
+                )
+            )
+        )
+
+        var changed = original.change(listOf())
+
+        assertEquals(original, changed)
+
+        changed = original.change(
+            Change(TestMarykModel { int::ref } with null)
+        )
+
+        assertNull(changed { int })
+        assertEquals(5, original { int })
+
+        changed = original.change(
+            Change(TestMarykModel { multi.refAtType(S1) } with null)
+        )
+
+        assertNull(changed { multi }?.value)
+        assertEquals("world", original { multi }?.value)
+
+        changed = original.change(
+            Change(TestMarykModel { list::ref } with null)
+        )
+
+        assertNull(changed { list })
+        assertEquals(listOf(3, 4, 5), original { list })
+
+        changed = original.change(
+            Change(TestMarykModel { list.refAt(0u) } with null)
+        )
+
+        assertEquals(4, changed { list }?.getOrNull(0))
+        assertEquals(3, original { list }?.getOrNull(0))
+
+        changed = original.change(
+            Change(TestMarykModel { list.refToAny() } with null)
+        )
+
+        assertEquals(emptyList(), changed { list })
+        assertEquals(listOf(3, 4, 5), original { list })
+
+        changed = original.change(
+            Change(TestMarykModel { map.refAt(LocalTime(12, 0)) } with null)
+        )
+
+        assertEquals(mapOf(LocalTime(1, 2) to "Hoi"), changed { map })
+        assertEquals(mapOf(LocalTime(12, 0) to "Hi", LocalTime(1, 2) to "Hoi"), original { map })
+
+        changed = original.change(
+            Change(TestMarykModel { map.refToAny() } with null)
+        )
+
+        assertEquals(emptyMap(), changed { map })
+        assertEquals(mapOf(LocalTime(12, 0) to "Hi", LocalTime(1, 2) to "Hoi"), original { map })
+
+        changed = original.change(
+            Change(TestMarykModel { embeddedValues { value::ref } } with null)
+        )
+
+        assertNull(changed { embeddedValues } / { value })
+        assertEquals("hi", original { embeddedValues } / { value })
+
+        changed = original.change(
+            Change(TestMarykModel { embeddedValues { model { value::ref } } } with null)
+        )
+
+        assertNull(changed { embeddedValues } / { model } / { value })
+        assertEquals("bye", original { embeddedValues } / { model } / { value })
+
+        changed = original.change(
+            Change(TestMarykModel { embeddedValues { marykModel { string::ref } } } with null)
+        )
+
+        assertNull(changed { embeddedValues } / { marykModel } / { string })
+        assertNull(original { embeddedValues } / { marykModel } / { string })
     }
 }

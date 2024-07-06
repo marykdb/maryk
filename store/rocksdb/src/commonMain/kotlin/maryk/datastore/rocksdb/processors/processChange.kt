@@ -56,7 +56,6 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IncMapKeyAdditions
@@ -455,36 +454,6 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         addValidationFail(e)
                                     }
                                 }
-                            }
-                        }
-                    }
-                    is Delete -> {
-                        for (reference in change.references) {
-                            @Suppress("UNCHECKED_CAST")
-                            val ref = reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>
-                            val referenceAsBytes = reference.toStorageByteArray()
-                            try {
-                                if (reference is TypedValueReference<*, *, *>) {
-                                    throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
-                                }
-
-                                deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, referenceAsBytes, versionBytes) { _, previousValue ->
-                                    ref.propertyDefinition.validateWithRef(
-                                        previousValue = previousValue,
-                                        newValue = null,
-                                        refGetter = { ref }
-                                    )
-
-                                    // Extra validations based on reference type
-                                    when (ref) {
-                                        is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
-                                        is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to delete Map with any key reference, delete by map reference instead")
-                                        is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to delete List with any item reference, delete by list reference instead")
-                                        else -> {}
-                                    }
-                                }.also(setChanged)
-                            } catch (e: ValidationException) {
-                                addValidationFail(e)
                             }
                         }
                     }

@@ -4,11 +4,15 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.pairs.ReferenceNullPair
+import maryk.core.query.pairs.ReferenceValuePair
+import kotlin.js.JsName
 
 /**
  * Reference to a Set Item by [value] of [T] and context [CX] on set referred to [parentReference] and
@@ -27,6 +31,19 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
             "${it.completeName}.#$value"
         } ?: "#$value"
     }
+
+    @Suppress("UNCHECKED_CAST")
+    infix fun <T : Any> with(value: T) =
+        ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+
+    @JsName("withValueOrNull")
+    infix fun <T : Any> with(value: T?) =
+        @Suppress("UNCHECKED_CAST")
+        if (value == null) {
+            ReferenceNullPair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>)
+        } else {
+            ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+        }
 
     override fun resolveFromAny(value: Any) =
         if (value is Set<*> && value.contains(this.value)) {

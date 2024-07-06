@@ -5,7 +5,6 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.clock.HLC
 import maryk.core.query.changes.Change
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
@@ -80,8 +79,8 @@ class ReadStorageToChangesKtTest {
                     1233UL,
                     listOf(
                         ObjectCreate,
-                        Delete(TestMarykModel { double::ref }),
                         Change(
+                            TestMarykModel { double::ref } with null,
                             TestMarykModel { dateTime::ref } with LocalDateTime(2018, 7, 18, 0, 0),
                             TestMarykModel { map refAt LocalTime(10, 14, 1) } with "ten",
                             TestMarykModel { listOfString refAt 0u } with "v1"
@@ -104,17 +103,15 @@ class ReadStorageToChangesKtTest {
                             TestMarykModel { int::ref } with 5,
                             TestMarykModel { enum::ref } with V2,
                             TestMarykModel { map refAt LocalTime(11, 22, 33) } with "eleven",
+                            TestMarykModel { map refAt LocalTime(11, 22, 17) } with null,
                             TestMarykModel { map refAt LocalTime(12, 23, 34) } with "twelve",
+                            TestMarykModel { map refAt LocalTime(12, 15, 2) } with null,
                             TestMarykModel { embeddedValues { value::ref } } with "test",
                             TestMarykModel { embeddedValues { model { value::ref } } } with "another test",
                             TestMarykModel { listOfString refAt 1u } with "v2",
-                            TestMarykModel { listOfString refAt 2u } with "v3"
-                        ),
-                        Delete(
-                            TestMarykModel { map refAt LocalTime(11, 22, 17) },
-                            TestMarykModel { map refAt LocalTime(12, 15, 2) },
-                            TestMarykModel { listOfString refAt 3u },
-                            TestMarykModel { listOfString refAt 4u }
+                            TestMarykModel { listOfString refAt 2u } with "v3",
+                            TestMarykModel { listOfString refAt 3u } with null,
+                            TestMarykModel { listOfString refAt 4u } with null
                         )
                     )
                 ),
@@ -125,17 +122,15 @@ class ReadStorageToChangesKtTest {
                             TestMarykModel { string::ref } with "hello universe",
                             TestMarykModel { int::ref } with 7,
                             TestMarykModel { uint::ref } with 3u,
-                            TestMarykModel { enum::ref } with V0
-                        ),
-                        Delete(
-                            TestMarykModel { dateTime::ref },
-                            TestMarykModel { set refAt LocalDate(1989, 5, 15) },
-                            TestMarykModel { set refAt LocalDate(1989, 5, 16) },
-                            TestMarykModel { map refAt LocalTime(10, 14, 1) },
-                            TestMarykModel { embeddedValues { model { value::ref } } },
-                            TestMarykModel { listOfString.refAt(2u) },
-                            TestMarykModel { setOfString refAt "abc" },
-                            TestMarykModel { setOfString refAt "def" }
+                            TestMarykModel { dateTime::ref } with null,
+                            TestMarykModel { enum::ref } with V0,
+                            TestMarykModel { set refAt LocalDate(1989, 5, 15) } with null,
+                            TestMarykModel { set refAt LocalDate(1989, 5, 16) } with null,
+                            TestMarykModel { map refAt LocalTime(10, 14, 1) } with null,
+                            TestMarykModel { embeddedValues { model { value::ref } } } with null,
+                            TestMarykModel { listOfString.refAt(2u) } with null,
+                            TestMarykModel { setOfString refAt "abc" } with null,
+                            TestMarykModel { setOfString refAt "def" } with null,
                         ),
                         SetChange(
                             TestMarykModel { set::ref }.change(
@@ -150,10 +145,10 @@ class ReadStorageToChangesKtTest {
                 VersionedChanges(
                     1236UL,
                     listOf(
-                        Delete(
-                            TestMarykModel { set refAt LocalDate(1981, 12, 6) },
-                            TestMarykModel { map::ref },
-                            TestMarykModel { embeddedValues::ref }
+                        Change(
+                            TestMarykModel { set refAt LocalDate(1981, 12, 6) } with null,
+                            TestMarykModel { map::ref } with null,
+                            TestMarykModel { embeddedValues::ref } with null
                         )
                     )
                 )

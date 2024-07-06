@@ -20,8 +20,10 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.IsValuesGetter
+import kotlin.js.JsName
 
 /**
  * Reference to a simple value by [type] [E] on [parentReference]
@@ -61,6 +63,15 @@ class SimpleTypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     @Suppress("UNCHECKED_CAST")
     infix fun with(value: T): ReferenceValuePair<T> =
         ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+
+    @JsName("withValueOrNull")
+    infix fun with(value: T?) =
+        @Suppress("UNCHECKED_CAST")
+        if (value == null) {
+            ReferenceNullPair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>)
+        } else {
+            ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+        }
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = parentReference?.calculateTransportByteLength(cacher) ?: 0

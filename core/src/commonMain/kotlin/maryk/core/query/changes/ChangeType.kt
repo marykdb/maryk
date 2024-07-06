@@ -12,7 +12,6 @@ enum class ChangeType(
 ) : IndexedEnumComparable<ChangeType>, IsCoreEnum, TypeEnum<IsChange> {
     Check(1u),
     Change(2u),
-    Delete(3u),
     ObjectCreate(4u),
     ObjectDelete(5u),
     ListChange(6u),

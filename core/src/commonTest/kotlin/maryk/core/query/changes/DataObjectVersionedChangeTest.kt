@@ -37,7 +37,7 @@ class DataObjectVersionedChangeTest {
                 listOf(
                     ObjectCreate,
                     Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
-                    Delete(EmbeddedMarykModel(subModel) { value::ref }),
+                    Change(EmbeddedMarykModel(subModel) { value::ref } with null),
                     Check(EmbeddedMarykModel(subModel) { value::ref } with "current")
                 )
             )
@@ -82,7 +82,8 @@ class DataObjectVersionedChangeTest {
               - !ObjectCreate
               - !Change
                 embeddedValues.value: new
-              - !Delete embeddedValues.value
+              - !Change
+                embeddedValues.value: null
               - !Check
                 embeddedValues.value: current
 

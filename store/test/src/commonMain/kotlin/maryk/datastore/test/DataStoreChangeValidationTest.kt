@@ -12,7 +12,6 @@ import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.change
@@ -135,7 +134,7 @@ class DataStoreChangeValidationTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
-                    Delete(TestMarykModel { uint::ref })
+                    Change(TestMarykModel { uint::ref } with null)
                 )
             )
         )
@@ -382,8 +381,8 @@ class DataStoreChangeValidationTest(
         val changeResponse = dataStore.execute(
             TestMarykModel.change(
                 keys[2].change(
-                    Delete(
-                        TestMarykModel { listOfString.refAt(0u) }
+                    Change(
+                        TestMarykModel { listOfString.refAt(0u) } with null
                     )
                 )
             )

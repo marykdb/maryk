@@ -51,7 +51,6 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.changes.IncMapKeyAdditions
@@ -62,6 +61,7 @@ import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.SetChange
+import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
@@ -144,7 +144,10 @@ internal suspend fun <DM : IsRootDataModel> processChange(
                 }
                 is Change -> change.referenceValuePairs.forEach {
                     val reference = it.reference
-                    orFilters += if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {
+                    orFilters += if (it is ReferenceNullPair<*> && reference is IsPropertyReferenceWithParent<*, *, *, *> && (reference is ListItemReference<*, *> || reference is SetItemReference<*, *> || reference is MapValueReference<*, *, *>) && reference.parentReference != null) {
+                        // For deletions
+                        ColumnPrefixFilter(reference.parentReference!!.toStorageByteArray())
+                    } else if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {
                         ColumnPrefixFilter(reference.parentReference!!.toStorageByteArray())
                     } else {
                         ColumnPrefixFilter(it.reference.toStorageByteArray())
@@ -163,14 +166,6 @@ internal suspend fun <DM : IsRootDataModel> processChange(
                 }
                 is SetChange -> change.setValueChanges.forEach {
                     orFilters += ColumnPrefixFilter(it.reference.toStorageByteArray())
-                }
-                is Delete -> change.references.forEach {
-                    orFilters += ColumnPrefixFilter(it.toStorageByteArray())
-                    orFilters += if (it is IsPropertyReferenceWithParent<*, *, *, *> && (it is ListItemReference<*, *> || it is SetItemReference<*, *> || it is MapValueReference<*, *, *>) && it.parentReference != null) {
-                        ColumnPrefixFilter(it.parentReference!!.toStorageByteArray())
-                    } else {
-                        ColumnPrefixFilter(it.toStorageByteArray())
-                    }
                 }
             }
         }
@@ -505,33 +500,6 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         addValidationFail(e)
                                     }
                                 }
-                            }
-                        }
-                    }
-                    is Delete -> {
-                        for (reference in change.references) {
-                            @Suppress("UNCHECKED_CAST")
-                            val ref = reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>
-                            val referenceAsBytes = reference.toStorageByteArray()
-                            try {
-                                //Extra validations based on reference type
-                                when (ref) {
-                                    is TypedValueReference<*, *, *> -> throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
-                                    is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
-                                    is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to delete Map with any key reference, delete by map reference instead")
-                                    is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to delete List with any item reference, delete by list reference instead")
-                                    else -> Unit
-                                }
-
-                                deleteByReference(currentRowResult, put, reference, referenceAsBytes) { _, previousValue ->
-                                    ref.propertyDefinition.validateWithRef(
-                                        previousValue = previousValue,
-                                        newValue = null,
-                                        refGetter = { ref }
-                                    )
-                                }.also(setChanged)
-                            } catch (e: ValidationException) {
-                                addValidationFail(e)
                             }
                         }
                     }

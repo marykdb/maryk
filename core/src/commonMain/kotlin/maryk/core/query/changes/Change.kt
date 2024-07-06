@@ -47,27 +47,51 @@ data class Change internal constructor(
             referenceValuePair.reference.unwrap(mutableReferenceList)
             var referenceIndex = 0
 
-            fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
-                val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+            if (referenceValuePair is ReferenceNullPair) {
+                fun valueDeleter(originalValue: Any?, newValue: Any?): Any? {
+                    val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
 
-                return if (currentRef == null) {
-                    referenceValuePair.value
-                } else {
-                    deepValueChanger(
-                        originalValue,
-                        newValue,
-                        currentRef,
-                        ::valueChanger
-                    )
-                    null // Deeper change so no overwrite
+                    return if (currentRef != null) {
+                        try {
+                            deepValueChanger(
+                                originalValue,
+                                newValue,
+                                currentRef,
+                                ::valueDeleter
+                            )
+                            null // Deeper change so no overwrite
+                        } catch (_: SubObjectChangeException) {} // Ignore since there is nothing to delete
+                    } else Unit // Set the deletion as Unit
+                }
+
+                when (val ref = mutableReferenceList[referenceIndex++]) {
+                    is IsPropertyReferenceForValues<*, *, *, *> -> objectChanger(ref, ::valueDeleter)
+                    else -> throw RequestException("Unsupported reference type: $ref")
+                }
+            } else {
+                fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
+                    val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
+
+                    return if (currentRef == null) {
+                        referenceValuePair.value
+                    } else {
+                        deepValueChanger(
+                            originalValue,
+                            newValue,
+                            currentRef,
+                            ::valueChanger
+                        )
+                        null // Deeper change so no overwrite
+                    }
+                }
+
+                when (val ref = mutableReferenceList[referenceIndex++]) {
+                    is IsPropertyReferenceForValues<*, *, *, *> -> objectChanger(ref, ::valueChanger)
+                    else -> throw RequestException("Unsupported reference type: $ref")
                 }
             }
-
-            when (val ref = mutableReferenceList[referenceIndex++]) {
-                is IsPropertyReferenceForValues<*, *, *, *> -> objectChanger(ref, ::valueChanger)
-                else -> throw RequestException("Unsupported reference type: $ref")
-            }
         }
+
     }
 
     override fun toString() = "Change[${referenceValuePairs.joinToString()}]"

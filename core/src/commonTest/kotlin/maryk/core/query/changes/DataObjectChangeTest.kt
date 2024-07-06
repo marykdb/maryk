@@ -26,7 +26,7 @@ class DataObjectChangeTest {
 
     private val dataObjectChange = key1.change(
         Change(EmbeddedMarykModel(subModel) { value::ref } with "new"),
-        Delete(EmbeddedMarykModel(subModel) { model::ref }),
+        Change(EmbeddedMarykModel(subModel) { model::ref } with null),
         Check(EmbeddedMarykModel(subModel) { value::ref } with "current"),
         ObjectSoftDeleteChange(true),
         ObjectCreate,
@@ -80,7 +80,8 @@ class DataObjectChangeTest {
             changes:
             - !Change
               embeddedValues.value: new
-            - !Delete embeddedValues.model
+            - !Change
+              embeddedValues.model: null
             - !Check
               embeddedValues.value: current
             - !ObjectDelete

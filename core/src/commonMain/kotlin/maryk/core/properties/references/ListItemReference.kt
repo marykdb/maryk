@@ -16,7 +16,9 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.pairs.ReferenceValuePair
+import kotlin.js.JsName
 
 /** Reference to a List Item on [parentReference] with [T] by [index] */
 class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
@@ -32,6 +34,15 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     @Suppress("UNCHECKED_CAST")
     infix fun <T : Any> with(value: T) =
         ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+
+    @JsName("withValueOrNull")
+    infix fun <T : Any> with(value: T?) =
+        @Suppress("UNCHECKED_CAST")
+        if (value == null) {
+            ReferenceNullPair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>)
+        } else {
+            ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+        }
 
     override fun getEmbedded(name: String, context: IsPropertyContext?) =
         when (this.propertyDefinition) {

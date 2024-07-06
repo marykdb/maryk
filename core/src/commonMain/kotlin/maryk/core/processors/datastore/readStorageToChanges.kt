@@ -30,7 +30,6 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.IsPropRefGraph
@@ -58,7 +57,6 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.referenceStorageTypeOf
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
-import maryk.core.query.changes.Delete
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.ObjectCreate
@@ -67,6 +65,7 @@ import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.SetValueChanges
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.pairs.IsReferenceValueOrNullPair
+import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.pairs.ReferenceTypePair
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.exceptions.ParseException
@@ -75,7 +74,7 @@ typealias ValueWithVersionReader = (StorageTypeEnum<IsPropertyDefinition<out Any
 private typealias ChangeAdder = (ULong, ChangeType, Any) -> Unit
 
 private enum class ChangeType {
-    OBJECT_CREATE, OBJECT_DELETE, CHANGE, DELETE, SET_ADD, TYPE
+    OBJECT_CREATE, OBJECT_DELETE, CHANGE, SET_ADD, TYPE
 }
 
 /**
@@ -125,25 +124,25 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
     when (changeType) {
         OBJECT_CREATE -> this.find { it is ObjectCreate }
         OBJECT_DELETE -> this.find { it is ObjectSoftDeleteChange }
-        CHANGE -> this.find { it is Change }?.also {
-            ((it as Change).referenceValuePairs as MutableList<ReferenceValuePair<*>>).add(
-                changePart as ReferenceValuePair<*>
-            )
-        }
-        ChangeType.DELETE -> this.find { it is Delete }?.also {
-            val reference = changePart as AnyValuePropertyReference
-            val toDelete = ((it as Delete).references as MutableList<AnyValuePropertyReference>)
-            if (reference is IsPropertyReferenceWithParent<*, *, *, *>) {
-                var toSearch: AnyPropertyReference? = reference
-                while (toSearch is IsPropertyReferenceWithParent<*, *, *, *>) {
-                    if (toDelete.contains(toSearch as AnyValuePropertyReference)) {
-                        return@also
-                    }
+        CHANGE -> this.find { it is Change }?.also { change ->
+            if (changePart is ReferenceNullPair<*>) {
+                // Handle deletion of reference
+                val reference = changePart.reference
+                if (reference is IsPropertyReferenceWithParent<*, *, *, *>) {
+                    val pairs = (change as Change).referenceValuePairs.map(IsReferenceValueOrNullPair<*>::reference)
+                    var toSearch: AnyPropertyReference? = reference
+                    while (toSearch is IsPropertyReferenceWithParent<*, *, *, *>) {
+                        if (pairs.contains(toSearch as AnyValuePropertyReference)) {
+                            return@also
+                        }
 
-                    toSearch = toSearch.parentReference ?: break
+                        toSearch = toSearch.parentReference ?: break
+                    }
                 }
             }
-            toDelete.add(reference)
+            ((change as Change).referenceValuePairs as MutableList<IsReferenceValueOrNullPair<*>>).add(
+                changePart as IsReferenceValueOrNullPair<*>
+            )
         }
         TYPE -> this.find { it is MultiTypeChange }?.also {
             ((it as MultiTypeChange).referenceTypePairs as MutableList<ReferenceTypePair<*>>).add(
@@ -174,7 +173,6 @@ private fun createChange(changeType: ChangeType, changePart: Any) = when (change
     OBJECT_CREATE -> ObjectCreate
     OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
     CHANGE -> Change(mutableListOf(changePart as IsReferenceValueOrNullPair<Any>))
-    ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValueDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
     TYPE -> MultiTypeChange(mutableListOf(changePart as ReferenceTypePair<*>))
     SET_ADD -> {
         val ref = changePart as SetItemReference<*, *>
@@ -274,7 +272,7 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
                     val ref =
                         reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, ref)
+                        addChangeToOutput(version, CHANGE, ReferenceNullPair(ref))
                     } else {
                         if (value !is TypedValue<*, *> && value !is MultiTypeEnum<*>) {
                             addChangeToOutput(version, CHANGE, ReferenceValuePair(ref, value))
@@ -318,7 +316,8 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
                 // Handle embed deletes
                 readValueFromStorage(Value, reference) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, reference as Any)
+                        @Suppress("UNCHECKED_CAST")
+                        addChangeToOutput(version, CHANGE, ReferenceNullPair(reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>))
                     } // Else this value just exists
                 }
             } else {
@@ -343,7 +342,8 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
             if (isAtEnd) {
                 readValueFromStorage(ListSize, reference) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, reference as Any)
+                        @Suppress("UNCHECKED_CAST")
+                        addChangeToOutput(version, CHANGE, ReferenceNullPair(reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>))
                     }
                 }
             } else {
@@ -357,11 +357,8 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
 
                 readValueFromStorage(Value, itemReference) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(
-                            version,
-                            ChangeType.DELETE,
-                            itemReference
-                        )
+                        @Suppress("UNCHECKED_CAST")
+                        addChangeToOutput(version, CHANGE, ReferenceNullPair(itemReference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>))
                     } else {
                         addChangeToOutput(
                             version,
@@ -376,7 +373,8 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
             if (isAtEnd) {
                 readValueFromStorage(SetSize, reference) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, reference as Any)
+                        @Suppress("UNCHECKED_CAST")
+                        addChangeToOutput(version, CHANGE, ReferenceNullPair(reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>))
                     }
                 }
             } else {
@@ -394,11 +392,8 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
 
                 readValueFromStorage(Value, setItemReference) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(
-                            version,
-                            ChangeType.DELETE,
-                            setItemReference
-                        )
+                        @Suppress("UNCHECKED_CAST")
+                        addChangeToOutput(version, CHANGE, ReferenceNullPair(setItemReference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>))
                     } else {
                         addChangeToOutput(version, SET_ADD, setItemReference)
                     }
@@ -413,7 +408,8 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
             if (isAtEnd) {
                 readValueFromStorage(MapSize, mapReference) { version, value ->
                     if (value == null) {
-                        addChangeToOutput(version, ChangeType.DELETE, reference as Any)
+                        @Suppress("UNCHECKED_CAST")
+                        addChangeToOutput(version, CHANGE, ReferenceNullPair(reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>))
                     }
                 }
             } else {
@@ -430,7 +426,8 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
                 if (qualifierLength <= offset) {
                     readValueFromStorage(Value, valueReference) { version, value ->
                         if (value == null) {
-                            addChangeToOutput(version, ChangeType.DELETE, valueReference)
+                            @Suppress("UNCHECKED_CAST")
+                            addChangeToOutput(version, CHANGE, ReferenceNullPair(valueReference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>))
                         } else {
                             if (value !is TypedValue<*, *> && value !is MultiTypeEnum<*>) {
                                 addChangeToOutput(version, CHANGE, valueReference with value)
@@ -590,7 +587,9 @@ private fun readTypedValue(
     if (qualifierLength <= qIndex1) {
         readValueFromStorage(Value, reference) { version, value ->
             when (value) {
-                null -> addChangeToOutput(version, ChangeType.DELETE, reference as Any)
+                null ->
+                    @Suppress("UNCHECKED_CAST")
+                    addChangeToOutput(version, CHANGE, ReferenceNullPair(reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>))
                 is MultiTypeEnum<*> -> {
                     @Suppress("UNCHECKED_CAST")
                     addChangeToOutput(

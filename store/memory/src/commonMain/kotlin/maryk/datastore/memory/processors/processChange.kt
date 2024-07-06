@@ -170,8 +170,30 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                         }
                     }
                     is Change -> {
-                        for ((reference, value) in change.referenceValuePairs) {
-                            when (value) {
+                        for (pair in change.referenceValuePairs) {
+                            @Suppress("UNCHECKED_CAST")
+                            val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                            when (val value = pair.value) {
+                                null -> {
+                                    deleteByReference(newValueList, reference, version, keepAllVersions) { _, previousValue ->
+                                        try {
+                                            reference.propertyDefinition.validateWithRef(
+                                                previousValue = previousValue,
+                                                newValue = null,
+                                                refGetter = { reference }
+                                            )
+
+                                            // Extra validations based on reference type
+                                            when (reference) {
+                                                is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
+                                                is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to delete Map with any key reference, delete by map reference instead")
+                                                is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to delete List with any item reference, delete by list reference instead")
+                                            }
+                                        } catch (e: ValidationException) {
+                                            addValidationFail(e)
+                                        }
+                                    }.also(setChanged)
+                                }
                                 is Map<*, *> -> {
                                     @Suppress("UNCHECKED_CAST")
                                     val mapDefinition = reference.propertyDefinition as? IsMapDefinition<Any, Any, IsPropertyContext>

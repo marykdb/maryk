@@ -3,21 +3,24 @@ package maryk.core.query.changes
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.ReferenceValuePairsDataModel
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
-import maryk.core.query.pairs.ReferenceValuePair
+import maryk.core.query.pairs.IsReferenceValueOrNullPair
+import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.values.ObjectValues
 
 /** Defines changes to properties defined by [referenceValuePairs] */
 data class Change internal constructor(
-    val referenceValuePairs: List<ReferenceValuePair<Any>>
+    val referenceValuePairs: List<IsReferenceValueOrNullPair<Any>>
 ) : IsChange {
     override val changeType = ChangeType.Change
 
     @Suppress("UNCHECKED_CAST")
-    constructor(vararg referenceValuePair: ReferenceValuePair<*>?) : this(referenceValuePair.filterNotNull() as List<ReferenceValuePair<Any>>)
+    constructor(vararg referenceValuePair: IsReferenceValueOrNullPair<*>?) : this(referenceValuePair.filterNotNull() as List<ReferenceNullPair<Any>>)
 
     override fun filterWithSelect(select: RootPropRefGraph<out IsRootDataModel>): Change? {
         val filtered = referenceValuePairs.filter {
@@ -27,9 +30,10 @@ data class Change internal constructor(
     }
 
     override fun validate(addException: (e: ValidationException) -> Unit) {
-        for ((reference, value) in referenceValuePairs) {
+        for (pair in referenceValuePairs) {
             try {
-                reference.comparablePropertyDefinition.validateWithRef(null, value, { reference })
+                @Suppress("UNCHECKED_CAST")
+                (pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>).comparablePropertyDefinition.validateWithRef(null, pair.value, { pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *> })
             } catch (e: ValidationException) {
                 addException(e)
             }
@@ -68,9 +72,9 @@ data class Change internal constructor(
 
     override fun toString() = "Change[${referenceValuePairs.joinToString()}]"
 
-    companion object : ReferenceValuePairsDataModel<Change, Companion, ReferenceValuePair<Any>, Any, Any>(
+    companion object : ReferenceValuePairsDataModel<Change, Companion, IsReferenceValueOrNullPair<Any>, Any, Any>(
         pairGetter = Change::referenceValuePairs,
-        pairModel = ReferenceValuePair,
+        pairModel = IsReferenceValueOrNullPair,
     ) {
         override fun invoke(values: ObjectValues<Change, Companion>) = Change(
             referenceValuePairs = values(1u)

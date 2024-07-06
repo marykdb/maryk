@@ -19,7 +19,6 @@ import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
-import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.query.addReference
 import maryk.core.values.ObjectValues
@@ -28,8 +27,8 @@ import maryk.core.values.Values
 /** Compares given [value] of type [T] against referenced value [reference] */
 data class ReferenceValuePair<T : Any> internal constructor(
     override val reference: IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>,
-    val value: T
-) : DefinedByReference<T> {
+    override val value: T
+) : IsReferenceValueOrNullPair<T> {
 
     override fun toString() = "$reference: $value"
 

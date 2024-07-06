@@ -205,8 +205,36 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                         }
                     }
                     is Change -> {
-                        for ((reference, value) in change.referenceValuePairs) {
-                            when (value) {
+                        for (pair in change.referenceValuePairs) {
+                            @Suppress("UNCHECKED_CAST")
+                            val reference = pair.reference as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>
+                            when (val value = pair.value) {
+                                null -> {
+                                    val referenceAsBytes = reference.toStorageByteArray()
+                                    try {
+                                        if (reference is TypedValueReference<*, *, *>) {
+                                            throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
+                                        }
+
+                                        deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, referenceAsBytes, versionBytes) { _, previousValue ->
+                                            reference.propertyDefinition.validateWithRef(
+                                                previousValue = previousValue,
+                                                newValue = null,
+                                                refGetter = { reference }
+                                            )
+
+                                            // Extra validations based on reference type
+                                            when (reference) {
+                                                is MapKeyReference<*, *, *> -> throw RequestException("Not allowed to delete Map key, delete value instead")
+                                                is MapAnyValueReference<*, *, *> -> throw RequestException("Not allowed to delete Map with any key reference, delete by map reference instead")
+                                                is ListAnyItemReference<*, *> -> throw RequestException("Not allowed to delete List with any item reference, delete by list reference instead")
+                                                else -> {}
+                                            }
+                                        }.also(setChanged)
+                                    } catch (e: ValidationException) {
+                                        addValidationFail(e)
+                                    }
+                                }
                                 is Map<*, *> -> {
                                     @Suppress("UNCHECKED_CAST")
                                     val mapDefinition = reference.propertyDefinition as? IsMapDefinition<Any, Any, IsPropertyContext>

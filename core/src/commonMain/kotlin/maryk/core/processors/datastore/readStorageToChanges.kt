@@ -66,6 +66,7 @@ import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.SetValueChanges
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.pairs.IsReferenceValueOrNullPair
 import maryk.core.query.pairs.ReferenceTypePair
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.exceptions.ParseException
@@ -172,7 +173,7 @@ private fun MutableList<IsChange>.addChange(changeType: ChangeType, changePart: 
 private fun createChange(changeType: ChangeType, changePart: Any) = when (changeType) {
     OBJECT_CREATE -> ObjectCreate
     OBJECT_DELETE -> ObjectSoftDeleteChange(changePart as Boolean)
-    CHANGE -> Change(mutableListOf(changePart as ReferenceValuePair<Any>))
+    CHANGE -> Change(mutableListOf(changePart as IsReferenceValueOrNullPair<Any>))
     ChangeType.DELETE -> Delete(mutableListOf(changePart as IsPropertyReference<*, IsValueDefinitionWrapper<*, *, IsPropertyContext, *>, *>))
     TYPE -> MultiTypeChange(mutableListOf(changePart as ReferenceTypePair<*>))
     SET_ADD -> {

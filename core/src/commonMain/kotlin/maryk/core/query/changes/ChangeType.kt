@@ -12,14 +12,14 @@ enum class ChangeType(
 ) : IndexedEnumComparable<ChangeType>, IsCoreEnum, TypeEnum<IsChange> {
     Check(1u),
     Change(2u),
-    ObjectCreate(4u),
-    ObjectDelete(5u),
-    ListChange(6u),
-    SetChange(7u),
-    TypeChange(8u),
-    IncMapChange(9u),
-    IncMapAddition(10u),
-    IndexChange(11u);
+    ObjectCreate(3u),
+    ObjectDelete(4u),
+    ListChange(5u),
+    SetChange(6u),
+    TypeChange(7u),
+    IncMapChange(8u),
+    IncMapAddition(9u),
+    IndexChange(10u);
 
     companion object : IndexedEnumDefinition<ChangeType>(
         ChangeType::class, { entries }

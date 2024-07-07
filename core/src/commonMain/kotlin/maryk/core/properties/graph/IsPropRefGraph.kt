@@ -5,8 +5,10 @@ import maryk.core.models.IsDataModel
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.EmbeddedObjectPropertyRef
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.MapValueReference
 
 /** Defines a graph element */
 interface IsPropRefGraph<in DM : IsDataModel> {
@@ -41,23 +43,36 @@ interface IsPropRefGraph<in DM : IsDataModel> {
     fun contains(reference: IsPropertyReference<*, *, *>): Boolean {
         val elements = reference.unwrap()
 
-        var referenceIndex = 0
-        var currentReference = elements[referenceIndex++]
-        var currentSelect: IsPropRefGraph<*> = this
+        var currentNode: IsPropRefGraph<*> = this
+        var currentMapKey: GraphMapItem<*, *>? = null
 
-        loop@ while (referenceIndex <= elements.size) {
+        for ((index, currentReference) in elements.withIndex()) {
             return when (currentReference) {
-                is IsPropertyReferenceForValues<*, *, *, *> -> {
-                    if (referenceIndex < elements.size && currentReference is EmbeddedValuesPropertyRef<*, *> || currentReference is EmbeddedObjectPropertyRef<*, *, *, *, *>) {
-                        when (val node = currentSelect.selectNodeOrNull(currentReference.index)) {
-                            is PropRefGraph<*, *> -> {
-                                currentReference = elements[referenceIndex++]
-                                currentSelect = node
-                                continue@loop
+                is IsMapReference<*, *, *, *> -> {
+                    if (index != elements.lastIndex) {
+                        when (val node = currentNode.selectNodeOrNull(currentReference.index)) {
+                            is PropRefGraph<*, *> -> break // Should not contain a PropRefGraph
+                            is GraphMapItem<*, *> -> {
+                                currentMapKey = node
+                                continue // To next MapValueReference
                             }
-                            else -> currentSelect.contains(currentReference.index)
                         }
-                    } else currentSelect.contains(currentReference.index)
+                    }
+                    currentNode.contains(currentReference.index)
+                }
+                is MapValueReference<*, *, *> -> {
+                    currentMapKey != null && currentMapKey.key == currentReference.key
+                }
+                is IsPropertyReferenceForValues<*, *, *, *> -> {
+                    if (index != elements.lastIndex && currentReference is EmbeddedValuesPropertyRef<*, *> || currentReference is EmbeddedObjectPropertyRef<*, *, *, *, *>) {
+                        when (val node = currentNode.selectNodeOrNull(currentReference.index)) {
+                            is PropRefGraph<*, *> -> {
+                                currentNode = node
+                                continue
+                            }
+                            else -> currentNode.contains(currentReference.index)
+                        }
+                    } else currentNode.contains(currentReference.index)
                 }
                 else -> false
             }

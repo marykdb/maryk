@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.Graph
+import maryk.core.properties.graph.PropRefGraphType.MapKey
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
@@ -47,24 +48,27 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                         contextualResolver = { context: GraphContext? ->
                             context?.dataModel as? IsValuesDataModel? ?: throw ContextNotFoundException()
                         }
+                    ),
+                    MapKey to EmbeddedObjectDefinition(
+                        dataModel = { GraphMapItem }
                     )
                 ),
                 typeEnum = PropRefGraphType
             ),
             getter = RootPropRefGraph<*>::properties,
             toSerializable = { value: IsPropRefGraphNode<*> ->
-                value.let {
-                    when (it) {
-                        is IsDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.ref() as IsTransportablePropRefGraphNode)
-                        is PropRefGraph<*, *> -> TypedValue(it.graphType, it)
-                        else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
-                    }
+                when (value) {
+                    is IsDefinitionWrapper<*, *, *, *> -> TypedValue(value.graphType, value.ref() as IsTransportablePropRefGraphNode)
+                    is PropRefGraph<*, *> -> TypedValue(value.graphType, value)
+                    is GraphMapItem<*, *> -> TypedValue(value.graphType, value)
+                    else -> throw ParseException("Unknown PropRefGraphType ${value.graphType}")
                 }
             },
             fromSerializable = { value: TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode> ->
                 when (value.type) {
                     PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
                     Graph -> value.value as IsPropRefGraphNode<*>
+                    MapKey -> value.value as IsPropRefGraphNode<*>
                 }
             }
         )
@@ -111,10 +115,12 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                 while (currentToken != JsonToken.EndArray && currentToken !is JsonToken.Stopped) {
                     when (currentToken) {
                         is JsonToken.StartObject -> {
+                            val newContext = transformContext(context)
+
                             propertiesList.add(
                                 TypedValue(
                                     Graph,
-                                    PropRefGraph.Serializer.readJson(reader, context).toDataObject()
+                                    PropRefGraph.Serializer.readJson(reader, newContext).toDataObject()
                                 )
                             )
                         }
@@ -122,10 +128,17 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                             val multiTypeDefinition =
                                 this@Companion.properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
 
+                            val currentTokenValue = currentToken.value
+
+                            val type = when {
+                                currentTokenValue is String && currentTokenValue.contains(char = '[') -> MapKey
+                                else -> PropRef
+                            }
+
                             propertiesList.add(
                                 TypedValue(
-                                    PropRef,
-                                    multiTypeDefinition.definition(PropRef)!!.readJson(reader, context)
+                                    type,
+                                    multiTypeDefinition.definition(type)!!.readJson(reader, context)
                                 )
                             )
                         }

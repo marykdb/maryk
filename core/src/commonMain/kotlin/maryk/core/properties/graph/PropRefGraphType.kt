@@ -11,7 +11,8 @@ enum class PropRefGraphType(
     override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<PropRefGraphType>, IsCoreEnum, TypeEnum<IsTransportablePropRefGraphNode> {
     PropRef(1u),
-    Graph(2u);
+    Graph(2u),
+    MapKey(3u);
 
     companion object : IndexedEnumDefinition<PropRefGraphType>(
         PropRefGraphType::class, { entries }

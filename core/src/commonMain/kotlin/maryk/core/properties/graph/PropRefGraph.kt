@@ -17,6 +17,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.graph.PropRefGraphType.Graph
+import maryk.core.properties.graph.PropRefGraphType.MapKey
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -94,6 +95,9 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
                     Graph to EmbeddedObjectDefinition(
                         dataModel = { this@Companion }
                     ),
+                    MapKey to EmbeddedObjectDefinition(
+                        dataModel = { GraphMapItem }
+                    ),
                     PropRef to ContextualPropertyReferenceDefinition(
                         contextualResolver = { context: GraphContext? ->
                             context?.subDataModel as? IsValuesDataModel? ?: throw ContextNotFoundException()
@@ -108,6 +112,7 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
                     when (it) {
                         is IsDefinitionWrapper<*, *, *, *> -> TypedValue(it.graphType, it.ref() as IsTransportablePropRefGraphNode)
                         is PropRefGraph<*, *> -> TypedValue(it.graphType, it)
+                        is GraphMapItem<*, *> -> TypedValue(it.graphType, it)
                         else -> throw ParseException("Unknown PropRefGraphType ${it.graphType}")
                     }
                 }
@@ -116,6 +121,7 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
                 when (value.type) {
                     PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
                     Graph -> value.value as IsPropRefGraphNode<*>
+                    MapKey -> value.value as GraphMapItem<*, *>
                 }
             }
         )
@@ -133,7 +139,8 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
                 context: GraphContext?,
                 skip: List<IsDefinitionWrapper<*, *, *, PropRefGraph<*, *>>>?
             ) {
-                writeJsonValues(obj.parent.ref(), obj.properties, writer, context)
+                val newContext = transformContext(context)
+                writeJsonValues(obj.parent.ref(), obj.properties, writer, newContext)
             }
 
             private fun writeJsonValues(
@@ -238,6 +245,9 @@ internal fun writePropertiesToJson(
     for (graphable in transformed) {
         when (val value = graphable.value) {
             is PropRefGraph<*, *> -> PropRefGraph.Serializer.writeObjectAsJson(
+                value, writer, context
+            )
+            is GraphMapItem<*, *> -> GraphMapItem.Serializer.writeObjectAsJson(
                 value, writer, context
             )
             is IsDefinitionWrapper<*, *, *, *> -> {

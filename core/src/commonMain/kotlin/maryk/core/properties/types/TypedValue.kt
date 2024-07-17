@@ -33,3 +33,7 @@ data class MutableTypedValue<out E : TypeEnum<T>, T : Any>(
 
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> TypedValue<*, *>.getValue() = this.value as T
+
+@Suppress("UNCHECKED_CAST", "UNUSED_PARAMETER")
+inline fun <reified E : TypeEnum<T>, T : Any> TypedValue<*, *>.withTypeOrNull(type: E): T? =
+    if (this.type is E) this.value as? T else null

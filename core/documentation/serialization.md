@@ -1,17 +1,21 @@
 ## Serializing Maryk DataObjects
 
-Maryk DataObjects can be serialized into three formats: [YAML](#yaml), [JSON](#json)
-and [ProtoBuf](#protobuf).
+Maryk DataObjects can be serialized into three formats: [YAML](#yaml), [JSON](#json), and [ProtoBuf](#protobuf). Each 
+format has its own advantages depending on the use case.
 
-ProtoBuf is the preferred format for its small size, while YAML is preferred when human-readability is required. 
-JSON is preferred when it needs to be parsed by external libraries.
+- **ProtoBuf** is the preferred format for its compact size and efficiency.
+- **YAML** is ideal when human readability is a priority.
+- **JSON** is suitable for interoperability with external libraries and systems.
 
 ### YAML
-YAML is a human-readable format that relies on indentation to make it easy to read and edit. Maryk includes its own
-[YAML library](../../yaml/README.md), which provides functionality such as anchors/aliases, complex field names, and comment support. This makes 
-YAML an ideal format for defining model definitions, queries, and data objects.
 
-Here is an example of a DataModel definition in YAML:
+YAML is a human-readable data serialization format that uses indentation to structure data. It is particularly useful 
+for configuration files and data exchange between languages with different data structures. Maryk provides its own 
+[YAML library](../../yaml/README.md), which supports features such as anchors, aliases, complex field names, and 
+comments. This makes YAML an excellent choice for defining model definitions, queries, and data objects.
+
+#### Example: DataModel Definition in YAML
+
 ```yaml
 name: User
 key:
@@ -27,35 +31,39 @@ key:
   unique: true
 ```
 
-And an example User object in YAML:
+#### Example: User Object in YAML
+
 ```yaml
 username: john.smith
 email: john.smith@gmail.com
 ```
 
-Serializing a User to YAML in Kotlin:
+#### Serializing a User to YAML in Kotlin
+
 ```kotlin
 val user: Values<User, User.Properties> // instance of a user
 val yamlWriter: YamlWriter // instance of YAML writer
 
-User.writeJson(user, yamlWriter)
-
+User.writeYaml(user, yamlWriter)
 ```
 
-Deserializing a User from YAML in Kotlin:
+#### Deserializing a User from YAML in Kotlin
+
 ```kotlin
 val yamlReader: YamlReader // instance of YAML reader
 
-val user: Values<User, User.Properties> = User.readJson(yamlReader)
+val user: Values<User, User.Properties> = User.readYaml(yamlReader)
 ```
 
 ### JSON
-JSON is a widely adopted and human-readable format that is easily parsable by many libraries across all platforms.
-This makes it easy to debug and share data with third-party systems not using Maryk. Additionally, JSON can be outputted 
-in "pretty mode," which includes extra whitespace to further enhance readability. 
-Maryk includes its own streaming [JSON library](../../json/README.md) to ensure consistent functionality across all platforms.
 
-Here is an example of a DataModel definition in JSON:
+JSON (JavaScript Object Notation) is a lightweight data interchange format that is easy for humans to read and write, 
+and easy for machines to parse and generate. It is widely used across various platforms and programming languages. 
+Maryk includes its own streaming [JSON library](../../json/README.md) to ensure consistent functionality across all 
+supported platforms. JSON can also be formatted in "pretty mode" for enhanced readability.
+
+#### Example: DataModel Definition in JSON
+
 ```json
 {
   "name": "User",
@@ -79,8 +87,8 @@ Here is an example of a DataModel definition in JSON:
 }
 ```
 
+#### Example: User Object in JSON
 
-And here is an example of a User object in JSON:
 ```json
 {
   "username": "john.smith",
@@ -88,53 +96,58 @@ And here is an example of a User object in JSON:
 }
 ```
 
-To serialize a User object to JSON, use the following code:
+#### Serializing a User to JSON in Kotlin
+
 ```kotlin
 val user: Values<User, User.Properties> // instance of a user
 val jsonWriter: JsonWriter // instance of JSON writer
 
 User.writeJson(user, jsonWriter)
-
 ```
 
-To deserialize a User object from JSON, use the following code:
+#### Deserializing a User from JSON in Kotlin
+
 ```kotlin
 val jsonReader: JsonReader // instance of JSON reader
 
-val user: Values<User, User.Properties> = User.readJson(reader)
+val user: Values<User, User.Properties> = User.readJson(jsonReader)
 ```
 
 ### ProtoBuf
-ProtoBuf is a widely adopted and highly efficient byte serialization format. Its ability to read and write bytes in a 
-streaming manner allows for faster parsing and reduces memory usage. 
-[Read more here.](protobuf.md)
 
-Here is an example of serializing a User object to ProtoBuf:
+ProtoBuf (Protocol Buffers) is a language-neutral, platform-neutral extensible mechanism for serializing structured data. 
+It is highly efficient in terms of both speed and space, making it suitable for high-performance applications. For more 
+details, [read here](protobuf.md).
+
+#### Example: Serializing a User Object to ProtoBuf
+
 ```kotlin
 val user: Values<User, User.Properties> // instance of a user
 val byteWriter: (Byte) -> Unit // instance of byte writer
 
 val cache = WriteCache()
 
-// Calculate first total byte length to write
+// Calculate the total byte length to write
 val byteLength = User.calculateProtoBufLength(user, cache)
 
-// Reserve space on your byte writer.
-
+// Reserve space on your byte writer
 User.writeProtoBuf(user, cache, byteWriter)
 ```
 
-And here is an example of deserializing a User object from ProtoBuf:
-```kotlin
-val jsonReader: JsonReader // instance of JSON reader
+#### Example: Deserializing a User Object from ProtoBuf
 
-val byteReader: () -> Byte 
-val byteLength: Int // Amount of bytes to read, probably defined in the request
+```kotlin
+val byteReader: () -> Byte // function to read bytes
+val byteLength: Int // Amount of bytes to read, typically defined in the request
 
 val user = User.readProtoBuf(byteLength, byteReader)
 ```
 
-It is also possible to get only a map of index-value pairs when deserializing from ProtoBuf. This is useful when there is not a generated model available.
+#### Getting Index-Value Pairs from ProtoBuf
+
+It is also possible to obtain a map of index-value pairs when deserializing from ProtoBuf. This is useful when a 
+generated model is not available.
+
 ```kotlin
 val user: Values<User, User.Properties> = User.readProtoBuf(byteLength, byteReader)
 ```

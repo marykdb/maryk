@@ -1,6 +1,5 @@
 package maryk.lib.extensions
 
-import maryk.lib.exceptions.ParseException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
@@ -12,10 +11,6 @@ internal class HexKtTest {
     @Test
     fun testToHexConversion() {
         expect("00ff58") { bytes.toHex() }
-
-        expect("ff58") { byteArrayOf(0, 0, 0, -1, 88).toHex(true) }
-        expect("044d") { byteArrayOf(4, 77).toHex(true) }
-        expect("") { byteArrayOf(0, 0, 0).toHex(true) }
     }
 
     @Test
@@ -31,7 +26,7 @@ internal class HexKtTest {
 
     @Test
     fun testFromInvalidHexConversion() {
-        assertFailsWith<ParseException> {
+        assertFailsWith<NumberFormatException> {
             bytes contentEquals initByteArrayByHex("wrong")
         }
     }

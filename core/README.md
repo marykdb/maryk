@@ -1,19 +1,21 @@
 # Maryk Core
 
-The Maryk Core project is the heart of the Maryk library, providing a comprehensive
-set of tools for creating structured, type-strict data models, and querying, parsing,
-and serializing this data in a variety of formats. This project includes everything
-from data model definition, properties, versioning, queries, filters, and serialization
-support for YAML, JSON, and ProtoBuf.
+Welcome to the Maryk Core project! This foundational component of the Maryk library provides a robust set of tools for 
+creating structured and type-safe data models, allowing you to efficiently query, parse, and serialize your data across
+various formats.
 
-## Documentation
+## Key Features
 
-For more information on how to use Maryk Core, check out the following resources:
+- **[Data Model Definition](documentation/datamodel.md)**: Define complex data structures using Maryk's property system.
 
-- [DataModels](documentation/datamodel.md): Learn how to define complex data models using Maryk's property system.
-- [Properties](documentation/properties/properties.md): Explore the various property types available in Maryk.
-- [Versioning](documentation/versioning.md): Discover how to store versioned data and revert to earlier versions as needed.
-- [Queries](documentation/query.md): Get a comprehensive overview of the query language and how to use it to extract meaningful data from your datasets.
-- [Aggregations](documentation/aggregations.md): Learn how to aggregate your data and gain valuable insights on your stored data.
-- [Collect & Inject Values Requests](documentation/collectAndInject.md): Learn how to use the Collect & Inject Values Requests to efficiently transport data between platforms.
-- [Serialization](documentation/serialization.md): Learn how to serialize and deserialize data in YAML, JSON, and ProtoBuf formats.
+- **[Property Types](documentation/properties/properties.md)**: Utilize a variety of property types tailored to your data needs.
+
+- **[Versioning](documentation/versioning.md)**: Store versioned data and easily revert to earlier versions when necessary.
+
+- **[Query Language](documentation/query.md)**: Extract meaningful insights from your datasets with a powerful query language.
+
+- **[Data Aggregation](documentation/aggregations.md)**: Aggregate data to gain valuable insights and analytics.
+
+- **[Collect & Inject Values](documentation/collectAndInject.md)**: Efficiently transport data between platforms using Collect & Inject requests.
+
+- **[Serialization Support](documentation/serialization.md)**: Serialize and deserialize data in YAML, JSON, and ProtoBuf formats.

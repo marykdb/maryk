@@ -3,8 +3,8 @@ package maryk.core.properties.definitions
 import maryk.core.exceptions.RequestException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextTransformerDefinition
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.IncMapDefinitionWrapper

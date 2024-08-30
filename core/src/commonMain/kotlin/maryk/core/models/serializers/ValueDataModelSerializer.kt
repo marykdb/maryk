@@ -1,5 +1,6 @@
 package maryk.core.models.serializers
 
+import maryk.core.base64.Base64Maryk
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.invoke
 import maryk.core.models.values
@@ -9,7 +10,6 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.values.MutableValueItems
-import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
@@ -59,7 +59,7 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
 
     @OptIn(ExperimentalEncodingApi::class)
     override fun fromBase64(value: String): DO {
-        val b = Base64.UrlSafe.decode(value)
+        val b = Base64Maryk.decode(value)
         var index = 0
         return this.readFromBytes {
             b[index++]

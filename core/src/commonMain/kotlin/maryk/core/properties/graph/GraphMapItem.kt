@@ -13,8 +13,6 @@ import maryk.core.properties.definitions.contextual.ContextualSubDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsMapDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
-import maryk.core.properties.graph.PropRefGraph.Companion.parent
-import maryk.core.properties.graph.PropRefGraph.Companion.properties
 import maryk.core.properties.references.IsMapReference
 import maryk.core.query.ContainsDataModelContext
 import maryk.core.values.ObjectValues
@@ -31,10 +29,6 @@ operator fun <K: Any, DM: IsDataModel> IsMapDefinitionWrapper<K, *, *, *, *>.get
     key = key,
 )
 
-/**
- * Represents a Property Reference Graph branch below a [parent] with all [properties] to fetch
- * [properties] should always be sorted by index so processing graphs is a lot easier
- */
 data class GraphMapItem<K: Any, DM: IsDataModel> internal constructor(
     val mapReference: IsMapReference<*, *, *, *>,
     val key: K,

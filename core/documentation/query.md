@@ -262,89 +262,62 @@ val scanRequest = Logs.scanUpdates(
             message
         )
     },
- where = GreaterThanEquals(
-  Logs { severity::ref } with Severity.ERROR
- ),
- order = ref { timeStamp }.descending(),
- filterSoftDeleted = false,
- limit = 50,
- fromVersion = 1000L,
- toVersion = 2000L,
- maxVersions = 100,
- orderedKeys = listOf(log1Key, log2Key, log3Key)
+    where = GreaterThanEquals(
+        Logs { severity::ref } with Severity.ERROR
+    ),
+    order = ref { timeStamp }.descending(),
+    filterSoftDeleted = false,
+    limit = 50,
+    fromVersion = 1000L,
+    toVersion = 2000L,
+    maxVersions = 100,
+    orderedKeys = listOf(log1Key, log2Key, log3Key)
 )
-```
 
-### Scan/Get Changes
-
-You can request all the changes on Objects ordered by version using two methods:
-[`GetChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetChangesRequest.kt) and [
-`ScanChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanChangesRequest.kt).
-
-The `maxVersions` parameter (default=1) controls how many versions are returned at maximum. To return more than one
-version, ensure that the DataStore has `keepAllVersions` set to `true`.
-
-When applied, these methods will deliver a [
-`ChangesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangesResponse.kt), which includes a list of [
-`DataObjectVersionedChange`](../src/commonMain/kotlin/maryk/core/query/changes/DataObjectVersionedChange.kt). This
-response contains details such as the `key` and `changes`, which provide insights into the version and any modifications
-made.
-
-**NOTE:** This type cannot have filters or orders on mutable properties, as doing so may yield unreliable results. For
-instance, if a value is modified, it could affect its ordering position or inadvertently filter out results. In such
-cases, consider using Get/Scan Updates to track changes effectively.
-
-Get changes with all parameters:
-
-```kotlin
 val person1Key // Key representing person 1 whose data will be changed.
 val person2Key // Key representing person 2 whose data will be changed.
 
 val getRequest = Person.run {
- getChanges(
-  person1Key,
-  person2Key,
-  select = graph {
-   listOf(
-    firstName,
-    lastName
-   )
-  },
-  where = And(
-   Equals(ref { firstName } with "Clark"),
-   Exists(ref { lastName })
-  ),
-  order = ref { lastName }.ascending(),
-  toVersion = 2000L,
-  filterSoftDeleted = false,
-  fromVersion = 1000L,
-  maxVersions = 100
- )
+    getChanges(
+        person1Key,
+        person2Key,
+        select = graph {
+            listOf(
+                firstName,
+                lastName
+            )
+        },
+        where = And(
+            Equals(ref { firstName } with "Clark"),
+            Exists(ref { lastName })
+        ),
+        order = ref { lastName }.ascending(),
+        toVersion = 2000L,
+        filterSoftDeleted = false,
+        fromVersion = 1000L,
+        maxVersions = 100
+    )
 }
-```
 
-Scan changes with all parameters:
-
-```kotlin
 val timedKey // Key that indicates the starting point for scanning at a certain time.
 
 val scanRequest = Logs.scanChanges(
- startKey = timedKey,
- select = graph {
-  listOf(
-   timeStamp,
-   severity,
-   message
-  )
- },
- where = GreaterThanEquals(
-  Logs { severity::ref } with Severity.ERROR
- ),
- order = ref { timeStamp }.descending(),
- filterSoftDeleted = false,
- limit = 50,
- fromVersion = 1000L,
- toVersion = 2000L,
- maxVersions = 100
+    startKey = timedKey,
+    select = graph {
+        listOf(
+            timeStamp,
+            severity,
+            message
+        )
+    },
+    where = GreaterThanEquals(
+        Logs { severity::ref } with Severity.ERROR
+    ),
+    order = ref { timeStamp }.descending(),
+    filterSoftDeleted = false,
+    limit = 50,
+    fromVersion = 1000L,
+    toVersion = 2000L,
+    maxVersions = 100
 )
 ```

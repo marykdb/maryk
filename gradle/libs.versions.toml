@@ -3,7 +3,7 @@
 [versions]
 
 kotlin = "2.0.0"
-android = "8.0.2"
+android = "8.6.0"
 
 [libraries]
 

@@ -1,16 +1,17 @@
 # Filters
 
-Filters can be applied to both [Get](query.md#get) and [Scan](query.md#scan) objects in
-queries. Complex operations can be created by using the [`And`](#and)
-and [`Or`](#or) filters. , and filters can be reversed using the [`Not`](#not)
-filter.
+Filters are useful tools that can be applied to both [Get](query.md#get) and [Scan](query.md#scan) objects in queries.
+You can create complex operations by using the [`And`](#and) and [`Or`](#or) filters, while also having the ability to
+reverse filters with the [`Not`](#not) filter.
 
 ## Reference Filters
-The following filters operate on a property within a data object which is referred to with a 
+
+The following filters operate on a property within a data object, which is identified by a
 [property reference](properties/references.md).
 
 ### Exists
-Checks if a value exists.
+
+This filter checks whether a value exists.
 
 ```kotlin
 Exists(
@@ -21,7 +22,8 @@ Exists(
 ```
 
 ### Equals
-Checks if a property reference's value is equal to the given value.
+
+Use this filter to check if a property reference's value is equal to a specified value.
 
 ```kotlin
 Equals(
@@ -31,7 +33,8 @@ Equals(
 ```
 
 ### GreaterThan
-Checks if the referenced values are greater than the given value.
+
+This filter checks if the referenced values are greater than a specific value.
 
 ```kotlin
 GreaterThan(
@@ -41,7 +44,8 @@ GreaterThan(
 ```
 
 ### GreaterThanEquals
-Checks if the referenced value is greater than or equal to the given value.
+
+Use this filter to check if the referenced value is greater than or equal to a specified value.
 
 ```kotlin
 GreaterThanEquals(
@@ -51,7 +55,8 @@ GreaterThanEquals(
 ```
 
 ### LessThan
-Checks if the referenced value is less than the given value.
+
+This filter checks if the referenced value is less than a particular value.
 
 ```kotlin
 LessThan(
@@ -61,7 +66,8 @@ LessThan(
 ```
 
 ### LessThanEquals
-Checks if the referenced value is less than or equal to the given value.
+
+Use this filter to check if the referenced value is less than or equal to a specified value.
 
 ```kotlin
 LessThanEquals(
@@ -71,9 +77,11 @@ LessThanEquals(
 ```
 
 ### Range
-Checks if the referenced value is within the given range.
+
+This filter checks if the referenced value falls within a specified range.
 
 Maryk YAML:
+
 ```kotlin
 Range(
     intPropertyReference with 2..42,
@@ -86,7 +94,8 @@ Range(
 ```
 
 ### Prefix
-Checks if the referenced value is prefixed by the given value.
+
+Use this filter to check if the referenced value starts with a given prefix.
 
 ```kotlin
 Prefix(
@@ -96,7 +105,8 @@ Prefix(
 ```
 
 ### RegEx
-Checks if the referenced value matches with the given regular expression.
+
+This filter checks if the referenced value matches a specified regular expression.
 
 ```kotlin
 RegEx(
@@ -106,7 +116,8 @@ RegEx(
 ```
 
 ### ValueIn
-Checks if the referenced value is within the set of given values.
+
+Use this filter to check if the referenced value is included in a set of specified values.
 
 ```kotlin
 ValueIn(
@@ -116,12 +127,14 @@ ValueIn(
 ```
 
 ## Filter operations
-Filter operations are powerful tools that allow you to construct complex queries. 
-They run on top of other filters, making it possible to create intricate and highly customizable search criteria.
+
+Filter operations provide powerful capabilities for constructing complex queries. They can run on top of other filters,
+allowing you to create intricate and highly customizable search criteria.
 
 ### And
-The And filter returns `true` if all the specified filters match. 
-This is an ideal filter to use if you want to find records that meet multiple conditions.
+
+The And filter returns `true` if all specified filters match. This filter is ideal when you want to find records that
+meet multiple conditions.
 
 ```kotlin
 And(
@@ -135,8 +148,9 @@ And(
 ```
 
 ### Or
-The Or filter returns `true` if one of the specified filters matches. 
-This is useful if you want to find records that match either of several conditions.
+
+The Or filter returns `true` if at least one of the specified filters matches. This is useful for finding records that
+satisfy any of several conditions.
 
 ```kotlin
 Or(
@@ -150,8 +164,9 @@ Or(
 ```
 
 ### Not
-The Not filter inverts the meaning of the specified filters. If multiple filters are passed, it performs an And operation. 
-This filter is useful if you want to exclude records that meet certain criteria.
+
+The Not filter inverts the meaning of specified filters. If multiple filters are provided, it performs an And operation.
+This filter is beneficial for excluding records that meet specific criteria.
 
 ```kotlin
 Not(

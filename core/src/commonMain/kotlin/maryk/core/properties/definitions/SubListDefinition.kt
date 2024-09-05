@@ -17,10 +17,6 @@ internal data class SubListDefinition<T : Any, CX : IsPropertyContext>(
     override val minSize: UInt? = null
     override val maxSize: UInt? = null
     override val default: List<T>? = null
-
-    init {
-        require(valueDefinition.required) { "Definition for value should have required=true on List" }
-    }
 }
 
 fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.subList(

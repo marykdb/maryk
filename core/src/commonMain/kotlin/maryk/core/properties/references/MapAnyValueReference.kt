@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsValueDefinition
-import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.SubListDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
@@ -24,7 +24,7 @@ class MapAnyValueReference<K : Any, V : Any, CX : IsPropertyContext> internal co
 ) : IsFuzzyReference,
     IsPropertyReferenceWithParent<List<V>, IsListDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>,
     CanHaveComplexChildReference<List<V>, IsListDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>(
-        ListDefinition(valueDefinition = mapDefinition.valueDefinition as IsValueDefinition<V, CX>),
+        SubListDefinition(valueDefinition = mapDefinition.valueDefinition as IsValueDefinition<V, CX>),
         parentReference
     ) {
     override val completeName by lazy {

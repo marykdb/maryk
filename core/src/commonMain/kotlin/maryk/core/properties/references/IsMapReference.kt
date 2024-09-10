@@ -51,11 +51,8 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         val protoKey = ProtoBuf.readKey(reader)
         val index = protoKey.tag
-        // Because of an issue in JS not working with unsigned it needs to be an if
-        // https://youtrack.jetbrains.com/issue/KT-31145
-        @Suppress("CascadeIf")
-        return if (index == 0u) {
-            MapValueReference(
+        return when (index) {
+            0u -> MapValueReference(
                 this.propertyDefinition.definition.keyDefinition.readTransportBytes(
                     ProtoBuf.getLength(protoKey.wireType, reader),
                     reader
@@ -63,8 +60,7 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
                 this.propertyDefinition.definition,
                 this
             )
-        } else if (index == 1u) {
-            MapKeyReference(
+            1u -> MapKeyReference(
                 this.propertyDefinition.definition.keyDefinition.readTransportBytes(
                     ProtoBuf.getLength(protoKey.wireType, reader),
                     reader
@@ -72,18 +68,17 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
                 this.propertyDefinition.definition,
                 this
             )
-        } else if (index == 2u) {
-            MapAnyValueReference(
+            2u -> MapAnyValueReference(
                 this.propertyDefinition.definition,
                 this
             )
-        } else if (index == 3u) {
-            IncMapAddIndexReference(
+            3u -> IncMapAddIndexReference(
                 initIntByVar(reader),
                 this.propertyDefinition.definition,
                 this
             )
-        } else throw ParseException("Unknown Key reference type ${protoKey.tag}")
+            else -> throw ParseException("Unknown Key reference type ${protoKey.tag}")
+        }
     }
 
     override fun getEmbeddedStorageRef(

@@ -92,7 +92,7 @@ fun <DM : IsRootDataModel> DM.readStorageToChanges(
     val mutableVersionedChanges = mutableListOf<VersionedChanges>()
 
     // Add changes to versionedChangesCollection
-    val changeAdder: ChangeAdder = { version: ULong, changeType: ChangeType, changePart: Any ->
+    val changeAdder: ChangeAdder = { version, changeType, changePart ->
         val index = mutableVersionedChanges.binarySearch { it.version compareTo version }
 
         if (index < 0) {
@@ -105,9 +105,7 @@ fun <DM : IsRootDataModel> DM.readStorageToChanges(
         }
     }
 
-    if (creationVersion != null) {
-        changeAdder(creationVersion, OBJECT_CREATE, Unit)
-    }
+    creationVersion?.let { changeAdder(it, OBJECT_CREATE, Unit) }
 
     processQualifiers(getQualifier) { qualifierReader, qualifierLength, addToCache ->
         // Otherwise, try to get a new qualifier processor from DataModel
@@ -414,10 +412,8 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
                 }
             } else {
                 // Read set contents. It is always a simple value for set since it is in the qualifier.
-                val keyDefinition =
-                    ((definition as IsMapDefinition<*, *, *>).keyDefinition as IsSimpleValueDefinition<*, *>)
-                val valueDefinition =
-                    ((definition as IsMapDefinition<*, *, *>).valueDefinition as IsSubDefinition<*, *>)
+                val keyDefinition = (definition as IsMapDefinition<*, *, *>).keyDefinition
+                val valueDefinition = (definition as IsMapDefinition<*, *, *>).valueDefinition
                 val keySize = initIntByVar { qualifierReader(offset++) }
                 val key = keyDefinition.readStorageBytes(keySize) { qualifierReader(offset++) }
 
@@ -522,43 +518,18 @@ private fun <DM : IsValuesDataModel> readComplexChanges(
                 addChangeToOutput
             )
         }
-        is IsListDefinition<*, *> -> {
+        is IsListDefinition<*, *>, is IsSetDefinition<*, *>, is IsMapDefinition<*, *, *> -> {
             readQualifierOfType(
                 qualifierReader = qualifierReader,
                 qualifierLength = qualifierLength,
                 currentOffset = offset + 1,
                 definition = definition,
-                refStoreType = LIST,
-                index = 0u, // Is ignored by addValueToOutput
-                select = select,
-                reference = parentReference,
-                addChangeToOutput = addChangeToOutput,
-                readValueFromStorage = readValueFromStorage,
-                addToCache = addToCache
-            )
-        }
-        is IsSetDefinition<*, *> -> {
-            readQualifierOfType(
-                qualifierReader = qualifierReader,
-                qualifierLength = qualifierLength,
-                currentOffset = offset + 1,
-                definition = definition,
-                refStoreType = SET,
-                index = 0u, // Is ignored by addValueToOutput
-                select = select,
-                reference = parentReference,
-                addChangeToOutput = addChangeToOutput,
-                readValueFromStorage = readValueFromStorage,
-                addToCache = addToCache
-            )
-        }
-        is IsMapDefinition<*, *, *> -> {
-            readQualifierOfType(
-                qualifierReader = qualifierReader,
-                qualifierLength = qualifierLength,
-                currentOffset = offset + 1,
-                definition = definition,
-                refStoreType = MAP,
+                refStoreType = when(definition) {
+                    is IsListDefinition<*, *> -> LIST
+                    is IsSetDefinition<*, *> -> SET
+                    is IsMapDefinition<*, *, *> -> MAP
+                    else -> throw IllegalStateException("Unexpected definition type")
+                },
                 index = 0u, // Is ignored by addValueToOutput
                 select = select,
                 reference = parentReference,

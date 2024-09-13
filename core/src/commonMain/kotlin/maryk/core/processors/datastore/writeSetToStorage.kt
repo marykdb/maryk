@@ -17,7 +17,7 @@ fun <T : IsPropertyDefinition<*>> writeSetToStorage(
     definition: T,
     set: Set<*>
 ) {
-    // Process Set Count
+    // Write Set Size
     valueWriter(
         SetSize as StorageTypeEnum<T>,
         writeQualifier(qualifierCount, qualifierWriter),
@@ -27,22 +27,18 @@ fun <T : IsPropertyDefinition<*>> writeSetToStorage(
 
     // Process Set Values
     val setValueDefinition = (definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<Any, *>
-    val comparableSet = set as Set<Comparable<Any>>
-    for (setItem in comparableSet.sorted()) {
+    (set as Set<Comparable<Any>>).sorted().forEach { setItem ->
         val setItemByteSize = setValueDefinition.calculateStorageByteLength(setItem)
-        val setItemByteCountSize = setItemByteSize.calculateVarByteLength()
-
-        val setValueQualifierWriter: QualifierWriter = { writer ->
-            qualifierWriter.invoke(writer)
-            setItemByteSize.writeVarBytes(writer)
-            setValueDefinition.writeStorageBytes(setItem, writer)
-        }
-        val setItemQualifierLength = qualifierCount + setItemByteSize + setItemByteCountSize
+        val setItemQualifierLength = qualifierCount + setItemByteSize + setItemByteSize.calculateVarByteLength()
 
         writeValue(
             null,
             setItemQualifierLength,
-            setValueQualifierWriter,
+            { writer ->
+                qualifierWriter(writer)
+                setItemByteSize.writeVarBytes(writer)
+                setValueDefinition.writeStorageBytes(setItem, writer)
+            },
             setValueDefinition,
             setItem,
             valueWriter as ValueWriter<IsValueDefinition<*, *>>

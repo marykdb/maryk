@@ -15,7 +15,7 @@ fun <T : IsPropertyDefinition<*>> writeListToStorage(
     definition: T,
     list: List<*>
 ) {
-    // Process List Count
+    // Write List Size
     valueWriter(
         ListSize as StorageTypeEnum<T>,
         writeQualifier(qualifierCount, qualifierWriter),
@@ -24,17 +24,18 @@ fun <T : IsPropertyDefinition<*>> writeListToStorage(
     )
 
     // Process List values
-    val listValueDefinition =
-        (definition as IsListDefinition<*, *>).valueDefinition
-    for ((listIndex, listItem) in (list as List<Any>).withIndex()) {
+    val listDefinition = definition as IsListDefinition<*, *>
+    list.forEachIndexed { listIndex, listItem ->
         val listValueQualifierWriter: QualifierWriter = { writer ->
-            qualifierWriter.invoke(writer)
+            qualifierWriter(writer)
             listIndex.toUInt().writeBytes(writer, 4)
         }
         writeValue(
-            null, qualifierCount + 4, listValueQualifierWriter,
-            listValueDefinition,
-            listItem,
+            null,
+            qualifierCount + 4,
+            listValueQualifierWriter,
+            listDefinition.valueDefinition,
+            listItem as Any,
             valueWriter as ValueWriter<IsSubDefinition<*, *>>
         )
     }

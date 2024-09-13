@@ -16,7 +16,7 @@ fun <T : IsPropertyDefinition<*>, K : Any, V : Any> writeMapToStorage(
     definition: T,
     map: Map<K, V>
 ) {
-    // Process Map Count
+    // Write Map Size
     valueWriter(
         MapSize as StorageTypeEnum<T>,
         writeQualifier(qualifierLength, qualifierWriter),
@@ -25,22 +25,25 @@ fun <T : IsPropertyDefinition<*>, K : Any, V : Any> writeMapToStorage(
     )
 
     // Process Map Values
-    val mapDefinition = (definition as IsMapDefinition<in Any, *, *>)
-    for ((key, mapValue) in map) {
-        val keyByteSize = mapDefinition.keyDefinition.calculateStorageByteLength(key)
+    val mapDefinition = definition as IsMapDefinition<K, V, *>
+    val keyDefinition = mapDefinition.keyDefinition
+
+    map.forEach { (key, value) ->
+        val keyByteSize = keyDefinition.calculateStorageByteLength(key)
         val keyByteCountSize = keyByteSize.calculateVarByteLength()
 
         val mapValueQualifierWriter: QualifierWriter = { writer ->
             qualifierWriter?.invoke(writer)
             keyByteSize.writeVarBytes(writer)
-            mapDefinition.keyDefinition.writeStorageBytes(key, writer)
+            keyDefinition.writeStorageBytes(key, writer)
         }
-        val mapValueQualifierLength = qualifierLength + keyByteSize + keyByteCountSize
 
         writeValue(
-            null, mapValueQualifierLength, mapValueQualifierWriter,
+            null,
+            qualifierLength + keyByteSize + keyByteCountSize,
+            mapValueQualifierWriter,
             mapDefinition.valueDefinition,
-            mapValue,
+            value,
             valueWriter as ValueWriter<IsSubDefinition<*, *>>
         )
     }

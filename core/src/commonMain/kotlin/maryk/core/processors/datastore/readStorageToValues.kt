@@ -231,7 +231,7 @@ private fun readQualifierOfType(
         LIST -> {
             if (isAtEnd) {
                 // If at the end it means that this is a list size
-                val listSize = readValueFromStorage(ListSize, reference) as Int?
+                val listSize = readValueFromStorage(ListSize, reference) as? Int
 
                 if (listSize != null) {
                     // If not null we can create an empty list of listSize

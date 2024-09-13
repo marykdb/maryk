@@ -1,7 +1,6 @@
 package maryk.core.processors.datastore
 
 import maryk.core.properties.definitions.IncrementingMapDefinition
-import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.lib.extensions.compare.prevByteInSameLength
 
@@ -12,38 +11,27 @@ fun <K: Comparable<K>, V : Any, D : IncrementingMapDefinition<K, V, *>> writeInc
     valueWriter: ValueWriter<D>,
     definition: D,
     addValues: List<V>
-): MutableList<K> {
+): List<K> {
     val qualifierLength = currentIncMapKey.size
     var nextIncMapKey = currentIncMapKey
     val qualifierWriter: QualifierWriter = { writer ->
-        for (writeIndex in 0..nextIncMapKey.lastIndex) {
-            writer(nextIncMapKey[writeIndex])
-        }
+        nextIncMapKey.forEach(writer)
     }
 
-    val addedKeys = mutableListOf<K>()
+    val keyDefinition = definition.keyDefinition
 
-    // Process Map Values
-    val mapDefinition = (definition as IsMapDefinition<in Any, *, *>)
-    for (mapValue in addValues) {
-        // Inc Map keys are stored in reverse order so latest is always first.
-        // So lower the latest value to get at the next value
-        nextIncMapKey = nextIncMapKey.prevByteInSameLength(definition.keyDefinition.byteSize)
+    return addValues.map { mapValue ->
+        nextIncMapKey = nextIncMapKey.prevByteInSameLength(keyDefinition.byteSize)
         writeValue(
             null, qualifierLength, qualifierWriter,
-            mapDefinition.valueDefinition,
+            definition.valueDefinition,
             mapValue,
             valueWriter as ValueWriter<IsSubDefinition<*, *>>
         )
 
-        // Add key to list to send back to requester
-        var keyIndex = currentIncMapKey.size - definition.keyDefinition.byteSize
-        addedKeys.add(
-            definition.keyDefinition.readStorageBytes(definition.keyDefinition.byteSize) {
-                nextIncMapKey[keyIndex++]
-            }
-        )
+        var keyIndex = currentIncMapKey.size - keyDefinition.byteSize
+        keyDefinition.readStorageBytes(keyDefinition.byteSize) {
+            nextIncMapKey[keyIndex++]
+        }
     }
-
-    return addedKeys
 }

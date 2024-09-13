@@ -14,16 +14,8 @@ import maryk.core.query.filters.IsFilter
 /** Create a scan range with [filter] and [keyScanRange] */
 fun IsIndexable.createScanRange(filter: IsFilter?, keyScanRange: KeyScanRanges, startIndexKey: ByteArray? = null): IndexableScanRanges {
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
-    convertFilterToIndexPartsToMatch(
-        this,
-        keyScanRange.keySize,
-        null,
-        filter,
-        listOfKeyParts
-    )
-
+    convertFilterToIndexPartsToMatch(this, keyScanRange.keySize, null, filter, listOfKeyParts)
     listOfKeyParts.sortBy { it.fromByteIndex }
-
     return createScanRangeFromParts(listOfKeyParts, keyScanRange, startIndexKey)
 }
 
@@ -49,6 +41,7 @@ private fun createScanRangeFromParts(
 
     val toAdd = mutableListOf<IsIndexPartialToMatch>()
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
+
     for (keyPart in listOfParts) {
         if (keyIndex + 1 == keyPart.indexableIndex) {
             keyIndex++ // continue to next indexable
@@ -63,68 +56,47 @@ private fun createScanRangeFromParts(
 
         when (keyPart) {
             is IndexPartialToMatch -> {
-                keyPart.toMatch.forEach {
-                    if (startShouldContinue) addByte(start, it)
-                    if (endShouldContinue) addByte(end, it)
+                keyPart.toMatch.forEach { byte ->
+                    if (startShouldContinue) addByte(start, byte)
+                    if (endShouldContinue) addByte(end, byte)
                 }
 
                 // Partial matches can only happen on index since is string only
                 if (!keyPart.partialMatch) {
                     // Add size checker for exact matches
-                    toAdd.add(
-                        IndexPartialSizeToMatch(
-                            keyIndex,
-                            null,
-                            keyPart.keySize,
-                            keyPart.toMatch.size
-                        )
-                    )
+                    toAdd += IndexPartialSizeToMatch(keyIndex, null, keyPart.keySize, keyPart.toMatch.size)
                 } else {
                     // Ensure no more parts are added with partial match by invalidating the keyIndex
                     startShouldContinue = false
                     endShouldContinue = false
                 }
-
-                toRemove.add(keyPart)
+                toRemove += keyPart
             }
             is IndexPartialToBeBigger -> {
                 if (startInclusive) {
-                    keyPart.toBeSmaller.forEach {
-                        addByte(start, it)
-                    }
+                    keyPart.toBeSmaller.forEach { addByte(start, it) }
                     startInclusive = keyPart.inclusive
-
-                    toRemove.add(keyPart)
+                    toRemove += keyPart
                 }
             }
             is IndexPartialToBeSmaller -> {
                 if (endShouldContinue) {
-                    keyPart.toBeBigger.forEach {
-                        addByte(end, it)
-                    }
+                    keyPart.toBeBigger.forEach { addByte(end, it) }
                     endInclusive = keyPart.inclusive
-
-                    toRemove.add(keyPart)
+                    toRemove += keyPart
                 }
             }
             is IndexPartialToBeOneOf -> {
                 val startSizeBefore = start.size
                 val endSizeBefore = end.size
-
                 multiplyList(start, end, keyPart.toBeOneOf.size)
-
-                for ((oneOfIndex, oneOfBytes) in keyPart.toBeOneOf.withIndex()) {
+                keyPart.toBeOneOf.forEachIndexed { oneOfIndex, oneOfBytes ->
                     oneOfBytes.forEach { oneOfByte ->
                         if (startShouldContinue) {
-                            for (copiesIndex in (0 until startSizeBefore)) {
-                                start[copiesIndex + oneOfIndex].add(oneOfByte)
-                            }
+                            repeat(startSizeBefore) { start[it + oneOfIndex] += oneOfByte }
                         }
-
                         if (endShouldContinue) {
-                            for (copiesIndex in (0 until endSizeBefore)) {
-                                end[copiesIndex + oneOfIndex].add(oneOfByte)
-                            }
+                            repeat(endSizeBefore) { end[it + oneOfIndex] += oneOfByte }
                         }
                     }
                 }
@@ -138,8 +110,10 @@ private fun createScanRangeFromParts(
         }
     }
 
-    listOfParts.removeAll(toRemove)
-    listOfParts.addAll(toAdd)
+    listOfParts.apply {
+        removeAll(toRemove)
+        addAll(toAdd)
+    }
 
     return IndexableScanRanges(
         ranges = createRanges(start, end, startInclusive, endInclusive, startIndexKey),

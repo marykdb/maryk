@@ -18,9 +18,8 @@ class QualifierExactMatcher(
     val qualifier: ByteArray,
     val referencedQualifierMatcher: ReferencedQualifierMatcher? = null
 ) : IsQualifierMatcher() {
-    fun compareTo(qualifier: ByteArray, offset: Int): Int {
-        return this.qualifier.compareToWithOffsetLength(qualifier, offset)
-    }
+    fun compareTo(qualifier: ByteArray, offset: Int) =
+        this.qualifier.compareToWithOffsetLength(qualifier, offset)
 }
 
 enum class FuzzyMatchResult {
@@ -41,30 +40,28 @@ class QualifierFuzzyMatcher(
     fun firstPossible() = qualifierParts.first()
 
     /** Compare current [qualifier] at [offset] */
-    fun isMatch(qualifier: ByteArray, offset: Int, length: Int = qualifier.size) : FuzzyMatchResult {
+    fun isMatch(qualifier: ByteArray, offset: Int, length: Int = qualifier.size): FuzzyMatchResult {
         var index = offset
         val lastIndexPlusOne = offset + length
 
-        for ((qIndex, qPart) in qualifierParts.withIndex()) {
-            for (byte in qPart) {
-                if (lastIndexPlusOne <= index) { return NO_MATCH }
-                if (byte != qualifier[index++]) {
-                    // If first part does not match it is out of range. Otherwise, possible matches so no match
-                    return if (qIndex == 0) OUT_OF_RANGE else NO_MATCH
-                }
+        qualifierParts.forEachIndexed { qIndex, qPart ->
+            if (!qPart.all { byte ->
+                if (index >= lastIndexPlusOne) return NO_MATCH
+                qualifier[index++] == byte
+            }) {
+                return if (qIndex == 0) OUT_OF_RANGE else NO_MATCH
             }
 
-            if (fuzzyMatchers.lastIndex >= qIndex) {
+            if (qIndex <= fuzzyMatchers.lastIndex) {
                 try {
                     fuzzyMatchers[qIndex].skip {
                         if (index >= lastIndexPlusOne) {
                             // So JS skips out.
-                            throw Throwable("0 char encountered")
+                            throw IndexOutOfBoundsException()
                         }
-
                         qualifier[index++]
                     }
-                } catch (e: Throwable) {
+                } catch (_: IndexOutOfBoundsException) {
                     return NO_MATCH
                 }
             }

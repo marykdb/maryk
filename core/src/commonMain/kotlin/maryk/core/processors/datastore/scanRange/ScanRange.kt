@@ -27,35 +27,21 @@ class ScanRange internal constructor(
         }
     } ?: false
 
-    /** Get the descending start key for scans based on the [startKey] and if it is an [inclusiveStartKey] */
-    fun getDescendingStartKey(startKey: ByteArray?, inclusiveStartKey: Boolean) =
-        if (startKey != null && (end == null || end.isEmpty() || startKey < end)) {
-            if (inclusiveStartKey) {
-                startKey
-            } else {
-                startKey.prevByteInSameLength()
-            }
-        } else {
-            if (endInclusive) {
-                end
-            } else {
-                end?.prevByteInSameLength()
-            }
+    /** Get the descending start key for scans */
+    fun getDescendingStartKey(startKey: ByteArray?, inclusiveStartKey: Boolean): ByteArray? =
+        when {
+            startKey != null && (end == null || end.isEmpty() || startKey < end) ->
+                if (inclusiveStartKey) startKey else startKey.prevByteInSameLength()
+            endInclusive -> end
+            else -> end?.prevByteInSameLength()
         }
 
-    /** Get the ascending start key for scans based on the [startKey] and if it is an [inclusiveStartKey] */
-    fun getAscendingStartKey(startKey: ByteArray?, inclusiveStartKey: Boolean) =
-        if (startKey != null && startKey > start) {
-            if (inclusiveStartKey) {
-                startKey
-            } else {
-                startKey.nextByteInSameLength()
-            }
-        } else {
-            if (startInclusive) {
-                start
-            } else {
-                start.nextByteInSameLength()
-            }
+    /** Get the ascending start key for scans */
+    fun getAscendingStartKey(startKey: ByteArray?, inclusiveStartKey: Boolean): ByteArray =
+        when {
+            startKey != null && startKey > start ->
+                if (inclusiveStartKey) startKey else startKey.nextByteInSameLength()
+            startInclusive -> start
+            else -> start.nextByteInSameLength()
         }
 }

@@ -16,17 +16,15 @@ class KeyScanRanges internal constructor(
     val uniques: List<UniqueToMatch>? = null
 ): ScanRanges(ranges, partialMatches) {
     fun keyBeforeStart(key: ByteArray, offset: Int = 0) =
-        startKey?.let { it.compareDefinedTo(key, offset, keySize) > 0 } ?: false
+        startKey?.compareDefinedTo(key, offset, keySize)?.let { it > 0 } == true
 
     fun keyAfterStart(key: ByteArray, offset: Int = 0) =
-        startKey?.let { it.compareDefinedTo(key, offset, keySize) < 0 } ?: false
+        startKey?.compareDefinedTo(key, offset, keySize)?.let { it < 0 } == true
 
-    fun isSingleKey(): Boolean {
-        return if (ranges.size == 1) {
-            val firstRange = ranges.first()
-            firstRange.start.size == keySize && firstRange.end?.contentEquals(firstRange.start) == true && firstRange.startInclusive && firstRange.endInclusive
-        } else {
-            false
-        }
-    }
+    fun isSingleKey() = ranges.singleOrNull()?.let { range ->
+        range.start.size == keySize &&
+        range.end?.contentEquals(range.start) == true &&
+        range.startInclusive &&
+        range.endInclusive
+    } ?: false
 }

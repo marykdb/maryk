@@ -12,7 +12,7 @@ class FuzzyExactLengthMatch(
     val length: Int
 ) : IsFuzzyMatcher() {
     override fun skip(reader: () -> Byte) {
-        for (i in 1..length) {
+        repeat(length) {
             reader()
         }
     }
@@ -23,7 +23,7 @@ object FuzzyDynamicLengthMatch : IsFuzzyMatcher() {
     override fun skip(reader: () -> Byte) {
         val length = initIntByVar(reader)
 
-        for (i in 1..length) {
+        repeat(length) {
             reader()
         }
     }

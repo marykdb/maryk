@@ -10,22 +10,9 @@ abstract class ScanRanges internal constructor(
     val partialMatches: List<IsIndexPartialToMatch>? = null
 ) {
     /** Checks if [key] matches the partial matches for this scan range */
-    open fun matchesPartials(key: ByteArray, offset: Int = 0, length: Int = key.size - offset): Boolean {
-        partialMatches?.let {
-            for (partial in partialMatches) {
-                if (!partial.match(key, offset)) return false
-            }
-        }
-        return true
-    }
+    open fun matchesPartials(key: ByteArray, offset: Int = 0, length: Int = key.size - offset): Boolean =
+        partialMatches?.all { it.match(key, offset) } != false
 
-    fun keyWithinRanges(key: ByteArray, keyIndex: Int = 0): Boolean {
-        for (range in ranges) {
-            if (!range.keyBeforeStart(key, keyIndex) && !range.keyOutOfRange(key, keyIndex)) {
-                return true
-            }
-        }
-
-        return false
-    }
+    fun keyWithinRanges(key: ByteArray, keyIndex: Int = 0): Boolean =
+        ranges.any { !it.keyBeforeStart(key, keyIndex) && !it.keyOutOfRange(key, keyIndex) }
 }

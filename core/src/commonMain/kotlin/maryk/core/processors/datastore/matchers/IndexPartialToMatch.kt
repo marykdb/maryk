@@ -20,7 +20,7 @@ sealed class IsIndexPartialToMatch {
         keySize
     )
 
-    abstract fun match(bytes: ByteArray, offset: Int = 0, length:Int = bytes.size - offset): Boolean
+    abstract fun match(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset): Boolean
 }
 
 /** Matcher for exact matches */
@@ -47,15 +47,8 @@ class IndexPartialToRegexMatch(
 
     /** Matches [bytes] to partial and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
-        val (internalOffset, size) = findByteIndexAndSizeByPartIndex(
-            indexableIndex,
-            bytes,
-            keySize
-        )
-
-        val toMatch = initString(bytes, offset + internalOffset, size)
-
-        return regex.matches(toMatch)
+        val (internalOffset, size) = findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize)
+        return regex.matches(initString(bytes, offset + internalOffset, size))
     }
 }
 
@@ -67,9 +60,8 @@ class IndexPartialSizeToMatch(
     val size: Int
 ) : IsIndexPartialToMatch() {
     /** Matches size encoded in [bytes] to partial size and returns true if matches */
-    override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
-        return findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize).second == size
-    }
+    override fun match(bytes: ByteArray, offset: Int, length: Int) =
+        findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize).second == size
 }
 
 /** Partial [toBeSmaller] for indexable part from [fromByteIndex]. If [inclusive] then include value itself too  */
@@ -128,11 +120,6 @@ class IndexPartialToBeOneOf(
     val toBeOneOf: List<ByteArray>
 ) : IsIndexPartialToMatch() {
     /** Matches [bytes] to be one of partials in list */
-    override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
-        val fromIndex = offset + getByteIndex(bytes)
-        for (item in toBeOneOf) {
-            if (bytes.matchPart(fromIndex, item, length)) return true
-        }
-        return false
-    }
+    override fun match(bytes: ByteArray, offset: Int, length: Int) =
+        toBeOneOf.any { bytes.matchPart(offset + getByteIndex(bytes), it, length) }
 }

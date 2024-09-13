@@ -1,43 +1,32 @@
 package maryk.core.processors.datastore.scanRange
 
 import maryk.lib.extensions.compare.compareTo
-import kotlin.math.floor
+import kotlin.math.min
 
 internal fun createRanges(
-    start: MutableList<MutableList<Byte>>,
-    end: MutableList<MutableList<Byte>>,
+    start: List<List<Byte>>,
+    end: List<List<Byte>>,
     startInclusive: Boolean,
     endInclusive: Boolean,
     startKey: ByteArray? = null
 ): List<ScanRange> {
-    val ranges = ArrayList<ScanRange>(maxOf(start.size, end.size))
+    val maxSize = maxOf(start.size, end.size)
+    val ranges = ArrayList<ScanRange>(maxSize)
+    val multiplier = if (start.size >= end.size) start.size / end.size else end.size / start.size
 
-    if (start.size >= end.size) {
-        val startMultiplier = start.size / end.size
+    for (i in 0 until maxSize) {
+        val startIndex = if (start.size >= end.size) i else i / multiplier
+        val endIndex = if (start.size >= end.size) i / multiplier else i
+        
+        val startArray = start[min(startIndex, start.lastIndex)].toByteArray()
+        val endArray = end[min(endIndex, end.lastIndex)].toByteArray()
 
-        for ((index, startList) in start.withIndex()) {
-            val startArray = startList.toByteArray()
-
-            ranges += ScanRange(
-                start = if (startKey != null && startArray < startKey) startKey else startArray,
-                startInclusive = startInclusive,
-                end = end[floor(index.toDouble() / startMultiplier).toInt()].toByteArray(),
-                endInclusive = endInclusive
-            )
-        }
-    } else {
-        val endMultiplier = end.size / start.size
-
-        for ((index, endList) in end.withIndex()) {
-            val startArray = start[floor(index.toDouble() / endMultiplier).toInt()].toByteArray()
-
-            ranges += ScanRange(
-                start = if (startKey != null && startArray < startKey) startKey else startArray,
-                startInclusive = startInclusive,
-                end = endList.toByteArray(),
-                endInclusive = endInclusive
-            )
-        }
+        ranges += ScanRange(
+            start = if (startKey != null && startArray < startKey) startKey else startArray,
+            startInclusive = startInclusive,
+            end = endArray,
+            endInclusive = endInclusive
+        )
     }
 
     return ranges

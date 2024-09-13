@@ -45,7 +45,7 @@ fun processQualifiers(
         // Try to process qualifier with last qualifier processor in list
         processorStack.lastOrNull()?.second?.invoke(qualifierReader, currentQualifierLength)
             ?: readQualifierAndProcessContent(qualifierReader, currentQualifierLength) { index, processor ->
-                processorStack += index to processor
+                processorStack += Pair(index, processor)
             }
 
         // Last qualifier to remove processors in next iteration

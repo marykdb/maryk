@@ -1,17 +1,15 @@
 package maryk.core.processors.datastore.scanRange
 
 internal fun multiplyList(start: MutableList<MutableList<Byte>>, end: MutableList<MutableList<Byte>>, size: Int) {
-    val startCopy = start.toList()
-    val endCopy = end.toList()
+    fun multiplyListInternal(list: MutableList<MutableList<Byte>>) {
+        val originalSize = list.size
+        repeat(size - 1) {
+            for (i in 0 until originalSize) {
+                list.add(ArrayList(list[i]))
+            }
+        }
+    }
 
-    for (byteList in startCopy) {
-        for (it in 1 until size) { // first one is already there
-            start.add(byteList.toMutableList())
-        }
-    }
-    for (byteList in endCopy) {
-        for (it in 1 until size) { // first one is already there
-            end.add(byteList.toMutableList())
-        }
-    }
+    multiplyListInternal(start)
+    multiplyListInternal(end)
 }

@@ -20,22 +20,20 @@ import maryk.yaml.YamlWriter
 
 /** Write a complex field name with [index]: [name] as key value pair */
 internal fun YamlWriter.writeNamedIndexField(name: String, index: UInt, alternativeNames: Set<String>? = null) {
-    this.writeStartComplexField()
-    this.writeStartObject()
-    this.writeFieldName(index.toString())
-    when (alternativeNames) {
-        null -> this.writeValue(name)
+    writeStartComplexField()
+    writeStartObject()
+    writeFieldName(index.toString())
+    when {
+        alternativeNames == null -> writeValue(name)
         else -> {
             writeStartArray(true)
             writeValue(name)
-            for (altName in alternativeNames) {
-                writeValue(altName)
-            }
+            alternativeNames.forEach(::writeValue)
             writeEndArray()
         }
     }
-    this.writeEndObject()
-    this.writeEndComplexField()
+    writeEndObject()
+    writeEndComplexField()
 }
 
 /**
@@ -57,12 +55,9 @@ internal fun <DO : Any> IsYamlReader.readNamedIndexField(
     valueMap[indexDescriptor.index] = index
 
     when (nextToken()) {
-        is Value<*> -> {
-            valueMap[nameDescriptor.index] = nameDescriptor.readJson(this, null)
-        }
+        is Value<*> -> valueMap[nameDescriptor.index] = nameDescriptor.readJson(this, null)
         is StartArray -> {
-            (nextToken() as? Value<*>)
-                ?: throw IllegalJsonOperation("Expected property name as value like '? 0: name'")
+            if (nextToken() !is Value<*>) throw IllegalJsonOperation("Expected property name as value like '? 0: name'")
             valueMap[nameDescriptor.index] = nameDescriptor.readJson(this, null)
 
             alternativeNamesDescriptor?.let { altNamesDesc ->

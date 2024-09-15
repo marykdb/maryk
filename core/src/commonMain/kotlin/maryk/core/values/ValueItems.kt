@@ -12,15 +12,10 @@ import kotlin.jvm.JvmInline
 
 interface IsValueItems : Iterable<ValueItem> {
     val size: Int
-
     operator fun get(index: UInt): Any?
-
     fun getValueItem(index: UInt): ValueItem?
-
     fun contains(index: UInt): Boolean
-
     fun copyAdding(toAdd: Iterable<ValueItem>): IsValueItems
-
     fun copySelecting(select: IsPropRefGraph<*>): IsValueItems
     fun toString(dataModel: IsDataModel): String
 }
@@ -29,61 +24,39 @@ interface IsValueItemsImpl : IsValueItems {
     val list: List<ValueItem>
 
     override val size get() = list.size
+    override fun contains(index: UInt) = list.binarySearch { it.index compareTo index } >= 0
+    override operator fun get(index: UInt) = list.getOrNull(list.searchItemByIndex(index))?.value
+    override fun getValueItem(index: UInt) = list.getOrNull(list.searchItemByIndex(index))
+    override fun iterator() = this.list.iterator()
 
-    override fun contains(index: UInt) =
-        0 <= list.binarySearch { it.index compareTo index }
-
-    override operator fun get(index: UInt): Any? {
-        this.list.searchItemByIndex(index).let {
-            return when {
-                it < 0 -> null
-                else -> list[it].value
-            }
-        }
-    }
-
-    override fun getValueItem(index: UInt): ValueItem? {
-        this.list.searchItemByIndex(index).let {
-            return when {
-                it < 0 -> null
-                else -> list[it]
-            }
-        }
-    }
-
-    override fun iterator() = object : Iterator<ValueItem> {
-        var index = 0
-        override fun hasNext() = index < list.size
-        override fun next() = list[index++]
-    }
-
-    override fun copyAdding(toAdd: Iterable<ValueItem>) = MutableValueItems(this.list.toMutableList()).also { items ->
+    override fun copyAdding(toAdd: Iterable<ValueItem>) = MutableValueItems(ArrayList(list)).also { items ->
         for (addition in toAdd) {
             items += addition
         }
     }
 
     override fun copySelecting(select: IsPropRefGraph<*>) = MutableValueItems(
-        list = this.mapNotNull { valueItem ->
-            if (!select.contains(valueItem.index)) {
-                null
-            } else {
-                if (valueItem.value is Values<*>) {
+        list.mapNotNullTo(ArrayList()) { valueItem ->
+            when {
+                !select.contains(valueItem.index) -> null
+                valueItem.value is Values<*> -> {
                     (select.selectNodeOrNull(valueItem.index) as? PropRefGraph<*, *>)?.let { subSelect ->
                         ValueItem(valueItem.index, valueItem.value.filterWithSelect(subSelect))
                     } ?: valueItem
-                } else valueItem
+                }
+                else -> valueItem
             }
-        }.toMutableList()
+        }
     )
 
-    override fun toString(dataModel: IsDataModel): String =
-        this.list.joinToString(separator = ", ", prefix = "{", postfix = "}") { valueItem ->
-            "${dataModel[valueItem.index]?.name ?: valueItem.index}=${valueItem.value}"
-        }
+    override fun toString(dataModel: IsDataModel) = list.joinToString(
+        separator = ", ",
+        prefix = "{",
+        postfix = "}"
+    ) { "${dataModel[it.index]?.name ?: it.index}=${it.value}" }
 }
 
-internal fun List<ValueItem>.searchItemByIndex(index: UInt): Int =
+internal fun List<ValueItem>.searchItemByIndex(index: UInt) =
     // Index can never be at a higher spot in list than index itself
     binarySearch(toIndex = minOf(index.toInt(), size)) { it.index compareTo index }
 
@@ -106,42 +79,25 @@ value class MutableValueItems(
      * If ValueItem contains Values object then it is merging it with existing data.
      */
     operator fun plusAssign(valueItem: ValueItem) {
-        this.list.searchItemByIndex(valueItem.index).let {
-            when {
-                it < 0 -> if (valueItem.value != Unit) {
-                    list.add((it * -1) - 1, valueItem)
-                } else Unit // Is deleted so do nothing
-                else -> {
-                    when {
-                        valueItem.value is Unit -> {
-                            list.removeAt(it)
-                        }
-                        valueItem.value is TypedValue<*, *> && valueItem.value.value is Unit -> {
-                            list.removeAt(it)
-                        }
-                        else -> {
-                            list[it] = when (valueItem.value) {
-                                is Values<*> -> {
-                                    val newValue = (list[it].value as Values<*>).copy(valueItem.value.values)
-                                    ValueItem(valueItem.index, newValue)
-                                }
-                                else -> valueItem
-                            }
-                        }
-                    }
+        val index = list.searchItemByIndex(valueItem.index)
+        when {
+            index < 0 -> if (valueItem.value != Unit) {
+                list.add(-index - 1, valueItem)
+            } else Unit // Is deleted so do nothing
+            else -> when {
+                valueItem.value is Unit || (valueItem.value as? TypedValue<*, *>)?.value is Unit -> list.removeAt(index)
+                else -> list[index] = when (val value = valueItem.value) {
+                    is Values<*> -> ValueItem(valueItem.index, (list[index].value as Values<*>).copy(value.values))
+                    else -> valueItem
                 }
             }
         }
     }
 
     operator fun set(index: UInt, value: Any) {
-        this.list.searchItemByIndex(index).let {
-            val valueItem = ValueItem(index, value)
-            when {
-                it < 0 -> list.add((it * -1) - 1, valueItem)
-                else -> list.set(it, valueItem)
-            }
-        }
+        val searchIndex = list.searchItemByIndex(index)
+        val valueItem = ValueItem(index, value)
+        if (searchIndex < 0) list.add(-searchIndex - 1, valueItem) else list[searchIndex] = valueItem
     }
 
     fun remove(index: UInt) = this.list.searchItemByIndex(index).let {
@@ -161,36 +117,26 @@ value class MutableValueItems(
         valueChanger: (Any?, Any?) -> Any?
     ) {
         val index = list.searchItemByIndex(referenceIndex)
-
         val originalValue = sourceValueItems?.getValueItem(referenceIndex)?.value
         when {
             index < 0 -> {
                 val newValue = mutableValueCreator(originalValue)
-                list.add((index * -1) - 1, ValueItem(referenceIndex, valueChanger(originalValue, newValue) ?: newValue!!))
+                list.add(-index - 1, ValueItem(referenceIndex, valueChanger(originalValue, newValue) ?: newValue!!))
             }
-            else -> {
-                valueChanger(originalValue, list[index].value)?.also {
-                    list[index] = ValueItem(referenceIndex, it)
-                }
-            }
+            else -> valueChanger(originalValue, list[index].value)?.let { list[index] = ValueItem(referenceIndex, it) }
         }
     }
 
     fun fillWithPairs(dataModel: IsTypedDataModel<*>, pairs: Array<out ValueItem?>, setDefaults: Boolean) {
-        for (it in pairs) {
-            if (it != null) this += it
-        }
+        pairs.filterNotNull().forEach { this += it }
         if (setDefaults) {
-            for (definition in dataModel.allWithDefaults) {
-                val innerDef = definition.definition
-                if (this[definition.index] == null) {
-                    this[definition.index] = (innerDef as HasDefaultValueDefinition<*>).default!!
-                }
-            }
+            dataModel.allWithDefaults
+                .filter { this[it.index] == null }
+                .forEach { this[it.index] = (it.definition as HasDefaultValueDefinition<*>).default!! }
         }
     }
 
-    override fun toString() = this.list.joinToString(separator = ", ", prefix = "{", postfix = "}")
+    override fun toString() = list.joinToString(separator = ", ", prefix = "{", postfix = "}")
 }
 
 private fun mutableValueCreator(valueToChange: Any?): Any? = when (valueToChange) {
@@ -198,15 +144,7 @@ private fun mutableValueCreator(valueToChange: Any?): Any? = when (valueToChange
     is List<*> -> valueToChange.toMutableList()
     is Set<*> -> valueToChange.toMutableSet()
     is Map<*, *> -> valueToChange.toMutableMap()
-    is Values<*> ->
-        Values(
-            valueToChange.dataModel,
-            MutableValueItems(mutableListOf()),
-            valueToChange.context
-        )
-    is TypedValue<*, *> -> MutableTypedValue(
-        valueToChange.type,
-        mutableValueCreator(valueToChange.value) as Any
-    )
+    is Values<*> -> Values(valueToChange.dataModel, MutableValueItems(), valueToChange.context)
+    is TypedValue<*, *> -> MutableTypedValue(valueToChange.type, mutableValueCreator(valueToChange.value) as Any)
     else -> valueToChange
 }

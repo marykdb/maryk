@@ -19,11 +19,7 @@ data class Values<DM : IsValuesDataModel> internal constructor(
 ) : AbstractValues<Any, DM>() {
     /** make a copy of Values and add new pairs from [pairCreator] */
     fun copy(pairCreator: DM.() -> List<ValueItem>) =
-        Values(
-            dataModel,
-            values.copyAdding(pairCreator(dataModel)),
-            context
-        )
+        Values(dataModel, values.copyAdding(pairCreator(dataModel)), context)
 
     fun copy(values: IsValueItems) =
         Values(dataModel, values.copyAdding(values), context)
@@ -41,20 +37,17 @@ data class Values<DM : IsValuesDataModel> internal constructor(
     }
 
     /** Change the Values with given [change] */
-    fun change(vararg change: IsChange) = this.change(listOf(*change))
+    fun change(vararg change: IsChange) = change(change.toList())
 
     fun change(changes: List<IsChange>): Values<DM> =
-        if (changes.isEmpty()) {
-            this
-        } else {
+        if (changes.isEmpty()) this
+        else {
             val valueItemsToChange = MutableValueItems(mutableListOf())
-
-            for (change in changes) {
+            changes.forEach { change ->
                 change.changeValues { ref, valueChanger ->
-                    valueItemsToChange.copyFromOriginalAndChange(this.values, ref.index, valueChanger)
+                    valueItemsToChange.copyFromOriginalAndChange(values, ref.index, valueChanger)
                 }
             }
-
             Values(dataModel, values.copyAdding(valueItemsToChange), context)
         }
 
@@ -68,27 +61,16 @@ data class Values<DM : IsValuesDataModel> internal constructor(
     }
 
     // ignore context
-    override fun hashCode(): Int {
-        var result = dataModel.Meta.hashCode()
-        result = 31 * result + values.hashCode()
-        return result
-    }
+    override fun hashCode() = 31 * dataModel.Meta.hashCode() + values.hashCode()
 
-    override fun toString(): String {
-        val modelName = dataModel.Meta.name
-        return "Values<$modelName>${values.toString(dataModel)}"
-    }
+    override fun toString() = "Values<${dataModel.Meta.name}>${values.toString(dataModel)}"
 
     /**
      * Validates the contents of values
      */
-    fun validate() {
-        this.dataModel.validate(this)
-    }
+    fun validate() = dataModel.validate(this)
 }
 
 /** Output values to a json string */
-fun <V: Values<DM>, DM: TypedValuesDataModel<DM>> V.toJson(
-    pretty: Boolean = false
-): String =
-    this.dataModel.Serializer.writeJson(this, pretty = pretty)
+fun <V: Values<DM>, DM: TypedValuesDataModel<DM>> V.toJson(pretty: Boolean = false) =
+    dataModel.Serializer.writeJson(this, pretty = pretty)

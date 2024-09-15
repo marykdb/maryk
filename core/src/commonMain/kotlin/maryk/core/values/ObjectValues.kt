@@ -20,26 +20,16 @@ data class ObjectValues<DO : Any, DM : IsObjectDataModel<DO>> internal construct
      * Will throw exception if values is missing values for a complete DataObject
      */
     @Suppress("UNCHECKED_CAST")
-    fun toDataObject() = (this.dataModel as IsTypedObjectDataModel<DO, DM, *, *>).invoke(this)
+    fun toDataObject() = (dataModel as IsTypedObjectDataModel<DO, DM, *, *>)(this)
 
     // ignore context
-    override fun equals(other: Any?) = when {
-        this === other -> true
-        other !is ObjectValues<*, *> -> false
-        dataModel != other.dataModel -> false
-        values != other.values -> false
-        else -> true
+    override fun equals(other: Any?) = when (other) {
+        is ObjectValues<*, *> -> dataModel == other.dataModel && values == other.values
+        else -> false
     }
 
     // ignore context
-    override fun hashCode(): Int {
-        var result = dataModel.hashCode()
-        result = 31 * result + values.hashCode()
-        return result
-    }
+    override fun hashCode() = 31 * dataModel.hashCode() + values.hashCode()
 
-    override fun toString(): String {
-        val modelName = (dataModel as? IsStorableDataModel<*>)?.Meta?.name ?: dataModel
-        return "ObjectValues<$modelName>$values"
-    }
+    override fun toString() = "ObjectValues<${(dataModel as? IsStorableDataModel<*>)?.Meta?.name ?: dataModel}>$values"
 }

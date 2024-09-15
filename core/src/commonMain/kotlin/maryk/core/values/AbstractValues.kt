@@ -50,13 +50,8 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
      */
     inline operator fun <reified T> invoke(index: UInt): T {
         val value = this.original(index)
-
-        val valueDef = this.dataModel[index]
-            ?: throw DefNotFoundException("Value definition of index $index is missing")
-
-        return process(valueDef, value, null is T) {
-            it is T
-        }
+        val valueDef = this.dataModel[index] ?: throw DefNotFoundException("Value definition of index $index is missing")
+        return process(valueDef, value, null is T) { it is T }
     }
 
     fun <T: Any?> process(
@@ -83,20 +78,15 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
                 } else null as T
             }
             else -> throw ParseException(
-                "Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as? IsTransportablePropertyDefinitionType<*>)?.propertyDefinitionType?.name
-                    ?: "unknown"} ${valueDef.definition}"
+                "Property '${valueDef.name}' with value '$value' should be of type ${(valueDef.definition as? IsTransportablePropertyDefinitionType<*>)?.propertyDefinitionType?.name ?: "unknown"} ${valueDef.definition}"
             )
         }
     }
 
     /** Mutate Values with [pairToAddCreator]. */
-    @Suppress("unused")
     fun mutate(pairToAddCreator: DM.() -> Array<ValueItem>) {
         val mutableValues = values as MutableValueItems
-
-        for (toAdd in pairToAddCreator(this.dataModel)) {
-            mutableValues += toAdd
-        }
+        pairToAddCreator(this.dataModel).forEach { mutableValues += it }
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
@@ -107,58 +97,41 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
     inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
-        val index = getProperty(
-            this.dataModel
-        ).index
-
+        val index = getProperty(this.dataModel).index
         val value = this.original(index)
-
-        val valueDef = this.dataModel[index]
-            ?: throw DefNotFoundException("Value definition of index $index is missing")
-
-        return process(valueDef, value, true) {
-            it is TO?
-        }
+        val valueDef = this.dataModel[index] ?: throw DefNotFoundException("Value definition of index $index is missing")
+        return process(valueDef, value, true) { it is TO? }
     }
 
     /** Get property from values with wrapper in [getProperty] and convert it to native usage */
     fun <T : Any> original(getProperty: DM.() -> IsDefinitionWrapper<T, *, *, DO>): T? {
-        val index = getProperty(
-            this.dataModel
-        ).index
-
+        val index = getProperty(this.dataModel).index
         @Suppress("UNCHECKED_CAST")
         return this.values[index] as T?
     }
 
     /** Get ValueItem at [index] from internal list */
-    fun getByInternalListIndex(index: Int) =
-        (this.values as IsValueItemsImpl).list[index]
+    fun getByInternalListIndex(index: Int) = (this.values as IsValueItemsImpl).list[index]
 
     /** Get the original value by [index] */
     override fun original(index: UInt) = this.values[index]
 
     override fun toString(): String {
         val name = (dataModel as? IsStorableDataModel<*>)?.Meta?.name ?: "ObjectValues"
-
         return "$name $values"
     }
 
     /** Test if values matches given [filter] */
-    fun matches(filter: IsFilter?) =
-        maryk.core.query.filters.matchesFilter(filter) { propertyReference, valueMatcher ->
-            @Suppress("UNCHECKED_CAST")
-            val value = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
+    fun matches(filter: IsFilter?) = maryk.core.query.filters.matchesFilter(filter) { propertyReference, valueMatcher ->
+        @Suppress("UNCHECKED_CAST")
+        val value = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
 
-            if (value is List<*> && propertyReference !is ListReference<*,*>) {
-                for (v in value) {
-                    if (valueMatcher(v)) return@matchesFilter true
-                }
-                return@matchesFilter false
-            } else {
-                valueMatcher(value)
-            }
+        if (value is List<*> && propertyReference !is ListReference<*, *>) {
+            value.any { valueMatcher(it) }
+        } else {
+            valueMatcher(value)
         }
+    }
 
     @Suppress("UNCHECKED_CAST")
     override operator fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
@@ -172,13 +145,10 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
             if (fuzzy) {
                 // With fuzzy references all resolved results need to be combined into a list
                 val list = value as MutableList<Any>
-                value = mutableListOf<Any>()
-                for (v in list) {
-                    val valueToAdd = toResolve.resolve(v) ?: continue
-                    if (valueToAdd is List<*>) {
-                        value.addAll(valueToAdd as Collection<Any>)
-                    } else {
-                        value.add(valueToAdd)
+                value = mutableListOf<Any>().apply {
+                    list.forEach { v ->
+                        val valueToAdd = toResolve.resolve(v) ?: return@forEach
+                        if (valueToAdd is List<*>) addAll(valueToAdd as Collection<Any>) else add(valueToAdd)
                     }
                 }
             } else {
@@ -196,9 +166,7 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
     }
 
     /** Remove from internal values by [index] */
-    internal fun remove(index: UInt): Any? {
-        return (this.values as MutableValueItems).remove(index)?.value
-    }
+    internal fun remove(index: UInt): Any? = (this.values as MutableValueItems).remove(index)?.value
 
     /**
      * Method to walk to any value and process it with the reference
@@ -225,40 +193,27 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
     ) {
         @Suppress("UNCHECKED_CAST")
         when (definition) {
-            is IsEmbeddedValuesDefinition<*, *> -> {
-                (value as AbstractValues<*, *>).processAllValues(parentReference, processor)
+            is IsEmbeddedValuesDefinition<*, *> -> (value as AbstractValues<*, *>).processAllValues(parentReference, processor)
+            is IsListDefinition<*, *> -> (value as List<Any>).forEachIndexed { listIndex, item ->
+                val itemRef = definition.itemRef(
+                    listIndex.toUInt(),
+                    parentReference as CanContainListItemReference<*, *, *>
+                ) as IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>
+                processor(itemRef, item)
             }
-            is IsListDefinition<*, *> ->
-                for ((listIndex, item) in (value as List<Any>).withIndex()) {
-                    val itemRef = definition.itemRef(
-                        listIndex.toUInt(),
-                        parentReference as CanContainListItemReference<*, *, *>
-                    ) as IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>
-                    processor(itemRef, item)
-                }
-            is IsSetDefinition<*, *> -> {
-                for (item in value as Set<Any>) {
-                    val itemRef = (definition as IsSetDefinition<Any, *>).itemRef(
-                        item,
-                        parentReference as CanContainSetItemReference<*, *, *>
-                    )
-                    processor(itemRef as IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>, item)
-                }
+            is IsSetDefinition<*, *> -> (value as Set<Any>).forEach { item ->
+                val itemRef = (definition as IsSetDefinition<Any, *>).itemRef(
+                    item,
+                    parentReference as CanContainSetItemReference<*, *, *>
+                )
+                processor(itemRef as IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>, item)
             }
-            is IsMapDefinition<out Any, out Any, *> -> {
-                for ((key, item) in value as Map<Any, Any>) {
-                    val itemRef = (definition as IsMapDefinition<Any, out Any, *>).valueRef(
-                        key,
-                        parentReference as CanContainMapItemReference<*, *, *>
-                    ) as IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>
-
-                    processDefinitionForProcessor(
-                        definition.valueDefinition,
-                        item,
-                        itemRef,
-                        processor
-                    )
-                }
+            is IsMapDefinition<out Any, out Any, *> -> (value as Map<Any, Any>).forEach { (key, item) ->
+                val itemRef = (definition as IsMapDefinition<Any, out Any, *>).valueRef(
+                    key,
+                    parentReference as CanContainMapItemReference<*, *, *>
+                ) as IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>
+                processDefinitionForProcessor(definition.valueDefinition, item, itemRef, processor)
             }
             is IsMultiTypeDefinition<out TypeEnum<Any>, out Any, *> -> {
                 val multiType = value as TypedValue<TypeEnum<Any>, Any>
@@ -273,15 +228,13 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
                     processor
                 )
             }
-            else ->
-                processor(
-                    parentReference as IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>,
-                    value
-                )
+            else -> processor(
+                parentReference as IsPropertyReference<out Any, IsPropertyDefinition<out Any>, IsValues<*>>,
+                value
+            )
         }
     }
 }
-
 
 /**
  * Transforms the serialized [value] to current value.
@@ -290,9 +243,7 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
 @Suppress("UNCHECKED_CAST")
 inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertToCurrentValue(value: Any?): TO? {
     return when {
-        value == null && this.definition is HasDefaultValueDefinition<*> -> (this.definition as? HasDefaultValueDefinition<*>).let {
-            it?.default as TO?
-        }
+        value == null && this.definition is HasDefaultValueDefinition<*> -> (this.definition as? HasDefaultValueDefinition<*>)?.default as TO?
         value is ObjectValues<*, *> -> value.toDataObject() as TO?
         else -> try {
             this.fromSerializable?.invoke(Unit, value as? T?) ?: value as? TO?
@@ -308,13 +259,9 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
 fun <V: AbstractValues<DO, DM>, DO: Any, DM: IsTypedObjectDataModel<DO, *, *, CX>, CX: IsPropertyContext> V.toJson(
     context: CX? = null,
     pretty: Boolean = false
-): String =
-    (this.dataModel.Serializer as IsDataModelSerializer<V, DM, CX>).writeJson(this, context = context, pretty = pretty)
+): String = (this.dataModel.Serializer as IsDataModelSerializer<V, DM, CX>).writeJson(this, context = context, pretty = pretty)
 
 /** Get property from values with wrapper in [getProperty] and convert it to native usage */
 inline operator fun <DO : Any, DM : IsTypedDataModel<DO>, TI : Any, reified TO : Any> AbstractValues<DO, DM>?.div(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
-    if (this == null) {
-        return null
-    }
-    return invoke(getProperty)
+    return this?.invoke(getProperty)
 }

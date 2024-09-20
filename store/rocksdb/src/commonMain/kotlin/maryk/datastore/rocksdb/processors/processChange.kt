@@ -174,7 +174,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
             if (validationExceptions == null) {
                 validationExceptions = mutableListOf()
             }
-            validationExceptions!!.add(ve)
+            validationExceptions.add(ve)
         }
 
         var isChanged = false
@@ -666,14 +666,14 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                 if (newKeyAndValue == null) {
                     if (oldKeyAndValue != null) {
                         deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes)
-                        indexUpdates!!.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldKeyAndValue)))
+                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldKeyAndValue)))
                     } // else ignore since did not exist
                 } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
                     if (oldKeyAndValue != null) {
                         deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes)
                     }
                     setIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, newKeyAndValue, versionBytes)
-                    indexUpdates!!.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newKeyAndValue), oldKeyAndValue?.let { Bytes(oldKeyAndValue) }))
+                    indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newKeyAndValue), oldKeyAndValue?.let { Bytes(oldKeyAndValue) }))
                 }
             }
         }

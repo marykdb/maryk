@@ -26,16 +26,6 @@ class StringTest {
     }
 
     @Test
-    fun testBytesToString() {
-        for ((hex, value) in stringsAndBytes) {
-            val b = initByteArrayByHex(hex)
-            expect(value) {
-                initString(b, 0, b.size)
-            }
-        }
-    }
-
-    @Test
     fun testStringToBytes() {
         for ((hex, value) in stringsAndBytes) {
             val size = value.calculateUTF8ByteLength()

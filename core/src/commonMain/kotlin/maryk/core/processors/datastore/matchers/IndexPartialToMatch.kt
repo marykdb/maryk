@@ -2,7 +2,6 @@ package maryk.core.processors.datastore.matchers
 
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
 import maryk.core.processors.datastore.findByteIndexByPartIndex
-import maryk.lib.bytes.initString
 import maryk.lib.extensions.compare.matchPart
 
 sealed class IsIndexPartialToMatch {
@@ -48,7 +47,8 @@ class IndexPartialToRegexMatch(
     /** Matches [bytes] to partial and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         val (internalOffset, size) = findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize)
-        return regex.matches(initString(bytes, offset + internalOffset, size))
+        val fullOffset = offset + internalOffset
+        return regex.matches(bytes.decodeToString(fullOffset, fullOffset + size))
     }
 }
 

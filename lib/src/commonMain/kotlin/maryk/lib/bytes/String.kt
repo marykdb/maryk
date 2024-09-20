@@ -7,9 +7,6 @@ private const val MIN_SUPPLEMENTARY_CODE_POINT = 0x010000
 expect fun fromCodePoint(value: Int): String
 expect fun codePointAt(string: String, index: Int): Int
 
-fun initString(bytes: ByteArray, offset: Int, length: Int): String =
-    bytes.decodeToString(offset, offset + length)
-
 fun initString(length: Int, reader: () -> Byte): String =
     if (length > recyclableByteArray.size) {
         ByteArray(length) {

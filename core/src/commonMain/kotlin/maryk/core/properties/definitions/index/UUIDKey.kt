@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalUuidApi::class)
+
 package maryk.core.properties.definitions.index
 
 import maryk.core.extensions.bytes.calculateVarByteLength
@@ -18,18 +20,20 @@ import maryk.core.values.IsValuesGetter
 import maryk.core.values.ObjectValues
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
-import maryk.lib.uuid.generateUUID
 import maryk.yaml.IsYamlReader
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 /** A key with a Universally Unique ID */
-object UUIDKey : IsFixedBytesPropertyReference<Pair<Long, Long>> {
+object UUIDKey : IsFixedBytesPropertyReference<Uuid> {
     override val indexKeyPartType = IndexKeyPartType.UUID
     override val byteSize = 16
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
-    override fun getValue(values: IsValuesGetter) = generateUUID()
+    @OptIn(ExperimentalUuidApi::class)
+    override fun getValue(values: IsValuesGetter) = Uuid.random()
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = Pair(
+    override fun readStorageBytes(length: Int, reader: () -> Byte) = Uuid.fromLongs(
         initLong(reader),
         initLong(reader)
     )
@@ -37,9 +41,11 @@ object UUIDKey : IsFixedBytesPropertyReference<Pair<Long, Long>> {
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) = false
     override fun toQualifierStorageByteArray() = null
 
-    override fun writeStorageBytes(value: Pair<Long, Long>, writer: (byte: Byte) -> Unit) {
-        value.first.writeBytes(writer)
-        value.second.writeBytes(writer)
+    override fun writeStorageBytes(value: Uuid, writer: (byte: Byte) -> Unit) {
+        value.toLongs { first, second ->
+            first.writeBytes(writer)
+            second.writeBytes(writer)
+        }
     }
 
     override fun calculateReferenceStorageByteLength() =

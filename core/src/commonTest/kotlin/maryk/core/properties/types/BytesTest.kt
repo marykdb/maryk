@@ -16,17 +16,17 @@ internal class BytesTest {
     @Test
     fun testCompare() {
         expect(0) {
-            Bytes("__") compareTo Bytes("__")
+            Bytes("_w") compareTo Bytes("_w")
         }
 
         expect(-4) {
-            Bytes("AAAA") compareTo Bytes("BBBBBB")
+            Bytes("AAAA") compareTo Bytes("BBBB")
         }
     }
 
     @Test
     fun hashcode() {
-        expect(30) { Bytes("__").hashCode() }
+        expect(30) { Bytes("_w").hashCode() }
         expect(29791) { Bytes("AAAA").hashCode() }
     }
 

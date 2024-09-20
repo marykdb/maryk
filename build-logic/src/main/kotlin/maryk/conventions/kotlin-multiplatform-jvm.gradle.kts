@@ -10,6 +10,7 @@ plugins {
 
 kotlin {
     jvm {
+        @Suppress("OPT_IN_USAGE")
         compilerOptions {
             jvmTarget = JVM_17
         }

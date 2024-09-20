@@ -15,7 +15,7 @@ internal class ByteArrayKtTest {
         Base64Maryk.decode("________"),
         Base64Maryk.decode("AAAAAAA"),
         Base64Maryk.decode("iIiIiIiI"),
-        Base64Maryk.decode("iIiIiIiIAAAA__")
+        Base64Maryk.decode("iIiIiIiIAAAA_w")
     )
 
     @Test

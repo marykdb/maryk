@@ -1,11 +1,12 @@
+@file:OptIn(ExperimentalUuidApi::class)
 package maryk.core.properties.definitions.index
 
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
-import maryk.core.properties.definitions.string
 import maryk.core.models.key
+import maryk.core.properties.definitions.string
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -13,6 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
+import kotlin.uuid.ExperimentalUuidApi
 
 internal class UUIDKeyTest {
     object MarykModel : RootDataModel<MarykModel>(
@@ -35,8 +37,10 @@ internal class UUIDKeyTest {
             b[i++]
         }
 
-        expect(msb) { uuid.first }
-        expect(lsb) { uuid.second }
+        uuid.toLongs { first, second ->
+            expect(msb) { first }
+            expect(lsb) { second }
+        }
     }
 
     @Test

@@ -4,6 +4,8 @@ import maryk.lib.recyclableByteArray
 
 private const val MIN_SUPPLEMENTARY_CODE_POINT = 0x010000
 
+private const val SURROGATE_OFFSET = MIN_SUPPLEMENTARY_CODE_POINT - (Char.MIN_HIGH_SURROGATE.code shl 10) - Char.MIN_LOW_SURROGATE.code
+
 expect fun fromCodePoint(value: Int): String
 expect fun codePointAt(string: String, index: Int): Int
 
@@ -21,63 +23,31 @@ fun initString(length: Int, reader: () -> Byte): String =
 
 /**
  * Calculates the length of a String in UTF8 bytes in an optimized way
- * @throws IllegalArgumentException when string contains invalid UTF-16: unpaired surrogates
+ * @throws IllegalArgumentException when string contains invalid UTF-16 surrogates or the UTF-8 length exceeds Int.MAX_VALUE
  */
 fun String.calculateUTF8ByteLength(): Int {
-    val utf16Length = this.length
-    var utf8Length = utf16Length
-    var i = 0
-
-    // Count ASCII chars.
-    while (i < utf16Length && this[i].code < 0x80) {
-        i++
-    }
-
-    // Count other chars
-    while (i < utf16Length) {
-        val c = this[i]
-        if (c.code < 0x800) {
-            // Count any chars anything below 0x800.
-            utf8Length += (0x7f - c.code) ushr 31
-        } else {
-            // Count remaining chars
-            utf8Length += calculateGenericUTF8Length(this, i)
-            break
-        }
-        i++
-    }
-
-    // Check if utf8 length did not overflow the Int to become smaller than the utf16 length
-    if (utf8Length < utf16Length) {
-        throw IllegalArgumentException("UTF-8 length does not fit in int: ${utf8Length + (1L shl 32)}")
-    }
-    return utf8Length
-}
-
-/**
- * Calculates the length of [string] from [startPosition] in UTF8 in a less optimized way
- * @throws IllegalArgumentException when string contains invalid UTF-16: unpaired surrogates
- */
-private fun calculateGenericUTF8Length(string: String, startPosition: Int): Int {
     var utf8Length = 0
-    val utf16Length = string.length
-    var i = startPosition
-    while (i < utf16Length) {
-        val char = string[i]
-        if (char.code < 0x800) {
-            utf8Length += (0x7f - char.code) ushr 31
-        } else {
-            utf8Length += 2
-            // Check if char is a correct surrogate pair
-            if (char.isSurrogate()) {
-                val cp = codePointAt(string, i)
-                if (cp < MIN_SUPPLEMENTARY_CODE_POINT) {
+    var i = 0
+    while (i < length) {
+        val c = this[i]
+        when {
+            c.code < 0x80 -> utf8Length++
+            c.code < 0x800 -> utf8Length += 2
+            c.isHighSurrogate() -> {
+                if (i + 1 >= length || !this[i + 1].isLowSurrogate()) {
                     throw IllegalArgumentException("Unpaired surrogate at index $i")
                 }
+                utf8Length += 4
                 i++
             }
+            c.isLowSurrogate() -> throw IllegalArgumentException("Unexpected low surrogate at index $i")
+            else -> utf8Length += 3
         }
         i++
+    }
+
+    if (utf8Length < 0) {
+        throw IllegalArgumentException("UTF-8 length overflow: ${utf8Length.toLong() and 0xFFFFFFFFL}")
     }
     return utf8Length
 }
@@ -87,31 +57,28 @@ private fun calculateGenericUTF8Length(string: String, startPosition: Int): Int 
  * @throws IllegalArgumentException when string contains invalid UTF-16 unpaired surrogates
  */
 fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) {
-    val utf16Length = this.length
     var i = 0
-    while (i < utf16Length) {
+    while (i < length) {
         val char = this[i]
-        val charInt = char.code
         when {
-            charInt < 0x80 -> writer(char.code.toByte()) // ASCII
-
-            char.code < 0x800 -> { // 11 bits, two UTF-8 bytes
-                writer((0xF shl 6 or (charInt ushr 6)).toByte())
-                writer((0x80 or (0x3F and charInt)).toByte())
+            char.code < 0x80 -> writer(char.code.toByte())
+            char.code < 0x800 -> {
+                writer((0xC0 or (char.code ushr 6)).toByte())
+                writer((0x80 or (0x3F and char.code)).toByte())
             }
-            char < Char.MIN_SURROGATE || Char.MAX_SURROGATE < char -> {
-                // Max possible character is 0xFFFF. This is encoded in 3 UTF-8 bytes.
-                writer((0xF shl 5 or (charInt ushr 12)).toByte())
-                writer((0x80 or (0x3F and (charInt ushr 6))).toByte())
-                writer((0x80 or (0x3F and charInt)).toByte())
+            char < Char.MIN_SURROGATE || char > Char.MAX_SURROGATE -> {
+                writer((0xE0 or (char.code ushr 12)).toByte())
+                writer((0x80 or (0x3F and (char.code ushr 6))).toByte())
+                writer((0x80 or (0x3F and char.code)).toByte())
             }
             else -> {
                 val low = this[++i]
-                if (i == this.length || !isSurrogatePair(char, low)) {
+                if (i == this.length || !(char.isHighSurrogate() && low.isLowSurrogate())) {
                     throw IllegalArgumentException("Unpaired surrogate at index: ${i - 1}")
                 }
-                val codePoint = toCodePoint(char, low)
-                writer((0xF shl 4 or (codePoint ushr 18)).toByte())
+
+                val codePoint = (char.code shl 10) + low.code + SURROGATE_OFFSET
+                writer((0xF0 or (codePoint ushr 18)).toByte())
                 writer((0x80 or (0x3F and (codePoint ushr 12))).toByte())
                 writer((0x80 or (0x3F and (codePoint ushr 6))).toByte())
                 writer((0x80 or (0x3F and codePoint)).toByte())
@@ -120,13 +87,3 @@ fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) {
         i++
     }
 }
-
-private fun toCodePoint(high: Char, low: Char) =
-    (high.code shl 10) + low.code + (
-            MIN_SUPPLEMENTARY_CODE_POINT
-                    - (Char.MIN_HIGH_SURROGATE.code shl 10)
-                    - Char.MIN_LOW_SURROGATE.code
-            )
-
-private fun isSurrogatePair(high: Char, low: Char) =
-    high.isHighSurrogate() && low.isLowSurrogate()

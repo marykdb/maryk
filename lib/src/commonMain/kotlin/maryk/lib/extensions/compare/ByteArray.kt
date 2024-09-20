@@ -1,7 +1,5 @@
 package maryk.lib.extensions.compare
 
-private val MAX_BYTE = 0b1111_1111.toUByte()
-
 /**
  * Compares ByteArray to [other] ByteArray.
  * Returns zero if this object is equal to the specified [other] object,
@@ -9,9 +7,10 @@ private val MAX_BYTE = 0b1111_1111.toUByte()
  * or a positive number if it's greater than [other].
  */
 infix operator fun ByteArray.compareTo(other: ByteArray): Int {
-    for (it in 0 until minOf(this.size, other.size)) {
-        val a = this[it].toUByte() and MAX_BYTE
-        val b = other[it].toUByte() and MAX_BYTE
+    val minSize = minOf(this.size, other.size)
+    for (it in 0 until minSize) {
+        val a = this[it].toUByte()
+        val b = other[it].toUByte()
         if (a != b) {
             return a.toInt() - b.toInt()
         }
@@ -26,31 +25,15 @@ infix operator fun ByteArray.compareTo(other: ByteArray): Int {
  * or a positive number if it's greater than [other].
  */
 fun ByteArray.compareToWithOffsetLength(other: ByteArray, offset: Int, length: Int = other.size - offset): Int {
-    for (it in 0 until minOf(this.size, length)) {
-        val a = this[it].toUByte() and MAX_BYTE
-        val b = other[it + offset].toUByte() and MAX_BYTE
+    val minSize = minOf(this.size, length)
+    for (it in 0 until minSize) {
+        val a = this[it].toUByte()
+        val b = other[it + offset].toUByte()
         if (a != b) {
             return a.toInt() - b.toInt()
         }
     }
     return this.size - length
-}
-
-/**
- * Compares ByteArray to ByteArray [b], both with offsets and lengths.
- * Returns zero if this object is equal to the specified [b] object,
- * a negative number if it's less than [b],
- * or a positive number if it's greater than [b].
- */
-fun ByteArray.compareToWithOffsetAndLength(aOffset: Int, aLength: Int, b: ByteArray, bOffset: Int, bLength: Int): Int {
-    for (it in 0 until minOf(aLength, bLength)) {
-        val aByte = this[it + aOffset].toUByte() and MAX_BYTE
-        val bByte = b[it + bOffset].toUByte() and MAX_BYTE
-        if (aByte != bByte) {
-            return aByte.toInt() - bByte.toInt()
-        }
-    }
-    return aLength - bLength
 }
 
 /**
@@ -60,18 +43,15 @@ fun ByteArray.compareToWithOffsetAndLength(aOffset: Int, aLength: Int, b: ByteAr
  * or a positive number if it's greater than [other].
  */
 fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int = 0, length: Int = other.size - offset): Int {
-    for (it in 0 until minOf(this.size, length)) {
-        val a = this[it].toUByte() and MAX_BYTE
-        val b = other[it + offset].toUByte() and MAX_BYTE
+    val minSize = minOf(this.size, length)
+    for (it in 0 until minSize) {
+        val a = this[it].toUByte()
+        val b = other[it + offset].toUByte()
         if (a != b) {
             return a.toInt() - b.toInt()
         }
     }
-    return if (length < this.size){
-        this.size - length
-    } else {
-        0
-    }
+    return if (length < this.size) this.size - length else 0
 }
 
 /**
@@ -80,10 +60,7 @@ fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int = 0, length: Int = 
  */
 fun ByteArray.match(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
     if (length != fromLength) return false
-    for (index in length - 1 downTo 0) {
-        if (this[index + fromOffset] != bytes[index + offset]) return false
-    }
-    return true
+    return (length - 1 downTo 0).all { this[it + fromOffset] == bytes[it + offset] }
 }
 
 /**
@@ -92,10 +69,7 @@ fun ByteArray.match(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.si
  */
 fun ByteArray.matchPart(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
     if (length > fromLength) return false
-    for (index in length - 1 downTo 0) {
-        if (this[index + fromOffset] != bytes[index + offset]) return false
-    }
-    return true
+    return (length - 1 downTo 0).all { this[it + fromOffset] == bytes[it + offset] }
 }
 
 /**
@@ -105,17 +79,12 @@ fun ByteArray.matchPart(fromOffset: Int, bytes: ByteArray, fromLength: Int = thi
 fun ByteArray.nextByteInSameLength(): ByteArray {
     val newArray = this.copyOf()
     for (i in newArray.lastIndex downTo 0) {
-        val v = newArray[i].toUByte()
-
-        if (v < MAX_BYTE) {
-            newArray[i] = (v + 1.toUByte()).toByte()
-            break
-        } else if (i == 0) {
-            return this
-            // All bytes are max bytes
+        if (newArray[i] != 0xFF.toByte()) {
+            newArray[i]++
+            return newArray
         }
     }
-    return newArray
+    return this // All bytes are max bytes
 }
 
 /**
@@ -124,18 +93,13 @@ fun ByteArray.nextByteInSameLength(): ByteArray {
  */
 fun ByteArray.prevByteInSameLength(maxLengthToRead: Int? = null): ByteArray {
     val newArray = this.copyOf()
-    val startIndex = maxLengthToRead?.let { newArray.lastIndex - it } ?: 0
+    val startIndex = maxLengthToRead?.let { newArray.size - it.coerceAtMost(newArray.size) } ?: 0
     for (i in newArray.lastIndex downTo startIndex) {
-        val v = newArray[i].toUByte()
-
-        if (v > 0u) {
-            newArray[i] = (v - 1.toUByte()).toByte()
-            break
-        } else if (i == 0) {
-            throw IllegalStateException("Byte array already reached the end")
-        } else {
-            newArray[i] = 0xFF.toByte()
+        if (newArray[i] != 0.toByte()) {
+            newArray[i]--
+            return newArray
         }
+        newArray[i] = 0xFF.toByte()
     }
-    return newArray
+    throw IllegalStateException("Byte array already reached the minimum value")
 }

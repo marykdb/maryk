@@ -18,13 +18,5 @@ kotlin {
                 implementation(projects.testlib)
             }
         }
-        jsMain {
-            dependencies {
-                api(npm("buffer", "6.0.3"))
-                api(npm("stream-browserify", "3.0.0"))
-                api(npm("crypto-browserify", "3.12.0"))
-                api(npm("safe-buffer", "5.2.1"))
-            }
-        }
     }
 }

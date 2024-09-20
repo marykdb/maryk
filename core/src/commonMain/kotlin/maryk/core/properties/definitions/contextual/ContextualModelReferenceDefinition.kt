@@ -18,7 +18,7 @@ import maryk.lib.exceptions.ParseException
 
 /** Definition for a reference to another DataObject resolved from context by [contextualResolver]. */
 fun <DM : IsDataModel, CX : IsPropertyContext> ContextualModelReferenceDefinition(
-    contextualResolver: Unit.(context: CX?, name: String) -> IsDataModelReference<DM>
+    contextualResolver: (context: CX?, name: String) -> IsDataModelReference<DM>
 ) = ContextualModelReferenceDefinition<DM, CX, CX>(contextualResolver) {
     it
 }
@@ -28,8 +28,8 @@ fun <DM : IsDataModel, CX : IsPropertyContext> ContextualModelReferenceDefinitio
  * Has a [contextTransformer] to transform context.
  */
 data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsPropertyContext, CXI : IsPropertyContext>(
-    val contextualResolver: Unit.(context: CXI?, name: String) -> IsDataModelReference<DM>,
-    val contextTransformer: Unit.(CX?) -> CXI?
+    val contextualResolver: (context: CXI?, name: String) -> IsDataModelReference<DM>,
+    val contextTransformer: (CX?) -> CXI?
 ) : IsValueDefinition<IsDataModelReference<DM>, CX>, IsContextualEncodable<IsDataModelReference<DM>, CX> {
     override val required = true
     override val final = true
@@ -46,7 +46,7 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
     }
 
     override fun fromString(string: String, context: CX?) =
-        resolveContext(contextTransformer(Unit, context), string)
+        resolveContext(contextTransformer(context), string)
 
     override fun writeJsonValue(value: IsDataModelReference<DM>, writer: IsJsonLikeWriter, context: CX?) =
         writer.writeString(this.asString(value, context))
@@ -81,7 +81,7 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
         context: CX?,
         earlierValue: IsDataModelReference<DM>?
     ) =
-        resolveContext(contextTransformer(Unit, context), initString(length, reader))
+        resolveContext(contextTransformer(context), initString(length, reader))
 
     private fun resolveContext(context: CXI?, name: String): IsDataModelReference<DM> {
         // read and remove keyLength from name
@@ -93,10 +93,10 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
         }
         val onlyName = value[0]
         try {
-            return this.contextualResolver(Unit, context, onlyName)
-        } catch (e: DefNotFoundException) {
+            return this.contextualResolver(context, onlyName)
+        } catch (_: DefNotFoundException) {
             return LazyDataModelReference(onlyName, keyLength) {
-                this.contextualResolver(Unit, context, onlyName).also {
+                this.contextualResolver(context, onlyName).also {
                     if (it is LazyDataModelReference<*>) {
                         throw DefNotFoundException("Could not resolve DataModel $name, was it processed before or provided in dependents in the context?")
                     }

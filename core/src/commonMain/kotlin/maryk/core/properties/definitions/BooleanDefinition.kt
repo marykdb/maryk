@@ -97,10 +97,10 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.boolean(
     final: Boolean = false,
     default: Boolean? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> Boolean?)? = null,
-    fromSerializable: (Unit.(Boolean?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, Boolean) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> Boolean?)? = null,
+    fromSerializable: ((Boolean?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, Boolean) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

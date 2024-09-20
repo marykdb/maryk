@@ -20,7 +20,7 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
 internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
-    val contextualResolver: Unit.(context: CX?) -> TypedValuesDataModel<IsValuesDataModel>
+    val contextualResolver: (context: CX?) -> TypedValuesDataModel<IsValuesDataModel>
 ) : IsEmbeddedValuesDefinition<IsValuesDataModel, CX> {
     override val dataModel: IsValuesDataModel
         get() = throw DefNotFoundException("dataModel is contextually determined")
@@ -43,13 +43,13 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     }
 
     override fun writeJsonValue(value: ValuesImpl, writer: IsJsonLikeWriter, context: CX?) =
-        contextualResolver(Unit, context).Serializer.writeJson(value, writer, context)
+        contextualResolver(context).Serializer.writeJson(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(Unit, context).Serializer.readJson(reader, context)
+        contextualResolver(context).Serializer.readJson(reader, context)
 
     override fun calculateTransportByteLength(value: ValuesImpl, cacher: WriteCacheWriter, context: CX?) =
-        contextualResolver(Unit, context).Serializer.calculateProtoBufLength(value, cacher, null)
+        contextualResolver(context).Serializer.calculateProtoBufLength(value, cacher, null)
 
     override fun writeTransportBytes(
         value: ValuesImpl,
@@ -57,7 +57,7 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) =
-        contextualResolver(Unit, context).Serializer.writeProtoBuf(value, cacheGetter, writer, context)
+        contextualResolver(context).Serializer.writeProtoBuf(value, cacheGetter, writer, context)
 
     override fun readTransportBytes(
         length: Int,
@@ -65,19 +65,19 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         context: CX?,
         earlierValue: Values<IsValuesDataModel>?
     ) =
-        contextualResolver(Unit, context).Serializer.readProtoBuf(length, reader, context)
+        contextualResolver(context).Serializer.readProtoBuf(length, reader, context)
 }
 
 fun <DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.embedContextual(
     index: UInt,
     getter: (DO) -> Values<out IsValuesDataModel>? = { null },
-    contextualResolver: Unit.(context: CX?) -> TypedValuesDataModel<IsValuesDataModel>,
+    contextualResolver: (context: CX?) -> TypedValuesDataModel<IsValuesDataModel>,
     name: String? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(Values<IsValuesDataModel>?, IsPropertyContext?) -> Values<IsValuesDataModel>?)? = null,
-    fromSerializable: (Unit.(Values<IsValuesDataModel>?) -> Values<IsValuesDataModel>?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(IsPropertyContext, Values<IsValuesDataModel>) -> Unit)? = null
+    toSerializable: ((Values<IsValuesDataModel>?, IsPropertyContext?) -> Values<IsValuesDataModel>?)? = null,
+    fromSerializable: ((Values<IsValuesDataModel>?) -> Values<IsValuesDataModel>?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((IsPropertyContext, Values<IsValuesDataModel>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     @Suppress("UNCHECKED_CAST")
     EmbeddedValuesDefinitionWrapper(

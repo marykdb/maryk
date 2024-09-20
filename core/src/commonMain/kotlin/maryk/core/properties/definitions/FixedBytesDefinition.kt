@@ -143,10 +143,10 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.fixedBytes(
     maxValue: Bytes? = null,
     default: Bytes? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> Bytes?)? = null,
-    fromSerializable: (Unit.(Bytes?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, Bytes) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> Bytes?)? = null,
+    fromSerializable: ((Bytes?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, Bytes) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

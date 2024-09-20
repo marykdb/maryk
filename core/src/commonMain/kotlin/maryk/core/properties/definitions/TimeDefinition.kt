@@ -211,10 +211,10 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.time(
     default: LocalTime? = null,
     precision: TimePrecision = TimePrecision.SECONDS,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> LocalTime?)? = null,
-    fromSerializable: (Unit.(LocalTime?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, LocalTime) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> LocalTime?)? = null,
+    fromSerializable: ((LocalTime?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, LocalTime) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

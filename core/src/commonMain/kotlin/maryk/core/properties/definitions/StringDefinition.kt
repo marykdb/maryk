@@ -179,10 +179,10 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.string(
     maxSize: UInt? = null,
     regEx: String? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> String?)? = null,
-    fromSerializable: (Unit.(String?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, String) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> String?)? = null,
+    fromSerializable: ((String?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, String) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FlexBytesDefinitionWrapper(
         index,

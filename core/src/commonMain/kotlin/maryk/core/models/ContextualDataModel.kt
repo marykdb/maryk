@@ -8,7 +8,7 @@ import maryk.core.properties.IsPropertyContext
  * a need for injection of information from other sources.
  */
 abstract class ContextualDataModel<DO: Any, DM: ContextualDataModel<DO, DM, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext>(
-    val contextTransformer: Unit.(CXI?) -> CX?,
+    val contextTransformer: (CXI?) -> CX?,
 ) : TypedObjectDataModel<DO, DM, CXI, CX>(),
     IsObjectDataModel<DO>,
     IsTypedObjectDataModel<DO, DM, CXI, CX>

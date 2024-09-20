@@ -203,10 +203,10 @@ fun <DM: IsRootDataModel, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataM
     default: Key<DM>? = null,
     dataModel: () -> DM,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> Key<DM>?)? = null,
-    fromSerializable: (Unit.(Key<DM>?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, Key<DM>) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> Key<DM>?)? = null,
+    fromSerializable: ((Key<DM>?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, Key<DM>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

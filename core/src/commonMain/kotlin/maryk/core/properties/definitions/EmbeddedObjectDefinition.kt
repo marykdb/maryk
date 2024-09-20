@@ -224,10 +224,10 @@ fun <TO: Any, DO: Any, EDO : Any, DM : IsTypedObjectDataModel<EDO, DM, CXI, CX>,
     final: Boolean = false,
     default: EDO? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CXI?) -> EDO?)? = null,
-    fromSerializable: (Unit.(EDO?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CXI, EDO) -> Unit)? = null
+    toSerializable: ((TO?, CXI?) -> EDO?)? = null,
+    fromSerializable: ((EDO?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CXI, EDO) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     EmbeddedObjectDefinitionWrapper(
         index,

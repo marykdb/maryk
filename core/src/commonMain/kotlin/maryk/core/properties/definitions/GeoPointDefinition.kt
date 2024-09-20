@@ -117,10 +117,10 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.geoPoint(
     final: Boolean = false,
     default: GeoPoint? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> GeoPoint?)? = null,
-    fromSerializable: (Unit.(GeoPoint?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, GeoPoint) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> GeoPoint?)? = null,
+    fromSerializable: ((GeoPoint?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, GeoPoint) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

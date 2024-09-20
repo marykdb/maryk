@@ -30,10 +30,10 @@ data class EmbeddedValuesDefinitionWrapper<
     override val definition: IsEmbeddedValuesDefinition<DM, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (Any) -> Values<DM>? = { null },
-    override val capturer: (Unit.(CX, Values<DM>) -> Unit)? = null,
-    override val toSerializable: (Unit.(Values<DM>?, CX?) -> Values<DM>?)? = null,
-    override val fromSerializable: (Unit.(Values<DM>?) -> Values<DM>?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((CX, Values<DM>) -> Unit)? = null,
+    override val toSerializable: ((Values<DM>?, CX?) -> Values<DM>?)? = null,
+    override val fromSerializable: ((Values<DM>?) -> Values<DM>?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsEmbeddedValuesDefinition<DM, CX> by definition,

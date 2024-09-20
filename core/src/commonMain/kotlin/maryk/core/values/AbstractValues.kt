@@ -246,7 +246,7 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
         value == null && this.definition is HasDefaultValueDefinition<*> -> (this.definition as? HasDefaultValueDefinition<*>)?.default as TO?
         value is ObjectValues<*, *> -> value.toDataObject() as TO?
         else -> try {
-            this.fromSerializable?.invoke(Unit, value as? T?) ?: value as? TO?
+            this.fromSerializable?.invoke(value as? T?) ?: value as? TO?
         } catch (e: Throwable) {
             e.printStackTrace()
             value as? TO?

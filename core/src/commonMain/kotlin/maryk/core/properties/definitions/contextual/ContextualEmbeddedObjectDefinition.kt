@@ -14,7 +14,7 @@ import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
 data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
-    val contextualResolver: Unit.(context: CX?) -> IsTypedObjectDataModel<Any, *, *, CX>
+    val contextualResolver: (context: CX?) -> IsTypedObjectDataModel<Any, *, *, CX>
 ) : IsValueDefinition<Any, CX>, IsContextualEncodable<Any, CX> {
     override val required = true
     override val final = true
@@ -34,13 +34,13 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     }
 
     override fun writeJsonValue(value: Any, writer: IsJsonLikeWriter, context: CX?) =
-        contextualResolver(Unit, context).Serializer.writeObjectAsJson(value, writer, context)
+        contextualResolver(context).Serializer.writeObjectAsJson(value, writer, context)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(Unit, context).Serializer.readJson(reader, context).toDataObject()
+        contextualResolver(context).Serializer.readJson(reader, context).toDataObject()
 
     override fun calculateTransportByteLength(value: Any, cacher: WriteCacheWriter, context: CX?) =
-        contextualResolver(Unit, context).Serializer.calculateObjectProtoBufLength(value, cacher, context)
+        contextualResolver(context).Serializer.calculateObjectProtoBufLength(value, cacher, context)
 
     override fun writeTransportBytes(
         value: Any,
@@ -48,7 +48,7 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) =
-        contextualResolver(Unit, context).Serializer.writeObjectProtoBuf(value, cacheGetter, writer, context)
+        contextualResolver(context).Serializer.writeObjectProtoBuf(value, cacheGetter, writer, context)
 
     override fun readTransportBytes(
         length: Int,
@@ -56,5 +56,5 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
         context: CX?,
         earlierValue: Any?
     ) =
-        contextualResolver(Unit, context).Serializer.readProtoBuf(length, reader, context).toDataObject()
+        contextualResolver(context).Serializer.readProtoBuf(length, reader, context).toDataObject()
 }

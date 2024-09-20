@@ -95,8 +95,8 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
         @Suppress("UNCHECKED_CAST")
         val definition = when(val def = this.valueDefinition) {
-            is ContextualSubDefinition<*, *, *, *> -> (def as ContextualSubDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(Unit, def.contextTransformer(Unit, context))
-            is ContextualValueDefinition<*, *, *, *> -> (def as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(Unit, def.contextTransformer(Unit, context) as IsPropertyContext)
+            is ContextualSubDefinition<*, *, *, *> -> (def as ContextualSubDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(def.contextTransformer(context))
+            is ContextualValueDefinition<*, *, *, *> -> (def as ContextualValueDefinition<IsPropertyContext, IsPropertyContext, *, *>).contextualResolver(def.contextTransformer(context) as IsPropertyContext)
             else -> this.valueDefinition
         }
 
@@ -223,7 +223,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                 @Suppress("UNCHECKED_CAST")
                 return when(earlierValue) {
                     null -> collection
-                    else -> (earlierValue as MutableCollection<T>).addAll(collection) as C
+                    else -> (earlierValue as MutableCollection<T>).apply { addAll(collection) } as C
                 }
             }
             else -> {

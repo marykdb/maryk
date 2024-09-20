@@ -34,10 +34,10 @@ data class EmbeddedObjectDefinitionWrapper<
     override val definition: IsEmbeddedObjectDefinition<EODO, DM, CXI, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
-    override val capturer: (Unit.(CXI, EODO) -> Unit)? = null,
-    override val toSerializable: (Unit.(TO?, CXI?) -> EODO?)? = null,
-    override val fromSerializable: (Unit.(EODO?) -> TO?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((CXI, EODO) -> Unit)? = null,
+    override val toSerializable: ((TO?, CXI?) -> EODO?)? = null,
+    override val fromSerializable: ((EODO?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsEmbeddedObjectDefinition<EODO, DM, CXI, CX> by definition,

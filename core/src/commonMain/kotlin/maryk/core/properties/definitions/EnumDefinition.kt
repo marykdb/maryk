@@ -289,10 +289,10 @@ fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any, CX: IsPropertyContext> IsOb
     maxValue: E? = null,
     default: E? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> E?)? = null,
-    fromSerializable: (Unit.(E?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, E) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> E?)? = null,
+    fromSerializable: ((E?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, E) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

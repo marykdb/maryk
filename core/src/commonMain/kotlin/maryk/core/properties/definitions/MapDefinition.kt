@@ -176,10 +176,10 @@ fun <K : Any, V : Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataMode
     valueDefinition: IsSubDefinition<V, CX>,
     default: Map<K, V>? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> Map<K, V>?)? = null,
-    fromSerializable: (Unit.(Map<K, V>?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, Map<K, V>) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> Map<K, V>?)? = null,
+    fromSerializable: ((Map<K, V>?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, Map<K, V>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     MapDefinitionWrapper(
         index,

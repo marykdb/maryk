@@ -19,10 +19,10 @@ data class ContextualDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     override val definition: D,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
-    override val capturer: (Unit.(CX, T) -> Unit)? = null,
-    override val toSerializable: (Unit.(TO?, CX?) -> T?)? = null,
-    override val fromSerializable: (Unit.(T?) -> TO?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((CX, T) -> Unit)? = null,
+    override val toSerializable: ((TO?, CX?) -> T?)? = null,
+    override val fromSerializable: ((T?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsDefinitionWrapper<T, TO, CX, DO>,
@@ -34,6 +34,7 @@ data class ContextualDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
         PropertyReferenceForValues(this, parentRef)
 
     // For delegation in definition
+    @Suppress("unused")
     operator fun getValue(thisRef: Any?, property: KProperty<*>) = this
 }
 
@@ -43,10 +44,10 @@ fun <T : Any, TO : Any, CX : IsPropertyContext, D : IsContextualEncodable<T, CX>
     definition: D,
     alternativeNames: Set<String>? = null,
     getter: (DO) -> TO? = { null },
-    capturer: (Unit.(CX, T) -> Unit)? = null,
-    toSerializable: (Unit.(TO?, CX?) -> T?)? = null,
-    fromSerializable: (Unit.(T?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    capturer: ((CX, T) -> Unit)? = null,
+    toSerializable: ((TO?, CX?) -> T?)? = null,
+    fromSerializable: ((T?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     ContextualDefinitionWrapper(
         index = index,

@@ -11,8 +11,8 @@ import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to sub definitions based on context from [contextualResolver] */
 data class ContextualSubDefinition<CX : IsPropertyContext, CXI : IsPropertyContext, T : Any, out D : IsSubDefinition<T, CXI>>(
-    val contextualResolver: Unit.(context: CX?) -> D,
-    val contextTransformer: Unit.(context: CX?) -> CXI? = {
+    val contextualResolver: (context: CX?) -> D,
+    val contextTransformer: (context: CX?) -> CXI? = {
         @Suppress("UNCHECKED_CAST")
         it as CXI?
     },
@@ -29,7 +29,7 @@ data class ContextualSubDefinition<CX : IsPropertyContext, CXI : IsPropertyConte
         cacher: WriteCacheWriter,
         context: CX?
     ) =
-        contextualResolver(Unit, context).calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(Unit, context))
+        contextualResolver(context).calculateTransportByteLengthWithKey(index, value, cacher, contextTransformer(context))
 
     override fun writeTransportBytesWithKey(
         index: Int,
@@ -38,15 +38,15 @@ data class ContextualSubDefinition<CX : IsPropertyContext, CXI : IsPropertyConte
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        contextualResolver(Unit, context).writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(Unit, context))
+        contextualResolver(context).writeTransportBytesWithKey(index, value, cacheGetter, writer, contextTransformer(context))
     }
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: CX?) =
-        contextualResolver(Unit, context).writeJsonValue(value, writer, contextTransformer(Unit, context))
+        contextualResolver(context).writeJsonValue(value, writer, contextTransformer(context))
 
     override fun readTransportBytes(length: Int, reader: () -> Byte, context: CX?, earlierValue: T?) =
-        contextualResolver(Unit, context).readTransportBytes(length, reader, contextTransformer(Unit, context), null)
+        contextualResolver(context).readTransportBytes(length, reader, contextTransformer(context), null)
 
     override fun readJson(reader: IsJsonLikeReader, context: CX?) =
-        contextualResolver(Unit, context).readJson(reader, contextTransformer(Unit, context))
+        contextualResolver(context).readJson(reader, contextTransformer(context))
 }

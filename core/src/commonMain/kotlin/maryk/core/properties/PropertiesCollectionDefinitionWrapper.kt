@@ -28,10 +28,10 @@ data class PropertiesCollectionDefinitionWrapper<DO : Any>(
 {
     override val graphType = PropRefGraphType.PropRef
 
-    override val toSerializable: (Unit.(IsTypedDataModel<DO>?, DefinitionsConversionContext?) -> IsTypedDataModel<DO>?)? = null
-    override val fromSerializable: (Unit.(IsTypedDataModel<DO>?) -> IsTypedDataModel<DO>?)? = null
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
-    override val capturer: (Unit.(DefinitionsConversionContext, IsTypedDataModel<DO>) -> Unit)? = null
+    override val toSerializable: ((IsTypedDataModel<DO>?, DefinitionsConversionContext?) -> IsTypedDataModel<DO>?)? = null
+    override val fromSerializable: ((IsTypedDataModel<DO>?) -> IsTypedDataModel<DO>?)? = null
+    override val shouldSerialize: ((Any) -> Boolean)? = null
+    override val capturer: ((DefinitionsConversionContext, IsTypedDataModel<DO>) -> Unit)? = null
 
     override fun ref(parentRef: AnyPropertyReference?) = throw NotImplementedError()
 

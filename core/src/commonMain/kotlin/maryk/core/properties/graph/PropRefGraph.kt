@@ -239,7 +239,7 @@ internal fun writePropertiesToJson(
     writer: IsJsonLikeWriter,
     context: GraphContext?
 ) {
-    val transformed = PropRefGraph.properties.toSerializable!!.invoke(Unit, listOfPropRefGraphNodes, context)!!
+    val transformed = PropRefGraph.properties.toSerializable!!.invoke(listOfPropRefGraphNodes, context)!!
 
     writer.writeStartArray()
     for (graphable in transformed) {

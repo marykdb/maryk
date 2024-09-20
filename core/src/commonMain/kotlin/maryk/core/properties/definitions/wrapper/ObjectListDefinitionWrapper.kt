@@ -30,10 +30,10 @@ data class ObjectListDefinitionWrapper<
     override val definition: ListDefinition<ODO, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> List<TO>? = { null },
-    override val capturer: (Unit.(CX, List<ODO>) -> Unit)? = null,
-    override val toSerializable: (Unit.(List<TO>?, CX?) -> List<ODO>?)? = null,
-    override val fromSerializable: (Unit.(List<ODO>?) -> List<TO>?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((CX, List<ODO>) -> Unit)? = null,
+    override val toSerializable: ((List<TO>?, CX?) -> List<ODO>?)? = null,
+    override val fromSerializable: ((List<ODO>?) -> List<TO>?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsListDefinition<ODO, CX> by definition,

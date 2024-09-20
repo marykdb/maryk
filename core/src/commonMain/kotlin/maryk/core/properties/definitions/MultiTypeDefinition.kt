@@ -173,10 +173,10 @@ fun <E : MultiTypeEnum<out T>, T: Any, TO: Any, DO: Any, CX: ContainsDefinitions
     typeIsFinal: Boolean = true,
     default: TypedValue<E, T>? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> TypedValue<E, T>?)? = null,
-    fromSerializable: (Unit.(TypedValue<E, T>?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, TypedValue<E, T>) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> TypedValue<E, T>?)? = null,
+    fromSerializable: ((TypedValue<E, T>?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, TypedValue<E, T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     MultiTypeDefinitionWrapper(
         index,

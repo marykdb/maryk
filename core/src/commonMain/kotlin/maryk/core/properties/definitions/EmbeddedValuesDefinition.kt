@@ -236,10 +236,10 @@ fun <DM : IsValuesDataModel> IsObjectDataModel<Any>.embed(
     final: Boolean = false,
     default: Values<DM>? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(Values<DM>?, IsPropertyContext?) -> Values<DM>?)? = null,
-    fromSerializable: (Unit.(Values<DM>?) -> Values<DM>?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(IsPropertyContext, Values<DM>) -> Unit)? = null
+    toSerializable: ((Values<DM>?, IsPropertyContext?) -> Values<DM>?)? = null,
+    fromSerializable: ((Values<DM>?) -> Values<DM>?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((IsPropertyContext, Values<DM>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     EmbeddedValuesDefinitionWrapper(
         index,

@@ -218,10 +218,10 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.dateTime(
     maxValue: LocalDateTime? = null,
     default: LocalDateTime? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> LocalDateTime?)? = null,
-    fromSerializable: (Unit.(LocalDateTime?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, LocalDateTime) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> LocalDateTime?)? = null,
+    fromSerializable: ((LocalDateTime?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, LocalDateTime) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

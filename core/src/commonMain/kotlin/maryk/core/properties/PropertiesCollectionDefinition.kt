@@ -22,7 +22,7 @@ import maryk.yaml.YamlWriter
  * Useful to serialize and deserialize a collection of property definitions
  */
 data class PropertiesCollectionDefinition<DO: Any>(
-    override val capturer: Unit.(DefinitionsConversionContext?, IsTypedDataModel<DO>) -> Unit
+    override val capturer: (DefinitionsConversionContext?, IsTypedDataModel<DO>) -> Unit
 ) : IsCollectionDefinition<
         AnyTypedDefinitionWrapper<DO>,
         IsTypedDataModel<DO>,
@@ -54,7 +54,7 @@ data class PropertiesCollectionDefinition<DO: Any>(
 
     override fun newMutableCollection(context: DefinitionsConversionContext?): MutablePropertiesCollection<DO> =
         MutablePropertiesCollection<DO>().apply {
-            capturer(Unit, context, this)
+            capturer(context, this)
         }
 
     /**

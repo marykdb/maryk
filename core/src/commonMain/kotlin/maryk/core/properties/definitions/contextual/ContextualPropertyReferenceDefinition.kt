@@ -16,7 +16,7 @@ import maryk.lib.exceptions.ParseException
 /** Definition for a reference to another property from a context resolved from [contextualResolver]  */
 data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> internal constructor(
     override val required: Boolean = true,
-    val contextualResolver: Unit.(context: CX?) -> IsDataModel
+    val contextualResolver: (context: CX?) -> IsDataModel
 ) : IsValueDefinition<AnyPropertyReference, CX>, IsContextualEncodable<AnyPropertyReference, CX> {
     override val final = true
     override val wireType = LENGTH_DELIMITED
@@ -25,7 +25,7 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
         value.completeName
 
     override fun fromString(string: String, context: CX?) =
-        contextualResolver(Unit, context).getPropertyReferenceByName(string, context)
+        contextualResolver(context).getPropertyReferenceByName(string, context)
 
     override fun writeJsonValue(value: AnyPropertyReference, writer: IsJsonLikeWriter, context: CX?) {
         writer.writeString(value.completeName)
@@ -39,7 +39,7 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
                     is String -> fromString(jsonValue, context)
                     is ByteArray -> {
                         var readIndex = 0
-                        contextualResolver(Unit, context).getPropertyReferenceByBytes(
+                        contextualResolver(context).getPropertyReferenceByBytes(
                             jsonValue.size,
                             { jsonValue[readIndex++] },
                             context
@@ -70,6 +70,6 @@ data class ContextualPropertyReferenceDefinition<in CX : IsPropertyContext> inte
         context: CX?,
         earlierValue: AnyPropertyReference?
     ): AnyPropertyReference =
-        contextualResolver(Unit, context).getPropertyReferenceByBytes(length, reader, context)
+        contextualResolver(context).getPropertyReferenceByBytes(length, reader, context)
 }
 

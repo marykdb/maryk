@@ -25,10 +25,10 @@ fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.subL
     name: String? = null,
     valueDefinition: IsSubDefinition<T, CX>,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO) -> T)? = null,
-    fromSerializable: (Unit.(T) -> TO)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, List<T>) -> Unit)? = null
+    toSerializable: ((TO) -> T)? = null,
+    fromSerializable: ((T) -> TO)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, List<T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     ListDefinitionWrapper(
         index,
@@ -38,14 +38,14 @@ fun <T: Any, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.subL
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable?.let { toSerializable ->
-            val toSerializableList: Unit.(List<TO>?, CX?) -> List<T>? = { value: List<TO>?, _: CX? ->
-                value?.map { toSerializable(Unit, it) }
+            val toSerializableList: (List<TO>?, CX?) -> List<T>? = { value: List<TO>?, _: CX? ->
+                value?.map { toSerializable(it) }
             }
             toSerializableList
         },
         fromSerializable = fromSerializable?.let { fromSerializable ->
-            val fromSerializableList: Unit.(List<T>?) -> List<TO>? = { value: List<T>? ->
-                value?.map { fromSerializable(Unit, it) }
+            val fromSerializableList: (List<T>?) -> List<TO>? = { value: List<T>? ->
+                value?.map { fromSerializable(it) }
             }
             fromSerializableList
         },

@@ -82,6 +82,6 @@ open class ObjectDataModelSerializer<DO: Any, DM: IsObjectDataModel<DO>, CXI:IsP
     @Suppress("UNCHECKED_CAST")
     override fun transformContext(context: CXI?): CX? =
         if (model is ContextualDataModel<*, *, *, *>) {
-            (model as ContextualDataModel<*, *, CXI, CX>).contextTransformer(Unit, context)
+            (model as ContextualDataModel<*, *, CXI, CX>).contextTransformer(context)
         } else context as CX?
 }

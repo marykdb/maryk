@@ -20,10 +20,10 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     override val definition: D,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
-    override val capturer: (Unit.(CX, T) -> Unit)? = null,
-    override val toSerializable: (Unit.(TO?, CX?) -> T?)? = null,
-    override val fromSerializable: (Unit.(T?) -> TO?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((CX, T) -> Unit)? = null,
+    override val toSerializable: ((TO?, CX?) -> T?)? = null,
+    override val fromSerializable: ((T?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsSerializableFixedBytesEncodable<T, CX> by definition,
@@ -37,5 +37,6 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     }
 
     // For delegation in definition
+    @Suppress("unused")
     operator fun getValue(thisRef: BaseDataModel<DO>, property: KProperty<*>) = this
 }

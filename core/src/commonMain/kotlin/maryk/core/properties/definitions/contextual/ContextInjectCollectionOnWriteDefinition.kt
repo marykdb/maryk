@@ -12,13 +12,13 @@ import maryk.json.IsJsonLikeWriter
  */
 data class ContextInjectCollectionOnWriteDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext>(
     val definition: IsSerializablePropertyDefinition<C, CX>,
-    private val valueInjector: Unit.(CX?) -> C
+    private val valueInjector: (CX?) -> C
 ) : IsSerializablePropertyDefinition<C, CX> by definition, IsContextualEncodable<C, CX> {
     override val required = definition.required
     override val final = definition.final
 
     override fun writeJsonValue(value: C, writer: IsJsonLikeWriter, context: CX?) {
-        this.definition.writeJsonValue(this.valueInjector(Unit, context), writer, context)
+        this.definition.writeJsonValue(this.valueInjector(context), writer, context)
     }
 
     override fun calculateTransportByteLengthWithKey(
@@ -26,7 +26,7 @@ data class ContextInjectCollectionOnWriteDefinition<T : Any, C : Collection<T>, 
         value: C,
         cacher: WriteCacheWriter,
         context: CX?
-    ) = this.definition.calculateTransportByteLengthWithKey(index, this.valueInjector(Unit, context), cacher, context)
+    ) = this.definition.calculateTransportByteLengthWithKey(index, this.valueInjector(context), cacher, context)
 
     override fun writeTransportBytesWithKey(
         index: Int,
@@ -35,6 +35,6 @@ data class ContextInjectCollectionOnWriteDefinition<T : Any, C : Collection<T>, 
         writer: (byte: Byte) -> Unit,
         context: CX?
     ) {
-        this.definition.writeTransportBytesWithKey(index, this.valueInjector(Unit, context), cacheGetter, writer, context)
+        this.definition.writeTransportBytesWithKey(index, this.valueInjector(context), cacheGetter, writer, context)
     }
 }

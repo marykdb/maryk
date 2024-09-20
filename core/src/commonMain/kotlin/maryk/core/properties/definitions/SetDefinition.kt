@@ -142,7 +142,7 @@ fun <T: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.set(
     valueDefinition: IsValueDefinition<T, CX>,
     default: Set<T>? = null,
     alternativeNames: Set<String>? = null,
-    capturer: (Unit.(CX, Set<T>) -> Unit)? = null
+    capturer: ((CX, Set<T>) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     SetDefinitionWrapper(
         index,

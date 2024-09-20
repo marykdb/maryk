@@ -26,10 +26,10 @@ data class IncMapDefinitionWrapper<K : Comparable<K>, V : Any, TO : Any, CX : Is
     override val definition: IncrementingMapDefinition<K, V, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
-    override val capturer: (Unit.(CX, Map<K, V>) -> Unit)? = null,
-    override val toSerializable: (Unit.(TO?, CX?) -> Map<K, V>?)? = null,
-    override val fromSerializable: (Unit.(Map<K, V>?) -> TO?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((CX, Map<K, V>) -> Unit)? = null,
+    override val toSerializable: ((TO?, CX?) -> Map<K, V>?)? = null,
+    override val fromSerializable: ((Map<K, V>?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsMapDefinition<K, V, CX> by definition,

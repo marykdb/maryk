@@ -258,10 +258,10 @@ fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataMod
     default: T? = null,
     reversedStorage: Boolean? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> T?)? = null,
-    fromSerializable: (Unit.(T?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, T) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> T?)? = null,
+    fromSerializable: ((T?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, T) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

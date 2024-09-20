@@ -25,10 +25,10 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
     override val definition: IsSetDefinition<T, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> Set<T>? = { null },
-    override val capturer: (Unit.(CX, Set<T>) -> Unit)? = null,
-    override val toSerializable: (Unit.(Set<T>?, CX?) -> Set<T>?)? = null,
-    override val fromSerializable: (Unit.(Set<T>?) -> Set<T>?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((CX, Set<T>) -> Unit)? = null,
+    override val toSerializable: ((Set<T>?, CX?) -> Set<T>?)? = null,
+    override val fromSerializable: ((Set<T>?) -> Set<T>?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsSetDefinition<T, CX> by definition,

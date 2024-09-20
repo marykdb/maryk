@@ -252,10 +252,10 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueDataModel<VDO, DM>, CX:
     maxValue: VDO? = null,
     default: VDO? = null,
     alternativeNames: Set<String>? = null,
-    toSerializable: (Unit.(TO?, CX?) -> VDO?)? = null,
-    fromSerializable: (Unit.(VDO?) -> TO?)? = null,
-    shouldSerialize: (Unit.(Any) -> Boolean)? = null,
-    capturer: (Unit.(CX, VDO) -> Unit)? = null
+    toSerializable: ((TO?, CX?) -> VDO?)? = null,
+    fromSerializable: ((VDO?) -> TO?)? = null,
+    shouldSerialize: ((Any) -> Boolean)? = null,
+    capturer: ((CX, VDO) -> Unit)? = null
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,

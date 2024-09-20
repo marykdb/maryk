@@ -25,10 +25,10 @@ data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsR
     override val definition: D,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> TO? = { null },
-    override val capturer: (Unit.(IsPropertyContext, Key<DM>) -> Unit)? = null,
-    override val toSerializable: (Unit.(TO?, IsPropertyContext?) -> Key<DM>?)? = null,
-    override val fromSerializable: (Unit.(Key<DM>?) -> TO?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((IsPropertyContext, Key<DM>) -> Unit)? = null,
+    override val toSerializable: ((TO?, IsPropertyContext?) -> Key<DM>?)? = null,
+    override val fromSerializable: ((Key<DM>?) -> TO?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsReferenceDefinition<DM, IsPropertyContext> by definition,

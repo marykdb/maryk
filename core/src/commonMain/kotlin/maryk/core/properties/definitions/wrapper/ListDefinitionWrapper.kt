@@ -16,10 +16,10 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, DO :
     override val definition: IsListDefinition<T, CX>,
     override val alternativeNames: Set<String>? = null,
     override val getter: (DO) -> List<TO>? = { null },
-    override val capturer: (Unit.(CX, List<T>) -> Unit)? = null,
-    override val toSerializable: (Unit.(List<TO>?, CX?) -> List<T>?)? = null,
-    override val fromSerializable: (Unit.(List<T>?) -> List<TO>?)? = null,
-    override val shouldSerialize: (Unit.(Any) -> Boolean)? = null
+    override val capturer: ((CX, List<T>) -> Unit)? = null,
+    override val toSerializable: ((List<TO>?, CX?) -> List<T>?)? = null,
+    override val fromSerializable: ((List<T>?) -> List<TO>?)? = null,
+    override val shouldSerialize: ((Any) -> Boolean)? = null
 ) :
     AbstractDefinitionWrapper(index, name),
     IsListDefinition<T, CX> by definition,
@@ -27,5 +27,6 @@ data class ListDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext, DO :
     override val graphType = PropRef
 
     // For delegation in definition
+    @Suppress("unused")
     operator fun getValue(thisRef: Any, property: KProperty<*>) = this
 }

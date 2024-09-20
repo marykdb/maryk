@@ -33,7 +33,9 @@ data class Change internal constructor(
         for (pair in referenceValuePairs) {
             try {
                 @Suppress("UNCHECKED_CAST")
-                (pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>).comparablePropertyDefinition.validateWithRef(null, pair.value, { pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *> })
+                (pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>).comparablePropertyDefinition.validateWithRef(null, pair.value) {
+                    pair.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
+                }
             } catch (e: ValidationException) {
                 addException(e)
             }

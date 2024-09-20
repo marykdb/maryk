@@ -23,7 +23,7 @@ class ReadStorageToValuesKtTest {
                 val qualifier = valuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
-                qualifier?.let { resultHander({ qualifier[it] }, qualifier.size); true } ?: false
+                qualifier?.let { resultHander({ qualifier[it] }, qualifier.size); true } == true
             },
             select = null,
             processValue = { _, _ -> valuesAsStorables[qualifierIndex].second }
@@ -40,7 +40,7 @@ class ReadStorageToValuesKtTest {
                 val qualifier = complexValuesAsStorables.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
-                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },
             select = null,
             processValue = { _, _ -> complexValuesAsStorables[qualifierIndex].second }
@@ -57,7 +57,7 @@ class ReadStorageToValuesKtTest {
                 val qualifier = valuesAsStorablesWithNulls.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
-                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },
             select = null,
             processValue = { _, _ -> valuesAsStorablesWithNulls[qualifierIndex].second }
@@ -108,7 +108,7 @@ class ReadStorageToValuesKtTest {
                 val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
-                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },
             select = null,
             processValue = { _, _ -> valuesUnset[qualifierIndex].second }
@@ -137,7 +137,7 @@ class ReadStorageToValuesKtTest {
                 val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
-                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },
             select = null,
             processValue = { _, _ -> valuesUnset[qualifierIndex].second }

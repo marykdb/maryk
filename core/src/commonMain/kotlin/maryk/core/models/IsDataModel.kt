@@ -1,7 +1,6 @@
 package maryk.core.models
 
 import maryk.core.definitions.MarykPrimitive
-import maryk.core.models.definitions.IsDataModelDefinition
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.PropertyReferenceMarker

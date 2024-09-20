@@ -26,5 +26,5 @@ class KeyScanRanges internal constructor(
         range.end?.contentEquals(range.start) == true &&
         range.startInclusive &&
         range.endInclusive
-    } ?: false
+    } == true
 }

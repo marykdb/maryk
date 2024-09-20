@@ -1,8 +1,9 @@
 package maryk.core.inject
 
 import maryk.core.exceptions.ContextNotFoundException
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.ContextualDataModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
+import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -11,7 +12,6 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
 import maryk.core.properties.exceptions.InjectException
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.models.values
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -111,7 +111,7 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
                         Companion.collectionName.capture(context, collectionName)
 
                         reader.nextToken()
-                        val propertyReference = Companion.propertyReference.readJson(reader, context)
+                        val propertyReference = propertyReference.readJson(reader, context)
                         Companion.propertyReference.capture(context, propertyReference)
 
                         reader.nextToken() // read past end object

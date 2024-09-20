@@ -3,7 +3,6 @@ package maryk.core.properties.definitions.contextual
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsStorableDataModel
-import maryk.core.models.IsValuesDataModel
 
 interface IsDataModelReference<DM : IsDataModel> {
     val name: String

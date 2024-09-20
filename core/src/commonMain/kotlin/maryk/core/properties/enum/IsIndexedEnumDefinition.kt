@@ -34,14 +34,14 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     fun check() {
         this.reservedIndices?.let {
             this.cases.invoke().forEach { case ->
-                require(!(reservedIndices?.contains(case.index) ?: false)) {
+                require(reservedIndices?.contains(case.index) != true) {
                     "Enum $name has ${case.index} defined in option ${case.name} while it is reserved"
                 }
             }
         }
         this.reservedNames?.let {
             this.cases.invoke().forEach { case ->
-                require(!(reservedNames?.contains(case.name) ?: false)) {
+                require(reservedNames?.contains(case.name) != true) {
                     "Enum $name has a reserved name defined ${case.name}"
                 }
             }

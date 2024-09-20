@@ -43,7 +43,7 @@ class YamlWriter(
                 } else return true
             }
 
-            return this.typeStack.lastOrNull()?.isSimple ?: false
+            return this.typeStack.lastOrNull()?.isSimple == true
         }
 
     override fun writeStartObject(isCompact: Boolean) {

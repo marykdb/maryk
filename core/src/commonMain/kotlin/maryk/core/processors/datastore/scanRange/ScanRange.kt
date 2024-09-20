@@ -25,7 +25,7 @@ class ScanRange internal constructor(
         end.compareDefinedTo(key, offset, length).let {
             if (endInclusive) it < 0 else it <= 0
         }
-    } ?: false
+    } == true
 
     /** Get the descending start key for scans */
     fun getDescendingStartKey(startKey: ByteArray?, inclusiveStartKey: Boolean): ByteArray? =

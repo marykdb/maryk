@@ -1,5 +1,7 @@
 @file:JsModule("buffer")
 @file:JsNonModule
+@file:Suppress("unused")
+
 package maryk.node
 
 external class Buffer(value: String, encoding: String) {

@@ -112,7 +112,7 @@ class JsonReader(
                     throw JsonWriteException("Start and End ComplexFieldName not possible in JSON")
                 }
             }
-        } catch (e: ExceptionWhileReadingJson) {
+        } catch (_: ExceptionWhileReadingJson) {
             currentToken = Suspended(currentToken, storedValue)
         } catch (e: InvalidJsonContent) {
             currentToken = JsonException(e)
@@ -159,7 +159,7 @@ class JsonReader(
         } else {
             columnNumber += 1
         }
-    } catch (e: Throwable) { // Reached end or something bad happened
+    } catch (_: Throwable) { // Reached end or something bad happened
         throw ExceptionWhileReadingJson()
     }
 
@@ -332,14 +332,11 @@ class JsonReader(
         object None : SkipCharType()
         object StartNewEscaped : SkipCharType()
         open class UtfChar(val charType: Char, private val charCount: Int) : SkipCharType() {
-            protected var chars: CharArray = CharArray(charCount)
+            private var chars: CharArray = CharArray(charCount)
             private var index = 0
             fun addCharAndHasReachedEnd(char: Char): Boolean {
                 chars[index++] = char
-                if (index == charCount) {
-                    return true
-                }
-                return false
+                return index == charCount
             }
 
             open fun toCharString(): String {

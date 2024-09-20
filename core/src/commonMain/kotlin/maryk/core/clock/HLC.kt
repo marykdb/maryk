@@ -21,7 +21,7 @@ private const val LOGICAL_MASK = 0xFFFFFuL
  * https://cse.buffalo.edu/tech-reports/2014-04.pdf
  */
 @JvmInline
-value class HLC constructor(
+value class HLC(
     val timestamp: ULong
 ) {
     /** Create HLC by setting [physical] and [logical] time specifically */

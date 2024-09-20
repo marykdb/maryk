@@ -92,10 +92,10 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
             null
         }
         val onlyName = value[0]
-        try {
-            return this.contextualResolver(context, onlyName)
+        return try {
+            this.contextualResolver(context, onlyName)
         } catch (_: DefNotFoundException) {
-            return LazyDataModelReference(onlyName, keyLength) {
+            LazyDataModelReference(onlyName, keyLength) {
                 this.contextualResolver(context, onlyName).also {
                     if (it is LazyDataModelReference<*>) {
                         throw DefNotFoundException("Could not resolve DataModel $name, was it processed before or provided in dependents in the context?")

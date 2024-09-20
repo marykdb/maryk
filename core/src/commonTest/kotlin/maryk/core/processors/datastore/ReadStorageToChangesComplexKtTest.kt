@@ -89,7 +89,7 @@ class ReadStorageToChangesComplexKtTest {
                 val qualifier = complexValuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
                     initByteArrayByHex(it.first)
                 }
-                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } ?: false
+                qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },
             select = null,
             creationVersion = 1234uL,

@@ -75,7 +75,7 @@ data class StringDefinition(
                     )
                     this._regEx?.let {
                         !(it matches newValue)
-                    } ?: false
+                    } == true
                     -> throw InvalidValueException(
                         refGetter(), newValue
                     )

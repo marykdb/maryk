@@ -76,12 +76,12 @@ internal fun IsYamlCharReader.doubleQuoteString(
 
         try {
             read()  // Skip last double quote and if fails just continue since tag is complete
-        } catch (e: ExceptionWhileReadingJson) {
+        } catch (_: ExceptionWhileReadingJson) {
             this.yamlReader.hasException = true
         }
 
         return jsonTokenCreator(foundValue, false, tag, indentAtStart)
-    } catch (e: ExceptionWhileReadingJson) {
+    } catch (_: ExceptionWhileReadingJson) {
         throw InvalidYamlContent("Double quoted string was never closed")
     }
 }
@@ -97,7 +97,7 @@ private sealed class SkipCharType {
 
     /** UTF char skip found */
     open class UtfChar(val charType: Char, private val charCount: Int) : SkipCharType() {
-        protected var chars: CharArray = CharArray(charCount)
+        var chars: CharArray = CharArray(charCount)
         private var index = 0
         fun addCharAndHasReachedEnd(char: Char): Boolean {
             chars[index++] = char

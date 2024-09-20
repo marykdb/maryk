@@ -11,7 +11,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-internal class processUpdateResponseTest {
+internal class ProcessUpdateResponseTest {
     val key1 = SimpleMarykModel.key("dR9gVdRcSPw2molM1AiOng")
     val key2 = SimpleMarykModel.key("Vc4WgX_mQHYCSEoLtfLSUQ")
 

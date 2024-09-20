@@ -9,13 +9,6 @@ import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-enum class A(override val index: UInt, override val alternativeNames: Set<String>? = null): IndexedEnumComparable<A> {
-    V1(1u),
-    V2(2u, setOf("VERSION2")),
-    V3(3u, setOf("VERSION3")),
-    Unknown(4u);
-}
-
 class IndexedEnumDefinitionTest {
     @Test
     fun isCompatible() {

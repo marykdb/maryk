@@ -20,7 +20,7 @@ import maryk.json.MapType
 /** Indexed type of property definitions */
 enum class PropertyDefinitionType(
     override val index: UInt,
-    override val alternativeNames: kotlin.collections.Set<kotlin.String>? = null
+    override val alternativeNames: Set<String>? = null
 ) : IndexedEnumComparable<PropertyDefinitionType>,
     MapType,
     IsCoreEnum,

@@ -16,7 +16,7 @@ internal class FoldedStringReader<P: IsYamlCharWithIndentsReader>(
 
         val startIndentCount = findAndSetStartingIndentation()
 
-        var previousWasOnBaseIndent = this.indentCount?.let { it == startIndentCount } ?: true
+        var previousWasOnBaseIndent = this.indentCount?.let { it == startIndentCount } != false
 
         loop@ while (true) {
             when (this.lastChar) {
@@ -48,7 +48,7 @@ internal class FoldedStringReader<P: IsYamlCharWithIndentsReader>(
                         this.foundLineBreaks--
                     }
 
-                    for (it in 0 until this.foundLineBreaks) {
+                    repeat(this.foundLineBreaks) {
                         this.storedValue += '\n'
                     }
 

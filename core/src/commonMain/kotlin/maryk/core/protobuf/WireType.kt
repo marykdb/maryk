@@ -15,6 +15,6 @@ enum class WireType(val type: Byte) {
  * Retrieve wire type from the [byte]
  */
 internal fun wireTypeOf(byte: Byte): WireType {
-    return WireType.values().getOrNull(byte.toInt())
+    return WireType.entries.getOrNull(byte.toInt())
         ?: throw ParseException("Unknown WireType $byte")
 }

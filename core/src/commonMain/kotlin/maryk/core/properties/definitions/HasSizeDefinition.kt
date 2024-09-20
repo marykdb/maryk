@@ -13,12 +13,12 @@ interface HasSizeDefinition {
     /** Checks if given [newSize] is too small compared to defined minSize */
     fun isSizeToSmall(newSize: UInt): Boolean = this.minSize?.let {
         newSize < it
-    } ?: false
+    } == true
 
     /** Checks if given [newSize] is too big compared to defined maxSize */
     fun isSizeToBig(newSize: UInt): Boolean = this.maxSize?.let {
         newSize > it
-    } ?: false
+    } == true
 }
 
 /**

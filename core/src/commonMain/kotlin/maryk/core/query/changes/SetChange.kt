@@ -33,7 +33,9 @@ data class SetChange internal constructor(
     override fun validate(addException: (e: ValidationException) -> Unit) {
         val typedSetValueChanges = setValueChanges.filterIsInstance<SetValueChanges<Any>>()
         typedSetValueChanges.forEach {
-            it.reference.comparablePropertyDefinition.validateWithRef(null, it.addValues, { it.reference })
+            it.reference.comparablePropertyDefinition.validateWithRef(null, it.addValues) {
+                it.reference
+            }
         }
     }
 

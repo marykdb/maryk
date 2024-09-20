@@ -33,7 +33,9 @@ data class ListChange internal constructor(
     override fun validate(addException: (e: ValidationException) -> Unit) {
         val typedListValueChanges = listValueChanges.filterIsInstance<SetValueChanges<Any>>()
         typedListValueChanges.forEach {
-            it.reference.comparablePropertyDefinition.validateWithRef(null, it.addValues, { it.reference })
+            it.reference.comparablePropertyDefinition.validateWithRef(null, it.addValues) {
+                it.reference
+            }
         }
     }
 

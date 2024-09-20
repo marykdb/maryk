@@ -108,7 +108,7 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                             }
                         }
                     }
-                } ?: false
+                } == true
 
                 if (toReturnNull) {
                     null

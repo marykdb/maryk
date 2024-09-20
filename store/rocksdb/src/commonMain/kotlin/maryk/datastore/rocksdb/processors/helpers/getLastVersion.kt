@@ -7,7 +7,6 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.LAST_VERSION_INDICATOR
 import maryk.lib.recyclableByteArray
-import maryk.lib.recyclableByteArray2
 import org.rocksdb.ReadOptions
 import org.rocksdb.RocksDB
 
@@ -18,11 +17,11 @@ internal fun <DM: IsRootDataModel> getLastVersion(dbAccessor: DBAccessor, column
     key.bytes.copyInto(recyclableByteArray)
     recyclableByteArray[key.bytes.size] = LAST_VERSION_INDICATOR
 
-    val valueLength = dbAccessor.get(columnFamilies.table, readOptions, recyclableByteArray, 0, key.size + 1, recyclableByteArray2)
+    val valueLength = dbAccessor.get(columnFamilies.table, readOptions, recyclableByteArray, 0, key.size + 1, recyclableByteArray, key.size + 2, recyclableByteArray.size - (key.size + 2))
 
     if (valueLength == RocksDB.NOT_FOUND) {
         throw StorageException("Can only retrieve last versions of existing objects")
     }
 
-    return recyclableByteArray2.readVersionBytes()
+    return recyclableByteArray.readVersionBytes(key.size + 2)
 }

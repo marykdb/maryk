@@ -36,9 +36,9 @@ internal fun <DM : IsStoreRequest<*, *>> IsObjectDataModel<DM>.addDataModel(
                 DataModelReference(it.Meta.name) { it }
             }
         },
-        fromSerializable = { it?.get?.invoke(Unit) },
+        fromSerializable = { it?.get?.invoke() },
         shouldSerialize = { it !is DataModelReference<*> },
         capturer = { context, value ->
-            context.dataModel = value.get(Unit)
+            context.dataModel = value.get()
         }
     )

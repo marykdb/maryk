@@ -4,7 +4,6 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.protobuf.WireType
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
-import maryk.lib.safeLazy
 
 abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     internal val optionalCases: (() -> List<E>)?,
@@ -20,7 +19,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     final override val final = true
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByString: Map<String, E> by safeLazy<Map<String, E>> {
+    private val valueByString: Map<String, E> by lazy<Map<String, E>> {
         mutableMapOf<String, E>().also { output ->
             for (type in cases()) {
                 output[type.name] = type
@@ -32,8 +31,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
         }
     }
 
-    // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByIndex by safeLazy {
+    private val valueByIndex by lazy {
         cases().associateBy { it.index }
     }
 
@@ -54,8 +52,8 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
                     throw ParseException("Non matching name $valueName with index $index, expected ${typeByName.index}")
                 }
 
-                valueByIndex[index] ?: unknownCreator?.invoke(index, valueName)
-            } catch (e: NumberFormatException) {
+                typeByName ?: unknownCreator?.invoke(index, valueName)
+            } catch (_: NumberFormatException) {
                 throw ParseException("Not a correct number between brackets in type $name")
             }
         } else {
@@ -121,8 +119,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
             }
 
             val newIterator = this.cases().iterator()
-            @Suppress("UNCHECKED_CAST")
-            val storedIterator = definition.cases().iterator() as Iterator<IndexedEnum>
+            val storedIterator = definition.cases().iterator()
 
             var newProperty: E? = newIterator.next()
             var storedProperty: IndexedEnum? = storedIterator.next()

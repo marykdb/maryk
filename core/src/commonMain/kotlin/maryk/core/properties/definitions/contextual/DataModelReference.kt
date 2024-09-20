@@ -8,14 +8,14 @@ import maryk.core.models.IsValuesDataModel
 interface IsDataModelReference<DM : IsDataModel> {
     val name: String
     val keyLength: Int?
-    val get: Unit.() -> DM
+    val get: () -> DM
 }
 
 /** Reference to a ObjectDataModel */
 class DataModelReference<DM : IsDataModel>(
     override val name: String,
     override val keyLength: Int? = null,
-    override val get: Unit.() -> DM
+    override val get: () -> DM
 ) : IsDataModelReference<DM> {
 
     constructor(dataModel: DM) : this(
@@ -44,12 +44,12 @@ class DataModelReference<DM : IsDataModel>(
 class LazyDataModelReference<DM : IsDataModel>(
     override val name: String,
     override val keyLength: Int?,
-    getLater: () -> Unit.() -> DM,
+    getLater: () -> () -> DM,
 ) : IsDataModelReference<DM> {
     private val internal = lazy(getLater)
 
-    override val get: Unit.() -> DM = {
-        internal.value(Unit)
+    override val get: () -> DM = {
+        internal.value()
     }
 
     override fun equals(other: Any?): Boolean {

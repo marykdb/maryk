@@ -33,17 +33,16 @@ class ReferenceDefinition<DM : IsRootDataModel>(
     override val default: Key<DM>? = null,
     internal val dataModelReference: () -> IsDataModelReference<DM>,
 ) : IsReferenceDefinition<DM, IsPropertyContext> {
-
     constructor(
         required: Boolean = true,
         final: Boolean = false,
         unique: Boolean = false,
+        dataModel: () -> DM,
         minValue: Key<DM>? = null,
         maxValue: Key<DM>? = null,
         default: Key<DM>? = null,
-        dataModel: Unit.() -> DM
     ) : this(required, final, unique, minValue, maxValue, default, dataModelReference = {
-        DataModelReference(dataModel(Unit))
+        DataModelReference(dataModel())
     })
 
     override val propertyDefinitionType = PropertyDefinitionType.Reference
@@ -54,7 +53,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         dataModelReference.invoke()
     }
     override val dataModel: DM by lazy {
-        internalDataModelReference.get(Unit)
+        internalDataModelReference.get()
     }
 
     override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize
@@ -167,7 +166,7 @@ fun <DM: IsRootDataModel, TO: Any, DO: Any> IsObjectDataModel<DO>.reference(
     minValue: Key<DM>? = null,
     maxValue: Key<DM>? = null,
     default: Key<DM>? = null,
-    dataModel: Unit.() -> DM,
+    dataModel: () -> DM,
     alternativeNames: Set<String>? = null
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Key<DM>, TO, IsPropertyContext, ReferenceDefinition<DM>, DO>, DO, IsPropertyContext> =
     reference(index, getter, name, required, final,  unique, minValue, maxValue, default, dataModel, alternativeNames, toSerializable = null)
@@ -181,13 +180,13 @@ fun <DM: IsRootDataModel> IsValuesDataModel.reference(
     minValue: Key<DM>? = null,
     maxValue: Key<DM>? = null,
     default: Key<DM>? = null,
-    dataModel: Unit.() -> DM,
+    dataModel: () -> DM,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     ReferenceDefinitionWrapper<Key<DM>, DM, IsReferenceDefinition<DM, IsPropertyContext>, Any>(
         index,
         name ?: propName,
-        ReferenceDefinition(required, final, unique, minValue, maxValue, default, dataModel) as IsReferenceDefinition<DM, IsPropertyContext>,
+        ReferenceDefinition(required, final, unique, dataModel, minValue, maxValue, default) as IsReferenceDefinition<DM, IsPropertyContext>,
         alternativeNames
     )
 }
@@ -202,7 +201,7 @@ fun <DM: IsRootDataModel, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataM
     minValue: Key<DM>? = null,
     maxValue: Key<DM>? = null,
     default: Key<DM>? = null,
-    dataModel: Unit.() -> DM,
+    dataModel: () -> DM,
     alternativeNames: Set<String>? = null,
     toSerializable: (Unit.(TO?, CX?) -> Key<DM>?)? = null,
     fromSerializable: (Unit.(Key<DM>?) -> TO?)? = null,
@@ -212,7 +211,7 @@ fun <DM: IsRootDataModel, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataM
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
-        ReferenceDefinition(required, final, unique, minValue, maxValue, default, dataModel = dataModel),
+        ReferenceDefinition(required, final, unique, dataModel, minValue, maxValue, default),
         alternativeNames,
         getter = getter,
         capturer = capturer,

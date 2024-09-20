@@ -277,7 +277,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                 val type: E = this.typeEnum.resolve(it.value as String)
                     ?: throw ParseException("Invalid multi type name ${it.value}")
                 val definition = this.definition(type)
-                    ?: throw DefNotFoundException("Unknown multi type index ${type.index}")
+                    ?: throw DefNotFoundException("Unknown multi type index ${type.index} for $type")
 
                 reader.nextToken()
                 val value = if (definition is IsEmbeddedObjectDefinition<*, *, CX, *> && this.keepAsValues()) {

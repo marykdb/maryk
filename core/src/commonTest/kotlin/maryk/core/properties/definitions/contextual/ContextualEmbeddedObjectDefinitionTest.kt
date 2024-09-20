@@ -15,7 +15,7 @@ class ContextualEmbeddedObjectDefinitionTest {
 
     @Suppress("UNCHECKED_CAST")
     private val def = ContextualEmbeddedObjectDefinition<ModelContext>(
-        contextualResolver = { it!!.model!!.invoke(Unit) as IsTypedObjectDataModel<Any, *, *, ModelContext> }
+        contextualResolver = { it!!.model!!.invoke() as IsTypedObjectDataModel<Any, *, *, ModelContext> }
     )
 
     private val context = ModelContext(

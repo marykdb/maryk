@@ -57,9 +57,9 @@ internal fun <DM : IsDataModelResponse<*>> IsObjectDataModel<DM>.addDataModel(
                 DataModelReference(it.Meta.name) { it }
             }
         },
-        fromSerializable = { it?.get?.invoke(Unit) },
+        fromSerializable = { it?.get?.invoke() },
         capturer = { context, value ->
-            context.dataModel = value.get(Unit)
+            context.dataModel = value.get()
         }
     )
 

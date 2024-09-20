@@ -144,7 +144,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
                 }
             },
             fromSerializable = {
-                it?.get?.invoke(Unit)
+                it?.get?.invoke()
             },
             capturer = { context, dataModelRef ->
                 context.let {
@@ -164,7 +164,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
+                    context?.model?.invoke() as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -175,7 +175,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
+                    context?.model?.invoke() as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -186,7 +186,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
+                    context?.model?.invoke() as? IsTypedObjectDataModel<Any, *, *, ModelContext>?
                         ?: throw ContextNotFoundException()
                 }
             )

@@ -29,20 +29,19 @@ import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.safeLazy
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
 class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI, CX>, CXI : IsPropertyContext, CX : IsPropertyContext>(
     override val required: Boolean = true,
     override val final: Boolean = false,
-    dataModel: Unit.() -> DM,
+    dataModel: () -> DM,
     override val default: DO? = null
 ) :
     IsUsableInMultiType<DO, CXI>,
     IsEmbeddedObjectDefinition<DO, DM, CXI, CX> {
     override val wireType = LENGTH_DELIMITED
 
-    override val dataModel: DM by safeLazy(dataModel)
+    override val dataModel: DM by lazy(dataModel)
 
     override fun asString(value: DO, context: CXI?): String {
         var string = ""
@@ -159,8 +158,8 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
             getter = {
                 { it.dataModel }
             },
-            toSerializable = { value: (Unit.() -> IsTypedObjectDataModel<*, *, *, *>)?, _ ->
-                value?.invoke(Unit)?.let { model ->
+            toSerializable = { value: (() -> IsTypedObjectDataModel<*, *, *, *>)?, _ ->
+                value?.invoke()?.let { model ->
                     DataModelReference((model as IsStorableDataModel<*>).Meta.name) { model }
                 }
             },
@@ -184,7 +183,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
             definition = ContextualEmbeddedObjectDefinition(
                 contextualResolver = { context: ModelContext? ->
                     @Suppress("UNCHECKED_CAST")
-                    context?.model?.invoke(Unit) as? IsTypedObjectDataModel<Any, *, *, ModelContext>
+                    context?.model?.invoke() as? IsTypedObjectDataModel<Any, *, *, ModelContext>
                         ?: throw ContextNotFoundException()
                 }
             )
@@ -201,7 +200,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
 
 fun <DO : Any, P : IsTypedObjectDataModel<DO, IsObjectDataModel<DO>, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsValuesDataModel.embedObject(
     index: UInt,
-    dataModel: Unit.() -> P,
+    dataModel: () -> P,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
@@ -219,7 +218,7 @@ fun <DO : Any, P : IsTypedObjectDataModel<DO, IsObjectDataModel<DO>, CXI, CX>, C
 fun <TO: Any, DO: Any, EDO : Any, DM : IsTypedObjectDataModel<EDO, DM, CXI, CX>, CXI: IsPropertyContext, CX: IsPropertyContext> IsObjectDataModel<DO>.embedObject(
     index: UInt,
     getter: (DO) -> TO?,
-    dataModel: Unit.() -> DM,
+    dataModel: () -> DM,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,

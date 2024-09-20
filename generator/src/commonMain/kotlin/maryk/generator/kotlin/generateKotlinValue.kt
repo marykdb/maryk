@@ -167,13 +167,13 @@ internal fun generateKotlinValue(
             is ContextualModelReferenceDefinition<*, *, *> -> {
                 when (val model =
                     (value as? IsValueDataModel<*, *>) ?:
-                    (value as? Unit.() -> Any)?.invoke(Unit)?.let {
+                    (value as? () -> Any)?.invoke()?.let {
                         // Fix for JS comparison issue
                         if (it is DataModelReference<*>)  {
-                            it.get.invoke(Unit)
+                            it.get.invoke()
                         } else it
                     } ?:
-                    (value as? () -> DataModelReference<IsDataModel>)?.invoke()?.get?.invoke(Unit)
+                    (value as? () -> DataModelReference<IsDataModel>)?.invoke()?.get?.invoke()
                 ) {
                     is IsValuesDataModel ->
                         """{ ${model.Meta.name} }"""

@@ -46,7 +46,7 @@ class ContextualModelReferenceDefinitionTest {
                 this.def,
                 this.context
             ) { converted, original ->
-                assertEquals(original.get(Unit), converted.get(Unit))
+                assertEquals(original.get(), converted.get())
             }
         }
     }
@@ -55,7 +55,7 @@ class ContextualModelReferenceDefinitionTest {
     fun convertString() {
         for (namedDataModel in modelsToTest) {
             val b = def.asString(DataModelReference(namedDataModel), this.context)
-            expect(namedDataModel) { def.fromString(b, this.context).get.invoke(Unit) }
+            expect(namedDataModel) { def.fromString(b, this.context).get.invoke() }
         }
     }
 }

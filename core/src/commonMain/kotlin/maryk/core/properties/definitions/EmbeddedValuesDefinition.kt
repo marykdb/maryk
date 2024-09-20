@@ -31,13 +31,12 @@ import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.safeLazy
 
 /** Definition for embedded object to [dataModel] of type [DM] */
 class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
     override val required: Boolean = true,
     override val final: Boolean = false,
-    dataModel: Unit.() -> DM,
+    dataModel: () -> DM,
     override val default: Values<DM>? = null
 ) :
     IsEmbeddedValuesDefinition<DM, IsPropertyContext>,
@@ -45,7 +44,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
     override val propertyDefinitionType = Embed
     override val wireType = LENGTH_DELIMITED
 
-    override val dataModel: DM by safeLazy(dataModel)
+    override val dataModel: DM by lazy(dataModel)
 
     @Suppress("UNCHECKED_CAST")
     // internal strong typed version so type system is not in a loop when creating EmbeddedValuesDefinition
@@ -172,8 +171,8 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
             getter = {
                 { it.dataModel }
             },
-            toSerializable = { value: (Unit.() -> IsValuesDataModel)?, _ ->
-                value?.invoke(Unit)?.let { model ->
+            toSerializable = { value: (() -> IsValuesDataModel)?, _ ->
+                value?.invoke()?.let { model ->
                     DataModelReference(model.Meta.name) { model }
                 }
             },
@@ -196,7 +195,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
             index = 4u,
             getter = EmbeddedValuesDefinition<*>::default,
             contextualResolver = { context: ModelContext? ->
-                context?.model?.invoke(Unit) as? TypedValuesDataModel<IsValuesDataModel>
+                context?.model?.invoke() as? TypedValuesDataModel<IsValuesDataModel>
                     ?: throw ContextNotFoundException()
             }
         )
@@ -213,7 +212,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
 
 fun <DM : IsValuesDataModel> IsValuesDataModel.embed(
     index: UInt,
-    dataModel: Unit.() -> DM,
+    dataModel: () -> DM,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
@@ -231,7 +230,7 @@ fun <DM : IsValuesDataModel> IsValuesDataModel.embed(
 fun <DM : IsValuesDataModel> IsObjectDataModel<Any>.embed(
     index: UInt,
     getter: (Any) -> Values<DM>? = { null },
-    dataModel: Unit.() -> DM,
+    dataModel: () -> DM,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,

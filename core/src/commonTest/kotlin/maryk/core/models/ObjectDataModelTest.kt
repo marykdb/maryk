@@ -82,7 +82,7 @@ private const val PRETTY_JSON_WITH_SKIP = """{
   "embeddedObject": {
     "value": "test"
   },
-  "multi": ["T3(3)", {
+  "multi": ["S3(3)", {
     "value": "subInMulti!"
   }],
   "listOfString": ["test1", "another test", "🤗"]

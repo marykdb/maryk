@@ -146,7 +146,7 @@ internal class YamlReaderImpl(
                         reader.readUntilToken(0)
                     }
                 }
-            } catch (e: ExceptionWhileReadingJson) {
+            } catch (_: ExceptionWhileReadingJson) {
                 this.hasException = true
                 currentReader.handleReaderInterrupt()
             }
@@ -252,7 +252,7 @@ internal class YamlReaderImpl(
             columnNumber += 1
         }
         lastChar = reader()
-    } catch (e: Throwable) { // Reached end or something bad happened
+    } catch (_: Throwable) { // Reached end or something bad happened
         throw ExceptionWhileReadingJson()
     }
 

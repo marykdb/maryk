@@ -30,27 +30,23 @@ interface IsJsonLikeWriter {
     fun writeValue(value: String)
 
     /** Writes a [boolean] */
-    fun writeBoolean(boolean: Boolean) {
-        this.writeValue(boolean.toString())
-    }
+    fun writeBoolean(boolean: Boolean) = writeValue(boolean.toString())
 
     /** Writes an [int] */
-    fun writeInt(int: Int) {
-        this.writeValue(int.toString())
-    }
+    fun writeInt(int: Int) = writeValue(int.toString())
+
+    /** Writes a [long] */
+    fun writeLong(long: Long) = writeValue(long.toString())
+
+    /** Writes a [double] */
+    fun writeDouble(double: Double) = writeValue(double.toString())
 
     /** Writes a [float] */
-    fun writeFloat(float: Float) {
-        this.writeValue(float.toString())
-    }
+    fun writeFloat(float: Float) = writeValue(float.toString())
 
     /** Writes a null */
-    fun writeNull() {
-        this.writeValue("null")
-    }
+    fun writeNull() = writeValue("null")
 }
 
 /** Exception for invalid JSON */
-class IllegalJsonOperation(
-    description: String
-) : Throwable(description)
+class IllegalJsonOperation(description: String) : IllegalStateException(description)

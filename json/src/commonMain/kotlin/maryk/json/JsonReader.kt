@@ -23,7 +23,7 @@ import maryk.json.JsonToken.Value
 import maryk.lib.extensions.HEX_CHARS
 import maryk.lib.extensions.isLineBreak
 
-private val skipArray = arrayOf(ObjectSeparator, ArraySeparator, StartDocument)
+private val skipArray = setOf(ObjectSeparator, ArraySeparator, StartDocument)
 
 /** Describes JSON complex types */
 internal enum class JsonComplexType {
@@ -121,11 +121,7 @@ class JsonReader(
             throw e
         }
 
-        if (currentToken in skipArray) {
-            return nextToken()
-        }
-
-        return currentToken
+        return if (currentToken in skipArray) nextToken() else currentToken
     }
 
     private fun constructJsonValueToken(it: Any?) =

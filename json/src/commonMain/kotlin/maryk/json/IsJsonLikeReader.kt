@@ -56,13 +56,11 @@ sealed class JsonToken(val name: String) {
 
     abstract class Stopped(name: String) : JsonToken(name)
     object EndDocument : Stopped("EndDocument")
-    class Suspended(val lastToken: JsonToken, val storedValue: String?) : Stopped("Stopped reader")
-    class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
+    data class Suspended(val lastToken: JsonToken, val storedValue: String?) : Stopped("Stopped reader")
+    data class JsonException(val e: InvalidJsonContent) : Stopped("JsonException")
 
     override fun toString() = when (this) {
-        is Value<*> -> this.value.let {
-            "$name(${this.value})"
-        }
+        is Value<*> -> "$name(${this.value})"
         is FieldName -> "$name(${this.value})"
         else -> name
     }

@@ -12,43 +12,35 @@ import maryk.json.JsonToken.Stopped
 class PresetJsonTokenReader(
     private val tokens: List<JsonToken>
 ) : IsJsonLikeReader {
-    override var currentToken: JsonToken = this.tokens[0]
-
+    override var currentToken: JsonToken = tokens.firstOrNull() ?: EndDocument
     override var columnNumber = 0
     override var lineNumber = 0
 
-    private var index = 1
-
-    private var typeStackCount: Int = 0
+    private var index = 0
+    private var typeStackCount = 0
 
     override fun nextToken(): JsonToken {
-        if (index > tokens.lastIndex) {
-            this.currentToken = EndDocument
-            return this.currentToken
+        if (++index > tokens.lastIndex) {
+            return EndDocument.also { currentToken = it }
         }
 
-        return this.tokens[index++].also {
-            this.currentToken = it
+        return tokens[index].also {
+            currentToken = it
             when (it) {
-                is StartObject, is StartArray -> {
-                    this.typeStackCount++
-                }
-                is EndObject, is EndArray -> {
-                    this.typeStackCount--
-                }
-                else -> Unit
+                is StartObject, is StartArray -> typeStackCount++
+                is EndObject, is EndArray -> typeStackCount--
+                else -> {}
             }
         }
     }
 
     override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
-        val startDepth = this.typeStackCount
+        val startDepth = typeStackCount
         do {
             nextToken()
-            handleSkipToken?.invoke(this.currentToken)
-        } while (
-            !((currentToken is FieldName || currentToken is EndObject) && this.typeStackCount <= startDepth)
-            && currentToken !is Stopped
-        )
+            handleSkipToken?.invoke(currentToken)
+        } while (!(isFieldOrEndObject() && typeStackCount <= startDepth) && currentToken !is Stopped)
     }
+
+    private fun isFieldOrEndObject() = currentToken is FieldName || currentToken is EndObject
 }

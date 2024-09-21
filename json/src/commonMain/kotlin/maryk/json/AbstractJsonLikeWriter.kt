@@ -37,7 +37,7 @@ sealed class JsonEmbedType(val isSimple: Boolean) {
 /** Class to implement code which is generic among JSON like writers */
 abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
     protected var lastType: JsonType = START
-    protected var typeStack: MutableList<JsonEmbedType> = mutableListOf()
+    protected val typeStack = mutableListOf<JsonEmbedType>()
 
     override fun writeStartObject(isCompact: Boolean) {
         typeStack.add(JsonEmbedType.Object(isCompact))
@@ -57,7 +57,7 @@ abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
     }
 
     override fun writeEndObject() {
-        if (typeStack.isEmpty() || typeStack.last() !is JsonEmbedType.Object) {
+        if (typeStack.lastOrNull() !is JsonEmbedType.Object) {
             throw IllegalJsonOperation("There is no object to close")
         }
         typeStack.removeAt(typeStack.lastIndex)
@@ -85,7 +85,7 @@ abstract class AbstractJsonLikeWriter : IsJsonLikeWriter {
     }
 
     override fun writeEndArray() {
-        if (typeStack.isEmpty() || typeStack.last() !is JsonEmbedType.Array) {
+        if (typeStack.lastOrNull() !is JsonEmbedType.Array) {
             throw IllegalJsonOperation("Json: There is no array to close")
         }
         typeStack.removeAt(typeStack.lastIndex)

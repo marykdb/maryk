@@ -10,16 +10,12 @@ class JsonWriter(
     private val pretty: Boolean = false,
     private val writer: (String) -> Unit
 ) : AbstractJsonLikeWriter() {
+    private val indent = if (pretty) "  " else ""
+    private val separator = if (pretty) ", " else ","
+    private val colonSpace = if (pretty) ": " else ":"
+
     override fun writeStartObject(isCompact: Boolean) {
-        if (lastType != START_ARRAY
-            && typeStack.isNotEmpty()
-            && typeStack.last() is JsonEmbedType.Array
-        ) {
-            writer(",")
-            if (pretty) {
-                writer(" ")
-            }
-        }
+        writeCommaIfNeeded()
         super.writeStartObject(isCompact)
         writer("{")
         makePretty()
@@ -32,15 +28,7 @@ class JsonWriter(
     }
 
     override fun writeStartArray(isCompact: Boolean) {
-        if (lastType != START_ARRAY
-            && typeStack.isNotEmpty()
-            && typeStack.last() is JsonEmbedType.Array
-        ) {
-            writer(",")
-            if (pretty) {
-                writer(" ")
-            }
-        }
+        writeCommaIfNeeded()
         super.writeStartArray(isCompact)
         writer("[")
     }
@@ -57,10 +45,7 @@ class JsonWriter(
             makePretty()
         }
         super.writeFieldName(name)
-        writer("\"$name\":")
-        if (pretty) {
-            writer(" ")
-        }
+        writer("\"$name\"$colonSpace")
     }
 
     /** Writes a string value including quotes */
@@ -74,12 +59,7 @@ class JsonWriter(
                 writer(value)
             }
             is JsonEmbedType.Array -> {
-                if (lastType != START_ARRAY) {
-                    writer(",")
-                    if (pretty) {
-                        writer(" ")
-                    }
-                }
+                writeCommaIfNeeded()
                 super.checkArrayValueAllowed()
                 writer(value)
             }
@@ -91,14 +71,15 @@ class JsonWriter(
         writer(value)
     }
 
+    private fun writeCommaIfNeeded() {
+        if (lastType != START_ARRAY && typeStack.isNotEmpty() && typeStack.last() is JsonEmbedType.Array) {
+            writer(separator)
+        }
+    }
+
     private fun makePretty() {
         if (pretty) {
-            writer("\n")
-            for (it in typeStack) {
-                if (it is Object) {
-                    writer("  ")
-                }
-            }
+            writer("\n${indent.repeat(typeStack.count { it is Object })}")
         }
     }
 }

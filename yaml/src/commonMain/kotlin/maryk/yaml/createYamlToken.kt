@@ -21,10 +21,10 @@ import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.math.pow
 
-private val trueValues = arrayOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
-private val falseValues = arrayOf("False", "FALSE", "false", "n", "N", "no", "NO", "No", "off", "OFF", "Off")
-private val nullValues = arrayOf("~", "Null", "null", "NULL")
-private val nanValues = arrayOf(".nan", ".NAN", ".Nan")
+private val trueValues = setOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
+private val falseValues = setOf("False", "FALSE", "false", "n", "N", "no", "NO", "No", "off", "OFF", "Off")
+private val nullValues = setOf("~", "Null", "null", "NULL")
+private val nanValues = setOf(".nan", ".NAN", ".Nan")
 private val infinityRegEx = Regex("^([-+]?)(\\.inf|\\.Inf|\\.INF)$")
 private val base2RegEx = Regex("^[-+]?0b([0-1_]+)$")
 private val base8RegEx = Regex("^[-+]?0([0-7_]+)$")
@@ -208,35 +208,35 @@ private fun findFloat(value: String): Value<Double>? {
 /** Tries to find timestamp in [value] and returns a DateTime if found */
 private fun findTimestamp(value: String): Value<LocalDateTime>? =
     timestampRegex.find(value)?.let {
-        val dateTime = if (it.groups[4] == null) {
-            LocalDate.parse(value).atStartOfDayIn(TimeZone.UTC).toLocalDateTime(TimeZone.UTC)
-        } else {
-            if (it.groups[11] == null || it.groups[11]!!.value == "Z" || it.groups[11]!!.value.isEmpty()) {
-                LocalDateTime(
-                    year = it.groups[1]!!.value.toInt(),
-                    monthNumber = it.groups[2]!!.value.toInt(),
-                    it.groups[3]!!.value.toInt(),
-                    it.groups[6]!!.value.toInt(),
-                    it.groups[7]!!.value.toInt(),
-                    it.groups[8]!!.value.toInt(),
-                    it.groups[10]?.value?.let { value ->
-                        when {
-                            value.length < 3 -> {
-                                var longer = value
-                                for (i in 1..3 - value.length) {
-                                    longer += "0"
-                                }
-                                longer
-                            }
-                            value.length == 3 -> value
-                            else -> value.substring(0, 3)
-                        }.toInt() * 1000000
-                    } ?: 0
-                )
-            } else {
-                Instant.parse(value).toLocalDateTime(TimeZone.UTC)
-            }
+        val dateTime = when {
+            it.groups[4] == null ->
+                parseDate(value)
+            it.groups[11] == null || it.groups[11]!!.value == "Z" || it.groups[11]!!.value.isEmpty() ->
+                parseLocalDateTime(it)
+            else -> Instant.parse(value).toLocalDateTime(TimeZone.UTC)
         }
-
         Value(dateTime, TimeStamp)
     }
+
+private fun parseDate(value: String): LocalDateTime =
+    LocalDate.parse(value).atStartOfDayIn(TimeZone.UTC).toLocalDateTime(TimeZone.UTC)
+
+private fun parseLocalDateTime(match: MatchResult): LocalDateTime =
+    LocalDateTime(
+        year = match.groups[1]!!.value.toInt(),
+        monthNumber = match.groups[2]!!.value.toInt(),
+        dayOfMonth = match.groups[3]!!.value.toInt(),
+        hour = match.groups[6]!!.value.toInt(),
+        minute = match.groups[7]!!.value.toInt(),
+        second = match.groups[8]!!.value.toInt(),
+        nanosecond = parseNanoseconds(match.groups[10]?.value)
+    )
+
+private fun parseNanoseconds(value: String?): Int =
+    value?.let {
+        when {
+            it.length < 3 -> it.padEnd(3, '0')
+            it.length == 3 -> it
+            else -> it.substring(0, 3)
+        }.toInt() * 1_000_000
+    } ?: 0

@@ -17,7 +17,7 @@ internal sealed class ChangeAction(
     class Delete(columnFamilyHandle: ColumnFamilyHandle, key: ByteArray) : ChangeAction(columnFamilyHandle, key)
 }
 
-private class CheckBeforeCommit(
+private data class CheckBeforeCommit(
     val columnFamilyHandle: ColumnFamilyHandle,
     val key: ByteArray,
     val value: ByteArray?
@@ -27,46 +27,35 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
     private var savedChanges: Map<Int, List<ChangeAction>>? = null
     // Changes sorted on the column family ID
     internal val changes = mutableMapOf<Int, MutableList<ChangeAction>>()
-    private var checksBeforeCommit: MutableList<CheckBeforeCommit>? = null
+    private val checksBeforeCommit = mutableListOf<CheckBeforeCommit>()
 
     fun put(columnFamilyHandle: ColumnFamilyHandle, key: ByteArray, value: ByteArray) {
-        setChange(
-            key = key,
-            action = Put(columnFamilyHandle, key, value)
-        )
+        setChange(Put(columnFamilyHandle, key, value))
     }
 
     fun delete(columnFamilyHandle: ColumnFamilyHandle, key: ByteArray) {
-        setChange(
-            key = key,
-            action = Delete(columnFamilyHandle, key)
-        )
+        setChange(Delete(columnFamilyHandle, key))
     }
 
     override fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray): ByteArray? {
-        val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID()) { mutableListOf() }
-        val index = columnChanges.binarySearch { it.key compareTo key }
+        val columnChange = getChangeOrNull(columnFamilyHandle, key)
 
-        return if (index < 0) {
-            dataStore.db.get(columnFamilyHandle, readOptions, key)
-        } else when (val change = columnChanges[index]) {
+        return when (val change = columnChange) {
+            null -> dataStore.db.get(columnFamilyHandle, readOptions, key)
             is Put -> change.value
             is Delete -> null
         }
     }
 
     override fun get(columnFamilyHandle: ColumnFamilyHandle, readOptions: ReadOptions, key: ByteArray, offset: Int, len: Int, value: ByteArray, vOffset: Int, vLen: Int): Int {
-        val columnChanges = this.changes.getOrPut(columnFamilyHandle.getID()) { mutableListOf() }
-        val index = columnChanges.binarySearch { it.key compareTo key }
-
-        return if (index < 0) {
-            super.get(columnFamilyHandle, readOptions, key, offset, len, value, vOffset, vLen)
-        } else when (val change = columnChanges[index]) {
+        val change = getChangeOrNull(columnFamilyHandle, key)
+        return when (change) {
             is Put -> {
                 change.value.copyInto(value, vOffset)
                 change.value.size
             }
             is Delete -> RocksDB.NOT_FOUND
+            else -> super.get(columnFamilyHandle, readOptions, key, offset, len, value, vOffset, vLen)
         }
     }
 
@@ -86,7 +75,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
     }
 
     fun commit() {
-        this.checksBeforeCommit?.forEach { check ->
+        checksBeforeCommit.forEach { check ->
             val current = dataStore.db.get(check.columnFamilyHandle, check.key)
 
             if (check.value == null) {
@@ -98,36 +87,31 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
             }
         }
 
-        for (changePerFamily in changes) {
-            for (change in changePerFamily.value) {
-                when (change) {
-                    is Put -> dataStore.db.put(change.columnFamilyHandle, change.key, change.value)
-                    is Delete -> dataStore.db.delete(change.columnFamilyHandle, change.key)
-                }
+        changes.values.flatten().forEach { change ->
+            when (change) {
+                is Put -> dataStore.db.put(change.columnFamilyHandle, change.key, change.value)
+                is Delete -> dataStore.db.delete(change.columnFamilyHandle, change.key)
             }
         }
-        this.changes.clear()
-        this.savedChanges = null
+        changes.clear()
+        savedChanges = null
+        checksBeforeCommit.clear()
     }
 
     fun setSavePoint() {
-        this.savedChanges = this.changes.map { (index, value) ->
-            Pair(index, value.toList())
-        }.toMap()
+        savedChanges = changes.mapValues { it.value.toList() }
     }
 
     fun rollbackToSavePoint() {
-        this.changes.clear()
-        this.savedChanges?.let { savedChanges ->
-            for ((family, changes) in savedChanges) {
-                this.changes[family] = changes.toMutableList()
-            }
+        changes.clear()
+        savedChanges?.let { saved ->
+            changes.putAll(saved.mapValues { it.value.toMutableList() })
         }
     }
 
-    private fun setChange(key: ByteArray, action: ChangeAction) {
-        val columnChanges = this.changes.getOrPut(action.columnFamilyHandle.getID()) { mutableListOf() }
-        val index = columnChanges.binarySearch { it.key compareTo key }
+    private fun setChange(action: ChangeAction) {
+        val columnChanges = changes.getOrPut(action.columnFamilyHandle.getID()) { mutableListOf() }
+        val index = columnChanges.binarySearch { it.key compareTo action.key }
         if (index >= 0) {
             columnChanges[index] = action
         } else {
@@ -136,17 +120,18 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
     }
 
     private fun setCheckBeforeCommit(columnFamilyHandle: ColumnFamilyHandle, key: ByteArray, value: ByteArray?) {
-        val checksBeforeCommit = this.checksBeforeCommit ?:
-            mutableListOf<CheckBeforeCommit>().also {
-                this.checksBeforeCommit = it
-            }
-
-        val index = checksBeforeCommit.binarySearch { it.key compareTo key }
         val check = CheckBeforeCommit(columnFamilyHandle, key, value)
+        val index = checksBeforeCommit.binarySearch { it.key compareTo key }
         if (index >= 0) {
             checksBeforeCommit[index] = check
         } else {
             checksBeforeCommit.add(index * -1 - 1, check)
         }
+    }
+
+    private fun getChangeOrNull(columnFamilyHandle: ColumnFamilyHandle, key: ByteArray): ChangeAction? {
+        val columnChanges = changes[columnFamilyHandle.getID()] ?: return null
+        val index = columnChanges.binarySearch { it.key compareTo key }
+        return if (index >= 0) columnChanges[index] else null
     }
 }

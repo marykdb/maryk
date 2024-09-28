@@ -81,6 +81,7 @@ import maryk.datastore.rocksdb.processors.helpers.deleteByReference
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.getCurrentIncMapKey
+import maryk.datastore.rocksdb.processors.helpers.getCurrentValues
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.getList
 import maryk.datastore.rocksdb.processors.helpers.getValue
@@ -90,6 +91,7 @@ import maryk.datastore.rocksdb.processors.helpers.setListValue
 import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
+import maryk.datastore.rocksdb.processors.helpers.unsetNonChangedValues
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.readValue
@@ -242,11 +244,9 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     @Suppress("UNCHECKED_CAST")
                                     val mapReference = reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *>
 
-                                    // Delete all existing values in placeholder
-                                    val hadPrevValue =
-                                        deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, mapReference, mapReference.toStorageByteArray(), versionBytes) { _, prevValue ->
-                                            prevValue != null // Check if parent was deleted
-                                        }
+                                    val referenceAsBytes = reference.toStorageByteArray()
+                                    val currentValues = getCurrentValues(transaction, columnFamilies, key, referenceAsBytes)
+                                    val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
                                     mapDefinition.validateWithRef(
@@ -254,8 +254,10 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         value as Map<Any, Any>
                                     ) { mapReference }
 
+                                    val qualifiersToKeep = mutableListOf<ByteArray>()
+
                                     val valueWriter = createValueWriter(
-                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues)
                                     )
 
                                     checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
@@ -267,17 +269,18 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         mapDefinition,
                                         value
                                     )
+
+                                    // Delete unneeded old values
+                                    unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
                                 }
                                 is List<*> -> {
                                     @Suppress("UNCHECKED_CAST")
                                     val listDefinition = reference.propertyDefinition as? IsListDefinition<Any, IsPropertyContext>
                                         ?: throw TypeException("Expected a Reference to IsListDefinition for List change")
 
-                                    // Delete all existing values in placeholder
-                                    val hadPrevValue =
-                                        deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
-                                            prevValue != null // Check if parent was deleted
-                                        }
+                                    val referenceAsBytes = reference.toStorageByteArray()
+                                    val currentValues = getCurrentValues(transaction, columnFamilies, key, referenceAsBytes)
+                                    val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
                                     listDefinition.validateWithRef(
@@ -285,8 +288,10 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         value as List<Any>
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
+                                    val qualifiersToKeep = mutableListOf<ByteArray>()
+
                                     val valueWriter = createValueWriter(
-                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues)
                                     )
 
                                     checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
@@ -298,17 +303,18 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         reference.propertyDefinition,
                                         value
                                     )
+
+                                    // Delete unneeded old values
+                                    unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
                                 }
                                 is Set<*> -> {
                                     @Suppress("UNCHECKED_CAST")
                                     val setDefinition = reference.propertyDefinition as? IsSetDefinition<Any, IsPropertyContext>
                                         ?: throw TypeException("Expected a Reference to IsSetDefinition for Set change")
 
-                                    // Delete all existing values in placeholder
-                                    val hadPrevValue =
-                                        deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
-                                            prevValue != null // Check if parent was deleted
-                                        }
+                                    val referenceAsBytes = reference.toStorageByteArray()
+                                    val currentValues = getCurrentValues(transaction, columnFamilies, key, referenceAsBytes)
+                                    val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
                                     setDefinition.validateWithRef(
@@ -316,8 +322,10 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         value as Set<Any>
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
+                                    val qualifiersToKeep = mutableListOf<ByteArray>()
+
                                     val valueWriter = createValueWriter(
-                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues)
                                     )
 
                                     checkParentReference(reference, transaction, columnFamilies, dataStore, key, versionBytes)
@@ -329,6 +337,9 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         reference.propertyDefinition,
                                         value
                                     )
+
+                                    // Delete unneeded old values
+                                    unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
                                 }
                                 is TypedValue<*, *> -> {
                                     if (reference.propertyDefinition !is IsMultiTypeDefinition<*, *, *>) {
@@ -378,10 +389,9 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                     @Suppress("UNCHECKED_CAST")
                                     val valuesReference = reference as IsPropertyReference<Values<IsValuesDataModel>, IsPropertyDefinition<Values<IsValuesDataModel>>, *>
 
-                                    // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(transaction, columnFamilies, dataStore.defaultReadOptions, key, reference, reference.toStorageByteArray(), versionBytes) { _, prevValue ->
-                                        prevValue != null // Check if parent was deleted
-                                    }
+                                    val referenceAsBytes = reference.toStorageByteArray()
+                                    val currentValues = getCurrentValues(transaction, columnFamilies, key, referenceAsBytes)
+                                    val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
@@ -389,15 +399,15 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         value as Values<IsValuesDataModel>
                                     ) { valuesReference }
 
+                                    val qualifiersToKeep = mutableListOf<ByteArray>()
                                     val valueWriter = createValueWriter(
-                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes
+                                        dataStore, dbIndex, transaction, columnFamilies, key, versionBytes, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues)
                                     )
 
                                     // Write complex values existence indicator
-                                    // Write parent value with Unit, so it knows this one is not deleted. So possible lingering old types are not read.
                                     valueWriter(
                                         Embed,
-                                        reference.toStorageByteArray(),
+                                        referenceAsBytes,
                                         valuesDefinition,
                                         Unit
                                     )
@@ -409,11 +419,14 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         reference::writeStorageBytes,
                                         valueWriter
                                     )
+
+                                    // Delete unneeded old values
+                                    unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
                                 }
                                 else -> {
                                     try {
                                         val referenceAsBytes = reference.toStorageByteArray()
-                                        val keyAndReference = byteArrayOf(*key.bytes, *referenceAsBytes)
+                                        val keyAndReference = key.bytes + referenceAsBytes
 
                                         val previousValue = transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, keyAndReference) { b, o, l ->
                                             var readIndex = o
@@ -430,7 +443,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                                         if (previousValue == null) {
                                             // Check if parent exists before trying to change
                                             if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {
-                                                transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, byteArrayOf(*key.bytes, *reference.parentReference!!.toStorageByteArray())) { b, o, _ ->
+                                                transaction.getValue(columnFamilies, dataStore.defaultReadOptions, null, key.bytes + reference.parentReference!!.toStorageByteArray()) { b, o, _ ->
                                                     // Check if parent was deleted
                                                     if (b[o] == TypeIndicator.DeletedIndicator.byte) null else true
                                                 } ?: throw RequestException("Property '${reference.completeName}' can only be changed if parent value exists. Set the parent value with this value.")
@@ -751,7 +764,9 @@ private fun createValueWriter(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
     key: Key<*>,
-    versionBytes: ByteArray
+    versionBytes: ByteArray,
+    qualifiersToKeep: MutableList<ByteArray>? = null,
+    shouldWrite: ((ByteArray, ByteArray) -> Boolean)? = null,
 ): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
     when (type) {
         ObjectDelete -> {} // Cannot happen on new add
@@ -759,55 +774,76 @@ private fun createValueWriter(
             val storableDefinition = Value.castDefinition(definition)
             val valueBytes = storableDefinition.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
-            // If a unique index, check if exists, and then write
-            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                val uniqueReference = byteArrayOf(*reference, *valueBytes)
+            qualifiersToKeep?.add(reference)
+            if (shouldWrite?.invoke(reference, valueBytes) != false) {
+                // If a unique index, check if exists, and then write
+                if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                    val uniqueReference = reference + valueBytes
 
-                try {
-                    transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)
-                        ?.let {
-                            throw UniqueException(
-                                reference,
-                                Key<IsValuesDataModel>(
-                                    // Get the key at the end of the stored unique index value
-                                    it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
+                    try {
+                        transaction.getForUpdate(dataStore.defaultReadOptions, columnFamilies.unique, uniqueReference)
+                            ?.let {
+                                throw UniqueException(
+                                    reference,
+                                    Key<IsValuesDataModel>(
+                                        // Get the key at the end of the stored unique index value
+                                        it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
+                                    )
                                 )
-                            )
+                            }
+
+                        // we need to delete the old value if present
+                        transaction.getValue(
+                            columnFamilies,
+                            dataStore.defaultReadOptions,
+                            null,
+                            byteArrayOf(*key.bytes, *reference)
+                        ) { b, o, l ->
+                            deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
                         }
 
-                    // we need to delete the old value if present
-                    transaction.getValue(
-                        columnFamilies,
-                        dataStore.defaultReadOptions,
-                        null,
-                        byteArrayOf(*key.bytes, *reference)
-                    ) { b, o, l ->
-                        deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
-                    }
-
-                    // Creates index reference on the table if it not exists so delete can find
-                    // what values to delete from the unique indices.
-                    dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
-                    setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
-                } catch (e: UniqueException) {
-                    // Only throw if key is not equal otherwise ignore as it is the same as existing key
-                    if (e.key != key) {
-                        throw e
+                        // Creates index reference on the table if it not exists so delete can find
+                        // what values to delete from the unique indices.
+                        dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
+                        setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
+                    } catch (e: UniqueException) {
+                        // Only throw if key is not equal otherwise ignore as it is the same as existing key
+                        if (e.key != key) {
+                            throw e
+                        }
                     }
                 }
-            }
 
-            setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+                setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+            }
         }
         ListSize,
         SetSize,
-        MapSize -> setValue(transaction, columnFamilies, key, reference, versionBytes, (value as Int).toVarBytes())
-        TypeValue -> setTypedValue(value, definition, transaction, columnFamilies, key, reference, versionBytes)
+        MapSize -> {
+            val valueBytes = (value as Int).toVarBytes()
+
+            qualifiersToKeep?.add(reference)
+            if (shouldWrite?.invoke(reference, valueBytes) != false) {
+                setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+            }
+        }
+        TypeValue -> setTypedValue(value, definition, transaction, columnFamilies, key, reference, versionBytes, qualifiersToKeep, shouldWrite)
         Embed -> {
             // Indicates value exists and is an embed
             // Is for the root of embed
             val valueBytes = byteArrayOf(TypeIndicator.EmbedIndicator.byte, TRUE)
-            setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+
+            qualifiersToKeep?.add(reference)
+            if (shouldWrite?.invoke(reference, valueBytes) != false) {
+                setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+            }
         }
     }
 }
+
+private fun doesCurrentNotContainExactQualifierAndValue(currentValues: List<Pair<ByteArray, ByteArray>>): (ByteArray, ByteArray) -> Boolean =
+    { qualifier, value ->
+        currentValues.none { (currentQualifier, currentValue) ->
+            currentQualifier.contentEquals(qualifier) && currentValue.contentEquals(value)
+        }
+    }

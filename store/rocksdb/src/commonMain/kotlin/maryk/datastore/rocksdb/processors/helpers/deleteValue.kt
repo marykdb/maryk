@@ -19,7 +19,7 @@ internal fun deleteValue(
     )
 
     if (columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = byteArrayOf(*keyAndReference, *version)
+        val historicReference = keyAndReference + version
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(historicReference.size - version.size)
 

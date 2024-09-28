@@ -33,7 +33,7 @@ internal class StoreValuesGetter(
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
         key?.let { currentKey ->
             val valueAsBytes = cache.getOrPut(propertyReference) {
-                val reference = byteArrayOf(*currentKey, *propertyReference.toStorageByteArray())
+                val reference = currentKey + propertyReference.toStorageByteArray()
 
                 db.get(columnFamilies.table, readOptions, reference)
             }

@@ -41,7 +41,7 @@ internal fun <R: Any> DBAccessor.iterateValues(
         }
         this.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
             val toVersionBytes = toVersion.toReversedVersionBytes()
-            val toSeek = byteArrayOf(*reference, *toVersionBytes)
+            val toSeek = reference + toVersionBytes
             iterator.seek(toSeek)
             while (iterator.isValid()) {
                 val referenceBytes = iterator.key()

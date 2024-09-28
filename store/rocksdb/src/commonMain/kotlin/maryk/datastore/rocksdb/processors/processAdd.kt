@@ -89,7 +89,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
                         // If a unique index, check if exists, and then write
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                            val uniqueReference = byteArrayOf(*reference, *valueBytes)
+                            val uniqueReference = reference + valueBytes
 
                             checksBeforeWrite.add {
                                 val uniqueCount =

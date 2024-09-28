@@ -47,7 +47,7 @@ internal fun <T : Any> deleteByReference(
     version: ByteArray,
     handlePreviousValue: ((ByteArray, T?) -> Unit)?
 ): Boolean {
-    val referenceToCompareTo = byteArrayOf(*key.bytes, *referenceAsBytes)
+    val referenceToCompareTo = key.bytes + referenceAsBytes
     var referenceOfParent: ByteArray? = null
     var toShiftListCount = 0u
 

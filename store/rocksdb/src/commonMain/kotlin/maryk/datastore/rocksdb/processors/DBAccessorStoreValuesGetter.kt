@@ -40,7 +40,7 @@ internal class DBAccessorStoreValuesGetter(
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
         @Suppress("UNCHECKED_CAST")
         return cache.getOrPut(propertyReference) {
-            dbAccessor.getValue(columnFamilies, readOptions, this.toVersion, byteArrayOf(*key, *propertyReference.toStorageByteArray())) { valueAsBytes, offset, length ->
+            dbAccessor.getValue(columnFamilies, readOptions, this.toVersion, key + propertyReference.toStorageByteArray()) { valueAsBytes, offset, length ->
                 (valueAsBytes.convertToValue(propertyReference, offset, length) as T?)?.also {
                     if (captureVersion) {
                         val version = valueAsBytes.readVersionBytes()

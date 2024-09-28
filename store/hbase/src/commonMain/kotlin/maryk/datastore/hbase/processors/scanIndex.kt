@@ -143,7 +143,7 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
 
                         add(
                             Get(cell.qualifierArray, cell.qualifierOffset, cell.qualifierLength).apply {
-                                sortingKeys.add(byteArrayOf(*result.row, *this.row))
+                                sortingKeys.add(result.row + this.row)
 
                                 addFamily(dataColumnFamily)
                                 readVersions(if (scanRequest is IsChangesRequest<*, *>) scanRequest.maxVersions.toInt() else 1)

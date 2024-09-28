@@ -62,7 +62,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
             for (indexRange in indexScanRange.ranges) {
                 val indexStartKey = indexRange.getAscendingStartKey(startKey, keyScanRange.includeStart)
 
-                iterator.seek(byteArrayOf(*indexReference, *indexStartKey))
+                iterator.seek(indexReference + indexStartKey)
 
                 checkAndProcess(
                     dbAccessor,
@@ -97,7 +97,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         iterator.seekToLast()
                     }
                 } else {
-                    iterator.seekForPrev(byteArrayOf(*indexReference, *indexStartKey))
+                    iterator.seekForPrev(indexReference + indexStartKey)
                 }
 
                 checkAndProcess(

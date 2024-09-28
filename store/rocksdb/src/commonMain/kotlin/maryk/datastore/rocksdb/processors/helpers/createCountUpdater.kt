@@ -9,7 +9,7 @@ import maryk.datastore.rocksdb.Transaction
 import org.rocksdb.ReadOptions
 
 /**
- * Set count for [reference] at [version] by applying [countChange] to current count read with [readOptions]
+ * Set count for [reference] at [versionBytes] by applying [countChange] to current count read with [readOptions]
  */
 internal fun <T : Any> createCountUpdater(
     transaction: Transaction,
@@ -23,7 +23,7 @@ internal fun <T : Any> createCountUpdater(
 ) {
     val referenceToCompareTo = reference.toStorageByteArray()
 
-    val previousCount = transaction.getValue(columnFamilies, readOptions, null, byteArrayOf(*key.bytes, *referenceToCompareTo)) { b, o, _ ->
+    val previousCount = transaction.getValue(columnFamilies, readOptions, null, key.bytes + referenceToCompareTo) { b, o, _ ->
         var readIndex = o
         initIntByVar { b[readIndex++] }
     } ?: 0

@@ -43,7 +43,7 @@ internal fun <T: Any> DBAccessor.getValue(
         }
 
         this.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
-            val toSeek = byteArrayOf(*keyAndReference, *versionBytes)
+            val toSeek = keyAndReference + versionBytes
             iterator.seek(toSeek)
             while (iterator.isValid()) {
                 val key = iterator.key()

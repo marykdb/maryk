@@ -24,7 +24,7 @@ internal fun deleteUniqueIndexValue(
 
     // Only add a delete marker when not a hard delete. With hard delete all historic values are deleted
     if (!hardDelete && columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = byteArrayOf(*reference, *version)
+        val historicReference = reference + version
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(reference.size)
 

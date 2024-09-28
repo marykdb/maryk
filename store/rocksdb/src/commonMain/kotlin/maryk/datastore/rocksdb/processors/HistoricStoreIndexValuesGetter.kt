@@ -59,7 +59,7 @@ internal class HistoricStoreIndexValuesWalker(
                     bytes.invert(versionIndex)
                 }
                 handleIndexReference(historicIndexReference)
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 // skip failing index reference generation
             }
         } while (getter.gotoNextVersion())
@@ -134,7 +134,7 @@ private class HistoricStoreIndexValuesGetter(
         }
         val iterator = iterableReference.iterator
         val reference = iterableReference.referenceAsBytes
-        val keyAndReference = byteArrayOf(*key, *iterableReference.referenceAsBytes)
+        val keyAndReference = key + iterableReference.referenceAsBytes
 
         // Only seek the first time
         if (iterableReference.lastVersion == null) {

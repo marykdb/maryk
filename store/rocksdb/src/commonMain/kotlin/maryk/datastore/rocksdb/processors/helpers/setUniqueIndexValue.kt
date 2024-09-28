@@ -14,10 +14,10 @@ internal fun setUniqueIndexValue(
     version: ByteArray,
     key: Key<*>
 ) {
-    transaction.put(columnFamilies.unique, uniqueReferenceWithValue, byteArrayOf(*version, *key.bytes))
+    transaction.put(columnFamilies.unique, uniqueReferenceWithValue, version + key.bytes)
 
     if (columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = byteArrayOf(*uniqueReferenceWithValue, *version)
+        val historicReference = uniqueReferenceWithValue + version
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(historicReference.size - version.size)
 

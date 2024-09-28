@@ -36,7 +36,7 @@ internal fun getKeyByUniqueValue(
         val versionBytes = toVersion.toReversedVersionBytes()
 
         dbAccessor.getIterator(readOptions, columnFamilies.historic.unique).use { iterator ->
-            val toSeek = byteArrayOf(*reference, *versionBytes)
+            val toSeek = reference + versionBytes
             iterator.seek(toSeek)
             while (iterator.isValid()) {
                 val key = iterator.key()

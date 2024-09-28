@@ -236,7 +236,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
             if (validationExceptions == null) {
                 validationExceptions = mutableListOf()
             }
-            validationExceptions!!.add(ve)
+            validationExceptions.add(ve)
         }
 
         var isChanged = false
@@ -734,14 +734,14 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                 if (newValue == null) {
                     if (oldValue != null) {
                         dependentPuts += Put(oldValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, softDeleteIndicator)
-                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(byteArrayOf(*oldValue, *key.bytes))))
+                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldValue + key.bytes)))
                     } // else ignore since did not exist
                 } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
                     if (oldValue != null) {
                         dependentPuts += Put(oldValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, softDeleteIndicator)
                     }
                     dependentPuts += Put(newValue).setTimestamp(version.timestamp.toLong()).addColumn(family, key.bytes, trueIndicator)
-                    indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(byteArrayOf(*newValue, *key.bytes)), oldValue?.let { Bytes(byteArrayOf(*oldValue, *key.bytes)) }))
+                    indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newValue + key.bytes), oldValue?.let { Bytes(oldValue + key.bytes) }))
                 }
             }
 

@@ -20,6 +20,7 @@ import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Deletion
+import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.recyclableByteArray
@@ -54,7 +55,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                 for (reference in dataStore.getUniqueIndices(
                     dbIndex, columnFamilies.unique
                 )) {
-                    val referenceAndKey = byteArrayOf(*key.bytes, *reference)
+                    val referenceAndKey = key.bytes + reference
                     val valueLength = transaction.get(
                         columnFamilies.table,
                         dataStore.defaultReadOptions,
@@ -147,13 +148,13 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
 
                     transaction.put(
                         columnFamilies.table,
-                        byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR),
-                        byteArrayOf(*versionBytes, TRUE)
+                        key.bytes + SOFT_DELETE_INDICATOR,
+                        versionBytes + TRUE
                     )
 
                     if (columnFamilies is HistoricTableColumnFamilies) {
                         val historicReference =
-                            byteArrayOf(*key.bytes, SOFT_DELETE_INDICATOR, *versionBytes)
+                            combineToByteArray(key.bytes, SOFT_DELETE_INDICATOR, versionBytes)
                         // Invert so the time is sorted in reverse order with newest on top
                         historicReference.invert(historicReference.size - versionBytes.size)
 

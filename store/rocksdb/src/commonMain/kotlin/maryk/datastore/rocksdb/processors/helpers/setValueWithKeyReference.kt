@@ -5,7 +5,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 
-/** Set [keyAndReference] = [value] (ByteArray) at [version] for object at [key] */
+/** Set [keyAndReference] = [value] (ByteArray) at [version] for object at [keyAndReference] */
 internal fun setValue(
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
@@ -26,7 +26,7 @@ internal fun setValue(
     )
 
     if (columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = byteArrayOf(*keyAndReference, *version)
+        val historicReference = keyAndReference + version
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(historicReference.size - version.size)
 

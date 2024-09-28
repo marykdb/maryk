@@ -797,7 +797,7 @@ private fun createValueWriter(
                             columnFamilies,
                             dataStore.defaultReadOptions,
                             null,
-                            byteArrayOf(*key.bytes, *reference)
+                            key.bytes + reference
                         ) { b, o, l ->
                             deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
                         }

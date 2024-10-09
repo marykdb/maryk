@@ -75,7 +75,7 @@ class TransactionIterator(
     }
 
     override fun isValid() =
-        super.isValid() || transactionChanges().getOrNull(changesIndex) != null
+        super.isValid() && if (fromChanges) transactionChanges().getOrNull(changesIndex) != null else true
 
     override fun next() {
         val changes = transactionChanges()

@@ -134,8 +134,8 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
 
     override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
         if (!dependencySet.contains(dataModel as MarykPrimitive)) {
-            dependencySet.add(dataModel as MarykPrimitive)
             dataModel.getAllDependencies(dependencySet)
+            dependencySet.add(dataModel as MarykPrimitive)
         }
     }
 

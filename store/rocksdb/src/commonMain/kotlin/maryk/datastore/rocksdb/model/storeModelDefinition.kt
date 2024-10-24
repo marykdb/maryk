@@ -31,8 +31,6 @@ fun storeModelDefinition(
 
     val dependencies = mutableListOf<MarykPrimitive>()
     dataModel.getAllDependencies(dependencies)
-    // Needs to be in reverse order to do sub dependencies first and then the higher up dependencies
-    dependencies.reverse()
 
     if (dependencies.isNotEmpty()) {
         val dependentCache = WriteCache()

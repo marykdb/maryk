@@ -66,8 +66,8 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
         if (!dependencySet.contains(typeEnum)) {
             dependencySet.add(typeEnum)
+            typeEnum.getAllDependencies(dependencySet)
         }
-        typeEnum.getAllDependencies(dependencySet)
     }
 
     object Model : ContextualDataModel<MultiTypeDefinition<*, *>, Model, ContainsDefinitionsContext, MultiTypeDefinitionContext>(

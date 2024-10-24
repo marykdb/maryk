@@ -133,10 +133,7 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
     }
 
     override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
-        if (!dependencySet.contains(dataModel as MarykPrimitive)) {
-            dependencySet.add(dataModel as MarykPrimitive)
-            dataModel.getAllDependencies(dependencySet)
-        }
+        this.addDataModelToDependencySet(dependencySet)
     }
 
     object Model : ContextualDataModel<EmbeddedObjectDefinition<*, *, *, *>, Model, ContainsDefinitionsContext, ModelContext>(

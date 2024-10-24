@@ -748,6 +748,6 @@ internal class RootDataModelTest {
         TestMarykModel.getAllDependencies(list)
 
         assertEquals(5, list.size)
-        assertEquals(mutableListOf(Option, TestValueObject, EmbeddedMarykModel, TestMarykModel, SimpleMarykTypeEnum), list)
+        assertEquals(mutableListOf(Option, TestValueObject, SimpleMarykTypeEnum, TestMarykModel, EmbeddedMarykModel), list)
     }
 }

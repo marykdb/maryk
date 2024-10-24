@@ -114,10 +114,7 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
     }
 
     override fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>) {
-        if (!dependencySet.contains(dataModel as MarykPrimitive)) {
-            dataModel.getAllDependencies(dependencySet)
-            dependencySet.add(dataModel as MarykPrimitive)
-        }
+        this.addDataModelToDependencySet(dependencySet)
     }
 
     object Model : ContextualDataModel<ValueObjectDefinition<*, *>, Model, ContainsDefinitionsContext, ModelContext>(

@@ -26,7 +26,7 @@ interface IsReferenceDefinition<DM : IsRootDataModel, CX : IsPropertyContext> :
 
         (definition as? IsReferenceDefinition<*, *>)?.let {
             // Make sure references to self are not in eternal loop
-            if (checkedDataModelNames?.contains(definition.dataModel.Meta.name) == true) {
+            if (checkedDataModelNames?.contains(this.internalDataModelReference.name) == true) {
                 return compatible
             }
 

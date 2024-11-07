@@ -22,6 +22,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.pairs.ReferenceValuePair
+import maryk.core.query.pairs.ReferenceValueSetPair
 import maryk.core.values.IsValuesGetter
 import kotlin.js.JsName
 
@@ -63,6 +64,11 @@ class SimpleTypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     @Suppress("UNCHECKED_CAST")
     infix fun with(value: T): ReferenceValuePair<T> =
         ReferenceValuePair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, value)
+
+    @JsName("withValueInSet")
+    @Suppress("UNCHECKED_CAST")
+    infix fun with(valueSet: Set<T>): ReferenceValueSetPair<T> =
+        ReferenceValueSetPair(this as IsPropertyReference<T, IsChangeableValueDefinition<T, IsPropertyContext>, *>, valueSet)
 
     @JsName("withValueOrNull")
     infix fun with(value: T?) =

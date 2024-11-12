@@ -99,7 +99,8 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
     inline operator fun <TI : Any, reified TO : Any> invoke(getProperty: DM.() -> IsDefinitionWrapper<TI, TO, *, DO>): TO? {
         val index = getProperty(this.dataModel).index
         val value = this.original(index)
-        val valueDef = this.dataModel[index] ?: throw DefNotFoundException("Value definition of index $index is missing")
+        val valueDef = this.dataModel[index]
+            ?: throw DefNotFoundException("Value definition of index $index is missing")
         return process(valueDef, value, true) { it is TO? }
     }
 

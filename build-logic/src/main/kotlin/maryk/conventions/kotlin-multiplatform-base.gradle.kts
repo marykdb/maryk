@@ -33,7 +33,6 @@ kotlin {
         }
     }
 
-    @Suppress("OPT_IN_USAGE")
     compilerOptions {
         apiVersion = KOTLIN_2_1
         languageVersion = KOTLIN_2_1

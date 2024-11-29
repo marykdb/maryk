@@ -15,7 +15,6 @@ kotlin {
 
 android {
     namespace = "io.maryk"
-    @Suppress("UnstableApiUsage")
     buildToolsVersion = "32.0.0"
     compileSdk = 32
     defaultConfig {

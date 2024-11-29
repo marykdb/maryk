@@ -5,6 +5,7 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.definitions.RootDataModelDefinition
+import maryk.core.models.definitions.RootDataModelDefinition.Model.iterator
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
@@ -59,7 +60,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
         )
     })
 
-    @Suppress("UNCHECKED_CAST", "LeakingThis")
+    @Suppress("UNCHECKED_CAST")
     private val typedThis: DM = this as DM
 
     final override val Meta: RootDataModelDefinition by lazy { meta(this::class.simpleName) }

@@ -11,6 +11,8 @@ kotlin {
             dependencies {
                 api("org.rocksdb:rocksdbjni:_")
 
+                api(projects.lib)
+                api(projects.core)
                 api(projects.store.shared)
             }
         }

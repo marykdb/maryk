@@ -9,6 +9,8 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                api(projects.lib)
+                api(projects.core)
                 api(projects.store.shared)
             }
         }

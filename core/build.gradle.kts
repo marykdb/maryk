@@ -9,6 +9,8 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                api(projects.lib)
+                api(projects.json)
                 api(projects.yaml)
                 api("org.jetbrains.kotlinx:atomicfu:_")
                 implementation(KotlinX.collections.immutable)

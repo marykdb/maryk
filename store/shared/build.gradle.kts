@@ -10,6 +10,7 @@ kotlin {
         commonMain {
             dependencies {
                 api(KotlinX.coroutines.core)
+                api(projects.lib)
                 api(projects.core)
                 implementation("com.mayakapps.kache:kache:_")
             }

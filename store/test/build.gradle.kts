@@ -8,6 +8,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                api(projects.core)
                 api(projects.store.shared)
                 api(projects.testmodels)
                 api(KotlinX.coroutines.test)

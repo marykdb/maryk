@@ -13,6 +13,8 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                api(projects.lib)
+                api(projects.core)
                 api(projects.store.shared)
                 api("org.apache.hbase:hbase-client:_")
             }

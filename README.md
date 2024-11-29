@@ -4,8 +4,8 @@
 # Maryk: Cross-Platform Data Modeling and Storage
 
 Maryk is a Kotlin Multiplatform project designed for developers to define, validate, serialize, and store data models 
-across various platforms, including iOS, macOS, Android, JVM, and JavaScript. Currently, storage is only supported on 
-the JVM.
+across various platforms, including iOS, macOS, Linux, Windows, Android, JVM, and JavaScript. Currently, storage is only 
+supported on the JVM.
 
 With Maryk, you can create complex data structures that facilitate efficient and seamless cross-platform communication. 
 It features a fully version-aware data store and query engine, making it an excellent choice for managing and storing 

@@ -34,26 +34,26 @@ kotlin {
     // More specialised targets are disabled. They can be enabled, if there is demand for them - just make sure
     // to add `dependsOn(nativeMain)` / `dependsOn(nativeTest)` below for any new targets.
 
-    //linuxX64() // not supported by io.maryk.rocksdb:rocksdb-multiplatform
-    //linuxArm64() // not supported by kotlinx-datetime
+    linuxX64() // not supported by io.maryk.rocksdb:rocksdb-multiplatform
+    linuxArm64() // not supported by kotlinx-datetime
 
-    //mingwX64() // not supported by io.maryk.rocksdb:rocksdb-multiplatform
+    mingwX64() // not supported by io.maryk.rocksdb:rocksdb-multiplatform
 
     iosX64()
     iosArm64()
     iosSimulatorArm64()
     macosArm64()
     macosX64()
+    watchosArm32()
+    watchosArm64()
+    tvosArm64()
+    iosSimulatorArm64()
+    watchosSimulatorArm64()
+    tvosSimulatorArm64()
+    watchosDeviceArm64()
 
-    // https://kotlinlang.org/docs/multiplatform-hierarchy.html#target-shortcuts
-    //watchos() // watchosArm32, watchosArm64, watchosX64
-    //tvos()    // tvosArm64, tvosX64
-    //iosSimulatorArm64()
-    //watchosSimulatorArm64()
-    //tvosSimulatorArm64()
-    //androidNativeArm32()
-    //androidNativeArm64()
-    //androidNativeX86()
-    //androidNativeX64()
-    //watchosDeviceArm64()
+    androidNativeArm32()
+    androidNativeArm64()
+    androidNativeX86()
+    androidNativeX64()
 }

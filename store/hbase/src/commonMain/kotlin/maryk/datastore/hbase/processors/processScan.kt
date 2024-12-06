@@ -46,19 +46,18 @@ internal suspend fun <DM : IsRootDataModel> processScan(
         }
         else -> {
             // Process uniques as a fast path
-            keyScanRange.uniques?.let {
-                if (it.isNotEmpty()) {
-                    // Only process the first unique since it has to match every found unique matcher
-                    // and if first is set it can go to direct key to match further
-                    val firstMatcher = it.first()
+            keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let { uniqueMatchers ->
+                // Only process the first unique since it has to match every found unique matcher
+                // and if first is set it can go to direct key to match further
+                val firstMatcher = uniqueMatchers.first()
 
-                    val uniqueReference = firstMatcher.reference
-                    @Suppress("UNCHECKED_CAST")
-                    val value = firstMatcher.value as Comparable<Any>
-                    @Suppress("UNCHECKED_CAST")
-                    val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
+                @Suppress("UNCHECKED_CAST")
+                val value = firstMatcher.value as Comparable<Any>
+                @Suppress("UNCHECKED_CAST")
+                val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
-                    table.get(Get(uniqueReference).apply {
+                table.get(
+                    Get(firstMatcher.reference).apply {
                         addColumn(uniquesColumnFamily, valueBytes)
                         readVersions(if (scanRequest is IsChangesRequest<*, *>) scanRequest.maxVersions.toInt() else 1)
                         if (scanLatestUpdate) {
@@ -69,14 +68,14 @@ internal suspend fun <DM : IsRootDataModel> processScan(
                         } else {
                             setTimeRange(scanRequest)
                         }
-                    }).let { resultFuture ->
-                        val result = resultFuture.await()
-                        if (!result.isEmpty) {
-                            getByKey(table, result.getValue(uniquesColumnFamily, valueBytes), scanRequest, processRecord)
-                        }
                     }
-                    return
+                ).let { resultFuture ->
+                    val result = resultFuture.await()
+                    if (!result.isEmpty) {
+                        getByKey(table, result.getValue(uniquesColumnFamily, valueBytes), scanRequest, processRecord)
+                    }
                 }
+                return
             }
 
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)

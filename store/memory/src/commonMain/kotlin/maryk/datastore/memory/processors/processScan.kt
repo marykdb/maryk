@@ -1,9 +1,9 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.datastore.memory.records.DataRecord
@@ -37,26 +37,25 @@ internal fun <DM : IsRootDataModel> processScan(
             }
         else -> {
             // Process uniques as a fast path
-            keyScanRange.uniques?.let {
-                if (it.isNotEmpty()) {
-                    // Only process the first unique
-                    val firstReference = it.first()
+            keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let {
+                // Only process the first unique since it has to match every found unique matcher
+                // and if first is set it can go to direct key to match further
+                val firstReference = it.first()
 
-                    val uniqueIndex = dataStore.getOrCreateUniqueIndex(firstReference.reference)
-                    @Suppress("UNCHECKED_CAST")
-                    val value = firstReference.value as Comparable<Any>
+                val uniqueIndex = dataStore.getOrCreateUniqueIndex(firstReference.reference)
+                @Suppress("UNCHECKED_CAST")
+                val value = firstReference.value as Comparable<Any>
 
-                    val record = scanRequest.toVersion?.let { version ->
-                        uniqueIndex[value, HLC(version)]
-                    } ?: uniqueIndex[value]
+                val record = scanRequest.toVersion?.let { version ->
+                    uniqueIndex[value, HLC(version)]
+                } ?: uniqueIndex[value]
 
-                    record?.let {
-                        if (shouldProcessRecord(record, scanRequest, keyScanRange, recordFetcher)) {
-                            processRecord(record, null)
-                        }
+                record?.let {
+                    if (shouldProcessRecord(record, scanRequest, keyScanRange, recordFetcher)) {
+                        processRecord(record, null)
                     }
-                    return
                 }
+                return
             }
 
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)

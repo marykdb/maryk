@@ -57,34 +57,30 @@ internal fun <DM : IsRootDataModel> processScan(
         }
         else -> {
             // Process uniques as a fast path
-            keyScanRange.uniques?.let {
-                if (it.isNotEmpty()) {
-                    // Only process the first unique since it has to match every found unique matcher
-                    // and if first is set it can go to direct key to match further
-                    val firstMatcher = it.first()
+            keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let { uniqueMatchers ->
+                // Only process the first unique since it has to match every found unique matcher
+                // and if first is set it can go to direct key to match further
+                val firstMatcher = uniqueMatchers.first()
+                @Suppress("UNCHECKED_CAST")
+                val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>)
+                    .toStorageBytes(firstMatcher.value as Comparable<Any>)
 
-                    val uniqueReference = firstMatcher.reference
-                    @Suppress("UNCHECKED_CAST")
-                    val value = firstMatcher.value as Comparable<Any>
-                    @Suppress("UNCHECKED_CAST")
-                    val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>).toStorageBytes(value)
+                val reference = ByteArray(firstMatcher.reference.size + 1 + valueBytes.size).apply {
+                    firstMatcher.reference.copyInto(this)
+                    this[firstMatcher.reference.size] = TypeIndicator.NoTypeIndicator.byte
+                    valueBytes.copyInto(this, firstMatcher.reference.size + 1)
+                }
 
-                    val reference = ByteArray(uniqueReference.size + 1 +valueBytes.size)
-                    uniqueReference.copyInto(reference)
-                    reference[uniqueReference.size] = TypeIndicator.NoTypeIndicator.byte
-                    valueBytes.copyInto(reference, uniqueReference.size + 1, 0, valueBytes.size)
+                getKeyByUniqueValue(dbAccessor, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->
+                    val key = scanRequest.dataModel.key(keyReader)
 
-                    getKeyByUniqueValue(dbAccessor, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->
-                        val key = scanRequest.dataModel.key(keyReader)
-
-                        if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange)) {
-                            readCreationVersion(dbAccessor, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
-                                processRecord(key, createdVersion, null)
-                            }
+                    if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange)) {
+                        readCreationVersion(dbAccessor, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
+                            processRecord(key, createdVersion, null)
                         }
                     }
-                    return
                 }
+                return
             }
 
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)

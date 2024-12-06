@@ -20,15 +20,14 @@ internal val objectSoftDeleteQualifier = byteArrayOf(0)
 internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
     version: HLC,
     storeAction: DeleteStoreAction<DM>,
-    dataStoreFetcher: IsStoreFetcher<*>,
+    dataStoreFetcher: IsStoreFetcher<DM>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
 
     if (deleteRequest.keys.isNotEmpty()) {
-        @Suppress("UNCHECKED_CAST")
-        val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(deleteRequest.dataModel)
+        val dataStore = dataStoreFetcher.invoke(deleteRequest.dataModel)
 
         // Delete it from history if it is a hard deletion
         val historicStoreIndexValuesWalker = if (deleteRequest.hardDelete && dataStore.keepAllVersions) {

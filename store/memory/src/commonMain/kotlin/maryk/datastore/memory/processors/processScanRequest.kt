@@ -17,7 +17,7 @@ internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel>
 /** Processes a ScanRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
 internal fun <DM : IsRootDataModel> processScanRequest(
     storeAction: ScanStoreAction<DM>,
-    dataStoreFetcher: IsStoreFetcher<*>
+    dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
@@ -28,8 +28,7 @@ internal fun <DM : IsRootDataModel> processScanRequest(
 
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(scanRequest.dataModel)
+    val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
 
     processScan(scanRequest, dataStore, recordFetcher) { record, _ ->
         val toVersion = scanRequest.toVersion?.let { HLC(it) }

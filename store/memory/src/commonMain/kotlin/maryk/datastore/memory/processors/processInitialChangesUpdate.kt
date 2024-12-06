@@ -6,12 +6,11 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddOrChangeResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.statuses.IsAddOrChangeResponseStatus
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
-import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 
@@ -20,12 +19,11 @@ import maryk.datastore.shared.updates.IsUpdateAction
  */
 internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
     storeAction: StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>,
-    dataStoreFetcher: (IsRootDataModel) -> DataStore<*>,
+    dataStoreFetcher: IsStoreFetcher<DM>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(dataModel)
+    val dataStore = dataStoreFetcher.invoke(dataModel)
 
     val update = storeAction.request.update as InitialChangesUpdate<DM>
 

@@ -22,12 +22,11 @@ internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootDataMo
 /** Processes a GetUpdatesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
 internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
     storeAction: GetUpdatesStoreAction<DM>,
-    dataStoreFetcher: IsStoreFetcher<*>
+    dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val getRequest = storeAction.request
 
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(getRequest.dataModel)
+    val dataStore = dataStoreFetcher.invoke(getRequest.dataModel)
 
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 

@@ -18,14 +18,13 @@ internal typealias AnyAddStoreAction = AddStoreAction<IsRootDataModel>
 internal suspend fun <DM : IsRootDataModel> processAddRequest(
     version: HLC,
     storeAction: StoreAction<DM, AddRequest<DM>, AddResponse<DM>>,
-    dataStoreFetcher: IsStoreFetcher<*>,
+    dataStoreFetcher: IsStoreFetcher<DM>,
     updateFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()
 
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(addRequest.dataModel)
+    val dataStore = dataStoreFetcher.invoke(addRequest.dataModel)
 
     if (addRequest.objects.isNotEmpty()) {
         for ((index, objectToAdd) in addRequest.objects.withIndex()) {

@@ -18,14 +18,13 @@ internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
 /** Processes a GetRequest in a [storeAction] and resolve dataStore with [dataStoreFetcher] */
 internal fun <DM : IsRootDataModel> processGetRequest(
     storeAction: GetStoreAction<DM>,
-    dataStoreFetcher: IsStoreFetcher<*>
+    dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
     val toVersion = getRequest.toVersion?.let { HLC(it) }
 
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(getRequest.dataModel)
+    val dataStore = dataStoreFetcher.invoke(getRequest.dataModel)
 
     getRequest.checkToVersion(dataStore.keepAllVersions)
 

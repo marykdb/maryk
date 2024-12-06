@@ -5,13 +5,12 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.responses.DeleteResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalUpdate
-import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 
@@ -20,12 +19,11 @@ import maryk.datastore.shared.updates.IsUpdateAction
  */
 internal suspend fun <DM : IsRootDataModel> processDeleteUpdate(
     storeAction: StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>,
-    dataStoreFetcher: (IsRootDataModel) -> DataStore<*>,
+    dataStoreFetcher: IsStoreFetcher<DM>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(dataModel)
+    val dataStore = dataStoreFetcher.invoke(dataModel)
 
     val update = storeAction.request.update as RemovalUpdate<DM>
 

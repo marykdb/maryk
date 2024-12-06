@@ -17,13 +17,12 @@ internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootDataModel>
 internal suspend fun <DM : IsRootDataModel> processChangeRequest(
     version: HLC,
     storeAction: ChangeStoreAction<DM>,
-    dataStoreFetcher: IsStoreFetcher<*>,
+    dataStoreFetcher: IsStoreFetcher<DM>,
     updateFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val changeRequest = storeAction.request
 
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(changeRequest.dataModel)
+    val dataStore = dataStoreFetcher.invoke(changeRequest.dataModel)
 
     val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
 

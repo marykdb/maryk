@@ -11,7 +11,6 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.memory.IsStoreFetcher
-import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.updates.IsUpdateAction
 
@@ -20,12 +19,11 @@ import maryk.datastore.shared.updates.IsUpdateAction
  */
 internal suspend fun <DM : IsRootDataModel> processChangeUpdate(
     storeAction: StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>,
-    dataStoreFetcher: (IsRootDataModel) -> DataStore<IsRootDataModel>,
+    dataStoreFetcher: IsStoreFetcher<DM>,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(dataModel)
+    val dataStore = dataStoreFetcher.invoke(dataModel)
 
     val update = storeAction.request.update as ChangeUpdate<DM>
 

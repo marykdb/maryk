@@ -14,15 +14,14 @@ internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootData
 /** Processes a ScanChangesRequest in a [storeAction] into a dataStore from [dataStoreFetcher] */
 internal fun <DM : IsRootDataModel> processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM>,
-    dataStoreFetcher: IsStoreFetcher<*>
+    dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val scanRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
 
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 
-    @Suppress("UNCHECKED_CAST")
-    val dataStore = (dataStoreFetcher as IsStoreFetcher<DM>).invoke(scanRequest.dataModel)
+    val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
 
     scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 

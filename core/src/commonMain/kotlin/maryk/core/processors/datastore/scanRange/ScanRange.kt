@@ -28,7 +28,7 @@ class ScanRange internal constructor(
     } == true
 
     /** Get the descending start key for scans */
-    fun getDescendingStartKey(startKey: ByteArray?, inclusiveStartKey: Boolean): ByteArray? =
+    fun getDescendingStartKey(startKey: ByteArray? = null, inclusiveStartKey: Boolean = true): ByteArray? =
         when {
             startKey != null && (end == null || end.isEmpty() || startKey < end) ->
                 if (inclusiveStartKey) startKey else startKey.prevByteInSameLength()
@@ -37,7 +37,7 @@ class ScanRange internal constructor(
         }
 
     /** Get the ascending start key for scans */
-    fun getAscendingStartKey(startKey: ByteArray?, inclusiveStartKey: Boolean): ByteArray =
+    fun getAscendingStartKey(startKey: ByteArray? = null, inclusiveStartKey: Boolean = true): ByteArray =
         when {
             startKey != null && startKey > start ->
                 if (inclusiveStartKey) startKey else startKey.nextByteInSameLength()

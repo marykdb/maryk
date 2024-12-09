@@ -5,11 +5,14 @@ import maryk.core.models.graph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.invoke
 import maryk.core.query.filters.Equals
+import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.FetchByIndexScan
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
@@ -99,6 +102,11 @@ class DataStoreScanMultiTypeTest(
         )
 
         expect(3) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(*keys[2].bytes),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Measurement is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -121,6 +129,11 @@ class DataStoreScanMultiTypeTest(
         )
 
         expect(4) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.DESC,
+            startKey = byteArrayOf(*keys[2].bytes),
+            stopKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Measurement is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -151,6 +164,12 @@ class DataStoreScanMultiTypeTest(
         )
 
         expect(1) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            index = byteArrayOf(17),
+            direction = Direction.ASC,
+            startKey = byteArrayOf(0, -36),
+            stopKey = byteArrayOf(0, -36),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Measurement is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -184,6 +203,11 @@ class DataStoreScanMultiTypeTest(
         )
 
         expect(3) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(*keys[2].bytes),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -208,6 +232,11 @@ class DataStoreScanMultiTypeTest(
         )
 
         expect(2) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponse.dataFetchType }
 
         // Reverse order
         scanResponse.values[0].let {

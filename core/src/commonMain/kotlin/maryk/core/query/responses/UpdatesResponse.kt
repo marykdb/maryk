@@ -13,7 +13,8 @@ import maryk.core.values.SimpleObjectValues
 /** Response with [updates] to [dataModel] */
 data class UpdatesResponse<DM : IsRootDataModel>(
     override val dataModel: DM,
-    val updates: List<IsUpdateResponse<DM>>
+    val updates: List<IsUpdateResponse<DM>>,
+    val dataFetchType: DataFetchType? = null,
 ) : IsDataResponse<DM> {
     companion object : SimpleQueryModel<UpdatesResponse<*>>() {
         val dataModel by addDataModel({ it.dataModel })

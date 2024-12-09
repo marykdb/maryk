@@ -9,6 +9,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
@@ -107,7 +108,8 @@ internal fun <DM : IsRootDataModel> processGetRequest(
         ValuesResponse(
             dataModel = getRequest.dataModel,
             values = valuesWithMeta,
-            aggregations = aggregator?.toResponse()
+            aggregations = aggregator?.toResponse(),
+            dataFetchType = FetchByKey,
         )
     )
 }

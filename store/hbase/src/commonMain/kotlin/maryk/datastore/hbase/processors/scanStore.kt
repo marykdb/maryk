@@ -7,6 +7,8 @@ import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.DataFetchType
+import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.hbase.helpers.createPartialsRowKeyFilter
@@ -30,17 +32,26 @@ internal fun <DM : IsRootDataModel> scanStore(
     scanRange: KeyScanRanges,
     scanLatestUpdate: Boolean,
     processStoreValue: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
-) {
+): DataFetchType {
+    var overallStartKey: ByteArray? = null
+    var overallEndKey: ByteArray? = null
+
     val scan = Scan().apply {
         addFamily(dataColumnFamily)
         withStartRow(scanRange.startKey, scanRange.includeStart)
         if (tableScan.direction == ASC) {
             val last = scanRange.ranges.last()
             withStopRow(last.end, last.endInclusive)
+
+            overallStartKey = scanRange.ranges.first().getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
+            overallEndKey = last.getDescendingStartKey()
         } else {
             this.isReversed = true
             val last = scanRange.ranges.first()
             withStopRow(last.start, last.startInclusive)
+
+            overallStartKey = scanRange.ranges.last().getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
+            overallEndKey = last.getAscendingStartKey()
         }
 
         val multiFilter = FilterList(FilterList.Operator.MUST_PASS_ALL)
@@ -95,4 +106,10 @@ internal fun <DM : IsRootDataModel> scanStore(
             count++
         }
     }
+
+    return FetchByTableScan(
+        direction = tableScan.direction,
+        startKey = overallStartKey,
+        stopKey = overallEndKey,
+    )
 }

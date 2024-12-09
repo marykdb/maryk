@@ -6,6 +6,7 @@ import maryk.core.models.fromChanges
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.requests.GetUpdatesRequest
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -104,7 +105,8 @@ internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
     storeAction.response.complete(
         UpdatesResponse(
             dataModel = getRequest.dataModel,
-            updates = updates
+            updates = updates,
+            dataFetchType = FetchByKey,
         )
     )
 }

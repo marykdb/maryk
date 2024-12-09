@@ -41,7 +41,7 @@ internal fun <DM : IsRootDataModel> processScanRequest(
         } else columnFamilies.table
         val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnToScan)
 
-        processScan(
+        val dataFetchType = processScan(
             scanRequest,
             dataStore,
             transaction,
@@ -87,13 +87,14 @@ internal fun <DM : IsRootDataModel> processScanRequest(
         }
 
         iterator.close()
-    }
 
-    storeAction.response.complete(
-        ValuesResponse(
-            dataModel = scanRequest.dataModel,
-            values = valuesWithMeta,
-            aggregations = aggregator?.toResponse()
+        storeAction.response.complete(
+            ValuesResponse(
+                dataModel = scanRequest.dataModel,
+                values = valuesWithMeta,
+                aggregations = aggregator?.toResponse(),
+                dataFetchType = dataFetchType,
+            )
         )
-    )
+    }
 }

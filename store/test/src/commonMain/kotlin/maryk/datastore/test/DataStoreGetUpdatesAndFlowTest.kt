@@ -12,6 +12,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.getUpdates
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
@@ -89,6 +90,7 @@ class DataStoreGetUpdatesAndFlowTest(
         )
 
         expect(3) { getResponse.updates.size }
+        expect(FetchByKey) {getResponse.dataFetchType}
 
         assertIs<OrderedKeysUpdate<*>>(getResponse.updates[0]).apply {
             assertEquals(listOf(testKeys[0], testKeys[1]), keys)

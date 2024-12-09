@@ -11,6 +11,8 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.DataFetchType
+import maryk.core.query.responses.FetchByIndexScan
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
@@ -33,7 +35,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
-) {
+): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
 
     val startKey = scanRequest.startKey?.let { startKey ->
@@ -41,6 +43,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
         startValuesGetter.moveToKey(startKey.bytes, dbAccessor, scanRequest.toVersion)
         indexScan.index.toStorageByteArrayForIndex(startValuesGetter, startKey.bytes)
     }
+
+    var overallStartKey: ByteArray? = null
+    var overallStopKey: ByteArray? = null
 
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
@@ -59,6 +64,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
     when (indexScan.direction) {
         ASC -> {
+            overallStartKey = indexScanRange.ranges.first().getAscendingStartKey(startKey, keyScanRange.includeStart)
+            overallStopKey = indexScanRange.ranges.last().getDescendingStartKey()
+
             for (indexRange in indexScanRange.ranges) {
                 val indexStartKey = indexRange.getAscendingStartKey(startKey, keyScanRange.includeStart)
 
@@ -85,6 +93,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
             }
         }
         DESC -> {
+            overallStartKey = indexScanRange.ranges.first().getDescendingStartKey(startKey, keyScanRange.includeStart)
+            overallStopKey = indexScanRange.ranges.last().getAscendingStartKey()
+
             for (indexRange in indexScanRange.ranges.reversed()) {
                 val indexStartKey = indexRange.getDescendingStartKey(startKey, keyScanRange.includeStart)?.let {
                     // If was not highered it was not possible so scan to lastIndex
@@ -121,6 +132,13 @@ internal fun <DM : IsRootDataModel> scanIndex(
             }
         }
     }
+
+    return FetchByIndexScan(
+        index = indexScan.index.referenceStorageByteArray.bytes,
+        direction = indexScan.direction,
+        startKey = overallStartKey,
+        stopKey = overallStopKey,
+    )
 }
 
 /**

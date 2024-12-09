@@ -3,6 +3,7 @@ package maryk.datastore.test
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
+import maryk.core.query.orders.Direction
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
@@ -10,6 +11,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -41,7 +43,7 @@ class DataStoreScanWithMutableValueIndexTest(
             ModelV2ExtraIndex.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertStatusIs< AddSuccess <ModelV2ExtraIndex>>(status)
+            val response = assertStatusIs<AddSuccess<ModelV2ExtraIndex>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -79,6 +81,12 @@ class DataStoreScanWithMutableValueIndexTest(
         )
 
         expect(3) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(-128, 0, 0, 2, 4, *keys[1].bytes),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].apply {
             expect(keys[1]) { key }
@@ -119,6 +127,12 @@ class DataStoreScanWithMutableValueIndexTest(
         )
 
         expect(2) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.DESC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(-128, 0, 0, 2, 4, *keys[1].bytes),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].apply {
             expect(keys[1]) { key }

@@ -9,6 +9,8 @@ import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.DataFetchType
+import maryk.core.query.responses.FetchByIndexScan
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.hbase.helpers.createPartialsQualifierFilter
@@ -17,8 +19,10 @@ import maryk.datastore.hbase.helpers.setTimeRange
 import maryk.datastore.hbase.helpers.toFamilyName
 import maryk.datastore.hbase.trueIndicator
 import maryk.datastore.shared.ScanType
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.nextByteInSameLength
+import maryk.lib.extensions.compare.prevByteInSameLength
 import org.apache.hadoop.hbase.CompareOperator
 import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
 import org.apache.hadoop.hbase.client.AsyncTable
@@ -39,8 +43,11 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
     keyScanRange: KeyScanRanges,
     scanLatestUpdate: Boolean,
     processStoreValue: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
-) {
+): DataFetchType {
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+
+    var overallStartKey: ByteArray? = null
+    var overallStopKey: ByteArray? = null
 
     val scan = Scan().apply {
         addFamily(indexScan.index.toFamilyName())
@@ -55,6 +62,9 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
             } else {
                 withStopRow(last.end, false)
             }
+
+            overallStartKey = first.getAscendingStartKey()
+            overallStopKey = last.getDescendingStartKey()
         } else {
             this.isReversed = true
             val first = indexScanRange.ranges.last()
@@ -66,6 +76,9 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
 
             val last = indexScanRange.ranges.first()
             withStopRow(last.start, last.startInclusive)
+
+            overallStartKey = first.getDescendingStartKey()
+            overallStopKey = last.getAscendingStartKey()
         }
 
         val multiFilter = FilterList(FilterList.Operator.MUST_PASS_ALL)
@@ -132,6 +145,21 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
                             if (scanRequest.startKey!!.bytes.compareToWithOffsetLength(cell.qualifierArray, cell.qualifierOffset, cell.qualifierLength) == 0) {
                                 shouldSkipTillStartKey = false
 
+                                val newRow = result.row + scanRequest.startKey!!.bytes
+                                if (indexScan.direction == ASC) {
+                                    if (overallStartKey == null || overallStartKey.isEmpty() || newRow > overallStartKey) {
+                                        overallStartKey = if (!scanRequest.includeStart) {
+                                            newRow.nextByteInSameLength()
+                                        } else newRow
+                                    }
+                                } else {
+                                    if (overallStartKey == null || overallStartKey.isEmpty() || newRow < overallStartKey) {
+                                        overallStartKey = if (!scanRequest.includeStart) {
+                                            newRow.prevByteInSameLength()
+                                        } else newRow
+                                    }
+                                }
+
                                 if (!scanRequest.includeStart) {
                                     // Skip start key as it is not included
                                     continue
@@ -188,4 +216,11 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
     } finally {
         scanner.close()
     }
+
+    return FetchByIndexScan(
+        index = indexScan.index.referenceStorageByteArray.bytes,
+        direction = indexScan.direction,
+        startKey = overallStartKey,
+        stopKey = overallStopKey,
+    )
 }

@@ -14,7 +14,8 @@ import maryk.core.values.ObjectValues
 data class ValuesResponse<DM : IsRootDataModel>(
     override val dataModel: DM,
     val values: List<ValuesWithMetaData<DM>>,
-    val aggregations: AggregationsResponse? = null
+    val aggregations: AggregationsResponse? = null,
+    val dataFetchType: DataFetchType? = null,
 ) : IsDataResponse<DM> {
     companion object : QueryModel<ValuesResponse<*>, Companion>() {
         val dataModel by addDataModel({ it.dataModel })

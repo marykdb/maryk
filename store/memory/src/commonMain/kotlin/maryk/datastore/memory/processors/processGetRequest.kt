@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.shared.StoreAction
@@ -65,7 +66,8 @@ internal fun <DM : IsRootDataModel> processGetRequest(
         ValuesResponse(
             dataModel = getRequest.dataModel,
             values = valuesWithMeta,
-            aggregations = aggregator?.toResponse()
+            aggregations = aggregator?.toResponse(),
+            dataFetchType = FetchByKey,
         )
     )
 }

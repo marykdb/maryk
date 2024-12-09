@@ -11,6 +11,7 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -77,6 +78,7 @@ class DataStoreGetChangesTest(
         )
 
         expect(2) { getResponse.changes.size }
+        expect(FetchByKey) {getResponse.dataFetchType}
 
         expect(
             listOf(
@@ -107,6 +109,7 @@ class DataStoreGetChangesTest(
                 SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
             )
 
+            expect(FetchByKey) {getResponse.dataFetchType}
             expect(0) { getResponse.changes.size }
         } else {
             assertFailsWith<RequestException> {
@@ -126,7 +129,7 @@ class DataStoreGetChangesTest(
     }
 
     private suspend fun executeGetChangesRequestWithSelect() {
-        val scanResponse = dataStore.execute(
+        val getResponse = dataStore.execute(
             SimpleMarykModel.getChanges(
                 *keys.toTypedArray(),
                 select = SimpleMarykModel.graph {
@@ -135,9 +138,10 @@ class DataStoreGetChangesTest(
             )
         )
 
-        expect(2) { scanResponse.changes.size }
+        expect(2) { getResponse.changes.size }
+        expect(FetchByKey) {getResponse.dataFetchType}
 
-        scanResponse.changes[0].let {
+        getResponse.changes[0].let {
             expect(
                 listOf(
                     VersionedChanges(version = lowestVersion, changes = listOf(

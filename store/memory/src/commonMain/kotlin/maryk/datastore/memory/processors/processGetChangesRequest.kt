@@ -5,6 +5,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.FetchByKey
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
@@ -56,7 +57,8 @@ internal fun <DM : IsRootDataModel> processGetChangesRequest(
     storeAction.response.complete(
         ChangesResponse(
             dataModel = getRequest.dataModel,
-            changes = objectChanges
+            changes = objectChanges,
+            dataFetchType = FetchByKey,
         )
     )
 }

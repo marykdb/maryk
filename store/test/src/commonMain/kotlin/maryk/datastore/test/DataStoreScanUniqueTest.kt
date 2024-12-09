@@ -11,6 +11,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.FetchByUniqueKey
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -20,6 +21,7 @@ import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class DataStoreScanUniqueTest(
@@ -82,6 +84,7 @@ class DataStoreScanUniqueTest(
         )
 
         expect(1) { scanResponse.values.size }
+        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {
             expect(objects[0]) { it.values }
@@ -109,6 +112,8 @@ class DataStoreScanUniqueTest(
         )
 
         expect(0) { scanResponseForLatest.values.size }
+        assertTrue { scanResponseForLatest.dataFetchType is FetchByUniqueKey }
+        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponseForLatest.dataFetchType }
 
         // Only test if all versions are kept
         if (dataStore.keepAllVersions) {

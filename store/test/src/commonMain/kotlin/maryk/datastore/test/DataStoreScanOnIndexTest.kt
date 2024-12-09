@@ -9,6 +9,7 @@ import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThanEquals
 import maryk.core.query.filters.LessThanEquals
+import maryk.core.query.orders.Direction
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
@@ -16,6 +17,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
@@ -86,6 +88,12 @@ class DataStoreScanOnIndexTest(
         )
 
         expect(4) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
 
         // Sorted on severity
         scanResponse.values[0].let {
@@ -112,6 +120,12 @@ class DataStoreScanOnIndexTest(
         )
 
         expect(2) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(0, 2, 2, *keys[1].bytes),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
 
         // Sorted on severity
         scanResponse.values[0].let {
@@ -130,6 +144,13 @@ class DataStoreScanOnIndexTest(
         )
 
         expect(4) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.DESC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
+
 
         // Sorted on severity
         scanResponse.values[0].let {
@@ -156,6 +177,13 @@ class DataStoreScanOnIndexTest(
         )
 
         expect(1) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
+
 
         scanResponse.values[0].let {
             expect(logs[2]) { it.values }
@@ -180,6 +208,13 @@ class DataStoreScanOnIndexTest(
             val scanResponse = dataStore.execute(scan)
 
             expect(4) { scanResponse.values.size }
+            expect(FetchByIndexScan(
+                direction = Direction.ASC,
+                index = byteArrayOf(10, 17),
+                startKey = byteArrayOf(),
+                stopKey = byteArrayOf(),
+            )) { scanResponse.dataFetchType }
+
 
             // Find the values of object that was changed
             val value = scanResponse.values.find { it.key == keys[0] }
@@ -211,6 +246,12 @@ class DataStoreScanOnIndexTest(
             val scanResponse = dataStore.execute(scan)
 
             expect(4) { scanResponse.values.size }
+            expect(FetchByIndexScan(
+                direction = Direction.DESC,
+                index = byteArrayOf(10, 17),
+                startKey = byteArrayOf(),
+                stopKey = byteArrayOf(),
+            )) { scanResponse.dataFetchType }
 
             // Find the values of object that was changed
             val value = scanResponse.values.find { it.key == keys[0] }
@@ -239,6 +280,13 @@ class DataStoreScanOnIndexTest(
         )
 
         expect(4) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
+
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -265,6 +313,12 @@ class DataStoreScanOnIndexTest(
         )
 
         expect(1) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(0, 2),
+            stopKey = byteArrayOf(0, 2),
+        )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {
             expect(logs[1]) { it.values }
@@ -283,6 +337,13 @@ class DataStoreScanOnIndexTest(
         )
 
         expect(2) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(0, 2),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
+
 
         scanResponse.values[0].let {
             expect(logs[1]) { it.values }
@@ -305,6 +366,13 @@ class DataStoreScanOnIndexTest(
         )
 
         expect(3) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.DESC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(0, 2),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
+
 
         scanResponse.values[0].let {
             expect(logs[1]) { it.values }

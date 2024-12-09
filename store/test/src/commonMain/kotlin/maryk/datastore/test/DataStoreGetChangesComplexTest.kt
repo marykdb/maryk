@@ -13,6 +13,7 @@ import maryk.core.query.pairs.withType
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
@@ -85,6 +86,8 @@ class DataStoreGetChangesComplexTest(
         )
 
         expect(1) { getResponse.changes.size }
+
+        expect(FetchByKey) {getResponse.dataFetchType}
 
         expect(
             listOf(

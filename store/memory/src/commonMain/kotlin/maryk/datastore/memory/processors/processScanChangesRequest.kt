@@ -25,7 +25,7 @@ internal fun <DM : IsRootDataModel> processScanChangesRequest(
 
     scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
-    processScan(scanRequest, dataStore, recordFetcher) { record, sortingKey ->
+    val dataFetchType = processScan(scanRequest, dataStore, recordFetcher) { record, sortingKey ->
         scanRequest.dataModel.recordToObjectChanges(
             scanRequest.select,
             scanRequest.fromVersion,
@@ -42,7 +42,8 @@ internal fun <DM : IsRootDataModel> processScanChangesRequest(
     storeAction.response.complete(
         ChangesResponse(
             dataModel = scanRequest.dataModel,
-            changes = objectChanges
+            changes = objectChanges,
+            dataFetchType = dataFetchType,
         )
     )
 }

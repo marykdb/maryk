@@ -1,32 +1,29 @@
 package maryk.datastore.test
 
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
+import maryk.core.query.orders.Direction
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
-import maryk.test.models.CompleteMarykModel
-import maryk.test.models.CompleteMarykModel.number
-import maryk.test.models.MarykEnumEmbedded.E1
-import maryk.test.models.MarykTypeEnum.T2
-import maryk.test.models.SimpleMarykModel
-import maryk.test.models.SimpleMarykTypeEnum.S1
+import maryk.test.models.TestMarykModel
+import maryk.test.models.TestMarykModel.string
 import kotlin.test.expect
 
 class DataStoreScanWithFilterTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
-    private val keys = mutableListOf<Key<CompleteMarykModel>>()
+    private val keys = mutableListOf<Key<TestMarykModel>>()
     private var lowestVersion = ULong.MAX_VALUE
 
     override val allTests = mapOf(
@@ -35,26 +32,22 @@ class DataStoreScanWithFilterTest(
     )
 
     private val objects = arrayOf(
-        CompleteMarykModel(
+        TestMarykModel(
             string="haas",
-            number = 24u,
-            subModel = SimpleMarykModel.run { create(
-                value with "haha"
-            ) },
-            multi=TypedValue(T2, 22),
-            booleanForKey= true,
-            dateForKey= LocalDate(2018, 3, 29),
-            multiForKey= TypedValue(S1, "hii"),
-            enumEmbedded= E1
+            int = 4,
+            uint = 3u,
+            double = 1.5,
+            dateTime = LocalDateTime(2021, 1, 1, 12, 55),
+            bool = false,
         )
     )
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(
-            CompleteMarykModel.add(*objects)
+            TestMarykModel.add(*objects)
         )
         addResponse.statuses.forEach { status ->
-            val response = assertStatusIs<AddSuccess<CompleteMarykModel>>(status)
+            val response = assertStatusIs<AddSuccess<TestMarykModel>>(status)
             keys.add(response.key)
             if (response.version < lowestVersion) {
                 // Add lowest version for scan test
@@ -65,7 +58,7 @@ class DataStoreScanWithFilterTest(
 
     override suspend fun resetData() {
         dataStore.execute(
-            CompleteMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
+            TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
         ).statuses.forEach {
             assertStatusIs<DeleteSuccess<*>>(it)
         }
@@ -75,14 +68,19 @@ class DataStoreScanWithFilterTest(
 
     private suspend fun executeSimpleScanFilterRequest() {
         val scanResponse = dataStore.execute(
-            CompleteMarykModel.scan(
+            TestMarykModel.scan(
                 where = Equals(
-                    number.ref() with 24u
+                    string.ref() with "haas"
                 )
             )
         )
 
         expect(1) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {
             expect(objects[0]) { it.values }
@@ -92,9 +90,9 @@ class DataStoreScanWithFilterTest(
 
     private suspend fun executeSimpleScanFilterWithToVersionRequest() {
         val changeResponse = dataStore.execute(
-            CompleteMarykModel.change(
+            TestMarykModel.change(
                 keys[0].change(
-                    Change(number.ref() with 33u)
+                    Change(string.ref() with "haos")
                 )
             )
         )
@@ -102,21 +100,26 @@ class DataStoreScanWithFilterTest(
         assertStatusIs<ChangeSuccess<*>>(changeResponse.statuses[0])
 
         val scanResponseForLatest = dataStore.execute(
-            CompleteMarykModel.scan(
+            TestMarykModel.scan(
                 where = Equals(
-                    number.ref() with 24u
+                    string.ref() with "haas"
                 )
             )
         )
 
         expect(0) { scanResponseForLatest.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponseForLatest.dataFetchType }
 
         // Only test if all versions are kept
         if (dataStore.keepAllVersions) {
             val scanResponseBeforeChange = dataStore.execute(
-                CompleteMarykModel.scan(
+                TestMarykModel.scan(
                     where = Equals(
-                        number.ref() with 24u
+                        string.ref() with "haas"
                     ),
                     toVersion = lowestVersion
                 )

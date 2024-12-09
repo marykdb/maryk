@@ -76,7 +76,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             }
         }
 
-        processScan(
+        val dataFetchType = processScan(
             scanRequest,
             dataStore,
             dbAccessor,
@@ -226,12 +226,13 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                 }
             }
         }
-    }
 
-    storeAction.response.complete(
-        UpdatesResponse(
-            dataModel = scanRequest.dataModel,
-            updates = updates
+        storeAction.response.complete(
+            UpdatesResponse(
+                dataModel = scanRequest.dataModel,
+                updates = updates,
+                dataFetchType = dataFetchType,
+            )
         )
-    )
+    }
 }

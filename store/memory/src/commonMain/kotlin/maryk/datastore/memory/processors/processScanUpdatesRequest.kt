@@ -45,7 +45,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
 
     var insertionIndex = -1
 
-    processScan(
+    val dataFetchType = processScan(
         scanRequest = scanRequest,
         dataStore = dataStore,
         recordFetcher = recordFetcher,
@@ -179,7 +179,8 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
     storeAction.response.complete(
         UpdatesResponse(
             dataModel = scanRequest.dataModel,
-            updates = updates
+            updates = updates,
+            dataFetchType = dataFetchType,
         )
     )
 }

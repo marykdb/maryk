@@ -6,6 +6,9 @@ import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.DataFetchType
+import maryk.core.query.responses.FetchByKey
+import maryk.core.query.responses.FetchByUniqueKey
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType
@@ -22,19 +25,21 @@ internal fun <DM : IsRootDataModel> processScan(
     recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (DataRecord<DM>, ByteArray?) -> Unit
-) {
+): DataFetchType {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
 
     when {
         // If hard key match then quit with direct record
-        keyScanRange.isSingleKey() ->
+        keyScanRange.isSingleKey() -> {
             dataStore.getByKey(keyScanRange.ranges.first().start)?.let {
                 if (shouldProcessRecord(it, scanRequest, keyScanRange, recordFetcher)) {
                     processRecord(it, null)
                 }
             }
+            return FetchByKey
+        }
         else -> {
             // Process uniques as a fast path
             keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let {
@@ -55,7 +60,7 @@ internal fun <DM : IsRootDataModel> processScan(
                         processRecord(record, null)
                     }
                 }
-                return
+                return FetchByUniqueKey(firstReference.reference)
             }
 
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
@@ -66,7 +71,7 @@ internal fun <DM : IsRootDataModel> processScan(
 
             scanSetup?.invoke(processedScanIndex)
 
-            when (processedScanIndex) {
+            return when (processedScanIndex) {
                 is TableScan -> {
                     scanStore(
                         dataStore,

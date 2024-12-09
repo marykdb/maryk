@@ -8,6 +8,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
@@ -79,6 +80,7 @@ class DataStoreGetSelectTest(
         )
 
         expect(1) { getResponse.values.size }
+        expect(FetchByKey) {getResponse.dataFetchType}
 
         getResponse.values[0].let {
             expect(CompleteMarykModel.values {

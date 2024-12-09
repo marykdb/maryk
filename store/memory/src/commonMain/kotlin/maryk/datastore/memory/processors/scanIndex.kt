@@ -8,6 +8,8 @@ import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.DataFetchType
+import maryk.core.query.responses.FetchByIndexScan
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType.IndexScan
@@ -21,9 +23,12 @@ internal fun <DM : IsRootDataModel> scanIndex(
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
     processStoreValue: (DataRecord<DM>, ByteArray?) -> Unit
-) {
+): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
     val index = dataStore.getOrCreateIndex(indexReference)
+
+    var overallStartKey: ByteArray? = null
+    var overallStopKey: ByteArray? = null
 
     val startKey = scanRequest.startKey?.let { startKey ->
         recordFetcher(scanRequest.dataModel, scanRequest.startKey as Key<*>)?.let { startRecord ->
@@ -37,6 +42,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
     when (indexScan.direction) {
         ASC -> {
+            overallStartKey = indexScanRange.ranges.first().getAscendingStartKey(startKey, keyScanRange.includeStart)
+            overallStopKey = indexScanRange.ranges.last().getDescendingStartKey()
+
             for (indexRange in indexScanRange.ranges) {
                 val indexStartKey = indexRange.getAscendingStartKey(startKey, keyScanRange.includeStart)
 
@@ -80,6 +88,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
             }
         }
         DESC -> {
+            overallStartKey = indexScanRange.ranges.first().getDescendingStartKey(startKey, keyScanRange.includeStart)
+            overallStopKey = indexScanRange.ranges.last().getAscendingStartKey()
+
             for (indexRange in indexScanRange.ranges.reversed()) {
                 val lastKey = indexRange.getDescendingStartKey(startKey, scanRequest.includeStart)?.let {
                     if (indexRange.endInclusive && indexRange.end === it) byteArrayOf() else it
@@ -124,4 +135,11 @@ internal fun <DM : IsRootDataModel> scanIndex(
             }
         }
     }
+
+    return FetchByIndexScan(
+        index = indexScan.index.referenceStorageByteArray.bytes,
+        direction = indexScan.direction,
+        startKey = overallStartKey,
+        stopKey = overallStopKey,
+    )
 }

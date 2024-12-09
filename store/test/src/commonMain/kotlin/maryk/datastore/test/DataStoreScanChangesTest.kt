@@ -9,6 +9,7 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
+import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
@@ -17,6 +18,8 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scanChanges
+import maryk.core.query.responses.FetchByIndexScan
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -84,6 +87,11 @@ class DataStoreScanChangesTest(
         )
 
         assertEquals(3, scanResponse.changes.size)
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(*keys[2].bytes),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].let {
@@ -146,6 +154,11 @@ class DataStoreScanChangesTest(
         )
 
         expect(2) { scanResponse.changes.size }
+        expect(FetchByTableScan(
+            direction = Direction.DESC,
+            startKey = byteArrayOf(*keys[2].bytes),
+            stopKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].apply {
@@ -164,6 +177,12 @@ class DataStoreScanChangesTest(
         )
 
         expect(2) { scanResponse.changes.size }
+        expect(FetchByIndexScan(
+            index = byteArrayOf(10, 17),
+            direction = Direction.ASC,
+            startKey = byteArrayOf(0, 1, 2, *keys[0].bytes),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].apply {
@@ -200,6 +219,11 @@ class DataStoreScanChangesTest(
         )
 
         expect(1) { scanResponse.changes.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(*keys[2].bytes),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].let {
@@ -228,6 +252,11 @@ class DataStoreScanChangesTest(
             )
 
             expect(0) { scanResponse.changes.size }
+            expect(FetchByTableScan(
+                direction = Direction.ASC,
+                startKey = byteArrayOf(*keys[2].bytes),
+                stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            )) { scanResponse.dataFetchType }
         } else {
             assertFailsWith<RequestException> {
                 dataStore.execute(
@@ -243,6 +272,11 @@ class DataStoreScanChangesTest(
         )
 
         expect(0) { scanResponse.changes.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(*keys[2].bytes),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponse.dataFetchType }
     }
 
     private suspend fun executeScanChangesRequestWithSelect() {
@@ -258,6 +292,11 @@ class DataStoreScanChangesTest(
         )
 
         expect(3) { scanResponse.changes.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(*keys[2].bytes),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.changes[0].let {
@@ -320,6 +359,11 @@ class DataStoreScanChangesTest(
             )
 
             expect(3) { scanResponse.changes.size }
+            expect(FetchByTableScan(
+                direction = Direction.ASC,
+                startKey = byteArrayOf(*keys[2].bytes),
+                stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
+            )) { scanResponse.dataFetchType }
 
             // Mind that Log is sorted in reverse, so it goes back in time going forward
             scanResponse.changes[0].let {

@@ -30,7 +30,7 @@ internal fun <DM : IsRootDataModel> processScanRequest(
 
     val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
 
-    processScan(scanRequest, dataStore, recordFetcher) { record, _ ->
+    val dataFetchType = processScan(scanRequest, dataStore, recordFetcher) { record, _ ->
         val toVersion = scanRequest.toVersion?.let { HLC(it) }
 
         val valuesWithMetaData = scanRequest.dataModel.recordToValueWithMeta(
@@ -51,7 +51,8 @@ internal fun <DM : IsRootDataModel> processScanRequest(
         ValuesResponse(
             dataModel = scanRequest.dataModel,
             values = valuesWithMeta,
-            aggregations = aggregator?.toResponse()
+            aggregations = aggregator?.toResponse(),
+            dataFetchType = dataFetchType,
         )
     )
 }

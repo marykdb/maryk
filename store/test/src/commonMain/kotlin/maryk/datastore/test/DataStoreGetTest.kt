@@ -9,6 +9,7 @@ import maryk.core.models.graph
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
@@ -60,6 +61,7 @@ class DataStoreGetTest(
         )
 
         expect(2) { getResponse.values.size }
+        expect(FetchByKey) {getResponse.dataFetchType}
 
         getResponse.values.forEachIndexed { index, value ->
             expect(addRequest.objects[index]) { value.values }
@@ -79,6 +81,7 @@ class DataStoreGetTest(
         )
 
         expect(2) { getResponse.values.size }
+        expect(FetchByKey) {getResponse.dataFetchType}
 
         expect(
             AggregationsResponse(
@@ -108,7 +111,7 @@ class DataStoreGetTest(
     }
 
     private suspend fun executeGetRequestWithSelect() {
-        val scanResponse = dataStore.execute(
+        val getResponse = dataStore.execute(
             SimpleMarykModel.get(
                 *keys.toTypedArray(),
                 select = SimpleMarykModel.graph {
@@ -117,9 +120,10 @@ class DataStoreGetTest(
             )
         )
 
-        expect(2) { scanResponse.values.size }
+        expect(2) { getResponse.values.size }
+        expect(FetchByKey) {getResponse.dataFetchType}
 
-        scanResponse.values[0].let {
+        getResponse.values[0].let {
             expect(SimpleMarykModel.run { create(value with "haha1") }) { it.values }
             expect(keys[0]) { it.key }
         }

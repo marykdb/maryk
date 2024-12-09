@@ -9,6 +9,9 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.DataFetchType
+import maryk.core.query.responses.FetchByKey
+import maryk.core.query.responses.FetchByUniqueKey
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
@@ -34,7 +37,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
     scanSetup: ((ScanType) -> Unit)? = null,
     scanLatestUpdate: Boolean = false,
     processRecord: (Key<DM>, ULong?, Result, ByteArray?) -> Unit,
-) {
+): DataFetchType {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
@@ -43,6 +46,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
         // If hard key match then quit with direct record
         keyScanRange.isSingleKey() -> {
             getByKey(table, keyScanRange.ranges.first().start, scanRequest, processRecord, scanLatestUpdate)
+            return FetchByKey
         }
         else -> {
             // Process uniques as a fast path
@@ -75,7 +79,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
                         getByKey(table, result.getValue(uniquesColumnFamily, valueBytes), scanRequest, processRecord)
                     }
                 }
-                return
+                return FetchByUniqueKey(firstMatcher.reference)
             }
 
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
@@ -86,7 +90,7 @@ internal suspend fun <DM : IsRootDataModel> processScan(
 
             scanSetup?.invoke(processedScanIndex)
 
-            when (processedScanIndex) {
+            return when (processedScanIndex) {
                 is TableScan -> {
                     scanStore(
                         processedScanIndex,

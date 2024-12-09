@@ -67,7 +67,7 @@ internal suspend fun <DM : IsRootDataModel> processScanUpdatesRequest(
     val actualGets = mutableListOf<Get>()
     val keys = mutableListOf<Key<DM>>()
 
-    processScan(
+    val dataFetchType = processScan(
         table,
         scanRequest,
         dataStore,
@@ -243,7 +243,8 @@ internal suspend fun <DM : IsRootDataModel> processScanUpdatesRequest(
     storeAction.response.complete(
         UpdatesResponse(
             dataModel = scanRequest.dataModel,
-            updates = updates
+            updates = updates,
+            dataFetchType = dataFetchType,
         )
     )
 }

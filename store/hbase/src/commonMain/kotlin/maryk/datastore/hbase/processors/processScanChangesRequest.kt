@@ -28,7 +28,7 @@ internal suspend fun <DM : IsRootDataModel> processScanChangesRequest(
 
     val table = dataStore.getTable(scanRequest.dataModel)
 
-    processScan(
+    val dataFetchType = processScan(
         table,
         scanRequest,
         dataStore,
@@ -55,7 +55,8 @@ internal suspend fun <DM : IsRootDataModel> processScanChangesRequest(
     storeAction.response.complete(
         ChangesResponse(
             dataModel = scanRequest.dataModel,
-            changes = objectChanges
+            changes = objectChanges,
+            dataFetchType = dataFetchType,
         )
     )
 }

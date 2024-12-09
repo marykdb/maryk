@@ -37,7 +37,7 @@ internal suspend fun <DM : IsRootDataModel> processScanRequest(
 
     val table = dataStore.getTable(scanRequest.dataModel)
 
-    processScan(
+    val scanType = processScan(
         table,
         scanRequest,
         dataStore,
@@ -72,7 +72,8 @@ internal suspend fun <DM : IsRootDataModel> processScanRequest(
         ValuesResponse(
             dataModel = scanRequest.dataModel,
             values = valuesWithMeta,
-            aggregations = aggregator?.toResponse()
+            aggregations = aggregator?.toResponse(),
+            dataFetchType = scanType,
         )
     )
 }

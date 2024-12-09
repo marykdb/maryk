@@ -8,6 +8,8 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.DataFetchType
+import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -21,11 +23,17 @@ internal fun <DM : IsRootDataModel> scanStore(
     direction: Direction,
     scanRange: KeyScanRanges,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
-) {
+): DataFetchType {
     val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnFamilies.keys)
+
+    var overallStartKey: ByteArray? = null
+    var overallEndKey: ByteArray? = null
 
     when (direction) {
         ASC -> {
+            overallStartKey = scanRange.ranges.first().getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
+            overallEndKey = scanRange.ranges.last().getDescendingStartKey()
+
             for (range in scanRange.ranges) {
                 val startKey = range.getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
 
@@ -67,6 +75,9 @@ internal fun <DM : IsRootDataModel> scanStore(
             }
         }
         DESC -> {
+            overallStartKey = scanRange.ranges.first().getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
+            overallEndKey = scanRange.ranges.last().getAscendingStartKey()
+
             for (range in scanRange.ranges.reversed()) {
                 val lastKey = range.getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
 
@@ -112,4 +123,10 @@ internal fun <DM : IsRootDataModel> scanStore(
     }
 
     iterator.close()
+
+    return FetchByTableScan(
+        direction = direction,
+        startKey = overallStartKey,
+        stopKey = overallEndKey,
+    )
 }

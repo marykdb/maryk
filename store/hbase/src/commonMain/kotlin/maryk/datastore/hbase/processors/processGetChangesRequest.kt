@@ -8,6 +8,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.FetchByKey
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
 import maryk.datastore.hbase.dataColumnFamily
@@ -77,7 +78,8 @@ internal suspend fun <DM : IsRootDataModel> processGetChangesRequest(
     storeAction.response.complete(
         ChangesResponse(
             dataModel = getRequest.dataModel,
-            changes = objectChanges
+            changes = objectChanges,
+            dataFetchType = FetchByKey,
         )
     )
 }

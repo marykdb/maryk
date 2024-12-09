@@ -11,11 +11,14 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.graph
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
+import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.FetchByKey
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
@@ -81,6 +84,11 @@ class DataStoreScanTest(
         )
 
         expect(3) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -113,6 +121,11 @@ class DataStoreScanTest(
         )
 
         expect(3) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+        )) { scanResponse.dataFetchType }
 
         expect(
             AggregationsResponse(
@@ -134,6 +147,11 @@ class DataStoreScanTest(
         )
 
         expect(2) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.DESC,
+            startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
+            stopKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -167,6 +185,11 @@ class DataStoreScanTest(
             )
 
             expect(0) { scanResponse.values.size }
+            expect(FetchByTableScan(
+                direction = Direction.ASC,
+                startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
+                stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+            )) { scanResponse.dataFetchType }
         } else {
             assertFailsWith<RequestException> {
                 dataStore.execute(
@@ -190,6 +213,11 @@ class DataStoreScanTest(
         )
 
         expect(3) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(127, -1, -1, -92, 19, -23, -19, 127, -112, 0, 1),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+        )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
@@ -215,6 +243,11 @@ class DataStoreScanTest(
         )
 
         expect(1) { scanResponse.values.size }
+        expect(FetchByTableScan(
+            direction = Direction.ASC,
+            startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1)
+        )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {
             expect(logs[1]) { it.values }
@@ -234,6 +267,7 @@ class DataStoreScanTest(
         )
 
         expect(1) { scanResponse.values.size }
+        expect(FetchByKey) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {
             expect(logs[0]) { it.values }
@@ -253,5 +287,6 @@ class DataStoreScanTest(
         )
 
         expect(0) { scanResponse.values.size }
+        expect(FetchByKey) { scanResponse.dataFetchType }
     }
 }

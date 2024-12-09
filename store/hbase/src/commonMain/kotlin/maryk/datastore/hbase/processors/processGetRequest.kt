@@ -11,6 +11,7 @@ import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
+import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.hbase.HbaseDataStore
 import maryk.datastore.hbase.MetaColumns
@@ -90,7 +91,8 @@ internal suspend fun <DM : IsRootDataModel> processGetRequest(
         ValuesResponse(
             dataModel = getRequest.dataModel,
             values = valuesWithMeta,
-            aggregations = aggregator?.toResponse()
+            aggregations = aggregator?.toResponse(),
+            dataFetchType = FetchByKey,
         )
     )
 }

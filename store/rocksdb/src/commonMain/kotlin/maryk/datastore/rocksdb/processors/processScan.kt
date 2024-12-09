@@ -8,6 +8,9 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.responses.DataFetchType
+import maryk.core.query.responses.FetchByKey
+import maryk.core.query.responses.FetchByUniqueKey
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -34,7 +37,7 @@ internal fun <DM : IsRootDataModel> processScan(
     readOptions: ReadOptions,
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Key<DM>, ULong, ByteArray?) -> Unit
-) {
+): DataFetchType {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
@@ -54,6 +57,7 @@ internal fun <DM : IsRootDataModel> processScan(
                     }
                 }
             }
+            return FetchByKey
         }
         else -> {
             // Process uniques as a fast path
@@ -80,7 +84,7 @@ internal fun <DM : IsRootDataModel> processScan(
                         }
                     }
                 }
-                return
+                return FetchByUniqueKey(firstMatcher.reference)
             }
 
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
@@ -91,7 +95,7 @@ internal fun <DM : IsRootDataModel> processScan(
 
             scanSetup?.invoke(processedScanIndex)
 
-            when (processedScanIndex) {
+            return when (processedScanIndex) {
                 is TableScan -> {
                     scanStore(
                         dataStore,

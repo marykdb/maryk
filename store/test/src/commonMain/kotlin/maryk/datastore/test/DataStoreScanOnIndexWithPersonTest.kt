@@ -1,11 +1,13 @@
 package maryk.datastore.test
 
 import maryk.core.properties.types.Key
+import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
@@ -61,6 +63,12 @@ class DataStoreScanOnIndexWithPersonTest(
         )
 
         expect(4) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(4, 2, 10, 9, 2, 10, 17),
+            startKey = byteArrayOf(),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
 
         // Sorted on severity
         scanResponse.values[0].let {

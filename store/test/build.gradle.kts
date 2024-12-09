@@ -12,6 +12,8 @@ kotlin {
                 api(projects.store.shared)
                 api(projects.testmodels)
                 api(KotlinX.coroutines.test)
+                api(KotlinX.datetime)
+                api(Kotlin.test)
             }
         }
     }

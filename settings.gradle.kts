@@ -65,7 +65,6 @@ include(
     ":yaml",
     ":core",
     ":dataframe",
-    ":query",
     ":testmodels",
     ":generator",
     ":generator:jvmTest",

@@ -3,116 +3,89 @@
 
 # Maryk: Cross-Platform Data Modeling and Storage
 
-Maryk is a Kotlin Multiplatform project designed for developers to define, validate, serialize, and store data models 
-across various platforms, including iOS, macOS, Linux, Windows, Android, JVM, and JavaScript. Currently, storage is only 
-supported on the JVM.
+Maryk is a **Kotlin Multiplatform** framework for defining, validating, serializing, and storing data models consistently across multiple platforms, including iOS, macOS, Linux, Windows, Android, JVM, and JavaScript. With a fully version-aware data store and flexible querying, Maryk makes it easy to maintain complex data structures while ensuring backward compatibility and efficient data handling.
 
-With Maryk, you can create complex data structures that facilitate efficient and seamless cross-platform communication. 
-It features a fully version-aware data store and query engine, making it an excellent choice for managing and storing 
-data in Kotlin-based applications.
+> **Note**: While Maryk’s data modeling and serialization are cross-platform, its persistant storage layer currently only runs on the JVM.
 
-## Features
+## Key Features
 
-- **Unified Data Modeling**: Define your [data models](core/documentation/datamodel.md) once and use them seamlessly 
-  across all supported platforms. This consistency simplifies the creation of cross-platform applications.
+- **Unified Data Modeling**: Define your [data models](core/documentation/datamodel.md) once and use them everywhere, ensuring a single source of truth across platforms.
 
-- **Flexible Data Model Inheritance**: Maryk allows you to include [properties of different types](core/documentation/properties/properties.md) 
-  within a data model. You can create a generic root data model that accommodates various data models, enabling more 
-  complex and expressive designs.
+- **Flexible Property Types and Inheritance**: Create models with a variety of [property types](core/documentation/properties/properties.md), and reuse model structures to build complex data hierarchies.
 
-- **Built-in Validation**: Easily [validate your data objects](core/documentation/properties/properties.md#validation) 
-  with various constraints such as required fields, uniqueness, min/max values or sizes, and regular expressions. This 
-  ensures your data remains accurate and consistent.
+- **Built-in Validation**: Enforce data quality with [validations](core/documentation/properties/properties.md#validation) such as required fields, uniqueness, min/max constraints, and regex checks.
 
-- **Cross-Platform Serialization**: Supports [JSON, YAML, and Protocol Buffers serialization](core/documentation/serialization.md)
-  formats for efficient data transportation between platforms, allowing seamless communication across different environments.
+- **Cross-Platform Serialization**: Seamlessly [serialize and deserialize](core/documentation/serialization.md) data as JSON, YAML, or Protocol Buffers, facilitating easy communication between clients and services.
 
-- **Data Model Serialization and Compatibility Check**: Maryk enables [serialization of the data models themselves](core/documentation/serialization.md),
-  facilitating compatibility checks between different models on various clients or storage. This feature ensures that 
-  your application's data structures remain compatible even when running against outdated clients.
+- **Model Serialization & Compatibility**: Serialize your schemas themselves and run compatibility checks across different clients, ensuring smooth upgrades and migrations.
 
-- **NoSQL Data Stores**: Efficiently store and query data using provided implementations for NoSQL data stores, such as
-  the [in-memory store](store/memory/README.md) and the [RocksDB backed store](store/rocksdb/README.md).
+- **Version-Aware Storage and Queries**: Store data in [NoSQL data stores](store/memory/README.md) (in-memory/[RocksDB](store/rocksdb/README.md)/[HBase](store/hbase/README.md)) and leverage [versioning](core/documentation/versioning.md) to request historical states, compare past values, and minimize bandwidth by fetching only changed fields.
 
-- **Full Versioning Support**: Built with [full versioning](core/documentation/versioning.md) in mind, Maryk allows easy
-  access to older versions or changes made to your data objects at any time. This capability supports maintaining an 
-  audit trail and provides rich data management features.
-
-- **Efficient Version-Aware Data Querying**: With full versioning support, you can [request only the changed values](core/documentation/query.md)
-  from a specific timeframe or compare two data objects. This reduces bandwidth usage during data synchronization across
-  platforms.
-
-- **Aggregations and Insights**: [Aggregate your data](core/documentation/aggregations.md) to gain valuable insights with
-  built-in functionalities like count, sum, average, min/max value, and other statistical aggregations. Group your data
-  by date units (hour/week/month/year) or by enum value for deeper analysis.
+- **Data Aggregations & Insights**: Perform [aggregations](core/documentation/aggregations.md) (count, sum, average, min/max, grouped by time intervals or enums) for richer analytics and decision-making.
 
 ## Getting Started
 
-To get started with Maryk, follow these steps:
+1. **Add Maryk Core Dependency**:  
+In your `build.gradle.kts`:
+```kotlin
+implementation("io.maryk:maryk-core:<version>")
+```
 
-1. **Add Maryk's Core Dependency**: Include Maryk's core dependency in your Kotlin Multiplatform project Gradle configuration:
+2. **Define Your Data Models**:  
+Create a Kotlin data model:
+```kotlin
+object Person : RootDataModel<Person>() {
+   val firstName by string(index = 1u)
+   val lastName by string(index = 2u)
+   val dateOfBirth by date(index = 3u)
+}
+```
 
-   ```gradle
-   implementation "io.maryk:maryk-core:$version"
-   ```
+3. **Create and Validate Instances**:  
+```kotlin
+val johnSmith = Person.run { create(
+   firstName with "John",
+   lastName with "Smith",
+   dateOfBirth with LocalDate(2017, 12, 5),
+) }
 
-2. **Define Your Data Models**: Create your data models using Kotlin:
+// Validate the object
+Person.validate(johnSmith)
+```
 
-   ```kotlin
-   object Person : RootDataModel<Person>() { 
-       val firstName by string(index = 1u)
-       val lastName by string(index = 2u)
-       val dateOfBirth by date(index = 3u)
-   }
-   ```
+4. **Serialize Your Data Objects**:  
+```kotlin
+// Serialize to JSON
+val json = Person.writeJson(johnSmith)
 
-3. **Create and Validate Data Objects**: Instantiate and validate your data objects:
+// Deserialize from JSON
+val personFromJson = Person.readJson(json)
+```
 
-   ```kotlin
-   val johnSmith = Person.run {
-       create(
-           firstName with "John",
-           lastName with "Smith",
-           dateOfBirth with LocalDate(2017, 12, 5),
-       )
-   }
-
-   // Validate the object
-   Person.validate(johnSmith) 
-   ```
-
-4. **Serialize Your Data Objects**: Serialize your data objects in your preferred format (e.g., JSON, YAML, or ProtoBuf) and deserialize them on another platform:
-
-   ```kotlin
-   User.writeJson(user, jsonWriter)
-
-   val user = User.readJson(reader)
-   ```
-
-5. **Choose an Appropriate Data Store**: Select a suitable data store for efficient storage and querying of your data objects. Available implementations include:
+5. **Choose a Data Store**:
   - [In-memory store](store/memory/README.md) (non-persistent, suitable for testing)
-  - [RocksDB based store](store/rocksdb/README.md) (persistent, suitable for JVM/Android/iOS/Mac)
+  - [RocksDB-based store](store/rocksdb/README.md) (persistent, efficient for local storage)
+  - [HBase-based store](store/hbase/README.md) (persistent and scalable store)
 
 ## Documentation
 
-For more details on how to use Maryk, explore the documentation within the modules of the project repository. All core
-projects are multi-platform Kotlin projects, supporting JS, macOS, iOS, Android, and the JVM.
+For detailed information, check out:
 
-- [core](core/README.md) - The core of Maryk, including models, properties, queries, parsers, and readers.
-- [library](lib/README.md) - A set of multi-platform utilities, such as String, Hex, UUID, and more.
-- [json](json/README.md) - A streaming JSON parser and writer.
-- [yaml](yaml/README.md) - A streaming YAML parser and writer.
-- [generator](generator/README.md) - A code generator for Kotlin and protobuf schemas from YAML Models.
-- [test library](testlib/README.md) - A library to assist with writing tests.
-- [test models](testmodels/README.md) - Maryk Models useful in testing library code.
-- [dataframe](dataframe/README.md) - Provides DataFrame helper functions for Maryk objects.
-- Stores:
-  - [Shared](store/shared/README.md) - Shared code useful in building Maryk stores.
-  - [Memory](store/memory/README.md) - An in-memory store implementation, useful for testing purposes.
-  - [RocksDB](store/rocksdb/README.md) - A RocksDB store implementation.
-  - [test](store/test/README.md) - Common tests to validate the correctness of store implementations.
+- [Core](core/README.md) – Data models, queries, parsers, readers.
+- [Library](lib/README.md) – Shared utilities for things like Strings and ByteArrays.
+- [JSON](json/README.md) & [YAML](yaml/README.md) – Streaming parsers and writers.
+- [Generator](generator/README.md) – Code generation from YAML and JSON models.
+- [Test Library](testlib/README.md) – Testing utilities and helpers.
+- [DataFrame Integration](dataframe/README.md) – DataFrame helper functions for Maryk objects.
+- **Stores**:
+  - [Shared](store/shared/README.md) – Shared logic for building stores.
+  - [Memory](store/memory/README.md) – In-memory store (non-persistent).
+  - [RocksDB](store/rocksdb/README.md) – Persistent, high-performance store.
+  - [HBase](store/hbase/README.md) – Persistent, scalabable high-performance store.
+  - [Tests](store/test/README.md) – Common tests to ensure store reliability.
 
 ## Contributing
 
-We welcome feature requests, issue reports, and merge requests from the community. Feel free to open issues or submit 
-pull requests on the GitHub repository.
+We welcome contributions through feature requests, issue reports, and pull requests.
+
+**Your involvement helps Maryk grow and improve!**

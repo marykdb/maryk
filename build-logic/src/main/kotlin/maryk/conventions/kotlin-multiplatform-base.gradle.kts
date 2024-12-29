@@ -1,7 +1,6 @@
 package maryk.conventions
 
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_1
-import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 
 /**
  * Base configuration for all Kotlin/Multiplatform conventions.
@@ -23,15 +22,6 @@ plugins {
 
 kotlin {
     jvmToolchain(17)
-
-    // configure all Kotlin/JVM Tests to use JUnit Jupiter
-    targets.withType<KotlinJvmTarget>().configureEach {
-        testRuns.configureEach {
-            executionTask.configure {
-                useJUnitPlatform()
-            }
-        }
-    }
 
     compilerOptions {
         apiVersion = KOTLIN_2_1

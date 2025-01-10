@@ -7,8 +7,8 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
-import org.rocksdb.ReadOptions
-import org.rocksdb.RocksDB
+import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.RocksDB
 import kotlin.math.max
 
 /** Reads requested values from the RocksDB [db] for [key] in [columnFamilies] */

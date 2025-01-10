@@ -25,7 +25,7 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
-import org.rocksdb.ReadOptions
+import maryk.rocksdb.ReadOptions
 
 internal fun <DM : IsRootDataModel> scanIndex(
     dataStore: RocksDBDataStore,

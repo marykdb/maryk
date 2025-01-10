@@ -29,7 +29,7 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 import maryk.lib.recyclableByteArray
-import org.rocksdb.RocksDB
+import maryk.rocksdb.rocksDBNotFound
 
 internal typealias ScanUpdatesStoreAction<DM> = StoreAction<DM, ScanUpdatesRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootDataModel>
@@ -189,7 +189,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                         key = removedKey,
                         version = lastResponseVersion,
                         reason = when {
-                            createdVersionLength == RocksDB.NOT_FOUND ->
+                            createdVersionLength == rocksDBNotFound ->
                                 HardDelete
                             isSoftDeleted(dbAccessor, columnFamilies, dataStore.defaultReadOptions, scanRequest.toVersion, removedKey.bytes) ->
                                 SoftDelete
@@ -203,7 +203,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                 for (addedKey in addedKeys) {
                     val valueLength = dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, addedKey.bytes, recyclableByteArray)
                     // Only process it if it was created
-                    if (valueLength != RocksDB.NOT_FOUND) {
+                    if (valueLength != rocksDBNotFound) {
                         val createdVersion = recyclableByteArray.readVersionBytes()
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->

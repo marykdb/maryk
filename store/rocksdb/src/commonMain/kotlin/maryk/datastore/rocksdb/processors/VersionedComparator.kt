@@ -1,10 +1,10 @@
 package maryk.datastore.rocksdb.processors
 
+import maryk.ByteBuffer
 import maryk.datastore.rocksdb.compareToWithOffsetAndLength
 import maryk.datastore.rocksdb.compareWith
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
-import org.rocksdb.ComparatorOptions
-import java.nio.ByteBuffer
+import maryk.rocksdb.ComparatorOptions
 
 /**
  * Takes care that qualifiers are first sorted on their reference/value and then on version
@@ -13,7 +13,7 @@ import java.nio.ByteBuffer
 internal class VersionedComparator(
     comparatorOptions: ComparatorOptions,
     private val keySize: Int
-) : org.rocksdb.AbstractComparator(comparatorOptions) {
+) : maryk.rocksdb.AbstractComparator(comparatorOptions) {
     override fun name() = "maryk.VersionedComparator"
     override fun compare(a: ByteBuffer, b: ByteBuffer): Int {
         return if (a.remaining() > keySize && b.remaining() > keySize) {

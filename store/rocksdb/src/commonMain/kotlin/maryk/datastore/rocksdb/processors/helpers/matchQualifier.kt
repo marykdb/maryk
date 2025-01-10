@@ -10,7 +10,7 @@ import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.references.IsPropertyReference
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
-import org.rocksdb.ReadOptions
+import maryk.rocksdb.ReadOptions
 
 /**
  * Match a qualifier from [reference] on transaction at [columnFamilies] and [readOptions] with [matcher] for [key].

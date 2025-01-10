@@ -98,7 +98,8 @@ import maryk.datastore.shared.readValue
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
-import org.rocksdb.RocksDB
+import maryk.rocksdb.RocksDB
+import maryk.rocksdb.rocksDBNotFound
 
 internal suspend fun <DM : IsRootDataModel> processChange(
     dataStore: RocksDBDataStore,
@@ -122,7 +123,7 @@ internal suspend fun <DM : IsRootDataModel> processChange(
                 recyclableByteArray
             )
 
-        if (valueLength != RocksDB.NOT_FOUND) {
+        if (valueLength != rocksDBNotFound) {
             // Check if version is within range
             if (lastVersion != null) {
                 val lastVersionFromStore =

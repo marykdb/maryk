@@ -77,14 +77,17 @@ import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
-import org.rocksdb.ColumnFamilyDescriptor
-import org.rocksdb.ColumnFamilyHandle
-import org.rocksdb.ColumnFamilyOptions
-import org.rocksdb.ComparatorOptions
-import org.rocksdb.DBOptions
-import org.rocksdb.ReadOptions
-import org.rocksdb.RocksDB
-import org.rocksdb.WriteOptions
+import kotlinx.coroutines.*
+import maryk.rocksdb.ColumnFamilyDescriptor
+import maryk.rocksdb.ColumnFamilyHandle
+import maryk.rocksdb.ColumnFamilyOptions
+import maryk.rocksdb.ComparatorOptions
+import maryk.rocksdb.DBOptions
+import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.RocksDB
+import maryk.rocksdb.WriteOptions
+import maryk.rocksdb.defaultColumnFamily
+import maryk.rocksdb.openRocksDB
 
 class RocksDBDataStore(
     override val keepAllVersions: Boolean = true,
@@ -119,13 +122,13 @@ class RocksDBDataStore(
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
-        descriptors.add(ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY))
+        descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily))
         for ((index, db) in dataModelsById) {
             createColumnFamilyHandles(descriptors, index, db)
         }
 
         val handles = mutableListOf<ColumnFamilyHandle>()
-        this.db = RocksDB.open(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
+        this.db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
 
         try {
             var handleIndex = 1
@@ -325,7 +328,7 @@ class RocksDBDataStore(
 
     override fun close() {
         super.close()
-        db.close()
+
         ownRocksDBOptions?.close()
         defaultWriteOptions.close()
         defaultReadOptions.close()
@@ -333,6 +336,7 @@ class RocksDBDataStore(
         columnFamilyHandlesByDataModelIndex.values.forEach {
             it.close()
         }
+        db.close()
     }
 
     internal fun getColumnFamilies(dbIndex: UInt) =

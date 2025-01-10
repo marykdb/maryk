@@ -1,8 +1,8 @@
 package maryk.datastore.rocksdb
 
 import maryk.core.extensions.bytes.writeVarBytes
-import org.rocksdb.ColumnFamilyDescriptor
-import org.rocksdb.ColumnFamilyOptions
+import maryk.rocksdb.ColumnFamilyDescriptor
+import maryk.rocksdb.ColumnFamilyOptions
 
 internal enum class TableType(
     val byte: Byte

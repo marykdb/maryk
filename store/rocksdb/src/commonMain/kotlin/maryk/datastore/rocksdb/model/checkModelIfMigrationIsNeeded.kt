@@ -10,8 +10,8 @@ import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
-import org.rocksdb.ColumnFamilyHandle
-import org.rocksdb.RocksDB
+import maryk.rocksdb.ColumnFamilyHandle
+import maryk.rocksdb.RocksDB
 
 fun checkModelIfMigrationIsNeeded(
     rocksDB: RocksDB,

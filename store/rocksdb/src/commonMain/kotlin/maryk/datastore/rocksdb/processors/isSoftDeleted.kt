@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.getValue
-import org.rocksdb.ReadOptions
+import maryk.rocksdb.ReadOptions
 
 /** Check if Object is soft deleted */
 internal fun isSoftDeleted(

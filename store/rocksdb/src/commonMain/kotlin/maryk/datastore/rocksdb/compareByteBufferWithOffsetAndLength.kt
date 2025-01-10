@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb
 
-import java.nio.ByteBuffer
+import maryk.ByteBuffer
 
 fun ByteBuffer.compareWith(b: ByteBuffer): Int =
     compareToWithOffsetAndLength(0, remaining(), b, 0, b.remaining())

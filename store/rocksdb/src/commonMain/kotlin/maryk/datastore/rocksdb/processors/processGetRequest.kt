@@ -20,7 +20,7 @@ import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
 import maryk.lib.recyclableByteArray
-import org.rocksdb.RocksDB
+import maryk.rocksdb.rocksDBNotFound
 
 internal typealias GetStoreAction<DM> = StoreAction<DM, GetRequest<DM>, ValuesResponse<DM>>
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
@@ -54,7 +54,7 @@ internal fun <DM : IsRootDataModel> processGetRequest(
                 val valueLength =
                     dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes, recyclableByteArray)
 
-                if (valueLength != RocksDB.NOT_FOUND) {
+                if (valueLength != rocksDBNotFound) {
                     val creationVersion = recyclableByteArray.readVersionBytes()
                     if (
                         getRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, getRequest.toVersion)

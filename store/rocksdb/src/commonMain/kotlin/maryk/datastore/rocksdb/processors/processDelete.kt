@@ -24,8 +24,8 @@ import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.recyclableByteArray
-import org.rocksdb.ReadOptions
-import org.rocksdb.RocksDB
+import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.rocksDBNotFound
 
 internal suspend fun <DM : IsRootDataModel> processDelete(
     dataStore: RocksDBDataStore,
@@ -43,7 +43,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
 
     val exists = if (mayExist) {
         // Really check if item exists
-        dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != RocksDB.NOT_FOUND
+        dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
     } else false
 
     when {
@@ -63,7 +63,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                         recyclableByteArray
                     )
 
-                    if (valueLength != RocksDB.NOT_FOUND) {
+                    if (valueLength != rocksDBNotFound) {
                         val value = if (valueLength > recyclableByteArray.size) {
                             // Large value which did not fit in recyclableByteArray
                             transaction.get(columnFamilies.table, dataStore.defaultReadOptions, referenceAndKey)!!

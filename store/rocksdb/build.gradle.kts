@@ -1,4 +1,6 @@
 import org.gradle.kotlin.dsl.support.serviceOf
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
@@ -9,7 +11,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api("org.rocksdb:rocksdbjni:_")
+                api("io.maryk.rocksdb:rocksdb-multiplatform:_")
 
                 api(projects.lib)
                 api(projects.core)
@@ -24,9 +26,17 @@ kotlin {
             }
         }
     }
+
+    macosArm64 {
+        binaries {
+            executable {
+                freeCompilerArgs += listOf("-g", "-ea")
+            }
+        }
+    }
 }
 
-tasks.withType<Test>().configureEach {
+fun Task.configureTestDatabase() {
     val testDatabaseDir = layout.buildDirectory.dir("test-database")
 
     val fs = serviceOf<FileSystemOperations>()
@@ -37,5 +47,17 @@ tasks.withType<Test>().configureEach {
     }
     doLast("clean test-database dir") {
         fs.delete { delete(testDatabaseDir) }
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    configureTestDatabase()
+}
+
+kotlin.targets.withType<KotlinNativeTarget>().configureEach {
+    binaries.withType<TestExecutable>().all {
+        tasks.findByName("${this.target.name}Test")?.apply {
+            configureTestDatabase()
+        }
     }
 }

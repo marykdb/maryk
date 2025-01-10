@@ -3,8 +3,8 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.recyclableByteArray
-import org.rocksdb.ReadOptions
-import org.rocksdb.RocksDB
+import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.rocksDBNotFound
 
 internal fun readCreationVersion(
     dbAccessor: DBAccessor,
@@ -13,7 +13,7 @@ internal fun readCreationVersion(
     key: ByteArray
 ): ULong? {
     return when (dbAccessor.get(columnFamilies.table, readOptions, key, recyclableByteArray)) {
-        RocksDB.NOT_FOUND -> null
+        rocksDBNotFound -> null
         else -> recyclableByteArray.readVersionBytes()
     }
 }

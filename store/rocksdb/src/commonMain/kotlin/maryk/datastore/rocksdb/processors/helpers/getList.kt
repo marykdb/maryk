@@ -7,7 +7,7 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.shared.readValue
 import maryk.lib.extensions.compare.matchPart
-import org.rocksdb.ReadOptions
+import maryk.rocksdb.ReadOptions
 
 /**
  * Get list from [dbAccessor] at [reference] by reading and collecting all values from DataRecord

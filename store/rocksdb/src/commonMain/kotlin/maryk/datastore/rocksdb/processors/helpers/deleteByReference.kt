@@ -35,7 +35,7 @@ import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.readValue
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.prevByteInSameLength
-import org.rocksdb.ReadOptions
+import maryk.rocksdb.ReadOptions
 
 internal fun <T : Any> deleteByReference(
     transaction: Transaction,

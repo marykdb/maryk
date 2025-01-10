@@ -38,7 +38,7 @@ import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
-import org.rocksdb.RocksDB
+import maryk.rocksdb.rocksDBNotFound
 
 internal suspend fun <DM : IsRootDataModel> processAdd(
     dataStore: RocksDBDataStore,
@@ -58,7 +58,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
         val exists = if (mayExist) {
             // Really check if item exists
-            dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != RocksDB.NOT_FOUND
+            dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
         } else false
 
         if (!exists) {
@@ -94,7 +94,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                             checksBeforeWrite.add {
                                 val uniqueCount =
                                     dataStore.db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
-                                if (uniqueCount != RocksDB.NOT_FOUND) {
+                                if (uniqueCount != rocksDBNotFound) {
                                     throw UniqueException(
                                         reference,
                                         Key<DM>(

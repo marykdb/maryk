@@ -6,7 +6,7 @@ import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
-import org.rocksdb.ReadOptions
+import maryk.rocksdb.ReadOptions
 
 /**
  * Set count for [reference] at [versionBytes] by applying [countChange] to current count read with [readOptions]

@@ -7,8 +7,8 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.recyclableByteArray
-import org.rocksdb.ReadOptions
-import org.rocksdb.RocksDB
+import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.rocksDBNotFound
 
 /**
  * Get a value for a [keyAndReference] from [columnFamilies] with [readOptions].
@@ -25,7 +25,7 @@ internal fun <T: Any> DBAccessor.getValue(
         val valueLength = this.get(columnFamilies.table, readOptions, keyAndReference, recyclableByteArray)
 
         when {
-            valueLength == RocksDB.NOT_FOUND -> null
+            valueLength == rocksDBNotFound -> null
             valueLength > recyclableByteArray.size -> {
                 handleResult(this.get(columnFamilies.table, readOptions, keyAndReference)!!,
                     VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE

@@ -25,8 +25,8 @@ import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.lib.recyclableByteArray
-import org.rocksdb.ReadOptions
-import org.rocksdb.RocksDB
+import maryk.rocksdb.ReadOptions
+import maryk.rocksdb.rocksDBNotFound
 
 /** Walk with [scanRequest] on [dataStore] and do [processRecord] */
 internal fun <DM : IsRootDataModel> processScan(
@@ -50,7 +50,7 @@ internal fun <DM : IsRootDataModel> processScan(
             if (mayExist) {
                 val valueLength = dbAccessor.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
                 // Only process it if it was created
-                if (valueLength != RocksDB.NOT_FOUND) {
+                if (valueLength != rocksDBNotFound) {
                     val createdVersion = recyclableByteArray.readVersionBytes()
                     if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, keyScanRange)) {
                         processRecord(key, createdVersion, null)

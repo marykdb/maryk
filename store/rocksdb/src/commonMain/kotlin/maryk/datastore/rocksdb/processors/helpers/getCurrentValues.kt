@@ -4,7 +4,7 @@ import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.lib.extensions.compare.compareDefinedTo
-import org.rocksdb.ReadOptions
+import maryk.rocksdb.ReadOptions
 
 internal fun getCurrentValues(
     transaction: Transaction,

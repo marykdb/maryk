@@ -4,9 +4,9 @@ import maryk.datastore.rocksdb.ChangeAction.Delete
 import maryk.datastore.rocksdb.ChangeAction.Put
 import maryk.lib.extensions.compare.compareDefinedTo
 import maryk.lib.extensions.compare.compareTo
-import org.rocksdb.ColumnFamilyHandle
-import org.rocksdb.RocksDBException
-import org.rocksdb.RocksIterator
+import maryk.rocksdb.ColumnFamilyHandle
+import maryk.rocksdb.RocksDBException
+import maryk.rocksdb.RocksIterator
 import kotlin.math.max
 
 class TransactionIterator(

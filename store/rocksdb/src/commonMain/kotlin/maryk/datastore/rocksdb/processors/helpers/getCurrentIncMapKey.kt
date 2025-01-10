@@ -6,7 +6,7 @@ import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.compareDefinedTo
-import org.rocksdb.ReadOptions
+import maryk.rocksdb.ReadOptions
 
 /** Get the current incrementing map key for [reference] */
 internal fun getCurrentIncMapKey(

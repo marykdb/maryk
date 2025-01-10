@@ -4,7 +4,7 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.lib.extensions.compare.nextByteInSameLength
-import org.rocksdb.RocksDB
+import maryk.rocksdb.RocksDB
 
 /**
  * Deletes all index values in [rocksDB] at [tableColumnFamilies] for [indexable]

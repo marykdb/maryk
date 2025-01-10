@@ -1,6 +1,6 @@
 package maryk.datastore.rocksdb
 
-import org.rocksdb.RocksIterator
+import maryk.rocksdb.RocksIterator
 
 open class DBIterator(
     internal val rocksIterator: RocksIterator

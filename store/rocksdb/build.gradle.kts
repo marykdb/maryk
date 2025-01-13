@@ -27,13 +27,12 @@ kotlin {
         }
     }
 
-    macosArm64 {
-        binaries {
-            executable {
-                freeCompilerArgs += listOf("-g", "-ea")
-            }
-        }
-    }
+    macosArm64()
+    macosX64()
+    iosArm64()
+    iosSimulatorArm64()
+    linuxX64()
+    linuxArm64()
 }
 
 fun Task.configureTestDatabase() {

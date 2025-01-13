@@ -34,8 +34,8 @@ kotlin {
     // More specialised targets are disabled. They can be enabled, if there is demand for them - just make sure
     // to add `dependsOn(nativeMain)` / `dependsOn(nativeTest)` below for any new targets.
 
-    linuxX64() // not supported by io.maryk.rocksdb:rocksdb-multiplatform
-    linuxArm64() // not supported by kotlinx-datetime
+    linuxX64()
+    linuxArm64()
 
     mingwX64() // not supported by io.maryk.rocksdb:rocksdb-multiplatform
 

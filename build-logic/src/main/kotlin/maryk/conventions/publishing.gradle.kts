@@ -37,7 +37,6 @@ val sonatypeReleaseUrl = isReleaseVersion.map { isRelease ->
 }
 //endregion
 
-
 //region POM convention
 publishing {
     publications.withType<MavenPublication>().configureEach {

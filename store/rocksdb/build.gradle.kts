@@ -4,6 +4,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
+    id("maryk.conventions.kotlin-multiplatform-native-limited")
     id("maryk.conventions.publishing")
 }
 
@@ -26,13 +27,6 @@ kotlin {
             }
         }
     }
-
-    macosArm64()
-    macosX64()
-    iosArm64()
-    iosSimulatorArm64()
-    linuxX64()
-    linuxArm64()
 }
 
 fun Task.configureTestDatabase() {

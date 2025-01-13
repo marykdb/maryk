@@ -4,11 +4,6 @@ Maryk Library is a project that provides multi-platform implementations for esse
 used across Maryk projects. The purpose of this library is to abstract platform-specific
 functionality, ensuring that all core Maryk projects have consistent support for the various platforms it supports.
 
-## Platform Support
-
-At present, Maryk Library provides support for JavaScript (JS), Android, 
-Java Virtual Machine (JVM) and Kotlin/Native with iOS and macOS targets.
-
 ## Dependency
 
 The foundation of Maryk projects is the Kotlin Standard Library, which means that as

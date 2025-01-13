@@ -3,9 +3,9 @@
 
 # Maryk: Cross-Platform Data Modeling and Storage
 
-Maryk is a **Kotlin Multiplatform** framework for defining, validating, serializing, and storing data models consistently across multiple platforms, including iOS, macOS, Linux, Windows, Android, JVM, and JavaScript. With a fully version-aware data store and flexible querying, Maryk makes it easy to maintain complex data structures while ensuring backward compatibility and efficient data handling.
+Maryk is a **Kotlin Multiplatform** framework for defining, validating, serializing, and storing data models consistently across multiple platforms, including **iOS**, **macOS**, **Linux**, **Windows**, **Android**, **JVM**, and **JavaScript**. With a fully version-aware data store and flexible querying, Maryk makes it easy to maintain complex data structures while ensuring backward compatibility and efficient data handling.
 
-> **Note**: While Maryk’s data modeling and serialization are cross-platform, its persistant storage layer currently only runs on the JVM.
+The RocksDB persistence layer is available for the **JVM**, **iOS**, **macOS**, **Android** and **Linux**.
 
 ## Key Features
 

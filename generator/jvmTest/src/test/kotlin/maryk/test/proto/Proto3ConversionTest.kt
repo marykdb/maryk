@@ -102,7 +102,7 @@ class Proto3ConversionTest {
             .setTime(completeObject { time }!!.toMillisecondOfDay())
             .setFixedBytes(ByteString.copyFrom(Bytes("AAECAwQ").bytes))
             .setFlexBytes(ByteString.copyFrom(Bytes("AAECAw").bytes))
-            .setReference(ByteString.copyFrom(Key<SimpleMarykModel>("AAECAQAAECAQAAECAQAAEC").bytes))
+            .setReference(ByteString.copyFrom(Key<SimpleMarykModel>("AAECAQAAECAQAAECAQAAEA").bytes))
             .setSubModel(MarykTestProtos.SimpleMarykModel.newBuilder().setValue("a default"))
             .setValueModel(ByteString.copyFrom(completeObject { valueModel }!!.toByteArray()))
             .addAllList(mutableListOf("ha1", "ha2", "ha3"))

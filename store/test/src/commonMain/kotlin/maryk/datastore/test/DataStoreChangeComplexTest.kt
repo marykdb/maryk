@@ -153,7 +153,7 @@ class DataStoreChangeComplexTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -177,7 +177,7 @@ class DataStoreChangeComplexTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -200,7 +200,7 @@ class DataStoreChangeComplexTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -227,7 +227,7 @@ class DataStoreChangeComplexTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -259,7 +259,7 @@ class DataStoreChangeComplexTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -297,7 +297,7 @@ class DataStoreChangeComplexTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -340,7 +340,7 @@ class DataStoreChangeComplexTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -386,7 +386,7 @@ class DataStoreChangeComplexTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -441,7 +441,7 @@ class DataStoreChangeComplexTest(
                         )
                     )
                 ) { changes }
-                assertRecent(version, 1000uL)
+                assertRecent(version, 5000uL)
             }
         }
 

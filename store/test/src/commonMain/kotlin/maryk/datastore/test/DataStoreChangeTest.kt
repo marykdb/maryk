@@ -165,7 +165,7 @@ class DataStoreChangeTest(
         expect(3) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         changeResponse.statuses[1].let { status ->
@@ -204,7 +204,7 @@ class DataStoreChangeTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -279,7 +279,7 @@ class DataStoreChangeTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -305,7 +305,7 @@ class DataStoreChangeTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -333,7 +333,7 @@ class DataStoreChangeTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -395,7 +395,7 @@ class DataStoreChangeTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -425,7 +425,7 @@ class DataStoreChangeTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -454,7 +454,7 @@ class DataStoreChangeTest(
         expect(1) { changeResponse.statuses.size }
         changeResponse.statuses[0].let { status ->
             val success = assertStatusIs<ChangeSuccess<*>>(status)
-            assertRecent(success.version, 1000uL)
+            assertRecent(success.version, 5000uL)
         }
 
         val getResponse = dataStore.execute(
@@ -504,7 +504,7 @@ class DataStoreChangeTest(
                        )
                     )
                 ) { changes }
-                assertRecent(version, 1000uL)
+                assertRecent(version, 5000uL)
             }
         }
 

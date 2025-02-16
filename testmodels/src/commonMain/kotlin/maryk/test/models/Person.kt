@@ -8,7 +8,7 @@ import maryk.test.models.Person.surname
 
 object Person : RootDataModel<Person>(
     indices = { listOf(
-        Multiple(firstName.ref(), surname.ref())
+        Multiple(surname.ref(), firstName.ref()),
     ) },
 ) {
     val firstName by string(

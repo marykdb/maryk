@@ -22,11 +22,11 @@ internal fun <T : Any> ByteArray.convertToValue(
         } as TypedValue<*, *>
 
         @Suppress("UNCHECKED_CAST")
-        if (typedValue.type != reference.type) {
-            return Unit as T
+        (return if (typedValue.type != reference.type) {
+            Unit as T
         } else {
-            return typedValue.value as T
-        }
+            typedValue.value as T
+        })
     }
 
     @Suppress("UNCHECKED_CAST")

@@ -69,7 +69,11 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> Update<DM
                 }
             }
             is Change<DM> -> {
-                val shouldDelete = changes.firstOrNull { it is ObjectSoftDeleteChange }?.let { (it as ObjectSoftDeleteChange).isDeleted && request.filterSoftDeleted } ?: false
+                val shouldDelete = changes.firstOrNull {
+                    it is ObjectSoftDeleteChange
+                }?.let {
+                    (it as ObjectSoftDeleteChange).isDeleted && request.filterSoftDeleted
+                } == true
 
                 if (currentKeys.contains(key)) {
                     if (shouldDelete) {

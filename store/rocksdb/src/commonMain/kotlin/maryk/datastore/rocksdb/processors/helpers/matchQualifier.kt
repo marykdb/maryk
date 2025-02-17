@@ -85,7 +85,7 @@ internal fun <T : Any> DBAccessor.matchQualifier(
                     OUT_OF_RANGE -> false
                 }
             }
-            return result ?: false
+            return result == true
         }
     }
 }

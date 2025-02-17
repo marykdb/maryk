@@ -3,9 +3,9 @@ package maryk.datastore.shared.updates
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.StorageException
+import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
@@ -39,29 +39,25 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
 
-    internal val sortedValues: AtomicRef<List<ByteArray>>?
-
-    init {
-        this.sortedValues = when(response) {
-            is UpdatesResponse<DM> -> {
-                (response.updates.firstOrNull() as? OrderedKeysUpdate<DM>)?.sortingKeys?.let { sortingKeys ->
-                    atomic(sortingKeys.map { it.bytes }.toList())
-                }
+    internal val sortedValues: AtomicRef<List<ByteArray>>? = when(response) {
+        is UpdatesResponse<DM> -> {
+            (response.updates.firstOrNull() as? OrderedKeysUpdate<DM>)?.sortingKeys?.let { sortingKeys ->
+                atomic(sortingKeys.map { it.bytes }.toList())
             }
-            is ValuesResponse<DM> -> {
-                if (scanType is IndexScan) {
-                    response.values.mapNotNull { valuesWithMeta ->
-                        scanType.index.toStorageByteArrayForIndex(valuesWithMeta.values, valuesWithMeta.key.bytes)
-                    }.let(::atomic)
-                } else null
-            }
-            is ChangesResponse<DM> -> {
-                if (scanType is IndexScan) {
-                    response.changes.mapNotNull { it.sortingKey?.bytes }.let(::atomic)
-                } else null
-            }
-            else -> throw Exception("Unknown response type $response. Cannot process")
         }
+        is ValuesResponse<DM> -> {
+            if (scanType is IndexScan) {
+                response.values.mapNotNull { valuesWithMeta ->
+                    scanType.index.toStorageByteArrayForIndex(valuesWithMeta.values, valuesWithMeta.key.bytes)
+                }.let(::atomic)
+            } else null
+        }
+        is ChangesResponse<DM> -> {
+            if (scanType is IndexScan) {
+                response.changes.mapNotNull { it.sortingKey?.bytes }.let(::atomic)
+            } else null
+        }
+        else -> throw Exception("Unknown response type $response. Cannot process")
     }
 
     override suspend fun process(
@@ -95,7 +91,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                             // Only add when position is smaller than limit and after first key
                             if (newPos != 0 && newPos < request.limit.toInt()) {
                                 sortedValues?.value = buildList {
-                                    addAll(sortedValues!!.value)
+                                    addAll(sortedValues.value)
                                     add(newPos, indexKey)
                                 }
 
@@ -155,7 +151,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         val index = super.removeKey(key)
 
         if (index >= 0) {
-            sortedValues?.value = sortedValues!!.value.filterIndexed { i, _ -> i != index }
+            sortedValues?.value = sortedValues.value.filterIndexed { i, _ -> i != index }
         }
         return index
     }
@@ -197,7 +193,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                             if (existingIndex == -1 || existingIndex != index) { // Is at new index
                                 if (existingIndex >= 0) {
                                     matchingKeys.value = matchingKeys.value.filterIndexed { i, _ -> i != existingIndex }
-                                    sortedValues?.value = sortedValues!!.value.filterIndexed { i, _ -> i != existingIndex }
+                                    sortedValues?.value = sortedValues.value.filterIndexed { i, _ -> i != existingIndex }
                                 }
 
                                 if (index != null) {
@@ -220,7 +216,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                                                 add(adjustedIndex, change.key)
                                             }
                                             sortedValues?.value = buildList {
-                                                addAll(sortedValues!!.value)
+                                                addAll(sortedValues.value)
                                                 add(adjustedIndex, indexUpdate.indexKey.bytes)
                                             }
 

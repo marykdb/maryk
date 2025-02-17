@@ -4,7 +4,7 @@ package maryk.core.aggregations
 interface IsAggregator<T: Any, RQ: IsAggregationRequest<T, *, RS>, RS: IsAggregationResponse> {
     val request: RQ
 
-    /** Aggregate a [value] */
+    /** Aggregate by [valueFetcher] */
     fun aggregate(valueFetcher: ValueByPropertyReference<*>)
 
     /** Convert the aggregator to a response */

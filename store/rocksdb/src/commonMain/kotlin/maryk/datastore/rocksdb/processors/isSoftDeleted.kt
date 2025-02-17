@@ -26,5 +26,5 @@ internal fun isSoftDeleted(
         softDeleteQualifier
     ) { b, o, l ->
         b[l + o - 1] == TRUE
-    } ?: false
+    } == true
 }

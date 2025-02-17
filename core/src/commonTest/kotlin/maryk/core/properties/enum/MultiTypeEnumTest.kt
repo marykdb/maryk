@@ -177,7 +177,7 @@ internal fun compareEnumDefinitions(
     assertEquals(against.name, value.name)
     assertEquals(against.cases().size, value.cases().size)
 
-    val valueMap = value.cases().map { Pair(it.index, it.name) }.toMap()
+    val valueMap = value.cases().associate { Pair(it.index, it.name) }
 
     for (enum in against.cases()) {
         assertEquals(enum.name, valueMap[enum.index])

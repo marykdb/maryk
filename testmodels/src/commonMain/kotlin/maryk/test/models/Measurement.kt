@@ -50,6 +50,6 @@ object Measurement : RootDataModel<Measurement>(
         )
     },
 ) {
-    val timestamp by dateTime(index = 1u, final = true, precision = MILLIS,)
+    val timestamp by dateTime(index = 1u, final = true, precision = MILLIS)
     val measurement by multiType(index = 2u, typeEnum = MeasurementType, final = true)
 }

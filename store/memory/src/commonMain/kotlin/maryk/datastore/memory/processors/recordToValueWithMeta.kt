@@ -2,10 +2,10 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
-import maryk.core.processors.datastore.readStorageToValues
 import maryk.core.models.IsRootDataModel
-import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.models.values
+import maryk.core.processors.datastore.readStorageToValues
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.EmptyValueItems
 import maryk.datastore.memory.records.DataRecord
@@ -33,7 +33,7 @@ internal fun <DM : IsRootDataModel> DM.recordToValueWithMeta(
                 val qualifier = record.values.getOrNull(++valueIndex)?.reference
                 qualifier?.let { q ->
                     resultHandler({ q[it] }, q.size); true
-                } ?: false
+                } == true
             },
             select = select,
             processValue = { _, _ ->

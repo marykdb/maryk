@@ -149,7 +149,7 @@ internal class StringDefinitionTest {
             default: aaa
             minSize: 3
             maxSize: 6
-            regEx: ^[abcd]{3,4}${'$'}
+            regEx: ^[abcd]{3,4}$
 
             """.trimIndent()
         ) {

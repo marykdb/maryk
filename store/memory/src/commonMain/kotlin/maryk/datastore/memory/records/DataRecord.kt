@@ -37,7 +37,7 @@ internal data class DataRecord<DM : IsRootDataModel>(
         getValue<T>(this.values, propertyReference.toStorageByteArray())?.value
 
     fun isDeleted(toVersion: HLC?): Boolean =
-        getValue<Boolean>(this.values, objectSoftDeleteQualifier, toVersion)?.value ?: false
+        getValue<Boolean>(this.values, objectSoftDeleteQualifier, toVersion)?.value == true
 
     fun <T : Any> matchQualifier(
         reference: IsPropertyReference<T, *, *>,
@@ -68,7 +68,7 @@ internal data class DataRecord<DM : IsRootDataModel>(
                             toVersion,
                             recordFetcher,
                             matcher
-                        ) ?: false
+                        ) == true
                     }
                 }
             }
@@ -92,9 +92,12 @@ internal data class DataRecord<DM : IsRootDataModel>(
                             val matches = when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                                 null -> matcher(value.value)
                                 else -> {
-                                    recordFetcher(referencedMatcher.reference.comparablePropertyDefinition.dataModel, value.value as Key<*>)?.
-                                        matchQualifier(referencedMatcher.qualifierMatcher, toVersion, recordFetcher, matcher)
-                                        ?: false
+                                    recordFetcher(
+                                        referencedMatcher.reference.comparablePropertyDefinition.dataModel,
+                                        value.value as Key<*>
+                                    )?.matchQualifier(
+                                        referencedMatcher.qualifierMatcher, toVersion, recordFetcher, matcher
+                                    ) == true
                                 }
                             }
 

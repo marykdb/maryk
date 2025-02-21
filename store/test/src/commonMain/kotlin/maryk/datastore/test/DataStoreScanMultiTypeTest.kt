@@ -4,7 +4,9 @@ import kotlinx.datetime.LocalDateTime
 import maryk.core.models.graph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.invoke
+import maryk.core.query.ValueRange
 import maryk.core.query.filters.Equals
+import maryk.core.query.filters.Range
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.pairs.with
@@ -34,6 +36,7 @@ class DataStoreScanMultiTypeTest(
         "executeScanRequestWithLimit" to ::executeScanRequestWithLimit,
         "executeScanRequestWithSelect" to ::executeScanRequestWithSelect,
         "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
+        "executeSimpleScanFilterOnIndexRequest" to ::executeSimpleScanFilterOnIndexRequest,
         "executeScanOnTypeIndexRequest" to ::executeScanOnTypeIndexRequest
     )
 
@@ -105,7 +108,7 @@ class DataStoreScanMultiTypeTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
         )) { scanResponse.dataFetchType }
 
         // Mind that Measurement is sorted in reverse, so it goes back in time going forward
@@ -132,7 +135,7 @@ class DataStoreScanMultiTypeTest(
         expect(FetchByTableScan(
             direction = Direction.DESC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0),
+            stopKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         )) { scanResponse.dataFetchType }
 
         // Mind that Measurement is sorted in reverse, so it goes back in time going forward
@@ -206,7 +209,7 @@ class DataStoreScanMultiTypeTest(
         expect(FetchByTableScan(
             direction = Direction.ASC,
             startKey = byteArrayOf(*keys[2].bytes),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
         )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
@@ -234,8 +237,8 @@ class DataStoreScanMultiTypeTest(
         expect(2) { scanResponse.values.size }
         expect(FetchByTableScan(
             direction = Direction.ASC,
-            startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0),
-            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1),
+            startKey = byteArrayOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
+            stopKey = byteArrayOf(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1),
         )) { scanResponse.dataFetchType }
 
         // Reverse order
@@ -247,6 +250,30 @@ class DataStoreScanMultiTypeTest(
         scanResponse.values[1].let {
             expect(measurements[0]) { it.values }
             expect(keys[0]) { it.key }
+        }
+    }
+
+    private suspend fun executeSimpleScanFilterOnIndexRequest() {
+        val scanResponse = dataStore.execute(
+            Measurement.scan(
+                where = Range(
+                    Measurement { measurement.withType(MeasurementType.Length) { lengthInCm::ref } } with ValueRange(170u, 180u),
+                )
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            index = byteArrayOf(26, 17, 21, 9),
+            direction = Direction.ASC,
+            startKey = byteArrayOf(0, -86),
+            stopKey = byteArrayOf(0, -76),
+        )) { scanResponse.dataFetchType }
+
+        // Reverse order
+        scanResponse.values[0].let {
+            expect(measurements[3]) { it.values }
+            expect(keys[3]) { it.key }
         }
     }
 }

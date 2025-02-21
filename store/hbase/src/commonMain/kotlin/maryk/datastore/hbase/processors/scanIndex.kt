@@ -3,6 +3,7 @@ package maryk.datastore.hbase.processors
 import kotlinx.coroutines.future.await
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
+import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
@@ -41,10 +42,11 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
     table: AsyncTable<AdvancedScanResultConsumer>,
     scanRequest: IsScanRequest<DM, *>,
     keyScanRange: KeyScanRanges,
+    indexScanRanges: IndexableScanRanges?,
     scanLatestUpdate: Boolean,
     processStoreValue: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
 ): DataFetchType {
-    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    val indexScanRange = indexScanRanges ?: indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
     var overallStartKey: ByteArray? = null
     var overallStopKey: ByteArray? = null
@@ -87,15 +89,19 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
             multiFilter.addFilter(
                 MultiRowRangeFilter(
                     indexScanRange.ranges.map { range ->
-                        RowRange(range.start, range.startInclusive, range.end, range.endInclusive)
+                        RowRange(
+                            range.start,
+                            range.startInclusive,
+                            if (range.endInclusive) range.end?.nextByteInSameLength() else range.end,
+                            false
+                        )
                     }
                 )
             )
         }
 
         indexScanRange.createPartialsRowKeyFilter()?.let(multiFilter::addFilter)
-
-        indexScanRange.keyScanRange.createPartialsQualifierFilter()
+        indexScanRange.keyScanRange.createPartialsQualifierFilter()?.let(multiFilter::addFilter)
 
         // Do not add any deleted values
         multiFilter.addFilter(ValueFilter(CompareOperator.EQUAL, BinaryComparator(trueIndicator)))
@@ -179,6 +185,7 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
                                 val allFilters = FilterList(FilterList.Operator.MUST_PASS_ALL)
                                 keyScanRange.createPartialsRowKeyFilter()?.let(allFilters::addFilter)
                                 scanRequest.createFilter()?.let(allFilters::addFilter)
+
                                 if (allFilters.filters.isNotEmpty()) {
                                     setFilter(allFilters)
                                 }
@@ -187,7 +194,8 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
                                     if (scanRequest.toVersion != null) {
                                         setTimeRange(0, scanRequest.toVersion!!.toLong() + 1)
                                     }
-                                    addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
+                                    // Dont scan for specific column as it doesnt filter anymore.
+                                    // addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray)
                                 } else {
                                     setTimeRange(scanRequest)
                                 }

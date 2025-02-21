@@ -14,6 +14,7 @@ import maryk.datastore.hbase.dataColumnFamily
 import maryk.datastore.hbase.helpers.createPartialsRowKeyFilter
 import maryk.datastore.hbase.helpers.setTimeRange
 import maryk.datastore.shared.ScanType
+import maryk.lib.extensions.compare.nextByteInSameLength
 import org.apache.hadoop.hbase.CompareOperator
 import org.apache.hadoop.hbase.client.AdvancedScanResultConsumer
 import org.apache.hadoop.hbase.client.AsyncTable
@@ -60,7 +61,12 @@ internal fun <DM : IsRootDataModel> scanStore(
             multiFilter.addFilter(
                 MultiRowRangeFilter(
                     scanRange.ranges.map { range ->
-                        RowRange(range.start, range.startInclusive, range.end, range.endInclusive)
+                        RowRange(
+                            range.start,
+                            range.startInclusive,
+                            if (range.endInclusive) range.end?.nextByteInSameLength() else range.end,
+                            false
+                        )
                     }
                 )
             )

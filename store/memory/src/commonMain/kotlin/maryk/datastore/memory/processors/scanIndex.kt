@@ -2,6 +2,7 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
+import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
@@ -22,6 +23,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
     recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
+    indexableScanRanges: IndexableScanRanges?,
     processStoreValue: (DataRecord<DM>, ByteArray?) -> Unit
 ): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
@@ -36,7 +38,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
         }
     }
 
-    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    val indexScanRange = indexableScanRanges ?: indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
     val toVersion = scanRequest.toVersion?.let { HLC(it) }
 

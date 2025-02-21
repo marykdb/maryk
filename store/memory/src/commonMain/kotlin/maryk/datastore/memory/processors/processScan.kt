@@ -65,9 +65,9 @@ internal fun <DM : IsRootDataModel> processScan(
 
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
 
-            val processedScanIndex = if (scanIndex is TableScan) {
-                scanRequest.dataModel.optimizeTableScan(scanIndex, keyScanRange.equalPairs)
-            } else scanIndex
+            val (processedScanIndex, indexScanRanges) = if (scanIndex is TableScan) {
+                scanRequest.dataModel.optimizeTableScan(scanIndex, scanRequest.where, keyScanRange)
+            } else scanIndex to null
 
             scanSetup?.invoke(processedScanIndex)
 
@@ -89,6 +89,7 @@ internal fun <DM : IsRootDataModel> processScan(
                         recordFetcher,
                         processedScanIndex,
                         keyScanRange,
+                        indexScanRanges,
                         processRecord
                     )
                 }

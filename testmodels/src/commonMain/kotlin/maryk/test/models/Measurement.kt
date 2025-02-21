@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.number
 import maryk.core.properties.enum.IndexedEnumImpl
@@ -16,6 +17,7 @@ import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.types.TimePrecision.MILLIS
 import maryk.core.properties.types.numeric.UInt16
 import maryk.core.values.Values
+import maryk.test.models.Measurement.measurement
 import maryk.test.models.Measurement.timestamp
 
 object WeightMeasurement : DataModel<WeightMeasurement>() {
@@ -41,6 +43,8 @@ object Measurement : RootDataModel<Measurement>(
     keyDefinition = {
         Multiple(
             Reversed(timestamp.ref()),
+            measurement.typeRef(),
+            UUIDKey,
         )
     },
     indices = {

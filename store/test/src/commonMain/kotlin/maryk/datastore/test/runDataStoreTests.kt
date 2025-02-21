@@ -55,11 +55,17 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
     for ((testClassName, testClassConstructor) in allTestClasses) {
         val testClass = testClassConstructor(dataStore)
 
-        println(testClassName)
+        var hasPrintedTestClassName = false
+
         for ((testName, test) in testClass.allTests) {
             if (runOnlyTest != null && testName != runOnlyTest) {
                 continue
             }
+            if (!hasPrintedTestClassName) {
+                println(testClassName)
+                hasPrintedTestClassName = true
+            }
+
             println("- $testName")
 
             var phase = "init"

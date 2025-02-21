@@ -4,43 +4,43 @@ import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
 import maryk.core.processors.datastore.findByteIndexByPartIndex
 import maryk.lib.extensions.compare.matchPart
 
-sealed class IsIndexPartialToMatch {
-    abstract val indexableIndex: Int
-    abstract val fromByteIndex: Int?
-    abstract val keySize: Int
+sealed interface IsIndexPartialToMatch {
+    val indexableIndex: Int
+    val fromByteIndex: Int?
+    val keySize: Int
 
     /**
      * Returns byte index to start reading for [bytes]
      * If this partial is for key bytes it already has the value or otherwise is for flex key then will calculate value
      */
-    protected fun getByteIndex(bytes: ByteArray) = fromByteIndex ?: findByteIndexByPartIndex(
+    fun getByteIndex(bytes: ByteArray) = fromByteIndex ?: findByteIndexByPartIndex(
         indexableIndex,
         bytes,
         keySize
     )
 
-    abstract fun match(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset): Boolean
+    fun match(bytes: ByteArray, offset: Int = 0, length: Int = bytes.size - offset): Boolean
 }
 
 /** Matcher for exact matches */
-class IndexPartialToMatch(
+data class IndexPartialToMatch(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
     val toMatch: ByteArray,
     val partialMatch: Boolean = false
-) : IsIndexPartialToMatch() {
+) : IsIndexPartialToMatch {
     /** Matches [bytes] to partial and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int, length: Int) =
         bytes.matchPart(offset + getByteIndex(bytes), toMatch, length)
 }
 
 /** Matcher for regex matches */
-class IndexPartialToRegexMatch(
+data class IndexPartialToRegexMatch(
     override val indexableIndex: Int,
     override val keySize: Int,
     val regex: Regex
-) : IsIndexPartialToMatch() {
+) : IsIndexPartialToMatch {
     // Cannot be set because is string, so needs to be encoded
     override val fromByteIndex: Int? = null
 
@@ -53,25 +53,25 @@ class IndexPartialToRegexMatch(
 }
 
 /** Size matcher for exact matches in partials */
-class IndexPartialSizeToMatch(
+data class IndexPartialSizeToMatch(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
     val size: Int
-) : IsIndexPartialToMatch() {
+) : IsIndexPartialToMatch {
     /** Matches size encoded in [bytes] to partial size and returns true if matches */
     override fun match(bytes: ByteArray, offset: Int, length: Int) =
         findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize).second == size
 }
 
 /** Partial [toBeSmaller] for indexable part from [fromByteIndex]. If [inclusive] then include value itself too  */
-class IndexPartialToBeBigger(
+data class IndexPartialToBeBigger(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
     val toBeSmaller: ByteArray,
     val inclusive: Boolean
-) : IsIndexPartialToMatch() {
+) : IsIndexPartialToMatch {
     /** Matches [bytes] to be bigger to partial and returns true if is bigger */
     override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         val fromIndex = offset + getByteIndex(bytes)
@@ -89,13 +89,13 @@ class IndexPartialToBeBigger(
 }
 
 /** Partial [toBeBigger] for indexable part from [fromByteIndex]. If [inclusive] then include value itself too */
-class IndexPartialToBeSmaller(
+data class IndexPartialToBeSmaller(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
     val toBeBigger: ByteArray,
     val inclusive: Boolean
-) : IsIndexPartialToMatch() {
+) : IsIndexPartialToMatch {
     /** Matches [bytes] to be smaller to partial and returns true if is smaller */
     override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         val fromIndex = offset + getByteIndex(bytes)
@@ -113,12 +113,12 @@ class IndexPartialToBeSmaller(
 }
 
 /** Partial for indexable to be one of given bytearrays. [toBeOneOf] needs to be sorted */
-class IndexPartialToBeOneOf(
+data class IndexPartialToBeOneOf(
     override val indexableIndex: Int,
     override val fromByteIndex: Int?,
     override val keySize: Int,
     val toBeOneOf: List<ByteArray>
-) : IsIndexPartialToMatch() {
+) : IsIndexPartialToMatch {
     /** Matches [bytes] to be one of partials in list */
     override fun match(bytes: ByteArray, offset: Int, length: Int) =
         toBeOneOf.any { bytes.matchPart(offset + getByteIndex(bytes), it, length) }

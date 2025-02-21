@@ -8,7 +8,7 @@ import maryk.lib.extensions.compare.prevByteInSameLength
 /**
  * Defines a range to scan.
  */
-class ScanRange internal constructor(
+data class ScanRange internal constructor(
     val start: ByteArray,
     val startInclusive: Boolean,
     val end: ByteArray? = null,

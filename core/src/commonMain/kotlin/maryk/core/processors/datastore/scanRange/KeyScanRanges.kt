@@ -6,15 +6,15 @@ import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareDefinedTo
 
 /** Defines ranges to scan for key. Also contains partial matches to check. */
-class KeyScanRanges internal constructor(
-    ranges: List<ScanRange>,
-    partialMatches: List<IsIndexPartialToMatch>? = null,
+data class KeyScanRanges internal constructor(
+    override val ranges: List<ScanRange>,
+    override val partialMatches: List<IsIndexPartialToMatch>? = null,
     val startKey: ByteArray?,
     val includeStart: Boolean,
     val keySize: Int,
     val equalPairs: List<ReferenceValuePair<Any>>,
     val uniques: List<UniqueToMatch>? = null
-): ScanRanges(ranges, partialMatches) {
+): ScanRanges {
     fun keyBeforeStart(key: ByteArray, offset: Int = 0) =
         startKey?.compareDefinedTo(key, offset, keySize)?.let { it > 0 } == true
 

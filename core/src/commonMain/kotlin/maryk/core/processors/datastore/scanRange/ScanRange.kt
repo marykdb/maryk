@@ -16,14 +16,22 @@ data class ScanRange internal constructor(
 ) {
     /** Checks if [key] is before start of this scan range */
     fun keyBeforeStart(key: ByteArray, offset: Int = 0, length: Int = key.size - offset) =
-        start.compareDefinedTo(key, offset, length).let {
-            if (startInclusive) it > 0 else it >= 0
+        if (start.isEmpty()) {
+            false
+        } else {
+            start.compareDefinedTo(key, offset, length).let {
+                if (startInclusive) it > 0 else it >= 0
+            }
         }
 
-    /** Checks if [key] is after the end of this range start of this scan range */
+    /** Checks if [key] is after the end of this range end of this scan range */
     fun keyOutOfRange(key: ByteArray, offset: Int = 0, length: Int = key.size - offset) = end?.let {
-        end.compareDefinedTo(key, offset, length).let {
-            if (endInclusive) it < 0 else it <= 0
+        if (end.isEmpty()) {
+            false
+        } else {
+            end.compareDefinedTo(key, offset, length).let {
+                if (endInclusive) it < 0 else it <= 0
+            }
         }
     } == true
 

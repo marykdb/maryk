@@ -52,8 +52,10 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
         }
     }
 
-    if (keyScanRanges.equalBytes < (this.Meta.minimumKeyScanByteRange ?: this.Meta.keyByteSize.toUInt())) {
-        throw StorageException("Key scan bytes (${keyScanRanges.equalBytes}) must be more or equal than minimum key scan bytes (${this.Meta.minimumKeyScanByteRange}). Or set an order to guide scan to an index")
+    val minimumKeyScanByteRange = this.Meta.minimumKeyScanByteRange ?: this.Meta.keyByteSize.toUInt()
+
+    if (keyScanRanges.equalBytes < minimumKeyScanByteRange) {
+        throw StorageException("Key scan bytes (${keyScanRanges.equalBytes}) must be more or equal than minimum key scan bytes ($minimumKeyScanByteRange). Or set an order to guide scan to an index")
     }
 
     return tableScan

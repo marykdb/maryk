@@ -93,7 +93,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
             for (indexRange in indexScanRange.ranges.reversed()) {
                 val lastKey = indexRange.getDescendingStartKey(startKey, scanRequest.includeStart)?.let {
-                    if (indexRange.endInclusive && indexRange.end === it) byteArrayOf() else it
+                    if (indexRange.endInclusive && indexRange.end === it) null else it
                 }
 
                 val startIndex = lastKey?.let { endRange ->

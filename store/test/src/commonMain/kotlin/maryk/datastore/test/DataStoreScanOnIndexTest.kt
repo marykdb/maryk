@@ -317,7 +317,7 @@ class DataStoreScanOnIndexTest(
             direction = Direction.ASC,
             index = byteArrayOf(10, 17),
             startKey = byteArrayOf(0, 2),
-            stopKey = byteArrayOf(0, 2),
+            stopKey = byteArrayOf(0, 3),
         )) { scanResponse.dataFetchType }
 
         scanResponse.values[0].let {
@@ -369,10 +369,9 @@ class DataStoreScanOnIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.DESC,
             index = byteArrayOf(10, 17),
-            startKey = byteArrayOf(0, 2),
+            startKey = byteArrayOf(0, 3),
             stopKey = byteArrayOf(),
         )) { scanResponse.dataFetchType }
-
 
         scanResponse.values[0].let {
             expect(logs[1]) { it.values }

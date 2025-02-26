@@ -108,7 +108,7 @@ class DataStoreScanOnIndexWithPersonTest(
             direction = Direction.ASC,
             index = byteArrayOf(4, 2, 10, 17, 2, 10, 9),
             startKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115),
-            stopKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115),
+            stopKey = byteArrayOf(75, 97, 115, 116, 101, 110, 116),
         )) { scanResponse.dataFetchType }
 
         // Sorted on name
@@ -137,7 +137,7 @@ class DataStoreScanOnIndexWithPersonTest(
             direction = Direction.ASC,
             index = byteArrayOf(4, 2, 10, 17, 2, 10, 9),
             startKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 108),
-            stopKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 108),
+            stopKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 109),
         )) { scanResponse.dataFetchType }
 
         // Sorted on name

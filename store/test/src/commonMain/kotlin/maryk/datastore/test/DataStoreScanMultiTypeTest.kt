@@ -172,7 +172,7 @@ class DataStoreScanMultiTypeTest(
             index = byteArrayOf(17),
             direction = Direction.ASC,
             startKey = byteArrayOf(0, -36),
-            stopKey = byteArrayOf(0, -36),
+            stopKey = byteArrayOf(0, -35),
         )) { scanResponse.dataFetchType }
 
         // Mind that Measurement is sorted in reverse, so it goes back in time going forward
@@ -269,7 +269,7 @@ class DataStoreScanMultiTypeTest(
             index = byteArrayOf(26, 17, 21, 9),
             direction = Direction.ASC,
             startKey = byteArrayOf(0, -86),
-            stopKey = byteArrayOf(0, -76),
+            stopKey = byteArrayOf(0, -75),
         )) { scanResponse.dataFetchType }
 
         // Reverse order

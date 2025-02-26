@@ -40,8 +40,8 @@ data class ScanRange internal constructor(
         when {
             startKey != null && (end == null || end.isEmpty() || startKey < end) ->
                 if (inclusiveStartKey) startKey else startKey.prevByteInSameLength()
-            endInclusive -> end
-            else -> end?.prevByteInSameLength()
+            endInclusive -> end?.nextByteInSameLength()
+            else -> end
         }
 
     /** Get the ascending start key for scans */

@@ -55,7 +55,7 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
     val minimumKeyScanByteRange = this.Meta.minimumKeyScanByteRange ?: this.Meta.keyByteSize.toUInt()
 
     if (keyScanRanges.equalBytes < minimumKeyScanByteRange) {
-        throw StorageException("Key scan bytes (${keyScanRanges.equalBytes}) must be more or equal than minimum key scan bytes ($minimumKeyScanByteRange). Or set an order to guide scan to an index")
+        throw StorageException("${this.Meta.name}: Key scan bytes (${keyScanRanges.equalBytes}) must be more or equal than minimum key scan bytes ($minimumKeyScanByteRange). Or set an order to guide scan to an index")
     }
 
     return tableScan

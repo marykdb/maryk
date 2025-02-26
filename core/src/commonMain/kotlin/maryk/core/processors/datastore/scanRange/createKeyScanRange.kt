@@ -29,7 +29,7 @@ fun <DM : IsRootDataModel> DM.createScanRange(filter: IsFilter?, startKey: ByteA
         uniqueFilters
     )
 
-    keyParts.sortBy { it.fromByteIndex }
+    keyParts.sortBy { it.indexableIndex }
 
     return createScanRangeFromParts(startKey, includeStart, keyParts, equalPairs, uniqueFilters)
 }
@@ -53,6 +53,7 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
     var keyIndex = -1
     var startInclusive = true
     var endInclusive = true
+    var equalBytes = 0u
 
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
     for (keyPart in keyParts) {
@@ -136,6 +137,26 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
         addByte(end, if (endInclusive) MAX_BYTE else 0)
     }
 
+    // Find all matching bytes
+    val keyLength = minOf(start.first().size, end.first().size)
+    for (byteIndex in 0 until keyLength) {
+        val expected = start[0].getOrNull(byteIndex) ?: break
+        var allEqual = true
+        for (index in start.indices) {
+            val startByte = start[index].getOrNull(byteIndex)
+            val endByte = end[index].getOrNull(byteIndex)
+            if (startByte != expected || endByte != expected) {
+                allEqual = false
+                break
+            }
+        }
+        if (allEqual) {
+            equalBytes++
+        } else {
+            break
+        }
+    }
+
     return KeyScanRanges(
         ranges = createRanges(start, end, startInclusive, endInclusive),
         partialMatches = keyParts,
@@ -143,6 +164,7 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
         uniques = uniqueFilters,
         keySize = this.Meta.keyByteSize,
         startKey = startKey,
-        includeStart = includeStart
+        includeStart = includeStart,
+        equalBytes = equalBytes,
     )
 }

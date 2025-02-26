@@ -108,6 +108,7 @@ internal class RootDataModelTest {
               "indices": [["Multiple", [["Reversed", "dateTime"], ["Ref", "enum"], ["Ref", "int"]]], ["Ref", "int"], ["Reversed", "double"], ["Ref", "multi.*"], ["Ref", "uint"]],
               "reservedIndices": [99],
               "reservedNames": ["reserved"],
+              "minimumKeyScanByteRange": 0,
               "properties": [{
                 "index": 1,
                 "name": "string",
@@ -381,6 +382,7 @@ internal class RootDataModelTest {
             - !Ref uint
             reservedIndices: [99]
             reservedNames: [reserved]
+            minimumKeyScanByteRange: 0
             ? 1: [string, str, stringValue]
             : !String
               required: true

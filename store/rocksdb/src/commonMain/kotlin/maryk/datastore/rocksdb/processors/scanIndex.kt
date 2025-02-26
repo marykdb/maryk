@@ -34,7 +34,6 @@ internal fun <DM : IsRootDataModel> scanIndex(
     scanRequest: IsScanRequest<DM, *>,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
-    indexScanRanges: IndexableScanRanges?,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
@@ -48,7 +47,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
     var overallStartKey: ByteArray? = null
     var overallStopKey: ByteArray? = null
 
-    val indexScanRange = indexScanRanges ?: indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
     val indexColumnHandle = if(scanRequest.toVersion == null) {
         columnFamilies.index

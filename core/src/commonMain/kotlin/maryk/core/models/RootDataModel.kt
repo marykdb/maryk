@@ -5,7 +5,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.models.definitions.RootDataModelDefinition
-import maryk.core.models.definitions.RootDataModelDefinition.Model.iterator
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
@@ -49,6 +48,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
         reservedIndices: List<UInt>? = null,
         reservedNames: List<String>? = null,
         name: String? = null,
+        minimumKeyScanByteRange: UInt? = null,
     ) : this({ passedName ->
         RootDataModelDefinition(
             name = name ?: passedName ?: throw DefNotFoundException("RootDataModel should have a name. Please define in a class instead of anonymous object or pass name as property."),
@@ -57,6 +57,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
             indices = indices?.invoke(),
             reservedIndices = reservedIndices,
             reservedNames = reservedNames,
+            minimumKeyScanByteRange = minimumKeyScanByteRange,
         )
     })
 

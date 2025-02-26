@@ -41,7 +41,8 @@ class IndexableScanRangesTest {
         startKey = null,
         includeStart = true,
         equalPairs = listOf(),
-        keySize = 23
+        keySize = 23,
+        equalBytes = 0u,
     )
 
     private val indexable = Multiple(

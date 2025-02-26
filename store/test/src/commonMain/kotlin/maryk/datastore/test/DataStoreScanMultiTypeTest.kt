@@ -9,6 +9,7 @@ import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Range
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Order.Companion.descending
+import maryk.core.query.orders.ascending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
@@ -258,7 +259,8 @@ class DataStoreScanMultiTypeTest(
             Measurement.scan(
                 where = Range(
                     Measurement { measurement.withType(MeasurementType.Length) { lengthInCm::ref } } with ValueRange(170u, 180u),
-                )
+                ),
+                order = Measurement { measurement.withType(MeasurementType.Length) { lengthInCm::ref } }.ascending()
             )
         )
 

@@ -1,8 +1,8 @@
 package maryk.core.processors.datastore.scanRange
 
 import kotlinx.datetime.LocalDateTime
-import maryk.core.processors.datastore.matchers.IndexPartialToMatch
 import maryk.core.models.key
+import maryk.core.processors.datastore.matchers.IndexPartialToMatch
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThan
@@ -41,7 +41,8 @@ class KeyScanRangesTest {
         uniques = listOf(),
         startKey = null,
         includeStart = true,
-        keySize = 5
+        keySize = 5,
+        equalBytes = 0u,
     )
 
     @Test
@@ -69,6 +70,8 @@ class KeyScanRangesTest {
         )
 
         val scanRange = Log.createScanRange(filter, null)
+
+        assertEquals(9u, scanRange.equalBytes)
 
         expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHex() }
         assertTrue { scanRange.ranges.first().startInclusive }
@@ -104,6 +107,8 @@ class KeyScanRangesTest {
 
         val scanRange1 = Log.createScanRange(filter, logKey.bytes, true)
 
+        assertEquals(9u, scanRange1.equalBytes)
+
         expect("7fffffa3f445ec7fff0003") { scanRange1.startKey!!.toHex() }
         assertTrue(scanRange1.includeStart)
 
@@ -133,6 +138,8 @@ class KeyScanRangesTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
+        assertEquals(0u, scanRange.equalBytes)
+
         // Order is reversed for timestamp
         expect("0000000000000000000000") { scanRange.ranges.first().start.toHex() }
         assertTrue { scanRange.ranges.first().startInclusive }
@@ -159,6 +166,8 @@ class KeyScanRangesTest {
         )
 
         val scanRange = Log.createScanRange(filter, null)
+
+        assertEquals(0u, scanRange.equalBytes)
 
         // Order is reversed for timestamp
         expect("0000000000000000000000") { scanRange.ranges.first().start.toHex() }
@@ -187,6 +196,8 @@ class KeyScanRangesTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
+        assertEquals(0u, scanRange.equalBytes)
+
         // Order is reversed for timestamp
         expect("7fffffa3f445ec7fffffff") { scanRange.ranges.first().start.toHex() }
         assertFalse { scanRange.ranges.first().startInclusive }
@@ -214,6 +225,8 @@ class KeyScanRangesTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
+        assertEquals(0u, scanRange.equalBytes)
+
         // Order is reversed for timestamp
         expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHex() }
         assertTrue { scanRange.ranges.first().startInclusive }
@@ -240,6 +253,8 @@ class KeyScanRangesTest {
         )
 
         val scanRange = Log.createScanRange(filter, null)
+
+        assertEquals(5u, scanRange.equalBytes)
 
         expect("7fffffa3f445cc7ffd0000") { scanRange.ranges.first().start.toHex() }
         assertTrue { scanRange.ranges.first().startInclusive }
@@ -270,6 +285,8 @@ class KeyScanRangesTest {
         )
 
         val scanRange = Log.createScanRange(filter, null)
+
+        assertEquals(6u, scanRange.equalBytes)
 
         expect("7fffffa3f44d087ffc0000") { scanRange.ranges.first().start.toHex() }
         assertTrue { scanRange.ranges.first().startInclusive }
@@ -315,6 +332,8 @@ class KeyScanRangesTest {
 
         val scanRange = Log.createScanRange(filter, null)
 
+        assertEquals(10u, scanRange.equalBytes)
+
         expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHex() }
         assertTrue { scanRange.ranges.first().startInclusive }
         expect("7fffffa3f445ec7fff0003") { scanRange.ranges.first().end?.toHex() }
@@ -340,6 +359,8 @@ class KeyScanRangesTest {
         )
 
         val scanRange = Log.createScanRange(filter, null)
+
+        assertEquals(0u, scanRange.equalBytes)
 
         expect("0000000000000000000000") { scanRange.ranges.first().start.toHex() }
         assertTrue { scanRange.ranges.first().startInclusive }

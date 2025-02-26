@@ -19,9 +19,9 @@ class OptimizeTableScanKtTest {
 
     @Test
     fun optimizeTableScanNoMatch() {
+        val keyScanRanges = TestMarykModel.createScanRange(null, null, false)
         expect(tableScan) {
-            val keyScanRanges = TestMarykModel.createScanRange(null, null, false)
-            TestMarykModel.optimizeTableScan(tableScan, null, keyScanRanges).first
+            TestMarykModel.optimizeTableScan(tableScan, keyScanRanges)
         }
     }
 
@@ -44,9 +44,8 @@ class OptimizeTableScanKtTest {
         ) {
             TestMarykModel.optimizeTableScan(
                 tableScan,
-                filter,
                 keyScanRanges
-            ).first
+            )
         }
     }
 
@@ -65,9 +64,8 @@ class OptimizeTableScanKtTest {
         ) {
             TestMarykModel.optimizeTableScan(
                 tableScan,
-                filter,
                 keyScanRanges,
-            ).first
+            )
         }
     }
 
@@ -97,9 +95,8 @@ class OptimizeTableScanKtTest {
         ) {
             TestMarykModel.optimizeTableScan(
                 tableScan,
-                filter,
                 keyScanRanges,
-            ).first
+            )
         }
     }
 }

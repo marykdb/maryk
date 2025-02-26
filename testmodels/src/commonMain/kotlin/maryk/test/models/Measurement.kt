@@ -53,6 +53,7 @@ object Measurement : RootDataModel<Measurement>(
             Measurement { measurement simpleRefAtType MeasurementType.Number }
         )
     },
+    minimumKeyScanByteRange = 0u,
 ) {
     val timestamp by dateTime(index = 1u, final = true, precision = MILLIS)
     val measurement by multiType(index = 2u, typeEnum = MeasurementType, final = true)

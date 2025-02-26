@@ -99,6 +99,7 @@ class DataStoreScanOnIndexWithPersonTest(
                 where = Equals(
                     Person { surname::ref } with "Kastens",
                 ),
+                order = Orders(Person { surname::ref }.ascending(), Person { firstName::ref }.ascending()),
             )
         )
 

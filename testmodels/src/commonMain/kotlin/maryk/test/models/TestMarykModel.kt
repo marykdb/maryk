@@ -57,6 +57,7 @@ object TestMarykModel : RootDataModel<TestMarykModel>(
     },
     reservedIndices = listOf(99u),
     reservedNames = listOf("reserved"),
+    minimumKeyScanByteRange = 0u,
 ) {
     val string by string(
         index = 1u,

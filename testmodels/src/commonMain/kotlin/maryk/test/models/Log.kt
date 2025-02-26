@@ -38,6 +38,7 @@ object Log : RootDataModel<Log>(
             Log.severity.ref()
         )
     },
+    minimumKeyScanByteRange = 0u,
 ) {
     val message by string(
         index = 1u

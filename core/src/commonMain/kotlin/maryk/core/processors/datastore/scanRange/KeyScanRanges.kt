@@ -13,7 +13,8 @@ data class KeyScanRanges internal constructor(
     val includeStart: Boolean,
     val keySize: Int,
     val equalPairs: List<ReferenceValuePair<Any>>,
-    val uniques: List<UniqueToMatch>? = null
+    val uniques: List<UniqueToMatch>? = null,
+    val equalBytes: UInt,
 ): ScanRanges {
     fun keyBeforeStart(key: ByteArray, offset: Int = 0) =
         startKey?.compareDefinedTo(key, offset, keySize)?.let { it > 0 } == true

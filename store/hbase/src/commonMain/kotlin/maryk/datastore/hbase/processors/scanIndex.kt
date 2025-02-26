@@ -3,7 +3,6 @@ package maryk.datastore.hbase.processors
 import kotlinx.coroutines.future.await
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
-import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
@@ -42,11 +41,10 @@ internal suspend fun <DM : IsRootDataModel> scanIndex(
     table: AsyncTable<AdvancedScanResultConsumer>,
     scanRequest: IsScanRequest<DM, *>,
     keyScanRange: KeyScanRanges,
-    indexScanRanges: IndexableScanRanges?,
     scanLatestUpdate: Boolean,
     processStoreValue: (Key<DM>, ULong?, Result, ByteArray?) -> Unit
 ): DataFetchType {
-    val indexScanRange = indexScanRanges ?: indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
     var overallStartKey: ByteArray? = null
     var overallStopKey: ByteArray? = null

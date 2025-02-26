@@ -30,4 +30,12 @@ interface IsRootDataModelDefinition : IsValuesDataModelDefinition {
 
     /** Specifies additional indices for the data model for easier retrieval. */
     val indices: List<IsIndexable>?
+
+    /**
+     * The amount of bytes which have to be equal in start and end of scan range.
+     * This is to protect the developer on doing non-optimal expensive scans.
+     *
+     * Default is key length
+     */
+    val minimumKeyScanByteRange: UInt?
 }

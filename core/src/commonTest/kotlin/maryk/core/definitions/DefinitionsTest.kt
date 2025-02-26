@@ -207,6 +207,7 @@ class DefinitionsTest {
               - !Ref uint
               reservedIndices: [99]
               reservedNames: [reserved]
+              minimumKeyScanByteRange: 0
               ? 1: [string, str, stringValue]
               : !String
                 required: true

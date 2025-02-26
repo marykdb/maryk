@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.index.checkKeyDefinitionAndCountBytes
 import maryk.core.properties.definitions.index.mapOfIndexKeyPartDefinitions
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.valueObject
 import maryk.core.properties.types.TypedValue
@@ -38,6 +39,7 @@ data class RootDataModelDefinition(
     override val indices: List<IsIndexable>? = null,
     override val reservedIndices: List<UInt>? = null,
     override val reservedNames: List<String>? = null,
+    override val minimumKeyScanByteRange: UInt? = null,
 ) : IsRootDataModelDefinition {
     override val primitiveType = RootModel
 
@@ -89,6 +91,11 @@ data class RootDataModelDefinition(
             getter = RootDataModelDefinition::reservedNames,
             valueDefinition = StringDefinition()
         )
+        val minimumKeyScanByteRange by number(
+            index = 7u,
+            getter = RootDataModelDefinition::minimumKeyScanByteRange,
+            type = UInt32,
+        )
 
         override fun invoke(values: ObjectValues<RootDataModelDefinition, IsObjectDataModel<RootDataModelDefinition>>) =
             RootDataModelDefinition(
@@ -97,7 +104,8 @@ data class RootDataModelDefinition(
                 keyDefinition = values(3u) ?: UUIDKey,
                 indices = values(4u),
                 reservedIndices = values(5u),
-                reservedNames = values(6u)
+                reservedNames = values(6u),
+                minimumKeyScanByteRange = values(7u),
             )
 
         override val Serializer = object: ObjectDataModelSerializer<RootDataModelDefinition, IsObjectDataModel<RootDataModelDefinition>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this){

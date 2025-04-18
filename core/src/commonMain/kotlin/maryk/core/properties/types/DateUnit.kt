@@ -23,7 +23,6 @@ import maryk.core.properties.types.DateUnit.Quarters
 import maryk.core.properties.types.DateUnit.Seconds
 import maryk.core.properties.types.DateUnit.Years
 import maryk.json.MapType
-import maryk.lib.exceptions.ParseException
 
 enum class DateUnit(
     override val index: UInt,
@@ -82,7 +81,6 @@ fun LocalDate.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
             Month.APRIL, Month.MAY, Month.JUNE -> 4
             Month.JULY, Month.AUGUST, Month.SEPTEMBER -> 7
             Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER -> 10
-            else -> throw ParseException("Unknown month")
         }
         LocalDate(year, newMonth, 1)
     }
@@ -95,13 +93,13 @@ fun LocalDate.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
 
 /** Round DateTime to the [dateUnit] */
 fun LocalDateTime.roundToDateUnit(dateUnit: DateUnit) = date.roundToDateUnit(dateUnit).let {
-        when (dateUnit) {
-            Nanos -> it.atTime(hour, minute, second, nanosecond)
-            Micros -> it.atTime(hour, minute, second, nanosecond / 1000 * 1000)
-            Millis -> it.atTime(hour, minute, second, nanosecond / 1000000 * 1000000)
-            Seconds -> it.atTime(hour, minute, second)
-            Minutes -> it.atTime(hour, minute)
-            Hours -> it.atTime(hour, 0)
-            else -> it.atTime(0, 0)
-        }
+    when (dateUnit) {
+        Nanos -> it.atTime(hour, minute, second, nanosecond)
+        Micros -> it.atTime(hour, minute, second, nanosecond / 1000 * 1000)
+        Millis -> it.atTime(hour, minute, second, nanosecond / 1000000 * 1000000)
+        Seconds -> it.atTime(hour, minute, second)
+        Minutes -> it.atTime(hour, minute)
+        Hours -> it.atTime(hour, 0)
+        else -> it.atTime(0, 0)
     }
+}

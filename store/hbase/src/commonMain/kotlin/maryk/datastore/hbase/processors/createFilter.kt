@@ -247,6 +247,5 @@ private fun convertToSingleColumnValueFilter(it: ReferenceValuePair<Any>, compar
             }
         }
         is QualifierFuzzyMatcher -> throw StorageException("Fuzzy filters are not supported by this storage engine yet")
-        else -> throw StorageException("Unknown matcher type")
     }
 }

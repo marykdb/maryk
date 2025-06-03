@@ -6,7 +6,7 @@ Learn more about the storage layout by reading [the storage description](documen
 
 ## Getting Started
 
-To get started with the Maryk Hbase Store, simply use the following code snippet. Be sure to pass a valid HBase connection.
+To get started with the Maryk HBase Store, simply use the following code snippet. Be sure to pass a valid HBase connection.
 
 You can also optionally pass a namespace to the store if you want to use a specific HBase namespace.
 

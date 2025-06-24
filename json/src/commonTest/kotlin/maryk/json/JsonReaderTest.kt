@@ -224,6 +224,7 @@ internal class JsonReaderTest {
 
             assertTrue { currentToken is Suspended }
 
+            @Suppress("AssignedValueIsNeverRead")
             input += "]"
 
             assertEndArray()

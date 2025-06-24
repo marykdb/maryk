@@ -128,12 +128,8 @@ Here's an example of constructing a YamlReader to read YAML from a simple string
 val yaml = ... // Yaml String
 var index = 0
 
-val reader = YamlReader { 
-  json[index++].also {
-     // JS platform returns a 0 control char when nothing can be read
-     // If not included the reader will never stop
-     if (it == '\u0000') throw Throwable("0 char encountered")
-  }
+val reader = YamlReader {
+  json.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
 }
 ```
 
@@ -186,11 +182,7 @@ age: 32
 var index = 0
 
 YamlReader { 
-  input[index++].also {
-      // JS platform returns a 0 control char when nothing can be read
-      // If not included the reader will never stop
-      if (it == '\u0000') throw Throwable("0 char encountered")
-  }
+  input.getOrNull(index).also { index++ } ?: throw Throwable("0 char encountered")
 }.apply {
     println(currentToken)
     

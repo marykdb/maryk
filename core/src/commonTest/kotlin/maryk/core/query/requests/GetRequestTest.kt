@@ -115,11 +115,7 @@ class GetRequestTest {
         var index = 0
 
         val reader = MarykYamlReader {
-            simpleYaml[index++].also {
-                if (it == '\u0000') {
-                    throw Throwable("0 char encountered")
-                }
-            }
+            simpleYaml.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
         }
 
         GetRequest.Serializer.readJson(reader, this.context)

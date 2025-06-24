@@ -157,14 +157,11 @@ internal class EnumDefinitionTest {
         minValue: V1(1)
         maxValue: V3(3)
         default: V2(2)
-        """.iterator()
+        """
 
+        var index = 0
         val reader = MarykYamlReader {
-            chars.nextChar().also {
-                if (it == '\u0000') {
-                    throw Throwable("0 char encountered")
-                }
-            }
+            chars.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
         }
         @Suppress("UNCHECKED_CAST")
         val context = EnumDefinition.Model.Serializer.transformContext(

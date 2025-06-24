@@ -3,8 +3,8 @@ package maryk.core.properties.types
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.datetime.Month
 import kotlinx.datetime.atTime
+import kotlinx.datetime.number
 import maryk.core.exceptions.TypeException
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.enum.IndexedEnumComparable
@@ -76,12 +76,8 @@ fun LocalDate.roundToDateUnit(dateUnit: DateUnit) = when (dateUnit) {
     // Weeks -> Wait for a calendar system
     Months -> LocalDate(year, month, 1)
     Quarters -> {
-        val newMonth: Int = when (month) {
-            Month.JANUARY, Month.FEBRUARY, Month.MARCH -> 1
-            Month.APRIL, Month.MAY, Month.JUNE -> 4
-            Month.JULY, Month.AUGUST, Month.SEPTEMBER -> 7
-            Month.OCTOBER, Month.NOVEMBER, Month.DECEMBER -> 10
-        }
+        // calculate to the month start, 1/4/7/12, when calculating quarters
+        val newMonth = ((month.number - 1) / 3) * 3 + 1
         LocalDate(year, newMonth, 1)
     }
     Years -> LocalDate(year, 1, 1)

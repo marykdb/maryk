@@ -18,7 +18,6 @@ import maryk.json.ValueType.IsNullValueType
 import maryk.yaml.YamlValueType.Binary
 import maryk.yaml.YamlValueType.TimeStamp
 import kotlin.io.encoding.Base64
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.math.pow
 
 private val trueValues = setOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
@@ -70,7 +69,6 @@ internal fun checkAndCreateFieldName(
  * Creates a JsonToken.Value by reading [value] and [tag]
  * If from plain string with [isPlainStringReader] = true and [tag] = false it will try to determine ValueType from contents.
  */
-@OptIn(ExperimentalEncodingApi::class)
 internal fun createYamlValueToken(
     value: String?,
     tag: TokenType?,

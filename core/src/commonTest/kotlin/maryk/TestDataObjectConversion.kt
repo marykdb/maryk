@@ -31,8 +31,10 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
         newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
-    val chars = output.iterator()
-    val reader = JsonReader { chars.nextChar() }
+    var index = 0
+    val reader = JsonReader {
+        output.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+    }
     val converted = dataModel.Serializer.readJson(reader, newContext).toDataObject()
 
     checker(converted, value)
@@ -61,13 +63,9 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
         newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
-    val chars = output.iterator()
+    var index = 0
     val reader = MarykYamlReader {
-        chars.nextChar().also {
-            if (it == '\u0000') {
-                throw Throwable("0 char encountered")
-            }
-        }
+        output.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
     }
     val converted = dataModel.Serializer.readJson(reader, newContext).toDataObject()
 
@@ -97,13 +95,9 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
         newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
-    val chars = output.iterator()
+    var index = 0
     val reader = MarykYamlReader {
-        chars.nextChar().also {
-            if (it == '\u0000') {
-                throw Throwable("0 char encountered")
-            }
-        }
+        output.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
     }
     val converted = dataModel.Serializer.readJson(reader, newContext)
 
@@ -134,8 +128,10 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
         newContext = dataModel.Serializer.transformContext(context?.invoke())
     }
 
-    val chars = output.iterator()
-    val reader = JsonReader { chars.nextChar() }
+    var index = 0
+    val reader = JsonReader {
+        output.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+    }
     val converted = dataModel.Serializer.readJson(reader, newContext)
 
     checker(converted, value)

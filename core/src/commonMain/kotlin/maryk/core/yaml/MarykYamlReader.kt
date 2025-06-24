@@ -13,11 +13,7 @@ const val MARYK_2018 = "tag:maryk.io,2018:"
 private fun createReader(yaml: String): () -> Char {
     var index = 0
     return {
-        yaml[index++].also {
-            if (it == '\u0000') {
-                throw Throwable("0 char encountered")
-            }
-        }
+        yaml.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
     }
 }
 

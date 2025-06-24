@@ -26,13 +26,10 @@ fun createSimpleYamlReader(yaml: String): IsJsonLikeReader {
     return YamlReader(
         allowUnknownTags = false
     ) {
-        val b = yaml[index].also {
-            // JS platform returns a 0 control char when nothing can be read
-            if (it == '\u0000') throw Throwable("0 char encountered")
-        }
-        alreadyRead += b
-        index++
-        b
+        yaml.getOrNull(index)?.also {
+            alreadyRead += it
+            index++
+        } ?: throw Throwable("0 char encountered")
     }
 }
 
@@ -53,14 +50,9 @@ fun createYamlReader(yaml: String): IsJsonLikeReader {
         ),
         allowUnknownTags = false
     ) {
-        val b = yaml[index].also {
-            // JS platform returns a 0 control char when nothing can be read
-            if (it == '\u0000') {
-                throw Throwable("0 char encountered")
-            }
-        }
-        alreadyRead += b
-        index++
-        b
+        yaml.getOrNull(index)?.also {
+            alreadyRead += it
+            index++
+        } ?: throw Throwable("0 char encountered")
     }
 }

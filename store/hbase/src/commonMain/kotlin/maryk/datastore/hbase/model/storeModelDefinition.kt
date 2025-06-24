@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalEncodingApi::class)
-
 package maryk.datastore.hbase.model
 
 import kotlinx.coroutines.future.await
@@ -20,7 +18,6 @@ import org.apache.hadoop.hbase.client.ColumnFamilyDescriptorBuilder
 import org.apache.hadoop.hbase.client.TableDescriptor
 import org.apache.hadoop.hbase.client.TableDescriptorBuilder
 import org.slf4j.LoggerFactory
-import kotlin.io.encoding.ExperimentalEncodingApi
 
 private val logger = LoggerFactory.getLogger("HbaseDataStore")
 

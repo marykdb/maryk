@@ -7,15 +7,16 @@ import org.jetbrains.kotlinx.dataframe.api.columnOf
 import org.jetbrains.kotlinx.dataframe.api.concat
 import org.jetbrains.kotlinx.dataframe.api.dataFrameOf
 import org.jetbrains.kotlinx.dataframe.api.emptyDataFrame
+import org.jetbrains.kotlinx.dataframe.api.named
 
 fun ValuesWithMetaData<*>.toDataFrame(): AnyFrame {
-    val key by columnOf(key.toString())
-    val values by columnOf(
+    val key = columnOf(key.toString()) named "key"
+    val values = columnOf(
         this.values.toDataFrame().columns()
-    )
-    val isDeleted by columnOf(isDeleted)
-    val firstVersion by columnOf(firstVersion)
-    val lastVersion by columnOf(lastVersion)
+    ) named "values"
+    val isDeleted = columnOf(isDeleted) named "isDeleted"
+    val firstVersion = columnOf(firstVersion) named "firstVersion"
+    val lastVersion = columnOf(lastVersion) named "lastVersion"
 
     return dataFrameOf(key, values, isDeleted, firstVersion, lastVersion)
 }

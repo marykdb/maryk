@@ -216,14 +216,7 @@ internal class JsonReaderTest {
         var index = 0
 
         JsonReader {
-            val b = input[index].also {
-                // JS platform returns a 0 control char when nothing can be read
-                if (it == '\u0000') {
-                    throw Throwable("0 char encountered")
-                }
-            }
-            index++
-            b
+            input.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
         }.apply {
             do {
                 nextToken()
@@ -242,14 +235,7 @@ internal class JsonReaderTest {
         var index = 0
 
         return JsonReader {
-            val b = input[index].also {
-                // JS platform returns a 0 control char when nothing can be read
-                if (it == '\u0000') {
-                    throw Throwable("0 char encountered")
-                }
-            }
-            index++
-            b
+            input.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
         }
     }
 

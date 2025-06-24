@@ -15,7 +15,6 @@ import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItems
 import maryk.core.values.Values
 import maryk.lib.exceptions.ParseException
-import kotlin.io.encoding.ExperimentalEncodingApi
 
 /**
  * The root DataModel which can be stored in a DataStore.
@@ -43,7 +42,6 @@ fun <DM : IsRootDataModel> DM.fromChanges(
 }
 
 
-@OptIn(ExperimentalEncodingApi::class)
 fun <DM: IsRootDataModel> DM.key(base64: String) = key(Base64Maryk.decode(base64))
 
 fun <DM: IsRootDataModel> DM.key(reader: () -> Byte) = Key<DM>(

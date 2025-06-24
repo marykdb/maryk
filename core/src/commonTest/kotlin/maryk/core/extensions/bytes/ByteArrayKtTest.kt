@@ -4,13 +4,11 @@ import maryk.core.base64.Base64Maryk
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.ByteCollector
-import kotlin.io.encoding.ExperimentalEncodingApi
 import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class ByteArrayKtTest {
-    @OptIn(ExperimentalEncodingApi::class)
     private val bytesToTest = arrayOf(
         Base64Maryk.decode("________"),
         Base64Maryk.decode("AAAAAAA"),

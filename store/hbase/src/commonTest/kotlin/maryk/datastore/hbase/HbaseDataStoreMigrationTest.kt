@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
-
 package maryk.datastore.hbase
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
@@ -91,7 +88,7 @@ class HbaseDataStoreMigrationTest {
 
         assertFailsWith<MigrationException> {
             // Missing migration handler so will throw exception
-            dataStore = HbaseDataStore(
+            HbaseDataStore(
                 connection = connection,
                 keepAllVersions = true,
                 namespace = namespace,
@@ -103,7 +100,7 @@ class HbaseDataStoreMigrationTest {
         }
 
         assertFailsWith<CustomException> {
-            dataStore = HbaseDataStore(
+            HbaseDataStore(
                 connection = connection,
                 keepAllVersions = true,
                 namespace = namespace,

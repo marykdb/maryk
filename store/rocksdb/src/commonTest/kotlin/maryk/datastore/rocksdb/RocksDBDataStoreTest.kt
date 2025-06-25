@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
-
 package maryk.datastore.rocksdb
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests

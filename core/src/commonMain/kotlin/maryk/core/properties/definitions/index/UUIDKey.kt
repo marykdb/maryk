@@ -30,7 +30,6 @@ object UUIDKey : IsFixedBytesPropertyReference<Uuid> {
     override val byteSize = 16
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
-    @OptIn(ExperimentalUuidApi::class)
     override fun getValue(values: IsValuesGetter) = Uuid.random()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Uuid.fromLongs(

@@ -1,8 +1,5 @@
-@file:OptIn(ExperimentalCoroutinesApi::class)
-
 package maryk.datastore.rocksdb
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
@@ -77,7 +74,7 @@ class RocksDBDataStoreMigrationTest {
 
         assertFailsWith<MigrationException> {
             // Missing migration handler so will throw exception
-            dataStore = RocksDBDataStore(
+            RocksDBDataStore(
                 keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
@@ -88,7 +85,7 @@ class RocksDBDataStoreMigrationTest {
         }
 
         assertFailsWith<CustomException> {
-            dataStore = RocksDBDataStore(
+            RocksDBDataStore(
                 keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(

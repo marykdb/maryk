@@ -70,14 +70,14 @@ internal fun generateKotlinValue(
     }
     is LocalDateTime -> {
         when {
-            value.nanosecond != 0 -> "LocalDate(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
-            value.second != 0 -> "LocalDateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute}, ${value.second})"
-            value.minute != 0 -> "LocalDateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour}, ${value.minute})"
-            value.hour != 0 -> "LocalDateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth}, ${value.hour})"
-            else -> "LocalDateTime(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"
+            value.nanosecond != 0 -> "LocalDate(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
+            value.second != 0 -> "LocalDateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second})"
+            value.minute != 0 -> "LocalDateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute})"
+            value.hour != 0 -> "LocalDateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour})"
+            else -> "LocalDateTime(${value.year}, ${value.month}, ${value.day})"
         }
     }
-    is LocalDate -> "LocalDate(${value.year}, ${value.monthNumber}, ${value.dayOfMonth})"
+    is LocalDate -> "LocalDate(${value.year}, ${value.month}, ${value.day})"
     is IsIndexedEnumDefinition<*> -> value.name
     is ValueDataModelDefinition -> value.name
     is Key<*> -> """Key("$value")"""

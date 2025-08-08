@@ -5,7 +5,7 @@ import maryk.core.extensions.bytes.initInt
 import maryk.core.extensions.bytes.writeBytes
 
 internal fun LocalDate.writeBytes(writer: (byte: Byte) -> Unit) {
-    this.toEpochDays().writeBytes(writer)
+    this.toEpochDays().toInt().writeBytes(writer)
 }
 
 /** Reads a date from bytes [reader] */

@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
@@ -13,6 +12,8 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.expect
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 internal class TimeDefinitionTest {
     private val timesToTestNanos = arrayOf(
@@ -54,6 +55,7 @@ internal class TimeDefinitionTest {
         default = LocalTime(12, 13, 14)
     )
 
+    @OptIn(ExperimentalTime::class)
     @Test
     fun createNowTime() {
         val expected = Clock.System.now().toEpochMilliseconds() % (24 * 60 * 60 * 1000) / 1000

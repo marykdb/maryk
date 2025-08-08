@@ -1,6 +1,5 @@
 package maryk.core.properties.definitions
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -11,9 +10,9 @@ import maryk.core.extensions.bytes.encodeZigZag
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
@@ -23,6 +22,8 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.values.SimpleObjectValues
 import maryk.lib.exceptions.ParseException
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /** Definition for Date properties */
 data class DateDefinition(
@@ -67,10 +68,6 @@ data class DateDefinition(
         epochDay.encodeZigZag().writeVarBytes(writer)
     }
 
-    override fun asString(value: LocalDate): String {
-        return super.asString(value)
-    }
-
     override fun fromString(string: String) = try {
         LocalDate.parse(string)
     } catch (e: IllegalArgumentException) {
@@ -103,6 +100,7 @@ data class DateDefinition(
         )
     }
 
+    @OptIn(ExperimentalTime::class)
     companion object {
         val MIN = LocalDate(-999_999, 1, 1)
         val MAX = LocalDate(999_999, 12, 31)

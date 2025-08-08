@@ -1,6 +1,7 @@
+@file:OptIn(ExperimentalTime::class)
+
 package maryk.yaml
 
-import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -19,6 +20,8 @@ import maryk.yaml.YamlValueType.Binary
 import maryk.yaml.YamlValueType.TimeStamp
 import kotlin.io.encoding.Base64
 import kotlin.math.pow
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 private val trueValues = setOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
 private val falseValues = setOf("False", "FALSE", "false", "n", "N", "no", "NO", "No", "off", "OFF", "Off")
@@ -224,8 +227,8 @@ private fun parseDate(value: String): LocalDateTime =
 private fun parseLocalDateTime(match: MatchResult): LocalDateTime =
     LocalDateTime(
         year = match.groups[1]!!.value.toInt(),
-        monthNumber = match.groups[2]!!.value.toInt(),
-        dayOfMonth = match.groups[3]!!.value.toInt(),
+        month = match.groups[2]!!.value.toInt(),
+        day = match.groups[3]!!.value.toInt(),
         hour = match.groups[6]!!.value.toInt(),
         minute = match.groups[7]!!.value.toInt(),
         second = match.groups[8]!!.value.toInt(),

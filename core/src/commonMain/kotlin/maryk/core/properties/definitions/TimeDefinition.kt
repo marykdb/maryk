@@ -1,6 +1,7 @@
+@file:OptIn(ExperimentalTime::class)
+
 package maryk.core.properties.definitions
 
-import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -27,6 +28,8 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.lib.exceptions.ParseException
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /** Definition for Time properties */
 data class TimeDefinition(

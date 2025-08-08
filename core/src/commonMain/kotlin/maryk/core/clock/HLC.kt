@@ -1,10 +1,11 @@
 package maryk.core.clock
 
-import kotlinx.datetime.Clock
 import maryk.core.extensions.bytes.initULong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import kotlin.jvm.JvmInline
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 private const val LOGICAL_BYTE_SIZE = 20
 
@@ -33,6 +34,7 @@ value class HLC(
     )
 
     /** Create HLC for the current time */
+    @OptIn(ExperimentalTime::class)
     constructor() : this(
         physical = Clock.System.now().toEpochMilliseconds().toULong(),
         logical = 0u

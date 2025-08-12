@@ -20,6 +20,7 @@ import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.Test
 import kotlin.test.expect
+import kotlin.time.ExperimentalTime
 
 class Proto3ConversionTest {
     @Test
@@ -79,6 +80,7 @@ class Proto3ConversionTest {
         expect(bc.bytes!!.toHex()) { protoBufByteArray.toHex() }
     }
 
+    @OptIn(ExperimentalTime::class)
     @Test
     fun testCompleteMarykObject(){
         // SimpleObject to convert
@@ -97,7 +99,7 @@ class Proto3ConversionTest {
             .setNumber(completeObject { number }!!.toLong())
             .setBoolean(completeObject { boolean }!!)
             .setEnum(MarykTestProtos.Option.V1)
-            .setDate(completeObject { date }!!.toEpochDays())
+            .setDate(completeObject { date }!!.toEpochDays().toInt())
             .setDateTime(completeObject { dateTime }!!.toInstant(TimeZone.UTC).toEpochMilliseconds())
             .setTime(completeObject { time }!!.toMillisecondOfDay())
             .setFixedBytes(ByteString.copyFrom(Bytes("AAECAwQ").bytes))
@@ -107,11 +109,11 @@ class Proto3ConversionTest {
             .setValueModel(ByteString.copyFrom(completeObject { valueModel }!!.toByteArray()))
             .addAllList(mutableListOf("ha1", "ha2", "ha3"))
             .addAllSet(mutableListOf(1, 2, 3))
-            .putMap(LocalDate(2010, 11, 12).toEpochDays(), 1)
-            .putMap(LocalDate(2011, 12, 13).toEpochDays(), 1)/**/
+            .putMap(LocalDate(2010, 11, 12).toEpochDays().toInt(), 1)
+            .putMap(LocalDate(2011, 12, 13).toEpochDays().toInt(), 1)/**/
             .setMulti(MarykTestProtos.CompleteMarykModel.MultiType.newBuilder().setT1("a value"))
             .setBooleanForKey(completeObject { booleanForKey }!!)
-            .setDateForKey(completeObject { dateForKey }!!.toEpochDays())
+            .setDateForKey(completeObject { dateForKey }!!.toEpochDays().toInt())
             .setMultiForKey(
                 MarykTestProtos.CompleteMarykModel.MultiForKeyType.newBuilder().setS1("string")
             )

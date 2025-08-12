@@ -3,6 +3,7 @@ package maryk.generator.kotlin
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.number
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsValueDataModel
@@ -70,14 +71,14 @@ internal fun generateKotlinValue(
     }
     is LocalDateTime -> {
         when {
-            value.nanosecond != 0 -> "LocalDate(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
-            value.second != 0 -> "LocalDateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second})"
-            value.minute != 0 -> "LocalDateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour}, ${value.minute})"
-            value.hour != 0 -> "LocalDateTime(${value.year}, ${value.month}, ${value.day}, ${value.hour})"
-            else -> "LocalDateTime(${value.year}, ${value.month}, ${value.day})"
+            value.nanosecond != 0 -> "LocalDate(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
+            value.second != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second})"
+            value.minute != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute})"
+            value.hour != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour})"
+            else -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day})"
         }
     }
-    is LocalDate -> "LocalDate(${value.year}, ${value.month}, ${value.day})"
+    is LocalDate -> "LocalDate(${value.year}, ${value.month.number}, ${value.day})"
     is IsIndexedEnumDefinition<*> -> value.name
     is ValueDataModelDefinition -> value.name
     is Key<*> -> """Key("$value")"""

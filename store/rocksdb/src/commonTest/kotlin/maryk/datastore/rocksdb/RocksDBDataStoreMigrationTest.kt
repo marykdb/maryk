@@ -13,6 +13,8 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.deleteFolder
+import maryk.rocksdb.util.createTestDBFolder
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
@@ -27,15 +29,14 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class RocksDBDataStoreMigrationTest {
-    private val basePath = "./build/test-database"
 
     class CustomException : Error()
 
     @Test
     fun testMigration() = runTest {
+        val path = createTestDBFolder("migration")
         var didRunUpdateHandler = false
 
-        val path = "$basePath/migration"
         var dataStore = RocksDBDataStore(
             keepAllVersions = true,
             relativePath = path,
@@ -100,12 +101,12 @@ class RocksDBDataStoreMigrationTest {
             )
         }
 
-        Unit
+        deleteFolder(path)
     }
 
     @Test
     fun testMigrationWithDependents() = runTest {
-        val path = "$basePath/migrationWithDeps"
+        val path = createTestDBFolder("migrationWithDeps")
         var dataStore = RocksDBDataStore(
             keepAllVersions = true,
             relativePath = path,
@@ -125,11 +126,13 @@ class RocksDBDataStoreMigrationTest {
         )
 
         dataStore.close()
+
+        deleteFolder(path)
     }
 
     @Test
     fun testMigrationWithIndex() = runTest {
-        val path = "$basePath/migration2"
+        val path = createTestDBFolder("migration2")
         var dataStore = RocksDBDataStore(
             keepAllVersions = true,
             relativePath = path,
@@ -208,5 +211,7 @@ class RocksDBDataStoreMigrationTest {
         assertEquals(40, historicScanResponse.values[3].values { newNumber })
 
         dataStore.close()
+
+        deleteFolder(path)
     }
 }

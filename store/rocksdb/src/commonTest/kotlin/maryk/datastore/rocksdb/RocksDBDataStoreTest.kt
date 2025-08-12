@@ -3,15 +3,17 @@ package maryk.datastore.rocksdb
 import kotlinx.coroutines.test.runTest
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
+import maryk.deleteFolder
+import maryk.rocksdb.util.createTestDBFolder
 import kotlin.test.Test
 
 class RocksDBDataStoreTest {
-    private val basePath = "./build/test-database"
-
     @Test
     fun testDataStore() = runTest {
+        val folder = createTestDBFolder("no-history")
+
         val dataStore = RocksDBDataStore(
-            relativePath = "$basePath/no-history",
+            relativePath = createTestDBFolder("no-history"),
             dataModelsById = dataModelsForTests,
             keepAllVersions = false
         )
@@ -19,12 +21,16 @@ class RocksDBDataStoreTest {
         runDataStoreTests(dataStore)
 
         dataStore.close()
+
+        deleteFolder(folder)
     }
 
     @Test
     fun testDataStoreWithKeepAllVersions() = runTest {
+        val folder = createTestDBFolder("history")
+
         val dataStore = RocksDBDataStore(
-            relativePath = "$basePath/history",
+            relativePath = folder,
             keepAllVersions = true,
             dataModelsById = dataModelsForTests
         )
@@ -32,5 +38,7 @@ class RocksDBDataStoreTest {
         runDataStoreTests(dataStore)
 
         dataStore.close()
+
+        deleteFolder(folder)
     }
 }

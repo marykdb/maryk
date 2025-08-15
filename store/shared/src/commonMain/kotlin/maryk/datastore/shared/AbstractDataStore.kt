@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -127,9 +128,8 @@ abstract class AbstractDataStore(
 
     override suspend fun close() {
         val job = this@AbstractDataStore.coroutineContext[Job]
-        job?.cancel()
         storeChannel.close()
-        job?.join()
+        job?.cancelAndJoin()
     }
 
     override suspend fun closeAllListeners() {

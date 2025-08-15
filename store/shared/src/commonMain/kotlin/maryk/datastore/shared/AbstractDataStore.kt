@@ -135,6 +135,14 @@ abstract class AbstractDataStore(
     override suspend fun closeAllListeners() {
         updateSharedFlow.emit(RemoveAllUpdateListenersAction)
     }
+
+    suspend fun use(block: suspend AbstractDataStore.() -> Unit) {
+        try {
+            block()
+        } finally {
+            close()
+        }
+    }
 }
 
 /** Creates update listener for request with [response] */

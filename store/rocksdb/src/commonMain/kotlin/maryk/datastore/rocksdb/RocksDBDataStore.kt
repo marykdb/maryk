@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
@@ -266,6 +267,9 @@ class RocksDBDataStore(
                         }
                         else -> throw TypeException("Unknown request type ${storeAction.request}")
                     }
+                } catch (e: CancellationException) {
+                    storeAction.response.cancel(e)
+                    throw e
                 } catch (e: Throwable) {
                     storeAction.response.completeExceptionally(e)
                 }

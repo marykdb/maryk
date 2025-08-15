@@ -1,5 +1,6 @@
 package maryk.datastore.memory
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
@@ -115,6 +116,9 @@ class InMemoryDataStore(
                         }
                         else -> throw TypeException("Unknown request type ${storeAction.request}")
                     }
+                } catch (e: CancellationException) {
+                    storeAction.response.cancel(e)
+                    throw e // terminate the actor
                 } catch (e: Throwable) {
                     storeAction.response.completeExceptionally(e)
                 }

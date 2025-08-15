@@ -1,5 +1,6 @@
 package maryk.datastore.hbase
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -196,6 +197,9 @@ class HbaseDataStore(
                         }
                         else -> throw TypeException("Unknown request type ${storeAction.request}")
                     }
+                } catch (e: CancellationException) {
+                    storeAction.response.cancel(e)
+                    throw e
                 } catch (e: Throwable) {
                     storeAction.response.completeExceptionally(e)
                 }

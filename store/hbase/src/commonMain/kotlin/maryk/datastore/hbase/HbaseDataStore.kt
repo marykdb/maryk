@@ -1,6 +1,5 @@
 package maryk.datastore.hbase
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
@@ -86,64 +85,62 @@ class HbaseDataStore(
 
     init {
         runBlocking {
-            launch(Dispatchers.IO) {
-                val admin = connection.admin
+            val admin = connection.admin
 
-                val namespaceAsString = namespace.decodeToString()
-                try {
-                    admin.getNamespaceDescriptor(namespaceAsString).await()
-                } catch (e: NamespaceNotFoundException) {
-                    admin.createNamespace(
-                        NamespaceDescriptor.create(namespaceAsString).build()
-                    ).await()
-                }
+            val namespaceAsString = namespace.decodeToString()
+            try {
+                admin.getNamespaceDescriptor(namespaceAsString).await()
+            } catch (_: NamespaceNotFoundException) {
+                admin.createNamespace(
+                    NamespaceDescriptor.create(namespaceAsString).build()
+                ).await()
+            }
 
-                val conversionContext = DefinitionsConversionContext()
+            val conversionContext = DefinitionsConversionContext()
 
-                for (dataModel in dataModelsById.values) {
-                    val tableName = getTableName(dataModel)
-                    val tableDescriptor = admin.getDescriptor(tableName)
-                    when (val migrationStatus = checkModelIfMigrationIsNeeded(tableDescriptor, dataModel, onlyCheckModelVersion, conversionContext)) {
-                        MigrationStatus.UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
-                        MigrationStatus.NewModel -> {
-                            scheduledVersionUpdateHandlers.add {
-                                versionUpdateHandler?.invoke(this@HbaseDataStore, null, dataModel)
+            for (dataModel in dataModelsById.values) {
+                val tableName = getTableName(dataModel)
+                val tableDescriptor = admin.getDescriptor(tableName)
+                when (val migrationStatus = checkModelIfMigrationIsNeeded(tableDescriptor, dataModel, onlyCheckModelVersion, conversionContext)) {
+                    MigrationStatus.UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
+                    MigrationStatus.NewModel -> {
+                        scheduledVersionUpdateHandlers.add {
+                            versionUpdateHandler?.invoke(this@HbaseDataStore, null, dataModel)
 
-                                storeModelDefinition(admin, null, dataModel, keepAllVersions)
-                            }
+                            storeModelDefinition(admin, null, dataModel, keepAllVersions)
                         }
-                        is MigrationStatus.OnlySafeAdds -> {
-                            scheduledVersionUpdateHandlers.add {
-                                versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
-                            }
+                    }
+                    is MigrationStatus.OnlySafeAdds -> {
+                        scheduledVersionUpdateHandlers.add {
+                            versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                            storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
                         }
-                        is MigrationStatus.NewIndicesOnExistingProperties -> {
-                            fillIndex(admin, dataModel, migrationStatus.indicesToIndex)
-                            scheduledVersionUpdateHandlers.add {
-                                versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
-                            }
+                    }
+                    is MigrationStatus.NewIndicesOnExistingProperties -> {
+                        fillIndex(admin, dataModel, migrationStatus.indicesToIndex)
+                        scheduledVersionUpdateHandlers.add {
+                            versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                            storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
                         }
-                        is MigrationStatus.NeedsMigration -> {
-                            val succeeded = migrationHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
+                    }
+                    is MigrationStatus.NeedsMigration -> {
+                        val succeeded = migrationHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                            ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
 
-                            if (!succeeded) {
-                                throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
-                            }
+                        if (!succeeded) {
+                            throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
+                        }
 
-                            migrationStatus.indicesToIndex?.let {
-                                fillIndex(admin, dataModel, it)
-                            }
-                            scheduledVersionUpdateHandlers.add {
-                                versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
-                            }
+                        migrationStatus.indicesToIndex?.let {
+                            fillIndex(admin, dataModel, it)
+                        }
+                        scheduledVersionUpdateHandlers.add {
+                            versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                            storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
                         }
                     }
                 }
-            }.join()
+            }
         }
     }
 

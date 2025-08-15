@@ -35,7 +35,7 @@ interface IsDataStore {
     ): ProcessResponse<DM>
 
     /** Close the data store */
-    fun close()
+    suspend fun close()
 
     /** Close all open listeners */
     suspend fun closeAllListeners()

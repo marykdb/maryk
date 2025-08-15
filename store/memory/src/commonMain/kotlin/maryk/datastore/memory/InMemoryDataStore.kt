@@ -53,7 +53,7 @@ import maryk.datastore.shared.AbstractDataStore
  * DataProcessor that stores all data changes in local memory.
  * Very useful for tests.
  */
-class InMemoryDataStore(
+class InMemoryDataStore private constructor(
     override val keepAllVersions: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>
 ) : AbstractDataStore(dataModelsById) {
@@ -124,5 +124,15 @@ class InMemoryDataStore(
                 }
             }
         }
+    }
+
+    companion object {
+        fun open(
+            keepAllVersions: Boolean = false,
+            dataModelsById: Map<UInt, IsRootDataModel>
+        ) = InMemoryDataStore(
+            keepAllVersions = keepAllVersions,
+            dataModelsById = dataModelsById
+        )
     }
 }

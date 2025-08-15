@@ -12,7 +12,7 @@ You can also optionally pass a namespace to the store if you want to use a speci
 
 Usage:
 ```kotlin
-HbaseDataStore(
+HbaseDataStore.open(
     connection = connection,
     keepAllVersions = true,
     namespace = "OptionalNamespace",
@@ -53,7 +53,7 @@ to set less strict validation rules. However, it is not possible to change the t
 without having the old value an alternative, or add more strict validation without automatically triggering a migration.
 
 ```kotlin
-HbaseDataStore(
+HbaseDataStore.open(
     connection = connection,
     // True if the data store should keep all past versions of the data
     keepAllVersions = true,

@@ -10,7 +10,7 @@ development purposes, where the focus is not on persistence.
 Here's a simple example of how to use the InMemoryDataStore:
 
 ```kotlin
-InMemoryDataStore(
+InMemoryDataStore.open(
     // True if the data store should keep all past versions of the data
     keepAllVersions = true, 
     dataModelsById = mapOf(

@@ -22,7 +22,7 @@ class HbaseDataStoreTest {
 
     @Test
     fun testDataStore() = runTest(timeout = 60.seconds) {
-        val dataStore = HbaseDataStore(
+        val dataStore = HbaseDataStore.open(
             connection = connection,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
@@ -35,7 +35,7 @@ class HbaseDataStoreTest {
 
     @Test
     fun testDataStoreWithKeepAllVersions() = runTest(timeout = 60.seconds) {
-        val dataStore = HbaseDataStore(
+        val dataStore = HbaseDataStore.open(
             connection = connection,
             dataModelsById = dataModelsForTests,
             keepAllVersions = true,

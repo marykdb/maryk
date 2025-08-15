@@ -10,7 +10,7 @@ To get started with the Maryk RocksDB Store, simply use the following code snipp
 
 Usage:
 ```kotlin
-RocksDBDataStore(
+RocksDBDataStore.open(
     keepAllVersions = false,
     relativePath = "path/to/folder/on/disk/for/store", 
     dataModelsById = mapOf(
@@ -50,7 +50,7 @@ to set less strict validation rules. However, it is not possible to change the t
 without having the old value an alternative, or add more strict validation without automatically triggering a migration.
 
 ```kotlin
-RocksDBDataStore(
+RocksDBDataStore.open(
     // True if the data store should keep all past versions of the data
     keepAllVersions = true,
     relativePath = "path/to/folder/on/disk/for/store", 

@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
@@ -87,7 +86,7 @@ import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 
-class RocksDBDataStore(
+class RocksDBDataStore private constructor(
     override val keepAllVersions: Boolean = true,
     relativePath: String,
     dataModelsById: Map<UInt, IsRootDataModel>,
@@ -159,68 +158,67 @@ class RocksDBDataStore(
                     )
                 }
             }
+        } catch (e: Throwable) {
+            closeResources()
+            throw e
+        }
+    }
 
-            runBlocking {
-                val conversionContext = DefinitionsConversionContext()
+    private suspend fun initAsync() {
+        try {
+            val conversionContext = DefinitionsConversionContext()
 
-                for ((index, dataModel) in dataModelsById) {
-                    columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
-                        tableColumnFamilies.model.let { modelColumnFamily ->
-                            when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion, conversionContext)) {
-                                UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
-                                NewModel -> {
-                                    scheduledVersionUpdateHandlers.add {
-                                        versionUpdateHandler?.invoke(this@RocksDBDataStore, null, dataModel)
-                                        storeModelDefinition(db, modelColumnFamily, dataModel)
-                                    }
+            for ((index, dataModel) in dataModelsById) {
+                columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
+                    tableColumnFamilies.model.let { modelColumnFamily ->
+                        when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion, conversionContext)) {
+                            UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
+                            NewModel -> {
+                                scheduledVersionUpdateHandlers.add {
+                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, null, dataModel)
+                                    storeModelDefinition(db, modelColumnFamily, dataModel)
                                 }
-                                is OnlySafeAdds -> {
-                                    scheduledVersionUpdateHandlers.add {
-                                        versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                        storeModelDefinition(db, modelColumnFamily, dataModel)
-                                    }
+                            }
+                            is OnlySafeAdds -> {
+                                scheduledVersionUpdateHandlers.add {
+                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                    storeModelDefinition(db, modelColumnFamily, dataModel)
                                 }
-                                is NewIndicesOnExistingProperties -> {
-                                    fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
-                                    scheduledVersionUpdateHandlers.add {
-                                        versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                        storeModelDefinition(db, modelColumnFamily, dataModel)
-                                    }
+                            }
+                            is NewIndicesOnExistingProperties -> {
+                                fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
+                                scheduledVersionUpdateHandlers.add {
+                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                    storeModelDefinition(db, modelColumnFamily, dataModel)
                                 }
-                                is NeedsMigration -> {
-                                    val succeeded = migrationHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                        ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
+                            }
+                            is NeedsMigration -> {
+                                val succeeded = migrationHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                    ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
 
-                                    if (!succeeded) {
-                                        throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
-                                    }
+                                if (!succeeded) {
+                                    throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
+                                }
 
-                                    migrationStatus.indicesToIndex?.let {
-                                        fillIndex(it, tableColumnFamilies)
-                                    }
-                                    scheduledVersionUpdateHandlers.add {
-                                        versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                        storeModelDefinition(db, modelColumnFamily, dataModel)
-                                    }
+                                migrationStatus.indicesToIndex?.let {
+                                    fillIndex(it, tableColumnFamilies)
+                                }
+                                scheduledVersionUpdateHandlers.add {
+                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                    storeModelDefinition(db, modelColumnFamily, dataModel)
                                 }
                             }
                         }
                     }
                 }
             }
+
+            startFlows()
+
+            scheduledVersionUpdateHandlers.forEach { it() }
         } catch (e: Throwable) {
             this.close()
             throw e
-        }
-    }
-
-    init {
-        startFlows()
-
-        runBlocking {
-            scheduledVersionUpdateHandlers.forEach {
-                it()
-            }
         }
     }
 
@@ -326,9 +324,13 @@ class RocksDBDataStore(
     internal fun getPrefixSize(columnFamilyHandle: ColumnFamilyHandle) =
         this.prefixSizesByColumnFamilyHandlesIndex.getOrElse(columnFamilyHandle.getID()) { 0 }
 
-    override fun close() {
+    override suspend fun close() {
         super.close()
 
+        closeResources()
+    }
+
+    fun closeResources() {
         ownRocksDBOptions?.close()
         defaultWriteOptions.close()
         defaultReadOptions.close()
@@ -382,6 +384,30 @@ class RocksDBDataStore(
                     break // break because it is not describing an index
                 }
                 this += key.copyOfRange(1, key.size)
+            }
+        }
+    }
+
+    companion object {
+        suspend fun open(
+            keepAllVersions: Boolean = true,
+            relativePath: String,
+            dataModelsById: Map<UInt, IsRootDataModel>,
+            rocksDBOptions: DBOptions? = null,
+            onlyCheckModelVersion: Boolean = false,
+            migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
+            versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null
+        ): RocksDBDataStore {
+            return RocksDBDataStore(
+                keepAllVersions = keepAllVersions,
+                relativePath = relativePath,
+                dataModelsById = dataModelsById,
+                rocksDBOptions = rocksDBOptions,
+                onlyCheckModelVersion = onlyCheckModelVersion,
+                migrationHandler = migrationHandler,
+                versionUpdateHandler = versionUpdateHandler
+            ).apply {
+                initAsync()
             }
         }
     }

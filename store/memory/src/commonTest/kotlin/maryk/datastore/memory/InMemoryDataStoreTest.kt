@@ -8,7 +8,7 @@ import kotlin.test.Test
 class InMemoryDataStoreTest {
     @Test
     fun testDataStore() = runTest {
-        val dataStore = InMemoryDataStore(dataModelsById = dataModelsForTests)
+        val dataStore = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
 
         runDataStoreTests(dataStore)
 
@@ -17,7 +17,7 @@ class InMemoryDataStoreTest {
 
     @Test
     fun testDataStoreWithKeepAllVersions() = runTest {
-        val dataStore = InMemoryDataStore(keepAllVersions = true, dataModelsById = dataModelsForTests)
+        val dataStore = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = dataModelsForTests)
 
         runDataStoreTests(dataStore)
 

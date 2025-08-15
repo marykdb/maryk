@@ -48,7 +48,7 @@ class HbaseDataStoreMigrationTest {
         var didRunUpdateHandler = false
 
         val namespace = "migration".encodeToByteArray()
-        var dataStore = HbaseDataStore(
+        var dataStore = HbaseDataStore.open(
             connection = connection,
             namespace = namespace,
             keepAllVersions = true,
@@ -68,7 +68,7 @@ class HbaseDataStoreMigrationTest {
 
         didRunUpdateHandler = false
 
-        dataStore = HbaseDataStore(
+        dataStore = HbaseDataStore.open(
             connection = connection,
             keepAllVersions = true,
             namespace = namespace,
@@ -88,7 +88,7 @@ class HbaseDataStoreMigrationTest {
 
         assertFailsWith<MigrationException> {
             // Missing migration handler so will throw exception
-            HbaseDataStore(
+            HbaseDataStore.open(
                 connection = connection,
                 keepAllVersions = true,
                 namespace = namespace,
@@ -100,7 +100,7 @@ class HbaseDataStoreMigrationTest {
         }
 
         assertFailsWith<CustomException> {
-            HbaseDataStore(
+            HbaseDataStore.open(
                 connection = connection,
                 keepAllVersions = true,
                 namespace = namespace,
@@ -115,15 +115,13 @@ class HbaseDataStoreMigrationTest {
                 }
             )
         }
-
-        Unit
     }
 
     @Test
     fun testMigrationWithDependents() = runTest {
         val namespace = "migrationWithDeps".encodeToByteArray()
 
-        var dataStore = HbaseDataStore(
+        var dataStore = HbaseDataStore.open(
             connection = connection,
             keepAllVersions = true,
             namespace = namespace,
@@ -134,7 +132,7 @@ class HbaseDataStoreMigrationTest {
 
         dataStore.close()
 
-        dataStore = HbaseDataStore(
+        dataStore = HbaseDataStore.open(
             connection = connection,
             keepAllVersions = true,
             namespace = namespace,
@@ -149,7 +147,7 @@ class HbaseDataStoreMigrationTest {
     @Test
     fun testMigrationWithIndex() = runTest {
         val namespace = "migration2".encodeToByteArray()
-        var dataStore = HbaseDataStore(
+        var dataStore = HbaseDataStore.open(
             connection = connection,
             keepAllVersions = true,
             namespace = namespace,
@@ -199,7 +197,7 @@ class HbaseDataStoreMigrationTest {
 
         dataStore.close()
 
-        dataStore = HbaseDataStore(
+        dataStore = HbaseDataStore.open(
             connection = connection,
             keepAllVersions = true,
             namespace = namespace,

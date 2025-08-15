@@ -4,8 +4,8 @@ import kotlinx.atomicfu.AtomicBoolean
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -122,9 +122,11 @@ abstract class AbstractDataStore(
         dataModelIdsByString[dataModel.Meta.name] ?:
         throw DefNotFoundException("DataStore not found ${dataModel.Meta.name}")
 
-    override fun close() {
-        this.cancel()
+    override suspend fun close() {
+        val job = coroutineContext[Job]
+        job?.cancel()
         storeChannel.close()
+        job?.join()
     }
 
     override suspend fun closeAllListeners() {

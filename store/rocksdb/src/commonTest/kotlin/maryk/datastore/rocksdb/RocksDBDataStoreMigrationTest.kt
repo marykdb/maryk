@@ -37,7 +37,7 @@ class RocksDBDataStoreMigrationTest {
         val path = createTestDBFolder("migration")
         var didRunUpdateHandler = false
 
-        var dataStore = RocksDBDataStore(
+        var dataStore = RocksDBDataStore.open(
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
@@ -56,7 +56,7 @@ class RocksDBDataStoreMigrationTest {
 
         didRunUpdateHandler = false
 
-        dataStore = RocksDBDataStore(
+        dataStore = RocksDBDataStore.open(
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
@@ -75,7 +75,7 @@ class RocksDBDataStoreMigrationTest {
 
         assertFailsWith<MigrationException> {
             // Missing migration handler so will throw exception
-            RocksDBDataStore(
+            RocksDBDataStore.open(
                 keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
@@ -86,7 +86,7 @@ class RocksDBDataStoreMigrationTest {
         }
 
         assertFailsWith<CustomException> {
-            RocksDBDataStore(
+            RocksDBDataStore.open(
                 keepAllVersions = true,
                 relativePath = path,
                 dataModelsById = mapOf(
@@ -107,7 +107,7 @@ class RocksDBDataStoreMigrationTest {
     @Test
     fun testMigrationWithDependents() = runTest {
         val path = createTestDBFolder("migrationWithDeps")
-        var dataStore = RocksDBDataStore(
+        var dataStore = RocksDBDataStore.open(
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
@@ -117,7 +117,7 @@ class RocksDBDataStoreMigrationTest {
 
         dataStore.close()
 
-        dataStore = RocksDBDataStore(
+        dataStore = RocksDBDataStore.open(
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
@@ -133,7 +133,7 @@ class RocksDBDataStoreMigrationTest {
     @Test
     fun testMigrationWithIndex() = runTest {
         val path = createTestDBFolder("migration2")
-        var dataStore = RocksDBDataStore(
+        var dataStore = RocksDBDataStore.open(
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(
@@ -175,7 +175,7 @@ class RocksDBDataStoreMigrationTest {
 
         dataStore.close()
 
-        dataStore = RocksDBDataStore(
+        dataStore = RocksDBDataStore.open(
             keepAllVersions = true,
             relativePath = path,
             dataModelsById = mapOf(

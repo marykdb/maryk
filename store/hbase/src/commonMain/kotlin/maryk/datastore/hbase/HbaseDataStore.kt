@@ -2,6 +2,7 @@ package maryk.datastore.hbase
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
@@ -146,6 +147,7 @@ class HbaseDataStore private constructor(
         scheduledVersionUpdateHandlers.forEach { it() }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun startFlows() {
         super.startFlows()
 
@@ -154,46 +156,54 @@ class HbaseDataStore private constructor(
 
             var clock = HLC()
             storeActorHasStarted.complete(Unit)
-            for (storeAction in storeChannel) {
-                try {
-                    clock = clock.calculateMaxTimeStamp()
+            try {
 
-                    @Suppress("UNCHECKED_CAST")
-                    when (storeAction.request) {
-                        is AddRequest<*> ->
-                            processAddRequest(clock, storeAction as AnyAddStoreAction, this@HbaseDataStore, updateSharedFlow)
-                        is ChangeRequest<*> ->
-                            processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@HbaseDataStore, updateSharedFlow)
-                        is DeleteRequest<*> ->
-                            processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, this@HbaseDataStore, cache, updateSharedFlow)
-                        is GetRequest<*> ->
-                            processGetRequest(storeAction as AnyGetStoreAction, this@HbaseDataStore, cache)
-                        is GetChangesRequest<*> ->
-                            processGetChangesRequest(storeAction as AnyGetChangesStoreAction, this@HbaseDataStore, cache)
-                        is GetUpdatesRequest<*> ->
-                            processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, this@HbaseDataStore, cache)
-                        is ScanRequest<*> ->
-                            processScanRequest(storeAction as AnyScanStoreAction, this@HbaseDataStore, cache)
-                        is ScanChangesRequest<*> ->
-                            processScanChangesRequest(storeAction as AnyScanChangesStoreAction, this@HbaseDataStore, cache)
-                        is ScanUpdatesRequest<*> ->
-                            processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@HbaseDataStore, cache)
-                        is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
-                            is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
-                            is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
-                            is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, cache, updateSharedFlow)
-                            is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
-                            is InitialValuesUpdate<*> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
-                            is OrderedKeysUpdate<*> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
-                            else -> throw TypeException("Unknown update type $update for datastore processing")
+                for (storeAction in storeChannel) {
+                    try {
+                        clock = clock.calculateMaxTimeStamp()
+
+                        @Suppress("UNCHECKED_CAST")
+                        when (storeAction.request) {
+                            is AddRequest<*> ->
+                                processAddRequest(clock, storeAction as AnyAddStoreAction, this@HbaseDataStore, updateSharedFlow)
+                            is ChangeRequest<*> ->
+                                processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@HbaseDataStore, updateSharedFlow)
+                            is DeleteRequest<*> ->
+                                processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, this@HbaseDataStore, cache, updateSharedFlow)
+                            is GetRequest<*> ->
+                                processGetRequest(storeAction as AnyGetStoreAction, this@HbaseDataStore, cache)
+                            is GetChangesRequest<*> ->
+                                processGetChangesRequest(storeAction as AnyGetChangesStoreAction, this@HbaseDataStore, cache)
+                            is GetUpdatesRequest<*> ->
+                                processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, this@HbaseDataStore, cache)
+                            is ScanRequest<*> ->
+                                processScanRequest(storeAction as AnyScanStoreAction, this@HbaseDataStore, cache)
+                            is ScanChangesRequest<*> ->
+                                processScanChangesRequest(storeAction as AnyScanChangesStoreAction, this@HbaseDataStore, cache)
+                            is ScanUpdatesRequest<*> ->
+                                processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@HbaseDataStore, cache)
+                            is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
+                                is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
+                                is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
+                                is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, cache, updateSharedFlow)
+                                is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@HbaseDataStore, updateSharedFlow)
+                                is InitialValuesUpdate<*> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
+                                is OrderedKeysUpdate<*> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
+                                else -> throw TypeException("Unknown update type $update for datastore processing")
+                            }
+                            else -> throw TypeException("Unknown request type ${storeAction.request}")
                         }
-                        else -> throw TypeException("Unknown request type ${storeAction.request}")
+                    } catch (e: CancellationException) {
+                        storeAction.response.cancel(e)
+                        throw e
+                    } catch (e: Throwable) {
+                        storeAction.response.completeExceptionally(e)
                     }
-                } catch (e: CancellationException) {
-                    storeAction.response.cancel(e)
-                    throw e
-                } catch (e: Throwable) {
-                    storeAction.response.completeExceptionally(e)
+                }
+            } finally {
+                while (!storeChannel.isEmpty) {
+                    val pending = storeChannel.tryReceive().getOrNull() ?: break
+                    pending.response.completeExceptionally(CancellationException("Datastore closing"))
                 }
             }
         }

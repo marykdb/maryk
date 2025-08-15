@@ -2,6 +2,8 @@ package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
@@ -94,7 +96,7 @@ class RocksDBDataStore private constructor(
     private val onlyCheckModelVersion: Boolean = false,
     val migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
     val versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
-) : AbstractDataStore(dataModelsById) {
+) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
@@ -396,7 +398,7 @@ class RocksDBDataStore private constructor(
             rocksDBOptions: DBOptions? = null,
             onlyCheckModelVersion: Boolean = false,
             migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
-            versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null
+            versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
         ): RocksDBDataStore {
             return RocksDBDataStore(
                 keepAllVersions = keepAllVersions,
@@ -405,7 +407,7 @@ class RocksDBDataStore private constructor(
                 rocksDBOptions = rocksDBOptions,
                 onlyCheckModelVersion = onlyCheckModelVersion,
                 migrationHandler = migrationHandler,
-                versionUpdateHandler = versionUpdateHandler
+                versionUpdateHandler = versionUpdateHandler,
             ).apply {
                 initAsync()
             }

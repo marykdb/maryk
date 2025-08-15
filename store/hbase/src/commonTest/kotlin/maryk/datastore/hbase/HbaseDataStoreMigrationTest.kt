@@ -79,7 +79,7 @@ class HbaseDataStoreMigrationTest {
                 didRunUpdateHandler = true
                 assertNotNull(oldModel)
                 assertEquals(ModelV1_1, newModel)
-            }
+            },
         )
 
         assertTrue { didRunUpdateHandler }
@@ -95,7 +95,7 @@ class HbaseDataStoreMigrationTest {
                 dataModelsById = mapOf(
                     1u to ModelV2,
                 ),
-                migrationHandler = null
+                migrationHandler = null,
             )
         }
 
@@ -112,7 +112,7 @@ class HbaseDataStoreMigrationTest {
                     assertEquals(ModelV1_1.Meta.version, storedDataModel.Meta.version)
                     // Should throw this exception to proof it is entering this handler
                     throw CustomException()
-                }
+                },
             )
         }
     }
@@ -127,7 +127,7 @@ class HbaseDataStoreMigrationTest {
             namespace = namespace,
             dataModelsById = mapOf(
                 1u to ModelWithDependents,
-            )
+            ),
         )
 
         dataStore.close()
@@ -138,7 +138,7 @@ class HbaseDataStoreMigrationTest {
             namespace = namespace,
             dataModelsById = mapOf(
                 1u to ModelWithDependents,
-            )
+            ),
         )
 
         dataStore.close()
@@ -153,7 +153,7 @@ class HbaseDataStoreMigrationTest {
             namespace = namespace,
             dataModelsById = mapOf(
                 1u to ModelV2,
-            )
+            ),
         )
 
         val addResult = dataStore.execute(
@@ -203,7 +203,7 @@ class HbaseDataStoreMigrationTest {
             namespace = namespace,
             dataModelsById = mapOf(
                 1u to ModelV2ExtraIndex,
-            )
+            ),
         )
 
         val scanResponse = dataStore.execute(

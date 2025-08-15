@@ -15,7 +15,7 @@ class RocksDBDataStoreTest {
         val dataStore = RocksDBDataStore.open(
             relativePath = createTestDBFolder("no-history"),
             dataModelsById = dataModelsForTests,
-            keepAllVersions = false
+            keepAllVersions = false,
         )
 
         runDataStoreTests(dataStore)
@@ -32,7 +32,7 @@ class RocksDBDataStoreTest {
         val dataStore = RocksDBDataStore.open(
             relativePath = folder,
             keepAllVersions = true,
-            dataModelsById = dataModelsForTests
+            dataModelsById = dataModelsForTests,
         )
 
         runDataStoreTests(dataStore)

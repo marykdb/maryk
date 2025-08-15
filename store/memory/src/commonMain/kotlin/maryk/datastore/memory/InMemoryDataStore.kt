@@ -48,6 +48,7 @@ import maryk.datastore.memory.processors.processScanRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.AbstractDataStore
+import maryk.datastore.shared.DISPATCHER
 
 /**
  * DataProcessor that stores all data changes in local memory.
@@ -55,8 +56,8 @@ import maryk.datastore.shared.AbstractDataStore
  */
 class InMemoryDataStore private constructor(
     override val keepAllVersions: Boolean = false,
-    dataModelsById: Map<UInt, IsRootDataModel>
-) : AbstractDataStore(dataModelsById) {
+    dataModelsById: Map<UInt, IsRootDataModel>,
+) : AbstractDataStore(dataModelsById, DISPATCHER) {
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
@@ -129,10 +130,10 @@ class InMemoryDataStore private constructor(
     companion object {
         fun open(
             keepAllVersions: Boolean = false,
-            dataModelsById: Map<UInt, IsRootDataModel>
+            dataModelsById: Map<UInt, IsRootDataModel>,
         ) = InMemoryDataStore(
             keepAllVersions = keepAllVersions,
-            dataModelsById = dataModelsById
+            dataModelsById = dataModelsById,
         )
     }
 }

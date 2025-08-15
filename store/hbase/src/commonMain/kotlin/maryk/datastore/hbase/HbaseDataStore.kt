@@ -1,6 +1,7 @@
 package maryk.datastore.hbase
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
@@ -75,7 +76,7 @@ class HbaseDataStore private constructor(
     private val onlyCheckModelVersion: Boolean = false,
     val migrationHandler: MigrationHandler<HbaseDataStore>? = null,
     val versionUpdateHandler: VersionUpdateHandler<HbaseDataStore>? = null,
-): AbstractDataStore(dataModelsById) {
+): AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val tableNameByDataModelName = mutableMapOf<String, TableName>()
 
@@ -228,7 +229,7 @@ class HbaseDataStore private constructor(
             dataModelsById: Map<UInt, IsRootDataModel>,
             onlyCheckModelVersion: Boolean = false,
             migrationHandler: MigrationHandler<HbaseDataStore>? = null,
-            versionUpdateHandler: VersionUpdateHandler<HbaseDataStore>? = null
+            versionUpdateHandler: VersionUpdateHandler<HbaseDataStore>? = null,
         ): HbaseDataStore {
             return HbaseDataStore(
                 keepAllVersions = keepAllVersions,
@@ -237,7 +238,7 @@ class HbaseDataStore private constructor(
                 dataModelsById = dataModelsById,
                 onlyCheckModelVersion = onlyCheckModelVersion,
                 migrationHandler = migrationHandler,
-                versionUpdateHandler = versionUpdateHandler
+                versionUpdateHandler = versionUpdateHandler,
             ).apply { initAsync() }
         }
     }

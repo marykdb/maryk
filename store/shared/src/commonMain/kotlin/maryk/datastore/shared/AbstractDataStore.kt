@@ -3,6 +3,7 @@ package maryk.datastore.shared
 import kotlinx.atomicfu.AtomicBoolean
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -31,14 +32,16 @@ import maryk.datastore.shared.updates.RemoveUpdateListenerAction
 import maryk.datastore.shared.updates.UpdateListenerForGet
 import maryk.datastore.shared.updates.UpdateListenerForScan
 import maryk.datastore.shared.updates.startProcessUpdateFlow
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Abstract DataStore implementation that takes care of the HLC clock
  */
 abstract class AbstractDataStore(
-    final override val dataModelsById: Map<UInt, IsRootDataModel>
+    final override val dataModelsById: Map<UInt, IsRootDataModel>,
+    coroutineContext: CoroutineContext,
 ): IsDataStore, CoroutineScope {
-    override val coroutineContext = DISPATCHER + SupervisorJob()
+    override val coroutineContext = coroutineContext + SupervisorJob() + CoroutineName("MarykDataStore")
 
     final override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (index, dataModel) ->
         Pair(dataModel.Meta.name, index)
@@ -123,7 +126,7 @@ abstract class AbstractDataStore(
         throw DefNotFoundException("DataStore not found ${dataModel.Meta.name}")
 
     override suspend fun close() {
-        val job = coroutineContext[Job]
+        val job = this@AbstractDataStore.coroutineContext[Job]
         job?.cancel()
         storeChannel.close()
         job?.join()

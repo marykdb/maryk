@@ -1,6 +1,5 @@
 package maryk.datastore.hbase
 
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -161,7 +160,8 @@ class HbaseDataStore(
             val cache = Cache()
 
             var clock = HLC()
-            storeFlow.onStart { storeActorHasStarted.complete(Unit) }.collect { storeAction ->
+            storeActorHasStarted.complete(Unit)
+            for (storeAction in storeChannel) {
                 try {
                     clock = clock.calculateMaxTimeStamp()
 

@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
@@ -231,7 +230,8 @@ class RocksDBDataStore(
             val cache = Cache()
 
             var clock = HLC()
-            storeFlow.onStart { storeActorHasStarted.complete(Unit) }.collect { storeAction ->
+            storeActorHasStarted.complete(Unit)
+            for (storeAction in storeChannel) {
                 try {
                     clock = clock.calculateMaxTimeStamp()
 

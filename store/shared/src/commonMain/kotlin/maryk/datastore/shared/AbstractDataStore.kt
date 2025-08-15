@@ -6,6 +6,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onCompletion
@@ -47,7 +48,7 @@ abstract class AbstractDataStore(
 
     protected val storeActorHasStarted = CompletableDeferred<Unit>()
     /** StoreActor to send actions to.*/
-    protected val storeFlow = MutableSharedFlow<StoreAction<*, *, *>>(extraBufferCapacity = 64)
+    protected val storeChannel = Channel<StoreAction<*, *, *>>(capacity = 64)
 
     private val updateSharedFlowHasStarted = CompletableDeferred<Unit>()
     val updateSharedFlow: MutableSharedFlow<IsUpdateAction> = MutableSharedFlow(extraBufferCapacity = 64)
@@ -73,7 +74,7 @@ abstract class AbstractDataStore(
 
         val response = CompletableDeferred<RP>()
 
-        storeFlow.emit(
+        storeChannel.send(
             StoreAction(request, response)
         )
 
@@ -87,7 +88,7 @@ abstract class AbstractDataStore(
 
         val response = CompletableDeferred<ProcessResponse<DM>>()
 
-        storeFlow.emit(
+        storeChannel.send(
             StoreAction(updateResponse, response)
         )
 
@@ -123,6 +124,7 @@ abstract class AbstractDataStore(
 
     override fun close() {
         this.cancel()
+        storeChannel.close()
     }
 
     override suspend fun closeAllListeners() {

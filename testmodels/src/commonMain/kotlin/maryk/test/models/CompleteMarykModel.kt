@@ -75,7 +75,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
             )
         }
     },
-    indices = {
+    indexes = {
         CompleteMarykModel.run {
             listOf(
                 number.ref(),

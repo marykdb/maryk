@@ -196,7 +196,7 @@ class DefinitionsTest {
               - !Ref uint
               - !Ref bool
               - !Ref enum
-              indices:
+              indexes:
               - !Multiple
                 - !Reversed dateTime
                 - !Ref enum

@@ -103,7 +103,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         booleanForKey.ref(),
         Reversed(dateForKey.ref())
     )
-    indices = listOf(
+    indexes = listOf(
         number.ref(),
         Reversed(dateTime.ref()),
         Multiple(

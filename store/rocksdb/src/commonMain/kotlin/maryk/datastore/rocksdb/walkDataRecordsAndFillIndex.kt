@@ -10,12 +10,12 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 
 /**
  * Walks all existing data records for [columnFamilies] of model in [dataStore]
- * Will index any [indicesToIndex] with relevant values
+ * Will index any [indexesToIndex] with relevant values
  */
 internal fun walkDataRecordsAndFillIndex(
     dataStore: RocksDBDataStore,
     columnFamilies: TableColumnFamilies,
-    indicesToIndex: List<IsIndexable>
+    indexesToIndex: List<IsIndexable>
 ) {
     Transaction(dataStore).use { transaction ->
         transaction.getIterator(dataStore.defaultReadOptions, columnFamilies.keys).use { iterator ->
@@ -35,7 +35,7 @@ internal fun walkDataRecordsAndFillIndex(
 
                 storeGetter.moveToKey(key)
 
-                for (index in indicesToIndex) {
+                for (index in indexesToIndex) {
                     storeGetter.lastVersion = null
                     // Store non-historic value
                     index.toStorageByteArrayForIndex(storeGetter, key)?.let { indexValue ->

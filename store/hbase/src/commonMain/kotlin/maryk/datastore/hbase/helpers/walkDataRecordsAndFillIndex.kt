@@ -25,7 +25,7 @@ import kotlin.math.max
 
 /**
  * Walks all existing data records of model in [table]
- * Will index any [indicesToIndex] with relevant values
+ * Will index any [indexesToIndex] with relevant values
  * Indices are already created as column families so only needed to retrieve the data and fill the index
  *
  * Currently only the latest values are indexed and not the full history.
@@ -34,22 +34,22 @@ internal suspend fun walkDataRecordsAndFillIndex(
     admin: AsyncAdmin,
     table: AsyncTable<AdvancedScanResultConsumer>,
     keepAllVersions: Boolean,
-    indicesToIndex: List<IsIndexable>
+    indexesToIndex: List<IsIndexable>
 ) {
-    // First create any missing indices
+    // First create any missing indexes
     admin.disableTable(table.name).await()
-    indicesToIndex.forEach { indexable ->
+    indexesToIndex.forEach { indexable ->
         val familyName = indexable.toFamilyName()
         admin.addColumnFamily(table.name, createFamilyDescriptor(familyName, keepAllVersions)).await()
     }
     admin.enableTable(table.name).await()
 
-    // Now walk all records and fill the indices
+    // Now walk all records and fill the indexes
     val orFilters = mutableListOf<Filter>(
         QualifierFilter(CompareOperator.EQUAL, BinaryComparator(MetaColumns.CreatedVersion.byteArray))
     )
 
-    indicesToIndex.forEach { indexable ->
+    indexesToIndex.forEach { indexable ->
         if (indexable is Multiple) {
             indexable.references.forEach {
                 orFilters += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it.toQualifierStorageByteArray()))
@@ -74,7 +74,7 @@ internal suspend fun walkDataRecordsAndFillIndex(
             val results = scanner.next(500)
             val indexPuts = mutableListOf<Put>()
             for (result in results) {
-                for (index in indicesToIndex) {
+                for (index in indexesToIndex) {
                     var latestVersion = result.getColumnLatestCell(dataColumnFamily, MetaColumns.CreatedVersion.byteArray)!!.timestamp.toULong()
 
                     val currentValuesGetter = object : IsValuesGetter {

@@ -12,7 +12,7 @@ import maryk.core.properties.types.Version
  * The interface also defines a [version] property, which can be used to support migration strategies between
  * different versions of the data model.
  *
- * Finally, the [indices] property enables you to define multiple indices for the data model, so that
+ * Finally, the [indexes] property enables you to define multiple indexes for the data model, so that
  * data can be retrieved efficiently from an index which fits a query.
  */
 interface IsRootDataModelDefinition : IsValuesDataModelDefinition {
@@ -22,14 +22,14 @@ interface IsRootDataModelDefinition : IsValuesDataModelDefinition {
     /** Specifies the size of the key in bytes. */
     val keyByteSize: Int
 
-    /** Specifies the indices within the key that correspond to each component of the key definition. */
+    /** Specifies the indexes within the key that correspond to each component of the key definition. */
     val keyIndices: IntArray
 
     /** Specifies the version of the data model. */
     val version: Version
 
-    /** Specifies additional indices for the data model for easier retrieval. */
-    val indices: List<IsIndexable>?
+    /** Specifies additional indexes for the data model for easier retrieval. */
+    val indexes: List<IsIndexable>?
 
     /**
      * The amount of bytes which have to be equal in start and end of scan range.

@@ -38,7 +38,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
         internal operator fun invoke(index: UInt, name: String, definition: IsUsableInMultiType<out Any, *>?, alternativeNames: Set<String>? = null) = object : IndexedEnumImpl<IndexedEnumComparable<Any>>(index, alternativeNames), MultiTypeEnum<Any> {
             init {
                 // Only allows higher than 0 because 0 is used to identify type references
-                require(index > 0u) { "Only indices of 1 and higher are allowed" }
+                require(index > 0u) { "Only indexes of 1 and higher are allowed" }
             }
             override val name = name
             @Suppress("UNCHECKED_CAST")

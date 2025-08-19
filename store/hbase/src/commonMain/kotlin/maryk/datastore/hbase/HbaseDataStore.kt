@@ -117,7 +117,7 @@ class HbaseDataStore private constructor(
                     }
                 }
                 is MigrationStatus.NewIndicesOnExistingProperties -> {
-                    fillIndex(admin, dataModel, migrationStatus.indicesToIndex)
+                    fillIndex(admin, dataModel, migrationStatus.indexesToIndex)
                     scheduledVersionUpdateHandlers.add {
                         versionUpdateHandler?.invoke(this@HbaseDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                         storeModelDefinition(admin, tableDescriptor.await(), dataModel, keepAllVersions)
@@ -131,7 +131,7 @@ class HbaseDataStore private constructor(
                         throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
                     }
 
-                    migrationStatus.indicesToIndex?.let {
+                    migrationStatus.indexesToIndex?.let {
                         fillIndex(admin, dataModel, it)
                     }
                     scheduledVersionUpdateHandlers.add {
@@ -215,20 +215,20 @@ class HbaseDataStore private constructor(
     fun <DM: IsRootDataModel> getTable(dataModel: DM): AsyncTable<AdvancedScanResultConsumer> =
         connection.getTable(getTableName(dataModel))
 
-    /** Walk all current values and fill [indicesToIndex] */
+    /** Walk all current values and fill [indexesToIndex] */
     private suspend fun fillIndex(
         admin: AsyncAdmin,
         dataModel: IsRootDataModel,
-        indicesToIndex: List<IsIndexable>,
+        indexesToIndex: List<IsIndexable>,
     ) {
         val tableName = getTableName(dataModel)
 
-        for (indexable in indicesToIndex) {
+        for (indexable in indexesToIndex) {
             deleteCompleteIndexContents(admin, tableName, indexable)
         }
 
         val table = getTable(dataModel)
-        walkDataRecordsAndFillIndex(admin, table, keepAllVersions, indicesToIndex)
+        walkDataRecordsAndFillIndex(admin, table, keepAllVersions, indexesToIndex)
     }
 
     companion object {

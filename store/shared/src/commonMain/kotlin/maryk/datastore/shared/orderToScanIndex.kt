@@ -54,9 +54,9 @@ fun IsRootDataModel.orderToScanType(
                 return it
             }
 
-            // Walk all indices and try to match given Orders
-            this.Meta.indices?.let { indices ->
-                indexLoop@ for (indexable in indices) {
+            // Walk all indexes and try to match given Orders
+            this.Meta.indexes?.let { indexes ->
+                indexLoop@ for (indexable in indexes) {
                     indexableToScan(indexable, order.orders, equalPairs) { direction ->
                         IndexScan(
                             indexable,
@@ -68,7 +68,7 @@ fun IsRootDataModel.orderToScanType(
                 }
 
                 throw RequestException("No index match found on model ${this.Meta.name} for order $order")
-            } ?: throw RequestException("No indices defined on model ${this.Meta.name} so order $order is not allowed")
+            } ?: throw RequestException("No indexes defined on model ${this.Meta.name} so order $order is not allowed")
         }
         else -> throw TypeException("Order type of $order is not supported")
     }
@@ -87,8 +87,8 @@ private fun IsRootDataModel.singleOrderToScanType(
             return it
         }
 
-        this.Meta.indices?.let { indices ->
-            for (indexable in indices) {
+        this.Meta.indexes?.let { indexes ->
+            for (indexable in indexes) {
                 singleIndexableToScan(indexable, order) { direction ->
                     IndexScan(indexable, direction)
                 }?.let {
@@ -149,7 +149,7 @@ private fun indexableToScan(
     var direction: Direction? = null
 
     if (indexable !is Multiple) {
-        return null // Non multiple indices should be catched with simple cases above
+        return null // Non multiple indexes should be catched with simple cases above
     } else if (orders.size > indexable.references.size + 1) {
         return null // If more orders than index size then skip
     } else if (orders.size > indexable.references.size && orders.last().propertyReference != null) {

@@ -131,7 +131,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
 
             /**
              * Stored enum was not present in new data model so it should have been added to reserved
-             * indices and names. Otherwise, should be handled by a migration.
+             * indexes and names. Otherwise, should be handled by a migration.
              */
             fun processStored(storedEnum: IndexedEnum) {
                 if (this.reservedIndices?.contains(storedEnum.index) != true) {

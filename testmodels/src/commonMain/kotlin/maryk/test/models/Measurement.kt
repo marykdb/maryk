@@ -47,7 +47,7 @@ object Measurement : RootDataModel<Measurement>(
             UUIDKey,
         )
     },
-    indices = {
+    indexes = {
         listOf(
             Measurement { measurement.withType(MeasurementType.Length) { lengthInCm::ref } },
             Measurement { measurement simpleRefAtType MeasurementType.Number }

@@ -15,7 +15,7 @@ import maryk.core.properties.types.numeric.SInt32
 object ModelV1 : RootDataModel<ModelV1>(
     name = "Model",
     version = Version(1),
-    indices = {
+    indexes = {
         listOf(
             ModelV1.value.ref()
         )
@@ -46,7 +46,7 @@ object ModelV1_1 : RootDataModel<ModelV1_1>(
 object ModelV2 : RootDataModel<ModelV2>(
     name = "Model",
     version = Version(2),
-    indices = { listOf(
+    indexes = { listOf(
         ModelV2.value.ref()
     ) },
 ) {
@@ -57,7 +57,7 @@ object ModelV2 : RootDataModel<ModelV2>(
 object ModelV2ExtraIndex : RootDataModel<ModelV2ExtraIndex>(
     name = "Model",
     version = Version(2),
-    indices = {
+    indexes = {
         listOf(
             ModelV2ExtraIndex.value.ref(),
             ModelV2ExtraIndex.newNumber.ref()
@@ -100,7 +100,7 @@ object DependentModel : DataModel<DependentModel>() {
 
 object ModelWithDependents : RootDataModel<ModelWithDependents>(
     version = Version(1, 0),
-    indices = { listOf(
+    indexes = { listOf(
         ModelWithDependents { dep { value::ref } }
     ) }
 ) {

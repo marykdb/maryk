@@ -117,10 +117,10 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
                 }
             }
             is IndexPartialToRegexMatch -> {
-                // Only used in indices since String is not possible in Key
+                // Only used in indexes since String is not possible in Key
             }
             is IndexPartialSizeToMatch -> {
-                // Only used in indices since key cannot hold flexible size key parts
+                // Only used in indexes since key cannot hold flexible size key parts
             }
         }
     }

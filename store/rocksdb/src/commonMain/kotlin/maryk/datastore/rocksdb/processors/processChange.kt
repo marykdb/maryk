@@ -665,15 +665,15 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
 
         var indexUpdates: MutableList<IsIndexUpdate>? = null
 
-        // Process indices
-        dataModel.Meta.indices?.let { indices ->
+        // Process indexes
+        dataModel.Meta.indexes?.let { indexes ->
             indexUpdates = mutableListOf()
 
             val storeGetter = StoreValuesGetter(key.bytes, dataStore.db, columnFamilies, dataStore.defaultReadOptions)
             val transactionGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
             transactionGetter.moveToKey(key.bytes, transaction)
 
-            for (index in indices) {
+            for (index in indexes) {
                 val oldKeyAndValue = index.toStorageByteArrayForIndex(storeGetter, key.bytes)
                 val newKeyAndValue = index.toStorageByteArrayForIndex(transactionGetter, key.bytes)
 
@@ -804,7 +804,7 @@ private fun createValueWriter(
                         }
 
                         // Creates index reference on the table if it not exists so delete can find
-                        // what values to delete from the unique indices.
+                        // what values to delete from the unique indexes.
                         dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
                         setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                     } catch (e: UniqueException) {

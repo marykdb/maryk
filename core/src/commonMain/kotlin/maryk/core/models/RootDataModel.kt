@@ -44,7 +44,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
     constructor(
         keyDefinition: () -> IsIndexable = { UUIDKey },
         version: Version = Version(1),
-        indices: (() -> List<IsIndexable>)? = null,
+        indexes: (() -> List<IsIndexable>)? = null,
         reservedIndices: List<UInt>? = null,
         reservedNames: List<String>? = null,
         name: String? = null,
@@ -54,7 +54,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
             name = name ?: passedName ?: throw DefNotFoundException("RootDataModel should have a name. Please define in a class instead of anonymous object or pass name as property."),
             keyDefinition = keyDefinition.invoke(),
             version = version,
-            indices = indices?.invoke(),
+            indexes = indexes?.invoke(),
             reservedIndices = reservedIndices,
             reservedNames = reservedNames,
             minimumKeyScanByteRange = minimumKeyScanByteRange,
@@ -85,19 +85,19 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
         checkedDataModelNames: MutableList<String>?,
         migrationReasons: MutableList<String>,
     ): MigrationStatus {
-        val indicesToIndex = mutableListOf<IsIndexable>()
+        val indexesToIndex = mutableListOf<IsIndexable>()
         if (storedDataModel is IsRootDataModel) {
-            // Only process indices if they are present on new model.
+            // Only process indexes if they are present on new model.
             // If they are present on stored but not on new, accept it.
-            Meta.indices?.let { indices ->
-                val orderedIndices = indices.sortedBy { it.referenceStorageByteArray }
+            Meta.indexes?.let { indexes ->
+                val orderedIndices = indexes.sortedBy { it.referenceStorageByteArray }
 
-                if (storedDataModel.Meta.indices == null) {
+                if (storedDataModel.Meta.indexes == null) {
                     // Only index the values which have stored properties on the stored model
                     val toIndex = orderedIndices.filter { it.isCompatibleWithModel(storedDataModel) }
-                    indicesToIndex.addAll(toIndex)
+                    indexesToIndex.addAll(toIndex)
                 } else {
-                    val storedOrderedIndices = storedDataModel.Meta.indices!!.sortedBy { it.referenceStorageByteArray }
+                    val storedOrderedIndices = storedDataModel.Meta.indexes!!.sortedBy { it.referenceStorageByteArray }
 
                     synchronizedIteration(
                         orderedIndices.iterator(),
@@ -108,7 +108,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                         processOnlyOnIterator1 = { newIndex ->
                             // Only index the values which have stored properties on the stored model
                             if (newIndex.isCompatibleWithModel(storedDataModel)) {
-                                indicesToIndex.add(newIndex)
+                                indexesToIndex.add(newIndex)
                             }
                         }
                     )
@@ -134,15 +134,15 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
 
         return if (parentResult == MigrationStatus.AlreadyProcessed) {
             return parentResult
-        } else if (indicesToIndex.isEmpty()) {
+        } else if (indexesToIndex.isEmpty()) {
             parentResult
         } else when (parentResult) {
             is MigrationStatus.NeedsMigration -> MigrationStatus.NeedsMigration(
                 storedDataModel,
                 migrationReasons,
-                indicesToIndex
+                indexesToIndex
             )
-            else -> MigrationStatus.NewIndicesOnExistingProperties(storedDataModel, indicesToIndex)
+            else -> MigrationStatus.NewIndicesOnExistingProperties(storedDataModel, indexesToIndex)
         }
     }
 
@@ -218,7 +218,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 val metaValues = mutableListOf<ValueItem>()
 
                 var keyDefinitionToReadLater: List<JsonToken>? = null
-                var indicesToReadLater: List<JsonToken>? = null
+                var indexesToReadLater: List<JsonToken>? = null
 
                 // Inject name if it was defined as a map key in a higher level
                 context?.currentDefinitionName?.let { name ->
@@ -253,8 +253,8 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                                         continue@walker
                                     }
                                 }
-                                RootDataModelDefinition.Model.indices -> {
-                                    indicesToReadLater = mutableListOf<JsonToken>().apply {
+                                RootDataModelDefinition.Model.indexes -> {
+                                    indexesToReadLater = mutableListOf<JsonToken>().apply {
                                         reader.skipUntilNextField(::add)
                                     }
                                     continue@walker
@@ -306,7 +306,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 }
 
                 readDelayed(keyDefinitionToReadLater, RootDataModelDefinition.Model.key)
-                readDelayed(indicesToReadLater, RootDataModelDefinition.Model.indices)
+                readDelayed(indexesToReadLater, RootDataModelDefinition.Model.indexes)
 
                 metaValues.sortBy { it.index }
 

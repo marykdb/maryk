@@ -41,19 +41,19 @@ fun IsRootDataModel.generateKotlin(
         "keyDefinition = ${keyDefs.prependIndent().prependIndent().trimStart()}"
     } else null
 
-    // Add indices if they are not null
-    val indicesAsKotlin = Meta.indices?.let { indexables ->
+    // Add indexes if they are not null
+    val indexesAsKotlin = Meta.indexes?.let { indexables ->
         val output = mutableListOf<String>()
         for (it in indexables) {
             output += it.generateKotlin(packageName, Meta.name, addImport)
         }
-        "indices = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),"
+        "indexes = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),"
     }
 
-    val reservedIndices = Meta.reservedIndices.let { indices ->
+    val reservedIndices = Meta.reservedIndices.let { indexes ->
         when {
-            indices.isNullOrEmpty() -> null
-            else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")})"
+            indexes.isNullOrEmpty() -> null
+            else -> "reservedIndices = listOf(${indexes.joinToString(", ", postfix = "u")})"
         }
     }
     val reservedNames = Meta.reservedNames.let { names ->
@@ -68,7 +68,7 @@ fun IsRootDataModel.generateKotlin(
         enumKotlinDefinitions.add(it)
     }
 
-    val constructorParameters = arrayOf(versionAsKotlin, keyDefAsKotlin, indicesAsKotlin, reservedIndices, reservedNames)
+    val constructorParameters = arrayOf(versionAsKotlin, keyDefAsKotlin, indexesAsKotlin, reservedIndices, reservedNames)
         .filterNotNull()
         .joinToString("\n        ")
         .let { if (it.isBlank()) "" else "\n        $it\n    " }

@@ -33,7 +33,7 @@ fun IsTypedDataModel<*>.toDataFrame(): AnyFrame {
         "index", "name", "type", "required", "final", "unique", "options",
     )
 
-    val indices = ArrayList<String>(this.size)
+    val indexes = ArrayList<String>(this.size)
     val names = ArrayList<String>(this.size)
     val types = ArrayList<String>(this.size)
     val requireds = ArrayList<String>(this.size)
@@ -42,7 +42,7 @@ fun IsTypedDataModel<*>.toDataFrame(): AnyFrame {
     val options = ArrayList<DataFrame<*>>(this.size)
 
     this.forEachIndexed { index, propertyDef ->
-        indices.add(propertyDef.index.toString())
+        indexes.add(propertyDef.index.toString())
         names.add(propertyDef.name)
         types.add(when(val def = propertyDef.definition) {
             is IsTransportablePropertyDefinitionType<*> -> def.propertyDefinitionType.name
@@ -61,7 +61,7 @@ fun IsTypedDataModel<*>.toDataFrame(): AnyFrame {
     }
 
     return dataFrameOf(headers)(
-        columnOf(*indices.toTypedArray()),
+        columnOf(*indexes.toTypedArray()),
         columnOf(*names.toTypedArray()),
         columnOf(*types.toTypedArray()),
         columnOf(*requireds.toTypedArray()),

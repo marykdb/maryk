@@ -45,7 +45,7 @@ If they are not, it will trigger a migration. A `migrationHandler` must be defin
 There is also a `versionUpdateHandler` which enables you to do actions after an update/migration action
 was successfully done. This way you can add intial data which depends on the updated models.
 
-**Note:** It is possible to add Models, indices, and properties without a migration. Additionally, it is possible 
+**Note:** It is possible to add Models, indexes, and properties without a migration. Additionally, it is possible 
 to set less strict validation rules. However, it is not possible to change the types of properties, rename values 
 without having the old value an alternative, or add more strict validation without automatically triggering a migration.
 

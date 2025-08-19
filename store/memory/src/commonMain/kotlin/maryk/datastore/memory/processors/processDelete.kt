@@ -33,7 +33,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
             dataStore.removeFromUniqueIndices(objectToDelete, version, hardDelete)
 
             // Delete indexed values
-            dataModel.Meta.indices?.forEach { indexable ->
+            dataModel.Meta.indexes?.forEach { indexable ->
                 val oldValue = indexable.toStorageByteArrayForIndex(objectToDelete, objectToDelete.key.bytes)
                 val indexRef = indexable.referenceStorageByteArray.bytes
                 if (oldValue != null) {

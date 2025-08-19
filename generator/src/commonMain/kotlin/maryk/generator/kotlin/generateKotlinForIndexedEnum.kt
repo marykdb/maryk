@@ -20,10 +20,10 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
     addImport("maryk.core.properties.enum.IndexedEnumImpl")
     addImport("maryk.core.properties.enum.IndexedEnumDefinition")
 
-    val reservedIndices = this.reservedIndices.let { indices ->
+    val reservedIndices = this.reservedIndices.let { indexes ->
         when {
-            indices.isNullOrEmpty() -> ""
-            else -> "\n"+ "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),".prependIndent().prependIndent().prependIndent()
+            indexes.isNullOrEmpty() -> ""
+            else -> "\n"+ "reservedIndices = listOf(${indexes.joinToString(", ", postfix = "u")}),".prependIndent().prependIndent().prependIndent()
         }
     }
     val reservedNames = this.reservedNames.let { names ->

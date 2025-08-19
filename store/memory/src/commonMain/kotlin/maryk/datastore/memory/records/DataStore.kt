@@ -9,13 +9,13 @@ import maryk.datastore.shared.UniqueException
 import maryk.lib.extensions.compare.compareTo
 
 /**
- * An in memory data store containing records and indices
+ * An in memory data store containing records and indexes
  */
 internal class DataStore<DM : IsRootDataModel>(
     val keepAllVersions: Boolean
 ) {
     val records: MutableList<DataRecord<DM>> = mutableListOf()
-    private val indices: MutableList<IndexValues<DM>> = mutableListOf()
+    private val indexes: MutableList<IndexValues<DM>> = mutableListOf()
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, Comparable<Any>>> = mutableListOf()
 
     /** Add [record] to index for [value] and pass [previousValue] so that index reference can be deleted */
@@ -71,7 +71,7 @@ internal class DataStore<DM : IsRootDataModel>(
         index.addToIndex(record, value, version)
     }
 
-    /** Remove [dataRecord] from all unique indices and register removal below [version] */
+    /** Remove [dataRecord] from all unique indexes and register removal below [version] */
     internal fun removeFromUniqueIndices(
         dataRecord: DataRecord<DM>,
         version: HLC,
@@ -125,16 +125,16 @@ internal class DataStore<DM : IsRootDataModel>(
 
     /** Get unique index for [indexReference] or create it if it does not exist. */
     internal fun getOrCreateIndex(indexReference: ByteArray): IndexValues<DM> {
-        val i = indices.binarySearch { it.indexReference compareTo indexReference }
+        val i = indexes.binarySearch { it.indexReference compareTo indexReference }
         return if (i < 0) {
             IndexValues<DM>(indexReference).also {
-                indices.add(
+                indexes.add(
                     i * -1 - 1,
                     it
                 )
             }
         } else {
-            indices[i]
+            indexes[i]
         }
     }
 

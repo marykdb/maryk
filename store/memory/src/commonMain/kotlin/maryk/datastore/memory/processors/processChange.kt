@@ -152,7 +152,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
 
         val outChanges = mutableListOf<IsChange>()
 
-        val oldIndexValues = dataModel.Meta.indices?.map {
+        val oldIndexValues = dataModel.Meta.indexes?.map {
             it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
         }
 
@@ -594,8 +594,8 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         // Apply the new values now all validations have been accepted
         objectToChange.values = newValueList
 
-        // Process indices
-        dataModel.Meta.indices?.forEachIndexed { index, it ->
+        // Process indexes
+        dataModel.Meta.indexes?.forEachIndexed { index, it ->
             if (indexUpdates == null) {
                 indexUpdates = mutableListOf()
             }

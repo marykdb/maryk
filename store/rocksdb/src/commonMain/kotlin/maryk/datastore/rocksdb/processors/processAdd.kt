@@ -72,7 +72,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
             setLatestVersion(transaction, columnFamilies, key, versionBytes)
 
             // Find new index values to write
-            dataModel.Meta.indices?.forEach { indexDefinition ->
+            dataModel.Meta.indexes?.forEach { indexDefinition ->
                 val indexReference = indexDefinition.referenceStorageByteArray.bytes
                 val valueAndKeyBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                     ?: return@forEach // skip if no complete values to index are found
@@ -109,7 +109,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                             }
 
                             // Creates index reference on the table if it not exists so delete can find
-                            // what values to delete from the unique indices.
+                            // what values to delete from the unique indexes.
                             dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
                             setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                         }

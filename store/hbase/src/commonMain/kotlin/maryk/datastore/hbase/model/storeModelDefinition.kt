@@ -63,15 +63,15 @@ suspend fun HbaseDataStore.storeModelDefinition(
         newTableDescriptor.setValue(TableMetaColumns.Dependents.byteArray, dependentBytes)
     }
 
-    val indicesAsString = dataModel.Meta.indices?.map {
+    val indexesAsString = dataModel.Meta.indexes?.map {
         it.toString() to it.toFamilyName()
     }
 
     if (tableDescriptor != null) {
         logger.info("Updating table ${dataModel.Meta.name}")
 
-        // Add all indices which do not exist yet
-        indicesAsString?.forEach { (name, familyName) ->
+        // Add all indexes which do not exist yet
+        indexesAsString?.forEach { (name, familyName) ->
             if (!tableDescriptor.hasColumnFamily(familyName)) {
                 logger.info("Adding index $name as ${familyName.decodeToString()}")
                 newTableDescriptor.setColumnFamily(
@@ -84,8 +84,8 @@ suspend fun HbaseDataStore.storeModelDefinition(
     } else {
         logger.info("Creating table ${dataModel.Meta.name}")
 
-        // Add all indices which do not exist yet
-        indicesAsString?.forEach { (name, familyName) ->
+        // Add all indexes which do not exist yet
+        indexesAsString?.forEach { (name, familyName) ->
             logger.info("Adding index $name as ${familyName.decodeToString()}")
             newTableDescriptor.setColumnFamily(
                 createFamilyDescriptor(familyName, keepAllVersions)

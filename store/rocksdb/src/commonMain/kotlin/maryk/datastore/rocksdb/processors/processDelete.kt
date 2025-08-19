@@ -94,11 +94,11 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                 }
 
                 // Delete indexed values
-                dataModel.Meta.indices?.let { indices ->
+                dataModel.Meta.indexes?.let { indexes ->
                     val valuesGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
                     valuesGetter.moveToKey(key.bytes, transaction)
 
-                    indices.forEach { indexable ->
+                    indexes.forEach { indexable ->
                         val indexReference = indexable.referenceStorageByteArray.bytes
                         val valueAndKeyBytes = indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
                             ?: return@forEach // skip if no complete values to index are found

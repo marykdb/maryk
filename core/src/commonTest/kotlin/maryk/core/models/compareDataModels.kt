@@ -27,7 +27,7 @@ internal fun <DM : IsStorableDataModel<*>> compareDataModels(converted: DM, orig
 
         assertEquals(original.Meta.keyDefinition, converted.Meta.keyDefinition)
 
-        assertEquals(original.Meta.indices?.size, converted.Meta.indices?.size)
-        assertEquals(original.Meta.indices, converted.Meta.indices)
+        assertEquals(original.Meta.indexes?.size, converted.Meta.indexes?.size)
+        assertEquals(original.Meta.indexes, converted.Meta.indexes)
     }
 }

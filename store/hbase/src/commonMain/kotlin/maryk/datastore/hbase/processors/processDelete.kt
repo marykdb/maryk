@@ -63,7 +63,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                         this += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it))
                     }
 
-                    dataModel.Meta.indices?.forEach { indexable ->
+                    dataModel.Meta.indexes?.forEach { indexable ->
                         if (indexable is Multiple) {
                             indexable.references.forEach {
                                 it.toQualifierStorageByteArray()
@@ -96,8 +96,8 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
             }
 
             // Delete indexed values
-            dataModel.Meta.indices?.let { indices ->
-                indices.forEach { indexable ->
+            dataModel.Meta.indexes?.let { indexes ->
+                indexes.forEach { indexable ->
                     val valueBytes = indexable.toStorageByteArrayForIndex(valuesGetter)
                         ?: return@forEach // skip if no complete values to index are found
 

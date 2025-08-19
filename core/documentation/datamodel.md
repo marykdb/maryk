@@ -16,7 +16,7 @@ Let us consider a simple DataModel for a person, which includes their first and 
 birth.
 
 To create a model for a data object within Kotlin, you start by creating a Kotlin object that extends from `RootModel`.
-Within this object, you define properties by their names, indices, types, and any validations.
+Within this object, you define properties by their names, indexes, types, and any validations.
 
 ```kotlin
 object Person : RootDataModel<Person>() {
@@ -71,7 +71,7 @@ A RootDataModel is essential for storing all DataModel structures, serving as th
 additional methods for creating a unique key based on the data within the object. For more information about keys, refer
 to the [key documentation](key.md).
 
-RootDataModels provide ways to set a version for easy migrations and to set ordered indices for more efficient data
+RootDataModels provide ways to set a version for easy migrations and to set ordered indexes for more efficient data
 retrieval.
 
 The first example above uses a RootDataModel.
@@ -86,7 +86,7 @@ object PersonalDiaryItem : RootDataModel<Person>(
             Reversed(dateOfPosting.ref()),
         )
     },
-    indices = listOf(
+    indexes = listOf(
         Multiple(
             user.ref(),
             tags.refToAny(),

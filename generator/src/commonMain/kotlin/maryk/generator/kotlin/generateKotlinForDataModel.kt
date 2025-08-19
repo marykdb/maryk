@@ -17,10 +17,10 @@ fun DataModel<*>.generateKotlin(
         enumKotlinDefinitions.add(it)
     }
 
-    val reservedIndices = Meta.reservedIndices.let { indices ->
+    val reservedIndices = Meta.reservedIndices.let { indexes ->
         when {
-            indices.isNullOrEmpty() -> null
-            else -> "reservedIndices = listOf(${indices.joinToString(", ", postfix = "u")}),"
+            indexes.isNullOrEmpty() -> null
+            else -> "reservedIndices = listOf(${indexes.joinToString(", ", postfix = "u")}),"
         }
     }
     val reservedNames = Meta.reservedNames.let { names ->

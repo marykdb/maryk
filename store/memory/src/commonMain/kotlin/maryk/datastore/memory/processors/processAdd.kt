@@ -49,7 +49,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         )
 
         // Find new index values to write
-        dataModel.Meta.indices?.forEach { indexDefinition ->
+        dataModel.Meta.indexes?.forEach { indexDefinition ->
             val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
                 ?: return@forEach // skip if no complete values to index are found
 

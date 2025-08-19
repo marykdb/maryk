@@ -189,7 +189,7 @@ class RocksDBDataStore private constructor(
                                 }
                             }
                             is NewIndicesOnExistingProperties -> {
-                                fillIndex(migrationStatus.indicesToIndex, tableColumnFamilies)
+                                fillIndex(migrationStatus.indexesToIndex, tableColumnFamilies)
                                 scheduledVersionUpdateHandlers.add {
                                     versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                                     storeModelDefinition(db, modelColumnFamily, dataModel)
@@ -203,7 +203,7 @@ class RocksDBDataStore private constructor(
                                     throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
                                 }
 
-                                migrationStatus.indicesToIndex?.let {
+                                migrationStatus.indexesToIndex?.let {
                                     fillIndex(it, tableColumnFamilies)
                                 }
                                 scheduledVersionUpdateHandlers.add {
@@ -286,16 +286,16 @@ class RocksDBDataStore private constructor(
         }
     }
 
-    /** Walk all current values in [tableColumnFamilies] and fill [indicesToIndex] */
+    /** Walk all current values in [tableColumnFamilies] and fill [indexesToIndex] */
     private fun fillIndex(
-        indicesToIndex: List<IsIndexable>,
+        indexesToIndex: List<IsIndexable>,
         tableColumnFamilies: TableColumnFamilies
     ) {
-        for (indexable in indicesToIndex) {
+        for (indexable in indexesToIndex) {
             deleteCompleteIndexContents(this.db, tableColumnFamilies, indexable)
         }
 
-        walkDataRecordsAndFillIndex(this, tableColumnFamilies, indicesToIndex)
+        walkDataRecordsAndFillIndex(this, tableColumnFamilies, indexesToIndex)
     }
 
     private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: IsRootDataModel) {
@@ -360,13 +360,13 @@ class RocksDBDataStore private constructor(
         columnFamilyHandlesByDataModelIndex[dataModelIdsByString[dataModel.Meta.name]]
             ?: throw DefNotFoundException("DataModel definition not found for ${dataModel.Meta.name}")
 
-    /** Get the unique indices for [dbIndex] and [uniqueHandle] */
+    /** Get the unique indexes for [dbIndex] and [uniqueHandle] */
     internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =
         uniqueIndicesByDataModelIndex.value[dbIndex] ?: searchExistingUniqueIndices(uniqueHandle)
 
     /**
      * Checks if unique index exists and creates it if not otherwise.
-     * This is needed so delete knows which indices to scan for values to delete.
+     * This is needed so delete knows which indexes to scan for values to delete.
      */
     internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, uniqueName: ByteArray) {
         val existingDbUniques = uniqueIndicesByDataModelIndex.value[dbIndex]
@@ -384,7 +384,7 @@ class RocksDBDataStore private constructor(
         }
     }
 
-    /** Search for existing unique indices in data store by [uniqueHandle] */
+    /** Search for existing unique indexes in data store by [uniqueHandle] */
     private fun searchExistingUniqueIndices(
         uniqueHandle: ColumnFamilyHandle
     ) = buildList {

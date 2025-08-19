@@ -40,7 +40,7 @@ object TestMarykModel : RootDataModel<TestMarykModel>(
             )
         }
     },
-    indices = {
+    indexes = {
         TestMarykModel.run {
             listOf(
                 Multiple(

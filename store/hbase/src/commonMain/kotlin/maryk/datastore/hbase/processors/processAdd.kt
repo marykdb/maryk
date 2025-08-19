@@ -64,7 +64,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         put.addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray, version.timestamp.toLong(), versionBytes)
 
         // Find new index values to write
-        dataModel.Meta.indices?.forEach { indexDefinition ->
+        dataModel.Meta.indexes?.forEach { indexDefinition ->
             val indexFamily = indexDefinition.toFamilyName()
             val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd)
                 ?: return@forEach // skip if no complete values to index are found

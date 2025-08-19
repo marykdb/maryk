@@ -20,7 +20,7 @@ import maryk.core.values.ObjectValues
 /**
  * Changes for a list property containing values of type [T]
  * Options are to [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
- * This is also the order of operation so mind changed indices while changing
+ * This is also the order of operation so mind changed indexes while changing
  */
 data class ListValueChanges<T : Any> internal constructor(
     override val reference: IsPropertyReference<List<T>, IsPropertyDefinition<List<T>>, *>,
@@ -73,7 +73,7 @@ private val valueDefinition = ContextualValueDefinition(
 /**
  * Convenience infix method to define an array value change
  * Options are to [deleteValues], [addValuesAtIndex] and/or [addValuesToEnd]
- * This is also the order of operation so mind changed indices while changing
+ * This is also the order of operation so mind changed indexes while changing
  */
 fun <T : Any> IsPropertyReference<List<T>, IsCollectionDefinition<T, List<T>, *, *>, *>.change(
     deleteValues: List<T>? = null,

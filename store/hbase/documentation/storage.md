@@ -10,7 +10,7 @@ client uses the right definition of the model. This to prevent any data corrupti
 any DataModel it depends on in its substructure. See [TableMetaColumns](../src/commonMain/kotlin/maryk/datastore/hbase/TableMetaColumns.kt)
 for the exact column keys below which the values are stored.
 
-The Table contains all the data but also all the unique value indices and other indices.
+The Table contains all the data but also all the unique value indexes and other indexes.
 
 # The Data column family
 

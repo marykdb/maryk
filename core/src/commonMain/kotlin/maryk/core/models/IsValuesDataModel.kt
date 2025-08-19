@@ -12,7 +12,7 @@ interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel<Any> {
 
     /**
      * Checks the model if there are no conflicting values.
-     * It at the moment checks the reserved indices and names of models to see if those are not used in the model.
+     * It at the moment checks the reserved indexes and names of models to see if those are not used in the model.
      */
     fun checkModel() {
         this.Meta.reservedIndices?.let { reservedIndices ->

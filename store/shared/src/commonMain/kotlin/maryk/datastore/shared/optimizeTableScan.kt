@@ -24,8 +24,8 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
     keyScanRanges: KeyScanRanges,
 ): ScanType {
     val equalPairs = keyScanRanges.equalPairs
-    this.Meta.indices?.let { indices ->
-        indexWalk@ for (indexable in indices) {
+    this.Meta.indexes?.let { indexes ->
+        indexWalk@ for (indexable in indexes) {
             when (indexable) {
                 is Multiple -> {
                     for (subIndexable in indexable.references) {

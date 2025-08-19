@@ -36,7 +36,7 @@ data class RootDataModelDefinition(
     override val name: String,
     override val keyDefinition: IsIndexable = UUIDKey,
     override val version: Version = Version(1),
-    override val indices: List<IsIndexable>? = null,
+    override val indexes: List<IsIndexable>? = null,
     override val reservedIndices: List<UInt>? = null,
     override val reservedNames: List<String>? = null,
     override val minimumKeyScanByteRange: UInt? = null,
@@ -64,9 +64,9 @@ data class RootDataModelDefinition(
             },
             fromSerializable = { value: TypedValue<IndexKeyPartType<IsIndexable>, Any>? -> value?.value as IsIndexable }
         )
-        val indices by list(
+        val indexes by list(
             index = 4u,
-            getter = RootDataModelDefinition::indices,
+            getter = RootDataModelDefinition::indexes,
             valueDefinition = InternalMultiTypeDefinition(
                 typeEnum = IndexKeyPartType,
                 definitionMap = mapOfIndexKeyPartDefinitions
@@ -102,7 +102,7 @@ data class RootDataModelDefinition(
                 name = values(1u),
                 version = values(2u),
                 keyDefinition = values(3u) ?: UUIDKey,
-                indices = values(4u),
+                indexes = values(4u),
                 reservedIndices = values(5u),
                 reservedNames = values(6u),
                 minimumKeyScanByteRange = values(7u),

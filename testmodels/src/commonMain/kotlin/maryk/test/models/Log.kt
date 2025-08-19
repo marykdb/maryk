@@ -33,7 +33,7 @@ object Log : RootDataModel<Log>(
             Log.severity.ref()
         )
     },
-    indices = {
+    indexes = {
         listOf(
             Log.severity.ref()
         )

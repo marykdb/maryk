@@ -4,7 +4,7 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 
-/** Type of scan to perform. On Table or one of the indices */
+/** Type of scan to perform. On Table or one of the indexes */
 sealed class ScanType {
     abstract val direction: Direction
 

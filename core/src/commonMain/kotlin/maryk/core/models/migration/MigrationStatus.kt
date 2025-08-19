@@ -25,14 +25,14 @@ sealed class MigrationStatus {
     /** The model contains new indexes on existing properties, which need to be indexed */
     class NewIndicesOnExistingProperties(
         override val storedDataModel: IsStorableDataModel<*>,
-        val indicesToIndex: List<IsIndexable>
+        val indexesToIndex: List<IsIndexable>
     ): MigrationStatus(), ModelChangeStatus
 
     /** The model is incompatible with the stored version and needs a migration */
     class NeedsMigration(
         override val storedDataModel: IsStorableDataModel<*>,
         val migrationReasons: List<String>,
-        val indicesToIndex: List<IsIndexable>?
+        val indexesToIndex: List<IsIndexable>?
     ): MigrationStatus(), ModelChangeStatus {
         override fun toString() = "NeedsMigration:\n\t${migrationReasons.joinToString("\n\t")}"
     }

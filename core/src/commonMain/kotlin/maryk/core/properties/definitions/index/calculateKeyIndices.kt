@@ -4,7 +4,7 @@ import maryk.core.exceptions.InvalidDefinitionException
 import maryk.core.exceptions.TypeException
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 
-/** Add indices for [keyDefinition] to int array. Also account for the 1 sized separator */
+/** Add indexes for [keyDefinition] to int array. Also account for the 1 sized separator */
 internal fun calculateKeyIndices(keyDefinition: IsIndexable): IntArray {
     var index = 0
     return when (keyDefinition) {

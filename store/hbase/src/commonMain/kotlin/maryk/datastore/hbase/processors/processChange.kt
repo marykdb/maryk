@@ -127,8 +127,8 @@ internal suspend fun <DM : IsRootDataModel> processChange(
         val orFilters = mutableListOf<Filter>()
 
         // Fetch all data needed to reconstruct an index if it is a Multiple
-        // Single data indices should already be fetched by the change
-        dataModel.Meta.indices?.forEach { indexable ->
+        // Single data indexes should already be fetched by the change
+        dataModel.Meta.indexes?.forEach { indexable ->
             if (indexable is Multiple) {
                 indexable.references.forEach {
                     orFilters += QualifierFilter(CompareOperator.EQUAL, BinaryComparator(it.toQualifierStorageByteArray()))
@@ -711,8 +711,8 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
             put.addColumn(dataColumnFamily, MetaColumns.LatestVersion.byteArray, HLC.toStorageBytes(version))
         }
 
-        // Process indices
-        dataModel.Meta.indices?.let { indices ->
+        // Process indexes
+        dataModel.Meta.indexes?.let { indexes ->
             val indexUpdates = mutableListOf<IsIndexUpdate>()
 
             val currentValuesGetter = object : IsValuesGetter {
@@ -726,7 +726,7 @@ private suspend fun <DM : IsRootDataModel> applyChanges(
                     put.get(dataColumnFamily, propertyReference.toStorageByteArray())?.lastOrNull()?.readValue(propertyReference.propertyDefinition) as T? ?: currentValuesGetter[propertyReference]
             }
 
-            for (index in indices) {
+            for (index in indexes) {
                 val family = index.toFamilyName()
                 val oldValue = index.toStorageByteArrayForIndex(currentValuesGetter)
                 val newValue = index.toStorageByteArrayForIndex(newValuesGetter)

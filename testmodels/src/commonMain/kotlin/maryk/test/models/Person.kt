@@ -7,7 +7,7 @@ import maryk.test.models.Person.firstName
 import maryk.test.models.Person.surname
 
 object Person : RootDataModel<Person>(
-    indices = { listOf(
+    indexes = { listOf(
         Multiple(surname.ref(), firstName.ref()),
     ) },
 ) {

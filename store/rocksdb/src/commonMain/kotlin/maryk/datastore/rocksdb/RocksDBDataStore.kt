@@ -168,61 +168,54 @@ class RocksDBDataStore private constructor(
     }
 
     private suspend fun initAsync() {
-        try {
-            val conversionContext = DefinitionsConversionContext()
+        val conversionContext = DefinitionsConversionContext()
 
-            for ((index, dataModel) in dataModelsById) {
-                columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
-                    tableColumnFamilies.model.let { modelColumnFamily ->
-                        when (val migrationStatus = checkModelIfMigrationIsNeeded(db, modelColumnFamily, dataModel, onlyCheckModelVersion, conversionContext)) {
-                            UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
-                            NewModel -> {
-                                scheduledVersionUpdateHandlers.add {
-                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, null, dataModel)
-                                    storeModelDefinition(db, modelColumnFamily, dataModel)
-                                }
-                            }
-                            is OnlySafeAdds -> {
-                                scheduledVersionUpdateHandlers.add {
-                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                    storeModelDefinition(db, modelColumnFamily, dataModel)
-                                }
-                            }
-                            is NewIndicesOnExistingProperties -> {
-                                fillIndex(migrationStatus.indexesToIndex, tableColumnFamilies)
-                                scheduledVersionUpdateHandlers.add {
-                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                    storeModelDefinition(db, modelColumnFamily, dataModel)
-                                }
-                            }
-                            is NeedsMigration -> {
-                                val succeeded = migrationHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                    ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
+        for ((index, dataModel) in dataModelsById) {
+            columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
+                when (val migrationStatus = checkModelIfMigrationIsNeeded(db, tableColumnFamilies.model, dataModel, onlyCheckModelVersion, conversionContext)) {
+                    UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
+                    NewModel -> {
+                        scheduledVersionUpdateHandlers.add {
+                            versionUpdateHandler?.invoke(this, null, dataModel)
+                            storeModelDefinition(db, tableColumnFamilies.model, dataModel)
+                        }
+                    }
+                    is OnlySafeAdds -> {
+                        scheduledVersionUpdateHandlers.add {
+                            versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                            storeModelDefinition(db, tableColumnFamilies.model, dataModel)
+                        }
+                    }
+                    is NewIndicesOnExistingProperties -> {
+                        fillIndex(migrationStatus.indexesToIndex, tableColumnFamilies)
+                        scheduledVersionUpdateHandlers.add {
+                            versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                            storeModelDefinition(db, tableColumnFamilies.model, dataModel)
+                        }
+                    }
+                    is NeedsMigration -> {
+                        val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                            ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
 
-                                if (!succeeded) {
-                                    throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
-                                }
+                        if (!succeeded) {
+                            throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
+                        }
 
-                                migrationStatus.indexesToIndex?.let {
-                                    fillIndex(it, tableColumnFamilies)
-                                }
-                                scheduledVersionUpdateHandlers.add {
-                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                    storeModelDefinition(db, modelColumnFamily, dataModel)
-                                }
-                            }
+                        migrationStatus.indexesToIndex?.let {
+                            fillIndex(it, tableColumnFamilies)
+                        }
+                        scheduledVersionUpdateHandlers.add {
+                            versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                            storeModelDefinition(db, tableColumnFamilies.model, dataModel)
                         }
                     }
                 }
             }
-
-            startFlows()
-
-            scheduledVersionUpdateHandlers.forEach { it() }
-        } catch (e: Throwable) {
-            this.close()
-            throw e
         }
+
+        startFlows()
+
+        scheduledVersionUpdateHandlers.forEach { it() }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -418,7 +411,12 @@ class RocksDBDataStore private constructor(
                 migrationHandler = migrationHandler,
                 versionUpdateHandler = versionUpdateHandler,
             ).apply {
-                initAsync()
+                try {
+                    initAsync()
+                } catch (e: Throwable) {
+                    this.close()
+                    throw e
+                }
             }
         }
     }

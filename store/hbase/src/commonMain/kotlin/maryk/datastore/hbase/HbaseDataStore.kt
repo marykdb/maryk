@@ -157,7 +157,6 @@ class HbaseDataStore private constructor(
             var clock = HLC()
             storeActorHasStarted.complete(Unit)
             try {
-
                 for (storeAction in storeChannel) {
                     try {
                         clock = clock.calculateMaxTimeStamp()
@@ -249,7 +248,14 @@ class HbaseDataStore private constructor(
                 onlyCheckModelVersion = onlyCheckModelVersion,
                 migrationHandler = migrationHandler,
                 versionUpdateHandler = versionUpdateHandler,
-            ).apply { initAsync() }
+            ).apply {
+                try {
+                    initAsync()
+                } catch (e: Throwable) {
+                    this.close()
+                    throw e
+                }
+            }
         }
     }
 }

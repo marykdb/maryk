@@ -46,4 +46,5 @@ include(
     ":store:memory",
     ":store:rocksdb",
     ":store:hbase",
+    ":store:foundationdb",
 )

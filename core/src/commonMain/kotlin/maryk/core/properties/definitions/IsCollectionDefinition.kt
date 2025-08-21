@@ -241,11 +241,15 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     }
 
     /** Packed is true when encoded with longer length than expected byte size for single */
-    private fun isPacked(length: Int) =
-        when ((this.valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
-            BIT_64, BIT_32, VAR_INT -> length > (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize
-            else -> false
+    private fun isPacked(length: Int): Boolean {
+        val vt = (this.valueDefinition as? IsValueDefinition<*, *>)?.wireType
+        return when (vt) {
+            VAR_INT -> true
+            BIT_32  -> length > 0 && length % (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize == 0
+            BIT_64  -> length > 0 && length % (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize == 0
+            else    -> false
         }
+    }
 
     /**
      * Reads the packed transport bytes from [reader] until [length] into a collection
@@ -253,16 +257,15 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
      */
     private fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?): C {
         var byteCounter = 0
-
         val byteReader = {
             byteCounter++
             reader()
         }
-
         val collection = this.newMutableCollection(context)
 
         while (byteCounter < length) {
-            collection += valueDefinition.readTransportBytes(length, byteReader, context)
+            val remaining = length - byteCounter
+            collection += valueDefinition.readTransportBytes(remaining, byteReader, context)
         }
 
         @Suppress("UNCHECKED_CAST")

@@ -13,6 +13,7 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.datastore.test.dataModelsForTests
 import maryk.deleteFolder
 import maryk.rocksdb.util.createTestDBFolder
 import maryk.test.models.ModelV1
@@ -31,6 +32,28 @@ import kotlin.test.assertTrue
 class RocksDBDataStoreMigrationTest {
 
     class CustomException : Error()
+
+    @Test
+    fun testComplexMigrationCheckWithNoChange() = runTest {
+        val path = createTestDBFolder("migrationWithDepsNoChange")
+        var dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = dataModelsForTests
+        )
+
+        dataStore.close()
+
+        dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = dataModelsForTests
+        )
+
+        dataStore.close()
+
+        deleteFolder(path)
+    }
 
     @Test
     fun testMigration() = runTest {

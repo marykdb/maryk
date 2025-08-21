@@ -3,15 +3,15 @@ package maryk.core.models.serializers
 import maryk.core.inject.Inject
 import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsTypedDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.values
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.models.values
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader

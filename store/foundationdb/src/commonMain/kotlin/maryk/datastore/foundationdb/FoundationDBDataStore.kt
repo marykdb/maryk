@@ -11,7 +11,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
-import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationException
@@ -35,9 +35,11 @@ import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
+import maryk.datastore.foundationdb.processors.processAddRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.StoreAction
@@ -61,12 +63,12 @@ class FoundationDBDataStore private constructor(
     private val fdb = FDB.selectAPIVersion(740)
     private val db = (if (fdbClusterFilePath != null) fdb.open(fdbClusterFilePath) else fdb.open())
     private val tenantDB = tenantName?.let { db.openTenant(tenantName) }
-    private val tc: TransactionContext = tenantDB ?: db
+    internal val tc: TransactionContext = tenantDB ?: db
 
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
 
     private lateinit var rootDirectory: DirectorySubspace
-    private val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
+    internal val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
 
     suspend fun initAsync() {
         rootDirectory = tc.runAsync { tr ->
@@ -190,16 +192,26 @@ class FoundationDBDataStore private constructor(
                         clock = clock.calculateMaxTimeStamp()
                         @Suppress("UNCHECKED_CAST")
                         when (val request = storeAction.request) {
-                            is AddRequest<*> -> handleAdd(storeAction as StoreAction<IsRootDataModel, AddRequest<IsRootDataModel>, *>)
-                            is ChangeRequest<*> -> handleChange(storeAction as StoreAction<IsRootDataModel, ChangeRequest<IsRootDataModel>, *>)
-                            is DeleteRequest<*> -> handleDelete(storeAction as StoreAction<IsRootDataModel, DeleteRequest<IsRootDataModel>, *>)
-                            is GetRequest<*> -> handleGet(storeAction as StoreAction<IsRootDataModel, GetRequest<IsRootDataModel>, *>)
-                            is ScanRequest<*> -> handleScan(storeAction as StoreAction<IsRootDataModel, ScanRequest<IsRootDataModel>, *>)
-                            is GetChangesRequest<*> -> handleGetChanges(storeAction as StoreAction<IsRootDataModel, GetChangesRequest<IsRootDataModel>, *>)
-                            is ScanChangesRequest<*> -> handleScanChanges(storeAction as StoreAction<IsRootDataModel, ScanChangesRequest<IsRootDataModel>, *>)
-                            is GetUpdatesRequest<*> -> handleGetUpdates(storeAction as StoreAction<IsRootDataModel, GetUpdatesRequest<IsRootDataModel>, *>)
-                            is ScanUpdatesRequest<*> -> handleScanUpdates(storeAction as StoreAction<IsRootDataModel, ScanUpdatesRequest<IsRootDataModel>, *>)
-                            is UpdateResponse<*> -> handleProcessUpdate(storeAction as StoreAction<IsRootDataModel, UpdateResponse<IsRootDataModel>, *>)
+                            is AddRequest<*> ->
+                                processAddRequest(clock, storeAction as StoreAction<IsRootDataModel, AddRequest<IsRootDataModel>, AddResponse<IsRootDataModel>>)
+                            is ChangeRequest<*> ->
+                                TODO("Change requests are not yet implemented in FoundationDB")
+                            is DeleteRequest<*> ->
+                                TODO("Delete requests are not yet implemented in FoundationDB")
+                            is GetRequest<*> ->
+                                TODO("Get requests are not yet implemented in FoundationDB")
+                            is ScanRequest<*> ->
+                                TODO("Scan requests are not yet implemented in FoundationDB")
+                            is GetChangesRequest<*> ->
+                                TODO("GetChanges requests are not yet implemented in FoundationDB")
+                            is ScanChangesRequest<*> ->
+                                TODO("ScanChanges requests are not yet implemented in FoundationDB")
+                            is GetUpdatesRequest<*> ->
+                                TODO("GetUpdates requests are not yet implemented in FoundationDB")
+                            is ScanUpdatesRequest<*> ->
+                                TODO("ScanUpdates requests are not yet implemented in FoundationDB")
+                            is UpdateResponse<*> ->
+                                TODO("Update responses are not yet implemented in FoundationDB")
                             else -> throw TypeException("Unsupported request type ${request::class.simpleName}")
                         }
                     } catch (e: CancellationException) {
@@ -230,55 +242,9 @@ class FoundationDBDataStore private constructor(
         walkDataRecordsAndFillIndex(tc, tableDirectories, indexesToIndex)
     }
 
-    private suspend fun <DM : IsRootDataModel> handleAdd(storeAction: StoreAction<DM, AddRequest<DM>, *>) {
-        // TODO Implement Add: write keys, values, indices, and emit updates
-        throw RequestException("FoundationDBDataStore: Add not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleChange(storeAction: StoreAction<DM, ChangeRequest<DM>, *>) {
-        // TODO Implement Change with transactional updates and unique index enforcement
-        throw RequestException("FoundationDBDataStore: Change not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleDelete(storeAction: StoreAction<DM, DeleteRequest<DM>, *>) {
-        // TODO Implement Delete (soft/hard) and update indices
-        throw RequestException("FoundationDBDataStore: Delete not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleGet(storeAction: StoreAction<DM, GetRequest<DM>, *>) {
-        // TODO Implement Get for selected properties and version
-        throw RequestException("FoundationDBDataStore: Get not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleScan(storeAction: StoreAction<DM, ScanRequest<DM>, *>) {
-        // TODO Implement Scan over key ranges and indices
-        throw RequestException("FoundationDBDataStore: Scan not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleGetChanges(storeAction: StoreAction<DM, GetChangesRequest<DM>, *>) {
-        // TODO Implement GetChanges reading historic versions
-        throw RequestException("FoundationDBDataStore: GetChanges not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleScanChanges(storeAction: StoreAction<DM, ScanChangesRequest<DM>, *>) {
-        // TODO Implement ScanChanges over ranges
-        throw RequestException("FoundationDBDataStore: ScanChanges not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleGetUpdates(storeAction: StoreAction<DM, GetUpdatesRequest<DM>, *>) {
-        // TODO Implement GetUpdates, and emit InitialValuesUpdate / OrderedKeysUpdate etc
-        throw RequestException("FoundationDBDataStore: GetUpdates not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleScanUpdates(storeAction: StoreAction<DM, ScanUpdatesRequest<DM>, *>) {
-        // TODO Implement ScanUpdates
-        throw RequestException("FoundationDBDataStore: ScanUpdates not implemented yet")
-    }
-
-    private suspend fun <DM : IsRootDataModel> handleProcessUpdate(storeAction: StoreAction<DM, UpdateResponse<DM>, *>) {
-        // TODO Process UpdateResponse to synchronize results in the datastore
-        throw RequestException("FoundationDBDataStore: processUpdate not implemented yet")
-    }
+    internal fun getTableDirs(dbIndex: UInt) =
+        directoriesByDataModelIndex[dbIndex]
+            ?: throw DefNotFoundException("DataModel definition not found for $dbIndex")
 
     override suspend fun close() {
         this.tenantDB?.close()

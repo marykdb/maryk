@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
@@ -11,16 +10,13 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.IsUpdateAction
 
 internal typealias ProcessUpdateResponseStoreAction<DM> = StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>
 internal typealias AnyProcessUpdateResponseStoreAction = ProcessUpdateResponseStoreAction<IsRootDataModel>
 
-/** Processes an Addition Update in a [storeAction] into [dataStore] */
-internal suspend fun <DM : IsRootDataModel> processAdditionUpdate(
+/** Processes an Addition Update in a [storeAction] into [RocksDBDataStore] */
+internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAdditionUpdate(
     storeAction: StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>,
-    dataStore: RocksDBDataStore,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
 
@@ -30,12 +26,11 @@ internal suspend fun <DM : IsRootDataModel> processAdditionUpdate(
         throw RequestException("Cannot process an AdditionUpdate with a version different than the first version. Use a query for changes to properly process changes into a data store")
     }
 
-    val dbIndex = dataStore.getDataModelId(dataModel)
-    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+    val dbIndex = getDataModelId(dataModel)
+    val columnFamilies = getColumnFamilies(dbIndex)
 
-    val result = Transaction(dataStore).use { transaction ->
+    val result = Transaction(this).use { transaction ->
         processAdd(
-            dataStore,
             dataModel,
             transaction,
             columnFamilies,
@@ -43,7 +38,6 @@ internal suspend fun <DM : IsRootDataModel> processAdditionUpdate(
             update.key,
             HLC(update.version),
             update.values,
-            updateSharedFlow
         )
     }
 

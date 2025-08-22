@@ -20,33 +20,31 @@ import maryk.datastore.shared.StoreAction
 internal typealias ScanStoreAction<DM> = StoreAction<DM, ScanRequest<DM>, ValuesResponse<DM>>
 internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel>
 
-/** Processes a ScanRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootDataModel> processScanRequest(
+/** Processes a ScanRequest in a [storeAction] into a [RocksDBDataStore] */
+internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
     storeAction: ScanStoreAction<DM>,
-    dataStore: RocksDBDataStore,
     cache: Cache
 ) {
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
-    val dbIndex = dataStore.getDataModelId(scanRequest.dataModel)
-    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+    val dbIndex = getDataModelId(scanRequest.dataModel)
+    val columnFamilies = getColumnFamilies(dbIndex)
 
     val aggregator = scanRequest.aggregations?.let {
         Aggregator(it)
     }
 
-    DBAccessor(dataStore).use { transaction ->
+    DBAccessor(this).use { transaction ->
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        val iterator = transaction.getIterator(dataStore.defaultReadOptions, columnToScan)
+        val iterator = transaction.getIterator(defaultReadOptions, columnToScan)
 
         val dataFetchType = processScan(
             scanRequest,
-            dataStore,
             transaction,
             columnFamilies,
-            dataStore.defaultReadOptions
+            defaultReadOptions
         ) { key, creationVersion, _ ->
             val cacheReader =
                 { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
@@ -73,7 +71,7 @@ internal fun <DM : IsRootDataModel> processScanRequest(
                 valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
                     ?: transaction.getValue(
                         columnFamilies,
-                        dataStore.defaultReadOptions,
+                        defaultReadOptions,
                         scanRequest.toVersion,
                         it.toStorageByteArray()
                     ) { valueBytes, offset, length ->

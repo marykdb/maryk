@@ -27,8 +27,7 @@ import maryk.lib.extensions.compare.matchPart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
 
-internal fun <DM : IsRootDataModel> scanIndex(
-    dataStore: RocksDBDataStore,
+internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     scanRequest: IsScanRequest<DM, *>,
@@ -39,13 +38,13 @@ internal fun <DM : IsRootDataModel> scanIndex(
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
 
     val startKey = scanRequest.startKey?.let { startKey ->
-        val startValuesGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
+        val startValuesGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
         startValuesGetter.moveToKey(startKey.bytes, dbAccessor, scanRequest.toVersion)
         indexScan.index.toStorageByteArrayForIndex(startValuesGetter, startKey.bytes)
     }
 
-    var overallStartKey: ByteArray? = null
-    var overallStopKey: ByteArray? = null
+    var overallStartKey: ByteArray?
+    var overallStopKey: ByteArray?
 
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
@@ -56,7 +55,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
             ?: throw StorageException("No historic table stored so toVersion in query cannot be processed")
     }
 
-    val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, indexColumnHandle)
+    val iterator = dbAccessor.getIterator(defaultReadOptions, indexColumnHandle)
 
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val valueOffset = indexReference.size
@@ -75,7 +74,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 checkAndProcess(
                     dbAccessor,
                     columnFamilies,
-                    dataStore.defaultReadOptions,
+                    defaultReadOptions,
                     iterator,
                     keySize,
                     scanRequest,
@@ -114,7 +113,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 checkAndProcess(
                     dbAccessor,
                     columnFamilies,
-                    dataStore.defaultReadOptions,
+                    defaultReadOptions,
                     iterator,
                     keySize,
                     scanRequest,

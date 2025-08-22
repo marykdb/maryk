@@ -16,31 +16,29 @@ import maryk.datastore.shared.checkMaxVersions
 internal typealias ScanChangesStoreAction<DM> = StoreAction<DM, ScanChangesRequest<DM>, ChangesResponse<DM>>
 internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootDataModel>
 
-/** Processes a ScanChangesRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootDataModel> processScanChangesRequest(
+/** Processes a ScanChangesRequest in a [storeAction] into a [RocksDBDataStore] */
+internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM>,
-    dataStore: RocksDBDataStore,
     cache: Cache
 ) {
     val scanRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
-    val dbIndex = dataStore.getDataModelId(scanRequest.dataModel)
-    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+    val dbIndex = getDataModelId(scanRequest.dataModel)
+    val columnFamilies = getColumnFamilies(dbIndex)
 
-    DBAccessor(dataStore).use { dbAccessor ->
+    DBAccessor(this).use { dbAccessor ->
         val columnToScan = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan)
+        val iterator = dbAccessor.getIterator(defaultReadOptions, columnToScan)
 
-        scanRequest.checkMaxVersions(dataStore.keepAllVersions)
+        scanRequest.checkMaxVersions(keepAllVersions)
 
         val dataFetchType = processScan(
             scanRequest,
-            dataStore,
             dbAccessor,
             columnFamilies,
-            dataStore.defaultReadOptions
+            defaultReadOptions
         ) { key, creationVersion, sortingKey ->
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                 runBlocking {

@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
@@ -35,13 +34,11 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
-import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootDataModel> processAdd(
-    dataStore: RocksDBDataStore,
+internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     dataModel: DM,
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
@@ -49,16 +46,15 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
     key: Key<DM>,
     version: HLC,
     objectToAdd: Values<DM>,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsAddResponseStatus<DM> {
     return try {
         objectToAdd.validate()
 
-        val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
+        val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
 
         val exists = if (mayExist) {
             // Really check if item exists
-            dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
+            db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
         } else false
 
         if (!exists) {
@@ -93,7 +89,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
                             checksBeforeWrite.add {
                                 val uniqueCount =
-                                    dataStore.db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
+                                    db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
                                 if (uniqueCount != rocksDBNotFound) {
                                     throw UniqueException(
                                         reference,
@@ -110,7 +106,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
                             // Creates index reference on the table if it not exists so delete can find
                             // what values to delete from the unique indexes.
-                            dataStore.createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
+                            createUniqueIndexIfNotExists(dbIndex, columnFamilies.unique, reference)
                             setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                         }
 

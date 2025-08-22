@@ -25,39 +25,38 @@ import maryk.rocksdb.rocksDBNotFound
 internal typealias GetStoreAction<DM> = StoreAction<DM, GetRequest<DM>, ValuesResponse<DM>>
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
 
-/** Processes a GetRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootDataModel> processGetRequest(
+/** Processes a GetRequest in a [storeAction] into a [RocksDBDataStore] */
+internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
     storeAction: GetStoreAction<DM>,
-    dataStore: RocksDBDataStore,
     cache: Cache
 ) {
     val getRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
-    val dbIndex = dataStore.getDataModelId(getRequest.dataModel)
-    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+    val dbIndex = getDataModelId(getRequest.dataModel)
+    val columnFamilies = getColumnFamilies(dbIndex)
 
     val aggregator = getRequest.aggregations?.let {
         Aggregator(it)
     }
 
-    getRequest.checkToVersion(dataStore.keepAllVersions)
+    getRequest.checkToVersion(keepAllVersions)
 
-    DBAccessor(dataStore).use { dbAccessor ->
+    DBAccessor(this).use { dbAccessor ->
         val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan)
+        val iterator = dbAccessor.getIterator(defaultReadOptions, columnToScan)
 
         keyWalk@ for (key in getRequest.keys) {
-            val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
+            val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
                 val valueLength =
-                    dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, key.bytes, recyclableByteArray)
+                    dbAccessor.get(columnFamilies.keys, defaultReadOptions, key.bytes, recyclableByteArray)
 
                 if (valueLength != rocksDBNotFound) {
                     val creationVersion = recyclableByteArray.readVersionBytes()
                     if (
-                        getRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, getRequest.toVersion)
+                        getRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, getRequest.toVersion)
                     ) {
                         continue@keyWalk
                     }
@@ -86,7 +85,7 @@ internal fun <DM : IsRootDataModel> processGetRequest(
                         valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
                             ?: dbAccessor.getValue(
                                 columnFamilies,
-                                dataStore.defaultReadOptions,
+                                defaultReadOptions,
                                 getRequest.toVersion,
                                 it.toStorageByteArray()
                             ) { valueBytes, offset, length ->

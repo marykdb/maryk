@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.invert
 import maryk.core.models.IsRootDataModel
@@ -18,7 +17,6 @@ import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.shared.Cache
-import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.matchPart
@@ -27,8 +25,7 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootDataModel> processDelete(
-    dataStore: RocksDBDataStore,
+internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
@@ -37,28 +34,27 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
     hardDelete: Boolean,
     historicStoreIndexValuesWalker: HistoricStoreIndexValuesWalker?,
     cache: Cache,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ): IsDeleteResponseStatus<DM> = try {
-    val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
+    val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
 
     val exists = if (mayExist) {
         // Really check if item exists
-        dataStore.db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
+        db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
     } else false
 
     when {
         exists -> {
-            Transaction(dataStore).use { transaction ->
+            Transaction(this).use { transaction ->
                 // Create version bytes
                 val versionBytes = HLC.toStorageBytes(version)
 
-                for (reference in dataStore.getUniqueIndices(
+                for (reference in getUniqueIndices(
                     dbIndex, columnFamilies.unique
                 )) {
                     val referenceAndKey = key.bytes + reference
                     val valueLength = transaction.get(
                         columnFamilies.table,
-                        dataStore.defaultReadOptions,
+                        defaultReadOptions,
                         referenceAndKey,
                         recyclableByteArray
                     )
@@ -66,7 +62,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                     if (valueLength != rocksDBNotFound) {
                         val value = if (valueLength > recyclableByteArray.size) {
                             // Large value which did not fit in recyclableByteArray
-                            transaction.get(columnFamilies.table, dataStore.defaultReadOptions, referenceAndKey)!!
+                            transaction.get(columnFamilies.table, defaultReadOptions, referenceAndKey)!!
                         } else recyclableByteArray
 
                         deleteUniqueIndexValue(
@@ -86,7 +82,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                         hardDeleteHistoricalUniqueValues(
                             transaction,
                             columnFamilies,
-                            dataStore.defaultReadOptions,
+                            defaultReadOptions,
                             referenceAndKey,
                             reference
                         )
@@ -95,7 +91,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
 
                 // Delete indexed values
                 dataModel.Meta.indexes?.let { indexes ->
-                    val valuesGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
+                    val valuesGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
                     valuesGetter.moveToKey(key.bytes, transaction)
 
                     indexes.forEach { indexable ->
@@ -130,14 +126,14 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                 if (hardDelete) {
                     cache.delete(dbIndex, key)
 
-                    dataStore.db.delete(columnFamilies.keys, key.bytes)
-                    dataStore.db.deleteRange(
+                    db.delete(columnFamilies.keys, key.bytes)
+                    db.deleteRange(
                         columnFamilies.table,
                         key.bytes,
                         key.bytes.nextByteInSameLength()
                     )
                     if (columnFamilies is HistoricTableColumnFamilies) {
-                        dataStore.db.deleteRange(
+                        db.deleteRange(
                             columnFamilies.historic.table,
                             key.bytes,
                             key.bytes.nextByteInSameLength()

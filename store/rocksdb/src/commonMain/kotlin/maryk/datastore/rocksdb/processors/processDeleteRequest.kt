@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.DeleteRequest
@@ -10,34 +9,30 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.IsUpdateAction
 
 internal typealias DeleteStoreAction<DM> = StoreAction<DM, DeleteRequest<DM>, DeleteResponse<DM>>
 internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootDataModel>
 
-/** Processes a DeleteRequest in a [storeAction] into a [dataStore] */
-internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
+/** Processes a DeleteRequest in a [storeAction] into a [RocksDBDataStore] */
+internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDeleteRequest(
     version: HLC,
     storeAction: DeleteStoreAction<DM>,
-    dataStore: RocksDBDataStore,
     cache: Cache,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val deleteRequest = storeAction.request
     val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
 
     if (deleteRequest.keys.isNotEmpty()) {
-        val dbIndex = dataStore.getDataModelId(deleteRequest.dataModel)
-        val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+        val dbIndex = getDataModelId(deleteRequest.dataModel)
+        val columnFamilies = getColumnFamilies(dbIndex)
 
         // Delete it from history if it is a hard deletion
         val historicStoreIndexValuesWalker = if (deleteRequest.hardDelete && columnFamilies is HistoricTableColumnFamilies) {
-            HistoricStoreIndexValuesWalker(columnFamilies, dataStore.defaultReadOptions)
+            HistoricStoreIndexValuesWalker(columnFamilies, defaultReadOptions)
         } else null
 
         for (key in deleteRequest.keys) {
             statuses += processDelete(
-                dataStore,
                 deleteRequest.dataModel,
                 columnFamilies,
                 key,
@@ -46,7 +41,6 @@ internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
                 deleteRequest.hardDelete,
                 historicStoreIndexValuesWalker,
                 cache,
-                updateSharedFlow
             )
         }
     }

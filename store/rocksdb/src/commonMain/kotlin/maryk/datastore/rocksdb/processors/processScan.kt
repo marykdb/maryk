@@ -28,10 +28,9 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
-/** Walk with [scanRequest] on [dataStore] and do [processRecord] */
-internal fun <DM : IsRootDataModel> processScan(
+/** Walk with [scanRequest] on [RocksDBDataStore] and do [processRecord] */
+internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
     scanRequest: IsScanRequest<DM, *>,
-    dataStore: RocksDBDataStore,
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
@@ -40,13 +39,13 @@ internal fun <DM : IsRootDataModel> processScan(
 ): DataFetchType {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
-    scanRequest.checkToVersion(dataStore.keepAllVersions)
+    scanRequest.checkToVersion(keepAllVersions)
 
     when {
         // If hard key match then quit with direct record
         keyScanRange.isSingleKey() -> {
             val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start)
-            val mayExist = dataStore.db.keyMayExist(columnFamilies.keys, key.bytes, null)
+            val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
             if (mayExist) {
                 val valueLength = dbAccessor.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
                 // Only process it if it was created
@@ -98,7 +97,6 @@ internal fun <DM : IsRootDataModel> processScan(
             return when (processedScanIndex) {
                 is TableScan -> {
                     scanStore(
-                        dataStore,
                         dbAccessor,
                         columnFamilies,
                         scanRequest,
@@ -109,7 +107,6 @@ internal fun <DM : IsRootDataModel> processScan(
                 }
                 is IndexScan -> {
                     scanIndex(
-                        dataStore,
                         dbAccessor,
                         columnFamilies,
                         scanRequest,

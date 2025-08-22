@@ -235,28 +235,28 @@ class RocksDBDataStore private constructor(
                         @Suppress("UNCHECKED_CAST")
                         when (storeAction.request) {
                             is AddRequest<*> ->
-                                processAddRequest(clock, storeAction as AnyAddStoreAction, this@RocksDBDataStore, updateSharedFlow)
+                                processAddRequest(clock, storeAction as AnyAddStoreAction)
                             is ChangeRequest<*> ->
-                                processChangeRequest(clock, storeAction as AnyChangeStoreAction, this@RocksDBDataStore, updateSharedFlow)
+                                processChangeRequest(clock, storeAction as AnyChangeStoreAction)
                             is DeleteRequest<*> ->
-                                processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, this@RocksDBDataStore, cache, updateSharedFlow)
+                                processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, cache)
                             is GetRequest<*> ->
-                                processGetRequest(storeAction as AnyGetStoreAction, this@RocksDBDataStore, cache)
+                                processGetRequest(storeAction as AnyGetStoreAction, cache)
                             is GetChangesRequest<*> ->
-                                processGetChangesRequest(storeAction as AnyGetChangesStoreAction, this@RocksDBDataStore, cache)
+                                processGetChangesRequest(storeAction as AnyGetChangesStoreAction, cache)
                             is GetUpdatesRequest<*> ->
-                                processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, this@RocksDBDataStore, cache)
+                                processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, cache)
                             is ScanRequest<*> ->
-                                processScanRequest(storeAction as AnyScanStoreAction, this@RocksDBDataStore, cache)
+                                processScanRequest(storeAction as AnyScanStoreAction, cache)
                             is ScanChangesRequest<*> ->
-                                processScanChangesRequest(storeAction as AnyScanChangesStoreAction, this@RocksDBDataStore, cache)
+                                processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache)
                             is ScanUpdatesRequest<*> ->
-                                processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, this@RocksDBDataStore, cache)
+                                processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache)
                             is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
-                                is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
-                                is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
-                                is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, cache, updateSharedFlow)
-                                is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, this@RocksDBDataStore, updateSharedFlow)
+                                is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
+                                is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
+                                is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, cache)
+                                is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
                                 is InitialValuesUpdate<*> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
                                 is OrderedKeysUpdate<*> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
                                 else -> throw TypeException("Unknown update type $update for datastore processing")

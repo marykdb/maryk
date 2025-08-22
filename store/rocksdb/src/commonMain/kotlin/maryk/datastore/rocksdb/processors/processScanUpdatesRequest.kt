@@ -34,15 +34,14 @@ import maryk.rocksdb.rocksDBNotFound
 internal typealias ScanUpdatesStoreAction<DM> = StoreAction<DM, ScanUpdatesRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootDataModel>
 
-/** Processes a ScanUpdatesRequest in a [storeAction] into a [dataStore] */
-internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
+/** Processes a ScanUpdatesRequest in a [storeAction] into a [RocksDBDataStore] */
+internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
     storeAction: ScanUpdatesStoreAction<DM>,
-    dataStore: RocksDBDataStore,
     cache: Cache
 ) {
     val scanRequest = storeAction.request
-    val dbIndex = dataStore.getDataModelId(scanRequest.dataModel)
-    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+    val dbIndex = getDataModelId(scanRequest.dataModel)
+    val columnFamilies = getColumnFamilies(dbIndex)
 
     val matchingKeys = mutableListOf<Key<DM>>()
     val updates = mutableListOf<IsUpdateResponse<DM>>()
@@ -54,16 +53,16 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
 
     var insertionIndex = -1
 
-    DBAccessor(dataStore).use { dbAccessor ->
+    DBAccessor(this).use { dbAccessor ->
         val columnToScan = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan)
+        val iterator = dbAccessor.getIterator(defaultReadOptions, columnToScan)
 
-        scanRequest.checkMaxVersions(dataStore.keepAllVersions)
+        scanRequest.checkMaxVersions(keepAllVersions)
 
         fun getSingleValues(key: Key<DM>, creationVersion: ULong, cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?): ValuesWithMetaData<DM>? {
-            dbAccessor.getIterator(dataStore.defaultReadOptions, columnToScan).use { deepIterator ->
+            dbAccessor.getIterator(defaultReadOptions, columnToScan).use { deepIterator ->
                 return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                     deepIterator,
                     creationVersion,
@@ -78,10 +77,9 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
 
         val dataFetchType = processScan(
             scanRequest,
-            dataStore,
             dbAccessor,
             columnFamilies,
-            dataStore.defaultReadOptions,
+            defaultReadOptions,
             scanSetup = {
                 (it as? IndexScan)?.let { indexScan ->
                     sortingKeys = mutableListOf()
@@ -95,7 +93,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
 
             // Add sorting index
             sortingIndex?.let {
-                val storeGetter = DBAccessorStoreValuesGetter(columnFamilies, dataStore.defaultReadOptions)
+                val storeGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
                 storeGetter.moveToKey(key.bytes, dbAccessor, scanRequest.toVersion)
 
                 it.toStorageByteArrayForIndex(storeGetter, key.bytes)?.let { indexableBytes ->
@@ -103,7 +101,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                 }
             }
 
-            val lastVersion = getLastVersion(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key)
+            val lastVersion = getLastVersion(dbAccessor, columnFamilies, defaultReadOptions, key)
             lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
 
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
@@ -183,7 +181,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             // This so the requester is up-to-date with any in between filtered values
             orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
                 for (removedKey in removedKeys) {
-                    val createdVersionLength = dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, removedKey.bytes, recyclableByteArray)
+                    val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, removedKey.bytes, recyclableByteArray)
 
                     updates += RemovalUpdate(
                         key = removedKey,
@@ -191,7 +189,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                         reason = when {
                             createdVersionLength == rocksDBNotFound ->
                                 HardDelete
-                            isSoftDeleted(dbAccessor, columnFamilies, dataStore.defaultReadOptions, scanRequest.toVersion, removedKey.bytes) ->
+                            isSoftDeleted(dbAccessor, columnFamilies, defaultReadOptions, scanRequest.toVersion, removedKey.bytes) ->
                                 SoftDelete
                             else -> NotInRange
                         }
@@ -201,7 +199,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
 
             matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
                 for (addedKey in addedKeys) {
-                    val valueLength = dbAccessor.get(columnFamilies.keys, dataStore.defaultReadOptions, addedKey.bytes, recyclableByteArray)
+                    val valueLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, addedKey.bytes, recyclableByteArray)
                     // Only process it if it was created
                     if (valueLength != rocksDBNotFound) {
                         val createdVersion = recyclableByteArray.readVersionBytes()

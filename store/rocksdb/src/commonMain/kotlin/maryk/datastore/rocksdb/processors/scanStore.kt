@@ -15,8 +15,7 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 
-internal fun <DM : IsRootDataModel> scanStore(
-    dataStore: RocksDBDataStore,
+internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     scanRequest: IsScanRequest<DM, *>,
@@ -24,10 +23,10 @@ internal fun <DM : IsRootDataModel> scanStore(
     scanRange: KeyScanRanges,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
-    val iterator = dbAccessor.getIterator(dataStore.defaultReadOptions, columnFamilies.keys)
+    val iterator = dbAccessor.getIterator(defaultReadOptions, columnFamilies.keys)
 
-    var overallStartKey: ByteArray? = null
-    var overallEndKey: ByteArray? = null
+    var overallStartKey: ByteArray?
+    var overallEndKey: ByteArray?
 
     when (direction) {
         ASC -> {
@@ -60,7 +59,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
                     val creationVersion = iterator.value().readVersionBytes()
 
-                    if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                    if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
                         iterator.next()
                         continue
                     }
@@ -106,7 +105,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
                     val creationVersion = iterator.value().readVersionBytes()
 
-                    if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, dataStore.defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                    if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
                         iterator.prev()
                         continue
                     }

@@ -1,6 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
@@ -14,13 +13,10 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.IsUpdateAction
 
-/** Processes a UpdateResponse with Change in a [storeAction] into a [dataStore] */
-internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
+/** Processes a UpdateResponse with Change in a [storeAction] into a [RocksDBDataStore] */
+internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChangesUpdate(
     storeAction: StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>,
-    dataStore: RocksDBDataStore,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val dataModel = storeAction.request.dataModel
 
@@ -28,12 +24,12 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
 
     val update = storeAction.request.update as InitialChangesUpdate<DM>
 
-    val dbIndex = dataStore.getDataModelId(changeRequest.dataModel)
-    val columnFamilies = dataStore.getColumnFamilies(dbIndex)
+    val dbIndex = getDataModelId(changeRequest.dataModel)
+    val columnFamilies = getColumnFamilies(dbIndex)
 
     val changeStatuses = mutableListOf<IsAddOrChangeResponseStatus<DM>>()
 
-    Transaction(dataStore).use { transaction ->
+    Transaction(this).use { transaction ->
         for (change in update.changes) {
             for (versionedChange in change.changes) {
                 if (versionedChange.changes.contains(ObjectCreate)) {
@@ -41,7 +37,6 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
 
                     changeStatuses += try {
                         val response = processAdd(
-                            dataStore = dataStore,
                             dataModel = dataModel,
                             transaction = transaction,
                             columnFamilies = columnFamilies,
@@ -49,7 +44,6 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
                             key = change.key,
                             version = HLC(versionedChange.version),
                             objectToAdd = addedValues,
-                            updateSharedFlow = updateSharedFlow
                         )
                         transaction.commit()
 
@@ -60,7 +54,6 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
                 } else {
                     changeStatuses += try {
                         val response = processChange(
-                            dataStore,
                             dataModel,
                             columnFamilies,
                             change.key,
@@ -69,7 +62,6 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
                             transaction,
                             dbIndex,
                             HLC(versionedChange.version),
-                            updateSharedFlow
                         )
                         transaction.commit()
 

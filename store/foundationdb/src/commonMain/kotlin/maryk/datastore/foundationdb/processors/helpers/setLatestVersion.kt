@@ -9,5 +9,5 @@ internal fun setLatestVersion(
     keyBytes: ByteArray,
     version: ByteArray
 ) {
-    tr.set(tableDirs.table.pack(keyBytes), version)
+    tr.set(packKey(tableDirs.tablePrefix, keyBytes), version)
 }

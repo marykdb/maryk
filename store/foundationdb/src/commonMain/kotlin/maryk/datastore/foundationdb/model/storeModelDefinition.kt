@@ -1,17 +1,17 @@
 package maryk.datastore.foundationdb.model
 
 import com.apple.foundationdb.TransactionContext
-import com.apple.foundationdb.directory.DirectorySubspace
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
+import maryk.datastore.foundationdb.processors.helpers.packKey
 
 fun storeModelDefinition(
     tc: TransactionContext,
-    model: DirectorySubspace,
+    model: ByteArray,
     dataModel: IsRootDataModel
 ) {
     val nameBytes = dataModel.Meta.name.encodeToByteArray()
@@ -41,11 +41,11 @@ fun storeModelDefinition(
     } else null
 
     tc.run { tr ->
-        tr.set(model.pack(modelNameKey), nameBytes)
-        tr.set(model.pack(modelVersionKey), versionBytes)
-        tr.set(model.pack(modelDefinitionKey), modelBytes)
+        tr.set(packKey(model, modelNameKey), nameBytes)
+        tr.set(packKey(model, modelVersionKey), versionBytes)
+        tr.set(packKey(model, modelDefinitionKey), modelBytes)
         if (dependentsBytes != null) {
-            tr.set(model.pack(modelDependentsDefinitionKey), dependentsBytes)
+            tr.set(packKey(model, modelDependentsDefinitionKey), dependentsBytes)
         }
     }
 }

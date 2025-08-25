@@ -16,7 +16,7 @@ internal fun setValue(
 ) {
     // Latest table value: (key, reference) -> (version || value)
     tr.set(
-        packKey(tableDirs.table, keyBytes, reference),
+        packKey(tableDirs.tablePrefix, keyBytes, reference),
         combineToByteArray(version, value)
     )
     // Historic table: (key, reference, invertedVersion) -> value
@@ -24,7 +24,7 @@ internal fun setValue(
         val inv = version.copyOf()
         inv.invert(0)
         tr.set(
-            packKey(tableDirs.historicTable, keyBytes, reference, inv),
+            packKey(tableDirs.historicTablePrefix, keyBytes, reference, inv),
             value
         )
     }

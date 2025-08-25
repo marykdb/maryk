@@ -15,14 +15,14 @@ internal fun setUniqueIndexValue(
 ) {
     // unique: (uniqueRef||value) -> (version || key)
     tr.set(
-        packKey(tableDirs.unique, uniqueReferenceWithValue),
+        packKey(tableDirs.uniquePrefix, uniqueReferenceWithValue),
         combineToByteArray(version, keyBytes)
     )
     if (tableDirs is HistoricTableDirectories) {
         val inv = version.copyOf()
         inv.invert()
         tr.set(
-            packKey(tableDirs.historicUnique, uniqueReferenceWithValue, inv),
+            packKey(tableDirs.historicUniquePrefix, uniqueReferenceWithValue, inv),
             keyBytes
         )
     }

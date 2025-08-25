@@ -14,14 +14,14 @@ internal fun setIndexValue(
 ) {
     // index: (indexRef, valueAndKey) -> version
     tr.set(
-        packKey(tableDirs.index, indexReference, valueAndKeyBytes),
+        packKey(tableDirs.indexPrefix, indexReference, valueAndKeyBytes),
         version
     )
     if (tableDirs is HistoricTableDirectories) {
         val inv = version.copyOf()
         inv.invert()
         tr.set(
-            packKey(tableDirs.historicIndex, indexReference, valueAndKeyBytes, inv),
+            packKey(tableDirs.historicIndexPrefix, indexReference, valueAndKeyBytes, inv),
             ByteArray(0)
         )
     }

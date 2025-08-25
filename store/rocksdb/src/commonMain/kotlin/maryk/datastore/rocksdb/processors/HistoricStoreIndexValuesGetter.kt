@@ -11,8 +11,8 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
-import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
+import maryk.datastore.shared.helpers.convertToValue
 import maryk.lib.extensions.compare.matchPart
 import maryk.rocksdb.ReadOptions
 

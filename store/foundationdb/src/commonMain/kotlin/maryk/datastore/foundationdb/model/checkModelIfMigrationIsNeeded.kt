@@ -1,7 +1,6 @@
 package maryk.datastore.foundationdb
 
 import com.apple.foundationdb.TransactionContext
-import com.apple.foundationdb.directory.DirectorySubspace
 import maryk.core.definitions.Definitions
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
@@ -16,18 +15,19 @@ import maryk.datastore.foundationdb.model.modelDefinitionKey
 import maryk.datastore.foundationdb.model.modelDependentsDefinitionKey
 import maryk.datastore.foundationdb.model.modelNameKey
 import maryk.datastore.foundationdb.model.modelVersionKey
+import maryk.datastore.foundationdb.processors.helpers.packKey
 
 fun checkModelIfMigrationIsNeeded(
     tc: TransactionContext,
-    model: DirectorySubspace,
+    model: ByteArray,
     dataModel: IsRootDataModel,
     onlyCheckModelVersion: Boolean,
     conversionContext: DefinitionsConversionContext
 ): MigrationStatus {
-    val nameKey = model.pack(modelNameKey)
-    val versionKey = model.pack(modelVersionKey)
-    val modelDefKey = model.pack(modelDefinitionKey)
-    val dependentsDefKey = model.pack(modelDependentsDefinitionKey)
+    val nameKey = packKey(model, modelNameKey)
+    val versionKey = packKey(model, modelVersionKey)
+    val modelDefKey = packKey(model, modelDefinitionKey)
+    val dependentsDefKey = packKey(model, modelDependentsDefinitionKey)
 
     // Read name and version within a single transaction
     val (name, version) = tc.run { tr ->

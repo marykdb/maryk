@@ -45,7 +45,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     objectToAdd.validate()
 
     tc.run<IsAddResponseStatus<DM>> { tr ->
-        val existing = tr.get(packKey(tableDirs.keys, key.bytes)).join()
+        val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
+
+        val existing = tr.get(packedKey).join()
         if (existing != null) {
             AlreadyExists(key)
         } else {
@@ -78,7 +80,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                             val uniqueRef = reference + valueBytes
                             checks += {
-                                val uniqueKey = packKey(tableDirs.unique, uniqueRef)
+                                val uniqueKey = packKey(tableDirs.uniquePrefix, uniqueRef)
                                 val uniqueExists = tr.get(uniqueKey).join()
                                 if (uniqueExists != null) {
                                     throw UniqueException(reference, key)

@@ -5,9 +5,9 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.shared.helpers.convertToValue
 import maryk.rocksdb.ReadOptions
 import kotlin.math.max
 

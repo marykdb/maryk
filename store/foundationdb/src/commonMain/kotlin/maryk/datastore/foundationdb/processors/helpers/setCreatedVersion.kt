@@ -10,9 +10,9 @@ fun setCreatedVersion(
     keyBytes: ByteArray,
     version: ByteArray
 ) {
-    tr.set(tableDirs.keys.pack(keyBytes), version)
-    tr.set(tableDirs.table.pack(keyBytes), version)
+    tr.set(packKey(tableDirs.keysPrefix, keyBytes), version)
+    tr.set(packKey(tableDirs.tablePrefix, keyBytes), version)
     if (tableDirs is HistoricTableDirectories) {
-        tr.set(tableDirs.historicTable.pack(keyBytes), version)
+        tr.set(packKey(tableDirs.historicTablePrefix, keyBytes), version)
     }
 }

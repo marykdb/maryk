@@ -9,9 +9,12 @@ import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.shared.StoreAction
 
+internal typealias AddStoreAction<DM> = StoreAction<DM, AddRequest<DM>, AddResponse<DM>>
+internal typealias AnyAddStoreAction = AddStoreAction<IsRootDataModel>
+
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAddRequest(
     version: HLC,
-    storeAction: StoreAction<DM, AddRequest<DM>, AddResponse<DM>>
+    storeAction: AddStoreAction<DM>
 ) {
     val addRequest = storeAction.request
     val statuses = mutableListOf<IsAddResponseStatus<DM>>()

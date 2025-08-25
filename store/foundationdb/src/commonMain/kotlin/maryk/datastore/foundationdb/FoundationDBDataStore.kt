@@ -35,14 +35,17 @@ import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
-import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.foundationdb.model.storeModelDefinition
+import maryk.datastore.foundationdb.processors.AnyAddStoreAction
+import maryk.datastore.foundationdb.processors.AnyGetStoreAction
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
 import maryk.datastore.foundationdb.processors.processAddRequest
+import maryk.datastore.foundationdb.processors.processDeleteRequest
+import maryk.datastore.foundationdb.processors.processGetRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
-import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.Cache
 
 /**
  * FoundationDB DataStore (JVM-only).
@@ -89,25 +92,25 @@ class FoundationDBDataStore private constructor(
 
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index]?.let { tableDirectories ->
-                when (val migrationStatus = checkModelIfMigrationIsNeeded(tc, tableDirectories.model, dataModel, onlyCheckModelVersion, conversionContext)) {
+                when (val migrationStatus = checkModelIfMigrationIsNeeded(tc, tableDirectories.modelPrefix, dataModel, onlyCheckModelVersion, conversionContext)) {
                     UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                     NewModel -> {
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, null, dataModel)
-                            storeModelDefinition(tc, tableDirectories.model, dataModel)
+                            storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         }
                     }
                     is OnlySafeAdds -> {
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(tc, tableDirectories.model, dataModel)
+                            storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         }
                     }
                     is NewIndicesOnExistingProperties -> {
                         fillIndex(migrationStatus.indexesToIndex, tableDirectories)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(tc, tableDirectories.model, dataModel)
+                            storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         }
                     }
                     is NeedsMigration -> {
@@ -123,7 +126,7 @@ class FoundationDBDataStore private constructor(
                         }
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(tc, tableDirectories.model, dataModel)
+                            storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         }
                     }
                 }
@@ -148,6 +151,7 @@ class FoundationDBDataStore private constructor(
         val histUniqueDir   = rootDirectory.createOrOpen(tr, listOf(modelName, "unique_versioned"))
 
         HistoricTableDirectories(
+            dataStore     = this,
             model         = modelDir.join(),
             keys          = keysDir.join(),
             table         = tableDir.join(),
@@ -169,6 +173,7 @@ class FoundationDBDataStore private constructor(
         val indexDir  = rootDirectory.createOrOpen(tr, listOf(modelName, "index"))
 
         TableDirectories(
+            dataStore = this,
             model  = modelDir.join(),
             keys   = keysDir.join(),
             table  = tableDir.join(),
@@ -182,7 +187,7 @@ class FoundationDBDataStore private constructor(
         super.startFlows()
 
         this.launch {
-//            val cache = Cache()
+            val cache = Cache()
 
             var clock = HLC()
             storeActorHasStarted.complete(Unit)
@@ -193,13 +198,13 @@ class FoundationDBDataStore private constructor(
                         @Suppress("UNCHECKED_CAST")
                         when (val request = storeAction.request) {
                             is AddRequest<*> ->
-                                processAddRequest(clock, storeAction as StoreAction<IsRootDataModel, AddRequest<IsRootDataModel>, AddResponse<IsRootDataModel>>)
+                                processAddRequest(clock, storeAction as AnyAddStoreAction)
                             is ChangeRequest<*> ->
                                 TODO("Change requests are not yet implemented in FoundationDB")
                             is DeleteRequest<*> ->
-                                TODO("Delete requests are not yet implemented in FoundationDB")
+                                processDeleteRequest(clock, storeAction as maryk.datastore.foundationdb.processors.AnyDeleteStoreAction, cache)
                             is GetRequest<*> ->
-                                TODO("Get requests are not yet implemented in FoundationDB")
+                                processGetRequest(storeAction as AnyGetStoreAction, cache)
                             is ScanRequest<*> ->
                                 TODO("Scan requests are not yet implemented in FoundationDB")
                             is GetChangesRequest<*> ->
@@ -241,6 +246,9 @@ class FoundationDBDataStore private constructor(
 
         walkDataRecordsAndFillIndex(tc, tableDirectories, indexesToIndex)
     }
+
+    internal fun getTableDirs(dataModel: IsRootDataModel) =
+        getTableDirs(dataModelIdsByString.getValue(dataModel.Meta.name))
 
     internal fun getTableDirs(dbIndex: UInt) =
         directoriesByDataModelIndex[dbIndex]

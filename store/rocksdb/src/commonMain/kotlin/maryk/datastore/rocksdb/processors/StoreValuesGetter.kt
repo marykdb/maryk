@@ -5,8 +5,8 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
-import maryk.datastore.rocksdb.processors.helpers.convertToValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.shared.helpers.convertToValue
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.RocksDB
 import kotlin.math.max
@@ -30,7 +30,7 @@ internal class StoreValuesGetter(
         cache.clear()
     }
 
-    override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? {
+    override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(propertyReference: IsPropertyReference<T, D, C>): T? =
         key?.let { currentKey ->
             val valueAsBytes = cache.getOrPut(propertyReference) {
                 val reference = currentKey + propertyReference.toStorageByteArray()
@@ -38,7 +38,7 @@ internal class StoreValuesGetter(
                 db.get(columnFamilies.table, readOptions, reference)
             }
 
-            return valueAsBytes?.convertToValue(propertyReference,
+            valueAsBytes?.convertToValue(propertyReference,
                 VERSION_BYTE_SIZE, valueAsBytes.size - VERSION_BYTE_SIZE
             )?.also {
                 if (captureVersion) {
@@ -49,5 +49,4 @@ internal class StoreValuesGetter(
                 }
             }
         } ?: throw Exception("No key passed to StoreValuesGetter")
-    }
 }

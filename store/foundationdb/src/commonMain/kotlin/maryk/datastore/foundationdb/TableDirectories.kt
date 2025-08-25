@@ -3,28 +3,46 @@ package maryk.datastore.foundationdb
 import com.apple.foundationdb.directory.DirectorySubspace
 
 sealed interface IsTableDirectories {
-    val keys: DirectorySubspace
-    val model: DirectorySubspace
-    val table: DirectorySubspace
-    val unique: DirectorySubspace
-    val index: DirectorySubspace
+    val dataStore: FoundationDBDataStore
+    val keysPrefix: ByteArray
+    val modelPrefix: ByteArray
+    val tablePrefix: ByteArray
+    val uniquePrefix: ByteArray
+    val indexPrefix: ByteArray
 }
 
 open class TableDirectories(
-    override val model: DirectorySubspace,
-    override val keys: DirectorySubspace,
-    override val table: DirectorySubspace,
-    override val unique: DirectorySubspace,
-    override val index: DirectorySubspace,
-): IsTableDirectories
+    override val dataStore: FoundationDBDataStore,
+    model: DirectorySubspace,
+    keys: DirectorySubspace,
+    table: DirectorySubspace,
+    unique: DirectorySubspace,
+    index: DirectorySubspace,
+): IsTableDirectories {
+    override val keysPrefix = keys.pack()
+    override val modelPrefix = model.pack()
+    override val tablePrefix = table.pack()
+    override val uniquePrefix = unique.pack()
+    override val indexPrefix = index.pack()
+}
 
 class HistoricTableDirectories(
-    override val model: DirectorySubspace,
-    override val keys: DirectorySubspace,
-    override val table: DirectorySubspace,
-    override val unique: DirectorySubspace,
-    override val index: DirectorySubspace,
-    val historicTable: DirectorySubspace,
-    val historicUnique: DirectorySubspace,
-    val historicIndex: DirectorySubspace,
-): IsTableDirectories
+    override val dataStore: FoundationDBDataStore,
+    model: DirectorySubspace,
+    keys: DirectorySubspace,
+    table: DirectorySubspace,
+    unique: DirectorySubspace,
+    index: DirectorySubspace,
+    historicTable: DirectorySubspace,
+    historicUnique: DirectorySubspace,
+    historicIndex: DirectorySubspace,
+): IsTableDirectories {
+    override val keysPrefix = keys.pack()
+    override val modelPrefix = model.pack()
+    override val tablePrefix = table.pack()
+    override val uniquePrefix = unique.pack()
+    override val indexPrefix = index.pack()
+    val historicTablePrefix = historicTable.pack()
+    val historicUniquePrefix = historicUnique.pack()
+    val historicIndexPrefix = historicIndex.pack()
+}

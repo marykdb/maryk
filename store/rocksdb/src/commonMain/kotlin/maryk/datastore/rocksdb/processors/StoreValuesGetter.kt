@@ -38,7 +38,8 @@ internal class StoreValuesGetter(
                 db.get(columnFamilies.table, readOptions, reference)
             }
 
-            valueAsBytes?.convertToValue(propertyReference,
+            valueAsBytes?.convertToValue(
+                propertyReference,
                 VERSION_BYTE_SIZE, valueAsBytes.size - VERSION_BYTE_SIZE
             )?.also {
                 if (captureVersion) {
@@ -48,5 +49,5 @@ internal class StoreValuesGetter(
                     } ?: version
                 }
             }
-        } ?: throw Exception("No key passed to StoreValuesGetter")
+        }
 }

@@ -41,6 +41,7 @@ import maryk.datastore.foundationdb.processors.AnyAddStoreAction
 import maryk.datastore.foundationdb.processors.AnyGetStoreAction
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
 import maryk.datastore.foundationdb.processors.processAddRequest
+import maryk.datastore.foundationdb.processors.processChangeRequest
 import maryk.datastore.foundationdb.processors.processDeleteRequest
 import maryk.datastore.foundationdb.processors.processGetRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
@@ -200,7 +201,7 @@ class FoundationDBDataStore private constructor(
                             is AddRequest<*> ->
                                 processAddRequest(clock, storeAction as AnyAddStoreAction)
                             is ChangeRequest<*> ->
-                                TODO("Change requests are not yet implemented in FoundationDB")
+                                processChangeRequest(clock, storeAction as maryk.datastore.foundationdb.processors.AnyChangeStoreAction)
                             is DeleteRequest<*> ->
                                 processDeleteRequest(clock, storeAction as maryk.datastore.foundationdb.processors.AnyDeleteStoreAction, cache)
                             is GetRequest<*> ->

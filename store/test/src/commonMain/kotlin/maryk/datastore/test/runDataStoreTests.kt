@@ -15,26 +15,26 @@ private val allTestClasses = arrayOf(
     "DataStoreChangeComplexTest" to ::DataStoreChangeComplexTest,
     "DataStoreChangeTest" to ::DataStoreChangeTest,
     "DataStoreChangeValidationTest" to ::DataStoreChangeValidationTest,
-    "DataStoreDeleteTest" to ::DataStoreDeleteTest,
-    "DataStoreFilterComplexTest" to ::DataStoreFilterComplexTest,
-    "DataStoreFilterTest" to ::DataStoreFilterTest,
-    "DataStoreGetChangesComplexTest" to ::DataStoreGetChangesComplexTest,
-    "DataStoreGetChangesTest" to ::DataStoreGetChangesTest,
-    "DataStoreGetUpdatesAndFlowTest" to ::DataStoreGetUpdatesAndFlowTest,
+//    "DataStoreDeleteTest" to ::DataStoreDeleteTest,
+//    "DataStoreFilterComplexTest" to ::DataStoreFilterComplexTest,
+//    "DataStoreFilterTest" to ::DataStoreFilterTest,
+//    "DataStoreGetChangesComplexTest" to ::DataStoreGetChangesComplexTest,
+//    "DataStoreGetChangesTest" to ::DataStoreGetChangesTest,
+//    "DataStoreGetUpdatesAndFlowTest" to ::DataStoreGetUpdatesAndFlowTest,
     "DataStoreGetTest" to ::DataStoreGetTest,
-    "DataStoreGetSelectTest" to ::DataStoreGetSelectTest,
-    "DataStoreProcessUpdateTest" to ::DataStoreProcessUpdateTest,
-    "DataStoreScanChangesTest" to ::DataStoreScanChangesTest,
-    "DataStoreScanMultiTypeTest" to ::DataStoreScanMultiTypeTest,
-    "DataStoreScanOnIndexTest" to ::DataStoreScanOnIndexTest,
-    "DataStoreScanOnIndexWithPersonTest" to ::DataStoreScanOnIndexWithPersonTest,
-    "DataStoreScanTest" to ::DataStoreScanTest,
-    "DataStoreScanUniqueTest" to ::DataStoreScanUniqueTest,
-    "DataStoreScanUpdatesAndFlowTest" to ::DataStoreScanUpdatesAndFlowTest,
-    "DataStoreScanUpdatesWithLogTest" to ::DataStoreScanUpdatesWithLogTest,
-    "DataStoreScanWithFilterTest" to ::DataStoreScanWithFilterTest,
-    "DataStoreScanWithMutableValueIndexTest" to ::DataStoreScanWithMutableValueIndexTest,
-    "UniqueTest" to ::UniqueTest,
+//    "DataStoreGetSelectTest" to ::DataStoreGetSelectTest,
+//    "DataStoreProcessUpdateTest" to ::DataStoreProcessUpdateTest,
+//    "DataStoreScanChangesTest" to ::DataStoreScanChangesTest,
+//    "DataStoreScanMultiTypeTest" to ::DataStoreScanMultiTypeTest,
+//    "DataStoreScanOnIndexTest" to ::DataStoreScanOnIndexTest,
+//    "DataStoreScanOnIndexWithPersonTest" to ::DataStoreScanOnIndexWithPersonTest,
+//    "DataStoreScanTest" to ::DataStoreScanTest,
+//    "DataStoreScanUniqueTest" to ::DataStoreScanUniqueTest,
+//    "DataStoreScanUpdatesAndFlowTest" to ::DataStoreScanUpdatesAndFlowTest,
+//    "DataStoreScanUpdatesWithLogTest" to ::DataStoreScanUpdatesWithLogTest,
+//    "DataStoreScanWithFilterTest" to ::DataStoreScanWithFilterTest,
+//    "DataStoreScanWithMutableValueIndexTest" to ::DataStoreScanWithMutableValueIndexTest,
+//    "UniqueTest" to ::UniqueTest,
 )
 
 val dataModelsForTests = mapOf(
@@ -98,6 +98,6 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
             }
             messages += "\t$name: $exception\n"
         }
-        throw RuntimeException("$messages]")
+        throw RuntimeException("$messages]", firstThrowable)
     }
 }

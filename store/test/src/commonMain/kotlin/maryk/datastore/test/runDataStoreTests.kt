@@ -22,7 +22,7 @@ private val allTestClasses = arrayOf(
 //    "DataStoreGetChangesTest" to ::DataStoreGetChangesTest,
 //    "DataStoreGetUpdatesAndFlowTest" to ::DataStoreGetUpdatesAndFlowTest,
     "DataStoreGetTest" to ::DataStoreGetTest,
-//    "DataStoreGetSelectTest" to ::DataStoreGetSelectTest,
+    "DataStoreGetSelectTest" to ::DataStoreGetSelectTest,
 //    "DataStoreProcessUpdateTest" to ::DataStoreProcessUpdateTest,
 //    "DataStoreScanChangesTest" to ::DataStoreScanChangesTest,
 //    "DataStoreScanMultiTypeTest" to ::DataStoreScanMultiTypeTest,

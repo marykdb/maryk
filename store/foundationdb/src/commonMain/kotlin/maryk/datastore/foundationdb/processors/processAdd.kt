@@ -58,6 +58,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
 
             val checks: MutableList<() -> Unit> = mutableListOf()
+            val uniqueWrites: MutableList<ByteArray> = mutableListOf()
 
             // Indexes
             dataModel.Meta.indexes?.forEach { indexDef ->
@@ -86,7 +87,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                                     throw UniqueException(reference, key)
                                 }
                             }
-                            setUniqueIndexValue(tr, tableDirs, uniqueRef, versionBytes, key.bytes)
+                            // Defer writing unique index until after checks to avoid read-your-writes conflicts
+                            uniqueWrites += uniqueRef
                         }
 
                         setValue(tr, tableDirs, key.bytes, reference, versionBytes, valueBytes)
@@ -121,6 +123,13 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 
             // Run uniqueness checks right before commit to keep all reads in txn
             for (c in checks) c()
+
+            // After all checks pass, write unique index values
+            if (uniqueWrites.isNotEmpty()) {
+                for (uniqueRef in uniqueWrites) {
+                    setUniqueIndexValue(tr, tableDirs, uniqueRef, versionBytes, key.bytes)
+                }
+            }
 
             updateSharedFlow.tryEmit(
                 Update.Addition(

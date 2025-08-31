@@ -73,7 +73,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 // Map reference bytes to property reference; if unique -> delete unique index
                 var idx = 0
                 val propRef = dataModel.getPropertyReferenceByStorageBytes(reference.size, { reference[idx++] })
-                val def = propRef.propertyDefinition
+                val def = propRef.comparablePropertyDefinition
                 if (def is IsComparableDefinition<*, *> && def.unique) {
                     val value = kv.value
                     // Stored as (version || value)
@@ -151,4 +151,3 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 } catch (e: Throwable) {
     ServerFail(e.toString(), e)
 }
-

@@ -84,7 +84,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                                 val uniqueKey = packKey(tableDirs.uniquePrefix, uniqueRef)
                                 val uniqueExists = tr.get(uniqueKey).join()
                                 if (uniqueExists != null) {
-                                    throw UniqueException(reference, key)
+                                    // Stored as (version || key)
+                                    val existingKeyBytes = uniqueExists.copyOfRange(
+                                        maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE,
+                                        uniqueExists.size
+                                    )
+                                    throw UniqueException(reference, Key<DM>(existingKeyBytes))
                                 }
                             }
                             // Defer writing unique index until after checks to avoid read-your-writes conflicts

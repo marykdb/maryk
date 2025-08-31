@@ -44,6 +44,7 @@ import maryk.datastore.foundationdb.processors.AnyGetChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyGetStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanStoreAction
+import maryk.datastore.foundationdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
 import maryk.datastore.foundationdb.processors.processAddRequest
 import maryk.datastore.foundationdb.processors.processChangeRequest
@@ -52,6 +53,7 @@ import maryk.datastore.foundationdb.processors.processGetChangesRequest
 import maryk.datastore.foundationdb.processors.processGetRequest
 import maryk.datastore.foundationdb.processors.processScanChangesRequest
 import maryk.datastore.foundationdb.processors.processScanRequest
+import maryk.datastore.foundationdb.processors.processScanUpdatesRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
@@ -223,7 +225,7 @@ class FoundationDBDataStore private constructor(
                             is GetUpdatesRequest<*> ->
                                 TODO("GetUpdates requests are not yet implemented in FoundationDB")
                             is ScanUpdatesRequest<*> ->
-                                TODO("ScanUpdates requests are not yet implemented in FoundationDB")
+                                processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache)
                             is UpdateResponse<*> ->
                                 TODO("Update responses are not yet implemented in FoundationDB")
                             else -> throw TypeException("Unsupported request type ${request::class.simpleName}")

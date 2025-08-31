@@ -73,7 +73,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                     ObjectDelete -> {
                         currentVersion = valueBytes.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            if (currentVersion >= fromVersion && keyBytes[key.size] == 0.toByte()) {
+                            if (currentVersion >= fromVersion && keyBytes[prefixWithKeyRange.size] == 0.toByte()) {
                                 valueBytes.last() == TRUE
                             } else null
                         }

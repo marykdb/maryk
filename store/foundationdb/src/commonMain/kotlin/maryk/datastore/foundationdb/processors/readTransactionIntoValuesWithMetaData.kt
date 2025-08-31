@@ -75,21 +75,14 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
             select = select,
             processValue = { storageType, reference ->
                 val currentVersion: ULong
-                val key = iterator.current.key
                 val value = iterator.current.value
 
                 when (storageType) {
                     ObjectDelete -> {
-                        if (key.last() == 0.toByte()) {
-                            val value = value
-                            currentVersion = maxOf(value.readVersionBytes(), maxVersion)
-                            index = VERSION_BYTE_SIZE
-                            isDeleted = value[index] == TRUE
-                            true
-                        } else {
-                            currentVersion = 0uL
-                            false
-                        }
+                        currentVersion = maxOf(value.readVersionBytes(), maxVersion)
+                        index = VERSION_BYTE_SIZE
+                        isDeleted = value[index] == TRUE
+                        true
                     }
                     Value -> {
                         currentVersion = value.readVersionBytes()
@@ -144,7 +137,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
             throw RequestException("No historic table present so cannot use `toVersion` on get")
         }
 
-        val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
+        val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
 
         val iterator = FDBIterator(
             tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).iterator()

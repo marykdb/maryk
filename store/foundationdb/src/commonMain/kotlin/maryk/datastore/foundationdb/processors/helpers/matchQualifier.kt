@@ -60,7 +60,8 @@ internal fun <T : Any> Transaction.matchQualifier(
                     val value = this.getValue(tableDirs, toVersion, qualifier) { valueBytes, offset, length ->
                         valueBytes.convertToValue(reference, offset, length)
                     }
-                    matcher(value)
+                    if (value != null) matcher(value)
+                    else matchExactFromRange(tableDirs, toVersion, keyLength, qualifier, reference, matcher)
                 }
                 else ->
                     matchReferenced(
@@ -135,4 +136,30 @@ private fun <T : Any> Transaction.matchReferenced(
         toVersion = toVersion,
         matcher = matcher
     )
+}
+
+/**
+ * Fallback helper for exact qualifier matching. If a direct get does not return a value,
+ * iterate the range and compare the qualifier bytes exactly, then decode and test the value.
+ */
+private fun <T : Any> Transaction.matchExactFromRange(
+    tableDirs: IsTableDirectories,
+    toVersion: ULong?,
+    keyLength: Int,
+    qualifier: ByteArray,
+    reference: IsPropertyReference<T, *, *>,
+    matcher: (T?) -> Boolean
+): Boolean {
+    val exact = qualifier.copyOfRange(keyLength, qualifier.size)
+    val iterRes = this.iterateValues(tableDirs, toVersion, keyLength, qualifier) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
+        if (refLength == exact.size) {
+            var i = 0
+            while (i < exact.size && referenceBytes[refOffset + i] == exact[i]) i++
+            if (i == exact.size) {
+                val v = valueBytes.convertToValue(reference, valOffset, valLength)
+                if (matcher(v)) true else null
+            } else null
+        } else null
+    }
+    return iterRes == true
 }

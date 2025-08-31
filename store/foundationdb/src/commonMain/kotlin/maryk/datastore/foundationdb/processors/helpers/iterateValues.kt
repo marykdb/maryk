@@ -23,18 +23,20 @@ internal fun <R : Any> Transaction.iterateValues(
     handleValue: (ByteArray, Int, Int, ByteArray, Int, Int) -> R?
 ): R? {
     return if (toVersion == null) {
-        val asyncIterable = this.getRange(Range.startsWith(packKey(tableDirectories.tablePrefix, reference)))
+        val tablePrefix = tableDirectories.tablePrefix
+        val asyncIterable = this.getRange(Range.startsWith(packKey(tablePrefix, reference)))
         val it = FDBIterator(asyncIterable.iterator())
 
         while (it.hasNext()) {
             val kv = it.next()
             val referenceBytes = kv.key
             val value = kv.value
-
+            val refOffset = tablePrefix.size + keyLength
+            val refLength = referenceBytes.size - refOffset
             handleValue(
                 referenceBytes,
-                keyLength,
-                referenceBytes.size - keyLength,
+                refOffset,
+                refLength,
                 value,
                 VERSION_BYTE_SIZE,
                 value.size - VERSION_BYTE_SIZE
@@ -46,7 +48,8 @@ internal fun <R : Any> Transaction.iterateValues(
         if (tableDirectories !is HistoricTableDirectories) {
             throw RequestException("Cannot use toVersion on a non historic table")
         }
-        val asyncIterable = this.getRange(Range.startsWith(packKey(tableDirectories.historicTablePrefix, reference)))
+        val histPrefix = tableDirectories.historicTablePrefix
+        val asyncIterable = this.getRange(Range.startsWith(packKey(histPrefix, reference)))
         val it = FDBIterator(asyncIterable.iterator())
 
         val toVersionBytes = toVersion.toReversedVersionBytes()
@@ -55,14 +58,16 @@ internal fun <R : Any> Transaction.iterateValues(
             val kv = it.next()
             val referenceBytes = kv.key
             val versionOffset = referenceBytes.size - toVersionBytes.size
+            val refOffset = histPrefix.size + keyLength
+            val refLength = versionOffset - refOffset
 
             // Only accept keys with a version component <= requested (in reversed ordering)
             if (toVersionBytes.compareToWithOffsetLength(referenceBytes, versionOffset) <= 0) {
                 val value = kv.value
                 handleValue(
                     referenceBytes,
-                    keyLength,
-                    versionOffset,
+                    refOffset,
+                    refLength,
                     value,
                     0,
                     value.size

@@ -19,16 +19,17 @@ internal fun FDBIterator.historicQualifierRetriever(
 
         val toVersionBytes = toVersion.toReversedVersionBytes()
 
+        var emitted = false
         while (hasNext()) {
             val value = next()
-            // key range check is ensured with setPrefixSameAsStart
+            // key range check is ensured with startsWith on the range
             val qualifier: ByteArray = value.key
             val versionOffset = qualifier.size - toVersionBytes.size
+
             val currentLastQualifier = lastQualifier
             if (currentLastQualifier != null && qualifier.match(offset, currentLastQualifier, versionOffset - offset, offset, lastQualifierLength)) {
-                if (counter >= maxVersions) {
-                    continue // Already returned this qualifier so skip
-                }
+                if (counter >= maxVersions)
+                    continue // Already returned this qualifier max times, skip until new qualifier
             } else {
                 counter = 0u
             }
@@ -42,14 +43,13 @@ internal fun FDBIterator.historicQualifierRetriever(
                     qualifier.readReversedVersionBytes(versionOffset)
                 )
 
-                resultHandler({ qualifier[offset+it] }, lastQualifierLength)
-
+                resultHandler({ qualifier[offset + it] }, lastQualifierLength)
                 counter++
-
+                emitted = true
                 break
             } else continue
         }
 
-        hasNext()
+        emitted
     }
 }

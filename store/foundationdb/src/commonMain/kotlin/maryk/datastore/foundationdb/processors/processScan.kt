@@ -10,8 +10,10 @@ import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByKey
+import maryk.core.query.responses.FetchByUniqueKey
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.checkToVersion
@@ -40,6 +42,36 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
                 }
             }
             FetchByKey
+        }
+    }
+
+    // Fast path for unique lookups: resolve unique -> key directly (supports toVersion)
+    keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let { uniqueMatchers ->
+        val firstMatcher = uniqueMatchers.first()
+        @Suppress("UNCHECKED_CAST")
+        val valueBytes = (firstMatcher.definition as maryk.core.properties.definitions.IsComparableDefinition<Comparable<Any>, maryk.core.properties.IsPropertyContext>)
+            .toStorageBytes(firstMatcher.value as Comparable<Any>)
+
+        // Build (reference || NoTypeIndicator || valueBytes) to match how uniques are stored
+        val reference = ByteArray(firstMatcher.reference.size + 1 + valueBytes.size).apply {
+            firstMatcher.reference.copyInto(this)
+            this[firstMatcher.reference.size] = maryk.datastore.shared.TypeIndicator.NoTypeIndicator.byte
+            valueBytes.copyInto(this, firstMatcher.reference.size + 1)
+        }
+
+        return this.tc.run { tr ->
+            tr.getKeyByUniqueValue(tableDirs, reference, scanRequest.toVersion) { keyBytes, setAtVersion ->
+                val key = scanRequest.dataModel.key(keyBytes)
+                if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange)) {
+                    // Ensure we have the creation version for processRecord callback
+                    val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).join()
+                    val createdVersion = createdBytes?.let { HLC.fromStorageBytes(it).timestamp }
+                    if (createdVersion != null) {
+                        processRecord(key, createdVersion, null)
+                    }
+                }
+            }
+            FetchByUniqueKey(firstMatcher.reference)
         }
     }
 

@@ -24,6 +24,7 @@ import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setCreatedVersion
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
@@ -86,7 +87,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                                 if (uniqueExists != null) {
                                     // Stored as (version || key)
                                     val existingKeyBytes = uniqueExists.copyOfRange(
-                                        maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE,
+                                        VERSION_BYTE_SIZE,
                                         uniqueExists.size
                                     )
                                     throw UniqueException(reference, Key<DM>(existingKeyBytes))

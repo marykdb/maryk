@@ -3,6 +3,7 @@ package maryk.datastore.foundationdb.processors
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
@@ -10,6 +11,7 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.values
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.Value
+import maryk.core.processors.datastore.writeIncMapAdditionsToStorage
 import maryk.core.processors.datastore.writeListToStorage
 import maryk.core.processors.datastore.writeMapToStorage
 import maryk.core.processors.datastore.writeSetToStorage
@@ -29,6 +31,7 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
+import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
@@ -83,6 +86,7 @@ import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndexTombsto
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.readValue
 import maryk.datastore.shared.updates.Update
 import maryk.lib.bytes.combineToByteArray
 
@@ -208,7 +212,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                     } catch (_: Throwable) {
                                         // Fallback to decoded compare if not a simple value definition
                                         var readIndex = VERSION_BYTE_SIZE
-                                        val actual = maryk.datastore.shared.readValue(reference.comparablePropertyDefinition, { packed[readIndex++] }) { packed.size - readIndex }
+                                        val actual = readValue(reference.comparablePropertyDefinition, { packed[readIndex++] }) { packed.size - readIndex }
                                         if (actual != expected) {
                                             checkFailed = true
                                         }
@@ -474,7 +478,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                     val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, setChange.reference.toStorageByteArray())).join()
                                     val prevCount = countEntry?.let { arr ->
                                         var ri = VERSION_BYTE_SIZE
-                                        maryk.core.extensions.bytes.initIntByVar { arr[ri++] }
+                                        initIntByVar { arr[ri++] }
                                     } ?: 0
                                     setDef.validateSize((prevCount + countChange).toUInt()) { setRef }
                                     setValue(tr, tableDirs, key.bytes, setChange.reference.toStorageByteArray(), versionBytes, (prevCount + countChange).toVarBytes())
@@ -484,7 +488,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         is IncMapChange -> {
                             @Suppress("UNCHECKED_CAST")
                             for (valueChange in change.valueChanges) {
-                                val incMapRef = valueChange.reference as maryk.core.properties.references.IncMapReference<Comparable<Any>, Any, IsPropertyContext>
+                                val incMapRef = valueChange.reference as IncMapReference<Comparable<Any>, Any, IsPropertyContext>
                                 val incDef = incMapRef.propertyDefinition
 
                                 valueChange.addValues?.let { addValues ->
@@ -498,7 +502,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
                                     val currentIncKey = getCurrentIncMapKey(tr, tableDirs, key, incMapRef)
                                     val writer = createValueWriter(tr, tableDirs, key, versionBytes)
-                                    val addedKeys = maryk.core.processors.datastore.writeIncMapAdditionsToStorage(currentIncKey, writer, incMapRef.propertyDefinition.definition, addValues)
+                                    val addedKeys = writeIncMapAdditionsToStorage(currentIncKey, writer, incMapRef.propertyDefinition.definition, addValues)
 
                                     if (addedKeys.isNotEmpty()) {
                                         isChanged = true
@@ -512,7 +516,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                     val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, valueChange.reference.toStorageByteArray())).join()
                                     val prevCount = countEntry?.let { arr ->
                                         var ri = VERSION_BYTE_SIZE
-                                        maryk.core.extensions.bytes.initIntByVar { arr[ri++] }
+                                        initIntByVar { arr[ri++] }
                                     } ?: 0
                                     incDef.validateSize((prevCount + addValues.size).toUInt()) { incMapRef }
                                     setValue(tr, tableDirs, key.bytes, valueChange.reference.toStorageByteArray(), versionBytes, (prevCount + addValues.size).toVarBytes())

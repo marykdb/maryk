@@ -11,6 +11,7 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
+import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
@@ -21,6 +22,7 @@ import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.setValue
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.updates.Update
 import maryk.lib.bytes.combineToByteArray
 import com.apple.foundationdb.Range as FDBRange
 
@@ -44,7 +46,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         val versionBytes = HLC.toStorageBytes(version)
 
         // Values getter to read current values by property reference for index computation
-        val valuesGetter = object : maryk.core.values.IsValuesGetter {
+        val valuesGetter = object : IsValuesGetter {
             override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
                 propertyReference: IsPropertyReference<T, D, C>
             ): T? {
@@ -138,7 +140,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 
         // Emit update and return success
         updateSharedFlow.tryEmit(
-            maryk.datastore.shared.updates.Update.Deletion(
+            Update.Deletion(
                 dataModel,
                 key,
                 version.timestamp,

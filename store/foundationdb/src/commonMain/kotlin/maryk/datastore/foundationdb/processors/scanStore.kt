@@ -2,6 +2,7 @@ package maryk.datastore.foundationdb.processors
 
 import com.apple.foundationdb.KeyValue
 import com.apple.foundationdb.Range
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -49,7 +50,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanStore(
             if (!scanRange.matchesPartials(modelKeyBytes)) continue
 
             val key = scanRequest.dataModel.key(modelKeyBytes)
-            val creationVersion = maryk.core.clock.HLC.fromStorageBytes(kv.value).timestamp
+            val creationVersion = HLC.fromStorageBytes(kv.value).timestamp
             if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) continue
 
             collected += modelKeyBytes to creationVersion

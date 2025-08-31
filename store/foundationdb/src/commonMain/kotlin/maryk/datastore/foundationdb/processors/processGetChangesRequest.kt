@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
 import kotlinx.coroutines.runBlocking
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -37,7 +38,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
             if (existing == null) {
                 null
             } else {
-                val creationVersion = maryk.core.clock.HLC.fromStorageBytes(existing, 0).timestamp
+                val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
 
                 if (getRequest.shouldBeFiltered(
                         transaction = tr,

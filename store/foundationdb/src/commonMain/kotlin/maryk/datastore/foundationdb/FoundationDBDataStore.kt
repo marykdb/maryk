@@ -38,13 +38,19 @@ import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
+import maryk.datastore.foundationdb.processors.AnyChangeStoreAction
+import maryk.datastore.foundationdb.processors.AnyDeleteStoreAction
+import maryk.datastore.foundationdb.processors.AnyGetChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyGetStoreAction
+import maryk.datastore.foundationdb.processors.AnyScanChangesStoreAction
+import maryk.datastore.foundationdb.processors.AnyScanStoreAction
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
 import maryk.datastore.foundationdb.processors.processAddRequest
 import maryk.datastore.foundationdb.processors.processChangeRequest
 import maryk.datastore.foundationdb.processors.processDeleteRequest
-import maryk.datastore.foundationdb.processors.processGetRequest
 import maryk.datastore.foundationdb.processors.processGetChangesRequest
+import maryk.datastore.foundationdb.processors.processGetRequest
+import maryk.datastore.foundationdb.processors.processScanChangesRequest
 import maryk.datastore.foundationdb.processors.processScanRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
@@ -203,17 +209,17 @@ class FoundationDBDataStore private constructor(
                             is AddRequest<*> ->
                                 processAddRequest(clock, storeAction as AnyAddStoreAction)
                             is ChangeRequest<*> ->
-                                processChangeRequest(clock, storeAction as maryk.datastore.foundationdb.processors.AnyChangeStoreAction)
+                                processChangeRequest(clock, storeAction as AnyChangeStoreAction)
                             is DeleteRequest<*> ->
-                                processDeleteRequest(clock, storeAction as maryk.datastore.foundationdb.processors.AnyDeleteStoreAction, cache)
+                                processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, cache)
                             is GetRequest<*> ->
                                 processGetRequest(storeAction as AnyGetStoreAction, cache)
                             is ScanRequest<*> ->
-                                processScanRequest(storeAction as maryk.datastore.foundationdb.processors.AnyScanStoreAction, cache)
+                                processScanRequest(storeAction as AnyScanStoreAction, cache)
                             is GetChangesRequest<*> ->
-                                processGetChangesRequest(storeAction as maryk.datastore.foundationdb.processors.AnyGetChangesStoreAction, cache)
+                                processGetChangesRequest(storeAction as AnyGetChangesStoreAction, cache)
                             is ScanChangesRequest<*> ->
-                                TODO("ScanChanges requests are not yet implemented in FoundationDB")
+                                processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache)
                             is GetUpdatesRequest<*> ->
                                 TODO("GetUpdates requests are not yet implemented in FoundationDB")
                             is ScanUpdatesRequest<*> ->

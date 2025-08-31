@@ -44,6 +44,7 @@ import maryk.datastore.foundationdb.processors.processAddRequest
 import maryk.datastore.foundationdb.processors.processChangeRequest
 import maryk.datastore.foundationdb.processors.processDeleteRequest
 import maryk.datastore.foundationdb.processors.processGetRequest
+import maryk.datastore.foundationdb.processors.processGetChangesRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
@@ -209,7 +210,7 @@ class FoundationDBDataStore private constructor(
                             is ScanRequest<*> ->
                                 TODO("Scan requests are not yet implemented in FoundationDB")
                             is GetChangesRequest<*> ->
-                                TODO("GetChanges requests are not yet implemented in FoundationDB")
+                                processGetChangesRequest(storeAction as maryk.datastore.foundationdb.processors.AnyGetChangesStoreAction, cache)
                             is ScanChangesRequest<*> ->
                                 TODO("ScanChanges requests are not yet implemented in FoundationDB")
                             is GetUpdatesRequest<*> ->

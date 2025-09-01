@@ -22,7 +22,7 @@ internal fun setValue(
     // Historic table: (key, reference, invertedVersion) -> value
     if (tableDirs is HistoricTableDirectories) {
         val inv = version.copyOf()
-        inv.invert(0)
+        inv.invert()
         tr.set(
             packKey(tableDirs.historicTablePrefix, keyBytes, reference, inv),
             value

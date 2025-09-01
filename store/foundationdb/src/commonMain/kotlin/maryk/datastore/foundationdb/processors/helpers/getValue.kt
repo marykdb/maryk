@@ -1,11 +1,12 @@
 package maryk.datastore.foundationdb.processors.helpers
 
 
-import com.apple.foundationdb.KeySelector
+import com.apple.foundationdb.Range
 import com.apple.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.lib.extensions.compare.compareToWithOffsetLength
 
 /**
  * Get a value for a [keyAndReference] from [tableDirs].
@@ -23,25 +24,23 @@ internal fun <T: Any> Transaction.getValue(
 
         handleResult(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
     } else {
-        val versionBytes = toVersion.toReversedVersionBytes()
-
         val historicDirs = tableDirs as? HistoricTableDirectories
             ?: throw RequestException("Cannot use toVersion on a non historic table")
 
-        // We want the latest version <= toVersion.
-        // Build range over all versions for the specific keyAndReference and cap the end at toVersion.
+        val toVersionBytes = toVersion.toReversedVersionBytes()
         val prefixForKey = packKey(historicDirs.historicTablePrefix, keyAndReference)
-        val upperBoundIncl = packKey(historicDirs.historicTablePrefix, keyAndReference, versionBytes)
 
-        // Create selectors for [prefixForKey, upperBoundIncl], then read 1 kv in reverse to get the latest <= toVersion.
-        val beginSel = KeySelector.firstGreaterOrEqual(prefixForKey)
-        val endSel = KeySelector.lastLessOrEqual(upperBoundIncl)
-
-        val kvs = this.getRange(beginSel, endSel, 1, true).asList().join()
-        if (kvs.isEmpty()) return null
-
-        val result = kvs[0].value
-        handleResult(result, 0, result.size)
+        // Iterate all historic versions (ascending by inverted version) and select the
+        // first one whose inverted version is >= inverted(toVersion), i.e. version <= toVersion.
+        val it = this.getRange(Range.startsWith(prefixForKey)).iterator()
+        while (it.hasNext()) {
+            val kv = it.next()
+            val versionOffset = kv.key.size - toVersionBytes.size
+            if (toVersionBytes.compareToWithOffsetLength(kv.key, versionOffset) <= 0) {
+                val result = kv.value
+                return handleResult(result, 0, result.size)
+            }
+        }
+        null
     }
 }
-

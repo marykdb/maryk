@@ -15,8 +15,6 @@ internal fun FDBIterator.historicQualifierRetriever(
     var counter = 0u
 
     return { resultHandler ->
-        val offset = prefix.size
-
         val toVersionBytes = toVersion.toReversedVersionBytes()
 
         var emitted = false
@@ -24,6 +22,11 @@ internal fun FDBIterator.historicQualifierRetriever(
             val value = next()
             // key range check is ensured with startsWith on the range
             val qualifier: ByteArray = value.key
+            val offset = prefix.size
+            // Skip meta entries without qualifier or without a version suffix
+            if (qualifier.size <= offset + toVersionBytes.size) {
+                continue
+            }
             val versionOffset = qualifier.size - toVersionBytes.size
 
             val currentLastQualifier = lastQualifier

@@ -6,6 +6,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
@@ -16,6 +18,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.shared.ScanType
+import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
@@ -45,17 +48,17 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
         }
     }
 
-    // Fast path for unique lookups: resolve unique -> key directly (supports toVersion)
+    // Fast path for unique lookups: resolve unique -> key directly (supports toVersion).
     keyScanRange.uniques?.takeIf { it.isNotEmpty() }?.let { uniqueMatchers ->
         val firstMatcher = uniqueMatchers.first()
         @Suppress("UNCHECKED_CAST")
-        val valueBytes = (firstMatcher.definition as maryk.core.properties.definitions.IsComparableDefinition<Comparable<Any>, maryk.core.properties.IsPropertyContext>)
+        val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>)
             .toStorageBytes(firstMatcher.value as Comparable<Any>)
 
         // Build (reference || NoTypeIndicator || valueBytes) to match how uniques are stored
         val reference = ByteArray(firstMatcher.reference.size + 1 + valueBytes.size).apply {
             firstMatcher.reference.copyInto(this)
-            this[firstMatcher.reference.size] = maryk.datastore.shared.TypeIndicator.NoTypeIndicator.byte
+            this[firstMatcher.reference.size] = TypeIndicator.NoTypeIndicator.byte
             valueBytes.copyInto(this, firstMatcher.reference.size + 1)
         }
 

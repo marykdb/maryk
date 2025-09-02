@@ -49,23 +49,26 @@ internal fun <R : Any> Transaction.iterateValues(
             throw RequestException("Cannot use toVersion on a non historic table")
         }
         val histPrefix = tableDirectories.historicTablePrefix
-        val asyncIterable = this.getRange(Range.startsWith(packKey(histPrefix, reference)))
-        val it = FDBIterator(asyncIterable.iterator())
+        val it = FDBIterator(
+            this.getRange(Range.startsWith(packKey(histPrefix, reference))).iterator()
+        )
 
         val toVersionBytes = toVersion.toReversedVersionBytes()
 
         while (it.hasNext()) {
             val kv = it.next()
-            val referenceBytes = kv.key
-            val versionOffset = referenceBytes.size - toVersionBytes.size
+            val keyBytes = kv.key
+            val versionOffset = keyBytes.size - toVersionBytes.size
             val refOffset = histPrefix.size + keyLength
-            val refLength = versionOffset - refOffset
+            val sepIndex = versionOffset - 1
+            // Validate separator and ranges
+            if (versionOffset <= 0 || sepIndex < refOffset || keyBytes[sepIndex] != 0.toByte()) throw Exception("Invalid qualifier for versioned iterateValues")
+            val refLength = sepIndex - refOffset
 
-            // Only accept keys with a version component <= requested (in reversed ordering)
-            if (toVersionBytes.compareToWithOffsetLength(referenceBytes, versionOffset) <= 0) {
+            if (toVersionBytes.compareToWithOffsetLength(keyBytes, versionOffset) <= 0) {
                 val value = kv.value
                 handleValue(
-                    referenceBytes,
+                    keyBytes,
                     refOffset,
                     refLength,
                     value,

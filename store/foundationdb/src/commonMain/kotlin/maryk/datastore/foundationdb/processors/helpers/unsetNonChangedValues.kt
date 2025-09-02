@@ -1,10 +1,10 @@
 package maryk.datastore.foundationdb.processors.helpers
 
 import com.apple.foundationdb.Transaction
-import maryk.core.extensions.bytes.invert
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 
 /**
  * For all [currentValues] under [key], clear those not present in [qualifiersToKeep].
@@ -23,11 +23,7 @@ internal fun unsetNonChangedValues(
         val keep = qualifierSet.any { it.contentEquals(qualifier) }
         if (!keep) {
             tr.clear(packKey(tableDirs.tablePrefix, key.bytes, qualifier))
-            if (tableDirs is HistoricTableDirectories) {
-                // Add a tombstone to history for removed entries
-                val inv = versionBytes.copyOf().also { it.invert() }
-                tr.set(packKey(tableDirs.historicTablePrefix, key.bytes, qualifier, inv), byteArrayOf())
-            }
+            writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, EMPTY_BYTEARRAY)
         }
     }
 }

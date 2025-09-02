@@ -4,7 +4,6 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
@@ -63,7 +62,6 @@ import maryk.core.values.EmptyValueItems
 import maryk.core.values.IsValuesGetter
 import maryk.core.values.Values
 import maryk.datastore.foundationdb.FoundationDBDataStore
-import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.checkParentReference
@@ -82,7 +80,8 @@ import maryk.datastore.foundationdb.processors.helpers.setListValue
 import maryk.datastore.foundationdb.processors.helpers.setValue
 import maryk.datastore.foundationdb.processors.helpers.unsetNonChangedValues
 import maryk.datastore.foundationdb.processors.helpers.withCountUpdate
-import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndexTombstone
+import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
+import maryk.datastore.foundationdb.processors.helpers.writeHistoricTable
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.helpers.convertToValue
@@ -316,10 +315,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         val current = getCurrentValuesForPrefix(tr, tableDirs, key, referenceBytes)
                                         for ((qualifier, _) in current) {
                                             tr.clear(packKey(tableDirs.tablePrefix, key.bytes, qualifier))
-                                            if (tableDirs is HistoricTableDirectories) {
-                                                val inv = versionBytes.copyOf().also { it.invert() }
-                                                tr.set(packKey(tableDirs.historicTablePrefix, key.bytes, qualifier, inv), byteArrayOf())
-                                            }
+                                            writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, EMPTY_BYTEARRAY)
                                         }
                                         val keep = mutableListOf<ByteArray>()
                                         val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current)
@@ -565,23 +561,17 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         if (oldKeyAndValue != null) {
                             // delete index
                             tr.clear(packKey(tableDirs.indexPrefix, index.referenceStorageByteArray.bytes, oldKeyAndValue))
-                            if (tableDirs is HistoricTableDirectories) {
-                                val inv = versionBytes.copyOf().also { it.invert() }
-                                writeHistoricIndexTombstone(
-                                    tr, tableDirs, index.referenceStorageByteArray.bytes, oldKeyAndValue, inv
-                                )
-                            }
+                            writeHistoricIndex(
+                                tr, tableDirs, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes, EMPTY_BYTEARRAY
+                            )
                             indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldKeyAndValue)))
                         }
                     } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
                         if (oldKeyAndValue != null) {
                             tr.clear(packKey(tableDirs.indexPrefix, index.referenceStorageByteArray.bytes, oldKeyAndValue))
-                            if (tableDirs is HistoricTableDirectories) {
-                                val inv = versionBytes.copyOf().also { it.invert() }
-                                writeHistoricIndexTombstone(
-                                    tr, tableDirs, index.referenceStorageByteArray.bytes, oldKeyAndValue, inv
-                                )
-                            }
+                            writeHistoricIndex(
+                                tr, tableDirs, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes, EMPTY_BYTEARRAY
+                            )
                         }
                         setIndexValue(tr, tableDirs, index.referenceStorageByteArray.bytes, newKeyAndValue, versionBytes)
                         indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newKeyAndValue), oldKeyAndValue?.let { Bytes(it) }))

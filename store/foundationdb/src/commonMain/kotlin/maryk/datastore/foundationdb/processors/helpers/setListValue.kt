@@ -1,14 +1,14 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Transaction
-import maryk.core.extensions.bytes.invert
-import maryk.core.extensions.bytes.toVarBytes
 // Avoid UInt.writeBytes to keep compatibility here; we'll encode manually
+import com.apple.foundationdb.Transaction
+import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 import maryk.datastore.shared.TypeIndicator
 
 /**
@@ -41,9 +41,8 @@ internal fun <T : Any> setListValue(
             writeUIntBE(refToDelete, keyAndRef.size, (i + newList.size).toUInt())
             tr.clear(refToDelete)
             if (tableDirs is HistoricTableDirectories) {
-                val inv = versionBytes.copyOf().also { it.invert() }
                 val qualifier = refToDelete.copyOfRange(packKey(tableDirs.tablePrefix, key.bytes).size, refToDelete.size)
-                tr.set(packKey(tableDirs.historicTablePrefix, key.bytes, qualifier, inv), byteArrayOf())
+                writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, EMPTY_BYTEARRAY)
             }
         }
         changed = true
@@ -56,9 +55,8 @@ internal fun <T : Any> setListValue(
         val valueBytes = valueDef.toStorageBytes(item, TypeIndicator.NoTypeIndicator.byte)
         tr.set(itemRef, combineToValue(versionBytes, valueBytes))
         if (tableDirs is HistoricTableDirectories) {
-            val inv = versionBytes.copyOf().also { it.invert() }
             val qualifier = itemRef.copyOfRange(packKey(tableDirs.tablePrefix, key.bytes).size, itemRef.size)
-            tr.set(packKey(tableDirs.historicTablePrefix, key.bytes, qualifier, inv), valueBytes)
+            writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, valueBytes)
         }
         changed = true
     }

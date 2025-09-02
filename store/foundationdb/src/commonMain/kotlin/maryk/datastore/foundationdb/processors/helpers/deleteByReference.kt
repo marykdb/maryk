@@ -2,7 +2,6 @@ package maryk.datastore.foundationdb.processors.helpers
 
 import com.apple.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
-import maryk.core.extensions.bytes.invert
 import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
@@ -23,6 +22,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 
 /**
  * Delete all values under the given [reference] for [key].
@@ -62,10 +62,7 @@ internal fun <T : Any> deleteByReference(
                     setValue(tr, tableDirs, key.bytes, qualifier, versionBytes, maryk.datastore.shared.TypeIndicator.DeletedIndicator.byteArray)
                 } else {
                     tr.clear(packKey(tableDirs.tablePrefix, key.bytes, qualifier))
-                    if (tableDirs is HistoricTableDirectories) {
-                        val inv = versionBytes.copyOf().also { it.invert() }
-                        tr.set(packKey(tableDirs.historicTablePrefix, key.bytes, qualifier, inv), byteArrayOf())
-                    }
+                    writeHistoricTable(tr, tableDirs, key.bytes, referenceBytes, versionBytes, EMPTY_BYTEARRAY)
                 }
                 changed = true
             }
@@ -102,10 +99,7 @@ internal fun <T : Any> deleteByReference(
 
             // Delete single item
             tr.clear(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes))
-            if (tableDirs is HistoricTableDirectories) {
-                val inv = versionBytes.copyOf().also { it.invert() }
-                tr.set(packKey(tableDirs.historicTablePrefix, key.bytes, referenceBytes, inv), byteArrayOf())
-            }
+            writeHistoricTable(tr, tableDirs, key.bytes, referenceBytes, versionBytes, EMPTY_BYTEARRAY)
             return true
         }
         else -> {}
@@ -145,10 +139,7 @@ internal fun <T : Any> deleteByReference(
             val valueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
             val uniqueRef = referenceBytes + valueBytes
             tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))
-            if (tableDirs is HistoricTableDirectories) {
-                val inv = versionBytes.copyOf().also { it.invert() }
-                tr.set(packKey(tableDirs.historicUniquePrefix, uniqueRef, inv), key.bytes)
-            }
+            writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
         }
     }
 

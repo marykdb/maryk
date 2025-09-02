@@ -4,26 +4,40 @@ import com.apple.foundationdb.Transaction
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 
-internal fun writeHistoricTableTombstone(
+internal fun writeHistoricTable(
     tr: Transaction,
     tableDirs: IsTableDirectories,
     keyBytes: ByteArray,
     qualifier: ByteArray,
-    invVersion: ByteArray
+    version: ByteArray,
+    value: ByteArray,
 ) {
     if (tableDirs is HistoricTableDirectories) {
-        tr.set(packKey(tableDirs.historicTablePrefix, keyBytes, qualifier, invVersion), byteArrayOf())
+        tr.set(packVersionedKey(tableDirs.historicTablePrefix, keyBytes, qualifier, version = version), value)
     }
 }
 
-internal fun writeHistoricIndexTombstone(
+internal fun writeHistoricUnique(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    keyBytes: ByteArray,
+    qualifier: ByteArray,
+    version: ByteArray,
+) {
+    if (tableDirs is HistoricTableDirectories) {
+        tr.set(packVersionedKey(tableDirs.historicUniquePrefix, qualifier, version = version), keyBytes)
+    }
+}
+
+internal fun writeHistoricIndex(
     tr: Transaction,
     tableDirs: IsTableDirectories,
     indexRefBytes: ByteArray,
     keyAndValue: ByteArray,
-    invVersion: ByteArray
+    version: ByteArray,
+    value: ByteArray,
 ) {
     if (tableDirs is HistoricTableDirectories) {
-        tr.set(packKey(tableDirs.historicIndexPrefix, indexRefBytes, keyAndValue, invVersion), byteArrayOf())
+        tr.set(packVersionedKey(tableDirs.historicIndexPrefix, indexRefBytes, keyAndValue, version = version), value)
     }
 }

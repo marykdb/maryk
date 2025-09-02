@@ -160,7 +160,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                     val value = cachedRead(reference, currentVersion) {
                         when (storageType) {
                             ObjectDelete -> {
-                                if (iterator.current.key.last() == 0.toByte()) {
+                                if (iterator.current.key[prefixWithKeyRange.size] == 0.toByte()) {
                                     val v = iterator.current.value
                                     v[0] == TRUE
                                 } else null

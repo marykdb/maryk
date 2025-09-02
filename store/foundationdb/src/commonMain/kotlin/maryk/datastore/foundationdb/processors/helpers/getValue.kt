@@ -35,8 +35,11 @@ internal fun <T: Any> Transaction.getValue(
         val it = this.getRange(Range.startsWith(prefixForKey)).iterator()
         while (it.hasNext()) {
             val kv = it.next()
-            val versionOffset = kv.key.size - toVersionBytes.size
-            if (toVersionBytes.compareToWithOffsetLength(kv.key, versionOffset) <= 0) {
+            val key = kv.key
+            val versionOffset = key.size - toVersionBytes.size
+            if (versionOffset <= 0) throw Exception("Invalid qualifier for versioned get Value")
+            if (key[versionOffset - 1] != 0.toByte()) throw Exception("Missing separator in qualifier for versioned get Value")
+            if (toVersionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
                 val result = kv.value
                 return handleResult(result, 0, result.size)
             }

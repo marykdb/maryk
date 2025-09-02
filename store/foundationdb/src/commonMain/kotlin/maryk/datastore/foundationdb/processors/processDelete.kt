@@ -1,7 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
 import maryk.core.clock.HLC
-import maryk.core.extensions.bytes.invert
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -20,6 +19,8 @@ import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.setValue
+import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
+import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.updates.Update
@@ -87,8 +88,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 
                     // For soft delete, append a historic tombstone so history reflects the change
                     if (!hardDelete && tableDirs is HistoricTableDirectories) {
-                        val inv = versionBytes.copyOf().also { it.invert() }
-                        tr.set(packKey(tableDirs.historicUniquePrefix, uniqueRef, inv), key.bytes)
+                        writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
                     }
                 }
             }
@@ -110,8 +110,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     tr.clear(FDBRange.startsWith(histPrefix))
                 } else if (tableDirs is HistoricTableDirectories) {
                     // Non-hard delete: write a deletion marker into historic index
-                    val inv = versionBytes.copyOf().also { it.invert() }
-                    tr.set(packKey(tableDirs.historicIndexPrefix, indexReference, valueAndKey, inv), byteArrayOf())
+                    writeHistoricIndex(tr, tableDirs, key.bytes, valueAndKey, versionBytes, EMPTY_BYTEARRAY)
                 }
             }
         }

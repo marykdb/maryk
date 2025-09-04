@@ -162,7 +162,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     val value = iterator.current.value
                     when (storageType) {
                         ObjectDelete -> {
-                            if (key[prefixWithKeyRange.size] == 0.toByte()) {
+                            if (key[prefixWithKeyRange.size] == SOFT_DELETE_INDICATOR) {
                                 val value = value
                                 isDeleted = value[0] == TRUE
                                 isDeleted

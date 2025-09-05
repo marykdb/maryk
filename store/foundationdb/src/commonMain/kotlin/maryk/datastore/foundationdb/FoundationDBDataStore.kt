@@ -36,12 +36,14 @@ import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.UpdateResponse
+import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
 import maryk.datastore.foundationdb.processors.AnyChangeStoreAction
 import maryk.datastore.foundationdb.processors.AnyDeleteStoreAction
 import maryk.datastore.foundationdb.processors.AnyGetChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyGetStoreAction
+import maryk.datastore.foundationdb.processors.AnyGetUpdatesStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanUpdatesStoreAction
@@ -51,6 +53,7 @@ import maryk.datastore.foundationdb.processors.processChangeRequest
 import maryk.datastore.foundationdb.processors.processDeleteRequest
 import maryk.datastore.foundationdb.processors.processGetChangesRequest
 import maryk.datastore.foundationdb.processors.processGetRequest
+import maryk.datastore.foundationdb.processors.processGetUpdatesRequest
 import maryk.datastore.foundationdb.processors.processScanChangesRequest
 import maryk.datastore.foundationdb.processors.processScanRequest
 import maryk.datastore.foundationdb.processors.processScanUpdatesRequest
@@ -223,7 +226,7 @@ class FoundationDBDataStore private constructor(
                             is ScanChangesRequest<*> ->
                                 processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache)
                             is GetUpdatesRequest<*> ->
-                                TODO("GetUpdates requests are not yet implemented in FoundationDB")
+                                processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, cache)
                             is ScanUpdatesRequest<*> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache)
                             is UpdateResponse<*> ->

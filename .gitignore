@@ -9,6 +9,9 @@ generator/jvmTest/gen
 .gradle
 build/
 
+# Local test dependencies
+/store/foundationdb/bin/
+
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties
 

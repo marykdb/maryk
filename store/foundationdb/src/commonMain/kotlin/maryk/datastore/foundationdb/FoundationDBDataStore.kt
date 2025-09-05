@@ -86,8 +86,8 @@ class FoundationDBDataStore private constructor(
     val migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
     val versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
 ) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
-    override val supportsFuzzyQualifierFiltering: Boolean = false
-    override val supportsSubReferenceFiltering: Boolean = false
+    override val supportsFuzzyQualifierFiltering: Boolean = true
+    override val supportsSubReferenceFiltering: Boolean = true
 
     private val fdb = FDB.selectAPIVersion(740)
     private val db = (if (fdbClusterFilePath != null) fdb.open(fdbClusterFilePath) else fdb.open())

@@ -19,6 +19,7 @@ import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.shared.ScanType
@@ -40,16 +41,14 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val baseOffset = tableDirs.indexPrefix.size
     val valueOffset = baseOffset + indexReference.size
-    val versionSize = if (scanRequest.toVersion != null) {
-        if (tableDirs !is HistoricTableDirectories) {
-            throw StorageException("No historic table stored so toVersion in query cannot be processed")
-        }
-        // For now: we do not support historic index reads in FDB yet
-        0
-    } else 0
+    val useHistoric = scanRequest.toVersion != null
+    if (useHistoric && tableDirs !is HistoricTableDirectories) {
+        throw StorageException("No historic table stored so toVersion in query cannot be processed")
+    }
+    val versionSize = if (useHistoric) VERSION_BYTE_SIZE else 0
 
     // Compute response metadata start/stop
-    // Build a helper valuesGetter for computing index start from the startKey
+    // Build a helper valuesGetter for computing index start from the startKey (respecting toVersion)
     val startIndexKey: ByteArray? = scanRequest.startKey?.let { startKey ->
         tc.run { tr ->
             val getter = object : IsValuesGetter {
@@ -57,7 +56,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
                     propertyReference: IsPropertyReference<T, D, C>
                 ): T? {
                     val keyAndRef = combineToByteArray(startKey.bytes, propertyReference.toStorageByteArray())
-                    return tr.getValue(tableDirs, null, keyAndRef) { valueBytes, offset, length ->
+                    return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef) { valueBytes, offset, length ->
                         valueBytes.convertToValue(propertyReference, offset, length) as T?
                     }
                 }
@@ -80,37 +79,80 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
     val collected = mutableListOf<Rec>()
 
     tc.run { tr ->
-        val it = tr.getRange(Range.startsWith(packKey(tableDirs.indexPrefix, indexReference))).iterator()
-        while (it.hasNext()) {
-            val kv = it.next()
-            val indexKeyBytes = kv.key
-            // Ensure still under same index reference
-            // Not strictly needed due to startsWith, but kept for clarity
-            // Compute sizes
-            val totalLen = indexKeyBytes.size
-            val valueSize = totalLen - valueOffset - keySize - versionSize
-            if (valueSize < 0) continue
+        if (!useHistoric) {
+            val it = tr.getRange(Range.startsWith(packKey(tableDirs.indexPrefix, indexReference))).iterator()
+            while (it.hasNext()) {
+                val kv = it.next()
+                val indexKeyBytes = kv.key
+                val totalLen = indexKeyBytes.size
+                val valueSize = totalLen - valueOffset - keySize - versionSize
+                if (valueSize < 0) continue
 
-            // Check primary key ranges based on value+key segment
-            var inRange = false
-            for (range in indexScanRange.ranges) {
-                val segmentLength = valueSize + keySize
-                val before = range.keyBeforeStart(indexKeyBytes, valueOffset, segmentLength)
-                val out = range.keyOutOfRange(indexKeyBytes, valueOffset, segmentLength)
-                if (!before && !out) { inRange = true; break }
+                var inRange = false
+                for (range in indexScanRange.ranges) {
+                    val segmentLength = valueSize + keySize
+                    val before = range.keyBeforeStart(indexKeyBytes, valueOffset, segmentLength)
+                    val out = range.keyOutOfRange(indexKeyBytes, valueOffset, segmentLength)
+                    if (!before && !out) { inRange = true; break }
+                }
+                if (!inRange) continue
+                if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
+
+                val keyOffset = valueOffset + valueSize
+                val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
+                val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).join() ?: continue
+                val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
+                collected += Rec(sortingKey, keyBytes, createdVersion)
             }
-            if (!inRange) continue
-            if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
+        } else {
+            // Historic index scan: compute index value at toVersion for each key and filter/order accordingly
+            val keysIt = tr.getRange(Range.startsWith(tableDirs.keysPrefix)).iterator()
+            while (keysIt.hasNext()) {
+                val kv = keysIt.next()
+                val keyBytes = kv.key.copyOfRange(tableDirs.keysPrefix.size, kv.key.size)
+                val createdVersion = HLC.fromStorageBytes(kv.value).timestamp
 
-            val keyOffset = valueOffset + valueSize
-            val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
-            // read creation version from keys record
-            val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).join() ?: continue
-            val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                // Respect generic filters (where, soft delete) with toVersion; do NOT apply primary key range for index scans here
+                if (scanRequest.shouldBeFiltered(
+                        transaction = tr,
+                        tableDirs = tableDirs,
+                        key = keyBytes,
+                        keyOffset = 0,
+                        keyLength = keySize,
+                        createdVersion = createdVersion,
+                        toVersion = scanRequest.toVersion
+                    )
+                ) continue
 
-            // sorting key is value+key bytes without version suffix
-            val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
-            collected += Rec(sortingKey, keyBytes, createdVersion)
+                // Compute index sorting key at toVersion
+                val getter = object : IsValuesGetter {
+                    override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
+                        propertyReference: IsPropertyReference<T, D, C>
+                    ): T? {
+                        val keyAndRef = combineToByteArray(keyBytes, propertyReference.toStorageByteArray())
+                        return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef) { valueBytes, offset, length ->
+                            valueBytes.convertToValue(propertyReference, offset, length) as T?
+                        }
+                    }
+                }
+                val sortingKey = indexScan.index.toStorageByteArrayForIndex(getter, keyBytes) ?: continue
+
+                // Verify index range constraints against computed sortingKey (value+key)
+                val totalLen = sortingKey.size
+                val valueSize = totalLen - keySize
+                var inRange = false
+                for (range in indexScanRange.ranges) {
+                    val segmentLength = valueSize + keySize
+                    val before = range.keyBeforeStart(sortingKey, 0, segmentLength)
+                    val out = range.keyOutOfRange(sortingKey, 0, segmentLength)
+                    if (!before && !out) { inRange = true; break }
+                }
+                if (!inRange) continue
+                if (!indexScanRange.matchesPartials(sortingKey, 0, valueSize)) continue
+
+                collected += Rec(sortingKey, keyBytes, createdVersion)
+            }
         }
     }
 

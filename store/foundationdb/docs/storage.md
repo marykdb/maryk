@@ -87,7 +87,7 @@ Indexes are stored in `index` as:
 
 - Key:   `indexPrefix + indexRef + (indexValueBytes || keyBytes)`
 - Value (latest): `version`
-- Historic: `index_versioned + indexRef + (indexValueBytes || keyBytes) + inverted(version)` → empty value (tombstone) or snapshot
+- Historic: `index_versioned + indexRef + (indexValueBytes || keyBytes) + inverted(version)` → entries record index changes. Scans reconstruct membership at a given `toVersion` by reading values at that version and computing the index for ordering and filtering.
 
 This design enables:
 
@@ -99,7 +99,7 @@ This design enables:
 
 - Get by key: check `keys` for existence and creation version, apply filters (including soft delete), then read values out of `table` or `table_versioned` depending on `toVersion`.
 - Scan by key: compute key ranges from the model and filters, walk `keys` in ASC or DESC, apply filters, and collect up to `limit`.
-- Scan by index: build index ranges from the filter and order, scan `index` (value+key) and map back to primary keys; historic index scanning is a future enhancement for the FDB engine.
+- Scan by index: build index ranges from the filter and order, scan `index` (value+key) and map back to primary keys. When `toVersion` is provided, perform a historic index scan by computing the index value at that version per key and applying the same ordering and range filters.
 - Changes APIs (GetChanges/ScanChanges): instead of returning full values, we stream `VersionedChanges` (creation + field changes) between `fromVersion`..`toVersion`, with `maxVersions` limiting per field.
 
 ## Filtering

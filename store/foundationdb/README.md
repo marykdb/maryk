@@ -50,8 +50,9 @@ Notes:
 - Per‑model subspaces: `keys`, `table`, `unique`, `index` (and historic `*_versioned` when `keepAllVersions = true`).
 - Latest values in `table` as `(version || value)`; historic values in `table_versioned` with inverted version bytes in the key suffix for newest‑first scans.
 - Soft delete and hard delete support.
-- Unique constraints and secondary indexes (latest). Historic indexes are a future enhancement.
+- Unique constraints and secondary indexes. Historic index entries are written and historic index scanning is implemented (used when `toVersion` is set).
 - Get/Scan by primary key and by index, GetChanges/ScanChanges for versioned deltas.
+- Processes `UpdateResponse` to sync external updates (supports Addition/Change/Removal/InitialChanges; rejects InitialValues/OrderedKeys since they lack sufficient change context).
 
 ## Migrations and Update Handling
 

@@ -15,7 +15,7 @@ At runtime:
 
 Capabilities and current limits in the FDB engine:
 
-- `keepAllVersions` is fully supported for data and uniques. Historic indexes are partially implemented (latest index scans are supported; historic index scans are a future enhancement).
+- `keepAllVersions` is fully supported for data, uniques, and indexes. Latest and historic index scans are supported; historic scanning is used when a `toVersion` is provided.
 - `supportsFuzzyQualifierFiltering = false` and `supportsSubReferenceFiltering = false` by default to avoid expensive fan‑outs; prefer secondary indexes for complex scans.
 
 ## Core Components
@@ -43,6 +43,7 @@ This provides simple, fast `pack()` prefixes for building FDB keys.
 - `processAddRequest` → validates input, checks uniques, writes `(version || value)` into `table`, updates indexes/uniques, and marks creation/latest versions.
 - `processChangeRequest` → reads current values, validates, applies modifications, writes new `(version || value)` and updates indexes/uniques (including historic tombstones/snapshots if enabled).
 - `processDeleteRequest` → soft delete writes a tombstone; hard delete clears keys, table, and optionally historic. Updates indexes/uniques accordingly.
+- `processUpdateResponse` → applies externally supplied updates (Addition/Change/Removal/InitialChanges) into the store to synchronize state; InitialValues and OrderedKeys are rejected as they do not contain sufficient version/change context.
 - `processGetRequest` → fetches values for keys, obeying `toVersion`, `select`, filters, and `filterSoftDeleted`.
 - `processScanRequest` → scans by key or index (based on order), performs filtering, and returns values (or aggregates) for up to `limit` rows.
 - `processGetChangesRequest`/`processScanChangesRequest` → same navigation as Get/Scan but reading “VersionedChanges” instead of full values, taking `fromVersion`/`toVersion`/`maxVersions` into account and returning the `sortingKey` (for index scans).

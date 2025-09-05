@@ -12,6 +12,7 @@ import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationException
@@ -36,6 +37,12 @@ import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
@@ -44,16 +51,21 @@ import maryk.datastore.foundationdb.processors.AnyDeleteStoreAction
 import maryk.datastore.foundationdb.processors.AnyGetChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyGetStoreAction
 import maryk.datastore.foundationdb.processors.AnyGetUpdatesStoreAction
+import maryk.datastore.foundationdb.processors.AnyProcessUpdateResponseStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
 import maryk.datastore.foundationdb.processors.processAddRequest
+import maryk.datastore.foundationdb.processors.processAdditionUpdate
 import maryk.datastore.foundationdb.processors.processChangeRequest
+import maryk.datastore.foundationdb.processors.processChangeUpdate
 import maryk.datastore.foundationdb.processors.processDeleteRequest
+import maryk.datastore.foundationdb.processors.processDeleteUpdate
 import maryk.datastore.foundationdb.processors.processGetChangesRequest
 import maryk.datastore.foundationdb.processors.processGetRequest
 import maryk.datastore.foundationdb.processors.processGetUpdatesRequest
+import maryk.datastore.foundationdb.processors.processInitialChangesUpdate
 import maryk.datastore.foundationdb.processors.processScanChangesRequest
 import maryk.datastore.foundationdb.processors.processScanRequest
 import maryk.datastore.foundationdb.processors.processScanUpdatesRequest
@@ -229,8 +241,21 @@ class FoundationDBDataStore private constructor(
                                 processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, cache)
                             is ScanUpdatesRequest<*> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache)
-                            is UpdateResponse<*> ->
-                                TODO("Update responses are not yet implemented in FoundationDB")
+                            is UpdateResponse<*> -> when (val update = (storeAction.request as UpdateResponse<*>).update) {
+                                is AdditionUpdate<*> ->
+                                    processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
+                                is ChangeUpdate<*> ->
+                                    processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
+                                is RemovalUpdate<*> ->
+                                    processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, cache)
+                                is InitialChangesUpdate<*> ->
+                                    processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
+                                is InitialValuesUpdate<*> ->
+                                    throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
+                                is OrderedKeysUpdate<*> ->
+                                    throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
+                                else -> throw TypeException("Unknown update type $update for datastore processing")
+                            }
                             else -> throw TypeException("Unsupported request type ${request::class.simpleName}")
                         }
                     } catch (e: CancellationException) {

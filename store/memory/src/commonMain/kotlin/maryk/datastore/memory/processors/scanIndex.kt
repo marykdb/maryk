@@ -27,8 +27,8 @@ internal fun <DM : IsRootDataModel> scanIndex(
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
     val index = dataStore.getOrCreateIndex(indexReference)
 
-    var overallStartKey: ByteArray? = null
-    var overallStopKey: ByteArray? = null
+    var overallStartKey: ByteArray?
+    var overallStopKey: ByteArray?
 
     val startKey = scanRequest.startKey?.let { startKey ->
         recordFetcher(scanRequest.dataModel, scanRequest.startKey as Key<*>)?.let { startRecord ->

@@ -1,7 +1,5 @@
-package maryk.rocksdb.util
+package maryk
 
-import maryk.createFolder
-import maryk.doesFolderExist
 import kotlin.random.Random
 import kotlin.random.nextUInt
 

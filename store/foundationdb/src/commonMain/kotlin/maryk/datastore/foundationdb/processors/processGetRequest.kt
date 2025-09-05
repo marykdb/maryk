@@ -70,7 +70,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
 
         aggregator?.aggregate {
             @Suppress("UNCHECKED_CAST")
-            valuesWithMetaData.values.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
+            valuesWithMetaData.values[it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>]
                 ?: tc.run { tr ->
                     tr.getValue(
                         tableDirs = tableDirs,

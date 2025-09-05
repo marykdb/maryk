@@ -157,7 +157,7 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
 
         // If it encounters reference, wrap. Otherwise, return resultingMatcher.
         return referenceRef?.toQualifierMatcher(
-            ReferencedQualifierMatcher(referenceRef!!, resultingMatcher)
+            ReferencedQualifierMatcher(referenceRef, resultingMatcher)
         ) ?: resultingMatcher
     }
 }

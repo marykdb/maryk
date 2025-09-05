@@ -1,4 +1,4 @@
-package maryk.datastore.foundationdb
+package maryk.datastore.foundationdb.model
 
 import com.apple.foundationdb.TransactionContext
 import maryk.core.definitions.Definitions
@@ -11,10 +11,6 @@ import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
-import maryk.datastore.foundationdb.model.modelDefinitionKey
-import maryk.datastore.foundationdb.model.modelDependentsDefinitionKey
-import maryk.datastore.foundationdb.model.modelNameKey
-import maryk.datastore.foundationdb.model.modelVersionKey
 import maryk.datastore.foundationdb.processors.helpers.packKey
 
 fun checkModelIfMigrationIsNeeded(

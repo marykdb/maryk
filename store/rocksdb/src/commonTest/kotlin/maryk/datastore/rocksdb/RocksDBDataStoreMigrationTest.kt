@@ -15,7 +15,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.test.dataModelsForTests
 import maryk.deleteFolder
-import maryk.rocksdb.util.createTestDBFolder
+import maryk.createTestDBFolder
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2

@@ -19,11 +19,11 @@ open class TableDirectories(
     unique: DirectorySubspace,
     index: DirectorySubspace,
 ): IsTableDirectories {
-    override val keysPrefix = keys.pack()
-    override val modelPrefix = model.pack()
-    override val tablePrefix = table.pack()
-    override val uniquePrefix = unique.pack()
-    override val indexPrefix = index.pack()
+    override val keysPrefix = keys.pack()!!
+    override val modelPrefix = model.pack()!!
+    override val tablePrefix = table.pack()!!
+    override val uniquePrefix = unique.pack()!!
+    override val indexPrefix = index.pack()!!
 }
 
 class HistoricTableDirectories(
@@ -37,12 +37,12 @@ class HistoricTableDirectories(
     historicUnique: DirectorySubspace,
     historicIndex: DirectorySubspace,
 ): IsTableDirectories {
-    override val keysPrefix = keys.pack()
-    override val modelPrefix = model.pack()
-    override val tablePrefix = table.pack()
-    override val uniquePrefix = unique.pack()
-    override val indexPrefix = index.pack()
-    val historicTablePrefix = historicTable.pack()
-    val historicUniquePrefix = historicUnique.pack()
-    val historicIndexPrefix = historicIndex.pack()
+    override val keysPrefix = keys.pack()!!
+    override val modelPrefix = model.pack()!!
+    override val tablePrefix = table.pack()!!
+    override val uniquePrefix = unique.pack()!!
+    override val indexPrefix = index.pack()!!
+    val historicTablePrefix = historicTable.pack()!!
+    val historicUniquePrefix = historicUnique.pack()!!
+    val historicIndexPrefix = historicIndex.pack()!!
 }

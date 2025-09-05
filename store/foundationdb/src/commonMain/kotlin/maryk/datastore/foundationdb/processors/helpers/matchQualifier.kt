@@ -1,4 +1,4 @@
-package maryk.datastore.foundationdb.processors
+package maryk.datastore.foundationdb.processors.helpers
 
 import com.apple.foundationdb.Transaction
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
@@ -10,8 +10,6 @@ import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.references.IsPropertyReference
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.datastore.foundationdb.processors.helpers.getValue
-import maryk.datastore.foundationdb.processors.helpers.iterateValues
 import maryk.datastore.shared.helpers.convertToValue
 
 /**

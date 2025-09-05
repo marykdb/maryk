@@ -5,6 +5,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.query.filters.matchesFilter
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.matchQualifier
 
 /**
  * Test if record at [key] should be filtered based on given FetchRequest

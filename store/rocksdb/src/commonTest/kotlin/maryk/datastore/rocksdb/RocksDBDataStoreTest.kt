@@ -4,7 +4,7 @@ import kotlinx.coroutines.test.runTest
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
 import maryk.deleteFolder
-import maryk.rocksdb.util.createTestDBFolder
+import maryk.createTestDBFolder
 import kotlin.test.Test
 
 class RocksDBDataStoreTest {

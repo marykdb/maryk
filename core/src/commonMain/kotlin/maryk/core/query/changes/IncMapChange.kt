@@ -74,7 +74,7 @@ data class IncMapChange internal constructor(
 
                                 for (value in addValues) {
                                     latestKeyedItem = descriptor.sum(latestKeyedItem, one)
-                                    newValue.put(latestKeyedItem, value)
+                                    newValue[latestKeyedItem] = value
                                 }
                             }
                         }

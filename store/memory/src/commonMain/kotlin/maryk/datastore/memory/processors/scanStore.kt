@@ -25,8 +25,8 @@ internal fun <DM : IsRootDataModel> scanStore(
 ): DataFetchType {
     val toVersion = scanRequest.toVersion?.let { HLC(it) }
 
-    var overallStartKey: ByteArray? = null
-    var overallEndKey: ByteArray? = null
+    var overallStartKey: ByteArray?
+    var overallEndKey: ByteArray?
 
     when (direction) {
         ASC -> {

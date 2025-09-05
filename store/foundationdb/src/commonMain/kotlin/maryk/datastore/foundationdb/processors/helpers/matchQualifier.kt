@@ -55,7 +55,7 @@ internal fun <T : Any> Transaction.matchQualifier(
 
             return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                 null -> {
-                    val value = this.getValue(tableDirs, toVersion, qualifier) { valueBytes, offset, length ->
+                    val value = this.getValue(tableDirs, toVersion, qualifier, keyLength = keyLength) { valueBytes, offset, length ->
                         valueBytes.convertToValue(reference, offset, length)
                     }
                     if (value != null) matcher(value)
@@ -66,6 +66,7 @@ internal fun <T : Any> Transaction.matchQualifier(
                         tableDirs = tableDirs,
                         toVersion = toVersion,
                         qualifier = qualifier,
+                        keyLength = keyLength,
                         referencedMatcher = referencedMatcher,
                         reference = reference,
                         matcher = matcher
@@ -92,6 +93,7 @@ internal fun <T : Any> Transaction.matchQualifier(
                                     tableDirs = tableDirs,
                                     toVersion = toVersion,
                                     qualifier = qualifier,
+                                    keyLength = keyLength,
                                     referencedMatcher = referencedMatcher,
                                     reference = reference,
                                     matcher = matcher
@@ -111,11 +113,12 @@ private fun <T : Any> Transaction.matchReferenced(
     tableDirs: IsTableDirectories,
     toVersion: ULong?,
     qualifier: ByteArray,
+    keyLength: Int,
     referencedMatcher: ReferencedQualifierMatcher,
     reference: IsPropertyReference<T, *, *>,
     matcher: (T?) -> Boolean
 ): Boolean {
-    val referencedKey = this.getValue(tableDirs, toVersion, qualifier) { valueBytes, offset, length ->
+    val referencedKey = this.getValue(tableDirs, toVersion, qualifier, keyLength = keyLength) { valueBytes, offset, length ->
         valueBytes.convertToValue(referencedMatcher.reference, offset, length)
     }
 

@@ -5,6 +5,7 @@ import com.apple.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 
 /**
@@ -49,9 +50,13 @@ internal fun <R : Any> Transaction.iterateValues(
             throw RequestException("Cannot use toVersion on a non historic table")
         }
         val histPrefix = tableDirectories.historicTablePrefix
-        val it = FDBIterator(
-            this.getRange(Range.startsWith(packKey(histPrefix, reference))).iterator()
-        )
+        // Encode qualifier part (after keyLength) to be zero-free for historic iteration
+        val encodedRef = if (reference.size > keyLength) {
+            val keyPart = reference.copyOfRange(0, keyLength)
+            val qualPart = reference.copyOfRange(keyLength, reference.size)
+            combineToByteArray(keyPart, encodeZeroFreeUsing01(qualPart))
+        } else reference
+        val it = FDBIterator(this.getRange(Range.startsWith(packKey(histPrefix, encodedRef))).iterator())
 
         val toVersionBytes = toVersion.toReversedVersionBytes()
 
@@ -63,14 +68,24 @@ internal fun <R : Any> Transaction.iterateValues(
             val sepIndex = versionOffset - 1
             // Validate separator and ranges
             if (versionOffset <= 0 || sepIndex < refOffset || keyBytes[sepIndex] != 0.toByte()) throw Exception("Invalid qualifier for versioned iterateValues")
-            val refLength = sepIndex - refOffset
+            val encRefLength = sepIndex - refOffset
 
             if (toVersionBytes.compareToWithOffsetLength(keyBytes, versionOffset) <= 0) {
                 val value = kv.value
+                // Decode qualifier before handing to caller
+                val decodedQualifier = if (encRefLength > 0) {
+                    val encQual = keyBytes.copyOfRange(refOffset, sepIndex)
+                    decodeZeroFreeUsing01(encQual)
+                } else ByteArray(0)
+                val refBytesForCaller = if (decodedQualifier.isNotEmpty()) combineToByteArray(
+                    histPrefix.copyOf(), // prefix portion is not used by callers beyond offset
+                    reference.copyOfRange(0, keyLength),
+                    decodedQualifier
+                ) else combineToByteArray(histPrefix.copyOf(), reference.copyOfRange(0, keyLength))
                 handleValue(
-                    keyBytes,
-                    refOffset,
-                    refLength,
+                    refBytesForCaller,
+                    histPrefix.size + keyLength,
+                    decodedQualifier.size,
                     value,
                     0,
                     value.size

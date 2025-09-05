@@ -1,37 +1,43 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-
 import com.apple.foundationdb.Range
 import com.apple.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 
 /**
  * Get a value for a [keyAndReference] from [tableDirs].
- * Depending on if [toVersion] is set it will be retrieved from the historic or current table.
+ * If [toVersion] is provided, read from the historic table; when a [keyLength] is supplied,
+ * the qualifier portion (after [keyLength]) is zero-free encoded to match the historic encoding.
  */
-internal fun <T: Any> Transaction.getValue(
+internal fun <T : Any> Transaction.getValue(
     tableDirs: IsTableDirectories,
     toVersion: ULong?,
     keyAndReference: ByteArray,
+    keyLength: Int? = null,
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
     return if (toVersion == null) {
         val packedKey = packKey(tableDirs.tablePrefix, keyAndReference)
         val value = this.get(packedKey).join() ?: return null
-
         handleResult(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
     } else {
         val historicDirs = tableDirs as? HistoricTableDirectories
             ?: throw RequestException("Cannot use toVersion on a non historic table")
 
         val toVersionBytes = toVersion.toReversedVersionBytes()
-        val prefixForKey = packKey(historicDirs.historicTablePrefix, keyAndReference)
 
-        // Iterate all historic versions (ascending by inverted version) and select the
-        // first one whose inverted version is >= inverted(toVersion), i.e. version <= toVersion.
+        val encodedRef = if (keyLength != null && keyAndReference.size > keyLength) {
+            val keyPart = keyAndReference.copyOfRange(0, keyLength)
+            val qualPart = keyAndReference.copyOfRange(keyLength, keyAndReference.size)
+            combineToByteArray(keyPart, encodeZeroFreeUsing01(qualPart))
+        } else keyAndReference
+
+        val prefixForKey = packKey(historicDirs.historicTablePrefix, encodedRef)
+
         val it = this.getRange(Range.startsWith(prefixForKey)).iterator()
         while (it.hasNext()) {
             val kv = it.next()

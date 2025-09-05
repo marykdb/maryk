@@ -20,7 +20,8 @@ internal fun isSoftDeleted(
     return transaction.getValue(
         tableDirectories,
         toVersion,
-        softDeleteQualifier
+        softDeleteQualifier,
+        keyLength,
     ) { b, o, l ->
         b[o + l - 1] == TRUE
     } == true

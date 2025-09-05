@@ -64,7 +64,8 @@ Some representative helpers used across processors:
 - `setValue`, `setLatestVersion`, `setCreatedVersion` write latest and creation timestamps + values, and mirror into historic subspaces when enabled.
 - `toReversedVersionBytes`, `readVersionBytes`, `readReversedVersionBytes` for version encoding/decoding.
 - Qualifier matching utilities to evaluate Maryk filters against stored bytes efficiently (direct gets for exact references, small range scans for fuzzy references).
-- Index/unique writers and historic tombstone writers.
+- Index/unique writers and historic value writers.
+- Zero‑free qualifier encoding: `encodeZeroFreeUsing01`/`decodeZeroFreeUsing01` ensure qualifiers in historic keys contain no 0x00 bytes. The single 0x00 separator before the inverted version then becomes an unambiguous split and ordering point. This way the version can be appended. Historic qualifier iteration can then be processed efficiently by range scans.
 
 ## Request Flow (Example)
 

@@ -3,6 +3,7 @@ package maryk.datastore.foundationdb.processors.helpers
 import com.apple.foundationdb.Transaction
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.lib.bytes.combineToByteArray
 
 internal fun writeHistoricTable(
     tr: Transaction,
@@ -13,7 +14,8 @@ internal fun writeHistoricTable(
     value: ByteArray,
 ) {
     if (tableDirs is HistoricTableDirectories) {
-        tr.set(packVersionedKey(tableDirs.historicTablePrefix, keyBytes, qualifier, version = version), value)
+        val encodedQualifier = encodeZeroFreeUsing01(qualifier)
+        tr.set(packVersionedKey(tableDirs.historicTablePrefix, keyBytes, encodedQualifier, version = version), value)
     }
 }
 
@@ -25,7 +27,8 @@ internal fun writeHistoricUnique(
     version: ByteArray,
 ) {
     if (tableDirs is HistoricTableDirectories) {
-        tr.set(packVersionedKey(tableDirs.historicUniquePrefix, qualifier, version = version), keyBytes)
+        val encodedQualifier = encodeZeroFreeUsing01(qualifier)
+        tr.set(packVersionedKey(tableDirs.historicUniquePrefix, encodedQualifier, version = version), keyBytes)
     }
 }
 
@@ -38,6 +41,9 @@ internal fun writeHistoricIndex(
     value: ByteArray,
 ) {
     if (tableDirs is HistoricTableDirectories) {
-        tr.set(packVersionedKey(tableDirs.historicIndexPrefix, indexRefBytes, keyAndValue, version = version), value)
+        // Encode the full qualifier (indexRef || valueAndKey) to be zero-free up to the separator
+        val combined = combineToByteArray(indexRefBytes, keyAndValue)
+        val encodedQualifier = encodeZeroFreeUsing01(combined)
+        tr.set(packVersionedKey(tableDirs.historicIndexPrefix, encodedQualifier, version = version), value)
     }
 }

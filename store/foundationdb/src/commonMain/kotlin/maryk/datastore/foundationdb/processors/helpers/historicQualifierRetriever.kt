@@ -3,7 +3,11 @@ package maryk.datastore.foundationdb.processors.helpers
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 import maryk.lib.extensions.compare.match
 
-/** Find historic qualifiers on [iterator] over [prefix] */
+/**
+ * Historic qualifier retriever without extra buffering.
+ * With zero-free encoded qualifiers, the base qualifier (ending before the 0 separator)
+ * always sorts before any deeper (longer) qualifiers at the same path, so iteration order is correct.
+ */
 internal fun FDBIterator.historicQualifierRetriever(
     prefix: ByteArray,
     toVersion: ULong,
@@ -16,43 +20,37 @@ internal fun FDBIterator.historicQualifierRetriever(
 
     return { resultHandler ->
         val toVersionBytes = toVersion.toReversedVersionBytes()
-
         var emitted = false
         while (hasNext()) {
-            val value = next()
-            // key range check is ensured with startsWith on the range
-            val qualifier: ByteArray = value.key
+            val kv = next()
+            val key = kv.key
             val offset = prefix.size
-            // Skip meta entries without qualifier or without a version suffix
-            if (qualifier.size <= offset + toVersionBytes.size) {
-                continue
-            }
-            val versionOffset = qualifier.size - toVersionBytes.size
+            if (key.size <= offset + 1 + toVersionBytes.size) continue
+            val versionOffset = key.size - toVersionBytes.size
+            val sepIndex = versionOffset - 1
+            if (sepIndex < offset || key[sepIndex] != 0.toByte()) continue
 
-            val currentLastQualifier = lastQualifier
-            if (currentLastQualifier != null && qualifier.match(offset, currentLastQualifier, versionOffset - offset, offset, lastQualifierLength)) {
-                if (counter >= maxVersions)
-                    continue // Already returned this qualifier max times, skip until new qualifier
+            // Compare with last emitted qualifier (encoded form) to enforce maxVersions
+            val currentLast = lastQualifier
+            if (currentLast != null && key.match(offset, currentLast, sepIndex - offset, offset, lastQualifierLength)) {
+                if (counter >= maxVersions) continue
             } else {
                 counter = 0u
             }
 
-            if (toVersionBytes.compareToWithOffsetLength(qualifier, versionOffset) <= 0) {
-                lastQualifier = qualifier
-                lastQualifierLength = versionOffset - offset
-
-                // Return version. Invert it so it is in normal order
-                handleVersion(
-                    qualifier.readReversedVersionBytes(versionOffset)
-                )
-
-                resultHandler({ qualifier[offset + it] }, lastQualifierLength)
+            if (toVersionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
+                // Decode qualifier slice before returning it
+                val encodedQualifier = key.copyOfRange(offset, sepIndex)
+                val decodedQualifier = decodeZeroFreeUsing01(encodedQualifier)
+                lastQualifier = key
+                lastQualifierLength = sepIndex - offset
+                handleVersion(key.readReversedVersionBytes(versionOffset))
+                resultHandler({ i -> decodedQualifier[i] }, decodedQualifier.size)
                 counter++
                 emitted = true
                 break
-            } else continue
+            }
         }
-
         emitted
     }
 }

@@ -255,7 +255,7 @@ private class StoreValuesGetter(
         propertyReference: IsPropertyReference<T, D, C>
     ): T? {
         val keyAndRef = combineToByteArray(keyBytes, propertyReference.toStorageByteArray())
-        return tr.getValue(tableDirs, toVersion, keyAndRef) { valueBytes, offset, length ->
+        return tr.getValue(tableDirs, toVersion, keyAndRef, keyBytes.size) { valueBytes, offset, length ->
             valueBytes.convertToValue(propertyReference, offset, length) as T?
         }
     }

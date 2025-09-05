@@ -31,7 +31,7 @@ internal fun Transaction.getKeyByUniqueValue(
         // Iterate within the unique reference prefix and select the first entry whose inverted version
         // is >= inverted(toVersion) (equivalent to version <= toVersion)
         val toVersionBytes = toVersion.toReversedVersionBytes()
-        val prefix = packKey(historic.historicUniquePrefix, reference)
+        val prefix = packKey(historic.historicUniquePrefix, encodeZeroFreeUsing01(reference))
         val it = this.getRange(Range.startsWith(prefix)).iterator()
         while (it.hasNext()) {
             val kv = it.next()

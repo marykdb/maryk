@@ -56,7 +56,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
                     propertyReference: IsPropertyReference<T, D, C>
                 ): T? {
                     val keyAndRef = combineToByteArray(startKey.bytes, propertyReference.toStorageByteArray())
-                    return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef) { valueBytes, offset, length ->
+                    return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef, startKey.size) { valueBytes, offset, length ->
                         valueBytes.convertToValue(propertyReference, offset, length) as T?
                     }
                 }
@@ -131,7 +131,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
                         propertyReference: IsPropertyReference<T, D, C>
                     ): T? {
                         val keyAndRef = combineToByteArray(keyBytes, propertyReference.toStorageByteArray())
-                        return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef) { valueBytes, offset, length ->
+                        return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef, keyLength = keyBytes.size) { valueBytes, offset, length ->
                             valueBytes.convertToValue(propertyReference, offset, length) as T?
                         }
                     }

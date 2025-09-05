@@ -48,9 +48,9 @@ The “qualifier” is generated from Maryk’s property references. Collections
 - Latest values in `table`: stored as `(version || value)`
   - `version` is Maryk’s HLC timestamp (8 bytes, big‑endian). We use it for concurrency control, “last write wins”, and to expose `firstVersion`/`lastVersion` to clients.
 - Historic values in `table_versioned`: stored on a separate key with inverted version bytes in the key suffix:
-  - Key: `historicTablePrefix + key + qualifier + inverted(version)`
+  - Key: `historicTablePrefix + key + encodeZeroFree(qualifier) + 0x00 + inverted(version)`
   - Value: just `value` (no version prefix, since it is already in the key)
-  - Inverting bytes makes newer versions sort before older versions lexicographically, so a forward range scan gives “latest first”.
+  - Inverting bytes for the version makes newer versions sort before older versions lexicographically, so a forward range scan gives “latest first”.
 
 Maryk’s value serialization is reused across storage engines. Simple types are written directly, and for wrappers (e.g. enums, typed values) the inner type bytes are composed accordingly.
 
@@ -60,6 +60,9 @@ FoundationDB write transactions always write a new `version` (HLC timestamp) for
 
 - Read the latest value from `table`.
 - Read to a `toVersion` by scanning the historic subspace only up to the inverted `toVersion` (first match = latest ≤ `toVersion`).
+
+On the historic/versioned tables the version is encoded in the key suffix, so we can scan the subspace in reverse order to get the latest value for a given key.  
+Qualifiers are encoded to contain no 0x00 bytes. A single 0x00 separator is inserted between the (encoded) qualifier and the inverted version. This guarantees the separator is the first zero byte and preserves correct lexicographic ordering without extra buffering during scans.
 
 ## Soft Delete vs Hard Delete
 
@@ -87,13 +90,13 @@ Indexes are stored in `index` as:
 
 - Key:   `indexPrefix + indexRef + (indexValueBytes || keyBytes)`
 - Value (latest): `version`
-- Historic: `index_versioned + indexRef + (indexValueBytes || keyBytes) + inverted(version)` → entries record index changes. Scans reconstruct membership at a given `toVersion` by reading values at that version and computing the index for ordering and filtering.
+- Historic: `index_versioned + encodeZeroFree(indexRef || (indexValueBytes || keyBytes)) + 0x00 + inverted(version)` → entries record index changes. Scans reconstruct membership at a given `toVersion` by reading values at that version and computing the index for ordering and filtering.
 
 This design enables:
 
 - Efficient scans in index order with or without a starting key.
 - Partial prefix scans (e.g. “all rows for this severity”).
-- Historic scans (if enabled) to see which keys matched an index at a given time. Note: historic index scanning is not fully implemented in the current FDB engine.
+- Historic scans (if enabled) to see which keys matched an index at a given time. Historic index scanning is supported and used when `toVersion` is provided.
 
 ## Get, Scan, and Changes
 

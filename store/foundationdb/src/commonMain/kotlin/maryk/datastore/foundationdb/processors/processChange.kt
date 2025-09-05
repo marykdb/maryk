@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -25,6 +26,7 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
@@ -122,6 +124,23 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
             val versionBytes = HLC.toStorageBytes(version)
 
+            // Capture initial index values BEFORE any writes
+            val storeGetter = object : IsValuesGetter {
+                override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
+                    propertyReference: IsPropertyReference<T, D, C>
+                ): T? {
+                    val keyAndRef = combineToByteArray(key.bytes, propertyReference.toStorageByteArray())
+                    @Suppress("UNCHECKED_CAST")
+                    return tr.getValue(tableDirs, null, keyAndRef) { valueBytes, offset, length ->
+                        valueBytes.convertToValue(propertyReference, offset, length) as T?
+                    }
+                }
+            }
+            val initialIndexValues: MutableMap<IsIndexable, ByteArray?> = mutableMapOf()
+            dataModel.Meta.indexes?.forEach { idx ->
+                initialIndexValues[idx] = idx.toStorageByteArrayForIndex(storeGetter, key.bytes)
+            }
+
             // Fast path: only Check operations — handle deterministically and return
             val onlyChecks = changes.all { it is Check }
             if (onlyChecks) {
@@ -160,18 +179,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 overlay[reference.toStorageByteArray()] = value
             }
 
-            // Read helper for current values (non-historic)
-            val currentGetter = object : IsValuesGetter {
-                override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
-                    propertyReference: IsPropertyReference<T, D, C>
-                ): T? {
-                    val keyAndRef = combineToByteArray(key.bytes, propertyReference.toStorageByteArray())
-                    @Suppress("UNCHECKED_CAST")
-                    return tr.getValue(tableDirs, null, keyAndRef) { valueBytes, offset, length ->
-                        valueBytes.convertToValue(propertyReference, offset, length) as T?
-                    }
-                }
-            }
+            // Snapshot getter no longer needed for 'old' — we captured initial values already
             // Overlay getter to see post-change state for index computation
             val overlayGetter = object : IsValuesGetter {
                 override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
@@ -181,7 +189,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                     // First check overlay map
                     overlay.entries.firstOrNull { it.key.contentEquals(refBytes) }?.let { @Suppress("UNCHECKED_CAST") return it.value as T? }
                     // Fallback to current store
-                    return currentGetter[propertyReference]
+                    return storeGetter[propertyReference]
                 }
             }
 
@@ -554,7 +562,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             dataModel.Meta.indexes?.let { indexes ->
                 indexUpdates = mutableListOf()
                 for (index in indexes) {
-                    val oldKeyAndValue = index.toStorageByteArrayForIndex(currentGetter, key.bytes)
+                    val oldKeyAndValue = initialIndexValues[index]
                     val newKeyAndValue = index.toStorageByteArrayForIndex(overlayGetter, key.bytes)
 
                     if (newKeyAndValue == null) {
@@ -586,7 +594,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 }
             }
 
-            updateSharedFlow.tryEmit(Update.Change(dataModel, key, version.timestamp, changes + outChanges))
+            launch {
+                updateSharedFlow.emit(Update.Change(dataModel, key, version.timestamp, changes + outChanges))
+            }
 
             ChangeSuccess(version.timestamp, outChanges)
         }

@@ -1,5 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.ChangeRequest
@@ -12,7 +14,7 @@ internal typealias ChangeStoreAction<DM> = StoreAction<DM, ChangeRequest<DM>, Ch
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootDataModel>
 
 /** Processes a ChangeRequest in a [storeAction] into a [FoundationDBDataStore] */
-internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeRequest(
+internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeRequest(
     version: HLC,
     storeAction: ChangeStoreAction<DM>,
 ) {
@@ -24,16 +26,18 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeRequest(
         val dbIndex = getDataModelId(changeRequest.dataModel)
         val tableDirs = getTableDirs(dbIndex)
 
-        for (objectChange in changeRequest.objects) {
-            val status = processChange(
-                dataModel = changeRequest.dataModel,
-                key = objectChange.key,
-                lastVersion = objectChange.lastVersion,
-                changes = objectChange.changes,
-                version = version,
-                tableDirs = tableDirs,
-            )
-            statuses += status
+        withContext(Dispatchers.IO) {
+            for (objectChange in changeRequest.objects) {
+                val status = processChange(
+                    dataModel = changeRequest.dataModel,
+                    key = objectChange.key,
+                    lastVersion = objectChange.lastVersion,
+                    changes = objectChange.changes,
+                    version = version,
+                    tableDirs = tableDirs,
+                )
+                statuses += status
+            }
         }
     }
 

@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
@@ -138,14 +139,16 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         }
 
         // Emit update and return success
-        updateSharedFlow.tryEmit(
-            Update.Deletion(
-                dataModel,
-                key,
-                version.timestamp,
-                hardDelete
+        launch {
+            updateSharedFlow.emit(
+                Update.Deletion(
+                    dataModel,
+                    key,
+                    version.timestamp,
+                    hardDelete
+                )
             )
-        )
+        }
 
         DeleteSuccess(version.timestamp)
     }

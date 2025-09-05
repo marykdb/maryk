@@ -1,5 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.DeleteRequest
@@ -13,7 +15,8 @@ internal typealias DeleteStoreAction<DM> = StoreAction<DM, DeleteRequest<DM>, De
 internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootDataModel>
 
 /** Processes a DeleteRequest in a [storeAction] into a [FoundationDBDataStore] */
-internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDeleteRequest(
+
+internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDeleteRequest(
     version: HLC,
     storeAction: DeleteStoreAction<DM>,
     cache: Cache,
@@ -25,16 +28,18 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDeleteRequest(
         val dbIndex = getDataModelId(deleteRequest.dataModel)
         val tableDirs = getTableDirs(dbIndex)
 
-        for (key in deleteRequest.keys) {
-            statuses += processDelete(
-                tableDirs = tableDirs,
-                dataModel = deleteRequest.dataModel,
-                key = key,
-                version = version,
-                dbIndex = dbIndex,
-                hardDelete = deleteRequest.hardDelete,
-                cache = cache,
-            )
+        withContext(Dispatchers.IO) {
+            for (key in deleteRequest.keys) {
+                statuses += processDelete(
+                    tableDirs = tableDirs,
+                    dataModel = deleteRequest.dataModel,
+                    key = key,
+                    version = version,
+                    dbIndex = dbIndex,
+                    hardDelete = deleteRequest.hardDelete,
+                    cache = cache,
+                )
+            }
         }
     }
 
@@ -45,4 +50,3 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDeleteRequest(
         )
     )
 }
-

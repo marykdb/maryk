@@ -6,6 +6,7 @@ The module can automatically install and run a local FoundationDB server for JVM
 - **Run script:** `scripts/run-fdb-for-tests.sh` starts `fdbserver` on `127.0.0.1:4500`, writes logs to `build/testdatastore/logs`, and PID to `build/testdatastore/fdbserver.pid`.
 - **Stop script:** `scripts/stop-fdb-for-tests.sh` stops the server and removes the test database directory.
 - **Install location:** Binaries are placed under `store/foundationdb/bin` and native libs under `store/foundationdb/bin/lib`.
+  The Gradle JVM test task sets `java.library.path` and `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH` to this location.
 
 ### Gradle Integration
 
@@ -17,7 +18,7 @@ The module can automatically install and run a local FoundationDB server for JVM
 
 ### Configuration
 
-- **`FDB_VERSION`:** FDB version to install (default `7.4.3`). Example: `FDB_VERSION=7.4.3 ./gradlew :store:foundationdb:jvmTest`.
+- **`FDB_VERSION`:** FDB version to install (default from scripts; 7.4.x client API in code). Example: `FDB_VERSION=7.4.3 ./gradlew :store:foundationdb:jvmTest`.
 - **`FDB_CLEAN_MODE`:** Post‑test cleanup (default `data`). Options:
     - `data`: delete `build/testdatastore/data` (database wiped).
     - `all`: delete `build/testdatastore/data` and `build/testdatastore/logs`.

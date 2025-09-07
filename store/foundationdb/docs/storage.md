@@ -16,7 +16,7 @@ This document explains how Maryk stores data in FoundationDB (FDB): what subspac
 
 Per DataModel (e.g. `Log`, `Person`) we create these subspaces:
 
-- `model`         – stored schema and migration state for the DataModel.
+- `meta`          – stored schema and migration state for the DataModel.
 - `keys`          – existence + creation version per object key.
 - `table`         – latest property values per object key, plus a small “latest version” marker per key.
 - `unique`        – latest unique constraints (per unique property or composite).
@@ -61,8 +61,7 @@ FoundationDB write transactions always write a new `version` (HLC timestamp) for
 - Read the latest value from `table`.
 - Read to a `toVersion` by scanning the historic subspace only up to the inverted `toVersion` (first match = latest ≤ `toVersion`).
 
-On the historic/versioned tables the version is encoded in the key suffix, so we can scan the subspace in reverse order to get the latest value for a given key.  
-Qualifiers are encoded to contain no 0x00 bytes. A single 0x00 separator is inserted between the (encoded) qualifier and the inverted version. This guarantees the separator is the first zero byte and preserves correct lexicographic ordering without extra buffering during scans.
+On the historic/versioned tables the version is encoded in the key suffix with inverted bytes, so forward range scans yield latest‑first. Qualifiers are encoded to contain no 0x00 bytes. A single 0x00 separator is inserted between the (encoded) qualifier and the inverted version. This guarantees the separator is the first zero byte and preserves correct lexicographic ordering without extra buffering during scans.
 
 ## Soft Delete vs Hard Delete
 
@@ -90,7 +89,7 @@ Indexes are stored in `index` as:
 
 - Key:   `indexPrefix + indexRef + (indexValueBytes || keyBytes)`
 - Value (latest): `version`
-- Historic: `index_versioned + encodeZeroFree(indexRef || (indexValueBytes || keyBytes)) + 0x00 + inverted(version)` → entries record index changes. Scans reconstruct membership at a given `toVersion` by reading values at that version and computing the index for ordering and filtering.
+- Historic: `index_versioned + encodeZeroFree(indexRef || (indexValueBytes || keyBytes)) + 0x00 + inverted(version)` → entries record index changes. Historic index scans read these entries within the computed range and map back to keys for ordering and filtering at a given `toVersion`.
 
 This design enables:
 
@@ -110,7 +109,7 @@ This design enables:
 Maryk’s filter DSL (Exists, Equals, Range, Regex, etc.) is evaluated by matching qualifiers to property references:
 
 - For exact property references we do a direct get on `table` or scan `table_versioned` up to `toVersion`.
-- For “fuzzy” references (like any element in a list/map) we scan the qualifier space under the property prefix. In the current FDB engine, `supportsFuzzyQualifierFiltering` and `supportsSubReferenceFiltering` are disabled to avoid expensive fan‑outs.
+- For “fuzzy” references (like any element in a list/map) we scan the qualifier space under the property prefix.
 
 Soft delete filtering is layered in: if `filterSoftDeleted` is true, we check the soft delete indicator and hide those rows.
 

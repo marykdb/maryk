@@ -41,17 +41,8 @@ suspend fun main() {
 ```
 
 Notes:
-- The cluster file can be omitted when the default `~/.fdb` setup is used. In tests we often pass a local `fdb.cluster` path.
+- The cluster file can be omitted when the default `~/.fdb` setup is used. Tests use `store/foundationdb/fdb.cluster` via `FDB_CLUSTER_FILE`.
 - Always close the store (or wrap in your runtime's lifecycle) to release FDB resources.
-
-## Features
-
-- Per‑model subspaces: `keys`, `table`, `unique`, `index` (and historic `*_versioned` when `keepAllVersions = true`).
-- Latest values in `table` as `(version || value)`; historic values in `table_versioned` with inverted version bytes in the key suffix for newest‑first scans.
-- Soft delete and hard delete support.
-- Unique constraints and secondary indexes. Historic index entries are written and historic index scanning is implemented (used when `toVersion` is set).
-- Get/Scan by primary key and by index, GetChanges/ScanChanges for versioned deltas.
-- Processes `UpdateResponse` to sync external updates (supports Addition/Change/Removal/InitialChanges; rejects InitialValues/OrderedKeys since they lack sufficient change context).
 
 ## Migrations and Update Handling
 
@@ -81,15 +72,15 @@ Model changes that generally do NOT require a migration: adding models, indexes,
 ## Configuration
 
 - `keepAllVersions`: Mirror latest writes into historic subspaces for time travel and change history.
-- `fdbClusterFilePath`: Optional path to an FDB cluster file; use default environment if null.
-- `tenantName`: Optional Tuple to open a tenant.
+- `fdbClusterFilePath`: Optional path to an FDB cluster file; uses default environment if null.
+- `tenantName`: Optional `Tuple` to open a tenant.
 - `directoryPath`: Subspace root path under which model directories are created.
 
 ## Operational Tips
 
 - Transactions: each request is handled within an FDB transaction; FDB retries on conflicts, while Maryk handles validation errors (uniques, parent presence, etc.).
 - Scans: index scans are recommended for large filtered queries. Primary key scans are inexpensive for full‑range iteration.
-- Historic queries: `toVersion` is supported for data and unique reads. Historic index scanning is a future enhancement for the FDB engine.
+- Historic queries: `toVersion` is supported for data, unique, and index reads. Historic index scanning is implemented and used when `toVersion` is provided.
 
 ## Development
 
@@ -106,6 +97,7 @@ Run module tests:
 ```
 
 If you use a non‑default cluster file for tests, ensure `fdb.cluster` is present (the test config references `./fdb.cluster`).
+Environment variable `FDB_CLUSTER_FILE` is set by Gradle to `store/foundationdb/fdb.cluster` for JVM tests.
 
 ## License
 

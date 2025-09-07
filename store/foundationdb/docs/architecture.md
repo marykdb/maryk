@@ -13,10 +13,9 @@ At runtime:
 - “Helpers” encapsulate encoding/decoding, qualifier matching, version math, and index/unique management.
 - An in‑memory `Cache` helps de‑duplicate value decoding when a request needs the same property multiple times (e.g. aggregations).
 
-Capabilities and current limits in the FDB engine:
+Capabilities in the FDB engine:
 
 - `keepAllVersions` is fully supported for data, uniques, and indexes. Latest and historic index scans are supported; historic scanning is used when a `toVersion` is provided.
-- `supportsFuzzyQualifierFiltering = false` and `supportsSubReferenceFiltering = false` by default to avoid expensive fan‑outs; prefer secondary indexes for complex scans.
 
 ## Core Components
 
@@ -33,7 +32,8 @@ Capabilities and current limits in the FDB engine:
 
 Encapsulates the FDB subspaces per model:
 
-- Non‑historic: `keys`, `model`, `table`, `unique`, `index`.
+- Generic: `meta`
+- Non‑historic: `keys`, `table`, `unique`, `index`.
 - Historic: adds `table_versioned`, `unique_versioned`, `index_versioned`.
 
 This provides simple, fast `pack()` prefixes for building FDB keys.
@@ -65,7 +65,7 @@ Some representative helpers used across processors:
 - `toReversedVersionBytes`, `readVersionBytes`, `readReversedVersionBytes` for version encoding/decoding.
 - Qualifier matching utilities to evaluate Maryk filters against stored bytes efficiently (direct gets for exact references, small range scans for fuzzy references).
 - Index/unique writers and historic value writers.
-- Zero‑free qualifier encoding: `encodeZeroFreeUsing01`/`decodeZeroFreeUsing01` ensure qualifiers in historic keys contain no 0x00 bytes. The single 0x00 separator before the inverted version then becomes an unambiguous split and ordering point. This way the version can be appended. Historic qualifier iteration can then be processed efficiently by range scans.
+- Zero‑free qualifier encoding: `encodeZeroFreeUsing01`/`decodeZeroFreeUsing01` ensure qualifiers in historic keys contain no 0x00 bytes. A single 0x00 separator is placed between the encoded qualifier and the inverted version bytes for unambiguous split and ordering; forward scans then yield latest‑first entries efficiently.
 
 ## Request Flow (Example)
 

@@ -21,7 +21,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 enableFeaturePreview("STABLE_CONFIGURATION_CACHE")
 
 plugins {
-    id("de.fayard.refreshVersions") version "0.60.5"
+    id("de.fayard.refreshVersions") version "0.60.6"
 }
 
 @Suppress("UnstableApiUsage")

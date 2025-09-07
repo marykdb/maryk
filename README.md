@@ -44,9 +44,9 @@ object Person : RootDataModel<Person>() {
 3. **Create and Validate Instances**:  
 ```kotlin
 val johnSmith = Person.create {
-   firstName("John")
-   lastName("Smith")
-   dateOfBirth(LocalDate(2017, 12, 5))
+   firstName += "John"
+   lastName += "Smith"
+   dateOfBirth += LocalDate(2017, 12, 5)
 }
 
 // Validate the object

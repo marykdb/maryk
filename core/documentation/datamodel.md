@@ -33,9 +33,9 @@ Here's a demonstration of constructing a new Person DataObject, validating it, a
 ```kotlin
 // Concise DSL
 val johnSmith = Person.create {
-    firstName("John")
-    lastName("Smith")
-    dateOfBirth(LocalDate(2017, 12, 5))
+    firstName += "John"
+    lastName += "Smith"
+    dateOfBirth += LocalDate(2017, 12, 5)
 }
 
 // Validate the object, which will throw a PropertyValidationUmbrellaException if it's invalid

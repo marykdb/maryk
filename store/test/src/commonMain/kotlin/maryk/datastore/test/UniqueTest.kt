@@ -33,8 +33,8 @@ class UniqueTest(
 
     override suspend fun initData() {
         val addItems = UniqueModel.add(
-            UniqueModel.run { create(email with "test@test.com") },
-            UniqueModel.run { create(email with "bla@bla.com") },
+            UniqueModel.create { email += "test@test.com" },
+            UniqueModel.create { email += "bla@bla.com" },
         )
 
         dataStore.execute(addItems).also {
@@ -55,7 +55,7 @@ class UniqueTest(
     }
 
     private val addUniqueItem = UniqueModel.add(
-        UniqueModel.run { create(email with "test@test.com") }
+        UniqueModel.create { email += "test@test.com" }
     )
 
     suspend fun checkUnique() {

@@ -222,11 +222,9 @@ class DataStoreScanTest(
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(
-                Log.run {
-                    create(
-                        this.severity with INFO,
-                        this.timestamp with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
-                    )
+                Log.create {
+                    severity += INFO
+                    timestamp += LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                 }
             ) { it.values }
             expect(keys[2]) { it.key }

@@ -124,7 +124,7 @@ class DataStoreGetTest(
         expect(FetchByKey) {getResponse.dataFetchType}
 
         getResponse.values[0].let {
-            expect(SimpleMarykModel.run { create(value with "haha1") }) { it.values }
+            expect(SimpleMarykModel.create { value += "haha1" }) { it.values }
             expect(keys[0]) { it.key }
         }
     }

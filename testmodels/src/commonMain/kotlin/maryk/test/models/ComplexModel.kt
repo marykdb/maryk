@@ -105,14 +105,14 @@ object ComplexModel : RootDataModel<ComplexModel>() {
         mapWithSet: Map<String, Set<String>>? = null,
         mapWithMap: Map<String, Map<String, String>>? = null,
         incMap: Map<UInt, Values<EmbeddedMarykModel>>? = null
-    ) = create(
-        this.multi with multi,
-        this.mapStringString with mapStringString,
-        this.mapIntObject with mapIntObject,
-        this.mapIntMulti with mapIntMulti,
-        this.mapWithList with mapWithList,
-        this.mapWithSet with mapWithSet,
-        this.mapWithMap with mapWithMap,
-        this.incMap with incMap
-    )
+    ) = create {
+        this.multi += multi
+        this.mapStringString += mapStringString
+        this.mapIntObject += mapIntObject
+        this.mapIntMulti += mapIntMulti
+        this.mapWithList += mapWithList
+        this.mapWithSet += mapWithSet
+        this.mapWithMap += mapWithMap
+        this.incMap += incMap
+    }
 }

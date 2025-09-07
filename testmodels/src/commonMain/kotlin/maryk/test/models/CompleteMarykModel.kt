@@ -194,9 +194,9 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         required = false,
         final = true,
         dataModel = { SimpleMarykModel },
-        default = SimpleMarykModel.run { create(
-            value with "a default"
-        ) }
+        default = SimpleMarykModel.create {
+            value += "a default"
+        }
     )
     val valueModel by valueObject(
         index = 12u,
@@ -341,9 +341,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         fixedBytes: Bytes = Bytes("AAECAwQ"),
         flexBytes: Bytes = Bytes("AAECAw"),
         reference: Key<SimpleMarykModel> = Key("AAECAQAAECAQAAECAQAAEA"),
-        subModel: Values<SimpleMarykModel> = SimpleMarykModel.run { create(
-            value with "a default"
-        ) },
+        subModel: Values<SimpleMarykModel> = SimpleMarykModel.create { value += "a default" },
         valueModel: ValueMarykObject = ValueMarykObject(
             int = 10,
             date = LocalDate(2010, 10, 10)
@@ -362,32 +360,32 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c")),
         incMap: Map<UInt, Values<EmbeddedMarykModel>>? = null,
         location: GeoPoint = GeoPoint(52.0906448, 5.1212607)
-    ) = create(
-        this.string with string,
-        this.number with number,
-        this.boolean with boolean,
-        this.enum with enum,
-        this.date with date,
-        this.dateTime with dateTime,
-        this.time with time,
-        this.fixedBytes with fixedBytes,
-        this.flexBytes with flexBytes,
-        this.reference with reference,
-        this.subModel with subModel,
-        this.valueModel with valueModel,
-        this.list with list,
-        this.set with set,
-        this.map with map,
-        this.multi with multi,
-        this.booleanForKey with booleanForKey,
-        this.dateForKey with dateForKey,
-        this.multiForKey with multiForKey,
-        this.enumEmbedded with enumEmbedded,
-        this.mapWithEnum with mapWithEnum,
-        this.mapWithList with mapWithList,
-        this.mapWithSet with mapWithSet,
-        this.mapWithMap with mapWithMap,
-        this.incMap with incMap,
-        this.location with location
-    )
+    ) = create {
+        this.string += string
+        this.number += number
+        this.boolean += boolean
+        this.enum += enum
+        this.date += date
+        this.dateTime += dateTime
+        this.time += time
+        this.fixedBytes += fixedBytes
+        this.flexBytes += flexBytes
+        this.reference += reference
+        this.subModel += subModel
+        this.valueModel += valueModel
+        this.list += list
+        this.set += set
+        this.map += map
+        this.multi += multi
+        this.booleanForKey += booleanForKey
+        this.dateForKey += dateForKey
+        this.multiForKey += multiForKey
+        this.enumEmbedded += enumEmbedded
+        this.mapWithEnum += mapWithEnum
+        this.mapWithList += mapWithList
+        this.mapWithSet += mapWithSet
+        this.mapWithMap += mapWithMap
+        this.incMap += incMap
+        this.location += location
+    }
 }

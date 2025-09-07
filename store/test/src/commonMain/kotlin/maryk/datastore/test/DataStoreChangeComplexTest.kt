@@ -49,14 +49,17 @@ class DataStoreChangeComplexTest(
         val addResponse = dataStore.execute(
             ComplexModel.add(
                 ComplexModel(
-                    multi = TypedValue(T3, EmbeddedMarykModel.run { create(
-                        value with "u3",
-                        model with create(value with "ue3"),
-                    ) }),
+                    multi = TypedValue(
+                        T3,
+                        EmbeddedMarykModel.create {
+                            value += "u3"
+                            model += EmbeddedMarykModel.create { value += "ue3" }
+                        }
+                    ),
                     mapStringString = mapOf("a" to "b", "c" to "d"),
                     incMap = mapOf(
-                        1u to EmbeddedMarykModel.run { create(value with "o") },
-                        2u to EmbeddedMarykModel.run { create(value with "p") },
+                        1u to EmbeddedMarykModel.create { value += "o" },
+                        2u to EmbeddedMarykModel.create { value += "p" },
                     )
                 ),
                 ComplexModel(
@@ -66,20 +69,18 @@ class DataStoreChangeComplexTest(
                 ComplexModel(
                     mapStringString = mapOf("a" to "b", "c" to "d"),
                     mapIntObject = mapOf(
-                        1u to EmbeddedMarykModel.run { create(value with "v1") },
+                        1u to EmbeddedMarykModel.create { value += "v1" },
                         2u to EmbeddedMarykModel("v2"),
                     )
                 ),
                 ComplexModel(
                     mapStringString = mapOf("a" to "b", "c" to "d"),
                     mapIntObject = mapOf(
-                        1u to EmbeddedMarykModel.run { create(
-                            value with "v1",
-                            model with create(value with "sub")
-                        ) },
-                        2u to EmbeddedMarykModel.run { create(
-                            value with "v2"
-                        ) }
+                        1u to EmbeddedMarykModel.create {
+                            value += "v1"
+                            model += EmbeddedMarykModel.create { value += "sub" }
+                        },
+                        2u to EmbeddedMarykModel.create { value += "v2" }
                     )
                 ),
                 ComplexModel(

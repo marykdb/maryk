@@ -30,49 +30,33 @@ class EnumValuesAggregatorTest {
 
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.run {
-                    create(
-                        enum with V1
-                    )
-                }
+                TestMarykModel.create { enum += V1 }
             )
         )
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.run {
-                    create(
-                        enum with V1
-                    )
-                }
+                TestMarykModel.create { enum += V1 }
             )
         )
 
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.run {
-                    create(
-                        enum with V3
-                    )
+                TestMarykModel.create { enum += V3 }
+            )
+        )
+        enumValuesAggregator.aggregate(
+            createAggregator(
+                TestMarykModel.create {
+                    enum += V3
+                    int += 37637
                 }
             )
         )
         enumValuesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.run {
-                    create(
-                        enum with V3,
-                        int with 37637
-                    )
-                }
-            )
-        )
-        enumValuesAggregator.aggregate(
-            createAggregator(
-                TestMarykModel.run {
-                    create(
-                        enum with V3,
-                        int with 1569
-                    )
+                TestMarykModel.create {
+                    enum += V3
+                    int += 1569
                 }
             )
         )

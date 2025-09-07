@@ -49,15 +49,9 @@ class DataStoreGetUpdatesAndFlowTest(
     override suspend fun initData() {
         val addResponse = dataStore.execute(
             SimpleMarykModel.add(
-                SimpleMarykModel.run { create(
-                    value with "haha1"
-                ) },
-                SimpleMarykModel.run { create(
-                    value with "haha2"
-                ) },
-                SimpleMarykModel.run { create(
-                    value with "haha3"
-                ) },
+                SimpleMarykModel.create { value += "haha1" },
+                SimpleMarykModel.create { value += "haha2" },
+                SimpleMarykModel.create { value += "haha3" },
             )
         )
         addResponse.statuses.forEach { status ->
@@ -100,16 +94,12 @@ class DataStoreGetUpdatesAndFlowTest(
 
         assertIs<AdditionUpdate<SimpleMarykModel>>(getResponse.updates[1]).apply {
             assertEquals(testKeys[0], key)
-            assertEquals(SimpleMarykModel.run { create(
-                value with "haha1"
-            ) }, values)
+            assertEquals(SimpleMarykModel.create { value += "haha1" }, values)
         }
 
         assertIs<AdditionUpdate<SimpleMarykModel>>(getResponse.updates[2]).apply {
             assertEquals(testKeys[1], key)
-            assertEquals(SimpleMarykModel.run { create(
-                value with "haha2"
-            ) }, values)
+            assertEquals(SimpleMarykModel.create { value += "haha2" }, values)
         }
     }
 
@@ -255,9 +245,9 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(testKeys[0], key)
             assertEquals(lowestVersion, version)
             assertEquals(
-                SimpleMarykModel.run { create(
-                    value with "haha1"
-                ) },
+                SimpleMarykModel.create {
+                    value += "haha1"
+                },
                 values
             )
         }
@@ -265,9 +255,9 @@ class DataStoreGetUpdatesAndFlowTest(
             assertEquals(testKeys[2], key)
             assertEquals(highestInitVersion, version)
             assertEquals(
-                SimpleMarykModel.run { create(
-                    value with "haha3"
-                ) },
+                SimpleMarykModel.create {
+                    value += "haha3"
+                },
                 values
             )
         }

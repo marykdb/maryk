@@ -11,9 +11,9 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 internal class AdditionUpdateTest {
-    private val values = SimpleMarykModel.run { create(
-        value with "nice value"
-    ) }
+    private val values = SimpleMarykModel.create {
+        value += "nice value"
+    }
 
     private val key = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA")
 

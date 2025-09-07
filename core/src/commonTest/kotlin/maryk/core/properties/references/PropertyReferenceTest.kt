@@ -1,12 +1,12 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.UnexpectedValueException
+import maryk.core.models.RootDataModel
 import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.processors.datastore.matchers.ReferencedQualifierMatcher
 import maryk.core.properties.IsPropertyContext
-import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
@@ -47,10 +47,8 @@ internal class PropertyReferenceTest {
 
     @Test
     fun getValueFromList() {
-        val values = Model.run {
-            create(
-                test with "±testValue"
-            )
+        val values = Model.create {
+            test += "±testValue"
         }
 
         expect("±testValue") { ref.resolveFromAny(values) }

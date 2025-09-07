@@ -36,7 +36,9 @@ internal class EmbeddedValuesDefinitionTest {
         required = false,
         final = true,
         dataModel = { MarykModel },
-        default = MarykModel.run { create(string with "default") }
+        default = MarykModel.create {
+            string += "default"
+        }
     )
 
     @Test
@@ -46,15 +48,15 @@ internal class EmbeddedValuesDefinitionTest {
 
     @Test
     fun validate() {
-        def.validateWithRef(newValue = MarykModel.create())
+        def.validateWithRef(newValue = MarykModel.create{})
         assertFailsWith<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = MarykModel.run { create(string with "wrong") })
+            def.validateWithRef(newValue = MarykModel.create { string += "wrong" })
         }
     }
 
     @Test
     fun convertObjectToJSONAndBack() {
-        val value = MarykModel.create()
+        val value = MarykModel.create{}
 
         val output = buildString {
             val writer = JsonWriter(pretty = true) {
@@ -76,7 +78,7 @@ internal class EmbeddedValuesDefinitionTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val value = MarykModel.create()
+        val value = MarykModel.create{}
 
         bc.reserve(
             def.calculateTransportByteLengthWithKey(5, value, cache)

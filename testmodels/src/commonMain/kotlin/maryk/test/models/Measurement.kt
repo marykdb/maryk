@@ -23,7 +23,7 @@ import maryk.test.models.Measurement.timestamp
 object WeightMeasurement : DataModel<WeightMeasurement>() {
     val weightInKg by number(index = 1u, type = UInt16)
 }
-object LengthMeasurement : DataModel<WeightMeasurement>() {
+object LengthMeasurement : DataModel<LengthMeasurement>() {
     val lengthInCm by number(index = 1u, type = UInt16)
 }
 

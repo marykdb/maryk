@@ -173,10 +173,22 @@ class FoundationDBDataStoreMigrationTest {
 
         val addResult = dataStore.execute(
             ModelV2.add(
-                ModelV2.run { create(value with "ha1", newNumber with 100) },
-                ModelV2.run { create(value with "ha2", newNumber with 50) },
-                ModelV2.run { create(value with "ha3", newNumber with 3500) },
-                ModelV2.run { create(value with "ha4", newNumber with 1) },
+                ModelV2.create { 
+                    value += "ha1"
+                    newNumber += 100
+                },
+                ModelV2.create {
+                    value += "ha2"
+                    newNumber += 50
+                },
+                ModelV2.create {
+                    value += "ha3"
+                    newNumber += 3500
+                },
+                ModelV2.create {
+                    value += "ha4"
+                    newNumber += 1
+                },
             )
         )
 

@@ -100,12 +100,12 @@ class InjectTest {
         expect(listOf("hay", "haas")) { injectFromAny.resolve(context) as List<*> }
     }
 
-    private val valuesToCollect = EmbeddedMarykModel.run { create(
-        value with "a test value",
-        model with EmbeddedMarykModel.run { create(
-            value  with "embedded value"
-        ) }
-    ) }
+    private val valuesToCollect = EmbeddedMarykModel.create {
+        value += "a test value"
+        model += EmbeddedMarykModel.create {
+            value += "embedded value"
+        }
+    }
 
     @Test
     fun testInjectInValues() {

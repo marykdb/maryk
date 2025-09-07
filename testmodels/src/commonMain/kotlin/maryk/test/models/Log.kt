@@ -59,11 +59,9 @@ object Log : RootDataModel<Log>(
         message: String,
         severity: Severity = INFO,
         timestamp: LocalDateTime = DateTimeDefinition.nowUTC()
-    ) = Log.run {
-        create(
-            this.timestamp with timestamp,
-            this.severity with severity,
-            this.message with message
-        )
+    ) = Log.create {
+        this.timestamp += timestamp
+        this.severity += severity
+        this.message += message
     }
 }

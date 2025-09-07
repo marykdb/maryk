@@ -33,9 +33,7 @@ class DataStoreGetSelectTest(
         CompleteMarykModel(
             string="haas",
             number = 24u,
-            subModel = SimpleMarykModel.run { create(
-                value with "haha"
-            ) },
+            subModel = SimpleMarykModel.create { value += "haha" },
             multi=TypedValue(T2, 22),
             booleanForKey= true,
             dateForKey= LocalDate(2018, 3, 29),

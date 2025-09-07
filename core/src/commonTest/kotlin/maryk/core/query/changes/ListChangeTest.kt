@@ -65,9 +65,9 @@ class ListChangeTest {
             double = 2.3,
             dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             list = listOf(3, 4, 5),
-            embeddedValues = EmbeddedMarykModel.run { create(
-                value with "test",
-                marykModel with TestMarykModel(
+            embeddedValues = EmbeddedMarykModel.create {
+                value += "test"
+                marykModel += TestMarykModel(
                     string = "hi world",
                     int = 3,
                     uint = 67u,
@@ -75,7 +75,7 @@ class ListChangeTest {
                     dateTime = LocalDateTime(2020, 10, 18, 0, 0),
                     list = listOf(33, 44, 55)
                 )
-            ) }
+            }
         )
 
         val changed = original.change(

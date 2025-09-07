@@ -22,9 +22,7 @@ internal class InitialValuesUpdateTest {
                 firstVersion = 0uL,
                 lastVersion = 1uL,
                 isDeleted = false,
-                values = SimpleMarykModel.run { create(
-                    value with "test value 1"
-                ) }
+                values = SimpleMarykModel.create { value += "test value 1" }
             )
         )
     )

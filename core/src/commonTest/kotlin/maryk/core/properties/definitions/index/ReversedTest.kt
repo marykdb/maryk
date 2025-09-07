@@ -5,9 +5,9 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
+import maryk.core.models.key
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.dateTime
-import maryk.core.models.key
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
@@ -34,10 +34,10 @@ internal class ReversedTest {
     fun testKey() {
         val dt = LocalDateTime(2017, 9, 3, 12, 43, 40)
 
-        val obj = MarykModel.create(
-            MarykModel.boolean with true,
-            MarykModel.dateTime with dt
-        )
+        val obj = MarykModel.create {
+            boolean += true
+            dateTime += dt
+        }
 
         val key = MarykModel.key(obj)
 

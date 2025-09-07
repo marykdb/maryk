@@ -38,9 +38,6 @@ val johnSmith = Person.create {
     dateOfBirth(LocalDate(2017, 12, 5))
 }
 
-// Existing style is still available
-// val johnSmith = Person.run { create(firstName with "John", lastName with "Smith", dateOfBirth with LocalDate(2017, 12, 5)) }
-
 // Validate the object, which will throw a PropertyValidationUmbrellaException if it's invalid
 // Since there's no validation on the PropertyDefinitions, validation will succeed
 Person.validate(johnSmith)

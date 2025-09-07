@@ -16,7 +16,7 @@ class UniqueIndexValuesTest {
             valueReference
         )
 
-    private val simpleValues = SimpleMarykModel.run { create(value with "test") }
+    private val simpleValues = SimpleMarykModel.create { value += "test" }
 
     private val timestamp1 = HLC(1uL)
     private val timestamp2 = HLC(2uL)

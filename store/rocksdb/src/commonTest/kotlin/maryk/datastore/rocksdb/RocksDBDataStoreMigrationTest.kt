@@ -13,9 +13,9 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.createTestDBFolder
 import maryk.datastore.test.dataModelsForTests
 import maryk.deleteFolder
-import maryk.createTestDBFolder
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
@@ -166,10 +166,10 @@ class RocksDBDataStoreMigrationTest {
 
         val addResult = dataStore.execute(
             ModelV2.add(
-                ModelV2.run { create (value with "ha1", newNumber with 100) },
-                ModelV2.run { create (value with "ha2", newNumber with 50) },
-                ModelV2.run { create (value with "ha3", newNumber with 3500) },
-                ModelV2.run { create (value with "ha4", newNumber with 1) },
+                ModelV2.create { value += "ha1"; newNumber += 100 },
+                ModelV2.create { value += "ha2"; newNumber += 50 },
+                ModelV2.create { value += "ha3"; newNumber += 3500 },
+                ModelV2.create { value += "ha4"; newNumber += 1 },
             )
         )
 

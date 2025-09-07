@@ -32,10 +32,10 @@ class DataStoreScanWithMutableValueIndexTest(
     )
 
     private val objects = arrayOf(
-        ModelV2ExtraIndex.run { create(value with "ha1", newNumber with 5) },
-        ModelV2ExtraIndex.run { create(value with "ha2", newNumber with 2) },
-        ModelV2ExtraIndex.run { create(value with "ha3", newNumber with 7) },
-        ModelV2ExtraIndex.run { create(value with "ha4", newNumber with 1) },
+        ModelV2ExtraIndex.create { value += "ha1"; newNumber += 5 },
+        ModelV2ExtraIndex.create { value += "ha2"; newNumber += 2 },
+        ModelV2ExtraIndex.create { value += "ha3"; newNumber += 7 },
+        ModelV2ExtraIndex.create { value += "ha4"; newNumber += 1 },
     )
 
     override suspend fun initData() {

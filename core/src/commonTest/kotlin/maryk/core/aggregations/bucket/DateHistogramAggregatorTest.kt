@@ -31,40 +31,32 @@ class DateHistogramAggregatorTest {
 
         dateHistogramAggregator.aggregate(
             createAggregator(
-                TestMarykModel.run {
-                    create(
-                        dateTime with LocalDateTime(2019, 12, 11, 10, 12, 8),
-                        int with 345
-                    )
+                TestMarykModel.create {
+                    dateTime += LocalDateTime(2019, 12, 11, 10, 12, 8)
+                    int += 345
                 }
             )
         )
         dateHistogramAggregator.aggregate(
             createAggregator(
-                TestMarykModel.run {
-                    create(
-                        dateTime with LocalDateTime(2019, 12, 11, 10, 12, 9),
-                        int with 2537
-                    )
+                TestMarykModel.create {
+                    dateTime += LocalDateTime(2019, 12, 11, 10, 12, 9)
+                    int += 2537
                 }
             )
         )
         dateHistogramAggregator.aggregate(
             createAggregator(
-                TestMarykModel.run {
-                    create(
-                        dateTime with LocalDateTime(2019, 12, 11, 11, 32, 19),
-                        int with 1
-                    )
+                TestMarykModel.create {
+                    dateTime += LocalDateTime(2019, 12, 11, 11, 32, 19)
+                    int += 1
                 }
             )
         )
         dateHistogramAggregator.aggregate(
             createAggregator(
-                TestMarykModel.run {
-                    create(
-                        dateTime with LocalDateTime(2019, 12, 11, 12, 55, 56)
-                    )
+                TestMarykModel.create {
+                    dateTime += LocalDateTime(2019, 12, 11, 12, 55, 56)
                 }
             )
         )

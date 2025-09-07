@@ -45,9 +45,9 @@ internal class TypeReferenceTest {
 
     @Test
     fun testKey() {
-        val obj = MarykModel.create(
-            MarykModel.multi with T2(23)
-        )
+        val obj = MarykModel.create{
+            multi += T2(23)
+        }
 
         val key = MarykModel.key(obj)
         expect("0002") { key.bytes.toHex() }

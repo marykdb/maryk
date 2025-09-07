@@ -72,18 +72,18 @@ class InjectIntoRequestTest {
         }
 
         val expectedKeys = listOf(
-            SimpleMarykModel.key(SimpleMarykModel.run { create(value with "v1") }),
-            SimpleMarykModel.key(SimpleMarykModel.run { create(value with "v2") }),
-            SimpleMarykModel.key(SimpleMarykModel.run { create(value with "v2") })
+            SimpleMarykModel.key(SimpleMarykModel.create { value += "v1" }),
+            SimpleMarykModel.key(SimpleMarykModel.create { value += "v2" }),
+            SimpleMarykModel.key(SimpleMarykModel.create { value += "v2" })
         )
 
-        val row1 = ReferencesModel.run { create(
-            references with expectedKeys.subList(0, 2)
-        ) }
+        val row1 = ReferencesModel.create {
+            references += expectedKeys.subList(0, 2)
+        }
 
-        val row2 = ReferencesModel.run { create(
-            references with expectedKeys.subList(2, 3)
-        ) }
+        val row2 = ReferencesModel.create {
+            references += expectedKeys.subList(2, 3)
+        }
 
         val response = ValuesResponse(
             dataModel = ReferencesModel,

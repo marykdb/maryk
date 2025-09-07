@@ -29,10 +29,22 @@ class DataStoreScanOnIndexWithPersonTest(
     )
 
     private val persons = arrayOf(
-        Person.run { create(firstName with "Jurriaan", surname with "Mous") },
-        Person.run { create(firstName with "Karel", surname with "Kastens") },
-        Person.run { create(firstName with "Ariël", surname with "Kastens") },
-        Person.run { create(firstName with "Ti", surname with "Tockle") },
+        Person.create {
+            firstName += "Jurriaan"
+            surname += "Mous"
+        },
+        Person.create {
+            firstName += "Karel"
+            surname += "Kastens"
+        },
+        Person.create {
+            firstName += "Ariël"
+            surname += "Kastens"
+        },
+        Person.create {
+            firstName += "Ti"
+            surname += "Tockle"
+        },
     )
 
     override suspend fun initData() {

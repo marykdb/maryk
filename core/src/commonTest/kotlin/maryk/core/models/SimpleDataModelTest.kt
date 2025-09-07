@@ -12,18 +12,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.expect
 
-private val testValues = SimpleMarykModel.run { create(
-    value with "haas"
-) }
+private val testValues = SimpleMarykModel.create {
+    value += "haas"
+}
 
 internal class SimpleDataModelTest {
     @Test
     fun constructByMap() {
         expect(testValues) {
-            SimpleMarykModel.run {
-                create(
-                    value with testValues { value }
-                )
+            SimpleMarykModel.create {
+                value += testValues { value }
             }
         }
     }
@@ -89,10 +87,8 @@ internal class SimpleDataModelTest {
         val bc = ByteCollector()
         val cache = WriteCache()
 
-        val map = SimpleMarykModel.run {
-            create(
-                value with "hay"
-            )
+        val map = SimpleMarykModel.create {
+            value += "hay"
         }
 
         bc.reserve(

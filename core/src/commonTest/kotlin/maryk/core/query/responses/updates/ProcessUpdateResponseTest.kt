@@ -20,14 +20,14 @@ internal class ProcessUpdateResponseTest {
             key = key1,
             firstVersion = 1234uL,
             lastVersion = 2345uL,
-            values = SimpleMarykModel.run { create(value with "v1") },
+            values = SimpleMarykModel.create { value += "v1" },
             isDeleted = false
         ),
         ValuesWithMetaData(
             key = key2,
             firstVersion = 12345uL,
             lastVersion = 23456uL,
-            values = SimpleMarykModel.run { create(value with "v2") },
+            values = SimpleMarykModel.create { value += "v2" },
             isDeleted = false
         )
     )
@@ -42,9 +42,9 @@ internal class ProcessUpdateResponseTest {
                     firstVersion = 123456uL,
                     lastVersion = 1234568uL,
                     isDeleted = false,
-                    values = SimpleMarykModel.run { create(
-                        value with "test value 1"
-                    ) }
+                    values = SimpleMarykModel.create {
+                        value += "test value 1"
+                    }
                 )
             )
         )
@@ -82,7 +82,9 @@ internal class ProcessUpdateResponseTest {
             firstVersion = 3456uL,
             version = 4567uL,
             insertionIndex = 1,
-            values = SimpleMarykModel.run { create(value with "v3") },
+            values = SimpleMarykModel.create {
+                value += "v3"
+            },
             isDeleted = false
         )
 

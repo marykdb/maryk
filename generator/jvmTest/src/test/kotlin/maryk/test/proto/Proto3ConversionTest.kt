@@ -26,7 +26,7 @@ class Proto3ConversionTest {
     @Test
     fun testSimpleMarykModel(){
         // SimpleObject to convert
-        val simpleObject = SimpleMarykModel.run { create(value with "testSimpleMarykModel") }
+        val simpleObject = SimpleMarykModel.create { value += "testSimpleMarykModel" }
         val simpleObjectProto = MarykTestProtos.SimpleMarykModel.newBuilder().setValue("testSimpleMarykModel").build()
 
         // Write protobuf
@@ -47,7 +47,7 @@ class Proto3ConversionTest {
     @Test
     fun testNumericMarykModel(){
         // SimpleObject to convert
-        val numericObject = NumericMarykModel.create()
+        val numericObject = NumericMarykModel.create {}
         val numericObjectProto = MarykTestProtos.NumericMarykModel
             .newBuilder()
             .setSInt8(4)

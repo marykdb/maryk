@@ -93,14 +93,10 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     }
 
     /** DSL support: add value via += inside a create { } block */
-    operator fun plusAssign(value: TO?) {
-        ValuesCollectorContext.add(this with value)
-    }
+    operator fun plusAssign(value: TO?) { ValuesCollectorContext.add(this with value) }
 
     /** DSL support: add value via function-call style inside a create { } block */
-    operator fun invoke(value: TO?) {
-        ValuesCollectorContext.add(this with value)
-    }
+    operator fun invoke(value: TO?) { ValuesCollectorContext.add(this with value) }
 
     /** Get a reference to this definition inside [parentRef] */
     fun ref(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, IsPropertyDefinition<T>, *>

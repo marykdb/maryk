@@ -23,8 +23,8 @@ class IncMapAdditionTest {
                 23u
             ),
             listOf(
-                EmbeddedMarykModel.run { create(value with "ho") },
-                EmbeddedMarykModel.run { create(value with "ha") },
+                EmbeddedMarykModel.create { value += "ho" },
+                EmbeddedMarykModel.create { value += "ha" },
             )
         )
     )
@@ -56,8 +56,8 @@ class IncMapAdditionTest {
             IncMapChange(
                 CompleteMarykModel { incMap::ref }.change(
                     listOf(
-                        EmbeddedMarykModel.run { create(value with "ho") },
-                        EmbeddedMarykModel.run { create(value with "ha") },
+                        EmbeddedMarykModel.create { value += "ho" },
+                        EmbeddedMarykModel.create { value += "ha" },
                     )
                 )
             )
@@ -127,9 +127,9 @@ class IncMapAdditionTest {
                 2u to "two",
                 3u to "three"
             ),
-            embeddedValues = EmbeddedMarykModel.run { create(
-                value with "test",
-                marykModel with TestMarykModel(
+            embeddedValues = EmbeddedMarykModel.create {
+                value += "test"
+                marykModel += TestMarykModel(
                     string = "hi world",
                     int = 3,
                     uint = 67u,
@@ -141,7 +141,7 @@ class IncMapAdditionTest {
                         13u to "thirteen"
                     )
                 )
-            ) }
+            }
         )
 
         val changed = original.change(

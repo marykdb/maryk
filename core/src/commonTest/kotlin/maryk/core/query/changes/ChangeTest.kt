@@ -81,12 +81,10 @@ class ChangeTest {
                 LocalTime(12, 0) to "Hi",
                 LocalTime(1, 2) to "Hoi"
             ),
-            embeddedValues = EmbeddedMarykModel.run { create(
-                value with "hi",
-                model with EmbeddedMarykModel.run { create(
-                    value with "bye"
-                ) }
-            ) }
+            embeddedValues = EmbeddedMarykModel.create {
+                value += "hi"
+                model += EmbeddedMarykModel.create { value += "bye" }
+            }
         )
 
         var changed = original.change(listOf())

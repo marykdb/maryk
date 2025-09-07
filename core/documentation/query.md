@@ -30,14 +30,14 @@ Kotlin:
 
 ```kotlin
 val addRequest = Person.add(
-    Person.run { create(
-        firstName with "Jurriaan",
-        lastName with "Mous"
-    ) },
-    Person.run { create(
-        firstName with "John",
-        lastName with "Smith"
-    ) }  
+    Person.create {
+        firstName += "Jurriaan"
+        lastName += "Mous"
+    },
+    Person.create {
+        firstName += "John"
+        lastName += "Smith"
+    }
 )
 ```
 

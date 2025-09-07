@@ -72,13 +72,11 @@ class ReadStorageToValuesKtTest {
                     map with mapOf(
                         LocalTime(12, 23, 34) to "twelve"
                     ),
-                    embeddedValues with EmbeddedMarykModel.run {
-                        create(
-                            value with "test",
-                            model with EmbeddedMarykModel.run {
-                                create()
-                            }
-                        )
+                    embeddedValues with EmbeddedMarykModel.create {
+                        value += "test"
+                        model += EmbeddedMarykModel.run {
+                            create{}
+                        }
                     },
                     listOfString with listOf("v1"),
                     setOfString with setOf("def")

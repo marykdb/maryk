@@ -20,9 +20,11 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.LengthMeasurement
+import maryk.test.models.LengthMeasurement.lengthInCm
 import maryk.test.models.Measurement
 import maryk.test.models.MeasurementType
 import maryk.test.models.WeightMeasurement
+import maryk.test.models.WeightMeasurement.weightInKg
 import kotlin.test.expect
 
 class DataStoreScanMultiTypeTest(
@@ -42,38 +44,38 @@ class DataStoreScanMultiTypeTest(
     )
 
     private val measurements = arrayOf(
-        Measurement.run { create(
-            this.timestamp with LocalDateTime(2023, 11, 14, 11, 22, 33, 40000000),
-            this.measurement with MeasurementType.Weight.invoke(WeightMeasurement.run { create(
-                weightInKg with 80u,
-            ) }),
-        ) },
-        Measurement.run { create(
-            this.timestamp with LocalDateTime(2023, 11, 14, 12, 0, 0, 0),
-            this.measurement with MeasurementType.Length(LengthMeasurement.run { create(
-                lengthInCm with 181u,
-            ) }),
-        ) },
-        Measurement.run { create(
-            this.timestamp with LocalDateTime(2023, 11, 14, 12, 33, 22, 111000000),
-            this.measurement with MeasurementType.Weight(WeightMeasurement.run { create(
-                weightInKg with 78u,
-            ) }),
-        ) },
-        Measurement.run { create(
-            this.timestamp with LocalDateTime(2023, 11, 14, 13, 0, 2, 0),
-            this.measurement with MeasurementType.Length(LengthMeasurement.run { create(
-                lengthInCm with 180u,
-            ) }),
-        ) },
-        Measurement.run { create(
-            this.timestamp with LocalDateTime(2023, 11, 14, 14, 0, 2, 0),
-            this.measurement with MeasurementType.Number(220u),
-        ) },
-        Measurement.run { create(
-            this.timestamp with LocalDateTime(2023, 11, 14, 15, 0, 2, 0),
-            this.measurement with MeasurementType.Number(231u),
-        ) },
+        Measurement.create {
+            this.timestamp += LocalDateTime(2023, 11, 14, 11, 22, 33, 40000000)
+            this.measurement += MeasurementType.Weight(
+                WeightMeasurement.create { weightInKg += 80u }
+            )
+        },
+        Measurement.create {
+            this.timestamp += LocalDateTime(2023, 11, 14, 12, 0, 0, 0)
+            this.measurement += MeasurementType.Length(
+                LengthMeasurement.create { lengthInCm += 181u }
+            )
+        },
+        Measurement.create {
+            this.timestamp += LocalDateTime(2023, 11, 14, 12, 33, 22, 111000000)
+            this.measurement += MeasurementType.Weight(
+                WeightMeasurement.create { weightInKg += 78u }
+            )
+        },
+        Measurement.create {
+            this.timestamp += LocalDateTime(2023, 11, 14, 13, 0, 2, 0)
+            this.measurement += MeasurementType.Length(
+                LengthMeasurement.create { lengthInCm += 180u }
+            )
+        },
+        Measurement.create {
+            this.timestamp += LocalDateTime(2023, 11, 14, 14, 0, 2, 0)
+            this.measurement += MeasurementType.Number(220u)
+        },
+        Measurement.create {
+            this.timestamp += LocalDateTime(2023, 11, 14, 15, 0, 2, 0)
+            this.measurement += MeasurementType.Number(231u)
+        },
     )
 
     override suspend fun initData() {
@@ -216,11 +218,11 @@ class DataStoreScanMultiTypeTest(
         // Mind that Log is sorted in reverse, so it goes back in time going forward
         scanResponse.values[0].let {
             expect(
-                Measurement.run { create(
-                    measurement with MeasurementType.Weight(WeightMeasurement.run { create(
-                        weightInKg with 78u,
-                    ) }),
-                ) }
+                Measurement.create {
+                    measurement += MeasurementType.Weight(
+                        WeightMeasurement.create { weightInKg += 78u }
+                    )
+                }
             ) { it.values }
             expect(keys[2]) { it.key }
         }

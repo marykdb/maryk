@@ -45,7 +45,9 @@ internal class UUIDKeyTest {
 
     @Test
     fun testKey() {
-        val obj = MarykModel.run { create(value with "test") }
+        val obj = MarykModel.create {
+            value += "test"
+        }
 
         val key = MarykModel.key(obj)
         expect(16) { key.bytes.size }

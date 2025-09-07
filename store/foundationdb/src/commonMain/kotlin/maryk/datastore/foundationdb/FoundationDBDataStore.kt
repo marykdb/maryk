@@ -104,14 +104,8 @@ class FoundationDBDataStore private constructor(
             DirectoryLayer.getDefault().createOrOpen(tr, directoryRootPath)
         }.await()
 
-        if (keepAllVersions) {
-            for ((index, dataModel) in dataModelsById) {
-                directoriesByDataModelIndex[index] = openHistoricTableDirs(dataModel.Meta.name)
-            }
-        } else {
-            for ((index, dataModel) in dataModelsById) {
-                directoriesByDataModelIndex[index] = openNonHistoricTableDirs(dataModel.Meta.name)
-            }
+        for ((index, dataModel) in dataModelsById) {
+            directoriesByDataModelIndex[index] = openTableDirs(dataModel.Meta.name, historic = keepAllVersions)
         }
 
         val conversionContext = DefinitionsConversionContext()
@@ -121,22 +115,29 @@ class FoundationDBDataStore private constructor(
                 when (val migrationStatus = checkModelIfMigrationIsNeeded(tc, tableDirectories.modelPrefix, dataModel, onlyCheckModelVersion, conversionContext)) {
                     UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                     NewModel -> {
+                        // Persist model metadata immediately to ensure subsequent opens see it
+                        storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, null, dataModel)
-                            storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         }
                     }
                     is OnlySafeAdds -> {
+                        // Conservatively (re)index all indexes defined on the new model
+                        dataModel.Meta.indexes?.let { idxs ->
+                            if (idxs.isNotEmpty()) {
+                                fillIndex(idxs, tableDirectories)
+                            }
+                        }
+                        storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         }
                     }
                     is NewIndicesOnExistingProperties -> {
                         fillIndex(migrationStatus.indexesToIndex, tableDirectories)
+                        storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         }
                     }
                     is NeedsMigration -> {
@@ -150,9 +151,9 @@ class FoundationDBDataStore private constructor(
                         migrationStatus.indexesToIndex?.let {
                             fillIndex(it, tableDirectories)
                         }
+                        storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
                         }
                     }
                 }
@@ -164,48 +165,42 @@ class FoundationDBDataStore private constructor(
         scheduledVersionUpdateHandlers.forEach { it() }
     }
 
-    private fun openHistoricTableDirs(
-        modelName: String
-    ): HistoricTableDirectories = tc.run { tr ->
-        val modelDir        = rootDirectory.createOrOpen(tr, listOf(modelName))
-        val keysDir         = rootDirectory.createOrOpen(tr, listOf(modelName, "keys"))
-        val tableDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "table"))
-        val uniqueDir       = rootDirectory.createOrOpen(tr, listOf(modelName, "unique"))
-        val indexDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "index"))
-        val histTableDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "table_versioned"))
-        val histIndexDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "index_versioned"))
-        val histUniqueDir   = rootDirectory.createOrOpen(tr, listOf(modelName, "unique_versioned"))
+    private fun openTableDirs(
+        modelName: String,
+        historic: Boolean = false
+    ): IsTableDirectories = tc.run { tr ->
+        val modelDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "meta")).join()
+        val keysDir         = rootDirectory.createOrOpen(tr, listOf(modelName, "keys")).join()
+        val tableDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "table")).join()
+        val uniqueDir       = rootDirectory.createOrOpen(tr, listOf(modelName, "unique")).join()
+        val indexDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "index")).join()
 
-        HistoricTableDirectories(
-            dataStore     = this,
-            model         = modelDir.join(),
-            keys          = keysDir.join(),
-            table         = tableDir.join(),
-            unique        = uniqueDir.join(),
-            index         = indexDir.join(),
-            historicTable = histTableDir.join(),
-            historicIndex = histIndexDir.join(),
-            historicUnique= histUniqueDir.join()
-        )
-    }
+        if (!historic) {
+            TableDirectories(
+                dataStore = this,
+                model  = modelDir,
+                keys   = keysDir,
+                table  = tableDir,
+                unique = uniqueDir,
+                index  = indexDir
+            )
+        } else {
+            val histTableDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "table_versioned")).join()
+            val histIndexDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "index_versioned")).join()
+            val histUniqueDir   = rootDirectory.createOrOpen(tr, listOf(modelName, "unique_versioned")).join()
 
-    private fun openNonHistoricTableDirs(
-        modelName: String
-    ): TableDirectories = tc.run { tr ->
-        val modelDir  = rootDirectory.createOrOpen(tr, listOf(modelName))
-        val keysDir   = rootDirectory.createOrOpen(tr, listOf(modelName, "keys"))
-        val tableDir  = rootDirectory.createOrOpen(tr, listOf(modelName, "table"))
-        val uniqueDir = rootDirectory.createOrOpen(tr, listOf(modelName, "unique"))
-        val indexDir  = rootDirectory.createOrOpen(tr, listOf(modelName, "index"))
-
-        TableDirectories(
-            dataStore = this,
-            model  = modelDir.join(),
-            keys   = keysDir.join(),
-            table  = tableDir.join(),
-            unique = uniqueDir.join(),
-            index  = indexDir.join()
-        )
+            HistoricTableDirectories(
+                dataStore     = this,
+                model         = modelDir,
+                keys          = keysDir,
+                table         = tableDir,
+                unique        = uniqueDir,
+                index         = indexDir,
+                historicTable = histTableDir,
+                historicIndex = histIndexDir,
+                historicUnique= histUniqueDir
+            )
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

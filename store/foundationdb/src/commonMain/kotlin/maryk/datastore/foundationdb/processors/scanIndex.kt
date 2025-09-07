@@ -24,6 +24,7 @@ import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.helpers.convertToValue
@@ -124,7 +125,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
             val baseEnd = Range.startsWith(packKey(histBase, basePrefix)).end
             val versionFloor = scanRequest.toVersion!!.toReversedVersionBytes()
             val toVersionBytes = versionFloor
-            val seen = mutableSetOf<Int>() // content hash of valueAndKey across all segments
+            data class Rev(val version: ULong, val rec: Rec)
+            val latestByKey = mutableMapOf<Int, Rev>() // keep the max version per key
 
             indexScanRange.ranges.forEachIndexed { i, range ->
                 val startSeg = when (indexScan.direction) {
@@ -143,6 +145,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
                 }
 
                 val it = tr.getRange(Range(begin, end)).iterator()
+                var lastQualifierEncoded: ByteArray? = null
                 while (it.hasNext()) {
                     val kv = it.next()
                     val k = kv.key
@@ -152,24 +155,32 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
                     if (toVersionBytes.compareToWithOffsetLength(k, versionOffset) > 0) continue
 
                     val encQualifier = k.copyOfRange(histBase.size, sepIndex)
+                    // Only process first entry per qualifier (this is the latest <= toVersion)
+                    val prevEnc = lastQualifierEncoded
+                    if (prevEnc != null && prevEnc.contentEquals(encQualifier)) continue
+                    lastQualifierEncoded = encQualifier
                     val qualifier = decodeZeroFreeUsing01(encQualifier)
                     if (qualifier.size <= indexReference.size) continue
                     val valueAndKey = qualifier.copyOfRange(indexReference.size, qualifier.size)
 
                     if (!indexScanRange.matchesPartials(valueAndKey, 0, valueAndKey.size - keySize)) continue
 
-                    val id = valueAndKey.contentHashCode()
-                    if (!seen.add(id)) continue
-
                     val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
+                    val keyId = keyBytes.contentHashCode()
                     // For historic filter checks, pass null as creationVersion to avoid excluding records created after toVersion
                     if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion)) continue
 
                     val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).join() ?: continue
                     val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
-                    collected += Rec(valueAndKey, keyBytes, createdVersion)
+                    val version = k.readReversedVersionBytes(versionOffset)
+                    val rec = Rec(valueAndKey, keyBytes, createdVersion)
+                    val prev = latestByKey[keyId]
+                    if (prev == null || version > prev.version) {
+                        latestByKey[keyId] = Rev(version, rec)
+                    }
                 }
             }
+            collected += latestByKey.values.map { it.rec }
         }
     }
 

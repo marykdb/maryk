@@ -22,6 +22,10 @@ abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(
      * Create a new [Values] object with [pairs] and set defaults if [setDefaults] is true
      */
     @Suppress("UNCHECKED_CAST")
+    @Deprecated(
+        message = "Marked for removal in a future version. Use create(setDefaults, block) instead",
+        replaceWith = ReplaceWith("this.create(setDefaults = setDefaults, block = block)")
+    )
     fun create(
         vararg pairs: ValueItem?,
         setDefaults: Boolean = true,
@@ -31,6 +35,28 @@ abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(
             fillWithPairs(this@TypedValuesDataModel, pairs, setDefaults)
         }
     )
+
+    /**
+     * Create a new [Values] object using a DSL block with direct property calls.
+     */
+    @Suppress("UNCHECKED_CAST")
+    fun create(
+        setDefaults: Boolean = true,
+        block: DM.() -> Unit
+    ): Values<DM> {
+        val dm = this as DM
+        val items = ValuesCollectorContext.push(setDefaults)
+        try {
+            dm.block()
+        } finally {
+            ValuesCollectorContext.pop()
+        }
+        items.fillWithPairs(dm, emptyArray(), setDefaults)
+        return Values(dm, items)
+    }
+
+    /** Convenience overload which applies defaults. */
+    fun create(block: DM.() -> Unit): Values<DM> = create(setDefaults = true, block = block)
 
     override fun validate(
         values: Values<DM>,

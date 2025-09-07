@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.ValuesCollectorContext
 import maryk.core.models.invoke
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
@@ -12,6 +13,7 @@ import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValues
+import maryk.core.values.ValueItem
 import maryk.core.values.Values
 import kotlin.reflect.KProperty
 
@@ -47,6 +49,19 @@ data class EmbeddedValuesDefinitionWrapper<
                 it as CanHaveComplexChildReference<*, *, *, *>
             }
         )
+    }
+
+    /** Shorthand for inline embedded values: property += { ... } */
+    operator fun plusAssign(block: DM.() -> Unit) {
+        val dm = this.definition.dataModel
+        val items = ValuesCollectorContext.push(ValuesCollectorContext.currentSetDefaults())
+        try {
+            dm.block()
+        } finally {
+            ValuesCollectorContext.pop()
+        }
+        items.fillWithPairs(dm, emptyArray(), ValuesCollectorContext.currentSetDefaults())
+        ValuesCollectorContext.add(ValueItem(this.index, Values(dm, items)))
     }
 
     /** Get a top-level reference on a model with [propertyDefinitionGetter]. Used for contextual embed values property definitions. */

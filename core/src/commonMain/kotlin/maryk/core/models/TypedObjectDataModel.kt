@@ -51,4 +51,22 @@ abstract class TypedObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : Is
         },
         context,
     )
+
+    /**
+     * Create new [ObjectValues] via DSL with direct property calls.
+     */
+    fun create(
+        setDefaults: Boolean = true,
+        context: RequestContext? = null,
+        block: DM.() -> Unit
+    ): ObjectValues<DO, DM> {
+        val items = ValuesCollectorContext.push(setDefaults)
+        try {
+            typedThis.block()
+        } finally {
+            ValuesCollectorContext.pop()
+        }
+        items.fillWithPairs(typedThis, emptyArray(), setDefaults)
+        return ObjectValues(typedThis, items, context)
+    }
 }

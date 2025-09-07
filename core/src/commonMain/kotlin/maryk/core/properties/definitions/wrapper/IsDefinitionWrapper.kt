@@ -1,5 +1,6 @@
 package maryk.core.properties.definitions.wrapper
 
+import maryk.core.models.ValuesCollectorContext
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.Inject
 import maryk.core.models.IsValuesDataModel
@@ -89,6 +90,16 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     /** Create an index [value] pair for maps */
     infix fun withSerializable(value: T?) = value?.let {
         ValueItem(this.index, value)
+    }
+
+    /** DSL support: add value via += inside a create { } block */
+    operator fun plusAssign(value: TO?) {
+        ValuesCollectorContext.add(this with value)
+    }
+
+    /** DSL support: add value via function-call style inside a create { } block */
+    operator fun invoke(value: TO?) {
+        ValuesCollectorContext.add(this with value)
     }
 
     /** Get a reference to this definition inside [parentRef] */

@@ -31,13 +31,15 @@ object Person : RootDataModel<Person>() {
 Here's a demonstration of constructing a new Person DataObject, validating it, and creating a new key to represent it.
 
 ```kotlin
-val johnSmith = Person.run {
-    create(
-        firstName with "John",
-        lastName with "Smith",
-        dateOfBirth with LocalDate(2017, 12, 5),
-    )
+// Concise DSL
+val johnSmith = Person.create {
+    firstName("John")
+    lastName("Smith")
+    dateOfBirth(LocalDate(2017, 12, 5))
 }
+
+// Existing style is still available
+// val johnSmith = Person.run { create(firstName with "John", lastName with "Smith", dateOfBirth with LocalDate(2017, 12, 5)) }
 
 // Validate the object, which will throw a PropertyValidationUmbrellaException if it's invalid
 // Since there's no validation on the PropertyDefinitions, validation will succeed

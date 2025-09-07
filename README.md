@@ -63,9 +63,11 @@ val personFromJson = Person.readJson(json)
 ```
 
 5. **Choose a Data Store**:
-  - [In-memory store](store/memory/README.md) (non-persistent, suitable for testing)
-  - [RocksDB-based store](store/rocksdb/README.md) (persistent, efficient for local storage)
-  - [FoundationDB-based store](store/foundationdb/README.md) (persistent, scalable; JVM)
+  - [Memory](store/memory/README.md) — in‑memory, non‑persistent, fastest feedback for dev/tests.
+  - [RocksDB](store/rocksdb/README.md) — embedded, persistent, high performance on a single node across desktop/mobile/server.
+  - [FoundationDB](store/foundationdb/README.md) — distributed, transactional persistence on the JVM with strong consistency and time‑travel support.
+  
+  See the overview and guidance in [store/README.md](store/README.md) for when to pick each engine.
 
 ## Documentation
 

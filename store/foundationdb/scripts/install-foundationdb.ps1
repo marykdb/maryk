@@ -2,7 +2,7 @@ Param(
   [string]$Version = $env:FDB_VERSION
 )
 
-if (-not $Version -or $Version -eq '') { $Version = '7.4.3' }
+if (-not $Version -or $Version -eq '') { $Version = '7.3.69' }
 
 $ErrorActionPreference = 'Stop'
 

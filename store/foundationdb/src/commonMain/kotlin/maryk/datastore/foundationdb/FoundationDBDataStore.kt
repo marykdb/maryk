@@ -89,7 +89,7 @@ class FoundationDBDataStore private constructor(
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
-    private val fdb = FDB.selectAPIVersion(740)
+    private val fdb = FDB.selectAPIVersion(730)
     private val db = (if (fdbClusterFilePath != null) fdb.open(fdbClusterFilePath) else fdb.open())
     private val tenantDB = tenantName?.let { db.openTenant(tenantName) }
     internal val tc: TransactionContext = tenantDB ?: db

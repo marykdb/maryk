@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Install or link FoundationDB locally for the current platform.
 # - Installs/symlinks into: store/foundationdb/bin
-# - Configurable version via FDB_VERSION env var or --version flag (e.g. 7.4.3)
+# - Configurable version via FDB_VERSION env var or --version flag (e.g. 7.3.69)
 # - Strategy:
 #   * If fdbserver already in bin, skip.
 #   * Else if fdbserver found on PATH, symlink into bin (and try to locate/copy libfdb_c.*).
@@ -17,7 +17,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BIN_DIR="$ROOT_DIR/store/foundationdb/bin"
 LIB_DIR="$BIN_DIR/lib"
 
-FDB_VERSION_DEFAULT="7.4.3"
+FDB_VERSION_DEFAULT="7.3.69"
 FDB_VERSION="${FDB_VERSION:-$FDB_VERSION_DEFAULT}"
 
 if [[ "${1:-}" == "--version" && -n "${2:-}" ]]; then

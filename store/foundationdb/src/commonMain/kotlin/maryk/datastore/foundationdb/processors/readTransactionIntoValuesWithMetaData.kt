@@ -37,7 +37,6 @@ import com.apple.foundationdb.Range as FDBRange
  * Read values for [key] from a FoundationDB [tr] into a ValuesWithMeta object.
  * Filters results on [select] and uses [toVersion] if provided.
  *
- * This implementation mirrors the RocksDB/HBase style:
  * - Build a getQualifier lambda that advances an underlying iterator
  * - Expose the current KV through captured state for processValue
  * - Use AsyncIterable directly; no custom walker class

@@ -128,7 +128,7 @@ For scans, we slice by `(indexValue || key)` to include/exclude `startKey` and p
 ## Why this design?
 
 - FoundationDB excels at ordered keyspaces and range reads. Separating current vs historic and composing keys as `(context prefix || logical key || qualifier || version)` plays to these strengths.
-- The engine mirrors the Maryk semantics already proven in other backends (RocksDB/HBase), which keeps the behavior consistent across storage engines and simplifies test reuse.
+- The engine mirrors the Maryk semantics already proven in other backends (RocksDB), which keeps the behavior consistent across storage engines and simplifies test reuse.
 
 ## Where to look in code
 

@@ -19,7 +19,7 @@ The RocksDB persistence layer is available for the **JVM**, **iOS**, **macOS**, 
 
 - **Model Serialization & Compatibility**: Serialize your schemas themselves and run compatibility checks across different clients, ensuring smooth upgrades and migrations.
 
-- **Version-Aware Storage and Queries**: Store data in [NoSQL data stores](store/memory/README.md) (in-memory/[RocksDB](store/rocksdb/README.md)/[HBase](store/hbase/README.md)) and leverage [versioning](core/documentation/versioning.md) to request historical states, compare past values, and minimize bandwidth by fetching only changed fields.
+- **Version-Aware Storage and Queries**: Store data in [NoSQL data stores](store/memory/README.md) (in-memory/[RocksDB](store/rocksdb/README.md)/[FoundationDB](store/foundationdb/README.md)) and leverage [versioning](core/documentation/versioning.md) to request historical states, compare past values, and minimize bandwidth by fetching only changed fields.
 
 - **Data Aggregations & Insights**: Perform [aggregations](core/documentation/aggregations.md) (count, sum, average, min/max, grouped by time intervals or enums) for richer analytics and decision-making.
 
@@ -66,7 +66,6 @@ val personFromJson = Person.readJson(json)
   - [In-memory store](store/memory/README.md) (non-persistent, suitable for testing)
   - [RocksDB-based store](store/rocksdb/README.md) (persistent, efficient for local storage)
   - [FoundationDB-based store](store/foundationdb/README.md) (persistent, scalable; JVM)
-  - [HBase-based store](store/hbase/README.md) (persistent and scalable store)
 
 ## Documentation
 
@@ -83,7 +82,6 @@ For detailed information, check out:
   - [Memory](store/memory/README.md) – In-memory store (non-persistent).
   - [RocksDB](store/rocksdb/README.md) – Persistent, high-performance store.
   - [FoundationDB](store/foundationdb/README.md) – Persistent, scalable transactional store (JVM).
-  - [HBase](store/hbase/README.md) – Persistent, scalabable high-performance store.
   - [Tests](store/test/README.md) – Common tests to ensure store reliability.
 
 ## Contributing

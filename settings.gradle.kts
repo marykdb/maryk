@@ -45,6 +45,5 @@ include(
     ":store:shared",
     ":store:memory",
     ":store:rocksdb",
-    ":store:hbase",
     ":store:foundationdb",
 )

@@ -143,11 +143,8 @@ class InjectTest {
     fun testInjectInObject() {
         context.addToCollect("where", Equals)
 
-        val getRequest = GetRequest.run {
-            create(
-                where injectWith Inject("where", EmbeddedMarykModel { this.model { value::ref } }),
-                context = context,
-            )
+        val getRequest = GetRequest.create(context = context) {
+                where inject Inject("where", EmbeddedMarykModel { this.model { value::ref } })
         }
 
         expect(InjectException("where")) {

@@ -33,36 +33,28 @@ private val context = RequestContext(mapOf(
 }
 
 class InjectIntoRequestTest {
-    private val getRequestWithInjectable = GetRequest.run {
-        create(
-            from with SimpleMarykModel,
-            keys injectWith Inject("keysToInject", GetRequest { keys::ref }),
-            where with Exists(SimpleMarykModel { value::ref }),
-            toVersion with 333uL,
-            filterSoftDeleted with true,
-            select with SimpleMarykModel.graph {
-                listOf(value)
-            },
-            context = context,
-        )
+    private val getRequestWithInjectable = GetRequest.create(context = context) {
+        from += SimpleMarykModel
+        keys inject Inject("keysToInject", GetRequest { keys::ref })
+        where += Exists(SimpleMarykModel { value::ref })
+        toVersion += 333uL
+        filterSoftDeleted += true
+        select += SimpleMarykModel.graph {
+            listOf(value)
+        }
     }
 
-    private val requests = Requests.run {
-        create(
-            requests withSerializable listOf(TypedValue(RequestType.Get, getRequestWithInjectable))
-        )
+    private val requests = Requests.create {
+        requests -= listOf(TypedValue(RequestType.Get, getRequestWithInjectable))
     }
 
     @Test
     fun testInjectInValuesGetRequest() {
         val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel) { references } } }
 
-        val getRequest = GetRequest.run {
-            create(
-                from with ReferencesModel,
-                keys injectWith Inject("referencedKeys", requestRef),
-                context = context,
-            )
+        val getRequest = GetRequest.create(context = context) {
+            from += ReferencesModel
+            keys += Inject("referencedKeys", requestRef)
         }
 
         expect(InjectException("referencedKeys")) {

@@ -1,10 +1,10 @@
 package maryk.core.properties.definitions.wrapper
 
-import maryk.core.models.ValuesCollectorContext
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.Inject
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectModel
+import maryk.core.models.ValuesCollectorContext
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
@@ -93,10 +93,22 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     }
 
     /** DSL support: add value via += inside a create { } block */
+    operator fun minusAssign(value: T?) { ValuesCollectorContext.add(value?.let {
+        ValueItem(this.index, value)
+    }) }
+
+    /** DSL support: add value via += inside a create { } block */
     operator fun plusAssign(value: TO?) { ValuesCollectorContext.add(this with value) }
 
-    /** DSL support: add value via function-call style inside a create { } block */
-    operator fun invoke(value: TO?) { ValuesCollectorContext.add(this with value) }
+    /** DSL support: inject via += inside a create { } block */
+    operator fun plusAssign(inject: Inject<*, *>?) {
+        inject?.let { ValuesCollectorContext.add(ValueItem(this.index, it)) }
+    }
+
+    /** DSL helper: explicit inject inside a create { } block */
+    infix fun inject(inject: Inject<*, *>?) {
+        inject?.let { ValuesCollectorContext.add(ValueItem(this.index, it)) }
+    }
 
     /** Get a reference to this definition inside [parentRef] */
     fun ref(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, IsPropertyDefinition<T>, *>
@@ -130,9 +142,9 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     /** Get the property from the [dataObject] and serialize it for transportation */
     fun getPropertyAndSerialize(dataObject: DO, context: CX?): T? {
         @Suppress("UNCHECKED_CAST")
-        this.toSerializable?.let {
+        return this.toSerializable?.let {
             return it.invoke(this.getter(dataObject), context)
-        } ?: return this.getter(dataObject) as T?
+        } ?: this.getter(dataObject) as T?
     }
 
     /** Capture the [value] in the [context] if needed */

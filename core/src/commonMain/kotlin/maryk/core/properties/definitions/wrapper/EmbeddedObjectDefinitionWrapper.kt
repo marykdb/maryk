@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.models.IsTypedObjectDataModel
+import maryk.core.models.ValuesCollectorContext
 import maryk.core.models.invoke
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -56,6 +57,19 @@ data class EmbeddedObjectDefinitionWrapper<
     /** Create an index [value] pair for maps */
     infix fun with(value: ObjectValues<EODO, DM>?) = value?.let {
         ValueItem(this.index, value)
+    }
+
+    /** Shorthand for inline embedded values: property += { ... } */
+    operator fun plusAssign(block: DM.() -> Unit) {
+        val dm = this.definition.dataModel
+        val items = ValuesCollectorContext.push(ValuesCollectorContext.currentSetDefaults())
+        try {
+            dm.block()
+        } finally {
+            ValuesCollectorContext.pop()
+        }
+        items.fillWithPairs(dm, emptyArray(), ValuesCollectorContext.currentSetDefaults())
+        ValuesCollectorContext.add(ValueItem(this.index, ObjectValues(dm, items)))
     }
 
     /** Get a top level reference on a model with [propertyDefinitionGetter] */

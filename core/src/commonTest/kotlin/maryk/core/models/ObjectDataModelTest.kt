@@ -92,16 +92,14 @@ internal class ObjectDataModelTest {
     @Test
     fun constructByMap() {
         expect(testObject) {
-            TestMarykObject.run {
-                create(
-                    string with testObject.string,
-                    int with testObject.int,
-                    uint with testObject.uint,
-                    double with testObject.double,
-                    dateTime with testObject.dateTime,
-                    bool with testObject.bool,
-                    enum with testObject.enum
-                )
+            TestMarykObject.create {
+                string += testObject.string
+                int += testObject.int
+                uint += testObject.uint
+                double += testObject.double
+                dateTime += testObject.dateTime
+                bool += testObject.bool
+                enum += testObject.enum
             }.toDataObject()
         }
     }

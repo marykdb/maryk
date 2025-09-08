@@ -7,9 +7,7 @@ import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.RequestContext
-import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
-import maryk.core.values.ValueItem
 
 typealias SimpleObjectModel<DO, DM> = TypedObjectDataModel<DO, DM, IsPropertyContext, IsPropertyContext>
 typealias DefinitionModel<DO> = TypedObjectDataModel<DO, IsObjectDataModel<DO>, ContainsDefinitionsContext, ContainsDefinitionsContext>
@@ -39,25 +37,10 @@ abstract class TypedObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : Is
         return block(typedThis)
     }
 
-    /** Create a new ObjectValues with given [pairs] */
+    /** Create a new ObjectValues from [block] */
     fun create(
-        vararg pairs: ValueItem?,
-        setDefaults: Boolean = true,
         context: RequestContext? = null,
-    ) = ObjectValues(
-        typedThis,
-        MutableValueItems().apply {
-            fillWithPairs(this@TypedObjectDataModel, pairs, setDefaults)
-        },
-        context,
-    )
-
-    /**
-     * Create new [ObjectValues] via DSL with direct property calls.
-     */
-    fun create(
         setDefaults: Boolean = true,
-        context: RequestContext? = null,
         block: DM.() -> Unit
     ): ObjectValues<DO, DM> {
         val items = ValuesCollectorContext.push(setDefaults)
@@ -69,4 +52,8 @@ abstract class TypedObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : Is
         items.fillWithPairs(typedThis, emptyArray(), setDefaults)
         return ObjectValues(typedThis, items, context)
     }
+
+    /** Convenience overload which applies defaults. */
+    fun create(block: DM.() -> Unit): ObjectValues<DO, DM> =
+        create(setDefaults = true, context = null, block = block)
 }

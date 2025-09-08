@@ -19,34 +19,30 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.expect
 
-private val testExtendedObject = TestMarykObject.run {
-    create(
-        string with "hay",
-        int with 4,
-        uint with 32u,
-        double with 3.555,
-        dateTime with LocalDateTime(2017, 12, 4, 12, 13),
-        bool with true,
-        enum with V1,
-        list with listOf(34, 2352, 3423, 766),
-        set with setOf(
-            LocalDate(2017, 12, 5),
-            LocalDate(2016, 3, 2),
-            LocalDate(1981, 12, 5)
-        ),
-        map with mapOf(
-            LocalTime(12, 55) to "yes",
-            LocalTime(10, 3) to "ahum"
-        ),
-        valueObject with TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true),
-        embeddedObject with EmbeddedMarykObject.run {
-            create(
-                value with "test"
-            )
-        },
-        multi with TypedValue(S3, EmbeddedMarykObject("subInMulti!")),
-        listOfString with listOf("test1", "another test", "🤗")
+private val testExtendedObject = TestMarykObject.create {
+    string += "hay"
+    int += 4
+    uint += 32u
+    double += 3.555
+    dateTime += LocalDateTime(2017, 12, 4, 12, 13)
+    bool += true
+    enum += V1
+    list += listOf(34, 2352, 3423, 766)
+    set += setOf(
+        LocalDate(2017, 12, 5),
+        LocalDate(2016, 3, 2),
+        LocalDate(1981, 12, 5)
     )
+    map += mapOf(
+        LocalTime(12, 55) to "yes",
+        LocalTime(10, 3) to "ahum"
+    )
+    valueObject += TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true)
+    embeddedObject += {
+        value += "test"
+    }
+    multi += TypedValue(S3, EmbeddedMarykObject("subInMulti!"))
+    listOfString += listOf("test1", "another test", "🤗")
 }
 
 private const val JSON =

@@ -6,7 +6,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.values
+import maryk.core.models.emptyValues
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -70,7 +70,6 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -387,7 +386,7 @@ private suspend fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
-                                        if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
+                                        if (hadPrevValue) valuesDefinition.dataModel.emptyValues() else null,
                                         value as Values<IsValuesDataModel>
                                     ) { valuesReference }
 

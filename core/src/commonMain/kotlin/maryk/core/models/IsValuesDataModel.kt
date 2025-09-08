@@ -4,6 +4,7 @@ import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
+import maryk.core.values.EmptyValueItems
 import maryk.core.values.IsValueItems
 import maryk.core.values.Values
 
@@ -56,3 +57,6 @@ fun <DM : IsValuesDataModel> DM.values(
     createMap: DM.() -> IsValueItems
 ) =
     Values(this, createMap(this), context)
+
+fun <DM : IsValuesDataModel> DM.emptyValues() =
+    Values(this, EmptyValueItems)

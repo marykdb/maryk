@@ -4,7 +4,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.values
+import maryk.core.models.emptyValues
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
 import maryk.core.processors.datastore.StorageTypeEnum.MapSize
@@ -18,7 +18,6 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
-import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
@@ -48,7 +47,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
     val values: Values<DM> = if (select != null && select.properties.isEmpty()) {
         // Don't read the values if no values are selected
-        this.values(null) { EmptyValueItems }
+        this.emptyValues()
     } else if (toVersion == null) {
         checkExistence(iterator, key)
 

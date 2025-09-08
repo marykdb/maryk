@@ -20,6 +20,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.IsValueItems
 import maryk.core.values.IsValues
 import maryk.core.values.MutableValueItems
+import maryk.core.values.Values
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -300,9 +301,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                     items
                 } as V
             is IsValuesDataModel ->
-                this.model.values(context as? RequestContext) {
-                    items
-                } as V
+                Values(this.model, items, context as? RequestContext) as V
             else -> throw Exception("Unknown properties type ${this.model::class.simpleName}")
         }
     }

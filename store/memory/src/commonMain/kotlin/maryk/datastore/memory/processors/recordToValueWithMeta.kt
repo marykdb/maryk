@@ -3,11 +3,10 @@ package maryk.datastore.memory.processors
 import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.values
+import maryk.core.models.emptyValues
 import maryk.core.processors.datastore.readStorageToValues
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.ValuesWithMetaData
-import maryk.core.values.EmptyValueItems
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordValue
@@ -26,7 +25,7 @@ internal fun <DM : IsRootDataModel> DM.recordToValueWithMeta(
 
     val values = if (select != null && select.properties.isEmpty()) {
         // Don't read the values if no values are selected
-        this.values(null) { EmptyValueItems }
+        this.emptyValues()
     } else {
         this.readStorageToValues(
             getQualifier = { resultHandler ->

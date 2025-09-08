@@ -6,7 +6,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.values
+import maryk.core.models.emptyValues
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.ValueWriter
 import maryk.core.processors.datastore.writeIncMapAdditionsToStorage
@@ -62,7 +62,6 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
 import maryk.datastore.memory.processors.changers.createCountUpdater
 import maryk.datastore.memory.processors.changers.deleteByReference
@@ -140,7 +139,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             if (validationExceptions == null) {
                 validationExceptions = mutableListOf()
             }
-            validationExceptions!!.add(ve)
+            validationExceptions.add(ve)
         }
 
         var uniquesToIndex: MutableMap<DataRecordValue<Comparable<Any>>, Any?>? = null
@@ -336,7 +335,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
 
                                     @Suppress("UNCHECKED_CAST")
                                     valuesDefinition.validateWithRef(
-                                        if (hadPrevValue) valuesDefinition.dataModel.values(null) { EmptyValueItems } else null,
+                                        if (hadPrevValue) valuesDefinition.dataModel.emptyValues() else null,
                                         value as Values<IsValuesDataModel>
                                     ) { valuesReference }
 
@@ -371,7 +370,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                                 dataStore.validateUniqueNotExists(comparableValue, objectToChange)
                                                 when (uniquesToIndex) {
                                                     null -> uniquesToIndex = mutableMapOf(comparableValue to previousValue)
-                                                    else -> uniquesToIndex!![comparableValue] = previousValue
+                                                    else -> uniquesToIndex[comparableValue] = previousValue
                                                 }
                                             } catch (e: UniqueException) {
                                                 // Only throw if key is not equal otherwise ignore as it is the same as existing key
@@ -606,11 +605,11 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             if (newValue == null) {
                 if (oldValue != null) {
                     dataStore.removeFromIndex(objectToChange, it.referenceStorageByteArray.bytes, version, oldValue)
-                    indexUpdates!!.add(IndexDelete(it.referenceStorageByteArray, Bytes(oldValue)))
+                    indexUpdates.add(IndexDelete(it.referenceStorageByteArray, Bytes(oldValue)))
                 } // else ignore since did not exist
             } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
                 dataStore.addToIndex(objectToChange, it.referenceStorageByteArray.bytes, newValue, version, oldValue)
-                indexUpdates!!.add(IndexUpdate(it.referenceStorageByteArray, Bytes(newValue), oldValue?.let { Bytes(oldValue) }))
+                indexUpdates.add(IndexUpdate(it.referenceStorageByteArray, Bytes(newValue), oldValue?.let { Bytes(oldValue) }))
             }
         }
 

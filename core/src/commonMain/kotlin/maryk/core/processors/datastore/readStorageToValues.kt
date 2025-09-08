@@ -79,9 +79,7 @@ fun <DM : IsRootDataModel> DM.readStorageToValues(
     }
 
     // Create Values
-    return values(null) {
-        mutableValuesItems
-    }
+    return Values(this, mutableValuesItems)
 }
 
 /**
@@ -413,7 +411,7 @@ private fun <DM : IsRootDataModel> readEmbeddedValues(
     addValueToOutput: AddValue
 ) {
     val dataModel = definition.dataModel
-    val values = dataModel.values { MutableValueItems() }
+    val values = Values(dataModel, MutableValueItems())
 
     addValueToOutput(values)
 

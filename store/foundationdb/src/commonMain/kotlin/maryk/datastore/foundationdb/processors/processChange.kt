@@ -8,7 +8,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.values
+import maryk.core.models.emptyValues
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.writeIncMapAdditionsToStorage
@@ -60,7 +60,6 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.core.values.EmptyValueItems
 import maryk.core.values.IsValuesGetter
 import maryk.core.values.Values
 import maryk.datastore.foundationdb.FoundationDBDataStore
@@ -342,7 +341,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             try {
                                                 val valuesRef = reference as IsPropertyReference<Values<IsValuesDataModel>, IsPropertyDefinition<Values<IsValuesDataModel>>, *>
                                                 valuesDef.validateWithRef(
-                                                    if (hadPrev) valuesDef.dataModel.values(null) { EmptyValueItems } else null,
+                                                    if (hadPrev) valuesDef.dataModel.emptyValues() else null,
                                                     value as Values<IsValuesDataModel>
                                                 ) { valuesRef }
                                             } catch (e: ValidationException) { addValidation(e) }

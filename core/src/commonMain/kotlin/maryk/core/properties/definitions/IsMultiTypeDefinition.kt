@@ -7,7 +7,6 @@ import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
@@ -28,6 +27,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.RequestContext
 import maryk.core.values.EmptyValueItems
+import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
@@ -198,7 +198,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
                     @Suppress("UNCHECKED_CAST")
                     val value: T = when (definition) {
                         is IsEmbeddedValuesDefinition<*, *> ->
-                            definition.dataModel.values(null) { EmptyValueItems } as T
+                            Values(definition.dataModel, EmptyValueItems) as T
                         is IsListDefinition<*, *> -> emptyList<Any>() as T
                         is IsSetDefinition<*, *> -> emptySet<Any>() as T
                         is IsMapDefinition<*, *, *> -> emptyMap<Any, Any>() as T

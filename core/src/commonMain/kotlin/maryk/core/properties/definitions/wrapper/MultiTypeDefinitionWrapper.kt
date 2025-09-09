@@ -82,11 +82,11 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
 
     /** Specific extension to support fetching deeper references with [type] */
     @Suppress("UNCHECKED_CAST")
-    fun <DM : IsValuesDataModel, T : Any, R : IsPropertyReference<T, IsDefinitionWrapper<T, *, *, *>, *>> withType(
+    fun <DM : IsValuesDataModel, T : Any, W : IsPropertyDefinition<T>, R : IsPropertyReference<T, W, *>> withType(
         type: TypeEnum<Values<DM>>,
         referenceGetter: DM.() ->
             (AnyOutPropertyReference?) -> R
-    ): (AnyOutPropertyReference?) -> R  =
+    ): (AnyOutPropertyReference?) -> R =
         {
             val typeRef = this.typedValueReference(type as E, it)
             (this.definition(type) as EmbeddedValuesDefinition<DM>).dataModel(

@@ -45,6 +45,13 @@ internal class DataObjectPropertyReferenceTest {
 
         expect("multi.*S3.value") { TestMarykModel { multi.withType(S3) { value::ref } }.completeName }
         expect("multi.*S3.model.value") { TestMarykModel { multi.withType(S3) { model { value::ref } } }.completeName }
+        expect("multi.*S3.marykModel.set.#2017-12-05") {
+            TestMarykModel {
+                multi.withType(S3) {
+                    marykModel { set refAt LocalDate(2017, 12, 5) }
+                }
+            }.completeName
+        }
 
         expect("mapIntObject.#2") { ComplexModel { mapIntObject refToKey 2u }.completeName }
         expect("mapIntObject.@2") { ComplexModel { mapIntObject refAt 2u }.completeName }
@@ -95,6 +102,13 @@ internal class DataObjectPropertyReferenceTest {
 
         expect("691d09") { TestMarykModel { multi.withType(S3) { value::ref } }.toStorageByteArray().toHex() }
         expect("691d1609") { TestMarykModel { multi.withType(S3) { model { value::ref } } }.toStorageByteArray().toHex() }
+        expect("691d1e4b0480004461") {
+            TestMarykModel {
+                multi.withType(S3) {
+                    marykModel { set refAt LocalDate(2017, 12, 5) }
+                }
+            }.toStorageByteArray().toHex()
+        }
 
         expect("1c040000000209") { ComplexModel { mapIntObject.at(2u) { value::ref } }.toStorageByteArray().toHex() }
         expect("1c04000000021609") { ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.toStorageByteArray().toHex() }

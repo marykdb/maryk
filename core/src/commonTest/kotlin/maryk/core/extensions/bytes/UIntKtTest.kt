@@ -47,6 +47,24 @@ internal class UIntKtTest {
         }
     }
 
+    @OptIn(ExperimentalUnsignedTypes::class)
+    @Test
+    fun testStreaming2Conversion() {
+        val bc = ByteCollector()
+        uintArrayOf(
+            0u,
+            1u,
+            2222u,
+            0xFFFFu
+        ).forEach { uInt ->
+            bc.reserve(2)
+            uInt.writeBytes(bc::write, 2)
+
+            expect(uInt) { initUInt(bc::read, 2) }
+            bc.reset()
+        }
+    }
+
     @Test
     fun testOutOfRangeConversion() {
         assertFailsWith<IllegalArgumentException> {

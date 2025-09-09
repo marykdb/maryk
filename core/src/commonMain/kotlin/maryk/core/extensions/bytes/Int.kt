@@ -22,12 +22,11 @@ internal fun Int.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
 internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
     var int = 0
     val firstByte = reader()
-    // Skip bytes if below certain length
+    // Sign‑extend if shorter than 4 bytes: prefill with 0xFF for negatives, 0x00 otherwise,
+    // then shift to make room for the remaining bytes.
     if (length < 4) {
-        if (firstByte and SIGN_BYTE != SIGN_BYTE) { // Set to max byte to have correct value if negative
-            int = int xor 0xFF
-        }
-        int = int shl 8 * (8 - length)
+        int = if (firstByte and SIGN_BYTE != SIGN_BYTE) -1 else 0
+        int = int shl ((4 - length) * 8)
     }
     int = int xor ((firstByte xor SIGN_BYTE).toInt() and 0xFF)
     for (it in 1 until length) {

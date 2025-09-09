@@ -25,12 +25,11 @@ internal fun Long.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
 internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
     var long = 0L
     val firstByte = reader()
-    // Skip bytes if below certain length
+    // Sign‑extend if shorter than 8 bytes: prefill with 0xFF for negatives, 0x00 otherwise,
+    // then shift to make room for the remaining bytes.
     if (length < 8) {
-        if (firstByte and SIGN_BYTE != SIGN_BYTE) { // Set to max byte to have correct value if negative
-            long = long xor 0xFF
-        }
-        long = long shl 8 * (8 - length)
+        long = if (firstByte and SIGN_BYTE != SIGN_BYTE) -1L else 0L
+        long = long shl ((8 - length) * 8)
     }
     long = long xor ((firstByte xor SIGN_BYTE).toLong() and 0xFF)
     for (it in 1 until length) {

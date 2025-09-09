@@ -36,6 +36,7 @@ internal class IntKtTest {
     fun testStreaming3Conversion() {
         val bc = ByteCollector()
         intArrayOf(
+            -0x800000,
             -0x7FFFFF,
             -1,
             0,

@@ -57,6 +57,7 @@ link_from_path_if_present() {
     /opt/homebrew/lib/libfdb_c.*
     /usr/lib/libfdb_c.*
     /usr/lib64/libfdb_c.*
+    /Library/FoundationDB/lib/libfdb_c.*
   )
   local found_lib=0
   for c in "${candidates[@]}"; do
@@ -77,7 +78,8 @@ link_from_path_if_present() {
 install_macos() {
   local tmp
   tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' EXIT
+  # Clean up the temp dir when this function returns (avoids set -u "unbound variable" on EXIT)
+  trap 'rm -rf "${tmp:-}"' RETURN
 
   local pkg
   pkg="FoundationDB-${FDB_VERSION}_arm64.pkg"
@@ -87,29 +89,85 @@ install_macos() {
   log "Downloading $pkg from FoundationDB releases"
   curl -fL "$url" -o "$tmp/$pkg"
 
-  pkgutil --expand "$tmp/$pkg" "$tmp/pkg"
+  # Expand the pkg fully (handles nested component pkgs)
+  pkgutil --expand-full "$tmp/$pkg" "$tmp/expanded"
   mkdir -p "$tmp/root"
-  (
-    cd "$tmp/root"
-    gzip -dc "$tmp/pkg/Payload" | cpio -id >/dev/null 2>&1
-  )
 
-  if [[ -x "$tmp/root/usr/local/bin/fdbserver" ]]; then
-    cp -f "$tmp/root/usr/local/bin/fdbserver" "$BIN_DIR/"
-    chmod +x "$BIN_DIR/fdbserver"
-  fi
-  if [[ -x "$tmp/root/usr/local/bin/fdbcli" ]]; then
-    cp -f "$tmp/root/usr/local/bin/fdbcli" "$BIN_DIR/"
-    chmod +x "$BIN_DIR/fdbcli"
+  # Extract every Payload/Payload~ we can find from the expanded tree
+  # Payloads may be gzip/xz-compressed cpio, or plain cpio. Prefer bsdtar if available.
+  extract_payload() {
+    local payload_file="$1"
+    if command -v bsdtar >/dev/null 2>&1; then
+      bsdtar -C "$tmp/root" -xf "$payload_file" 2>/dev/null || true
+      return
+    fi
+    local desc
+    desc="$(file -b "$payload_file" || true)"
+    if echo "$desc" | grep -qi 'xz'; then
+      xz -dc "$payload_file" | (cd "$tmp/root" && cpio -idmu >/dev/null 2>&1) || true
+    elif echo "$desc" | grep -qi 'gzip'; then
+      gzip -dc "$payload_file" | (cd "$tmp/root" && cpio -idmu >/dev/null 2>&1) || true
+    else
+      (cd "$tmp/root" && cpio -idmu < "$payload_file" >/dev/null 2>&1) || true
+    fi
+  }
+
+  while IFS= read -r payload; do
+    extract_payload "$payload"
+  done < <(find "$tmp/expanded" -type f \( -name 'Payload' -o -name 'Payload~' \))
+
+  # Try to locate binaries anywhere in the expanded package
+  local found_bin=0
+  while IFS= read -r f; do
+    cp -f "$f" "$BIN_DIR/"
+    chmod +x "$BIN_DIR/$(basename "$f")"
+    found_bin=1
+  done < <(find "$tmp/root" -type f -name fdbserver -perm -111 2>/dev/null)
+
+  while IFS= read -r f; do
+    cp -f "$f" "$BIN_DIR/"
+    chmod +x "$BIN_DIR/$(basename "$f")"
+    found_bin=1
+  done < <(find "$tmp/root" -type f -name fdbcli -perm -111 2>/dev/null)
+
+  # If we still didn't find binaries in the expanded pkg, fall back to using the system installer.
+  if [[ "$found_bin" -eq 0 && ! -x "$BIN_DIR/fdbserver" && ! -x "$BIN_DIR/fdbcli" ]]; then
+    warn "Could not locate fdbserver/fdbcli in expanded pkg; attempting system install via 'installer'"
+    if command -v sudo >/dev/null 2>&1; then
+      sudo installer -pkg "$tmp/$pkg" -target / || true
+    else
+      installer -pkg "$tmp/$pkg" -target / || true
+    fi
+    # Try linking from PATH after system install
+    if link_from_path_if_present; then
+      found_bin=1
+    fi
   fi
 
+  if [[ "$found_bin" -eq 0 && ! -x "$BIN_DIR/fdbserver" && ! -x "$BIN_DIR/fdbcli" ]]; then
+    warn "Could not locate fdbserver/fdbcli after expansion and installer fallback; showing contents for debugging"
+    find "$tmp/expanded" -maxdepth 3 -type f -print | sed 's/^/[install-foundationdb]   /' || true
+    find "$tmp/root" -maxdepth 6 -print | sed 's/^/[install-foundationdb]   /' || true
+  fi
+
+  # Copy libfdb_c.* from common locations inside the pkg root
   shopt -s nullglob
-  for lib in "$tmp/root"/usr/local/lib/libfdb_c.*; do
-    cp -f "$lib" "$LIB_DIR/"
+  for lib in \
+    "$tmp/root"/usr/local/lib/libfdb_c.* \
+    "$tmp/root"/usr/lib/libfdb_c.* \
+    "$tmp/root"/Library/FoundationDB/lib/libfdb_c.*; do
+    cp -f "$lib" "$LIB_DIR/" 2>/dev/null || true
   done
   shopt -u nullglob
 
-  log "Installed FoundationDB binaries into $BIN_DIR"
+  # Also try system install lib location (used by macOS Installer)
+  if compgen -G "/Library/FoundationDB/lib/libfdb_c.*" > /dev/null; then
+    cp -f /Library/FoundationDB/lib/libfdb_c.* "$LIB_DIR/" 2>/dev/null || true
+  fi
+
+  if [[ -x "$BIN_DIR/fdbserver" ]]; then
+    log "Installed FoundationDB binaries into $BIN_DIR"
+  fi
 }
 
 install_linux_from_deb() {
@@ -124,7 +182,8 @@ install_linux_from_deb() {
 
   local tmp
   tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' EXIT
+  # Clean up on function return to avoid EXIT referencing unset vars under `set -u`
+  trap 'rm -rf "${tmp:-}"' RETURN
 
   local base="https://github.com/apple/foundationdb/releases/download/${FDB_VERSION}"
   local clients_pkg="foundationdb-clients_${FDB_VERSION}-1_${deb_arch}.deb"

@@ -20,7 +20,9 @@ FDB_LISTEN="127.0.0.1:4500"
 
 mkdir -p "$DATA_DIR" "$LOG_DIR"
 
-bash "$SCRIPT_DIR/install-foundationdb.sh" >/dev/null
+if [[ ! -x "$BIN_DIR/fdbserver" ]] && ! command -v fdbserver >/dev/null 2>&1; then
+  bash "$SCRIPT_DIR/install-foundationdb.sh"
+fi
 
 export PATH="$BIN_DIR:$PATH"
 # Set library paths for JVM tests to pick up libfdb_c; Gradle also sets java.library.path.

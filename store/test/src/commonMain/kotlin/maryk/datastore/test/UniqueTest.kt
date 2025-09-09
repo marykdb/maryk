@@ -10,7 +10,9 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
@@ -28,7 +30,10 @@ class UniqueTest(
 
     override val allTests = mapOf(
         "checkUnique" to ::checkUnique,
-        "checkUniqueChange" to ::checkUniqueChange
+        "checkUniqueChange" to ::checkUniqueChange,
+        "checkUniqueChangeRelease" to ::checkUniqueChangeRelease,
+        "checkUniqueChangeFailDoesNotChange" to ::checkUniqueChangeFailDoesNotChange,
+        "checkUniqueAddDuplicate" to ::checkUniqueAddDuplicate,
     )
 
     override suspend fun initData() {
@@ -100,5 +105,64 @@ class UniqueTest(
                 keys.add(it.key)
             }
         }
+    }
+
+    suspend fun checkUniqueChangeRelease() {
+        val changeResponse = dataStore.execute(
+            UniqueModel.change(
+                keys[0].change(
+                    Change(
+                        UniqueModel { email::ref } with "new@test.com"
+                    )
+                )
+            )
+        )
+
+        changeResponse.statuses.forEach { status ->
+            assertStatusIs<ChangeSuccess<UniqueModel>>(status)
+        }
+
+        dataStore.execute(addUniqueItem).statuses.forEach { status ->
+            assertStatusIs<AddSuccess<UniqueModel>>(status).also {
+                keys.add(it.key)
+            }
+        }
+    }
+
+    suspend fun checkUniqueAddDuplicate() {
+        val addResponse = dataStore.execute(
+            UniqueModel.add(
+                UniqueModel.create { email += "dup@test.com" },
+                UniqueModel.create { email += "dup@test.com" },
+            )
+        )
+
+        val firstStatus = assertStatusIs<AddSuccess<UniqueModel>>(addResponse.statuses[0])
+        keys.add(firstStatus.key)
+
+        val fail = assertStatusIs<ValidationFail<UniqueModel>>(addResponse.statuses[1])
+        val alreadyExists = assertIs<AlreadyExistsException>(fail.exceptions.first())
+        expect(UniqueModel { email::ref }) { alreadyExists.reference }
+        expect(firstStatus.key) { alreadyExists.key }
+    }
+
+    suspend fun checkUniqueChangeFailDoesNotChange() {
+        val changeResponse = dataStore.execute(
+            UniqueModel.change(
+                keys[1].change(
+                    Change(
+                        UniqueModel { email::ref } with "test@test.com"
+                    )
+                )
+            )
+        )
+
+        val fail = assertStatusIs<ValidationFail<UniqueModel>>(changeResponse.statuses.first())
+        assertIs<AlreadyExistsException>(fail.exceptions.first())
+
+        val getResponse = dataStore.execute(
+            UniqueModel.get(keys[1])
+        )
+        expect("bla@bla.com") { getResponse.values.first().values { email } }
     }
 }

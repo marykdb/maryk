@@ -17,6 +17,7 @@ import maryk.json.ValueType
 import maryk.json.ValueType.IsNullValueType
 import maryk.core.properties.definitions.index.Multiple as MultipleInstance
 import maryk.core.properties.definitions.index.Reversed as ReversedInstance
+import maryk.core.properties.definitions.index.ReferenceToMax as ReferenceToMaxInstance
 
 /** Indexed type of property definitions */
 sealed class IndexKeyPartType<out T: IsIndexable>(
@@ -28,10 +29,13 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
     }
     object Reversed : IndexKeyPartType<ReversedInstance<*>>(3u), ValueType<String>
     object Multiple : IndexKeyPartType<MultipleInstance>(4u), ArrayType
+    object ReferenceToMax : IndexKeyPartType<ReferenceToMaxInstance<*>>(5u), ValueType<String> {
+        override val name = "RefToMax"
+    }
 
     companion object : IndexedEnumDefinition<IndexKeyPartType<*>>(
         IndexKeyPartType::class, {
-            listOf(UUID, Reference, Reversed, Multiple)
+            listOf(UUID, Reference, Reversed, Multiple, ReferenceToMax)
         }
     )
 }
@@ -45,7 +49,8 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
                     ?: throw ContextNotFoundException()
             }
         ),
-        IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model })
+        IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model }),
+        IndexKeyPartType.ReferenceToMax to EmbeddedObjectDefinition(dataModel = { ReferenceToMaxInstance.Model })
     )
 
 internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =

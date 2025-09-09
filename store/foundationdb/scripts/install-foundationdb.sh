@@ -80,7 +80,7 @@ install_macos() {
   trap 'rm -rf "$tmp"' EXIT
 
   local pkg
-  pkg="FoundationDB-${FDB_VERSION}.pkg"
+  pkg="FoundationDB-${FDB_VERSION}_arm64.pkg"
   local url
   url="https://github.com/apple/foundationdb/releases/download/${FDB_VERSION}/${pkg}"
 

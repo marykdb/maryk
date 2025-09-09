@@ -7,7 +7,7 @@ import kotlin.experimental.xor
 /** Write the bytes of this UInt to a [writer] */
 fun UInt.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
     if (length !in 2..4) {
-        throw IllegalArgumentException("Length should be within range of 3 to 4")
+        throw IllegalArgumentException("Length should be within range of 2 to 4")
     }
 
     for (it in 0 until length) {

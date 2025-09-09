@@ -62,6 +62,7 @@ val installFoundationDB by tasks.registering(Exec::class) {
     if (os.isWindows) {
         commandLine("powershell", "-ExecutionPolicy", "Bypass", "-File", scriptsDir.resolve("install-foundationdb.ps1").absolutePath)
     } else {
+        environment("VERBOSE", "1")
         commandLine("bash", scriptsDir.resolve("install-foundationdb.sh").absolutePath)
     }
 }

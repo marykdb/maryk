@@ -10,7 +10,7 @@ set -euo pipefail
 #   * Else attempt platform-native install:
 #       - macOS: download .pkg from GitHub Releases and extract.
 #       - Linux: download .deb packages from GitHub Releases and extract.
-#       - Windows: print hint to use the PowerShell installer in this repo.
+#       - Windows: print hint to use the PowerShell script in this repo.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -24,150 +24,100 @@ if [[ "${1:-}" == "--version" && -n "${2:-}" ]]; then
   FDB_VERSION="$2"
 fi
 
+: "${VERBOSE:=0}"
+
 mkdir -p "$BIN_DIR" "$LIB_DIR"
 
 log() { echo "[install-foundationdb] $*"; }
 warn() { echo "[install-foundationdb][WARN] $*" >&2; }
 err() { echo "[install-foundationdb][ERROR] $*" >&2; exit 1; }
 
+debug() { [[ "${VERBOSE:-0}" == "1" ]] && echo "[install-foundationdb][DEBUG] $*"; }
+safe_copy() {
+  # Usage: safe_copy <src> <dst_dir>
+  local src
+  local dst_dir
+  local dst
+  src="$1"
+  dst_dir="$2"
+  dst="$dst_dir/$(basename -- "$src")"
+  if [[ -e "$dst" ]] && [[ "$src" -ef "$dst" ]]; then
+    debug "Skip copy: $dst is already the same file as $src"
+    return 0
+  fi
+  cp -f "$src" "$dst_dir/" 2>/dev/null || true
+}
+
 have() { command -v "$1" >/dev/null 2>&1; }
 
-link_from_path_if_present() {
-  if have fdbserver; then
-    local fs
-    fs="$(command -v fdbserver)"
-    ln -sf "$fs" "$BIN_DIR/fdbserver"
-    log "Linked fdbserver from PATH: $fs"
-  else
-    return 1
-  fi
-
-  if have fdbcli; then
-    local fc
-    fc="$(command -v fdbcli)"
-    ln -sf "$fc" "$BIN_DIR/fdbcli"
-    log "Linked fdbcli from PATH: $fc"
-  else
-    warn "fdbcli not found on PATH; some setup steps may fail"
-  fi
-
-  # Try to find libfdb_c.* on common locations and link/copy into LIB_DIR
-  local candidates=(
-    /usr/local/lib/libfdb_c.*
-    /opt/homebrew/lib/libfdb_c.*
-    /usr/lib/libfdb_c.*
-    /usr/lib64/libfdb_c.*
-    /Library/FoundationDB/lib/libfdb_c.*
-  )
-  local found_lib=0
-  for c in "${candidates[@]}"; do
-    for f in $c; do
-      if [[ -e "$f" ]]; then
-        cp -f "$f" "$LIB_DIR/" || true
-        found_lib=1
-      fi
-    done
-  done
-  if [[ "$found_lib" -eq 1 ]]; then
-    log "Copied libfdb_c.* into $LIB_DIR"
-  else
-    warn "libfdb_c.* not found; Java client may not load without it"
-  fi
+macos_pkg_arch() {
+  case "$(uname -m)" in
+    arm64|aarch64) echo "arm64" ;;
+    x86_64|amd64)  echo "x86_64" ;;
+    *) echo "arm64" ;; # default to arm64 on modern runners
+  esac
 }
 
 install_macos() {
   local tmp
   tmp="$(mktemp -d)"
-  # Clean up the temp dir when this function returns (avoids set -u "unbound variable" on EXIT)
-  trap 'rm -rf "${tmp:-}"' RETURN
+  # shellcheck disable=SC2064 # Expand now to capture the literal tmp path for RETURN trap
+  trap "rm -rf -- '$tmp'" RETURN
 
-  local pkg
-  pkg="FoundationDB-${FDB_VERSION}_arm64.pkg"
-  local url
-  url="https://github.com/apple/foundationdb/releases/download/${FDB_VERSION}/${pkg}"
+  local arch
+  arch="$(macos_pkg_arch)"
+  local pkg="FoundationDB-${FDB_VERSION}_${arch}.pkg"
+  local url="https://github.com/apple/foundationdb/releases/download/${FDB_VERSION}/${pkg}"
 
   log "Downloading $pkg from FoundationDB releases"
-  curl -fL "$url" -o "$tmp/$pkg"
+  curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$url" -o "$tmp/$pkg"
 
-  # Expand the pkg fully (handles nested component pkgs)
+  # Expand meta-pkg
   pkgutil --expand-full "$tmp/$pkg" "$tmp/expanded"
   mkdir -p "$tmp/root"
 
-  # Extract every Payload/Payload~ we can find from the expanded tree
-  # Payloads may be gzip/xz-compressed cpio, or plain cpio. Prefer bsdtar if available.
-  extract_payload() {
-    local payload_file="$1"
-    if command -v bsdtar >/dev/null 2>&1; then
-      bsdtar -C "$tmp/root" -xf "$payload_file" 2>/dev/null || true
-      return
-    fi
-    local desc
-    desc="$(file -b "$payload_file" || true)"
-    if echo "$desc" | grep -qi 'xz'; then
-      xz -dc "$payload_file" | (cd "$tmp/root" && cpio -idmu >/dev/null 2>&1) || true
-    elif echo "$desc" | grep -qi 'gzip'; then
-      gzip -dc "$payload_file" | (cd "$tmp/root" && cpio -idmu >/dev/null 2>&1) || true
+  # Copy directory Payloads into $tmp/root (FoundationDB uses directory Payloads on macOS)
+  while IFS= read -r dir; do
+    log "Copying directory payload: $dir -> $tmp/root"
+    if command -v rsync >/dev/null 2>&1; then
+      rsync -a "$dir"/ "$tmp/root"/ || true
     else
-      (cd "$tmp/root" && cpio -idmu < "$payload_file" >/dev/null 2>&1) || true
+      (cd "$dir" && tar -cf - .) | (cd "$tmp/root" && tar -xf -) || cp -R "$dir"/. "$tmp/root"/ || true
     fi
-  }
+  done < <( (find "$tmp/expanded" -type d -name Payload 2>/dev/null) || true )
 
-  while IFS= read -r payload; do
-    extract_payload "$payload"
-  done < <(find "$tmp/expanded" -type f \( -name 'Payload' -o -name 'Payload~' \))
-
-  # Try to locate binaries anywhere in the expanded package
-  local found_bin=0
-  while IFS= read -r f; do
-    cp -f "$f" "$BIN_DIR/"
-    chmod +x "$BIN_DIR/$(basename "$f")"
-    found_bin=1
-  done < <(find "$tmp/root" -type f -name fdbserver -perm -111 2>/dev/null)
-
-  while IFS= read -r f; do
-    cp -f "$f" "$BIN_DIR/"
-    chmod +x "$BIN_DIR/$(basename "$f")"
-    found_bin=1
-  done < <(find "$tmp/root" -type f -name fdbcli -perm -111 2>/dev/null)
-
-  # If we still didn't find binaries in the expanded pkg, fall back to using the system installer.
-  if [[ "$found_bin" -eq 0 && ! -x "$BIN_DIR/fdbserver" && ! -x "$BIN_DIR/fdbcli" ]]; then
-    warn "Could not locate fdbserver/fdbcli in expanded pkg; attempting system install via 'installer'"
-    if command -v sudo >/dev/null 2>&1; then
-      sudo installer -pkg "$tmp/$pkg" -target / || true
-    else
-      installer -pkg "$tmp/$pkg" -target / || true
-    fi
-    # Try linking from PATH after system install
-    if link_from_path_if_present; then
-      found_bin=1
-    fi
+  # Copy binaries we know exist in the pkg layout
+  if [[ -f "$tmp/root/usr/local/libexec/fdbserver" ]]; then
+    safe_copy "$tmp/root/usr/local/libexec/fdbserver" "$BIN_DIR"
+    chmod +x "$BIN_DIR/fdbserver" 2>/dev/null || true
+    log "Installed fdbserver to $BIN_DIR"
+  else
+    err "Expected fdbserver not found under usr/local/libexec in expanded package."
   fi
 
-  if [[ "$found_bin" -eq 0 && ! -x "$BIN_DIR/fdbserver" && ! -x "$BIN_DIR/fdbcli" ]]; then
-    warn "Could not locate fdbserver/fdbcli after expansion and installer fallback; showing contents for debugging"
-    find "$tmp/expanded" -maxdepth 3 -type f -print | sed 's/^/[install-foundationdb]   /' || true
-    find "$tmp/root" -maxdepth 6 -print | sed 's/^/[install-foundationdb]   /' || true
+  if [[ -f "$tmp/root/usr/local/bin/fdbcli" ]]; then
+    safe_copy "$tmp/root/usr/local/bin/fdbcli" "$BIN_DIR"
+    chmod +x "$BIN_DIR/fdbcli" 2>/dev/null || true
+    log "Installed fdbcli to $BIN_DIR"
+  else
+    warn "fdbcli not found under usr/local/bin in expanded package (continuing)."
   fi
 
-  # Copy libfdb_c.* from common locations inside the pkg root
+  # Copy client library
   shopt -s nullglob
-  for lib in \
-    "$tmp/root"/usr/local/lib/libfdb_c.* \
-    "$tmp/root"/usr/lib/libfdb_c.* \
-    "$tmp/root"/Library/FoundationDB/lib/libfdb_c.*; do
-    cp -f "$lib" "$LIB_DIR/" 2>/dev/null || true
+  for lib in "$tmp/root"/usr/local/lib/libfdb_c.*; do
+    safe_copy "$lib" "$LIB_DIR"
   done
   shopt -u nullglob
 
-  # Also try system install lib location (used by macOS Installer)
-  if compgen -G "/Library/FoundationDB/lib/libfdb_c.*" > /dev/null; then
-    cp -f /Library/FoundationDB/lib/libfdb_c.* "$LIB_DIR/" 2>/dev/null || true
+  if [[ "${VERBOSE:-0}" == "1" ]]; then
+    log "Contents of $BIN_DIR:"
+    ls -l "$BIN_DIR" || true
+    log "Contents of $LIB_DIR:"
+    ls -l "$LIB_DIR" || true
   fi
 
-  if [[ -x "$BIN_DIR/fdbserver" ]]; then
-    log "Installed FoundationDB binaries into $BIN_DIR"
-  fi
+  log "FoundationDB installation complete (macOS minimal path)"
 }
 
 install_linux_from_deb() {
@@ -182,16 +132,16 @@ install_linux_from_deb() {
 
   local tmp
   tmp="$(mktemp -d)"
-  # Clean up on function return to avoid EXIT referencing unset vars under `set -u`
-  trap 'rm -rf "${tmp:-}"' RETURN
+  # shellcheck disable=SC2064 # Expand now to capture the literal tmp path for RETURN trap
+  trap "rm -rf -- '$tmp'" RETURN
 
   local base="https://github.com/apple/foundationdb/releases/download/${FDB_VERSION}"
   local clients_pkg="foundationdb-clients_${FDB_VERSION}-1_${deb_arch}.deb"
   local server_pkg="foundationdb-server_${FDB_VERSION}-1_${deb_arch}.deb"
 
   log "Downloading $clients_pkg and $server_pkg"
-  curl -fL "$base/$clients_pkg" -o "$tmp/$clients_pkg"
-  curl -fL "$base/$server_pkg" -o "$tmp/$server_pkg"
+  curl -fsSL "$base/$clients_pkg" -o "$tmp/$clients_pkg"
+  curl -fsSL "$base/$server_pkg" -o "$tmp/$server_pkg"
 
   extract_deb() {
     local deb="$1"
@@ -235,11 +185,9 @@ install_linux() {
     warn "Attempting apt install (may require sudo password)"
     sudo apt-get update || true
     sudo apt-get install -y foundationdb-clients foundationdb-server || true
-    link_from_path_if_present || true
   elif have dnf && have sudo; then
     warn "Attempting dnf install (may require sudo password)"
     sudo dnf install -y foundationdb || true
-    link_from_path_if_present || true
   else
     log "Falling back to downloading .deb packages from GitHub releases"
     install_linux_from_deb || warn "Deb extraction method failed"
@@ -247,12 +195,15 @@ install_linux() {
 }
 
 main() {
+  debug "System: $(uname -a)"
+  debug "Arch: $(uname -m)"
+  debug "OS: $(uname -s)"
+  debug "PATH: $PATH"
+  debug "BIN_DIR: $BIN_DIR"
+  debug "LIB_DIR: $LIB_DIR"
+
   if [[ -x "$BIN_DIR/fdbserver" ]]; then
     log "fdbserver already present in $BIN_DIR"
-    exit 0
-  fi
-
-  if link_from_path_if_present; then
     exit 0
   fi
 
@@ -265,8 +216,24 @@ main() {
     *) err "Unsupported OS: $(uname -s)" ;;
   esac
 
+  if [[ "$(uname -s)" == "Darwin" ]]; then
+    if [[ ! -x "$BIN_DIR/fdbserver" ]]; then
+      err "fdbserver not installed to $BIN_DIR on macOS."
+    fi
+  fi
+
   if [[ ! -x "$BIN_DIR/fdbserver" ]]; then
+    warn "fdbserver still missing from $BIN_DIR; dumping diagnostics"
+    command -v fdbserver || true
     err "fdbserver not installed. Please install FoundationDB and ensure fdbserver is available."
+  fi
+
+  # Inventory what we ended up with
+  if [[ "${VERBOSE:-0}" == "1" ]]; then
+    log "Contents of $BIN_DIR:"
+    ls -l "$BIN_DIR" || true
+    log "Contents of $LIB_DIR:"
+    ls -l "$LIB_DIR" || true
   fi
 
   log "FoundationDB installation complete"

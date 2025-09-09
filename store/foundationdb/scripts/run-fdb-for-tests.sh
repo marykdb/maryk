@@ -16,7 +16,7 @@ DATA_DIR="$ROOT_DIR/build/testdatastore/data"
 LOG_DIR="$ROOT_DIR/build/testdatastore/logs"
 PID_FILE="$ROOT_DIR/build/testdatastore/fdbserver.pid"
 
-FDB_LISTEN="127.0.0.1:4500"
+FDB_LISTEN="${FDB_LISTEN:-127.0.0.1:4500}"
 
 mkdir -p "$DATA_DIR" "$LOG_DIR"
 
@@ -40,6 +40,9 @@ start_server() {
   fi
   rm -f "$PID_FILE"
 
+  # Ensure log file exists before redirect
+  touch "$LOG_DIR/fdbserver.out" || true
+
   # Create a minimal cluster file if missing; fdbserver will update it.
   if [[ ! -f "$CLUSTER_FILE" ]]; then
     echo "test@$FDB_LISTEN" > "$CLUSTER_FILE"
@@ -62,34 +65,48 @@ start_server() {
 
 wait_ready() {
   export FDB_CLUSTER_FILE="$CLUSTER_FILE"
+  # If we don't have fdbcli available, do a best-effort short wait and return success.
   if [[ ! -x "$BIN_DIR/fdbcli" ]]; then
-    # Best effort: give server a short time to be ready
     sleep 2
     return 0
   fi
-  for i in {1..60}; do
-    if "$BIN_DIR/fdbcli" --exec "status minimal" >/dev/null 2>&1; then
+  # Wait until the cluster reports as available.
+  for i in {1..180}; do
+    if "$BIN_DIR/fdbcli" --exec "status minimal" 2>/dev/null | grep -qi "The database is available"; then
       return 0
     fi
-    sleep 0.5
+    sleep 1
   done
   return 1
 }
 
 configure_if_needed() {
   export FDB_CLUSTER_FILE="$CLUSTER_FILE"
-  # If database is not created yet, configure a single memory engine (fast for tests)
+  # Configure a single-memory test database only if the database is unavailable/uninitialized.
   if [[ -x "$BIN_DIR/fdbcli" ]]; then
-    if ! "$BIN_DIR/fdbcli" --exec "status minimal" 2>&1 | grep -qi "configuration"; then
+    if "$BIN_DIR/fdbcli" --exec "status minimal" 2>/dev/null | grep -qi "The database is unavailable"; then
       "$BIN_DIR/fdbcli" --exec "configure new single memory" || true
     fi
   fi
 }
 
 start_server
+
+echo "fdbserver started with PID $(cat "$PID_FILE")"
+
+# Fail fast if server exited immediately
+sleep 0.5
+if ! kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
+  echo "fdbserver exited immediately; see $LOG_DIR/fdbserver.out" >&2
+  exit 1
+fi
+
+# Ensure configuration happens before waiting for availability
+configure_if_needed || true
+
 if ! wait_ready; then
   echo "fdbserver did not become ready in time" >&2
   exit 1
 fi
-configure_if_needed || true
+
 echo "FoundationDB is ready for tests (PID $(cat "$PID_FILE"))"

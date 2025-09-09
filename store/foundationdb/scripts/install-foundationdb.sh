@@ -8,7 +8,7 @@ set -euo pipefail
 #   * If fdbserver already in bin, skip.
 #   * Else if fdbserver found on PATH, symlink into bin (and try to locate/copy libfdb_c.*).
 #   * Else attempt platform-native install:
-#       - macOS: use Homebrew if available.
+#       - macOS: download .pkg from GitHub Releases and extract.
 #       - Linux: download .deb packages from GitHub Releases and extract.
 #       - Windows: print hint to use the PowerShell installer in this repo.
 
@@ -75,17 +75,41 @@ link_from_path_if_present() {
 }
 
 install_macos() {
-  if have brew; then
-    log "Installing FoundationDB via Homebrew"
-    # Try generic formula first; Homebrew usually maintains one main version.
-    if ! brew list --versions foundationdb >/dev/null 2>&1; then
-      brew update >/dev/null || true
-      brew install foundationdb || brew reinstall foundationdb || true
-    fi
-    link_from_path_if_present || true
-  else
-    warn "Homebrew not found. Please install FoundationDB manually, or add fdbserver to PATH."
+  local tmp
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
+
+  local pkg
+  pkg="FoundationDB-${FDB_VERSION}.pkg"
+  local url
+  url="https://github.com/apple/foundationdb/releases/download/${FDB_VERSION}/${pkg}"
+
+  log "Downloading $pkg from FoundationDB releases"
+  curl -fL "$url" -o "$tmp/$pkg"
+
+  pkgutil --expand "$tmp/$pkg" "$tmp/pkg"
+  mkdir -p "$tmp/root"
+  (
+    cd "$tmp/root"
+    gzip -dc "$tmp/pkg/Payload" | cpio -id >/dev/null 2>&1
+  )
+
+  if [[ -x "$tmp/root/usr/local/bin/fdbserver" ]]; then
+    cp -f "$tmp/root/usr/local/bin/fdbserver" "$BIN_DIR/"
+    chmod +x "$BIN_DIR/fdbserver"
   fi
+  if [[ -x "$tmp/root/usr/local/bin/fdbcli" ]]; then
+    cp -f "$tmp/root/usr/local/bin/fdbcli" "$BIN_DIR/"
+    chmod +x "$BIN_DIR/fdbcli"
+  fi
+
+  shopt -s nullglob
+  for lib in "$tmp/root"/usr/local/lib/libfdb_c.*; do
+    cp -f "$lib" "$LIB_DIR/"
+  done
+  shopt -u nullglob
+
+  log "Installed FoundationDB binaries into $BIN_DIR"
 }
 
 install_linux_from_deb() {

@@ -34,6 +34,6 @@ The module can automatically install and run a local FoundationDB server for JVM
 - **Stop and clean:** `bash scripts/stop-fdb-for-tests.sh` (respects `FDB_CLEAN_MODE`).
 
 Notes:
-- On macOS, the installer prefers Homebrew when available; otherwise links from PATH. It also attempts to copy `libfdb_c.*` into `bin/lib`.
+- On macOS, the installer downloads and extracts the FoundationDB `.pkg` from GitHub releases if `fdbserver` is not on the `PATH`, and copies `libfdb_c.*` into `bin/lib`.
 - On Linux, if no package manager is detected, the installer downloads and extracts `.deb` artifacts locally.
 - On Windows, the installer uses Chocolatey or Winget if available; starting/stopping the Windows service can also be used instead of the scripts.

@@ -17,10 +17,14 @@ data class KeyScanRanges internal constructor(
     val equalBytes: UInt,
 ): ScanRanges {
     fun keyBeforeStart(key: ByteArray, offset: Int = 0) =
-        startKey?.compareDefinedTo(key, offset, keySize)?.let { it > 0 } == true
+        startKey?.compareDefinedTo(key, offset, keySize)?.let {
+            if (includeStart) it > 0 else it >= 0
+        } == true
 
     fun keyAfterStart(key: ByteArray, offset: Int = 0) =
-        startKey?.compareDefinedTo(key, offset, keySize)?.let { it < 0 } == true
+        startKey?.compareDefinedTo(key, offset, keySize)?.let {
+            if (includeStart) it < 0 else it <= 0
+        } == true
 
     fun isSingleKey() = ranges.singleOrNull()?.let { range ->
         range.start.size == keySize &&

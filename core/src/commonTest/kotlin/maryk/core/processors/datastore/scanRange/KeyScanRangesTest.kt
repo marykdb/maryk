@@ -128,6 +128,10 @@ class KeyScanRangesTest {
         assertTrue { scanRange2.ranges.first().startInclusive }
         expect("7fffffa3f445ec7fffffff") { scanRange2.ranges.first().end?.toHex() }
         assertTrue { scanRange2.ranges.first().endInclusive }
+
+        // start key should be excluded when includeStart is false
+        assertFalse { scanRange1.keyBeforeStart(logKey.bytes) }
+        assertTrue { scanRange2.keyBeforeStart(logKey.bytes) }
     }
 
     @Test

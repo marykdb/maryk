@@ -9,6 +9,7 @@ import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
+import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.list
@@ -21,6 +22,7 @@ import maryk.core.properties.graph.PropRefGraphType.MapKey
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.graph.PropRefGraphType.TypeGraph
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
@@ -274,15 +276,75 @@ internal fun readGraphNodeFromJson(
 ): TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode> {
     reader.nextToken()
 
-    val parentValue = reader.currentToken.let {
-        if (it !is FieldName) {
-            throw ParseException("JSON value should be a FieldName")
+    val fieldToken = reader.currentToken
+    if (fieldToken !is FieldName) {
+        throw ParseException("JSON value should be a FieldName")
+    }
+    val fieldValue = fieldToken.value ?: throw ParseException("JSON value should not be null")
+
+    // Check if this is a map key with sub graph
+    if (fieldValue.contains('[')) {
+        val (name, keyAsString) = fieldValue.split("[", "]")
+        val mapReference = context?.dataModel?.getPropertyReferenceByName(name, context) as? IsMapReference<*, *, *, *>
+            ?: throw ParseException("Expected MapReference")
+        GraphMapItem.mapReference.capture(context, mapReference)
+        @Suppress("UNCHECKED_CAST")
+        val key = when (val mapDef = mapReference.comparablePropertyDefinition) {
+            is IsMapDefinition<*, *, *> -> mapDef.keyDefinition.fromString(keyAsString) as Comparable<Any>
+            else -> throw ParseException("Unknown MapReference type")
+        }
+        GraphMapItem.key.capture(context, key)
+
+        if (reader.nextToken() !is StartArray) {
+            throw ParseException("JSON value should be an Array")
         }
 
-        val value = it.value ?: throw ParseException("JSON value should not be null")
+        val propertiesValue = mutableListOf<TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode>>()
+        var currentToken = reader.nextToken()
+        val multiTypeDefinition = GraphMapItem.properties.valueDefinition as IsMultiTypeDefinition<PropRefGraphType, IsTransportablePropRefGraphNode, GraphContext>
 
-        PropRefGraph.parent.definition.fromString(value, context)
+        while (currentToken != EndArray && currentToken !is Stopped) {
+            when (currentToken) {
+                is StartObject -> {
+                    val newContext = GraphContext(context.subDataModel ?: context.dataModel)
+                    propertiesValue.add(readGraphNodeFromJson(reader, newContext))
+                }
+                is Value<*> -> {
+                    val tokenValue = currentToken.value
+                    val type = when {
+                        tokenValue is String && tokenValue.contains('[') -> MapKey
+                        else -> PropRef
+                    }
+                    propertiesValue.add(
+                        TypedValue(
+                            type,
+                            multiTypeDefinition.definition(type)!!.readJson(reader, context)
+                        )
+                    )
+                }
+                else -> throw ParseException("JSON value should be a String or an Object")
+            }
+            currentToken = reader.nextToken()
+        }
+
+        if (reader.nextToken() !is EndObject) {
+            throw ParseException("JSON value should end with an Object")
+        }
+
+        val values = GraphMapItem.run {
+            values {
+                mapNonNulls(
+                    this@run.mapReference withSerializable mapReference,
+                    this@run.key withSerializable key,
+                    this@run.properties withSerializable propertiesValue
+                )
+            }
+        }
+
+        return TypedValue(MapKey, GraphMapItem.invoke(values))
     }
+
+    val parentValue = PropRefGraph.parent.definition.fromString(fieldValue, context)
 
     val nextToken = reader.nextToken()
     return when (nextToken) {

@@ -64,7 +64,13 @@ interface IsPropRefGraph<in DM : IsDataModel> {
                     currentNode.contains(currentReference.index)
                 }
                 is MapValueReference<*, *, *> -> {
-                    currentMapKey != null && currentMapKey.key == currentReference.key
+                    val matches = currentMapKey != null && currentMapKey.key == currentReference.key
+                    if (matches) {
+                        @Suppress("UNCHECKED_CAST")
+                        currentNode = currentMapKey as IsPropRefGraph<*>
+                        currentMapKey = null
+                    }
+                    matches
                 }
                 is TypedValueReference<*, *, *> -> {
                     if (index != elements.lastIndex) {

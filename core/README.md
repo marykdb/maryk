@@ -6,16 +6,16 @@ various formats.
 
 ## Key Features
 
-- **[Data Model Definition](documentation/datamodel.md)**: Define complex data structures using Maryk's property system.
+- **[Data Model Definition](docs/datamodel.md)**: Define complex data structures using Maryk's property system.
 
-- **[Property Types](documentation/properties/properties.md)**: Utilize a variety of property types tailored to your data needs.
+- **[Property Types](docs/properties/properties.md)**: Utilize a variety of property types tailored to your data needs.
 
-- **[Versioning](documentation/versioning.md)**: Store versioned data and easily revert to earlier versions when necessary.
+- **[Versioning](docs/versioning.md)**: Store versioned data and easily revert to earlier versions when necessary.
 
-- **[Query Language](documentation/query.md)**: Extract meaningful insights from your datasets with a powerful query language.
+- **[Query Language](docs/query.md)**: Extract meaningful insights from your datasets with a powerful query language.
 
-- **[Data Aggregation](documentation/aggregations.md)**: Aggregate data to gain valuable insights and analytics.
+- **[Data Aggregation](docs/aggregations.md)**: Aggregate data to gain valuable insights and analytics.
 
-- **[Collect & Inject Values](documentation/collectAndInject.md)**: Efficiently transport data between platforms using Collect & Inject requests.
+- **[Collect & Inject Values](docs/collectAndInject.md)**: Efficiently transport data between platforms using Collect & Inject requests.
 
-- **[Serialization Support](documentation/serialization.md)**: Serialize and deserialize data in YAML, JSON, and ProtoBuf formats.
+- **[Serialization Support](docs/serialization.md)**: Serialize and deserialize data in YAML, JSON, and ProtoBuf formats.

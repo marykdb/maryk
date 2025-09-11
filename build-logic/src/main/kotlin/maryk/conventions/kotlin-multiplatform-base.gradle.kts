@@ -21,7 +21,7 @@ plugins {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 
     compilerOptions {
         apiVersion = KOTLIN_2_2

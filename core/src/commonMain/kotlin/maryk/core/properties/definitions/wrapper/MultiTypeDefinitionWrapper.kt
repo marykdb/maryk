@@ -9,6 +9,8 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.PropRefGraphType.PropRef
+import maryk.core.properties.graph.IsPropRefGraphNode
+import maryk.core.properties.graph.TypePropRefGraph
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -94,6 +96,18 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
                 referenceGetter
             )
         }
+    /** Build a graph for a specific [type] */
+    @Suppress("UNCHECKED_CAST")
+    fun <DMS : IsValuesDataModel, E2 : TypeEnum<Values<DMS>>> withTypeGraph(
+        type: E2,
+        graphGetter: DMS.() -> List<IsPropRefGraphNode<DMS>>
+    ): TypePropRefGraph<IsValuesDataModel, DMS, E2> =
+        TypePropRefGraph(
+            parent = this as MultiTypeDefinitionWrapper<E2, Any, Any, IsPropertyContext, IsValuesDataModel>,
+            type = type,
+            properties = graphGetter((this.definition(type) as EmbeddedValuesDefinition<DMS>).dataModel).sortedBy { it.index }
+        )
+
 
     // For delegation in definition
     @Suppress("unused")

@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.wrapper.ListDefinitionWrapper
 import maryk.core.properties.graph.PropRefGraphType.Graph
 import maryk.core.properties.graph.PropRefGraphType.MapKey
 import maryk.core.properties.graph.PropRefGraphType.PropRef
+import maryk.core.properties.graph.PropRefGraphType.TypeGraph
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.ContainsDataModelContext
@@ -51,6 +52,9 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                     ),
                     MapKey to EmbeddedObjectDefinition(
                         dataModel = { GraphMapItem }
+                    ),
+                    TypeGraph to EmbeddedObjectDefinition(
+                        dataModel = { TypePropRefGraph }
                     )
                 ),
                 typeEnum = PropRefGraphType
@@ -61,6 +65,7 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                     is IsDefinitionWrapper<*, *, *, *> -> TypedValue(value.graphType, value.ref() as IsTransportablePropRefGraphNode)
                     is PropRefGraph<*, *> -> TypedValue(value.graphType, value)
                     is GraphMapItem<*, *> -> TypedValue(value.graphType, value)
+                    is TypePropRefGraph<*, *, *> -> TypedValue(value.graphType, value)
                     else -> throw ParseException("Unknown PropRefGraphType ${value.graphType}")
                 }
             },
@@ -69,6 +74,7 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                     PropRef -> (value.value as IsPropertyReferenceForValues<*, *, *, *>).propertyDefinition
                     Graph -> value.value as IsPropRefGraphNode<*>
                     MapKey -> value.value as IsPropRefGraphNode<*>
+                    TypeGraph -> value.value as TypePropRefGraph<*, *, *>
                 }
             }
         )
@@ -116,13 +122,9 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                     when (currentToken) {
                         is JsonToken.StartObject -> {
                             val newContext = transformContext(context)
-
-                            propertiesList.add(
-                                TypedValue(
-                                    Graph,
-                                    PropRefGraph.Serializer.readJson(reader, newContext).toDataObject()
-                                )
-                            )
+                            propertiesList.add(readGraphNodeFromJson(reader, newContext))
+                            currentToken = reader.nextToken()
+                            continue
                         }
                         is JsonToken.Value<*> -> {
                             val multiTypeDefinition =

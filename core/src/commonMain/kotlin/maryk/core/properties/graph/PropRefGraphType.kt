@@ -12,7 +12,8 @@ enum class PropRefGraphType(
 ) : IndexedEnumComparable<PropRefGraphType>, IsCoreEnum, TypeEnum<IsTransportablePropRefGraphNode> {
     PropRef(1u),
     Graph(2u),
-    MapKey(3u);
+    MapKey(3u),
+    TypeGraph(4u);
 
     companion object : IndexedEnumDefinition<PropRefGraphType>(
         PropRefGraphType::class, { entries }

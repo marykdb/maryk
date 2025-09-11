@@ -8,6 +8,8 @@ import maryk.core.properties.references.EmbeddedValuesPropertyRef
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.MultiTypePropertyReference
+import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.MapValueReference
 
 /** Defines a graph element */
@@ -30,6 +32,7 @@ interface IsPropRefGraph<in DM : IsDataModel> {
             when (it) {
                 is IsDefinitionWrapper<*, *, *, *> -> append(it.name)
                 is PropRefGraph<*, *> -> append(it)
+                is TypePropRefGraph<*, *, *> -> append(it)
                 else -> throw TypeException("Unknown Graphable type")
             }
         }
@@ -63,10 +66,19 @@ interface IsPropRefGraph<in DM : IsDataModel> {
                 is MapValueReference<*, *, *> -> {
                     currentMapKey != null && currentMapKey.key == currentReference.key
                 }
+                is TypedValueReference<*, *, *> -> {
+                    if (index != elements.lastIndex) {
+                        continue
+                    } else currentNode is TypePropRefGraph<*, *, *>
+                }
                 is IsPropertyReferenceForValues<*, *, *, *> -> {
-                    if (index != elements.lastIndex && currentReference is EmbeddedValuesPropertyRef<*, *> || currentReference is EmbeddedObjectPropertyRef<*, *, *, *, *>) {
+                    if (index != elements.lastIndex && (currentReference is EmbeddedValuesPropertyRef<*, *> || currentReference is EmbeddedObjectPropertyRef<*, *, *, *, *> || currentReference is MultiTypePropertyReference<*, *, *, *, *>)) {
                         when (val node = currentNode.selectNodeOrNull(currentReference.index)) {
                             is PropRefGraph<*, *> -> {
+                                currentNode = node
+                                continue
+                            }
+                            is TypePropRefGraph<*, *, *> -> {
                                 currentNode = node
                                 continue
                             }

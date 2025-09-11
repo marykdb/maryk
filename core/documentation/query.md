@@ -113,7 +113,7 @@ val deleteRequest = Person.delete(
 
 With [`GetRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetRequest.kt),
 multiple specific objects can be queried by their [key](key.md).
-To select a subset of values in the query, use `select`.
+To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
 It is possible to filter the results with [filters](filters.md), order the results, or include
 soft-deleted results by passing `filterSoftDeleted=false`.
 
@@ -161,7 +161,7 @@ val getRequest = Person.run {
 
 With [`ScanRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanRequest.kt),
 multiple objects can be queried by passing a startKey to scan from and filters on key parts to end it.
-To select a subset of values in the query, use `select`.
+To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
 It is possible to filter the results with [filters](filters.md), order, or limit the results (default= 100).
 You can also include soft-deleted results by passing `filterSoftDeleted=false`.
 

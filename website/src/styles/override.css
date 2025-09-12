@@ -1,0 +1,61 @@
+@layer starlight.overrides {
+    body {
+        /* Pick any CSS color value here */
+        --sl-color-accent: #3aadcd; /* Indigo 500 */
+        --sl-color-text-accent: #327eb5; /* Indigo 500 */
+        --sl-color-bg-sidebar: transparent;
+    }
+
+    /* Transparent, glassy header */
+    .header {
+        background-color: transparent !important;
+        -webkit-backdrop-filter: blur(16px) saturate(160%);
+        backdrop-filter: blur(16px) saturate(160%);
+    }
+
+    mobile-starlight-toc nav {
+        background-color: #00000011 !important;
+        -webkit-backdrop-filter: blur(16px) saturate(160%);
+        backdrop-filter: blur(16px) saturate(160%);
+    }
+
+    .page { position: relative; background-color: transparent; }
+    .page::before {
+        content: "";
+        position: fixed;
+        inset: -14vh -14vw;
+        z-index: -1;
+        pointer-events: none;
+        /* Creative aurora — layered conic + radial + soft veneer */
+        background-image:
+            radial-gradient(closest-side at 12% 18%, color-mix(in oklab, var(--sl-color-accent), transparent 70%), transparent 90%),
+            /*radial-gradient(closest-side at 86% 78%, color-mix(in oklab, #7b61ff, var(--sl-color-accent) 35%), transparent 90%),*/
+            conic-gradient(from 210deg at 50% 45%, rgba(255,205,210,0.06), rgba(58, 173, 205, 0.18), rgba(123, 97, 255, 0.22), rgba(58,173,205,0.06)),
+            linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02) 60%);
+        background-position:
+            12% 18%,
+            86% 78%,
+            50% 45%,
+            0 0;
+        background-size:
+            256rem 256rem,
+            244rem 244rem,
+            140% 140%,
+            cover;
+        background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+        background-blend-mode: screen, screen, overlay, normal;
+
+        /* Fallback if color-mix() unsupported — subtle hand-tuned RGBA fallbacks */
+        @supports not (background-image: radial-gradient(circle, color-mix(in oklab, var(--sl-color-accent), #fff 10%), transparent)) {
+            background-image:
+                radial-gradient(closest-side at 12% 18%, rgba(58,173,205,0.28), transparent 45%),
+                radial-gradient(closest-side at 86% 78%, rgba(123,97,255,0.22), transparent 48%),
+                conic-gradient(from 210deg at 50% 45%, rgba(255,205,210,0.05), rgba(58,173,205,0.07), rgba(123,97,255,0.06), rgba(58,173,205,0.05)),
+                linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02) 60%);
+        }
+
+        /* Gentle visual anchor for the page content */
+        filter: blur(20px) saturate(120%);
+        opacity: .94;
+    }
+}

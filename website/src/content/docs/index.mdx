@@ -1,0 +1,97 @@
+---
+title: Maryk
+description: One model, many platforms. Version‑aware storage and efficient queries.
+template: splash
+hero:
+  tagline: Strongly‑typed Kotlin models with built‑in versioning, compact serialization, and a single query API across stores.
+  image:
+    file: ../../assets/maryk-logo-optimized.webp
+  actions:
+    - text: Get Started
+      link: /getting-started/
+    - text: What & Why
+      link: /what/
+      variant: secondary
+    - text: View on GitHub
+      link: https://github.com/marykdb/maryk/
+      icon: external
+      variant: minimal
+      attrs:
+        rel: me
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What is Maryk?
+
+Maryk is a Kotlin Multiplatform toolkit for data. You describe your data once — with types and validation — and use that same model across clients and servers.
+
+- **Strong types, one schema** for JVM, Android, iOS, macOS, Linux, Windows, and JS.
+- **Version‑aware storage** with historic reads, change streams, and efficient sync.
+- **Portable serialization** (YAML/JSON streaming, compact ProtoBuf).
+- **Pluggable stores** with the same API (In‑Memory, RocksDB, FoundationDB).
+
+## Highlights
+
+<CardGrid>
+	<Card title="One Model" icon="seti:csv">
+		Define your schema once in Kotlin and reuse it everywhere — fewer mismatches, better autocomplete.
+	</Card>
+	<Card title="Versioned Storage" icon="seti:clock">
+		Ask for “only changes” or “as of time T”. Stream live updates without extra infrastructure.
+	</Card>
+	<Card title="Portable Serialization" icon="seti:json">
+		Streaming YAML/JSON and compact ProtoBuf with consistent encoders/decoders across platforms.
+	</Card>
+	<Card title="Unified Queries" icon="seti:plan">
+		One request API on every engine: filters, reference graphs (field selection), ordering, limits, aggregations.
+	</Card>
+	<Card title="Pluggable Stores" icon="seti:db">
+		Start in‑memory for tests, embed RocksDB for apps, or run FoundationDB for ACID and scale — same API.
+	</Card>
+	<Card title="Kotlin Multiplatform" icon="seti:kotlin">
+		Run on JVM, Android, iOS, macOS, Linux, Windows, and JS — share your model and logic.
+	</Card>
+</CardGrid>
+
+## Quick start
+
+1) **Add the dependency**
+
+```kotlin
+implementation("io.maryk:maryk-core:<version>")
+```
+
+2) **Define a model**
+
+```kotlin
+object Person : RootDataModel<Person>() {
+  val firstName by string(index = 1u)
+  val lastName by string(index = 2u)
+}
+```
+
+3) **Create, validate, serialize**
+
+```kotlin
+val jane = Person.create { firstName += "Jane"; lastName += "Doe" }
+Person.validate(jane)
+val json = Person.writeJson(jane)
+```
+
+## Learn more
+
+Start with the overview in [What is Maryk?](/what/) and the short case for [Why Maryk?](/why/).
+
+When you’re ready to dig in:
+
+- [Data Models](/core-concepts/datamodels/) and [Properties](/core-concepts/properties/) (types, operations, references)
+- [Querying](/core-concepts/querying/) with filters, [reference graphs](/core-concepts/querying/reference-graphs/), ordering, and [aggregations](/core-concepts/querying/aggregations/)
+- [Serialization](/core-concepts/serialization/) (YAML/JSON/ProtoBuf) and [ProtoBuf transport](/core-concepts/serialization/protobuf-transport/)
+- [Versioning](/core-concepts/versioning/) for historic views and change/update streams
+
+Picking storage? See [Stores](/stores/) for the overview, or jump straight to
+[In‑Memory](/stores/memory/), [RocksDB](/stores/rocksdb/), or [FoundationDB](/stores/foundationdb/).
+
+Tools and extras live under [Supporting Libraries](/support/): streaming [JSON](/support/json/) and [YAML](/support/yaml/), the
+[Generator](/support/generator/) for Kotlin/ProtoBuf, [DataFrame helpers](/support/dataframe/), and testing utilities.

@@ -1,4 +1,4 @@
-## Serializing Maryk DataObjects
+# Serializing
 
 Maryk DataObjects can be serialised to [YAML](#yaml), [JSON](#json) or [ProtoBuf](#protobuf). Each format has its own strengths:
 

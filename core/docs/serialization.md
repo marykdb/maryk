@@ -1,11 +1,10 @@
 ## Serializing Maryk DataObjects
 
-Maryk DataObjects can be serialized into three formats: [YAML](#yaml), [JSON](#json), and [ProtoBuf](#protobuf). Each 
-format has its own advantages depending on the use case.
+Maryk DataObjects can be serialised to [YAML](#yaml), [JSON](#json) or [ProtoBuf](#protobuf). Each format has its own strengths:
 
-- **ProtoBuf** is the preferred format for its compact size and efficiency.
-- **YAML** is ideal when human readability is a priority.
-- **JSON** is suitable for interoperability with external libraries and systems.
+- **ProtoBuf** – compact and efficient.
+- **YAML** – human‑readable.
+- **JSON** – interoperable with external systems.
 
 ### YAML
 

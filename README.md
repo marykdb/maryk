@@ -9,19 +9,19 @@ The RocksDB persistence layer is available for the **JVM**, **iOS**, **macOS**, 
 
 ## Key Features
 
-- **Unified Data Modeling**: Define your [data models](core/documentation/datamodel.md) once and use them everywhere, ensuring a single source of truth across platforms.
+- **Unified Data Modeling**: Define your [data models](core/docs/datamodel.md) once and use them everywhere, ensuring a single source of truth across platforms.
 
-- **Flexible Property Types and Inheritance**: Create models with a variety of [property types](core/documentation/properties/properties.md), and reuse model structures to build complex data hierarchies.
+- **Flexible Property Types and Inheritance**: Create models with a variety of [property types](core/docs/properties/README.md), and reuse model structures to build complex data hierarchies.
 
-- **Built-in Validation**: Enforce data quality with [validations](core/documentation/properties/properties.md#validation) such as required fields, uniqueness, min/max constraints, and regex checks.
+- **Built-in Validation**: Enforce data quality with [validations](core/docs/properties/README.md#validation) such as required fields, uniqueness, min/max constraints, and regex checks.
 
-- **Cross-Platform Serialization**: Seamlessly [serialize and deserialize](core/documentation/serialization.md) data as JSON, YAML, or Protocol Buffers, facilitating easy communication between clients and services.
+- **Cross-Platform Serialization**: Seamlessly [serialize and deserialize](core/docs/serialization.md) data as JSON, YAML, or Protocol Buffers, facilitating easy communication between clients and services.
 
 - **Model Serialization & Compatibility**: Serialize your schemas themselves and run compatibility checks across different clients, ensuring smooth upgrades and migrations.
 
-- **Version-Aware Storage and Queries**: Store data in [NoSQL data stores](store/memory/README.md) (in-memory/[RocksDB](store/rocksdb/README.md)/[FoundationDB](store/foundationdb/README.md)) and leverage [versioning](core/documentation/versioning.md) to request historical states, compare past values, and minimize bandwidth by fetching only changed fields.
+- **Version-Aware Storage and Queries**: Store data in [NoSQL data stores](store/memory/README.md) (in-memory/[RocksDB](store/rocksdb/README.md)/[FoundationDB](store/foundationdb/README.md)) and leverage [versioning](core/docs/versioning.md) to request historical states, compare past values, and minimize bandwidth by fetching only changed fields.
 
-- **Data Aggregations & Insights**: Perform [aggregations](core/documentation/aggregations.md) (count, sum, average, min/max, grouped by time intervals or enums) for richer analytics and decision-making.
+- **Data Aggregations & Insights**: Perform [aggregations](core/docs/aggregations.md) (count, sum, average, min/max, grouped by time intervals or enums) for richer analytics and decision-making.
 
 ## Getting Started
 

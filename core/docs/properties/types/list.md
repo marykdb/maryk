@@ -1,8 +1,7 @@
 # List Property
-A property to contain lists of items. The items are ordered and the same item can be
-added multiple times.
+Stores an ordered list of items where duplicates are allowed.
 
-See [properties page](../properties.md) to see which property types it can contain.
+See [properties page](../README.md) to see which property types it can contain.
 Property definitions need to be required and values can thus not be null.
 
 - Kotlin Definition: `ListDefinition<T>` T is for type of value definition

@@ -1,5 +1,5 @@
 # Boolean
-Boolean true or false.
+Represents a `true` or `false` value.
 
 - Kotlin Definition: `BooleanDefinition`
 - Kotlin Value: `Boolean`

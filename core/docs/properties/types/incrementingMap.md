@@ -1,7 +1,7 @@
-# Map Property
-A property to contain a list of items indexed by an incrementing number. 
+# Incrementing Map Property
+Stores items indexed by an auto-incrementing number.
 
-See [properties page](../properties.md) to see which property types it can contain for value. 
+See [properties page](../README.md) to see which property types it can contain for value. 
 Property definitions need to be required and values can thus not be null.
 
 - Kotlin Definition: `IncrementingMapDefinition<K, V>` 

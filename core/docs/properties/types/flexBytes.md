@@ -1,5 +1,5 @@
 # Flex bytes
-Defines a property of a flexible bytes length.
+Represents a variable-length byte array.
 
 - Kotlin Definition: `FlexBytesDefinition`
 - Kotlin Value: `ByteArray`

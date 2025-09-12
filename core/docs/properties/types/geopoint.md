@@ -1,6 +1,5 @@
 # GeoPoint
-Represents a geographical coordinate for a location. The value can contain up 
-to 7 digits. This represents an accuracy of up to ~11mm or ~0.43 inch.
+Represents a geographical coordinate. Precision is up to 7 digits (~11 =mm / 0.43 inch).
 
 - Kotlin Definition: `GeoPointDefinition`
 - Kotlin Value: `GeoPoint`

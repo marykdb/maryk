@@ -1,42 +1,26 @@
 # Keys in DataObjects
 
-All DataObjects must be stored under a unique key, which acts as an index to the object. The key serves as a permanent
-identifier for the object and can be used to retrieve it. If you store new data under an existing key, the existing data
-will be overwritten.
+Every DataObject is stored under a unique key that acts as its identifier. If new data is written with an existing key the previous object is replaced.
 
 ## Default UUID Keys
 
-If you don't specify a key definition, the model will automatically generate 128-bit v4 UUID keys. These keys are
-guaranteed to be unique, ensuring that no two DataObjects will share the same identifier. However, please note that
-while they are unique, they do not provide any inherent benefits for scanning or ordering the data.
+If no key definition is provided the model generates 128‑bit v4 UUID keys. They are unique but offer no ordering benefits for scans.
 
 ## Choosing the Right Key from the Start
 
-It's essential to be mindful when designing the key for a DataModel since the key structure cannot be changed after data
-has been stored (without complex migrations). Consider the primary use case and the desired ordering of the data
-carefully. Make sure the key is optimized for this purpose upfront. If secondary use cases arise, they can often be
-addressed by adding an index later.
+Design the key carefully: once data is stored its structure cannot change without heavy migrations. Optimise the key for the primary access pattern. Secondary use cases can often be handled later with an index.
 
 ## Properties for Key Structure
 
-Key structures must have fixed byte lengths. This predictability is crucial as it allows for efficient indexing and
-scanning over keys.
+Key structures must have fixed byte lengths so they can be indexed and scanned efficiently.
 
-Properties that can be utilized for key elements include numbers, dates and times, fixed bytes, references, enums,
-booleans, multi-type objects, and ValueDataModels containing similar values.
-
-On the other hand, properties that cannot be used in keys include strings, flexible bytes, sets, lists, maps, and
-embedded models, as they possess varying byte lengths, which disrupts the consistency required for effective key
-structures.
+Key parts must have predictable sizes. Numbers, dates, fixed bytes, references, enums, booleans, multi‑type type IDs and small value objects all qualify. Strings, flexible bytes, collections and embedded models cannot be used because their length varies.
 
 ## The Order of Keys
 
-Keys are stored in a specific order, meaning that data scans will traverse or skip the data in the same organized
-manner. If the key begins with a reference, scans can efficiently start at the exact location corresponding to that
-reference.
+Keys are stored in order. If the key begins with a reference, scans can jump directly to that reference.
 
-If the data is often requested in a newest-first order, it is advisable to reverse the date of creation in the key
-structure. This way, newer data will be retrieved first during scans, enhancing the user experience.
+If data is often requested newest‑first, store a reversed timestamp in the key so scans return recent results first.
 
 ## Tips on Designing a Key
 

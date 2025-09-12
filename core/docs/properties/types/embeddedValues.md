@@ -1,5 +1,5 @@
-# EmbeddedObject Property
-A property which contains values from selected DataModel. See 
+# Embedded Values Property
+A property that contains values from a selected DataModel. See
 [DataModels](../../datamodel.md) for more details on how to define DataModels.
 
 - Kotlin Definition: `EmbeddedValuesDefinition<DM, P>` DM is DataModel and P the properties

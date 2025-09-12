@@ -8,7 +8,7 @@ various formats.
 
 - **[Data Model Definition](docs/datamodel.md)**: Define complex data structures using Maryk's property system.
 
-- **[Property Types](docs/properties/properties.md)**: Utilize a variety of property types tailored to your data needs.
+- **[Property Types](docs/properties/README.md)**: Utilize a variety of property types tailored to your data needs.
 
 - **[Versioning](docs/versioning.md)**: Store versioned data and easily revert to earlier versions when necessary.
 

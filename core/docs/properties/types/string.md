@@ -1,5 +1,5 @@
 # String
-Basic String property to represent text.
+Represents textual values.
 
 - Kotlin Definition: `StringDefinition`
 - Kotlin Value : `String`

@@ -1,6 +1,5 @@
 # Number
-Used to store numbers in specific formats. Signed floats and signed and 
-unsigned integers are available.
+Used to store numbers in specific formats. Signed and unsigned integers as well as floating‑point types are available.
 
 - Kotlin Definition: `NumberDefinition`
 - Kotlin Value: `UInt8` | `UInt16` | `UInt32` | `UInt64` | `Byte` | 

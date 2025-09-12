@@ -1,5 +1,5 @@
 # Enum
-Contains an enumeration value. The value is limited to one of the values in an enum. 
+Represents a value chosen from a predefined enum.
 
 - Kotlin Definition: `EnumDefinition`
 - Kotlin Value: `IndexedEnum`

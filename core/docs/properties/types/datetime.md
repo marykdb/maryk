@@ -1,5 +1,5 @@
 # DateTime
-A DateTime Property which can be used to represent the time in a date plus time.
+Represents a date combined with a time value.
 
 - Kotlin Definition: `DateTimeDefinition`
 - Kotlin Value: `LocalDateTime`

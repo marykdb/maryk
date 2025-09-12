@@ -1,23 +1,16 @@
 # Data Aggregations
 
-Aggregations are a vital feature for analyzing and deriving insights from your collected data. They summarize and 
-process large volumes of information, providing a comprehensive understanding of your data while allowing you to focus 
-on specific subsets. Maryk offers a robust set of built-in aggregation functionalities, including count, sum, average, 
-min/max value, and other statistical aggregations, to facilitate the analysis of your stored data with ease.
+Aggregations help you analyse data by summarising large result sets into concise values. Maryk offers built‑in operators for counts, sums, averages, minimums, maximums and more.
 
-To effectively organize your data and gain deeper insights, you can group it based on date units such as hour, week, 
-month, and year, or by enumerated values. This approach helps break down your data into manageable chunks, making it 
-more understandable and enabling you to derive meaningful conclusions.
+You can organise results into buckets by date (hour, week, month, year) or by enum value. Bucketing breaks a dataset into manageable groups so trends become clearer.
 
-The aggregation operators in Maryk are categorized into two main types: **value operators** and **bucketing operators**. 
-Value operators perform aggregations over data, such as count, sum, average, min/max value, and combined statistics. 
-Conversely, bucketing operators collect values based on a bucket of date, enum, or object type.
+Maryk divides aggregation operators into two categories:
+- **Value operators** compute a single statistic such as a count or sum.
+- **Bucketing operators** group values by date, enum or object type and can contain nested value operators.
 
-These aggregations can be added to any `Get` or `Scan` request within the `aggregations` property. The responses will 
-also contain the aggregated values within the `aggregations` property alongside the queried values, updates, or changes.
+Aggregations can be added to any `Get` or `Scan` request through the `aggregations` property. Responses return the aggregated values alongside the requested objects.
 
-In the following sections, we will provide a concise summary of each operator, along with their use cases and code 
-examples to demonstrate their usage within Maryk.
+The sections below summarise each operator with short examples to demonstrate how they are used in Maryk.
 
 ## Value Based Operators
 

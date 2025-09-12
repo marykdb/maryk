@@ -1,7 +1,7 @@
 # Map Property
-A property to contain a map of items. 
+Represents a map from keys to values.
 
-See [properties page](../properties.md) to see which property types it can contain for
+See [properties page](../README.md) to see which property types it can contain for
 as key and as value. Property definitions need to be required and values can thus not
 be null.
 

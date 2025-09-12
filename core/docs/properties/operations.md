@@ -1,11 +1,9 @@
 # Property Operations
 
-Properties can be changed, deleted, checked and more. To do those you create
-a property operation.
+Properties can be changed, deleted or checked with property operations.
 
 ## Check property value
-A `Check` is used to check a property value so no operations are done
-unless it is true. 
+A `Check` compares a property value; subsequent operations run only when the check passes.
 
 Check if firstName is `John`
 ```kotlin
@@ -16,7 +14,7 @@ Check(
 ```
 
 ## Change property value
-A property value can be changed with a `Change`.
+Use `Change` to update a property value.
 
 ```kotlin
 Change(
@@ -26,7 +24,7 @@ Change(
 ```
 
 ### Deletion
-A property can be deleted by setting it to `null`.
+Set a property to `null` to delete it.
 ```kotlin
 Change(
     Person { firstName::ref } with null
@@ -35,6 +33,4 @@ Change(
 
 ## Changes on Map, List and Set properties
 
-[`Map`](types/map.md#operations), [`List`](types/list.md#operations) and 
-[`Set`](types/set.md#operations) properties can also be changed. How that is done 
-is described in their own documentation.
+[`Map`](types/map.md#operations), [`List`](types/list.md#operations) and [`Set`](types/set.md#operations) properties have specialised change operations documented on their respective pages.

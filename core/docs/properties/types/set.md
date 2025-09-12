@@ -1,8 +1,7 @@
 # Set Property
-A property to contain a set of items. An item can only be added once and it contains 
-no order.
+Stores an unordered set of unique items.
 
-See [properties page](../properties.md) to see which property types it can contain.
+See [properties page](../README.md) to see which property types it can contain.
 Property definitions need to be required and values can thus not be null.
 
 - Kotlin Definition: `SetDefinition<T>` T is for type of value definition

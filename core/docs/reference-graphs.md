@@ -1,9 +1,6 @@
 # Property Reference Graphs
 
-Property reference graphs define which properties to retrieve in a query. They allow selecting
-specific fields and nested structures rather than fetching entire objects. A graph can be as
-simple as a list of top-level properties or as complex as a combination of embedded graphs,
-map keys, and type-specific selections.
+Property reference graphs define which properties to retrieve in a query. They allow you to select specific fields and nested structures instead of fetching entire objects. A graph can range from a list of top-level properties to a combination of embedded graphs, map keys and type-specific selections.
 
 The examples below use a fictitious `User` model for a social application. It contains the
 following properties:

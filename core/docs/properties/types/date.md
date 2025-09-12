@@ -1,6 +1,5 @@
 # Date
-A Date Property which can be used to represent the date in years, month and date. The 
-year is unsigned so it can contain negative dates
+Represents a calendar date. The year is unsigned so negative years are supported.
 
 - Kotlin Definition: `DateDefinition`
 - Kotlin Value: `LocalDate`

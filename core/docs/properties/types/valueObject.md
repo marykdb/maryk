@@ -1,5 +1,5 @@
-# Value Object
-A property which contains another DataModel as a value. See 
+# Value Object Property
+Contains another DataModel as a fixed-size value. See
 [DataModels](../../datamodel.md) for more details on how to define DataModels.
 
 ValueDataModel objects are stored and transported as fixed length byte objects.

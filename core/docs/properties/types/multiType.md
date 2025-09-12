@@ -1,7 +1,5 @@
 # Multi Type Property
-A property which can contain a value of one of multiple predefined types. For each type you can 
-define a full property definition. Refer to [properties](../properties.md) to see which definition
-types can be used.
+A property that can contain a value of one of multiple predefined types. Each type has its own property definition. Refer to [properties](../README.md) for supported definitions.
 
 This multi type property could be useful to use different DataModels inside one field. 
 For example in a Timeline in which multiple types of data like posts, photos, videos

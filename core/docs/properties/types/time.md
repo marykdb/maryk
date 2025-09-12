@@ -1,6 +1,5 @@
 # Time
-A Time Property which can be used to represent the time in hours, minutes, seconds and optionally
-in milliseconds and nanoseconds.
+Represents the time of day in hours, minutes, seconds and optionally milliseconds or nanoseconds.
 
 - Kotlin Definition: `TimeDefinition`
 - Kotlin Value : `LocalTime`

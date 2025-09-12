@@ -1,5 +1,5 @@
 # Fixed bytes
-Defines a property of a fixed bytes length.
+Represents a fixed-length byte array.
 
 - Kotlin Definition: `FixedBytesDefinition`
 - Kotlin Value: `ByteArray`

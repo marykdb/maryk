@@ -1,5 +1,5 @@
 # Reference
-Property representing a Reference to another DataObject.
+References another DataObject by key.
 
 - Kotlin Definition: `ReferenceDefinition<T>` In which T is the DataModel name
 - Kotlin Value : `Key<T>` In which T is the DataModel

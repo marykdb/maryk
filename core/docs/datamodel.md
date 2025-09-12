@@ -1,22 +1,16 @@
 # What is a DataModel?
-A DataModel is a blueprint that defines the structure of the data. It contains
-[property definitions](properties/properties.md), which specify the type of data, 
-how it should be validated, and other relevant information. The property definitions 
-are used to create data objects, which can be validated or serialized.
+A DataModel is the blueprint for a record. It contains [property definitions](properties/README.md) that describe the type of each field, how it is validated, and how it is stored. These definitions are used to create data objects that can be validated or serialised.
 
 ## Properties with Unique Identifiers
 
-To ensure efficient data transport and storage, each property in a DataModel must have both a name and a unique integer
-index. The index is used to identify the property and must remain unchanged throughout the lifetime of the application.
-This index eliminates the need for reflection in code implementation, allowing everything to run quickly.
+Every property in a DataModel has both a name and a unique integer index. The index must stay the same for the lifetime of the application and removes the need for reflection during serialisation, keeping processing fast.
 
 ### Example of a DataModel Representing a Person
 
-Let us consider a simple DataModel for a person, which includes their first and last names as well as their date of
-birth.
+Consider a simple `Person` DataModel with first name, last name and date of birth.
 
 To create a model for a data object within Kotlin, you start by creating a Kotlin object that extends from `RootModel`.
-Within this object, you define properties by their names, indexes, types, and any validations.
+Within this object, you define properties by name, index, type and optional validations.
 
 ```kotlin
 object Person : RootDataModel<Person>() {
@@ -28,7 +22,7 @@ object Person : RootDataModel<Person>() {
 
 ### Usage Example
 
-Here's a demonstration of constructing a new Person DataObject, validating it, and creating a new key to represent it.
+Here's how to create a new `Person` object, validate it and generate a key.
 
 ```kotlin
 // Concise DSL

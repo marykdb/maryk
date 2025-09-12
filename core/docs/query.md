@@ -1,22 +1,15 @@
 # Query Data
 
-You can perform a selection of query actions on a store of data objects. This store can be local, or the
-query action can be serialized and sent to a store on another server to be performed there.
+Maryk stores support a range of query actions. Requests can run locally or be serialized and sent to a remote store.
 
 ## Basic Query Actions
 
-Maryk provides some basic query actions which are fundamentally based on the CRUD model: you can add, change, get,
-scan, or delete objects.
+Maryk exposes CRUD-style actions and query variants:
 
-The **Get** and **Scan** request types are available in three variations:
-
-- `GetRequest`/`ScanRequest` - Returns `Values` to represent the object as it is at the requested time.
-- `GetUpdatesRequest`/`ScanUpdatesRequest` - Returns `Updates` like `Addition`/`Change`/`Removal` to show
-  the changing of data and its view defined by filters and limit/offset over time. It is possible to use this in
-  `executeFlow`
-  to get live updates as new data is processed.
-- `GetChangesRequest`/`ScanChangesRequest` - Returns any data as versioned changes as they are stored in the datastore
-  ordered per data object.
+- Add, Change, Delete – mutate objects.
+- Get, Scan – fetch current values.
+- Get/Scan Updates – stream additions, changes, removals over time.
+- Get/Scan Changes – fetch versioned changes per object from history.
 
 ### Add
 
@@ -114,8 +107,8 @@ val deleteRequest = Person.delete(
 With [`GetRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetRequest.kt),
 multiple specific objects can be queried by their [key](key.md).
 To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
-It is possible to filter the results with [filters](filters.md), order the results, or include
-soft-deleted results by passing `filterSoftDeleted=false`.
+It is possible to filter the results with [filters](filters.md) or include soft-deleted results by
+passing `filterSoftDeleted=false`.
 
 You can also view the objects at a certain version with `toVersion`
 if the store supports viewing past versions.
@@ -150,8 +143,7 @@ val getRequest = Person.run {
             Equals(ref { firstName } with "Clark"),
             Exists(ref { lastName })
         ),
-        order = ref { lastName }.ascending(),
-        toVersion = 2L,
+        toVersion = 2uL,
         filterSoftDeleted = false
     )
 }
@@ -165,8 +157,7 @@ To select a subset of values in the query, use `select` with a [graph](reference
 It is possible to filter the results with [filters](filters.md), order, or limit the results (default= 100).
 You can also include soft-deleted results by passing `filterSoftDeleted=false`.
 
-Additionally, you can view the objects at a certain version with `toVersion`
-if the store supports viewing past versions.
+Additionally, you can view the objects at a certain version with `toVersion` if the store supports historical views.
 
 When applied, it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ValuesResponse.kt)
 with a list of [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
@@ -194,12 +185,71 @@ val scanRequest = Logs.run {
         order = ref { timeStamp }.descending(),
         filterSoftDeleted = false,
         limit = 50,
-        toVersion = 2L
+        toVersion = 2uL
     )
 }
 ```
 
-### Scan/Get Updates
+### Get/Scan Changes
+
+Use [`GetChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetChangesRequest.kt)
+and [`ScanChangesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanChangesRequest.kt)
+to fetch versioned changes as stored in the data store, grouped per object.
+
+Response shape: a [`ChangesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ChangesResponse.kt)
+containing a list of `DataObjectVersionedChange` entries with the object `key`, optional `sortingKey` (for index scans),
+and a list of `VersionedChanges` items. Each `VersionedChanges` contains a `version` and a list of field-level changes
+at that version (for example: `ObjectCreate`, `Change`, `ObjectDelete`).
+
+Notes:
+- Default `maxVersions` is 1; requesting more than 1 version or using `toVersion` requires the store to enable `keepAllVersions`.
+- Aggregations are not supported for changes requests.
+- For `ScanChanges`, filters cannot use mutable (non-final or non-required) properties. Ordering is allowed only on the
+  primary key order or on required, final properties.
+
+**Get changes with all parameters:**
+
+```kotlin
+val person1Key // Key representing person 1.
+val person2Key // Key representing person 2.
+
+val getRequest = Person.run {
+    getChanges(
+        person1Key,
+        person2Key,
+        select = graph { listOf(firstName, lastName) },
+        where = And(
+            Equals(ref { firstName } with "Clark"),
+            Exists(ref { lastName })
+        ),
+        fromVersion = 1000uL,
+        toVersion = 2000uL,
+        maxVersions = 100u,
+        filterSoftDeleted = false
+    )
+}
+```
+
+**Scan changes with all parameters:**
+
+```kotlin
+val timedKey // Key that indicates the starting point for scanning.
+
+val scanRequest = Logs.scanChanges(
+    startKey = timedKey,
+    select = graph { listOf(timeStamp, severity, message) },
+    where = GreaterThanEquals(Logs { severity::ref } with Severity.ERROR),
+    order = ref { timeStamp }.descending(),
+    limit = 50u,
+    includeStart = true,
+    fromVersion = 1000uL,
+    toVersion = 2000uL,
+    maxVersions = 100u,
+    filterSoftDeleted = false
+)
+```
+
+### Get/Scan Updates
 
 You can request updates on objects ordered by version with
 [`GetUpdatesRequest`](../src/commonMain/kotlin/maryk/core/query/requests/GetUpdatesRequest.kt)
@@ -240,9 +290,9 @@ val getRequest = Person.run {
             Exists(ref { lastName })
         ),
         order = ref { lastName }.ascending(),
-        toVersion = 2000L,
+        toVersion = 2000uL,
         filterSoftDeleted = false,
-        fromVersion = 1000L,
+        fromVersion = 1000uL,
         maxVersions = 100
     )
 }
@@ -268,56 +318,10 @@ val scanRequest = Logs.scanUpdates(
     order = ref { timeStamp }.descending(),
     filterSoftDeleted = false,
     limit = 50,
-    fromVersion = 1000L,
-    toVersion = 2000L,
+    fromVersion = 1000uL,
+    toVersion = 2000uL,
     maxVersions = 100,
     orderedKeys = listOf(log1Key, log2Key, log3Key)
 )
 
-val person1Key // Key representing person 1 whose data will be changed.
-val person2Key // Key representing person 2 whose data will be changed.
-
-val getRequest = Person.run {
-    getChanges(
-        person1Key,
-        person2Key,
-        select = graph {
-            listOf(
-                firstName,
-                lastName
-            )
-        },
-        where = And(
-            Equals(ref { firstName } with "Clark"),
-            Exists(ref { lastName })
-        ),
-        order = ref { lastName }.ascending(),
-        toVersion = 2000L,
-        filterSoftDeleted = false,
-        fromVersion = 1000L,
-        maxVersions = 100
-    )
-}
-
-val timedKey // Key that indicates the starting point for scanning at a certain time.
-
-val scanRequest = Logs.scanChanges(
-    startKey = timedKey,
-    select = graph {
-        listOf(
-            timeStamp,
-            severity,
-            message
-        )
-    },
-    where = GreaterThanEquals(
-        Logs { severity::ref } with Severity.ERROR
-    ),
-    order = ref { timeStamp }.descending(),
-    filterSoftDeleted = false,
-    limit = 50,
-    fromVersion = 1000L,
-    toVersion = 2000L,
-    maxVersions = 100
-)
 ```

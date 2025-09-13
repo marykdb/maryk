@@ -39,6 +39,36 @@ val def = EmbeddedValuesDefinition(
 )
 ```
 
+## Setting Values (builder DSL)
+Embedded values are regular `Values<DM>` instances. The typical pattern is to build the embedded values with the embedded data model’s `create { }` and assign it with `with`.
+
+```kotlin
+// Property on a DataModel
+val address by embed(
+    index = 1u,
+    required = false,
+    dataModel = { Address }
+)
+
+// Setting an embedded value using the builder DSL
+val user = User.create {
+    address with {
+        street with "Main St"
+        postalCode with "1234AB"
+        // set other fields as needed
+    }
+}
+
+// Alternative: construct the embedded values beforehand
+val addr = Address.create {
+    street with "Main St"
+    postalCode with "1234AB"
+}
+val user2 = User.create {
+    address with addr
+}
+```
+
 ## Transport Byte representation
 All fields of a DataObject are wrapped in a tag/value pair with LENGTH_DELIMITED
 wiretype and the value starts with the length of the total bytes of the DataObject

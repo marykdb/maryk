@@ -64,20 +64,18 @@ class ReadStorageToValuesKtTest {
 
         assertEquals(
             TestMarykModel.create(setDefaults = false) {
-                set += setOf(
+                set with setOf(
                     LocalDate(1981, 12, 5)
                 )
-                map += mapOf(
+                map with mapOf(
                     LocalTime(12, 23, 34) to "twelve"
                 )
-                embeddedValues += EmbeddedMarykModel.create {
-                    value += "test"
-                    model += EmbeddedMarykModel.run {
-                        create{}
-                    }
+                embeddedValues with {
+                    value with "test"
+                    model with EmbeddedMarykModel.create {}
                 }
-                listOfString += listOf("v1")
-                setOfString += setOf("def")
+                listOfString with listOf("v1")
+                setOfString with setOf("def")
             },
             values
         )
@@ -138,7 +136,7 @@ class ReadStorageToValuesKtTest {
 
         assertEquals(
             TestMarykModel.create(setDefaults = false) {
-                multi += TypedValue(S1, "test")
+                multi with TypedValue(S1, "test")
             },
             values
         )

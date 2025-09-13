@@ -9,10 +9,10 @@ class ValuesDslTest {
     @Test
     fun buildValuesWithDsl() {
         val v = TestMarykModel.create {
-            string += "wrong"
-            int += 999
-            uint += 53u
-            double += 2.3
+            string with "wrong"
+            int with 999
+            uint with 53u
+            double with 2.3
         }
 
         expect("wrong") { v { string } }
@@ -23,8 +23,8 @@ class ValuesDslTest {
     @Test
     fun buildNestedEmbeddedValues() {
         val v = TestMarykModel.create {
-            embeddedValues += {
-                value += "X"
+            embeddedValues with {
+                value with "X"
             }
         }
 

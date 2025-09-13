@@ -27,9 +27,9 @@ Here's how to create a new `Person` object, validate it and generate a key.
 ```kotlin
 // Concise DSL
 val johnSmith = Person.create {
-    firstName += "John"
-    lastName += "Smith"
-    dateOfBirth += LocalDate(2017, 12, 5)
+    firstName with "John"
+    lastName with "Smith"
+    dateOfBirth with LocalDate(2017, 12, 5)
 }
 
 // Validate the object, which will throw a PropertyValidationUmbrellaException if it's invalid

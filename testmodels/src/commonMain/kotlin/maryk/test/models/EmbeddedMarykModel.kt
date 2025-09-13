@@ -28,8 +28,8 @@ object EmbeddedMarykModel : DataModel<EmbeddedMarykModel>(
         model: Values<EmbeddedMarykModel>? = null,
         marykModel: Values<TestMarykModel>? = null
     ) = create {
-        this.value += value
-        this.model += model
-        this.marykModel += marykModel
+        this.value with value
+        this.model with model
+        this.marykModel with marykModel
     }
 }

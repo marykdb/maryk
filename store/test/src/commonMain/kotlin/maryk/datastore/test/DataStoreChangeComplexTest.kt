@@ -52,14 +52,14 @@ class DataStoreChangeComplexTest(
                     multi = TypedValue(
                         T3,
                         EmbeddedMarykModel.create {
-                            value += "u3"
-                            model += EmbeddedMarykModel.create { value += "ue3" }
+                            value with "u3"
+                            model with { value with "ue3" }
                         }
                     ),
                     mapStringString = mapOf("a" to "b", "c" to "d"),
                     incMap = mapOf(
-                        1u to EmbeddedMarykModel.create { value += "o" },
-                        2u to EmbeddedMarykModel.create { value += "p" },
+                        1u to EmbeddedMarykModel.create { value with "o" },
+                        2u to EmbeddedMarykModel.create { value with "p" },
                     )
                 ),
                 ComplexModel(
@@ -69,7 +69,7 @@ class DataStoreChangeComplexTest(
                 ComplexModel(
                     mapStringString = mapOf("a" to "b", "c" to "d"),
                     mapIntObject = mapOf(
-                        1u to EmbeddedMarykModel.create { value += "v1" },
+                        1u to EmbeddedMarykModel.create { value with "v1" },
                         2u to EmbeddedMarykModel("v2"),
                     )
                 ),
@@ -77,10 +77,10 @@ class DataStoreChangeComplexTest(
                     mapStringString = mapOf("a" to "b", "c" to "d"),
                     mapIntObject = mapOf(
                         1u to EmbeddedMarykModel.create {
-                            value += "v1"
-                            model += EmbeddedMarykModel.create { value += "sub" }
+                            value with "v1"
+                            model with { value with "sub" }
                         },
-                        2u to EmbeddedMarykModel.create { value += "v2" }
+                        2u to EmbeddedMarykModel.create { value with "v2" }
                     )
                 ),
                 ComplexModel(

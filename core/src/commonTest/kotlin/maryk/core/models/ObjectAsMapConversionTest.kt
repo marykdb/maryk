@@ -21,14 +21,14 @@ private val context = RequestContext(mapOf(
 
 class ObjectAsMapConversionTest {
     private val getRequestWithInjectable = GetRequest.create(context = context) {
-        from += SimpleMarykModel
-        keys += listOf(key1, key2)
-        select += SimpleMarykModel.graph {
+        from with SimpleMarykModel
+        keys with listOf(key1, key2)
+        select with SimpleMarykModel.graph {
             listOf(value)
         }
-        where += Exists(SimpleMarykModel { value::ref })
-        toVersion += 333uL
-        filterSoftDeleted += true
+        where with Exists(SimpleMarykModel { value::ref })
+        toVersion with 333uL
+        filterSoftDeleted with true
     }
 
     @Test

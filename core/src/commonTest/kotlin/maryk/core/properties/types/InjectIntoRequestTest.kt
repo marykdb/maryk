@@ -34,12 +34,12 @@ private val context = RequestContext(mapOf(
 
 class InjectIntoRequestTest {
     private val getRequestWithInjectable = GetRequest.create(context = context) {
-        from += SimpleMarykModel
-        keys += Inject("keysToInject", GetRequest { keys::ref })
-        where += Exists(SimpleMarykModel { value::ref })
-        toVersion += 333uL
-        filterSoftDeleted += true
-        select += SimpleMarykModel.graph {
+        from with SimpleMarykModel
+        keys with Inject("keysToInject", GetRequest { keys::ref })
+        where with Exists(SimpleMarykModel { value::ref })
+        toVersion with 333uL
+        filterSoftDeleted with true
+        select with SimpleMarykModel.graph {
             listOf(value)
         }
     }
@@ -53,8 +53,8 @@ class InjectIntoRequestTest {
         val requestRef = ValuesResponse { values.atAny { values.refWithDM(ReferencesModel) { references } } }
 
         val getRequest = GetRequest.create(context = context) {
-            from += ReferencesModel
-            keys += Inject("referencedKeys", requestRef)
+            from with ReferencesModel
+            keys with Inject("referencedKeys", requestRef)
         }
 
         expect(InjectException("referencedKeys")) {
@@ -64,17 +64,17 @@ class InjectIntoRequestTest {
         }
 
         val expectedKeys = listOf(
-            SimpleMarykModel.key(SimpleMarykModel.create { value += "v1" }),
-            SimpleMarykModel.key(SimpleMarykModel.create { value += "v2" }),
-            SimpleMarykModel.key(SimpleMarykModel.create { value += "v2" })
+            SimpleMarykModel.key(SimpleMarykModel.create { value with "v1" }),
+            SimpleMarykModel.key(SimpleMarykModel.create { value with "v2" }),
+            SimpleMarykModel.key(SimpleMarykModel.create { value with "v2" })
         )
 
         val row1 = ReferencesModel.create {
-            references += expectedKeys.subList(0, 2)
+            references with expectedKeys.subList(0, 2)
         }
 
         val row2 = ReferencesModel.create {
-            references += expectedKeys.subList(2, 3)
+            references with expectedKeys.subList(2, 3)
         }
 
         val response = ValuesResponse(

@@ -64,8 +64,8 @@ class SetChangeTest {
             dateTime = LocalDateTime(2018, 7, 18, 0, 0),
             set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
             embeddedValues = EmbeddedMarykModel.create {
-                value += "test"
-                marykModel += TestMarykModel(
+                value with "test"
+                marykModel with TestMarykModel(
                     string = "hi world",
                     int = 3,
                     uint = 67u,

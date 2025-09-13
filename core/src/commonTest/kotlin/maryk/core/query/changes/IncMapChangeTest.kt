@@ -18,8 +18,8 @@ class IncMapChangeTest {
     private val incMapChange = IncMapChange(
         CompleteMarykModel { incMap::ref }.change(
             addValues = listOf(
-                EmbeddedMarykModel.create { value += "a" },
-                EmbeddedMarykModel.create { value += "b" },
+                EmbeddedMarykModel.create { value with "a" },
+                EmbeddedMarykModel.create { value with "b" },
             )
         )
     )
@@ -70,8 +70,8 @@ class IncMapChangeTest {
                 3u to "three"
             ),
             embeddedValues = EmbeddedMarykModel.create {
-                value += "test"
-                marykModel += TestMarykModel(
+                value with "test"
+                marykModel with TestMarykModel(
                     string = "hi world",
                     int = 3,
                     uint = 67u,

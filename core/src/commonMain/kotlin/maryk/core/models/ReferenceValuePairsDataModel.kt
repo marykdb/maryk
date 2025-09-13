@@ -108,8 +108,8 @@ abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsData
 
                         listOfTypePairs.add(
                             model.pairModel.create {
-                                this@ReferenceValuePairsDataModel.pairModel.reference += reference
-                                this@ReferenceValuePairsDataModel.pairModel.value += value
+                                pairModel.reference with reference
+                                pairModel.value with value
                             }.toDataObject()
                         )
                     }

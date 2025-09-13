@@ -46,7 +46,9 @@ class DataStoreAddTest(
     }
 
     private suspend fun executeAddWithKeyAndSimpleGetRequest() {
-        val values = SimpleMarykModel.create {  value += "haha101" }
+        val values = SimpleMarykModel.create {
+            value with "haha101"
+        }
         val key = SimpleMarykModel.key(values)
 
         val addResponse = dataStore.execute(

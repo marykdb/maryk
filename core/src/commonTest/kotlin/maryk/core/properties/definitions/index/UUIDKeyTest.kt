@@ -46,7 +46,7 @@ internal class UUIDKeyTest {
     @Test
     fun testKey() {
         val obj = MarykModel.create {
-            value += "test"
+            value with "test"
         }
 
         val key = MarykModel.key(obj)

@@ -100,9 +100,9 @@ class InjectTest {
     }
 
     private val valuesToCollect = EmbeddedMarykModel.create {
-        value += "a test value"
-        model += EmbeddedMarykModel.create {
-            value += "embedded value"
+        value with "a test value"
+        model with {
+            value with "embedded value"
         }
     }
 
@@ -111,7 +111,7 @@ class InjectTest {
         context.addToCollect("testCollection2", EmbeddedMarykModel)
 
         val values = TestMarykModel.create(context = context) {
-            string += Inject("testCollection2", EmbeddedMarykModel { this.model { value::ref } })
+            string with Inject("testCollection2", EmbeddedMarykModel { this.model { value::ref } })
         }
 
         expect(InjectException("testCollection2")) {
@@ -128,7 +128,7 @@ class InjectTest {
     @Test
     fun testInjectInValuesWithResponse() {
         val values = TestMarykModel.create(context = context) {
-            string += injectDeep
+            string with injectDeep
         }
 
         expect("test") { values { string } }
@@ -139,7 +139,7 @@ class InjectTest {
         context.addToCollect("where", Equals)
 
         val getRequest = GetRequest.create(context = context) {
-                where += Inject("where", EmbeddedMarykModel { this.model { value::ref } })
+            where with Inject("where", EmbeddedMarykModel { this.model { value::ref } })
         }
 
         expect(InjectException("where")) {

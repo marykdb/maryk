@@ -223,8 +223,8 @@ class DataStoreScanTest(
         scanResponse.values[0].let {
             expect(
                 Log.create {
-                    severity += INFO
-                    timestamp += LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
+                    severity with INFO
+                    timestamp with LocalDateTime(2018, 11, 14, 12, 33, 22, 111000000)
                 }
             ) { it.values }
             expect(keys[2]) { it.key }

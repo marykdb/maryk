@@ -21,8 +21,8 @@ Requests(
     ),
     // This get request needs to be defined as an ObjectValues object so the response can be injected later
     GetRequest.create(context = context) {
-        from += Person
-        keys += Inject(
+        from with Person
+        keys with Inject(
             "collectedResponse",
             // Reference to the friends within the Values of the response
             ValuesResponse { values.atAny { values.refWithDM(Person) { friends } } }

@@ -25,8 +25,8 @@ class GetRequestTest {
     fun createAsMap() {
         expect(getRequest) {
             GetRequest.create(context) {
-                from += SimpleMarykModel
-                keys += listOf(getRequest.keys[0], getRequest.keys[1])
+                from with SimpleMarykModel
+                keys with listOf(getRequest.keys[0], getRequest.keys[1])
             }.toDataObject()
         }
     }
@@ -35,15 +35,15 @@ class GetRequestTest {
     fun createAsMaxMap() {
         expect(getMaxRequest) {
             GetRequest.create(context) {
-                from += SimpleMarykModel
-                keys += listOf(getMaxRequest.keys[0], getMaxRequest.keys[1])
-                where += Exists(SimpleMarykModel { value::ref })
-                toVersion += 333uL
-                filterSoftDeleted += true
-                select += SimpleMarykModel.graph {
+                from with SimpleMarykModel
+                keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1])
+                where with Exists(SimpleMarykModel { value::ref })
+                toVersion with 333uL
+                filterSoftDeleted with true
+                select with SimpleMarykModel.graph {
                     listOf(value)
                 }
-                aggregations += Aggregations(
+                aggregations with Aggregations(
                     namedAggregations = mapOf(
                         "totalValues" to ValueCount(SimpleMarykModel { value::ref })
                     )

@@ -42,9 +42,9 @@ Create and validate:
 
 ```kotlin
 val john = Person.create {
-  firstName += "John"
-  lastName += "Smith"
-  dateOfBirth += LocalDate(2017, 12, 5)
+  firstName with "John"
+  lastName with "Smith"
+  dateOfBirth with LocalDate(2017, 12, 5)
 }
 
 Person.validate(john)

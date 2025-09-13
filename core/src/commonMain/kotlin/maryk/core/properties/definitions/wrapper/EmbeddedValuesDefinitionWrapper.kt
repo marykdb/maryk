@@ -52,7 +52,7 @@ data class EmbeddedValuesDefinitionWrapper<
     }
 
     /** Shorthand for inline embedded values: property += { ... } */
-    operator fun plusAssign(block: DM.() -> Unit) {
+    infix fun with(block: DM.() -> Unit) {
         val dm = this.definition.dataModel
         val items = ValuesCollectorContext.push(ValuesCollectorContext.currentSetDefaults())
         try {

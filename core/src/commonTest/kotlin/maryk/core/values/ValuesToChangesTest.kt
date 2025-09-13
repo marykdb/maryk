@@ -6,6 +6,8 @@ import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.changes.Change
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.EmbeddedMarykModel.model
+import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.SimpleMarykTypeEnum.S3
@@ -19,12 +21,12 @@ class ValuesToChangesTest {
     @Test
     fun convertValuesToChanges() {
         val values = TestMarykModel.create {
-            string += "hello"
-            int += 5
-            embeddedValues += {
-                value += "sub"
-                model += {
-                    value += "deep"
+            string with "hello"
+            int with 5
+            embeddedValues with {
+                value with "sub"
+                model with {
+                    value with "deep"
                 }
             }
         }
@@ -59,12 +61,12 @@ class ValuesToChangesTest {
     @Test
     fun convertCollectionsToChanges() {
         val values = TestMarykModel.create {
-            string += "hello"
-            int += 1
-            list += listOf(3, 4)
-            set += setOf(LocalDate(2017, 12, 5))
-            map += mapOf(LocalTime(12, 23) to "yes")
-            valueObject += TestValueObject(1, LocalDateTime(2018, 9, 3, 12, 30), true)
+            string with "hello"
+            int with 1
+            list with listOf(3, 4)
+            set with setOf(LocalDate(2017, 12, 5))
+            map with mapOf(LocalTime(12, 23) to "yes")
+            valueObject with TestValueObject(1, LocalDateTime(2018, 9, 3, 12, 30), true)
         }
 
         val change = values.toChanges()[0] as Change
@@ -82,9 +84,9 @@ class ValuesToChangesTest {
     @Test
     fun convertSimpleMultiTypeToChanges() {
         val values = TestMarykModel.create {
-            string += "hello"
-            int += 1
-            multi += TypedValue(S1, "s1value")
+            string with "hello"
+            int with 1
+            multi with TypedValue(S1, "s1value")
         }
 
         val change = values.toChanges()[0] as Change
@@ -99,13 +101,15 @@ class ValuesToChangesTest {
     @Test
     fun convertEmbeddedMultiTypeToChanges() {
         val values = TestMarykModel.create {
-            string += "hello"
-            int += 1
-            multi += TypedValue(
+            string with "hello"
+            int with 1
+            multi with TypedValue(
                 S3,
                 EmbeddedMarykModel.create {
-                    value += "multi"
-                    model += { value += "deep" }
+                    value with "multi"
+                    model with {
+                        value with "deep"
+                    }
                 }
             )
         }
@@ -120,4 +124,3 @@ class ValuesToChangesTest {
         assertEquals(Option.V1, pairs[TestMarykModel { enum::ref }])
     }
 }
-

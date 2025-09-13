@@ -37,7 +37,7 @@ internal class EmbeddedValuesDefinitionTest {
         final = true,
         dataModel = { MarykModel },
         default = MarykModel.create {
-            string += "default"
+            string with "default"
         }
     )
 
@@ -50,7 +50,7 @@ internal class EmbeddedValuesDefinitionTest {
     fun validate() {
         def.validateWithRef(newValue = MarykModel.create{})
         assertFailsWith<ValidationUmbrellaException> {
-            def.validateWithRef(newValue = MarykModel.create { string += "wrong" })
+            def.validateWithRef(newValue = MarykModel.create { string with "wrong" })
         }
     }
 

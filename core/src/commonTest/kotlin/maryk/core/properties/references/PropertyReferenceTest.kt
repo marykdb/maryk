@@ -48,7 +48,7 @@ internal class PropertyReferenceTest {
     @Test
     fun getValueFromList() {
         val values = Model.create {
-            test += "±testValue"
+            test with "±testValue"
         }
 
         expect("±testValue") { ref.resolveFromAny(values) }

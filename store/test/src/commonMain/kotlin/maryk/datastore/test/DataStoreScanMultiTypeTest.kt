@@ -45,36 +45,36 @@ class DataStoreScanMultiTypeTest(
 
     private val measurements = arrayOf(
         Measurement.create {
-            this.timestamp += LocalDateTime(2023, 11, 14, 11, 22, 33, 40000000)
-            this.measurement += MeasurementType.Weight(
-                WeightMeasurement.create { weightInKg += 80u }
+            this.timestamp with LocalDateTime(2023, 11, 14, 11, 22, 33, 40000000)
+            this.measurement with MeasurementType.Weight(
+                WeightMeasurement.create { weightInKg with 80u }
             )
         },
         Measurement.create {
-            this.timestamp += LocalDateTime(2023, 11, 14, 12, 0, 0, 0)
-            this.measurement += MeasurementType.Length(
-                LengthMeasurement.create { lengthInCm += 181u }
+            this.timestamp with LocalDateTime(2023, 11, 14, 12, 0, 0, 0)
+            this.measurement with MeasurementType.Length(
+                LengthMeasurement.create { lengthInCm with 181u }
             )
         },
         Measurement.create {
-            this.timestamp += LocalDateTime(2023, 11, 14, 12, 33, 22, 111000000)
-            this.measurement += MeasurementType.Weight(
-                WeightMeasurement.create { weightInKg += 78u }
+            this.timestamp with LocalDateTime(2023, 11, 14, 12, 33, 22, 111000000)
+            this.measurement with MeasurementType.Weight(
+                WeightMeasurement.create { weightInKg with 78u }
             )
         },
         Measurement.create {
-            this.timestamp += LocalDateTime(2023, 11, 14, 13, 0, 2, 0)
-            this.measurement += MeasurementType.Length(
-                LengthMeasurement.create { lengthInCm += 180u }
+            this.timestamp with LocalDateTime(2023, 11, 14, 13, 0, 2, 0)
+            this.measurement with MeasurementType.Length(
+                LengthMeasurement.create { lengthInCm with 180u }
             )
         },
         Measurement.create {
-            this.timestamp += LocalDateTime(2023, 11, 14, 14, 0, 2, 0)
-            this.measurement += MeasurementType.Number(220u)
+            this.timestamp with LocalDateTime(2023, 11, 14, 14, 0, 2, 0)
+            this.measurement with MeasurementType.Number(220u)
         },
         Measurement.create {
-            this.timestamp += LocalDateTime(2023, 11, 14, 15, 0, 2, 0)
-            this.measurement += MeasurementType.Number(231u)
+            this.timestamp with LocalDateTime(2023, 11, 14, 15, 0, 2, 0)
+            this.measurement with MeasurementType.Number(231u)
         },
     )
 
@@ -219,8 +219,8 @@ class DataStoreScanMultiTypeTest(
         scanResponse.values[0].let {
             expect(
                 Measurement.create {
-                    measurement += MeasurementType.Weight(
-                        WeightMeasurement.create { weightInKg += 78u }
+                    measurement with MeasurementType.Weight(
+                        WeightMeasurement.create { weightInKg with 78u }
                     )
                 }
             ) { it.values }

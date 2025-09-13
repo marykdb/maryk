@@ -24,12 +24,12 @@ Kotlin:
 ```kotlin
 val addRequest = Person.add(
     Person.create {
-        firstName += "Jurriaan"
-        lastName += "Mous"
+        firstName with "Jurriaan"
+        lastName with "Mous"
     },
     Person.create {
-        firstName += "John"
-        lastName += "Smith"
+        firstName with "John"
+        lastName with "Smith"
     }
 )
 ```

@@ -35,8 +35,8 @@ internal class ReversedTest {
         val dt = LocalDateTime(2017, 9, 3, 12, 43, 40)
 
         val obj = MarykModel.create {
-            boolean += true
-            dateTime += dt
+            boolean with true
+            dateTime with dt
         }
 
         val key = MarykModel.key(obj)

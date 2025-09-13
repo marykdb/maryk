@@ -22,7 +22,7 @@ object Person : RootDataModel<Person>() {
   val dateOfBirth by date(index = 3u)
 }
 
-val john = Person.create { firstName += "John"; lastName += "Smith" }
+val john = Person.create { firstName with "John"; lastName with "Smith" }
 Person.validate(john) // throws if invalid
 ```
 

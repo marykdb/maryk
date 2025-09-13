@@ -252,7 +252,7 @@ data class TypePropRefGraph<
 
                 return create {
                     parent -= parentValue
-                    type += typeValue
+                    type with typeValue
                     properties -= propertiesValue
                 }
             }

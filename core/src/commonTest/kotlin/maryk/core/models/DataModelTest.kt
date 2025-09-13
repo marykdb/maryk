@@ -101,13 +101,13 @@ internal class DataModelTest {
     fun constructByMap() {
         expect(testMarykModelObject) {
             TestMarykModel.create {
-                string += testMarykModelObject { string }
-                int += testMarykModelObject { int }
-                uint += testMarykModelObject { uint }
-                double += testMarykModelObject { double }
-                dateTime += testMarykModelObject { dateTime }
-                bool += testMarykModelObject { bool }
-                enum += testMarykModelObject { enum }
+                string with testMarykModelObject { string }
+                int with testMarykModelObject { int }
+                uint with testMarykModelObject { uint }
+                double with testMarykModelObject { double }
+                dateTime with testMarykModelObject { dateTime }
+                bool with testMarykModelObject { bool }
+                enum with testMarykModelObject { enum }
             }
         }
     }
@@ -138,9 +138,9 @@ internal class DataModelTest {
         val e = assertFailsWith<ValidationUmbrellaException> {
             TestMarykModel.validate(
                 TestMarykModel.create {
-                    string += "wrong"
-                    int += 999
-                    uint += 53u
+                    string with "wrong"
+                    int with 999
+                    uint with 53u
                 },
             )
         }
@@ -159,9 +159,9 @@ internal class DataModelTest {
         val e = assertFailsWith<ValidationUmbrellaException> {
             TestMarykModel.validate(
                 TestMarykModel.create {
-                    string += "wrong"
-                    int += 999
-                    uint += 53u
+                    string with "wrong"
+                    int with 999
+                    uint with 53u
                 },
                 failOnMissingRequiredValues = false,
             )
@@ -313,14 +313,14 @@ internal class DataModelTest {
         val cache = WriteCache()
 
         val map = TestMarykModel.create {
-            string += "hay"
-            int += 4
-            uint += 32u
-            double += 3.555
-            dateTime += LocalDateTime(2017, 12, 4, 12, 13)
-            bool += true
-            enum += Option.V3
-            reference += TestMarykModel.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1))
+            string with "hay"
+            int with 4
+            uint with 32u
+            double with 3.555
+            dateTime with LocalDateTime(2017, 12, 4, 12, 13)
+            bool with true
+            enum with Option.V3
+            reference with TestMarykModel.key(byteArrayOf(1, 5, 1, 5, 1, 5, 1))
         }
 
         bc.reserve(

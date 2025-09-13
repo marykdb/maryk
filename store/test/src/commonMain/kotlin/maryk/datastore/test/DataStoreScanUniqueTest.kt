@@ -40,7 +40,7 @@ class DataStoreScanUniqueTest(
             string="haas",
             number = 24u,
             subModel = SimpleMarykModel.create {
-                value += "haha"
+                value with "haha"
             },
             multi=TypedValue(T2, 22),
             booleanForKey= true,

@@ -33,33 +33,33 @@ class TypesAggregatorTest {
         typesAggregator.aggregate(
             createAggregator(
                 TestMarykModel.create {
-                    multi += TypedValue(S1, "value 1")
-                    int += 2324
+                    multi with TypedValue(S1, "value 1")
+                    int with 2324
                 }
             )
         )
         typesAggregator.aggregate(
             createAggregator(
                 TestMarykModel.create {
-                    multi += TypedValue(S1, "value 2")
-                    int += 872364
+                    multi with TypedValue(S1, "value 2")
+                    int with 872364
                 }
             )
         )
 
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.create { multi += TypedValue(S3, EmbeddedMarykModel("E1")) }
+                TestMarykModel.create { multi with TypedValue(S3, EmbeddedMarykModel("E1")) }
             )
         )
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.create { multi += TypedValue(S3, EmbeddedMarykModel("E1")) }
+                TestMarykModel.create { multi with TypedValue(S3, EmbeddedMarykModel("E1")) }
             )
         )
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.create { multi += TypedValue(S3, EmbeddedMarykModel("E1")) }
+                TestMarykModel.create { multi with TypedValue(S3, EmbeddedMarykModel("E1")) }
             )
         )
 

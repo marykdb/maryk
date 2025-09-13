@@ -30,20 +30,20 @@ class DataStoreScanOnIndexWithPersonTest(
 
     private val persons = arrayOf(
         Person.create {
-            firstName += "Jurriaan"
-            surname += "Mous"
+            firstName with "Jurriaan"
+            surname with "Mous"
         },
         Person.create {
-            firstName += "Karel"
-            surname += "Kastens"
+            firstName with "Karel"
+            surname with "Kastens"
         },
         Person.create {
-            firstName += "Ariël"
-            surname += "Kastens"
+            firstName with "Ariël"
+            surname with "Kastens"
         },
         Person.create {
-            firstName += "Ti"
-            surname += "Tockle"
+            firstName with "Ti"
+            surname with "Tockle"
         },
     )
 

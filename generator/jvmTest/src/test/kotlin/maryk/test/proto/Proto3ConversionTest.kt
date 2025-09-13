@@ -26,7 +26,7 @@ class Proto3ConversionTest {
     @Test
     fun testSimpleMarykModel(){
         // SimpleObject to convert
-        val simpleObject = SimpleMarykModel.create { value += "testSimpleMarykModel" }
+        val simpleObject = SimpleMarykModel.create { value with "testSimpleMarykModel" }
         val simpleObjectProto = MarykTestProtos.SimpleMarykModel.newBuilder().setValue("testSimpleMarykModel").build()
 
         // Write protobuf

@@ -70,7 +70,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     }) }
 
     /** DSL support: add value via += inside a create { } block */
-    operator fun plusAssign(value: TO?) {
+    infix fun with(value: TO?) {
         value?.let {
             val serializedValue = try {
                 if (shouldSerialize == null || shouldSerialize!!(value)) {
@@ -89,7 +89,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     }
 
     /** DSL support: inject via += inside a create { } block */
-    operator fun plusAssign(inject: Inject<*, *>?) {
+    infix fun with(inject: Inject<*, *>?) {
         inject?.let { ValuesCollectorContext.add(ValueItem(this.index, it)) }
     }
 

@@ -46,7 +46,7 @@ internal class TypeReferenceTest {
     @Test
     fun testKey() {
         val obj = MarykModel.create{
-            multi += T2(23)
+            multi with T2(23)
         }
 
         val key = MarykModel.key(obj)

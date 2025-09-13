@@ -204,23 +204,23 @@ object TestMarykModel : RootDataModel<TestMarykModel>(
         setOfString: Set<String>? = null,
         incMap: Map<UInt, String>? = null
     ) = create {
-        this.string += string
-        this.int += int
-        this.uint += uint
-        this.double += double
-        this.dateTime += dateTime
-        this.bool += bool
-        this.enum += enum
-        this.list += list
-        this.set += set
-        this.map += map
-        this.valueObject += valueObject
-        this.embeddedValues += embeddedValues
-        this.multi += multi
-        this.reference += reference
-        this.listOfString += listOfString
-        this.selfReference += selfReference
-        this.setOfString += setOfString
-        this.incMap += incMap
+        this.string with string
+        this.int with int
+        this.uint with uint
+        this.double with double
+        this.dateTime with dateTime
+        this.bool with bool
+        this.enum with enum
+        this.list with list
+        this.set with set
+        this.map with map
+        this.valueObject with valueObject
+        this.embeddedValues with embeddedValues
+        this.multi with multi
+        this.reference with reference
+        this.listOfString with listOfString
+        this.selfReference with selfReference
+        this.setOfString with setOfString
+        this.incMap with incMap
     }
 }

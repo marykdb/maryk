@@ -82,8 +82,10 @@ class ChangeTest {
                 LocalTime(1, 2) to "Hoi"
             ),
             embeddedValues = EmbeddedMarykModel.create {
-                value += "hi"
-                model += EmbeddedMarykModel.create { value += "bye" }
+                value with "hi"
+                model with EmbeddedMarykModel.create {
+                    value with "bye"
+                }
             }
         )
 

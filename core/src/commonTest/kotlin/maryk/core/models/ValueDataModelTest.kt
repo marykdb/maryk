@@ -33,9 +33,9 @@ internal class ValueDataModelTest {
                     converted as ValueDataModel<ValueDataObject, IsValueDataModel<ValueDataObject, *>>
 
                 val value = converted.create {
-                    convertedValueModel[1u]!! += 5
-                    convertedValueModel[2u]!! += LocalDateTime(2018, 7, 18, 12, 0, 0)
-                    convertedValueModel[3u]!! += true
+                    convertedValueModel[1u]!! with 5
+                    convertedValueModel[2u]!! with LocalDateTime(2018, 7, 18, 12, 0, 0)
+                    convertedValueModel[3u]!! with true
                 }.toDataObject()
 
                 val context = DefinitionsContext()

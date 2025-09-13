@@ -32,7 +32,7 @@ class DataStoreGetSelectTest(
         CompleteMarykModel(
             string="haas",
             number = 24u,
-            subModel = SimpleMarykModel.create { value += "haha" },
+            subModel = SimpleMarykModel.create { value with "haha" },
             multi=TypedValue(T2, 22),
             booleanForKey= true,
             dateForKey= LocalDate(2018, 3, 29),
@@ -82,9 +82,9 @@ class DataStoreGetSelectTest(
         getResponse.values[0].let {
             expect(
                 CompleteMarykModel.create(setDefaults = false) {
-                    number += 24u
-                    subModel += SimpleMarykModel.create {
-                        value += "haha"
+                    number with 24u
+                    subModel with {
+                        value with "haha"
                     }
                 }
             ) { it.values }

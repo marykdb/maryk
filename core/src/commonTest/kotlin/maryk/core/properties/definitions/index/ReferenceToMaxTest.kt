@@ -30,11 +30,11 @@ internal class ReferenceToMaxTest {
     fun writesMaxWhenEndDateMissing() {
         val start = LocalDate(2020, 5, 1)
         val valuesWithoutEnd = PeriodModel.create {
-            startDate += start
+            startDate with start
         }
         val valuesWithEnd = PeriodModel.create {
-            startDate += start
-            endDate += DateDefinition.MAX
+            startDate with start
+            endDate with DateDefinition.MAX
         }
         val indexable = Multiple(
             PeriodModel.startDate.ref(),

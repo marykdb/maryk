@@ -19,16 +19,12 @@ class TransactionIterator(
     private var fromChanges: Boolean = false
     private var startPrefix: ByteArray? = null
 
-    private fun transactionChanges() = transaction.changes.getOrPut(columnFamilyHandle.getID()) { mutableListOf() }
+    private val changes = transaction.changes.getOrPut(columnFamilyHandle.getID()) { mutableListOf() }
 
     override fun seek(target: ByteArray) {
         super.seek(target)
 
-        val changes = transactionChanges()
-
-        val index = changes.binarySearch {
-            it.key compareTo target
-        }
+        val index = changes.binarySearch { it.key compareTo target }
 
         changesIndex = if (index >= 0) index else -index - 1
         fromChanges = !rocksIterator.isValid() ||
@@ -48,14 +44,10 @@ class TransactionIterator(
     override fun seekForPrev(target: ByteArray) {
         super.seekForPrev(target)
 
-        val changes = transactionChanges()
-
-        val index = changes.binarySearch {
-            it.key compareTo target
-        }
+        val index = changes.binarySearch { it.key compareTo target }
 
         changesIndex = if (index >= 0) index else -index - 2
-        fromChanges = (changes.isNotEmpty() && changesIndex < changes.size && rocksIterator.key() <= transactionChanges()[changesIndex].key)
+        fromChanges = (changes.isNotEmpty() && changesIndex < changes.size && rocksIterator.key() <= changes[changesIndex].key)
         startPrefix = target.copyOfRange(0, transaction.rocksDBDataStore.getPrefixSize(columnFamilyHandle))
 
         // Skip to start if prefix does not match
@@ -68,17 +60,14 @@ class TransactionIterator(
     override fun seekToLast() {
         super.seekToLast()
 
-        val changes = transactionChanges()
-
         changesIndex = changes.lastIndex
         fromChanges = changes.isNotEmpty() && rocksIterator.key() <= changes.last().key
     }
 
     override fun isValid() =
-        super.isValid() && if (fromChanges) transactionChanges().getOrNull(changesIndex) != null else true
+        super.isValid() && if (fromChanges) changes.getOrNull(changesIndex) != null else true
 
     override fun next() {
-        val changes = transactionChanges()
         if (fromChanges) {
             // If order of walking was reversed and end was reached before, restore it
             if (changesIndex == -1) {
@@ -119,7 +108,6 @@ class TransactionIterator(
     }
 
     override fun prev() {
-        val changes = transactionChanges()
         if (fromChanges) {
             // If order of walking was reversed and end was reached before, restore it
             if (changesIndex == changes.size) {
@@ -161,7 +149,7 @@ class TransactionIterator(
 
     override fun key() =
         if (fromChanges) {
-            transactionChanges().getOrElse(changesIndex) {
+            changes.getOrElse(changesIndex) {
                 throw RocksDBException("Invalid key")
             }.key
         } else {
@@ -170,7 +158,7 @@ class TransactionIterator(
 
     override fun value() =
         if (fromChanges) {
-            val change = transactionChanges().getOrElse(changesIndex) {
+            val change = changes.getOrElse(changesIndex) {
                 throw RocksDBException("Invalid key")
             }
             when (change) {

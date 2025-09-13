@@ -16,14 +16,18 @@ internal class VersionedComparator(
 ) : maryk.rocksdb.AbstractComparator(comparatorOptions) {
     override fun name() = "maryk.VersionedComparator"
     override fun compare(a: ByteBuffer, b: ByteBuffer): Int {
-        return if (a.remaining() > keySize && b.remaining() > keySize) {
+        val aRemaining = a.remaining()
+        val bRemaining = b.remaining()
+        return if (aRemaining > keySize && bRemaining > keySize) {
+            val aKeyLength = aRemaining - VERSION_BYTE_SIZE
+            val bKeyLength = bRemaining - VERSION_BYTE_SIZE
             when (val comparison =
-                a.compareToWithOffsetAndLength(0, a.remaining() - VERSION_BYTE_SIZE, b, 0, b.remaining() - VERSION_BYTE_SIZE)) {
+                a.compareToWithOffsetAndLength(0, aKeyLength, b, 0, bKeyLength)) {
                 0 -> a.compareToWithOffsetAndLength(
-                    a.remaining() - VERSION_BYTE_SIZE,
+                    aKeyLength,
                     VERSION_BYTE_SIZE,
                     b,
-                    b.remaining() - VERSION_BYTE_SIZE,
+                    bKeyLength,
                     VERSION_BYTE_SIZE
                 )
                 else -> comparison

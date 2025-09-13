@@ -74,9 +74,9 @@ object Person : RootDataModel<Person>() {
 3) **Create, validate, serialize**
 
 ```kotlin
-val jane = Person.create { firstName += "Jane"; lastName += "Doe" }
+val jane = Person.create { firstName with "Jane"; lastName with "Doe" }
 Person.validate(jane)
-val json = Person.writeJson(jane)
+val json = person.toJson(pretty = true)
 ```
 
 ## Learn more

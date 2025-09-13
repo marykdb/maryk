@@ -13,7 +13,6 @@ import maryk.core.properties.types.invoke
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.core.values.div
-import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -68,26 +67,26 @@ class ChangeTest {
 
     @Test
     fun changeValuesTest() {
-        val original = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            multi = S1( "world"),
-            list = listOf(3, 4, 5),
-            set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
-            map = mapOf(
+        val original = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            multi with S1( "world")
+            list with listOf(3, 4, 5)
+            set with setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11))
+            map with mapOf(
                 LocalTime(12, 0) to "Hi",
                 LocalTime(1, 2) to "Hoi"
-            ),
-            embeddedValues = EmbeddedMarykModel.create {
+            )
+            embeddedValues with {
                 value with "hi"
-                model with EmbeddedMarykModel.create {
+                model with {
                     value with "bye"
                 }
             }
-        )
+        }
 
         var changed = original.change(listOf())
 
@@ -186,26 +185,24 @@ class ChangeTest {
 
     @Test
     fun changeValuesRemoveTest() {
-        val original = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            multi = S1( "world"),
-            list = listOf(3, 4, 5),
-            set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
-            map = mapOf(
+        val original = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            multi with S1("world")
+            list with listOf(3, 4, 5)
+            set with setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11))
+            map with mapOf(
                 LocalTime(12, 0) to "Hi",
                 LocalTime(1, 2) to "Hoi"
-            ),
-            embeddedValues = EmbeddedMarykModel(
-                value = "hi",
-                model = EmbeddedMarykModel(
-                    value = "bye"
-                )
             )
-        )
+            embeddedValues with {
+                value with "hi"
+                model with { value with "bye" }
+            }
+        }
 
         var changed = original.change(listOf())
 

@@ -4,40 +4,39 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.invoke
-import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V1
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 
-val testMaryk = TestMarykModel(
-    string = "hello world",
-    int = 5,
-    uint = 3u,
-    double = 2.3,
-    dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-    listOfString = listOf(
+val testMaryk = TestMarykModel.create {
+    string with "hello world"
+    int with 5
+    uint with 3u
+    double with 2.3
+    dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+    listOfString with listOf(
         "v1", "v2", "v3"
-    ),
-    set = setOf(
+    )
+    set with setOf(
         LocalDate(2018, 9, 9),
         LocalDate(1981, 12, 5),
         LocalDate(1989, 5, 15)
-    ),
-    map = mapOf(
+    )
+    map with mapOf(
         LocalTime(11, 22, 33) to "eleven",
         LocalTime(12, 23, 34) to "twelve"
-    ),
-    embeddedValues = EmbeddedMarykModel(
-        value = "test",
-        model = EmbeddedMarykModel(
-            value = "another test"
-        )
-    ),
-    multi = S1("test"),
-    setOfString = setOf(
+    )
+    embeddedValues with {
+        value with "test"
+        model with {
+            value with "another test"
+        }
+    }
+    multi with S1("test")
+    setOfString with setOf(
         "abc", "def", "ghi"
     )
-)
+}
 
 val valuesAsStorables = arrayOf(
     "09" to "hello world",

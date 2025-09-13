@@ -11,9 +11,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.incrementingMap
 import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.multiType
-import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.values.Values
 
 object ComplexModel : RootDataModel<ComplexModel>() {
     val multi by multiType(
@@ -95,24 +93,4 @@ object ComplexModel : RootDataModel<ComplexModel>() {
             dataModel = { EmbeddedMarykModel }
         )
     )
-
-    operator fun invoke(
-        multi: TypedValue<MarykTypeEnum<*>, Any>? = null,
-        mapStringString: Map<String, String>? = null,
-        mapIntObject: Map<UInt, Values<EmbeddedMarykModel>>? = null,
-        mapIntMulti: Map<UInt, TypedValue<MarykTypeEnum<*>, Any>>? = null,
-        mapWithList: Map<String, List<String>>? = null,
-        mapWithSet: Map<String, Set<String>>? = null,
-        mapWithMap: Map<String, Map<String, String>>? = null,
-        incMap: Map<UInt, Values<EmbeddedMarykModel>>? = null
-    ) = create {
-        this.multi with multi
-        this.mapStringString with mapStringString
-        this.mapIntObject with mapIntObject
-        this.mapIntMulti with mapIntMulti
-        this.mapWithList with mapWithList
-        this.mapWithSet with mapWithSet
-        this.mapWithMap with mapWithMap
-        this.incMap with incMap
-    }
 }

@@ -12,15 +12,15 @@ import kotlin.test.Test
 import kotlin.test.expect
 
 class ValuesWithMetaDataTest {
-    private val value = TestMarykModel(
-        string = "name",
-        int = 5123123,
-        uint = 555u,
-        double = 6.33,
-        bool = true,
-        enum = V3,
-        dateTime = LocalDateTime(2017, 12, 5, 1, 33, 55)
-    )
+    private val value = TestMarykModel.create {
+        string with "name"
+        int with 5123123
+        uint with 555u
+        double with 6.33
+        bool with true
+        enum with V3
+        dateTime with LocalDateTime(2017, 12, 5, 1, 33, 55)
+    }
 
     private val key1 = TestMarykModel.key(this.value)
 

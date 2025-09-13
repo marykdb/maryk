@@ -36,28 +36,44 @@ class DataStoreGetChangesComplexTest(
     override suspend fun initData() {
         val addResponse = dataStore.execute(
             ComplexModel.add(
-                ComplexModel(
-                    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
-                    mapStringString = mapOf("a" to "b", "c" to "d"),
-                    mapIntObject = mapOf(1u to EmbeddedMarykModel("v1"), 2u to EmbeddedMarykModel("v2")),
-                    mapIntMulti = mapOf(
+                ComplexModel.create {
+                    multi with TypedValue(T3, EmbeddedMarykModel.create {
+                        value with "u3"
+                        model with {
+                            value with "ue3"
+                        }
+                    })
+                    mapStringString with mapOf("a" to "b", "c" to "d")
+                    mapIntObject with mapOf(
+                        1u to EmbeddedMarykModel.create { value with "v1" },
+                        2u to EmbeddedMarykModel.create { value with "v2" }
+                    )
+                    mapIntMulti with mapOf(
                         1u to TypedValue(T3,
-                            EmbeddedMarykModel("v1",
-                                EmbeddedMarykModel("sub1",
-                                    EmbeddedMarykModel("sub2")
-                                )
-                            )
+                            EmbeddedMarykModel.create {
+                                value with "v1"
+                                model with {
+                                    value with "sub1"
+                                    model with {
+                                        value with "sub2"
+                                    }
+                                }
+                            }
                         ),
                         2u to TypedValue(T1, "string"),
                         3u to TypedValue(T3,
-                            EmbeddedMarykModel("v2",
-                                EmbeddedMarykModel("2sub1",
-                                    EmbeddedMarykModel("2sub2")
-                                )
-                            )
+                            EmbeddedMarykModel.create {
+                                value with "v2"
+                                model with {
+                                    value with "2sub1"
+                                    model with {
+                                        value with "2sub2"
+                                    }
+                                }
+                            }
                         )
                     )
-                )
+                }
             )
         )
         addResponse.statuses.forEach { status ->

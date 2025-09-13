@@ -8,7 +8,6 @@ import maryk.checkYamlConversion
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.values.div
-import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -56,25 +55,25 @@ class SetChangeTest {
 
     @Test
     fun changeValuesTest() {
-        val original = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            set = setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)),
-            embeddedValues = EmbeddedMarykModel.create {
+        val original = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            set with setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11))
+            embeddedValues with {
                 value with "test"
-                marykModel with TestMarykModel(
-                    string = "hi world",
-                    int = 3,
-                    uint = 67u,
-                    double = 232523.3,
-                    dateTime = LocalDateTime(2020, 10, 18, 0, 0),
-                    set = setOf(LocalDate(2010, 2, 20), LocalDate(2009, 12, 11))
-                )
+                marykModel with {
+                    string with "hi world"
+                    int with 3
+                    uint with 67u
+                    double with 232523.3
+                    dateTime with LocalDateTime(2020, 10, 18, 0, 0)
+                    set with setOf(LocalDate(2010, 2, 20), LocalDate(2009, 12, 11))
+                }
             }
-        )
+        }
 
         val changed = original.change(
             SetChange(

@@ -27,12 +27,12 @@ class DataStoreFilterComplexTest(
         "doEqualsFilter" to ::doEqualsFilter
     )
 
-    private val dataObject = ComplexModel(
-        mapStringString = mapOf(
+    private val dataObject = ComplexModel.create {
+        mapStringString with mapOf(
             "k1" to "v1",
             "k2" to "v2"
         )
-    )
+    }
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(

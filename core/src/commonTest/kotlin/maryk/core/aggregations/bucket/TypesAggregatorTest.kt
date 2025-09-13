@@ -49,17 +49,29 @@ class TypesAggregatorTest {
 
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.create { multi with TypedValue(S3, EmbeddedMarykModel("E1")) }
+                TestMarykModel.create {
+                    multi with TypedValue(S3, EmbeddedMarykModel.create {
+                        value with "E1"
+                    })
+                }
             )
         )
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.create { multi with TypedValue(S3, EmbeddedMarykModel("E1")) }
+                TestMarykModel.create {
+                    multi with TypedValue(S3, EmbeddedMarykModel.create {
+                        value with "E1"
+                    })
+                }
             )
         )
         typesAggregator.aggregate(
             createAggregator(
-                TestMarykModel.create { multi with TypedValue(S3, EmbeddedMarykModel("E1")) }
+                TestMarykModel.create {
+                    multi with TypedValue(S3, EmbeddedMarykModel.create {
+                        value with "E1"
+                    })
+                }
             )
         )
 

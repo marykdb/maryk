@@ -3,6 +3,8 @@ package maryk.core.processors.datastore
 import maryk.core.properties.types.TypedValue
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.EmbeddedMarykModel.model
+import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.models.MarykTypeEnum.T4
@@ -11,15 +13,15 @@ import maryk.test.models.MarykTypeEnum.T6
 import maryk.test.models.MarykTypeEnum.T7
 import maryk.test.models.SimpleMarykTypeEnum.S3
 
-val complexValues = ComplexModel(
-    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
-    mapStringString = mapOf("v1" to "a", "v22" to "b"),
-    mapIntObject = mapOf(
-        1u to EmbeddedMarykModel("t1"),
-        2u to EmbeddedMarykModel("t2", EmbeddedMarykModel("te2"))
-    ),
-    mapIntMulti = mapOf(
-        2u to TypedValue(T3, EmbeddedMarykModel("m3", EmbeddedMarykModel("me3"))),
+val complexValues = ComplexModel.create {
+    multi with TypedValue(T3, EmbeddedMarykModel.create { value with "u3"; model with { value with "ue3" } })
+    mapStringString with mapOf("v1" to "a", "v22" to "b")
+    mapIntObject with mapOf(
+        1u to EmbeddedMarykModel.create { value with "t1" },
+        2u to EmbeddedMarykModel.create { value with "t2"; model with { value with "te2" } }
+    )
+    mapIntMulti with mapOf(
+        2u to TypedValue(T3, EmbeddedMarykModel.create { value with "m3"; model with { value with "me3" } }),
         5u to TypedValue(T1, "TEST"),
         7u to TypedValue(T4, listOf("a", "b")),
         8u to TypedValue(T5, setOf("c", "d")),
@@ -27,18 +29,18 @@ val complexValues = ComplexModel(
             5u to "e",
             6u to "f"
         )),
-        10u to TypedValue(T7, TypedValue(S3, EmbeddedMarykModel("g")))
-    ),
-    mapWithList = mapOf(
+        10u to TypedValue(T7, TypedValue(S3, EmbeddedMarykModel.create { value with "g" }))
+    )
+    mapWithList with mapOf(
         "a" to listOf("a1", "a2")
-    ),
-    mapWithSet = mapOf(
+    )
+    mapWithSet with mapOf(
         "b" to setOf("b1", "b2")
-    ),
-    mapWithMap = mapOf(
+    )
+    mapWithMap with mapOf(
         "c" to mapOf("c1" to "c2")
     )
-)
+}
 
 val complexValuesAsStorables = arrayOf(
     "09" to T3,

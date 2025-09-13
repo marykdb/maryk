@@ -20,6 +20,7 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.SimpleMarykModel.value
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -36,18 +37,18 @@ class DataStoreScanUniqueTest(
     )
 
     private val objects = arrayOf(
-        CompleteMarykModel(
-            string="haas",
-            number = 24u,
-            subModel = SimpleMarykModel.create {
+        CompleteMarykModel.create {
+            string with "haas"
+            number with 24u
+            subModel with SimpleMarykModel.create {
                 value with "haha"
-            },
-            multi=TypedValue(T2, 22),
-            booleanForKey= true,
-            dateForKey= LocalDate(2018, 3, 29),
-            multiForKey= TypedValue(S1, "hii"),
-            enumEmbedded= E1
-        )
+            }
+            multi with TypedValue(T2, 22)
+            booleanForKey with true
+            dateForKey with LocalDate(2018, 3, 29)
+            multiForKey with TypedValue(S1, "hii")
+            enumEmbedded with E1
+        }
     )
 
     override suspend fun initData() {

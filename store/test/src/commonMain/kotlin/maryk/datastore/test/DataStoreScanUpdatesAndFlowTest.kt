@@ -40,46 +40,46 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.expect
 
-val t0 = TestMarykModel(
-    string = "ha world 1",
-    int = 0,
-    uint = 67u,
-    bool = true,
-    double = 2323.3,
-    dateTime = LocalDateTime(1989, 9, 8, 0, 0)
-)
-val t1 = TestMarykModel(
-    string = "ha world 2",
-    int = -10,
-    uint = 69u,
-    bool = false,
-    double = 0.1,
-    dateTime = LocalDateTime(2001, 4, 2, 0, 0)
-)
-val t2 = TestMarykModel(
-    string = "ha world 3",
-    int = 2,
-    uint = 1244u,
-    bool = true,
-    double = 444.0,
-    dateTime = LocalDateTime(2005, 11, 30, 0, 0)
-)
-val t3 = TestMarykModel(
-    string = "ha world 4",
-    int = -5,
-    uint = 52323u,
-    bool = false,
-    double = 2333.0,
-    dateTime = LocalDateTime(2012, 1, 28, 0, 0)
-)
-val t4 = TestMarykModel(
-    string = "ha world 5",
-    int = 4,
-    uint = 234234u,
-    bool = true,
-    double = 232523.3,
-    dateTime = LocalDateTime(2020, 3, 23, 0, 0)
-)
+val t0 = TestMarykModel.create {
+    string with "ha world 1"
+    int with 0
+    uint with 67u
+    bool with true
+    double with 2323.3
+    dateTime with LocalDateTime(1989, 9, 8, 0, 0)
+}
+val t1 = TestMarykModel.create {
+    string with "ha world 2"
+    int with -10
+    uint with 69u
+    bool with false
+    double with 0.1
+    dateTime with LocalDateTime(2001, 4, 2, 0, 0)
+}
+val t2 = TestMarykModel.create {
+    string with "ha world 3"
+    int with 2
+    uint with 1244u
+    bool with true
+    double with 444.0
+    dateTime with LocalDateTime(2005, 11, 30, 0, 0)
+}
+val t3 = TestMarykModel.create {
+    string with "ha world 4"
+    int with -5
+    uint with 52323u
+    bool with false
+    double with 2333.0
+    dateTime with LocalDateTime(2012, 1, 28, 0, 0)
+}
+val t4 = TestMarykModel.create {
+    string with "ha world 5"
+    int with 4
+    uint with 234234u
+    bool with true
+    double with 232523.3
+    dateTime with LocalDateTime(2020, 3, 23, 0, 0)
+}
 
 class DataStoreScanUpdatesAndFlowTest(
     val dataStore: IsDataStore
@@ -315,14 +315,14 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(HardDelete, reason)
             }
 
-            val newDataObject = TestMarykModel(
-                string = "ha world 6",
-                int = 6,
-                uint = 23425u,
-                bool = true,
-                double = 6968798.37465,
-                dateTime = LocalDateTime(1922, 12, 23, 0, 0)
-            )
+            val newDataObject = TestMarykModel.create {
+                string with "ha world 6"
+                int with 6
+                uint with 23425u
+                bool with true
+                double with 6968798.37465
+                dateTime with LocalDateTime(1922, 12, 23, 0, 0)
+            }
 
             dataStore.execute(TestMarykModel.add(
                 newDataObject
@@ -535,14 +535,14 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(HardDelete, reason)
             }
 
-            val newDataObject = TestMarykModel(
-                string = "ha world 6",
-                int = -20,
-                uint = 1u,
-                bool = true,
-                double = 6968798.37465,
-                dateTime = LocalDateTime(1922, 12, 23, 0, 0)
-            )
+            val newDataObject = TestMarykModel.create {
+                string with "ha world 6"
+                int with -20
+                uint with 1u
+                bool with true
+                double with 6968798.37465
+                dateTime with LocalDateTime(1922, 12, 23, 0, 0)
+            }
 
             dataStore.execute(TestMarykModel.add(
                 newDataObject
@@ -630,14 +630,14 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(testKeys[2], key)
             }
 
-            val newDataObject = TestMarykModel(
-                string = "ha world 6",
-                int = 6,
-                uint = 23133214u,
-                bool = true,
-                double = 6968798.37465,
-                dateTime = LocalDateTime(1922, 12, 23, 0, 0)
-            )
+            val newDataObject = TestMarykModel.create {
+                string with "ha world 6"
+                int with 6
+                uint with 23133214u
+                bool with true
+                double with 6968798.37465
+                dateTime with LocalDateTime(1922, 12, 23, 0, 0)
+            }
 
             dataStore.execute(TestMarykModel.add(
                 newDataObject
@@ -648,14 +648,14 @@ class DataStoreScanUpdatesAndFlowTest(
 
             // no updates because is outside the limit otherwise next one will not match
 
-            val newDataObject2 = TestMarykModel(
-                string = "ha new world",
-                int = -2,
-                uint = 4321u,
-                bool = false,
-                double = 1.1,
-                dateTime = LocalDateTime(1901, 1, 2, 0, 0)
-            )
+            val newDataObject2 = TestMarykModel.create {
+                string with "ha new world"
+                int with -2
+                uint with 4321u
+                bool with false
+                double with 1.1
+                dateTime with LocalDateTime(1901, 1, 2, 0, 0)
+            }
 
             // New object is added within range in already full list, so we expect an add and a delete
             dataStore.execute(TestMarykModel.add(
@@ -819,14 +819,14 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(testKeys[3], key)
             }
 
-            val newDataObject = TestMarykModel(
-                string = "ha world 6",
-                int = 6,
-                uint = 23123214u,
-                bool = true,
-                double = 6968798.37465,
-                dateTime = LocalDateTime(1922, 12, 23, 0, 0)
-            )
+            val newDataObject = TestMarykModel.create {
+                string with "ha world 6"
+                int with 6
+                uint with 23123214u
+                bool with true
+                double with 6968798.37465
+                dateTime with LocalDateTime(1922, 12, 23, 0, 0)
+            }
 
             dataStore.execute(TestMarykModel.add(
                 newDataObject
@@ -838,14 +838,14 @@ class DataStoreScanUpdatesAndFlowTest(
 
             // no updates because is outside the limit otherwise next one will not match
 
-            val newDataObject2 = TestMarykModel(
-                string = "ha new world",
-                int = -1,
-                uint = 4321u,
-                bool = false,
-                double = 1.1,
-                dateTime = LocalDateTime(1901, 1, 2, 0, 0)
-            )
+            val newDataObject2 = TestMarykModel.create {
+                string with "ha new world"
+                int with -1
+                uint with 4321u
+                bool with false
+                double with 1.1
+                dateTime with LocalDateTime(1901, 1, 2, 0, 0)
+            }
 
             // New object is added within range in already full list, so we expect an add and a delete
             dataStore.execute(TestMarykModel.add(

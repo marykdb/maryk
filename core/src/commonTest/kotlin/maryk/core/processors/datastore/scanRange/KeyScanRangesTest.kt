@@ -302,7 +302,7 @@ class KeyScanRangesTest {
         expect("7fffffa3f44d827ffeffff") { scanRange.ranges.last().end?.toHex() }
         assertTrue { scanRange.ranges.last().endInclusive }
 
-        val match = Log.key(Log("message", ERROR, LocalDateTime(2018, 12, 8, 12, 2, 2, 2000000)))
+        val match = Log.key(Log.create { message with "message"; severity with ERROR; timestamp with LocalDateTime(2018, 12, 8, 12, 2, 2, 2000000) })
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(match.bytes) }
         assertTrue { scanRange.ranges.first().keyOutOfRange(match.bytes) }

@@ -47,15 +47,15 @@ internal class RootDataModelTest {
             )
         ) {
             TestMarykModel.key(
-                TestMarykModel(
-                    string = "name",
-                    int = 5123123,
-                    uint = 555u,
-                    double = 6.33,
-                    bool = true,
-                    enum = V3,
-                    dateTime = DateTimeDefinition.nowUTC()
-                )
+                TestMarykModel.create {
+                    string with "name"
+                    int with 5123123
+                    uint with 555u
+                    double with 6.33
+                    bool with true
+                    enum with V3
+                    dateTime with DateTimeDefinition.nowUTC()
+                }
             )
         }
     }

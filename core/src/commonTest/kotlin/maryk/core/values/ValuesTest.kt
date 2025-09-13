@@ -6,7 +6,6 @@ import maryk.core.models.graph
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.invoke
-import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
@@ -18,13 +17,13 @@ import kotlin.test.expect
 class ValuesTest {
     @Test
     fun copy() {
-        val original = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0)
-        )
+        val original = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+        }
 
         val copy = original.copy {
             listOf(
@@ -40,19 +39,17 @@ class ValuesTest {
 
     @Test
     fun filterWithSelect() {
-        val original = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            embeddedValues = EmbeddedMarykModel(
-                value = "hello universe",
-                model = EmbeddedMarykModel(
-                    value = "hello multiverse"
-                )
-            )
-        )
+        val original = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            embeddedValues with {
+                value with "hello universe"
+                model with { value with "hello multiverse" }
+            }
+        }
 
         val filtered = original.filterWithSelect(
             TestMarykModel.graph {
@@ -77,26 +74,24 @@ class ValuesTest {
 
     @Test
     fun testGetValue() {
-        val values = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            listOfString = listOf(
-                "v1", "v2", "v3"
-            ),
-            map = mapOf(
+        val values = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            listOfString with listOf("v1", "v2", "v3")
+            map with mapOf(
                 LocalTime(11, 22, 33) to "eleven",
                 LocalTime(12, 23, 34) to "twelve"
-            ),
-            embeddedValues = EmbeddedMarykModel(
-                value = "test",
-                model = EmbeddedMarykModel(
-                    value = "another test"
-                )
             )
-        )
+            embeddedValues with {
+                value with "test"
+                model with {
+                    value with "another test"
+                }
+            }
+        }
 
         expect("hello world") { values[TestMarykModel { string::ref }] }
         expect(2.3) { values[TestMarykModel { double::ref }] }
@@ -110,26 +105,24 @@ class ValuesTest {
 
     @Test
     fun testGetValueNotReified() {
-        val values = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            listOfString = listOf(
-                "v1", "v2", "v3"
-            ),
-            map = mapOf(
+        val values = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            listOfString with listOf("v1", "v2", "v3")
+            map with mapOf(
                 LocalTime(11, 22, 33) to "eleven",
                 LocalTime(12, 23, 34) to "twelve"
-            ),
-            embeddedValues = EmbeddedMarykModel(
-                value = "test",
-                model = EmbeddedMarykModel(
-                    value = "another test"
-                )
             )
-        )
+            embeddedValues with {
+                value with "test"
+                model with {
+                    value with "another test"
+                }
+            }
+        }
 
         expect("hello world") { values.get { string } }
         expect(2.3) { values.get { double } }
@@ -143,26 +136,26 @@ class ValuesTest {
 
     @Test
     fun testToJson() {
-        val values = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            listOfString = listOf(
+        val values = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            listOfString with listOf(
                 "v1", "v2", "v3"
-            ),
-            map = mapOf(
+            )
+            map with mapOf(
                 LocalTime(11, 22, 33) to "eleven",
                 LocalTime(12, 23, 34) to "twelve"
-            ),
-            embeddedValues = EmbeddedMarykModel(
-                value = "test",
-                model = EmbeddedMarykModel(
-                    value = "another test"
-                )
             )
-        )
+            embeddedValues with {
+                value with "test"
+                model with {
+                    value with "another test"
+                }
+            }
+        }
 
         expect("""
         {
@@ -191,27 +184,25 @@ class ValuesTest {
 
     @Test
     fun processValuesTest() {
-        val values = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            map = mapOf(
+        val values = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            map with mapOf(
                 LocalTime(11, 22, 33) to "eleven",
                 LocalTime(12, 23, 34) to "twelve"
-            ),
-            embeddedValues = EmbeddedMarykModel(
-                value = "test",
-                model = EmbeddedMarykModel(
-                    value = "another test"
-                )
-            ),
-            multi = S1("s1value"),
-            listOfString = listOf(
-                "v1", "v2", "v3"
             )
-        )
+            embeddedValues with {
+                value with "test"
+                model with {
+                    value with "another test"
+                }
+            }
+            multi with S1("s1value")
+            listOfString with listOf("v1", "v2", "v3")
+        }
 
         val expectedValues = arrayOf<Pair<IsPropertyReference<*, *, *>, Any?>>(
             TestMarykModel { string::ref } to values { string },

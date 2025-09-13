@@ -32,44 +32,44 @@ import kotlin.test.assertTrue
 
 class FilterWithFetchRequestKtTest {
     private val value2 = TestMarykModel.createDataRecord(
-        TestMarykModel(
-            string = "haha2",
-            int = 532,
-            uint = 2u,
-            double = 2828.43,
-            dateTime = LocalDateTime(2013, 3, 2, 0, 0),
-            bool = true,
-            map = mapOf(
+        TestMarykModel.create {
+            string with "haha2"
+            int with 532
+            uint with 2u
+            double with 2828.43
+            dateTime with LocalDateTime(2013, 3, 2, 0, 0)
+            bool with true
+            map with mapOf(
                 LocalTime(14, 15, 14) to "haha10"
-            ),
-            list = listOf(
+            )
+            list with listOf(
                 2, 6, 7
-            ),
-            set = setOf(
+            )
+            set with setOf(
                 LocalDate(2020, 3, 30), LocalDate(2018, 9, 9)
             )
-        )
+        }
     )
 
     private val value1 = TestMarykModel.createDataRecord(
-        TestMarykModel(
-            string = "haha1",
-            int = 5,
-            uint = 6u,
-            double = 0.43,
-            dateTime = LocalDateTime(2018, 3, 2, 0, 0),
-            bool = true,
-            map = mapOf(
+        TestMarykModel.create {
+            string with "haha1"
+            int with 5
+            uint with 6u
+            double with 0.43
+            dateTime with LocalDateTime(2018, 3, 2, 0, 0)
+            bool with true
+            map with mapOf(
                 LocalTime(12, 13, 14) to "haha10"
-            ),
-            list = listOf(
+            )
+            list with listOf(
                 4, 6, 7
-            ),
-            set = setOf(
+            )
+            set with setOf(
                 LocalDate(2019, 3, 30), LocalDate(2018, 9, 9)
-            ),
-            selfReference = value2.key
-        )
+            )
+            selfReference with value2.key
+        }
     )
 
     private fun <DM : IsRootDataModel> DM.createDataRecord(values: Values<DM>): DataRecord<DM> {

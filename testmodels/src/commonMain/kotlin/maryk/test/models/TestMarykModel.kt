@@ -1,7 +1,6 @@
 package maryk.test.models
 
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.DateDefinition
@@ -23,12 +22,9 @@ import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.valueObject
-import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.values.Values
 
 object TestMarykModel : RootDataModel<TestMarykModel>(
     keyDefinition = {
@@ -183,44 +179,4 @@ object TestMarykModel : RootDataModel<TestMarykModel>(
         valueDefinition = StringDefinition(),
         required = false
     )
-
-    operator fun invoke(
-        string: String = "haha",
-        int: Int,
-        uint: UInt,
-        double: Double,
-        dateTime: LocalDateTime,
-        bool: Boolean? = null,
-        enum: Option = Option.V1,
-        list: List<Int>? = null,
-        set: Set<LocalDate>? = null,
-        map: Map<LocalTime, String>? = null,
-        valueObject: TestValueObject? = null,
-        embeddedValues: Values<EmbeddedMarykModel>? = null,
-        multi: TypedValue<SimpleMarykTypeEnum<*>, *>? = null,
-        reference: Key<TestMarykModel>? = null,
-        listOfString: List<String>? = null,
-        selfReference: Key<TestMarykModel>? = null,
-        setOfString: Set<String>? = null,
-        incMap: Map<UInt, String>? = null
-    ) = create {
-        this.string with string
-        this.int with int
-        this.uint with uint
-        this.double with double
-        this.dateTime with dateTime
-        this.bool with bool
-        this.enum with enum
-        this.list with list
-        this.set with set
-        this.map with map
-        this.valueObject with valueObject
-        this.embeddedValues with embeddedValues
-        this.multi with multi
-        this.reference with reference
-        this.listOfString with listOfString
-        this.selfReference with selfReference
-        this.setOfString with setOfString
-        this.incMap with incMap
-    }
 }

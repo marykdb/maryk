@@ -49,38 +49,38 @@ class DataStoreChangeValidationTest(
     override suspend fun initData() {
         val addResponse = dataStore.execute(
             TestMarykModel.add(
-                TestMarykModel(
-                    "haha1",
-                    5,
-                    6u,
-                    0.43,
-                    LocalDateTime(2018, 3, 2, 0, 0),
-                    true,
-                    listOfString = listOf("a", "b", "c"),
-                    map = mapOf(LocalTime(2, 3, 5) to "test"),
-                    set = setOf(LocalDate(2018, 3, 4))
-                ),
-                TestMarykModel(
-                    "haha2",
-                    3,
-                    8u,
-                    1.244,
-                    LocalDateTime(2018, 1, 2, 0, 0),
-                    false,
-                    listOfString = listOf("c", "d", "e"),
-                    map = mapOf(LocalTime(12, 33, 45) to "another", LocalTime(13, 44, 55) to "another2"),
-                    set = setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))
-                ),
-                TestMarykModel(
-                    "haha3",
-                    6,
-                    12u,
-                    1333.3,
-                    LocalDateTime(2018, 12, 9, 0, 0),
-                    false,
-                    listOfString = listOf("c"),
-                    reference = TestMarykModel.key("AAACKwEAAw")
-                )
+                TestMarykModel.create {
+                    string with "haha1"
+                    int with 5
+                    uint with 6u
+                    double with 0.43
+                    dateTime with LocalDateTime(2018, 3, 2, 0, 0)
+                    bool with true
+                    listOfString with listOf("a", "b", "c")
+                    map with mapOf(LocalTime(2, 3, 5) to "test")
+                    set with setOf(LocalDate(2018, 3, 4))
+                },
+                TestMarykModel.create {
+                    string with "haha2"
+                    int with 3
+                    uint with 8u
+                    double with 1.244
+                    dateTime with LocalDateTime(2018, 1, 2, 0, 0)
+                    bool with false
+                    listOfString with listOf("c", "d", "e")
+                    map with mapOf(LocalTime(12, 33, 45) to "another", LocalTime(13, 44, 55) to "another2")
+                    set with setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))
+                },
+                TestMarykModel.create {
+                    string with "haha3"
+                    int with 6
+                    uint with 12u
+                    double with 1333.3
+                    dateTime with LocalDateTime(2018, 12, 9, 0, 0)
+                    bool with false
+                    listOfString with listOf("c")
+                    reference with TestMarykModel.key("AAACKwEAAw")
+                }
             )
         )
 

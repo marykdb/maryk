@@ -58,25 +58,25 @@ class ListChangeTest {
 
     @Test
     fun changeValuesTest() {
-        val original = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            list = listOf(3, 4, 5),
-            embeddedValues = EmbeddedMarykModel.create {
+        val original = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            list with listOf(3, 4, 5)
+            embeddedValues with EmbeddedMarykModel.create {
                 value with "test"
-                marykModel with TestMarykModel(
-                    string = "hi world",
-                    int = 3,
-                    uint = 67u,
-                    double = 232523.3,
-                    dateTime = LocalDateTime(2020, 10, 18, 0, 0),
-                    list = listOf(33, 44, 55)
-                )
+                marykModel with TestMarykModel.create {
+                    string with "hi world"
+                    int with 3
+                    uint with 67u
+                    double with 232523.3
+                    dateTime with LocalDateTime(2020, 10, 18, 0, 0)
+                    list with listOf(33, 44, 55)
+                }
             }
-        )
+        }
 
         val changed = original.change(
             ListChange(

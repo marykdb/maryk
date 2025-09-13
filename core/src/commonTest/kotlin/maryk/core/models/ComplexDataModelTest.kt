@@ -8,18 +8,20 @@ import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.EmbeddedMarykModel.model
+import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.expect
 
-val testComplexMap = ComplexModel(
-    multi = TypedValue(T3, EmbeddedMarykModel("u3", EmbeddedMarykModel("ue3"))),
-    mapStringString = mapOf("v1" to "a", "v2" to "b"),
-    mapIntObject = mapOf(1u to EmbeddedMarykModel("t1"), 2u to EmbeddedMarykModel("t2")),
-    mapIntMulti = mapOf(2u to TypedValue(T3, EmbeddedMarykModel("m3")))
-)
+val testComplexMap = ComplexModel.create {
+    multi with TypedValue(T3, EmbeddedMarykModel.create { value with "u3"; model with { value with "ue3" } })
+    mapStringString with mapOf("v1" to "a", "v2" to "b")
+    mapIntObject with mapOf(1u to EmbeddedMarykModel.create { value with "t1" }, 2u to EmbeddedMarykModel.create { value with "t2" })
+    mapIntMulti with mapOf(2u to TypedValue(T3, EmbeddedMarykModel.create { value with "m3" }))
+}
 
 internal class ComplexDataModelMapTest {
     @Test

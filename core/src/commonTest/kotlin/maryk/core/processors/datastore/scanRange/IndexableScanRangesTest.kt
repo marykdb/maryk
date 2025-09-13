@@ -50,43 +50,43 @@ class IndexableScanRangesTest {
         time.ref()
     )
 
-    private val earlierDO = CompleteMarykModel(
-        string = "Arend",
-        number = 2u,
-        time = LocalTime(12, 11, 10),
-        booleanForKey = true,
-        dateForKey = LocalDate(2019, 3, 20),
-        multiForKey = S1( "test"),
-        enumEmbedded = E1
-    )
+    private val earlierDO = CompleteMarykModel.create {
+        string with "Arend"
+        number with 2u
+        time with LocalTime(12, 11, 10)
+        booleanForKey with true
+        dateForKey with LocalDate(2019, 3, 20)
+        multiForKey with S1( "test")
+        enumEmbedded with E1
+    }
     private val earlierKey = CompleteMarykModel.key(earlierDO)
     private val earlierIndexValue = number.ref().toStorageByteArrayForIndex(
         earlierDO, earlierKey.bytes
     )!!
 
-    private val matchDO = CompleteMarykModel(
-        string = "Jannes",
-        number = 5u,
-        time = LocalTime(11, 10, 9),
-        booleanForKey = true,
-        dateForKey = LocalDate(2019, 3, 3),
-        multiForKey = S1( "test"),
-        enumEmbedded = E1
-    )
+    private val matchDO = CompleteMarykModel.create {
+        string with "Jannes"
+        number with 5u
+        time with LocalTime(11, 10, 9)
+        booleanForKey with true
+        dateForKey with LocalDate(2019, 3, 3)
+        multiForKey with S1( "test")
+        enumEmbedded with E1
+    }
     private val matchKey = CompleteMarykModel.key(matchDO)
     private val matchIndexValue = number.ref().toStorageByteArrayForIndex(
         matchDO, matchKey.bytes
     )!!
 
-    private val laterDO = CompleteMarykModel(
-        string = "Karel",
-        number = 9u,
-        time = LocalTime(9, 8, 7),
-        booleanForKey = true,
-        dateForKey = LocalDate(2019, 3, 1),
-        multiForKey = S1( "test"),
-        enumEmbedded = E1
-    )
+    private val laterDO = CompleteMarykModel.create {
+        string with "Karel"
+        number with 9u
+        time with LocalTime(9, 8, 7)
+        booleanForKey with true
+        dateForKey with LocalDate(2019, 3, 1)
+        multiForKey with S1( "test")
+        enumEmbedded with E1
+    }
     private val laterKey = CompleteMarykModel.key(laterDO)
     private val laterIndexValue = number.ref().toStorageByteArrayForIndex(
         laterDO, laterKey.bytes

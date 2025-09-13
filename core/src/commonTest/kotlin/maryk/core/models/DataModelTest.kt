@@ -17,6 +17,7 @@ import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
@@ -28,37 +29,37 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.expect
 
-val testMarykModelObject = TestMarykModel(
-    string = "haas",
-    int = 4,
-    uint = 53u,
-    double = 3.5555,
-    bool = true,
-    dateTime = LocalDateTime(2017, 12, 5, 12, 40)
-)
+val testMarykModelObject = TestMarykModel.create {
+    string with "haas"
+    int with 4
+    uint with 53u
+    double with 3.5555
+    bool with true
+    dateTime with LocalDateTime(2017, 12, 5, 12, 40)
+}
 
-val testExtendedMarykModelObject = TestMarykModel(
-    string = "hay",
-    int = 4,
-    double = 3.555,
-    dateTime = LocalDateTime(2017, 12, 4, 12, 13),
-    uint = 32u,
-    bool = true,
-    list = listOf(34, 2352, 3423, 766),
-    set = setOf(
+val testExtendedMarykModelObject = TestMarykModel.create {
+    string with "hay"
+    int with 4
+    double with 3.555
+    dateTime with LocalDateTime(2017, 12, 4, 12, 13)
+    uint with 32u
+    bool with true
+    list with listOf(34, 2352, 3423, 766)
+    set with setOf(
         LocalDate(2017, 12, 5),
         LocalDate(2016, 3, 2),
         LocalDate(1981, 12, 5)
-    ),
-    map = mapOf(
+    )
+    map with mapOf(
         LocalTime(12, 55) to "yes",
         LocalTime(10, 3) to "ahum"
-    ),
-    valueObject = TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true),
-    embeddedValues = EmbeddedMarykModel("test"),
-    multi = TypedValue(S3, EmbeddedMarykModel("subInMulti!")),
-    listOfString = listOf("test1", "another test", "🤗")
-)
+    )
+    valueObject with TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true)
+    embeddedValues with EmbeddedMarykModel.create { value with "test" }
+    multi with TypedValue(S3, EmbeddedMarykModel.create { value with "subInMulti!" })
+    listOfString with listOf("test1", "another test", "🤗")
+}
 
 private const val JSON =
     """{"string":"hay","int":4,"uint":32,"double":"3.555","dateTime":"2017-12-04T12:13","bool":true,"enum":"V1(1)","list":[34,2352,3423,766],"set":["2017-12-05","2016-03-02","1981-12-05"],"map":{"12:55":"yes","10:03":"ahum"},"valueObject":{"int":6,"dateTime":"2017-04-01T12:55","bool":true},"embeddedValues":{"value":"test"},"multi":["S3(3)",{"value":"subInMulti!"}],"listOfString":["test1","another test","🤗"]}"""
@@ -121,14 +122,14 @@ internal class DataModelTest {
     fun failValidationWithIncorrectValuesInDataObject() {
         assertFailsWith<ValidationUmbrellaException> {
             TestMarykModel.validate(
-                TestMarykModel(
-                    string = "haas",
-                    int = 9,
-                    uint = 53u,
-                    double = 3.5555,
-                    bool = true,
-                    dateTime = LocalDateTime(2017, 12, 5, 12, 40)
-                )
+                TestMarykModel.create {
+                    string with "haas"
+                    int with 9
+                    uint with 53u
+                    double with 3.5555
+                    bool with true
+                    dateTime with LocalDateTime(2017, 12, 5, 12, 40)
+                }
             )
         }
     }

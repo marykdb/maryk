@@ -59,65 +59,65 @@ class DataStoreChangeTest(
     override suspend fun initData() {
         val addResponse = dataStore.execute(
             TestMarykModel.add(
-                TestMarykModel(
-                    "haha1",
-                    5,
-                    6u,
-                    0.43,
-                    LocalDateTime(2018, 3, 2, 0, 0),
-                    true,
-                    listOfString = listOf("a", "b", "c"),
-                    map = mapOf(LocalTime(2, 3, 5) to "test"),
-                    set = setOf(LocalDate(2018, 3, 4))
-                ),
-                TestMarykModel(
-                    "haha2",
-                    3,
-                    8u,
-                    1.244,
-                    LocalDateTime(2018, 1, 2, 0, 0),
-                    false,
-                    embeddedValues = EmbeddedMarykModel("value"),
-                    list = listOf(1, 4, 6),
-                    listOfString = listOf("c", "d", "e"),
-                    map = mapOf(LocalTime(12, 33, 45) to "another", LocalTime(13, 44, 55) to "another2"),
-                    set = setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5)),
-                    incMap = mapOf(1u to "a", 2u to "b")
-                ),
-                TestMarykModel(
-                    "haha3",
-                    6,
-                    12u,
-                    1333.3,
-                    LocalDateTime(2018, 12, 9, 0, 0),
-                    false,
-                    reference = TestMarykModel.key("AAACKwEAAw")
-                ),
-                TestMarykModel(
-                    "haha4",
-                    4,
-                    14u,
-                    1.644,
-                    LocalDateTime(2019, 1, 2, 0, 0),
-                    false,
-                    multi = TypedValue(S1, "string"),
-                    listOfString = listOf("f", "g", "h"),
-                    map = mapOf(LocalTime(1, 33, 45) to "an other", LocalTime(13, 44, 55) to "an other2"),
-                    set = setOf(LocalDate(2015, 11, 25), LocalDate(2001, 12, 5))
-                ),
-                TestMarykModel(
-                    "haha5",
-                    5,
-                    13u,
-                    3.44,
-                    LocalDateTime(1, 1, 2, 0, 0),
-                    true,
-                    multi = TypedValue(S1, "v1"),
-                    listOfString = listOf("f", "g", "h"),
-                    map = mapOf(LocalTime(3, 3, 3) to "three", LocalTime(4, 4, 4) to "4"),
-                    set = setOf(LocalDate(2001, 1, 1), LocalDate(2002, 2, 2))
-                ),
-                TestMarykModel("haha6", 1, 13u, 3.44, LocalDateTime(1, 1, 2, 0, 0), false)
+                TestMarykModel.create {
+                    string with "haha1"
+                    int with 5
+                    uint with 6u
+                    double with 0.43
+                    dateTime with LocalDateTime(2018, 3, 2, 0, 0)
+                    bool with true
+                    listOfString with listOf("a", "b", "c")
+                    map with mapOf(LocalTime(2, 3, 5) to "test")
+                    set with setOf(LocalDate(2018, 3, 4))
+                },
+                TestMarykModel.create {
+                    string with "haha2"
+                    int with 3
+                    uint with 8u
+                    double with 1.244
+                    dateTime with LocalDateTime(2018, 1, 2, 0, 0)
+                    bool with false
+                    embeddedValues with EmbeddedMarykModel.create { value with "value" }
+                    list with listOf(1, 4, 6)
+                    listOfString with listOf("c", "d", "e")
+                    map with mapOf(LocalTime(12, 33, 45) to "another", LocalTime(13, 44, 55) to "another2")
+                    set with setOf(LocalDate(2018, 11, 25), LocalDate(1981, 12, 5))
+                    incMap with mapOf(1u to "a", 2u to "b")
+                },
+                TestMarykModel.create {
+                    string with "haha3"
+                    int with 6
+                    uint with 12u
+                    double with 1333.3
+                    dateTime with LocalDateTime(2018, 12, 9, 0, 0)
+                    bool with false
+                    reference with TestMarykModel.key("AAACKwEAAw")
+                },
+                TestMarykModel.create {
+                    string with "haha4"
+                    int with 4
+                    uint with 14u
+                    double with 1.644
+                    dateTime with LocalDateTime(2019, 1, 2, 0, 0)
+                    bool with false
+                    multi with TypedValue(S1, "string")
+                    listOfString with listOf("f", "g", "h")
+                    map with mapOf(LocalTime(1, 33, 45) to "an other", LocalTime(13, 44, 55) to "an other2")
+                    set with setOf(LocalDate(2015, 11, 25), LocalDate(2001, 12, 5))
+                },
+                TestMarykModel.create {
+                    string with "haha5"
+                    int with 5
+                    uint with 13u
+                    double with 3.44
+                    dateTime with LocalDateTime(1, 1, 2, 0, 0)
+                    bool with true
+                    multi with TypedValue(S1, "v1")
+                    listOfString with listOf("f", "g", "h")
+                    map with mapOf(LocalTime(3, 3, 3) to "three", LocalTime(4, 4, 4) to "4")
+                    set with setOf(LocalDate(2001, 1, 1), LocalDate(2002, 2, 2))
+                },
+                TestMarykModel.create { string with "haha6"; int with 1; uint with 13u; double with 3.44; dateTime with LocalDateTime(1, 1, 2, 0, 0); bool with false }
             )
         )
 
@@ -184,7 +184,7 @@ class DataStoreChangeTest(
     private suspend fun executeChangeChangeRequest() {
         val newIntList = listOf(1, 2, 3)
         val newDateSet = setOf(LocalDate(2019, 1, 19), LocalDate(2019, 1, 18))
-        val newValues = EmbeddedMarykModel("Different")
+        val newValues = EmbeddedMarykModel.create { value with "Different" }
 
         val changeResponse = dataStore.execute(
             TestMarykModel.change(

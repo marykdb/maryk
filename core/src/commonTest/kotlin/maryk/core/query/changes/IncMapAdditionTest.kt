@@ -116,33 +116,33 @@ class IncMapAdditionTest {
 
     @Test
     fun changeValuesTest() {
-        val original = TestMarykModel(
-            string = "hello world",
-            int = 5,
-            uint = 3u,
-            double = 2.3,
-            dateTime = LocalDateTime(2018, 7, 18, 0, 0),
-            incMap = mapOf(
+        val original = TestMarykModel.create {
+            string with "hello world"
+            int with 5
+            uint with 3u
+            double with 2.3
+            dateTime with LocalDateTime(2018, 7, 18, 0, 0)
+            incMap with mapOf(
                 1u to "one",
                 2u to "two",
                 3u to "three"
-            ),
-            embeddedValues = EmbeddedMarykModel.create {
+            )
+            embeddedValues with {
                 value with "test"
-                marykModel with TestMarykModel(
-                    string = "hi world",
-                    int = 3,
-                    uint = 67u,
-                    double = 232523.3,
-                    dateTime = LocalDateTime(2020, 10, 18, 0, 0),
-                    incMap = mapOf(
+                marykModel with {
+                    string with "hi world"
+                    int with 3
+                    uint with 67u
+                    double with 232523.3
+                    dateTime with LocalDateTime(2020, 10, 18, 0, 0)
+                    incMap with mapOf(
                         11u to "eleven",
                         12u to "twelve",
                         13u to "thirteen"
                     )
-                )
+                }
             }
-        )
+        }
 
         val changed = original.change(
             IncMapAddition(

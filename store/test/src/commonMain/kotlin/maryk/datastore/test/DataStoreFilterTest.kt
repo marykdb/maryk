@@ -60,41 +60,41 @@ class DataStoreFilterTest(
         "doReferencedEqualsFilter" to ::doReferencedEqualsFilter
     )
 
-    private val dataObject = TestMarykModel(
-        string = "haha1",
-        int = 5,
-        uint = 6u,
-        double = 0.43,
-        dateTime = LocalDateTime(2018, 3, 2, 0, 0),
-        bool = true,
-        map = mapOf(
+    private val dataObject = TestMarykModel.create {
+        string with "haha1"
+        int with 5
+        uint with 6u
+        double with 0.43
+        dateTime with LocalDateTime(2018, 3, 2, 0, 0)
+        bool with true
+        map with mapOf(
             LocalTime(12, 13, 14) to "haha10"
-        ),
-        list = listOf(
+        )
+        list with listOf(
             4, 6, 7
-        ),
-        set = setOf(
+        )
+        set with setOf(
             LocalDate(2019, 3, 30), LocalDate(2018, 9, 9)
         )
-    )
+    }
 
-    private val dataObject2 = TestMarykModel(
-        string = "haha2",
-        int = 3,
-        uint = 5u,
-        double = 0.23,
-        dateTime = LocalDateTime(2016, 2, 20, 0, 0),
-        bool = false,
-        map = mapOf(
+    private val dataObject2 = TestMarykModel.create {
+        string with "haha2"
+        int with 3
+        uint with 5u
+        double with 0.23
+        dateTime with LocalDateTime(2016, 2, 20, 0, 0)
+        bool with false
+        map with mapOf(
             LocalTime(17, 16, 15) to "haha1"
-        ),
-        list = listOf(
+        )
+        list with listOf(
             3, 4, 6
-        ),
-        set = setOf(
+        )
+        set with setOf(
             LocalDate(2020, 2, 20), LocalDate(2013, 4, 19)
         )
-    )
+    }
 
     override suspend fun initData() {
         val addResponse = dataStore.execute(

@@ -6,6 +6,7 @@ import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.invoke
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.MarykEnumEmbedded
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.SimpleMarykTypeEnum
@@ -22,15 +23,15 @@ class ValuesToDataFrameTest {
 
     @Test
     fun testToDataFrame() {
-        val dataFrameTest = TestMarykModel(
-            string = "haas",
-            int = 4,
-            uint = 53u,
-            double = 3.5555,
-            bool = true,
-            embeddedValues = EmbeddedMarykModel(value = "haas"),
-            dateTime = LocalDateTime(2017, 12, 5, 12, 40)
-        ).toDataFrame()
+        val dataFrameTest = TestMarykModel.create {
+            string with "haas"
+            int with 4
+            uint with 53u
+            double with 3.5555
+            bool with true
+            embeddedValues with EmbeddedMarykModel.create { value with "haas" }
+            dateTime with LocalDateTime(2017, 12, 5, 12, 40)
+        }.toDataFrame()
 
         assertEquals(8, dataFrameTest.columns().size)
         assertEquals(
@@ -46,33 +47,33 @@ class ValuesToDataFrameTest {
     @Test
     fun testListToDataFrame() {
         val dataFrameTest = listOf(
-            CompleteMarykModel(
-                string = "Arend",
-                number = 2u,
-                time = LocalTime(12, 11, 10),
-                booleanForKey = true,
-                dateForKey = LocalDate(2019, 3, 20),
-                multiForKey = S1( "test"),
-                enumEmbedded = E1,
-            ),
-            CompleteMarykModel(
-                string = "Jan",
-                number = 4u,
-                time = LocalTime(15, 9, 40),
-                booleanForKey = false,
-                dateForKey = LocalDate(2022, 5, 20),
-                multiForKey = SimpleMarykTypeEnum.S2(2.toShort()),
-                enumEmbedded = MarykEnumEmbedded.E2,
-            ),
-            CompleteMarykModel(
-                string = "Marlies",
-                number = 100u,
-                time = LocalTime(12, 11, 10),
-                booleanForKey = true,
-                dateForKey = LocalDate(2002, 3, 20),
-                multiForKey = S1( "Fine"),
-                enumEmbedded = MarykEnumEmbedded.E3,
-            )
+            CompleteMarykModel.create {
+                string with "Arend"
+                number with 2u
+                time with LocalTime(12, 11, 10)
+                booleanForKey with true
+                dateForKey with LocalDate(2019, 3, 20)
+                multiForKey with S1( "test")
+                enumEmbedded with E1
+            },
+            CompleteMarykModel.create {
+                string with "Jan"
+                number with 4u
+                time with LocalTime(15, 9, 40)
+                booleanForKey with false
+                dateForKey with LocalDate(2022, 5, 20)
+                multiForKey with SimpleMarykTypeEnum.S2(2.toShort())
+                enumEmbedded with MarykEnumEmbedded.E2
+            },
+            CompleteMarykModel.create {
+                string with "Marlies"
+                number with 100u
+                time with LocalTime(12, 11, 10)
+                booleanForKey with true
+                dateForKey with LocalDate(2002, 3, 20)
+                multiForKey with S1( "Fine")
+                enumEmbedded with MarykEnumEmbedded.E3
+            }
         ).toDataFrame()
 
         assertEquals(25, dataFrameTest.columns().size)

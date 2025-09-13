@@ -32,14 +32,14 @@ class DataStoreScanWithFilterTest(
     )
 
     private val objects = arrayOf(
-        TestMarykModel(
-            string="haas",
-            int = 4,
-            uint = 3u,
-            double = 1.5,
-            dateTime = LocalDateTime(2021, 1, 1, 12, 55),
-            bool = false,
-        )
+        TestMarykModel.create {
+            string with "haas"
+            int with 4
+            uint with 3u
+            double with 1.5
+            dateTime with LocalDateTime(2021, 1, 1, 12, 55)
+            bool with false
+        }
     )
 
     override suspend fun initData() {

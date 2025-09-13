@@ -43,7 +43,6 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
-import maryk.core.values.Values
 import maryk.test.models.SimpleMarykModel.value
 
 sealed class MarykEnumEmbedded(
@@ -329,63 +328,4 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         final = true,
         default = GeoPoint(52.0906448, 5.1212607)
     )
-
-    operator fun invoke(
-        string: String = "string",
-        number: UInt = 42u,
-        boolean: Boolean = true,
-        enum: Option = Option.V1,
-        date: LocalDate = LocalDate(2018, 5, 2),
-        dateTime: LocalDateTime = LocalDateTime(2018, 5, 2, 10, 11, 12),
-        time: LocalTime = LocalTime(10, 11, 12),
-        fixedBytes: Bytes = Bytes("AAECAwQ"),
-        flexBytes: Bytes = Bytes("AAECAw"),
-        reference: Key<SimpleMarykModel> = Key("AAECAQAAECAQAAECAQAAEA"),
-        subModel: Values<SimpleMarykModel> = SimpleMarykModel.create { value with "a default" },
-        valueModel: ValueMarykObject = ValueMarykObject(
-            int = 10,
-            date = LocalDate(2010, 10, 10)
-        ),
-        list: List<String> = listOf("ha1", "ha2", "ha3"),
-        set: Set<Int> = setOf(1, 2, 3),
-        map: Map<LocalDate, Int> = mapOf(LocalDate(2010, 11, 12) to 1, LocalDate(2011, 12, 13) to 1),
-        multi: TypedValue<MarykTypeEnum<out Any>, Any> = TypedValue(MarykTypeEnum.T1, "a value"),
-        booleanForKey: Boolean,
-        dateForKey: LocalDate,
-        multiForKey: TypedValue<SimpleMarykTypeEnum<out Any>, Any>,
-        enumEmbedded: MarykEnumEmbedded,
-        mapWithEnum: Map<MarykEnumEmbedded, String> = mapOf(MarykEnumEmbedded.E1 to "value"),
-        mapWithList: Map<String, List<String>> = mapOf("a" to listOf("b", "c")),
-        mapWithSet: Map<String, Set<String>> = mapOf("a" to setOf("b", "c")),
-        mapWithMap: Map<String, Map<String, String>> = mapOf("a" to mapOf("b" to "c")),
-        incMap: Map<UInt, Values<EmbeddedMarykModel>>? = null,
-        location: GeoPoint = GeoPoint(52.0906448, 5.1212607)
-    ) = create {
-        this.string with string
-        this.number with number
-        this.boolean with boolean
-        this.enum with enum
-        this.date with date
-        this.dateTime with dateTime
-        this.time with time
-        this.fixedBytes with fixedBytes
-        this.flexBytes with flexBytes
-        this.reference with reference
-        this.subModel with subModel
-        this.valueModel with valueModel
-        this.list with list
-        this.set with set
-        this.map with map
-        this.multi with multi
-        this.booleanForKey with booleanForKey
-        this.dateForKey with dateForKey
-        this.multiForKey with multiForKey
-        this.enumEmbedded with enumEmbedded
-        this.mapWithEnum with mapWithEnum
-        this.mapWithList with mapWithList
-        this.mapWithSet with mapWithSet
-        this.mapWithMap with mapWithMap
-        this.incMap with incMap
-        this.location with location
-    }
 }

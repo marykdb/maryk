@@ -16,12 +16,12 @@ import kotlin.test.assertTrue
 
 class FilterWithFetchRequestComplexKtTest {
     private val value1 = ComplexModel.createDataRecord(
-        ComplexModel(
-            mapStringString = mapOf(
+        ComplexModel.create {
+            mapStringString with mapOf(
                 "k1" to "v1",
                 "k2" to "v2"
             )
-        )
+        }
     )
 
     private val recordFetcher = { _: IsRootDataModel, _: Key<*> ->

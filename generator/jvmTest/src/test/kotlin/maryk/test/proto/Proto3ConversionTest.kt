@@ -84,15 +84,15 @@ class Proto3ConversionTest {
     @Test
     fun testCompleteMarykObject(){
         // SimpleObject to convert
-        val completeObject = CompleteMarykModel(
-            booleanForKey = true,
-            dateForKey = LocalDate(2018, 7, 25),
-            multiForKey = S1("string"),
-            enumEmbedded = E1,
-            mapWithEnum = mapOf(
+        val completeObject = CompleteMarykModel.create {
+            booleanForKey with true
+            dateForKey with LocalDate(2018, 7, 25)
+            multiForKey with S1("string")
+            enumEmbedded with E1
+            mapWithEnum with mapOf(
                 E2 to "mapped"
             )
-        )
+        }
 
         val completeObjectProto = MarykTestProtos.CompleteMarykModel.newBuilder()
             .setString(completeObject { string })

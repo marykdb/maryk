@@ -3,7 +3,6 @@ package maryk.test.models
 import maryk.core.models.DataModel
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
-import maryk.core.values.Values
 
 object EmbeddedMarykModel : DataModel<EmbeddedMarykModel>(
     reservedIndices = listOf(999u),
@@ -22,14 +21,4 @@ object EmbeddedMarykModel : DataModel<EmbeddedMarykModel>(
         required = false,
         dataModel = { TestMarykModel }
     )
-
-    operator fun invoke(
-        value: String,
-        model: Values<EmbeddedMarykModel>? = null,
-        marykModel: Values<TestMarykModel>? = null
-    ) = create {
-        this.value with value
-        this.model with model
-        this.marykModel with marykModel
-    }
 }

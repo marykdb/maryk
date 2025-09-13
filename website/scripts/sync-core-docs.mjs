@@ -84,6 +84,13 @@ function rewriteLinks(md) {
     ['(protobuf.md)', '(/core-concepts/serialization/protobuf-transport/)'],
     ['(../../yaml/README.md)', '(/support/yaml/)'],
     ['(../../json/README.md)', '(/support/json/)'],
+    ['(../yaml/README.md)', '(/support/yaml/)'],
+    ['(../json/README.md)', '(/support/json/)'],
+    ['(../README.md)', '(/core-concepts/properties/)'],
+    ['(../datamodel.md)', '(/core-concepts/datamodels/)'],
+    ['(../../datamodel.md)', '(/core-concepts/datamodels/)'],
+    ['(operations.md)', '(/core-concepts/properties/operations/)'],
+    ['(references.md)', '(/core-concepts/properties/references/)'],
     // Stores links
     ['(./docs/storage.md)', '(/stores/foundationdb/storage/)'],
     ['(./docs/architecture.md)', '(/stores/foundationdb/architecture/)'],
@@ -92,6 +99,7 @@ function rewriteLinks(md) {
   ];
   for (const [from, to] of pairs) out = out.replaceAll(from, to);
   out = out.replaceAll('(properties/', '(/core-concepts/properties/');
+  out = out.replace(/\.md/g, '/');
   return out;
 }
 

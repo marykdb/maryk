@@ -7,7 +7,6 @@ import maryk.checkYamlConversion
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.values.div
-import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -65,9 +64,9 @@ class ListChangeTest {
             double with 2.3
             dateTime with LocalDateTime(2018, 7, 18, 0, 0)
             list with listOf(3, 4, 5)
-            embeddedValues with EmbeddedMarykModel.create {
+            embeddedValues with {
                 value with "test"
-                marykModel with TestMarykModel.create {
+                marykModel with {
                     string with "hi world"
                     int with 3
                     uint with 67u

@@ -4,7 +4,7 @@ import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.ObjectCreate
@@ -47,7 +47,7 @@ private val complexValuesAsStorablesWithVersion = arrayOf(
     "2404000000021d09" to arrayOf(1234uL to "m3"),
     "2404000000021d16" to arrayOf(1234uL to Unit),
     "2404000000021d1609" to arrayOf(1234uL to "me3"),
-    "240400000005" to arrayOf(1234uL to TypedValue(T1, "TEST")),
+    "240400000005" to arrayOf(1234uL to T1("TEST")),
     "240400000007" to arrayOf(1234uL to T4),
     "2404000000072502" to arrayOf(1234uL to 2),
     "240400000007250200000000" to arrayOf(1234uL to "a"),
@@ -126,7 +126,7 @@ class ReadStorageToChangesComplexKtTest {
                             ComplexModel { mapIntObject.at(2u) { model { value::ref } } } with "te2",
                             ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } } with "m3",
                             ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } } with "me3",
-                            ComplexModel { mapIntMulti.refAt(5u) } with TypedValue(T1, "TEST"),
+                            ComplexModel { mapIntMulti.refAt(5u) } with T1("TEST"),
                             ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(0u) } } } with "a",
                             ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(1u) } } } with "b",
                             ComplexModel { mapIntMulti.at(7u) { atType(T4) { refAt(2u) } } } with null,

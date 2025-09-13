@@ -9,7 +9,7 @@ interface TypedValue<out E : TypeEnum<T>, out T : Any> {
 }
 
 /** Constructs an immutable typed value */
-fun <E : TypeEnum<T>, T : Any> TypedValue(
+internal fun <E : TypeEnum<T>, T : Any> TypedValue(
     type: E,
     value: T
 ) = TypedValueImpl(type, value)

@@ -100,7 +100,7 @@ internal class MultiTypeDefinitionTest {
             def.validateWithRef(newValue = T6(mapOf(1 to "&WRONG")))
         }
         assertFailsWith<InvalidValueException> {
-            def.validateWithRef(newValue = T7(TypedValue(S1, "&WRONG")))
+            def.validateWithRef(newValue = T7(S1("&WRONG")))
         }
 
         expect("multi.*T2") {
@@ -168,7 +168,7 @@ internal class MultiTypeDefinitionTest {
     @Test
     fun invalidFieldShouldThrowException() {
         assertFailsWith<DefNotFoundException> {
-            def.validateWithRef(newValue = TypedValue(MarykTypeEnum.UnknownMarykTypeEnum(99u, "UNKNOWN"), "NonExistingField"))
+            def.validateWithRef(newValue = MarykTypeEnum.UnknownMarykTypeEnum(99u, "UNKNOWN")("NonExistingField"))
         }
     }
 

@@ -5,6 +5,7 @@ import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 import maryk.datastore.shared.helpers.convertToValue
@@ -41,7 +42,7 @@ internal fun decodePrevForDelete(
         val read = maryk.datastore.shared.readValue(reference.comparablePropertyDefinition, { prevBytes[ri++] }) { offset + length - ri }
         when (read) {
             is TypedValue<*, *> -> read
-            is MultiTypeEnum<*> -> TypedValue(read, Unit)
+            is MultiTypeEnum<*> -> read(Unit)
             else -> read
         }
     }

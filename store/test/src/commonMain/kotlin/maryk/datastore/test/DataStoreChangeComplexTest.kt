@@ -1,9 +1,11 @@
 package maryk.datastore.test
 
+import maryk.core.properties.enum.invoke
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.IncMapAddition
 import maryk.core.query.changes.IncMapChange
@@ -20,9 +22,6 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.EmbeddedMarykModel.model
-import maryk.test.models.EmbeddedMarykModel.value
-import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
 import kotlin.test.assertNotNull
@@ -51,13 +50,10 @@ class DataStoreChangeComplexTest(
         val addResponse = dataStore.execute(
             ComplexModel.add(
                 ComplexModel.create {
-                    multi with TypedValue(
-                        T3,
-                        EmbeddedMarykModel.create {
-                            value with "u3"
-                            model with EmbeddedMarykModel.create { value with "ue3" }
-                        }
-                    )
+                    multi with T3 {
+                        value with "u3"
+                        model with { value with "ue3" }
+                    }
                     mapStringString with mapOf("a" to "b", "c" to "d")
                     incMap with mapOf(
                         1u to EmbeddedMarykModel.create { value with "o" },
@@ -65,7 +61,7 @@ class DataStoreChangeComplexTest(
                     )
                 },
                 ComplexModel.create {
-                    multi with TypedValue(T1, "value")
+                    multi with T1("value")
                     mapStringString with mapOf("a" to "b", "c" to "d")
                 },
                 ComplexModel.create {
@@ -88,31 +84,22 @@ class DataStoreChangeComplexTest(
                 ComplexModel.create {
                     mapStringString with mapOf("a" to "b", "c" to "d")
                     mapIntMulti with mapOf(
-                        1u to TypedValue(
-                            T3,
-                            EmbeddedMarykModel.create { value with "v1"; model with EmbeddedMarykModel.create { value with "sub1"; model with EmbeddedMarykModel.create { value with "sub2" } } }
-                        ),
-                        2u to TypedValue(T1, "string"),
-                        3u to TypedValue(
-                            T3,
-                            EmbeddedMarykModel.create { value with "v2"; model with EmbeddedMarykModel.create { value with "2sub1"; model with EmbeddedMarykModel.create { value with "2sub2" } } }
-                        )
+                        1u to T3  { value with "v1"; model with { value with "sub1"; model with { value with "sub2" } } },
+                        2u to T1("string"),
+                        3u to T3 { value with "v2"; model with { value with "2sub1"; model with { value with "2sub2" } } }
                     )
                 },
                 ComplexModel.create {
-                    multi with TypedValue(T3, EmbeddedMarykModel.create { value with "u3"; model with EmbeddedMarykModel.create { value with "ue3" } })
+                    multi with T3 { value with "u3"; model with { value with "ue3" } }
                     mapStringString with mapOf("a" to "b", "c" to "d")
-                    mapIntObject with mapOf(1u to EmbeddedMarykModel.create { value with "v1" }, 2u to EmbeddedMarykModel.create { value with "v2" })
+                    mapIntObject with mapOf(
+                        1u to EmbeddedMarykModel.create { value with "v1" },
+                        2u to EmbeddedMarykModel.create { value with "v2" },
+                    )
                     mapIntMulti with mapOf(
-                        1u to TypedValue(
-                            T3,
-                            EmbeddedMarykModel.create { value with "v1"; model with EmbeddedMarykModel.create { value with "sub1"; model with EmbeddedMarykModel.create { value with "sub2" } } }
-                        ),
-                        2u to TypedValue(T1, "string"),
-                        3u to TypedValue(
-                            T3,
-                            EmbeddedMarykModel.create { value with "v2"; model with EmbeddedMarykModel.create { value with "2sub1"; model with EmbeddedMarykModel.create { value with "2sub2" } } }
-                        )
+                        1u to T3 { value with "v1"; model with { value with "sub1"; model with { value with "sub2" } } },
+                        2u to T1("string"),
+                        3u to T3 { value with "v2"; model with { value with "2sub1"; model with { value with "2sub2" } } }
                     )
                 },
                 ComplexModel.create {
@@ -273,10 +260,10 @@ class DataStoreChangeComplexTest(
         getResponse.values.first().values { mapIntMulti }.let { mapIntMulti ->
             assertNotNull(mapIntMulti)
             expect(3) { mapIntMulti.size }
-            expect(TypedValue(T3, EmbeddedMarykModel.create { value with "v1"; model with EmbeddedMarykModel.create { value with "sub1" } })) {
+            expect(T3 { value with "v1"; model with { value with "sub1" } }) {
                 mapIntMulti[1u] as TypedValue<*, *>
             }
-            expect(TypedValue(T3, EmbeddedMarykModel.create { value with "v2" })) {
+            expect(T3 { value with "v2" }) {
                 mapIntMulti[3u] as TypedValue<*, *>
             }
         }
@@ -313,7 +300,15 @@ class DataStoreChangeComplexTest(
                 assertNotNull(mapIntMulti)
                 expect(3) { mapIntMulti.size }
                 expect(
-                    TypedValue(T3, EmbeddedMarykModel.create { value with "v1"; model with EmbeddedMarykModel.create { value with "sub1"; model with EmbeddedMarykModel.create { value with "changed" } } })
+                    T3 {
+                        value with "v1"
+                        model with {
+                            value with "sub1"
+                            model with {
+                                value with "changed"
+                            }
+                        }
+                    }
                 ) { mapIntMulti[1u] as TypedValue<*, *> }
             }
 
@@ -323,7 +318,10 @@ class DataStoreChangeComplexTest(
                 expect(EmbeddedMarykModel.create { value with "mapIntObjectChanged" }) { mapIntObject[1u] }
             }
 
-            expect(TypedValue(T3, EmbeddedMarykModel.create { value with "u3"; model with EmbeddedMarykModel.create { value with "multi sub changed" } })) {
+            expect(T3 {
+                value with "u3"
+                model with { value with "multi sub changed" }
+            }) {
                 valuesWithMetaData.values { multi } as TypedValue<*, *>
             }
         }
@@ -361,16 +359,35 @@ class DataStoreChangeComplexTest(
     }
 
     private suspend fun executeChangeChangeReplaceComplexValueRequest() {
-        val newMultiValue = TypedValue(T3, EmbeddedMarykModel.create { value with "a5"; model with EmbeddedMarykModel.create { value with "ae5" } })
+        val newMultiValue = T3 {
+            value with "a5"
+            model with { value with "ae5" }
+        }
         val newMapStringString = mapOf("e" to "f", "g" to "h")
-        val newMapIntObject = mapOf(4u to EmbeddedMarykModel.create { value with "v100" }, 8u to EmbeddedMarykModel.create { value with "v200" })
-        val newMapIntMulti = mapOf<UInt, TypedValue<MarykTypeEnum<*>, *>>(
-            5u to TypedValue(
-                T3,
-                EmbeddedMarykModel.create { value with "v101"; model with EmbeddedMarykModel.create { value with "suba1"; model with EmbeddedMarykModel.create { value with "suba2" } } }
-            ),
-            10u to TypedValue(T1, "new"),
-            3u to TypedValue(T3, EmbeddedMarykModel.create { value with "v222"; model with EmbeddedMarykModel.create { value with "2asub1"; model with EmbeddedMarykModel.create { value with "2asub2" } } })
+        val newMapIntObject = mapOf(
+            4u to EmbeddedMarykModel.create { value with "v100" },
+            8u to EmbeddedMarykModel.create { value with "v200" },
+        )
+        val newMapIntMulti = mapOf(
+            5u to T3 {
+                value with "v101"
+                model with {
+                    value with "suba1"
+                    model with {
+                        value with "suba2"
+                    }
+                }
+            },
+            10u to T1("new"),
+            3u to T3 {
+                value with "v222"
+                model with {
+                    value with "2asub1"
+                    model with {
+                        value with "2asub2"
+                    }
+                }
+            }
         )
 
         val changeResponse = dataStore.execute(

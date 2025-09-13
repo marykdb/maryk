@@ -1,10 +1,9 @@
 package maryk.core.processors.datastore
 
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.enum.invoke
+import maryk.core.properties.types.invoke
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.EmbeddedMarykModel.model
-import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.models.MarykTypeEnum.T4
@@ -14,22 +13,22 @@ import maryk.test.models.MarykTypeEnum.T7
 import maryk.test.models.SimpleMarykTypeEnum.S3
 
 val complexValues = ComplexModel.create {
-    multi with TypedValue(T3, EmbeddedMarykModel.create { value with "u3"; model with { value with "ue3" } })
+    multi with T3 { value with "u3"; model with { value with "ue3" } }
     mapStringString with mapOf("v1" to "a", "v22" to "b")
     mapIntObject with mapOf(
         1u to EmbeddedMarykModel.create { value with "t1" },
         2u to EmbeddedMarykModel.create { value with "t2"; model with { value with "te2" } }
     )
     mapIntMulti with mapOf(
-        2u to TypedValue(T3, EmbeddedMarykModel.create { value with "m3"; model with { value with "me3" } }),
-        5u to TypedValue(T1, "TEST"),
-        7u to TypedValue(T4, listOf("a", "b")),
-        8u to TypedValue(T5, setOf("c", "d")),
-        9u to TypedValue(T6, mapOf(
+        2u to T3 { value with "m3"; model with { value with "me3" } },
+        5u to T1("TEST"),
+        7u to T4(listOf("a", "b")),
+        8u to T5(setOf("c", "d")),
+        9u to T6(mapOf(
             5u to "e",
             6u to "f"
         )),
-        10u to TypedValue(T7, TypedValue(S3, EmbeddedMarykModel.create { value with "g" }))
+        10u to T7(S3 { value with "g" })
     )
     mapWithList with mapOf(
         "a" to listOf("a1", "a2")
@@ -64,7 +63,7 @@ val complexValuesAsStorables = arrayOf(
     "2404000000021d09" to "m3",
     "2404000000021d16" to Unit,
     "2404000000021d1609" to "me3",
-    "240400000005" to TypedValue(T1, "TEST"),
+    "240400000005" to T1("TEST"),
     "240400000007" to T4,
     "2404000000072502" to 2,
     "240400000007250200000000" to "a",

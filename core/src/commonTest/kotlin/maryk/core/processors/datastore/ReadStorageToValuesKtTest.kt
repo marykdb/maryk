@@ -3,11 +3,9 @@ package maryk.core.processors.datastore
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maryk.core.models.emptyValues
-import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.models.ComplexModel
-import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -72,7 +70,7 @@ class ReadStorageToValuesKtTest {
                 )
                 embeddedValues with {
                     value with "test"
-                    model with EmbeddedMarykModel.create {}
+                    model with {}
                 }
                 listOfString with listOf("v1")
                 setOfString with setOf("def")
@@ -136,7 +134,7 @@ class ReadStorageToValuesKtTest {
 
         assertEquals(
             TestMarykModel.create(setDefaults = false) {
-                multi with TypedValue(S1, "test")
+                multi with S1("test")
             },
             values
         )

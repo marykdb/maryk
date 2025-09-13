@@ -3,7 +3,7 @@ package maryk.core.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.requests.Requests
 import maryk.test.models.Option
@@ -16,15 +16,13 @@ import kotlin.test.expect
 class RootMarykTest {
     private val rootMaryk = RootMaryk(
         listOf(
-            TypedValue(
-                Operation.Define,
+            Operation.Define(
                 Definitions(
                     Option,
                     SimpleMarykModel,
                 )
             ),
-            TypedValue(
-                Operation.Request,
+            Operation.Request(
                 Requests(
                     addRequest,
                     getMaxRequest,

@@ -6,7 +6,7 @@ import kotlinx.datetime.LocalTime
 import maryk.core.models.key
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.IncMapAddition
@@ -77,7 +77,7 @@ class DataStoreChangeTest(
                     double with 1.244
                     dateTime with LocalDateTime(2018, 1, 2, 0, 0)
                     bool with false
-                    embeddedValues with EmbeddedMarykModel.create { value with "value" }
+                    embeddedValues with { value with "value" }
                     list with listOf(1, 4, 6)
                     listOfString with listOf("c", "d", "e")
                     map with mapOf(LocalTime(12, 33, 45) to "another", LocalTime(13, 44, 55) to "another2")
@@ -100,7 +100,7 @@ class DataStoreChangeTest(
                     double with 1.644
                     dateTime with LocalDateTime(2019, 1, 2, 0, 0)
                     bool with false
-                    multi with TypedValue(S1, "string")
+                    multi with S1("string")
                     listOfString with listOf("f", "g", "h")
                     map with mapOf(LocalTime(1, 33, 45) to "an other", LocalTime(13, 44, 55) to "an other2")
                     set with setOf(LocalDate(2015, 11, 25), LocalDate(2001, 12, 5))
@@ -112,7 +112,7 @@ class DataStoreChangeTest(
                     double with 3.44
                     dateTime with LocalDateTime(1, 1, 2, 0, 0)
                     bool with true
-                    multi with TypedValue(S1, "v1")
+                    multi with S1("v1")
                     listOfString with listOf("f", "g", "h")
                     map with mapOf(LocalTime(3, 3, 3) to "three", LocalTime(4, 4, 4) to "4")
                     set with setOf(LocalDate(2001, 1, 1), LocalDate(2002, 2, 2))

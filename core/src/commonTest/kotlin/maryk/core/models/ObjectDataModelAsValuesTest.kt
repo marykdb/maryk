@@ -3,7 +3,7 @@ package maryk.core.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -41,7 +41,7 @@ private val testExtendedObject = TestMarykObject.create {
     embeddedObject += {
         value with "test"
     }
-    multi with TypedValue(S3, EmbeddedMarykObject("subInMulti!"))
+    multi with S3(EmbeddedMarykObject("subInMulti!"))
     listOfString with listOf("test1", "another test", "🤗")
 }
 

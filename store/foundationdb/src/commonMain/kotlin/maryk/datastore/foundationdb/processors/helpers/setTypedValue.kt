@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.shared.TypeIndicator
 
@@ -24,7 +25,7 @@ internal fun setTypedValue(
     shouldWrite: ((referenceBytes: ByteArray, valueBytes: ByteArray) -> Boolean)? = null,
 ) {
     val properValue = if (value is MultiTypeEnum<*>) {
-        TypedValue(value, Unit)
+        value.invoke(Unit)
     } else {
         value
     }

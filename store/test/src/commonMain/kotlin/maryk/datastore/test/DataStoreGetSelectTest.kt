@@ -3,7 +3,7 @@ package maryk.datastore.test
 import kotlinx.datetime.LocalDate
 import maryk.core.models.graph
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
@@ -33,10 +33,10 @@ class DataStoreGetSelectTest(
             string with "haas"
             number with 24u
             subModel with SimpleMarykModel.create { value with "haha" }
-            multi with TypedValue(T2, 22)
+            multi with T2(22)
             booleanForKey with true
             dateForKey with LocalDate(2018, 3, 29)
-            multiForKey with TypedValue(S1, "hii")
+            multiForKey with S1("hii")
             enumEmbedded with E1
         }
     )

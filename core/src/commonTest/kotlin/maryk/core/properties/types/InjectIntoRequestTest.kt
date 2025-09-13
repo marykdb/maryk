@@ -45,7 +45,7 @@ class InjectIntoRequestTest {
     }
 
     private val requests = Requests.create {
-        requests -= listOf(TypedValue(RequestType.Get, getRequestWithInjectable))
+        requests -= listOf(RequestType.Get(getRequestWithInjectable))
     }
 
     @Test

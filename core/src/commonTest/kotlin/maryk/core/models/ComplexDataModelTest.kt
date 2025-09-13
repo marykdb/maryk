@@ -8,6 +8,7 @@ import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
+import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
@@ -17,7 +18,10 @@ import kotlin.test.expect
 val testComplexMap = ComplexModel.create {
     multi with T3 { value with "u3"; model with { value with "ue3" } }
     mapStringString with mapOf("v1" to "a", "v2" to "b")
-    mapIntObject with mapOf(1u to EmbeddedMarykModel.create { value with "t1" }, 2u to EmbeddedMarykModel.create { value with "t2" })
+    mapIntObject with mapOf(
+        1u to EmbeddedMarykModel.create { value with "t1" },
+        2u to EmbeddedMarykModel.create { value with "t2" },
+    )
     mapIntMulti with mapOf(2u to T3 { value with "m3" })
 }
 

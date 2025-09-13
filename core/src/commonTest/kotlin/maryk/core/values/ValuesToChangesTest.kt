@@ -3,11 +3,9 @@ package maryk.core.values
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.enum.invoke
+import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
-import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.EmbeddedMarykModel.model
-import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.SimpleMarykTypeEnum.S3
@@ -86,7 +84,7 @@ class ValuesToChangesTest {
         val values = TestMarykModel.create {
             string with "hello"
             int with 1
-            multi with TypedValue(S1, "s1value")
+            multi with S1("s1value")
         }
 
         val change = values.toChanges()[0] as Change
@@ -103,15 +101,12 @@ class ValuesToChangesTest {
         val values = TestMarykModel.create {
             string with "hello"
             int with 1
-            multi with TypedValue(
-                S3,
-                EmbeddedMarykModel.create {
-                    value with "multi"
-                    model with {
-                        value with "deep"
-                    }
+            multi with S3 {
+                value with "multi"
+                model with {
+                    value with "deep"
                 }
-            )
+            }
         }
 
         val change = values.toChanges()[0] as Change

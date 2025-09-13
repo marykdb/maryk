@@ -6,7 +6,7 @@ import kotlinx.datetime.LocalTime
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
@@ -51,7 +51,7 @@ private val testExtendedObject = TestMarykObject(
     ),
     valueObject = TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true),
     embeddedObject = EmbeddedMarykObject("test"),
-    multi = TypedValue(S3, EmbeddedMarykObject("subInMulti!")),
+    multi = S3(EmbeddedMarykObject("subInMulti!")),
     listOfString = listOf("test1", "another test", "🤗")
 )
 

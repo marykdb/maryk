@@ -52,7 +52,7 @@ fun readValue(
                 val valueDefinition = typeEnum.definition as? IsSimpleValueDefinition<*, *>
                     ?: throw StorageException("Unknown type $type for $typeEnum. Was it added to the EnumDefinition?")
                 val value = valueDefinition.readStorageBytes(valueBytesLeft(), reader)
-                typeEnum.invoke(value)
+                typeEnum(value)
             }
             TypeIndicator.ComplexTypeIndicator.byte -> {
                 fun resolveType(enumDef: IsIndexedEnumDefinition<*>): TypeEnum<*> =

@@ -4,8 +4,8 @@ import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.AggregationsResponse
 import maryk.core.aggregations.metric.Sum
 import maryk.core.aggregations.metric.SumResponse
-import maryk.core.properties.types.TypedValue
-import maryk.test.models.EmbeddedMarykModel
+import maryk.core.properties.enum.invoke
+import maryk.core.properties.types.invoke
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
@@ -33,7 +33,7 @@ class TypesAggregatorTest {
         typesAggregator.aggregate(
             createAggregator(
                 TestMarykModel.create {
-                    multi with TypedValue(S1, "value 1")
+                    multi with S1("value 1")
                     int with 2324
                 }
             )
@@ -41,7 +41,7 @@ class TypesAggregatorTest {
         typesAggregator.aggregate(
             createAggregator(
                 TestMarykModel.create {
-                    multi with TypedValue(S1, "value 2")
+                    multi with S1("value 2")
                     int with 872364
                 }
             )
@@ -50,27 +50,27 @@ class TypesAggregatorTest {
         typesAggregator.aggregate(
             createAggregator(
                 TestMarykModel.create {
-                    multi with TypedValue(S3, EmbeddedMarykModel.create {
+                    multi with S3 {
                         value with "E1"
-                    })
+                    }
                 }
             )
         )
         typesAggregator.aggregate(
             createAggregator(
                 TestMarykModel.create {
-                    multi with TypedValue(S3, EmbeddedMarykModel.create {
+                    multi with S3 {
                         value with "E1"
-                    })
+                    }
                 }
             )
         )
         typesAggregator.aggregate(
             createAggregator(
                 TestMarykModel.create {
-                    multi with TypedValue(S3, EmbeddedMarykModel.create {
+                    multi with S3 {
                         value with "E1"
-                    })
+                    }
                 }
             )
         )

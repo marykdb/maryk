@@ -21,6 +21,7 @@ import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.lib.extensions.compare.compareTo
@@ -118,7 +119,7 @@ internal fun <T : Any> deleteByReference(
                     if (it is TypedValue<*, *>) {
                         it
                     } else if (it is MultiTypeEnum<*>) {
-                        TypedValue(it, Unit) as T
+                        it.invoke(Unit) as T
                     } else throw StorageException("Unknown type $it for MultiTypePropertyReference")
                 }
                 else -> it

@@ -5,8 +5,6 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.properties.types.invoke
 import maryk.test.models.CompleteMarykModel
-import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.MarykEnumEmbedded
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.SimpleMarykTypeEnum
@@ -29,7 +27,7 @@ class ValuesToDataFrameTest {
             uint with 53u
             double with 3.5555
             bool with true
-            embeddedValues with EmbeddedMarykModel.create { value with "haas" }
+            embeddedValues with { value with "haas" }
             dateTime with LocalDateTime(2017, 12, 5, 12, 40)
         }.toDataFrame()
 

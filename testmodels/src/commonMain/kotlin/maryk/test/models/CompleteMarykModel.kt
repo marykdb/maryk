@@ -39,8 +39,8 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
-import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.Version
+import maryk.core.properties.types.invoke
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.test.models.SimpleMarykModel.value
@@ -254,7 +254,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         required = false,
         final = true,
         typeEnum = MarykTypeEnum,
-        default = TypedValue(MarykTypeEnum.T1, "a value")
+        default = MarykTypeEnum.T1("a value")
     )
     val booleanForKey by boolean(
         index = 17u,

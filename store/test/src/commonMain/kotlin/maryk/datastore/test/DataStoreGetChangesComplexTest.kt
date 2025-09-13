@@ -1,9 +1,10 @@
 package maryk.datastore.test
 
+import maryk.core.properties.enum.invoke
 import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.ObjectCreate
@@ -37,41 +38,37 @@ class DataStoreGetChangesComplexTest(
         val addResponse = dataStore.execute(
             ComplexModel.add(
                 ComplexModel.create {
-                    multi with TypedValue(T3, EmbeddedMarykModel.create {
+                    multi with T3 {
                         value with "u3"
                         model with {
                             value with "ue3"
                         }
-                    })
+                    }
                     mapStringString with mapOf("a" to "b", "c" to "d")
                     mapIntObject with mapOf(
                         1u to EmbeddedMarykModel.create { value with "v1" },
                         2u to EmbeddedMarykModel.create { value with "v2" }
                     )
                     mapIntMulti with mapOf(
-                        1u to TypedValue(T3,
-                            EmbeddedMarykModel.create {
-                                value with "v1"
+                        1u to T3 {
+                            value with "v1"
+                            model with {
+                                value with "sub1"
                                 model with {
-                                    value with "sub1"
-                                    model with {
-                                        value with "sub2"
-                                    }
+                                    value with "sub2"
                                 }
                             }
-                        ),
-                        2u to TypedValue(T1, "string"),
-                        3u to TypedValue(T3,
-                            EmbeddedMarykModel.create {
-                                value with "v2"
+                        },
+                        2u to T1("string"),
+                        3u to T3 {
+                            value with "v2"
+                            model with {
+                                value with "2sub1"
                                 model with {
-                                    value with "2sub1"
-                                    model with {
-                                        value with "2sub2"
-                                    }
+                                    value with "2sub2"
                                 }
                             }
-                        )
+                        }
                     )
                 }
             )
@@ -126,7 +123,7 @@ class DataStoreGetChangesComplexTest(
                         ComplexModel { mapIntMulti.at(1u) { atType(T3) { value::ref } } } with "v1",
                         ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { value::ref } } } } with "sub1",
                         ComplexModel { mapIntMulti.at(1u) { atType(T3) { model { model { value::ref } } } } } with "sub2",
-                        ComplexModel { mapIntMulti refAt 2u } with TypedValue(T1, "string"),
+                        ComplexModel { mapIntMulti refAt 2u } with T1("string"),
                         ComplexModel { mapIntMulti.at(3u) { atType(T3) { value::ref } } } with "v2",
                         ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { value::ref } } } } with "2sub1",
                         ComplexModel { mapIntMulti.at(3u) { atType(T3) { model { model { value::ref } } } } } with "2sub2"

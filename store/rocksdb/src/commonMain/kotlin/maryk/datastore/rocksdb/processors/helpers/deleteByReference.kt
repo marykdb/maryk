@@ -28,6 +28,7 @@ import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.TypeIndicator
@@ -155,7 +156,7 @@ internal fun <T : Any> deleteByReference(
                     }.let {
                         when (it) {
                             is TypedValue<*, *> -> it
-                            is MultiTypeEnum<*> -> TypedValue(it, Unit) as T
+                            is MultiTypeEnum<*> -> it.invoke(Unit) as T
                             else -> throw StorageException("Unknown type for T")
                         }
                     } as T

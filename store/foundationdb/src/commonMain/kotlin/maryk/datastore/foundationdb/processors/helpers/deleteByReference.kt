@@ -20,6 +20,7 @@ import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
@@ -121,7 +122,7 @@ internal fun <T : Any> deleteByReference(
                 val read = maryk.datastore.shared.readValue(reference.comparablePropertyDefinition, { prev[ri++] }) { prev.size - ri }
                 when (read) {
                     is TypedValue<*, *> -> read as Any
-                    is MultiTypeEnum<*> -> TypedValue(read, Unit) as Any
+                    is MultiTypeEnum<*> -> read(Unit) as Any
                     else -> read as Any
                 }
             }

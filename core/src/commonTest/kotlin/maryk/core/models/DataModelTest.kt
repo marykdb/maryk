@@ -5,19 +5,17 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
+import maryk.core.properties.enum.invoke
 import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.OutOfRangeException
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
-import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
-import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
@@ -56,8 +54,8 @@ val testExtendedMarykModelObject = TestMarykModel.create {
         LocalTime(10, 3) to "ahum"
     )
     valueObject with TestValueObject(6, LocalDateTime(2017, 4, 1, 12, 55), true)
-    embeddedValues with EmbeddedMarykModel.create { value with "test" }
-    multi with TypedValue(S3, EmbeddedMarykModel.create { value with "subInMulti!" })
+    embeddedValues with { value with "test" }
+    multi with S3 { value with "subInMulti!" }
     listOfString with listOf("test1", "another test", "🤗")
 }
 

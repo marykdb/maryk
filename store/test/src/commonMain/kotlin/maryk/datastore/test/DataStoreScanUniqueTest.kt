@@ -2,7 +2,7 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDate
 import maryk.core.properties.types.Key
-import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
@@ -20,7 +20,6 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.SimpleMarykModel
-import maryk.test.models.SimpleMarykModel.value
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -43,10 +42,10 @@ class DataStoreScanUniqueTest(
             subModel with SimpleMarykModel.create {
                 value with "haha"
             }
-            multi with TypedValue(T2, 22)
+            multi with T2(22)
             booleanForKey with true
             dateForKey with LocalDate(2018, 3, 29)
-            multiForKey with TypedValue(S1, "hii")
+            multiForKey with S1("hii")
             enumEmbedded with E1
         }
     )

@@ -41,12 +41,13 @@ sealed class MultiType<T: Any>(
 ) : IndexedEnumImpl<MultiType<*>>(index), MultiTypeEnum<T> {
     object S1: MultiType<String>(1u, StringDefinition())
     object S2: MultiType<Short>(2u, NumberDefinition(type = SInt16))
+    object S3: MultiType<Values<EmbeddedModel>>(3u, ValuesDefinition(EmbeddedModel))
 
     class UnknownMultiType(index: UInt, override val name: String): MultiType<Any>(index, null)
 
     companion object : MultiTypeEnumDefinition<MultiType<out Any>>(
         MultiType::class,
-        values = { arrayOf(S1, S2) },
+        values = { arrayOf(S1, S2, S3) },
         unknownCreator = ::UnknownMultiType
     )
 }
@@ -59,7 +60,7 @@ val category by multiType(
     required = false,
     final = true,
     typeEnum = MultiType,
-    default = MultiType.S1("unknown")
+    default = MultiType.S1("default")
 )
 ```
 
@@ -71,6 +72,39 @@ val def = MultiTypeDefinition(
     typeEnum = MultiType,
     default = MultiType.S1("a value")
 )
+```
+
+## Setting Values (invoke DSL)
+Multi-type fields are assigned using a typed wrapper (`TypedValue`). To keep code concise, enums that implement `MultiTypeEnum` support an invoke DSL.
+
+- Regular (non-embedded) type values: call the enum option like a function with the value.
+- Embedded values: build the embedded `Values` via a builder lambda on the enum option.
+
+The snippets below illustrate both styles using a sample enum `SimpleMultiType` with:
+- `S1: String`
+- `S3: Values<EmbeddedModel>`
+
+```kotlin
+// Property on a DataModel
+val multi by multiType(
+    index = 1u,
+    required = false,
+    typeEnum = SimpleMultiType,
+)
+
+// 1) Setting a regular value
+val v1 = Values(YourModel) {
+    multi with S1("value")
+}
+
+// 2) Setting an embedded value
+// Add: import maryk.core.properties.enum.invoke
+val v2 = Values(YourModel) {
+    multi with S3 {
+        value with "v1"
+    }
+}
+
 ```
 
 ## Storage Byte representation

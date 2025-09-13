@@ -51,11 +51,12 @@ internal fun <R : Any> Transaction.iterateValues(
         }
         val histPrefix = tableDirectories.historicTablePrefix
         // Encode qualifier part (after keyLength) to be zero-free for historic iteration
+        val keyPart = if (reference.size > keyLength) reference.copyOfRange(0, keyLength) else reference
         val encodedRef = if (reference.size > keyLength) {
-            val keyPart = reference.copyOfRange(0, keyLength)
             val qualPart = reference.copyOfRange(keyLength, reference.size)
             combineToByteArray(keyPart, encodeZeroFreeUsing01(qualPart))
         } else reference
+        val baseRefBytes = combineToByteArray(histPrefix, keyPart)
         val it = FDBIterator(this.getRange(Range.startsWith(packKey(histPrefix, encodedRef))).iterator())
 
         val toVersionBytes = toVersion.toReversedVersionBytes()
@@ -78,10 +79,9 @@ internal fun <R : Any> Transaction.iterateValues(
                     decodeZeroFreeUsing01(encQual)
                 } else ByteArray(0)
                 val refBytesForCaller = if (decodedQualifier.isNotEmpty()) combineToByteArray(
-                    histPrefix.copyOf(), // prefix portion is not used by callers beyond offset
-                    reference.copyOfRange(0, keyLength),
+                    baseRefBytes,
                     decodedQualifier
-                ) else combineToByteArray(histPrefix.copyOf(), reference.copyOfRange(0, keyLength))
+                ) else baseRefBytes
                 handleValue(
                     refBytesForCaller,
                     histPrefix.size + keyLength,

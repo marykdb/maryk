@@ -3,9 +3,20 @@ package maryk.core.values
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.TypedValuesDataModel
 import maryk.core.models.validate
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
+import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.graph.IsPropRefGraph
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.core.query.changes.Change
 import maryk.core.query.changes.IsChange
+import maryk.core.query.pairs.IsReferenceValueOrNullPair
+import maryk.core.query.pairs.ReferenceValuePair
 
 typealias ValuesImpl = Values<IsValuesDataModel>
 
@@ -50,6 +61,61 @@ data class Values<DM : IsValuesDataModel> internal constructor(
             }
             Values(dataModel, values.copyAdding(valueItemsToChange), context)
         }
+
+    /** Convert these values to a list of [IsChange]s */
+    fun toChanges(): Array<IsChange> {
+        if (values.size == 0) return emptyArray()
+        val referenceValuePairs = mutableListOf<IsReferenceValueOrNullPair<Any>>()
+
+        fun addPairs(
+            itemsDataModel: IsValuesDataModel,
+            valueItems: IsValueItems,
+            parentRef: IsPropertyReference<*, *, *>?
+        ) {
+            for (valueItem in valueItems) {
+                val def = itemsDataModel[valueItem.index] ?: continue
+                val value = valueItem.value
+                val definition = def.definition
+
+                when {
+                    definition is IsEmbeddedValuesDefinition<*, *> -> {
+                        val ref = def.ref(parentRef)
+                        addPairs(definition.dataModel, (value as Values<*>).values, ref)
+                    }
+                    definition is IsMultiTypeDefinition<*, *, *> -> {
+                        val typedValue = value as TypedValue<TypeEnum<Any>, Any>
+                        @Suppress("UNCHECKED_CAST")
+                        val multiDef = def as MultiTypeDefinitionWrapper<TypeEnum<Any>, Any, *, *, *>
+                        val type = typedValue.type
+                        val typeRef = multiDef.refAtType(type)(parentRef)
+
+                        val subDef = multiDef.definition(type)
+                        if (subDef is IsEmbeddedValuesDefinition<*, *>) {
+                            addPairs(subDef.dataModel, (typedValue.value as Values<*>).values, typeRef)
+                        } else {
+                            @Suppress("UNCHECKED_CAST")
+                            referenceValuePairs += ReferenceValuePair(
+                                typeRef as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
+                                typedValue.value
+                            )
+                        }
+                    }
+                    else -> {
+                        val ref = def.ref(parentRef)
+                        @Suppress("UNCHECKED_CAST")
+                        referenceValuePairs += ReferenceValuePair(
+                            ref as IsPropertyReference<Any, IsChangeableValueDefinition<Any, IsPropertyContext>, *>,
+                            value
+                        )
+                    }
+                }
+            }
+        }
+
+        addPairs(dataModel, values, null)
+
+        return arrayOf(Change(referenceValuePairs))
+    }
 
     // ignore context
     override fun equals(other: Any?) = when {

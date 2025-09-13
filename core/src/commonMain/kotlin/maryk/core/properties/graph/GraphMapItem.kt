@@ -5,7 +5,6 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -193,12 +192,10 @@ data class GraphMapItem<K : Any, DM : IsDataModel> internal constructor(
                     else -> throw ParseException("Unknown MapReference type")
                 }
 
-                return values {
-                    mapNonNulls(
-                        this.mapReference withSerializable mapReference,
-                        this.key withSerializable key,
-                        this.properties withSerializable emptyList<TypedValue<PropRefGraphType, IsTransportablePropRefGraphNode>>()
-                    )
+                return create {
+                    this.mapReference -= mapReference
+                    this.key -= key
+                    this.properties -= emptyList()
                 }
             }
         }

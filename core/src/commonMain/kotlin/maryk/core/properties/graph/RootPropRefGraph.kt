@@ -5,7 +5,6 @@ import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
@@ -150,10 +149,8 @@ data class RootPropRefGraph<DM : IsRootDataModel> internal constructor(
                     currentToken = reader.nextToken()
                 }
 
-                return values {
-                    mapNonNulls(
-                        this@Companion.properties withSerializable propertiesList
-                    )
+                return create {
+                    this@Companion.properties -= propertiesList
                 }
             }
         }

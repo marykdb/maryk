@@ -7,6 +7,7 @@ import maryk.core.properties.exceptions.InvalidValueException
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
@@ -42,6 +43,7 @@ abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(
     @Suppress("UNCHECKED_CAST")
     fun create(
         setDefaults: Boolean = true,
+        context: RequestContext? = null,
         block: DM.() -> Unit
     ): Values<DM> {
         val dm = this as DM
@@ -52,7 +54,7 @@ abstract class TypedValuesDataModel<DM: IsValuesDataModel> : BaseDataModel<Any>(
             ValuesCollectorContext.pop()
         }
         items.fillWithPairs(dm, emptyArray(), setDefaults)
-        return Values(dm, items)
+        return Values(dm, items, context)
     }
 
     /** Convenience overload which applies defaults. */

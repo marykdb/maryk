@@ -3,13 +3,13 @@ package maryk.core.models.serializers
 import maryk.core.base64.Base64Maryk
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.invoke
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
 
 /**
  * Serializer for [ValueDataObject]s
@@ -34,7 +34,7 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
             val def = it as IsFixedStorageBytesEncodable<*>
             values[it.index] = def.readStorageBytes(def.byteSize, reader)
         }
-        return model.invoke(model.values { values })
+        return model.invoke(ObjectValues(model, values))
     }
 
     override fun toBytes(vararg inputs: Any): ByteArray {

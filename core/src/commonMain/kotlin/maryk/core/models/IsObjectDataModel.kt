@@ -10,7 +10,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.RequestContext
-import maryk.core.values.IsValueItems
+import maryk.core.values.EmptyValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 
@@ -48,12 +48,9 @@ interface IsObjectDataModel<DO: Any>: IsTypedDataModel<DO> {
     }
 }
 
-/** Create a Values object with given [createMap] function */
-fun <DO: Any, DM : IsObjectDataModel<DO>> DM.values(
-    context: RequestContext? = null,
-    createMap: DM.() -> IsValueItems
-) =
-    ObjectValues(this, createMap(this), context)
+/** Create an empty Values object */
+fun <DO: Any, DM : IsObjectDataModel<DO>> DM.emptyValues() =
+    ObjectValues(this, EmptyValueItems)
 
 /**
  * Converts a DataObject back to ObjectValues
@@ -88,7 +85,5 @@ fun <DO : Any, DM : IsObjectDataModel<DO>> DM.asValues(
         }
     }
 
-    return this.values(context) {
-        mutableMap
-    }
+    return ObjectValues(this, mutableMap, context)
 }

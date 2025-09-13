@@ -2,7 +2,6 @@ package maryk.core.query.requests
 
 import maryk.core.models.QueryModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -89,11 +88,9 @@ data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
 
                 reader.nextToken() // read past end object
 
-                return values(context) {
-                    mapNonNulls(
-                        this.name withSerializable name,
-                        this.request withSerializable request
-                    )
+                return create(context) {
+                    this.name -= name
+                    this.request -= request
                 }
             }
         }

@@ -4,7 +4,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.SimpleObjectModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsUsableInMultiType
@@ -116,9 +115,7 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
                     valueMap[definition.index] =
                         definition.readJson(reader, context as ContainsDefinitionsContext)
 
-                    values(context as? RequestContext) {
-                        valueMap
-                    }
+                    ObjectValues(this@Model, valueMap, context as? RequestContext)
                 } else {
                     super.readJson(reader, context)
                 }

@@ -66,7 +66,7 @@ abstract class ReferencesDataModel<DO: Any, DM: ReferencesDataModel<DO, DM>>(
             val valueMap = when (currentToken) {
                 is JsonToken.Value<*> -> {
                     ValueItems(
-                        model.references withNotNull listOf(
+                        model.references asValueItem listOf(
                             (model.references.definition.valueDefinition as IsValueDefinition<*, RequestContext>).fromString(
                                 currentToken.value as String,
                                 context
@@ -76,16 +76,13 @@ abstract class ReferencesDataModel<DO: Any, DM: ReferencesDataModel<DO, DM>>(
                 }
                 is JsonToken.StartArray -> {
                     ValueItems(
-                        model.references withNotNull model.references.readJson(reader, context)
+                        model.references asValueItem model.references.readJson(reader, context)
                     )
                 }
                 else -> throw ParseException("Expected a list or a single property reference in Exists filter")
             }
 
-            @Suppress("UNCHECKED_CAST")
-            return values(context) {
-                valueMap
-            } as ObjectValues<DO, DM>
+            return ObjectValues(this@ReferencesDataModel as DM, valueMap, context)
         }
     }
 }

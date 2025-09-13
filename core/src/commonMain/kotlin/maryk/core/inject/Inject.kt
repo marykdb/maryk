@@ -3,7 +3,6 @@ package maryk.core.inject
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
@@ -116,11 +115,9 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
 
                         reader.nextToken() // read past end object
 
-                        model.values(context?.requestContext) {
-                            mapNonNulls(
-                                Companion.collectionName withSerializable collectionName,
-                                Companion.propertyReference withSerializable propertyReference
-                            )
+                        model.create(context?.requestContext) {
+                            Companion.collectionName -= collectionName
+                            Companion.propertyReference -= propertyReference
                         }
                     }
                     is JsonToken.Value<*> -> {
@@ -131,10 +128,8 @@ data class Inject<T : Any, D : IsPropertyDefinition<T>>(
 
                         reader.nextToken()
 
-                        model.values(context?.requestContext) {
-                            mapNonNulls(
-                                Companion.collectionName withSerializable collectionName
-                            )
+                        model.create(context?.requestContext) {
+                            Companion.collectionName -= collectionName
                         }
                     }
                     else -> throw ParseException("JSON value for Inject should be an Object or String")

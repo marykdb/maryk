@@ -1,12 +1,11 @@
 package maryk.core.query.filters
 
-import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.models.QueryModel
+import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
-import maryk.core.models.values
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -59,10 +58,8 @@ data class Or(
                     reader.nextToken()
                 }
 
-                return values(context) {
-                    mapNonNulls(
-                        filters withSerializable filters.readJson(reader, context)
-                    )
+                return create(context) {
+                    filters -= filters.readJson(reader, context)
                 }
             }
         }

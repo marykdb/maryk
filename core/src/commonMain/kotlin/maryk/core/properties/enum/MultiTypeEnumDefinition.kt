@@ -7,7 +7,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsChangeableValueDefinition
@@ -44,24 +43,6 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
     override val Meta = object: MarykPrimitiveDescriptor {
         override val name: String = this@MultiTypeEnumDefinition.name
         override val primitiveType = PrimitiveType.TypeDefinition
-    }
-
-    // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByString: Map<String, E> by lazy<Map<String, E>> {
-        mutableMapOf<String, E>().also { output ->
-            for (type in cases()) {
-                output[type.name] = type
-                type.alternativeNames?.forEach { name: String ->
-                    if (output.containsKey(name)) throw ParseException("Enum ${this.name} already has a case for $name")
-                    output[name] = type
-                }
-            }
-        }
-    }
-
-    // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
-    private val valueByIndex by lazy {
-        cases().associateBy { it.index }
     }
 
     override val cases get() = optionalCases!!
@@ -194,10 +175,8 @@ open class MultiTypeEnumDefinition<E : MultiTypeEnum<*>> internal constructor(
                     val value = name.readJson(reader, context)
                     name.capture(context, value)
 
-                    values {
-                        mapNonNulls(
-                            name withSerializable value
-                        )
+                    create {
+                        name -= value
                     }
                 } else {
                     super.readJson(reader, context)

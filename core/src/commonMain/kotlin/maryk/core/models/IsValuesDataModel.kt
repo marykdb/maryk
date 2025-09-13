@@ -3,9 +3,7 @@ package maryk.core.models
 import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
-import maryk.core.query.RequestContext
 import maryk.core.values.EmptyValueItems
-import maryk.core.values.IsValueItems
 import maryk.core.values.Values
 
 interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel<Any> {
@@ -50,13 +48,6 @@ internal fun <DM: IsValuesDataModel> DM.validate(
         failOnMissingRequiredValues = failOnMissingRequiredValues
     )
 }
-
-/** Create a Values object with given [createMap] function */
-fun <DM : IsValuesDataModel> DM.values(
-    context: RequestContext? = null,
-    createMap: DM.() -> IsValueItems
-) =
-    Values(this, createMap(this), context)
 
 fun <DM : IsValuesDataModel> DM.emptyValues() =
     Values(this, EmptyValueItems)

@@ -5,7 +5,6 @@ import maryk.core.inject.InjectWithReference
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsTypedDataModel
 import maryk.core.models.IsValuesDataModel
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
@@ -20,6 +19,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.IsValueItems
 import maryk.core.values.IsValues
 import maryk.core.values.MutableValueItems
+import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
@@ -297,9 +297,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         @Suppress("UNCHECKED_CAST")
         return when (this.model) {
             is IsObjectDataModel<*> ->
-                (this.model as IsObjectDataModel<Any>).values(context as? RequestContext) {
-                    items
-                } as V
+                ObjectValues(this.model, items, context as? RequestContext) as V
             is IsValuesDataModel ->
                 Values(this.model, items, context as? RequestContext) as V
             else -> throw Exception("Unknown properties type ${this.model::class.simpleName}")

@@ -6,7 +6,6 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.SerializationException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SingleOrListDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -207,10 +206,8 @@ open class IndexedEnumDefinition<E : IndexedEnum> internal constructor(
                     val value = name.readJson(reader, context)
                     name.capture(context, value)
 
-                    values {
-                        mapNonNulls(
-                            this@Model.name withSerializable value
-                        )
+                    create {
+                        this.name -= value
                     }
                 } else {
                     super.readJson(reader, context)

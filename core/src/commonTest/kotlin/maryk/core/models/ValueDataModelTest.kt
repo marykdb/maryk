@@ -10,7 +10,6 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
-import maryk.core.values.ValueItems
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
@@ -33,12 +32,10 @@ internal class ValueDataModelTest {
                 val convertedValueModel =
                     converted as ValueDataModel<ValueDataObject, IsValueDataModel<ValueDataObject, *>>
 
-                val value = converted.values {
-                    ValueItems(
-                        convertedValueModel[1u]!! withNotNull 5,
-                        convertedValueModel[2u]!! withNotNull LocalDateTime(2018, 7, 18, 12, 0, 0),
-                        convertedValueModel[3u]!! withNotNull true
-                    )
+                val value = converted.create {
+                    convertedValueModel[1u]!! += 5
+                    convertedValueModel[2u]!! += LocalDateTime(2018, 7, 18, 12, 0, 0)
+                    convertedValueModel[3u]!! += true
                 }.toDataObject()
 
                 val context = DefinitionsContext()

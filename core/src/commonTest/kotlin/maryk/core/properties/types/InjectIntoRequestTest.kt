@@ -35,7 +35,7 @@ private val context = RequestContext(mapOf(
 class InjectIntoRequestTest {
     private val getRequestWithInjectable = GetRequest.create(context = context) {
         from += SimpleMarykModel
-        keys inject Inject("keysToInject", GetRequest { keys::ref })
+        keys += Inject("keysToInject", GetRequest { keys::ref })
         where += Exists(SimpleMarykModel { value::ref })
         toVersion += 333uL
         filterSoftDeleted += true

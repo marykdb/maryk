@@ -80,14 +80,6 @@ interface IsDataModel {
         return true
     }
 
-    /** Converts a list of optional [pairs] to values */
-    fun mapNonNulls(vararg pairs: ValueItem?): IsValueItems =
-        MutableValueItems().also { items ->
-            for (it in pairs) {
-                if (it != null) items += it
-            }
-        }
-
     /** Collects DataModels and Enums of the current data model into a mutable list. */
     fun getAllDependencies(dependencySet: MutableList<MarykPrimitive>)
 }

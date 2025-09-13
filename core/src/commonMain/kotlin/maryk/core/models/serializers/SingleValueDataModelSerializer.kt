@@ -1,10 +1,9 @@
 package maryk.core.models.serializers
 
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.TypedObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.models.values
-import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -46,10 +45,9 @@ open class SingleValueDataModelSerializer<T : Any, TO : Any, DO : Any, P : IsObj
 
         val value = readJsonValue(reader, context)
 
-        return model.values(context as? RequestContext) {
-            mapNonNulls(
-                singlePropertyDefinition withSerializable value
-            )
+        @Suppress("UNCHECKED_CAST")
+        return (model as TypedObjectDataModel<DO, P, *, *>).create {
+            singlePropertyDefinition -= value
         }
     }
 

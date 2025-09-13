@@ -6,7 +6,6 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectModel
 import maryk.core.models.ValuesCollectorContext
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
@@ -61,35 +60,8 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     val shouldSerialize: ((Any) -> Boolean)?
 
     /** Create an index [value] pair for maps */
-    infix fun withNotNull(value: Any): ValueItem {
+    infix fun asValueItem(value: Any): ValueItem {
         return ValueItem(this.index, value)
-    }
-
-    /** Create an index [value] pair for maps */
-    infix fun with(value: TO?) = value?.let {
-        val serializedValue = try {
-            if (shouldSerialize == null || shouldSerialize!!(value)) {
-                toSerializable?.let { serializer ->
-                    serializer(value, null) ?: value
-                } ?: value
-            } else {
-                value
-            }
-        } catch (_: Throwable) {
-            value
-        }
-
-        ValueItem(this.index, serializedValue)
-    }
-
-    /** Create an index [value] pair for maps */
-    infix fun injectWith(value: Inject<*, *>?) = value?.let {
-        ValueItem(this.index, value)
-    }
-
-    /** Create an index [value] pair for maps */
-    infix fun withSerializable(value: T?) = value?.let {
-        ValueItem(this.index, value)
     }
 
     /** DSL support: add value via += inside a create { } block */
@@ -98,15 +70,26 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     }) }
 
     /** DSL support: add value via += inside a create { } block */
-    operator fun plusAssign(value: TO?) { ValuesCollectorContext.add(this with value) }
+    operator fun plusAssign(value: TO?) {
+        value?.let {
+            val serializedValue = try {
+                if (shouldSerialize == null || shouldSerialize!!(value)) {
+                    toSerializable?.let { serializer ->
+                        serializer(value, null) ?: value
+                    } ?: value
+                } else {
+                    value
+                }
+            } catch (_: Throwable) {
+                value
+            }
+
+            ValueItem(this.index, serializedValue).also { ValuesCollectorContext.add(it) }
+        }
+    }
 
     /** DSL support: inject via += inside a create { } block */
     operator fun plusAssign(inject: Inject<*, *>?) {
-        inject?.let { ValuesCollectorContext.add(ValueItem(this.index, it)) }
-    }
-
-    /** DSL helper: explicit inject inside a create { } block */
-    infix fun inject(inject: Inject<*, *>?) {
         inject?.let { ValuesCollectorContext.add(ValueItem(this.index, it)) }
     }
 
@@ -259,9 +242,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                     valueMap[definition.index] =
                         definition.readJson(reader, context as ContainsDefinitionsContext)
 
-                    values(context as? RequestContext) {
-                        valueMap
-                    }
+                    ObjectValues(this@Model, valueMap, context as? RequestContext)
                 } else {
                     super.readJson(reader, context)
                 }

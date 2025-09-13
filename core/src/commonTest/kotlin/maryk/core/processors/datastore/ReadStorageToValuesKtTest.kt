@@ -3,7 +3,6 @@ package maryk.core.processors.datastore
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maryk.core.models.emptyValues
-import maryk.core.models.values
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
 import maryk.lib.extensions.initByteArrayByHex
@@ -64,23 +63,21 @@ class ReadStorageToValuesKtTest {
         )
 
         assertEquals(
-            TestMarykModel.values {
-                mapNonNulls(
-                    set with setOf(
-                        LocalDate(1981, 12, 5)
-                    ),
-                    map with mapOf(
-                        LocalTime(12, 23, 34) to "twelve"
-                    ),
-                    embeddedValues with EmbeddedMarykModel.create {
-                        value += "test"
-                        model += EmbeddedMarykModel.run {
-                            create{}
-                        }
-                    },
-                    listOfString with listOf("v1"),
-                    setOfString with setOf("def")
+            TestMarykModel.create(setDefaults = false) {
+                set += setOf(
+                    LocalDate(1981, 12, 5)
                 )
+                map += mapOf(
+                    LocalTime(12, 23, 34) to "twelve"
+                )
+                embeddedValues += EmbeddedMarykModel.create {
+                    value += "test"
+                    model += EmbeddedMarykModel.run {
+                        create{}
+                    }
+                }
+                listOfString += listOf("v1")
+                setOfString += setOf("def")
             },
             values
         )
@@ -140,10 +137,8 @@ class ReadStorageToValuesKtTest {
         )
 
         assertEquals(
-            TestMarykModel.values {
-                mapNonNulls(
-                    multi with TypedValue(S1, "test")
-                )
+            TestMarykModel.create(setDefaults = false) {
+                multi += TypedValue(S1, "test")
             },
             values
         )

@@ -5,7 +5,6 @@ import maryk.core.models.BaseDataModel
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
@@ -227,11 +226,9 @@ data class PropRefGraph<DM : IsValuesDataModel, DMS : IsValuesDataModel> interna
 
                 reader.nextToken()
 
-                return values {
-                    mapNonNulls(
-                        parent withSerializable parentValue,
-                        properties withSerializable propertiesValue
-                    )
+                return create {
+                    parent -= parentValue
+                    properties -= propertiesValue
                 }
             }
         }
@@ -331,14 +328,10 @@ internal fun readGraphNodeFromJson(
             throw ParseException("JSON value should end with an Object")
         }
 
-        val values = GraphMapItem.run {
-            values {
-                mapNonNulls(
-                    this@run.mapReference withSerializable mapReference,
-                    this@run.key withSerializable key,
-                    this@run.properties withSerializable propertiesValue
-                )
-            }
+        val values = GraphMapItem.create {
+            this.mapReference -= mapReference
+            this.key -= key
+            this.properties -= propertiesValue
         }
 
         return TypedValue(MapKey, GraphMapItem.invoke(values))
@@ -380,13 +373,9 @@ internal fun readGraphNodeFromJson(
 
             reader.nextToken() // consume EndObject
 
-            val values = PropRefGraph.run {
-                values {
-                    mapNonNulls(
-                        parent withSerializable parentValue,
-                        properties withSerializable propertiesValue
-                    )
-                }
+            val values = PropRefGraph.create {
+                parent -= parentValue
+                properties -= propertiesValue
             }
 
             TypedValue(Graph, PropRefGraph.invoke(values))
@@ -441,14 +430,10 @@ internal fun readGraphNodeFromJson(
                 throw ParseException("JSON value should end with an Object")
             }
 
-            val values = TypePropRefGraph.run {
-                values {
-                    mapNonNulls(
-                        parent withSerializable parentValue,
-                        type withSerializable typeValue,
-                        properties withSerializable propertiesValue
-                    )
-                }
+            val values = TypePropRefGraph.create {
+                parent -= parentValue
+                type -= typeValue
+                properties -= propertiesValue
             }
 
             TypedValue(TypeGraph, TypePropRefGraph.invoke(values))

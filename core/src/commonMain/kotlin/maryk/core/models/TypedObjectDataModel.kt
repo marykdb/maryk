@@ -53,7 +53,7 @@ abstract class TypedObjectDataModel<DO: Any, DM: IsObjectDataModel<DO>, CXI : Is
         return ObjectValues(typedThis, items, context)
     }
 
-    /** Convenience overload which applies defaults. */
-    fun create(block: DM.() -> Unit): ObjectValues<DO, DM> =
-        create(setDefaults = true, context = null, block = block)
+//    /** Convenience overload which applies defaults. */
+//    fun create(block: DM.() -> Unit): ObjectValues<DO, DM> =
+//        create(setDefaults = true, context = null, block = block)
 }

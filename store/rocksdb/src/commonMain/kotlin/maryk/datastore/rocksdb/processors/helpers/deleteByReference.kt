@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
-import maryk.core.models.values
+import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -28,7 +28,6 @@ import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.values.EmptyValueItems
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.TypeIndicator
@@ -66,7 +65,7 @@ internal fun <T : Any> deleteByReference(
                 is MapReference<*, *, *> -> mapOf<Any, Any>() as T
                 is ListReference<*, *> -> listOf<Any>() as T
                 is SetReference<*, *> -> setOf<Any>() as T
-                is EmbeddedValuesPropertyRef<*, *> -> reference.propertyDefinition.definition.dataModel.values { EmptyValueItems } as T
+                is EmbeddedValuesPropertyRef<*, *> -> reference.propertyDefinition.definition.dataModel.emptyValues() as T
                 is MapValueReference<*, *, *> -> {
                     val mapReference = reference.parentReference as IsMapReference<Any, Any, IsPropertyContext, IsMapDefinitionWrapper<Any, Any, Any, IsPropertyContext, *>>
                     createCountUpdater(
@@ -87,7 +86,7 @@ internal fun <T : Any> deleteByReference(
                         is IsStorageBytesEncodable<*> ->
                             valueDefinition.fromStorageBytes(b, o, l) as T
                         is EmbeddedValuesDefinition<*> ->
-                            valueDefinition.dataModel.values { EmptyValueItems } as T
+                            valueDefinition.dataModel.emptyValues() as T
                         is IsMapDefinition<*, *, *> -> mapOf<Any, Any>() as T
                         is IsListDefinition<*, *> -> listOf<Any>() as T
                         is IsSetDefinition<*, *> -> setOf<Any>() as T

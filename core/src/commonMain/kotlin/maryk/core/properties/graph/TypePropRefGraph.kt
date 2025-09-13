@@ -4,7 +4,6 @@ import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -251,12 +250,10 @@ data class TypePropRefGraph<
                 reader.nextToken() // end type object
                 reader.nextToken() // end outer object
 
-                return values {
-                    mapNonNulls(
-                        parent withSerializable parentValue,
-                        type withSerializable typeValue,
-                        properties withSerializable propertiesValue
-                    )
+                return create {
+                    parent -= parentValue
+                    type += typeValue
+                    properties -= propertiesValue
                 }
             }
         }

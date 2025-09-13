@@ -3,9 +3,9 @@ package maryk.core.values
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import maryk.core.models.graph
-import maryk.core.properties.types.invoke
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.invoke
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
 import maryk.test.models.SimpleMarykTypeEnum.S1
@@ -28,8 +28,8 @@ class ValuesTest {
 
         val copy = original.copy {
             listOf(
-                string withNotNull "bye world",
-                enum withNotNull V2
+                string asValueItem "bye world",
+                enum asValueItem V2
             )
         }
 

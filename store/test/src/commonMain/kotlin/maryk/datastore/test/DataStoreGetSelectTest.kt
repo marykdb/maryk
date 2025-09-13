@@ -2,7 +2,6 @@ package maryk.datastore.test
 
 import kotlinx.datetime.LocalDate
 import maryk.core.models.graph
-import maryk.core.models.values
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.requests.add
@@ -81,16 +80,14 @@ class DataStoreGetSelectTest(
         expect(FetchByKey) {getResponse.dataFetchType}
 
         getResponse.values[0].let {
-            expect(CompleteMarykModel.values {
-                mapNonNulls(
-                    number with 24u,
-                    subModel with SimpleMarykModel.values {
-                        mapNonNulls(
-                            value with "haha"
-                        )
+            expect(
+                CompleteMarykModel.create(setDefaults = false) {
+                    number += 24u
+                    subModel += SimpleMarykModel.create {
+                        value += "haha"
                     }
-                )
-            }) { it.values }
+                }
+            ) { it.values }
             expect(keys[0]) { it.key }
         }
     }

@@ -1,13 +1,12 @@
 package maryk.core.models.serializers
 
 import maryk.core.models.IsObjectDataModel
-import maryk.core.properties.IsPropertyContext
 import maryk.core.models.QueryModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.wrapper.ContextualDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.models.values
 import maryk.core.query.DefinedByReference
 import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
@@ -98,9 +97,7 @@ open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference
                         this.containedDataModel.Serializer.walkJsonToRead(reader, valueMap, context)
                     }
 
-                    val dataObjectMap = this.containedDataModel.values(context) {
-                        valueMap
-                    }
+                    val dataObjectMap = ObjectValues(this.containedDataModel, valueMap, context)
                     items.add(
                         dataObjectMap.toDataObject()
                     )
@@ -110,10 +107,11 @@ open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference
             reader.nextToken()
         } while (token !is JsonToken.Stopped)
 
-        return model.values(context) {
+        return ObjectValues(
+            model,
             ValueItems(
-                referenceProperty withNotNull items
+                referenceProperty asValueItem items
             )
-        }
+        )
     }
 }

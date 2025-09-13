@@ -3,8 +3,8 @@ package maryk.core.query.orders
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.BaseDataModel
 import maryk.core.models.QueryModel
+import maryk.core.models.emptyValues
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.definitions.contextual.ContextualPropertyReferenceDefinition
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -17,7 +17,6 @@ import maryk.core.query.RequestContext
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.orders.OrderType.ORDER
-import maryk.core.values.EmptyValueItems
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
@@ -131,7 +130,7 @@ data class Order internal constructor(
 
                         when (currentToken) {
                             is Suspended -> currentToken = currentToken.lastToken
-                            is EndDocument -> return values(context) { EmptyValueItems }
+                            is EndDocument -> return emptyValues()
                             else -> Unit
                         }
                     }
@@ -142,32 +141,30 @@ data class Order internal constructor(
                         is StartObject -> { // when has no values
                             currentToken.type.let { valueType ->
                                 if (valueType is UnknownYamlTag && valueType.name == "Desc") {
-                                    valueMap += direction withNotNull DESC
+                                    valueMap += direction asValueItem DESC
                                 }
                             }
 
                             reader.nextToken() // Read until EndObject
-                            values(context) { valueMap }
+                            ObjectValues(this@Model, valueMap, context)
                         }
                         is Value<*> -> {
-                            values(context) {
-                                currentToken.type.let { valueType ->
-                                    if (valueType is UnknownYamlTag && valueType.name == "Desc") {
-                                        valueMap += direction withNotNull DESC
-                                    }
+                            currentToken.type.let { valueType ->
+                                if (valueType is UnknownYamlTag && valueType.name == "Desc") {
+                                    valueMap += direction asValueItem DESC
                                 }
-
-                                currentToken.value.let { value ->
-                                    if (value is String) {
-                                        valueMap += propertyReference withNotNull propertyReference.definition.fromString(
-                                            value,
-                                            context
-                                        )
-                                    }
-                                }
-
-                                valueMap
                             }
+
+                            currentToken.value.let { value ->
+                                if (value is String) {
+                                    valueMap += propertyReference asValueItem propertyReference.definition.fromString(
+                                        value,
+                                        context
+                                    )
+                                }
+                            }
+
+                            ObjectValues(this@Model, valueMap, context)
                         }
                         else -> throw ParseException("Expected an order definition, not $currentToken")
                     }

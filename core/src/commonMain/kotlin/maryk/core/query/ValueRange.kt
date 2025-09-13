@@ -3,7 +3,6 @@ package maryk.core.query
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.models.QueryModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.boolean
@@ -141,38 +140,37 @@ data class ValueRange<T : Comparable<T>>(
                         reader.nextToken()
                     }
 
-                    values(context) {
-                        val valueMap = MutableValueItems()
+                    val valueMap = MutableValueItems()
 
-                        if (reader.currentToken !is JsonToken.StartArray) {
-                            throw ParseException("Range should be contained in an Array")
-                        }
-
-                        reader.nextToken().let {
-                            (it as? TokenWithType)?.type?.let { tokenType ->
-                                if (tokenType is UnknownYamlTag && tokenType.name == "Exclude") {
-                                    valueMap[inclusiveFrom.index] = false
-                                }
-                            }
-                        }
-
-                        valueMap += from withNotNull from.readJson(reader, context)
-
-                        reader.nextToken().let {
-                            (it as? TokenWithType)?.type?.let { tokenType ->
-                                if (tokenType is UnknownYamlTag && tokenType.name == "Exclude") {
-                                    valueMap[inclusiveTo.index] = false
-                                }
-                            }
-                        }
-
-                        valueMap += to withNotNull to.readJson(reader, context)
-
-                        if (reader.nextToken() !== JsonToken.EndArray) {
-                            throw ParseException("Range should have two values")
-                        }
-                        valueMap
+                    if (reader.currentToken !is JsonToken.StartArray) {
+                        throw ParseException("Range should be contained in an Array")
                     }
+
+                    reader.nextToken().let {
+                        (it as? TokenWithType)?.type?.let { tokenType ->
+                            if (tokenType is UnknownYamlTag && tokenType.name == "Exclude") {
+                                valueMap[inclusiveFrom.index] = false
+                            }
+                        }
+                    }
+
+                    valueMap += from asValueItem from.readJson(reader, context)
+
+                    reader.nextToken().let {
+                        (it as? TokenWithType)?.type?.let { tokenType ->
+                            if (tokenType is UnknownYamlTag && tokenType.name == "Exclude") {
+                                valueMap[inclusiveTo.index] = false
+                            }
+                        }
+                    }
+
+                    valueMap += to asValueItem to.readJson(reader, context)
+
+                    if (reader.nextToken() !== JsonToken.EndArray) {
+                        throw ParseException("Range should have two values")
+                    }
+
+                    ObjectValues(this@Companion, valueMap, context)
                 } else {
                     super.readJson(reader, context)
                 }

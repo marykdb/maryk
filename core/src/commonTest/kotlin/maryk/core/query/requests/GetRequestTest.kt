@@ -6,7 +6,6 @@ import maryk.checkYamlConversion
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
 import maryk.core.models.graph
-import maryk.core.models.values
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
@@ -25,11 +24,9 @@ class GetRequestTest {
     @Test
     fun createAsMap() {
         expect(getRequest) {
-            GetRequest.values(context) {
-                mapNonNulls(
-                    from with SimpleMarykModel,
-                    keys with listOf(getRequest.keys[0], getRequest.keys[1])
-                )
+            GetRequest.create(context) {
+                from += SimpleMarykModel
+                keys += listOf(getRequest.keys[0], getRequest.keys[1])
             }.toDataObject()
         }
     }
@@ -37,20 +34,18 @@ class GetRequestTest {
     @Test
     fun createAsMaxMap() {
         expect(getMaxRequest) {
-            GetRequest.values(context) {
-                mapNonNulls(
-                    from with SimpleMarykModel,
-                    keys with listOf(getMaxRequest.keys[0], getMaxRequest.keys[1]),
-                    where with Exists(SimpleMarykModel { value::ref }),
-                    toVersion with 333uL,
-                    filterSoftDeleted with true,
-                    select with SimpleMarykModel.graph {
-                        listOf(value)
-                    },
-                    aggregations with Aggregations(
-                        namedAggregations = mapOf(
-                            "totalValues" to ValueCount(SimpleMarykModel { value::ref })
-                        )
+            GetRequest.create(context) {
+                from += SimpleMarykModel
+                keys += listOf(getMaxRequest.keys[0], getMaxRequest.keys[1])
+                where += Exists(SimpleMarykModel { value::ref })
+                toVersion += 333uL
+                filterSoftDeleted += true
+                select += SimpleMarykModel.graph {
+                    listOf(value)
+                }
+                aggregations += Aggregations(
+                    namedAggregations = mapOf(
+                        "totalValues" to ValueCount(SimpleMarykModel { value::ref })
                     )
                 )
             }.toDataObject()

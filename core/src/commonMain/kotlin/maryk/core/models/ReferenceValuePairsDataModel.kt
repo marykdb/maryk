@@ -107,11 +107,9 @@ abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsData
                         }
 
                         listOfTypePairs.add(
-                            model.pairModel.values {
-                                mapNonNulls(
-                                    this@ReferenceValuePairsDataModel.pairModel.reference with reference,
-                                    this@ReferenceValuePairsDataModel.pairModel.value with value
-                                )
+                            model.pairModel.create {
+                                this@ReferenceValuePairsDataModel.pairModel.reference += reference
+                                this@ReferenceValuePairsDataModel.pairModel.value += value
                             }.toDataObject()
                         )
                     }
@@ -120,10 +118,8 @@ abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsData
                 reader.nextToken()
             } while (token !is JsonToken.Stopped)
 
-            return model.values(context) {
-                mapNonNulls(
-                    model.referenceValuePairs withSerializable listOfTypePairs
-                )
+            return model.create(context) {
+                model.referenceValuePairs -= listOfTypePairs
             }
         }
     }

@@ -10,7 +10,6 @@ import maryk.core.models.DefinitionModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
-import maryk.core.models.values
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
@@ -63,7 +62,7 @@ object UUIDKey : IsFixedBytesPropertyReference<Uuid> {
             override fun readJson(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?) =
                 if (reader is IsYamlReader) {
                     @Suppress("UNCHECKED_CAST")
-                    this@Model.values { EmptyValueItems } as ObjectValues<UUIDKey, IsObjectDataModel<UUIDKey>>
+                    ObjectValues(this@Model, EmptyValueItems) as ObjectValues<UUIDKey, IsObjectDataModel<UUIDKey>>
                 } else {
                     super.readJson(reader, context)
                 }

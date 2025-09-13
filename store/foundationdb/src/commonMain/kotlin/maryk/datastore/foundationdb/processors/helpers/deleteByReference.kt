@@ -2,7 +2,7 @@ package maryk.datastore.foundationdb.processors.helpers
 
 import com.apple.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
-import maryk.core.models.values
+import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -20,7 +20,6 @@ import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
-import maryk.core.values.EmptyValueItems
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
@@ -116,7 +115,7 @@ internal fun <T : Any> deleteByReference(
             is ListReference<*, *> -> listOf<Any>()
             is SetReference<*, *> -> setOf<Any>()
             is EmbeddedValuesPropertyRef<*, *> ->
-                reference.propertyDefinition.definition.dataModel.values { EmptyValueItems }
+                reference.propertyDefinition.definition.dataModel.emptyValues()
             is MultiTypePropertyReference<*, *, *, *, *> -> {
                 var ri = VERSION_BYTE_SIZE
                 val read = maryk.datastore.shared.readValue(reference.comparablePropertyDefinition, { prev[ri++] }) { prev.size - ri }

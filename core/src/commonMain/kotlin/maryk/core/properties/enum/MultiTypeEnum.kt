@@ -2,9 +2,12 @@ package maryk.core.properties.enum
 
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsObjectDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.SimpleObjectModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.models.serializers.ObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.PropertyDefinitionType
@@ -22,6 +25,7 @@ import maryk.core.query.RequestContext
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.core.values.SimpleObjectValues
+import maryk.core.values.Values
 import maryk.core.yaml.readNamedIndexField
 import maryk.core.yaml.writeNamedIndexField
 import maryk.json.IsJsonLikeReader
@@ -122,4 +126,14 @@ interface MultiTypeEnum<T: Any>: TypeEnum<T> {
             }
         }
     }
+}
+
+@Suppress("UNCHECKED_CAST")
+operator fun <DM : IsValuesDataModel, E : MultiTypeEnum<Values<DM>>> E.invoke(
+    builder: DM.() -> Unit
+): TypedValue<E, Values<DM>> {
+    val embeddedDef = this.definition as? EmbeddedValuesDefinition<DM>
+        ?: throw IllegalArgumentException("Type $this does not accept embedded values")
+    val values = (embeddedDef.dataModel as TypedValuesDataModel<DM>).create(builder)
+    return TypedValue(this, values)
 }

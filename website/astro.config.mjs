@@ -35,6 +35,7 @@ export default defineConfig({
                 {
                     label: 'Data Modeling',
                     items: [
+                        { label: 'Data Design', slug: 'core-concepts/data-design' },
                         { label: 'Data Models', slug: 'core-concepts/datamodels' },
                         { label: 'Keys', slug: 'core-concepts/keys' },
                         { label: 'Versioning', slug: 'core-concepts/versioning' },

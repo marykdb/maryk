@@ -14,6 +14,7 @@ try { rmSync(resolve(siteRoot, '.astro'), { recursive: true, force: true }); } c
 const map = [
   // Core concepts
   ['src/content/docs/core-concepts/datamodels.mdx', 'datamodel.md'],
+  ['src/content/docs/core-concepts/data-design.mdx', 'data-design.md'],
   ['src/content/docs/core-concepts/index.mdx', 'README.md'],
   ['src/content/docs/core-concepts/keys.mdx', 'key.md'],
   ['src/content/docs/core-concepts/versioning.mdx', 'versioning.md'],
@@ -101,15 +102,6 @@ function rewriteLinks(md) {
   out = out.replaceAll('(properties/', '(/core-concepts/properties/');
   out = out.replace(/\.md/g, '/');
   return out;
-}
-
-function takeFrontmatter(text) {
-  if (!text.startsWith('---')) return { fm: '---\n---\n', rest: text };
-  const end = text.indexOf('\n---', 3);
-  if (end === -1) return { fm: '---\n---\n', rest: text };
-  const fm = text.slice(0, end + 4);
-  const rest = text.slice(end + 4);
-  return { fm, rest };
 }
 
 for (const [targetRel, srcRel] of map) {

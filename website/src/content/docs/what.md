@@ -41,4 +41,4 @@ Person.validate(john) // throws if invalid
 ### Next steps
 
 - Quick setup: [Getting Started](/getting-started/)
-- Deep dive: [Core Concepts](/core-concepts/)
+- Deep dive: [Data Design](/data-modeling/data-design/)

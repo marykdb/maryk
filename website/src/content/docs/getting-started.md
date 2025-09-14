@@ -57,7 +57,7 @@ val json = Person.writeJson(john)
 val fromJson = Person.readJson(json)
 ```
 
-Also see YAML/ProtoBuf in [Serialization](/core-concepts/serialization/).
+Also see YAML/ProtoBuf in [Serialization](/serialization/).
 
 ## Pick a datastore
 
@@ -76,7 +76,7 @@ Then advance to [Stores](/stores/) for RocksDB or FoundationDB and migration tip
 
 ## Next steps
 
-- Learn how models and properties work in [Core Concepts](/core-concepts/datamodels/).
-- Explore queries, filters, and aggregations in [Querying](/core-concepts/querying/).
-- Generate Kotlin/ProtoBuf from serialized models in [Generator](/support/generator/).
+- Learn how models and properties work in [Data design](/data-modeling/data-design/).
+- Explore queries, filters, and aggregations in [Querying](/querying/).
+- Check out how to persist data in [Stores](/stores/).
 

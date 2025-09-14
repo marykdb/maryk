@@ -10,8 +10,9 @@ node_modules/
 .generated/
 
 # generated from core/docs at build time
-src/content/docs/core-concepts/**
-src/content/docs/support/**
+src/content/docs/data-modeling/**
+src/content/docs/querying/**
+src/content/docs/serialization/**
 src/content/docs/stores/**
 
 # logs

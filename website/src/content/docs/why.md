@@ -29,5 +29,5 @@ Serialize schemas and run compatibility checks across clients. Built‑in migrat
 
 ### If that sounds good
 
-- Skim [Core Concepts](/core-concepts/) to understand the building blocks.
+- Read [Data Design](/data-modeling/data-design/) to understand the building blocks.
 - Choose an engine in [Stores](/stores/) to match your deployment.

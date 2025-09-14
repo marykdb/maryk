@@ -55,6 +55,7 @@ const map = [
   ['src/content/docs/stores/index.mdx', '../store/README.md'],
   ['src/content/docs/stores/memory.mdx', '../store/memory/README.md'],
   ['src/content/docs/stores/rocksdb.mdx', '../store/rocksdb/README.md'],
+  ['src/content/docs/stores/rocksdb/architecture.mdx', '../store/rocksdb/documentation/architecture.md'],
   ['src/content/docs/stores/rocksdb/storage.mdx', '../store/rocksdb/documentation/storage.md'],
   ['src/content/docs/stores/foundationdb.mdx', '../store/foundationdb/README.md'],
   ['src/content/docs/stores/foundationdb/architecture.mdx', '../store/foundationdb/docs/architecture.md'],
@@ -103,6 +104,7 @@ const map = [
     ['(./docs/architecture.md)', '(/stores/foundationdb/architecture/)'],
     ['(./docs/local-testing.md)', '(/stores/foundationdb/local-testing/)'],
     ['(documentation/storage.md)', '(/stores/rocksdb/storage/)'],
+    ['(documentation/architecture.md)', '(/stores/rocksdb/architecture/)'],
     // Map code links to GitHub full URLs (main branch)
     ['(../src/', '(https://github.com/marykdb/maryk/blob/master/core/src/'],
     ['(../../src/', '(https://github.com/marykdb/maryk/blob/master/core/src/'],

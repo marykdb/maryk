@@ -104,6 +104,7 @@ export default defineConfig({
                             collapsed: true,
                             items: [
                                 { label: 'RocksDB Store', slug: 'stores/rocksdb' },
+                                { label: 'RocksDB Architecture', slug: 'stores/rocksdb/architecture' },
                                 { label: 'RocksDB Storage Layout', slug: 'stores/rocksdb/storage' },
                             ],
                         },

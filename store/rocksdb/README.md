@@ -1,8 +1,8 @@
-# Maryk RocksDB Store implementation
+# Maryk RocksDB Store
 
-A powerful implementation of Maryk data store using [RocksDB](https://rocksdb.org). 
-This store organizes data into multiple column families in the format defined by the DataModel.
-Learn more about the storage layout by reading [the storage description](documentation/storage.md).
+An embedded, high‑performance Maryk data store built on [RocksDB](https://rocksdb.org).
+
+Each DataModel is mapped to multiple column families (keys/table/index/unique and historic variants when enabled). See the detailed [Architecture](documentation/architecture.md) and [Storage Layout](documentation/storage.md).
 
 ## Getting Started
 
@@ -35,19 +35,15 @@ RocksDBDataStore.open(
 }
 ```
 
-**Note:** It is important to call `close()` at the end of the use block to release memory and clean up any processes.
+The `.use { ... }` scope closes the store automatically. If you don’t use `use`, call `close()` when finished to free native resources.
 
-## Migrations and Update handling
+## Migrations and Version Updates
 
-The data store always checks if all passed DataModels are compatible with the stored models upon creation. 
-If they are not, it will trigger a migration. A `migrationHandler` must be defined to handle migrations.
+On open, the store compares the stored model with your provided definitions and decides whether it is up‑to‑date, requires safe additions (including new indexes), or needs a migration. For incompatible changes you provide a `migrationHandler` that performs fixes and returns `true` to continue. After a successful update you can run custom logic via `versionUpdateHandler` (for example, seed data that depends on the new schema).
 
-There is also a `versionUpdateHandler` which enables you to do actions after an update/migration action
-was successfully done. This way you can add intial data which depends on the updated models.
-
-**Note:** It is possible to add Models, indexes, and properties without a migration. Additionally, it is possible 
-to set less strict validation rules. However, it is not possible to change the types of properties, rename values 
-without having the old value an alternative, or add more strict validation without automatically triggering a migration.
+Notes:
+- You can add models, properties, and indexes and relax validation without a migration.
+- Changing property types, renaming without alternatives, or tightening validation triggers a migration.
 
 ```kotlin
 RocksDBDataStore.open(
@@ -80,3 +76,9 @@ RocksDBDataStore.open(
     }
 )
 ```
+
+## Platform Support
+
+This module is Kotlin Multiplatform and works on JVM, iOS, macOS, Android, and Linux via the `rocksdb-multiplatform` bindings.
+
+For a deeper dive into how data is laid out and how queries execute, check the [Architecture](documentation/architecture.md) and [Storage Layout](documentation/storage.md) docs.

@@ -1,86 +1,68 @@
-# RockDB record storage structure
+# RocksDB Record Storage Structure
 
-# ColumnFamily structure
+## Column Family Layout
 
-Each table is represented by multiple column families in which the actual data
-is stored. It has at least a Model, Keys, Table, Index and a UniqueIndex column family and
-if `keepAllVersions` is true on the store historic variants of those 3 storing 
-the historical values. 
+Each DataModel is represented by multiple column families that hold the actual data. At minimum a model has `Model`, `Keys`, `Table`, `Index` and `Unique`. When `keepAllVersions = true` the historic variants are also created to store previous versions.
 
-The column family descriptor is a byte array consisting 2 parts, the index of the
-DB and a Type to indicate which of the types it is.
+The column family name is a compact byte array made of two parts: a single type byte followed by the varint‑encoded model id. The type byte values are:
 
-- The index is retrieved from the database map as passed to the RocksDBDataStore
-- The type is created on init. At least Model, Keys, Table, Index and a UniqueIndex, 
-  and if `keepAllVersions` is true also historic version of the same 3.
-  - Model - index 0
-  - Keys - index 1 
-  - Table - index 2
-  - Index - index 3
-  - Unique - index 4
-  - Historic Table - index 5 - Only if `keepAllVersions = true` on dataStore
-  - Historic Index - index 6 - Only if `keepAllVersions = true` on dataStore
-  - Historic Unique - index 7 - Only if `keepAllVersions = true` on dataStore
+- Model (1)
+- Keys (2)
+- Table (3)
+- Index (4)
+- Unique (5)
+- Historic Table (6) – only when `keepAllVersions = true`
+- Historic Index (7) – only when `keepAllVersions = true`
+- Historic Unique (8) – only when `keepAllVersions = true`
 
-# Model
+The model id is the `UInt` key from `dataModelsById` passed to `RocksDBDataStore.open`.
+
+For efficient scans, the `Table` and `HistoricTable` families use a fixed‑length prefix extractor sized to the model key. The historic families use a custom comparator so qualifiers sort before versions (see `VersionedComparator`).
+
+## Model
 Stores the model used for the data. Useful to get current structure and to check if current data can be
 read or updated with reference model from a client.
 
-# Keys
-Contains all the keys and creation dates for efficient scans for existence.
+## Keys
+Contains all object keys and their creation versions. Scan operations iterate this family to enumerate keys in order.
 
-# Record structure
-A record is stored in multiple key value pairs in multiple column families. Each 
-Type stores data different for its use case.
+## Record Structure
+Each record is represented by multiple key/value pairs across the families. The exact encoding differs per family and whether history is enabled.
 
-# Table
-A record is stored with the following structure within the Table column family. 
+## Table (latest values)
+A record is stored with the following structure within the `Table` family.
 
-- KEY = VERSION. The root key-value pair is always the first version 
-  indicating when the record was created. Is never changed afterwards.
-- KEY:SOFT_DELETE_INDICATOR = VERSION Boolean. Indicates if the record was
-  soft deleted. SoftDelete indicator is 0. Boolean is a value of 0 or 1.
-- KEY:LAST_UPDATE_INDICATOR = VERSION. This pair stores the latest
-  version which is stored and is always updated on any add, change, delete. 
-  The indicator is `0b1000`
-- KEY:REFERENCE = VERSION-VALUE. All values are stored with a key and property 
-  reference. All values are prefixed with version so it is known when value was
-  changed.
+- `KEY` → `VERSION` – Creation version. Written once, never changed.
+- `KEY || SOFT_DELETE_INDICATOR(0x00)` → `VERSION || Boolean` – Object‑level soft delete flag.
+- `KEY || LAST_VERSION_INDICATOR(0b1000)` → `VERSION` – Last write version; updated on any add/change/delete.
+- `KEY || QUALIFIER` → `VERSION || VALUE` – Property values. The qualifier encodes the property reference (and collection item, where applicable).
   
-# Index
-Index makes it easy to search records by values 
+## Index (latest)
+`INDEX_REF || VALUE_BYTES || KEY` → `VERSION`
 
-- INDEX_REFERENCE:VALUE:KEY = VERSION. An indexed value and key which is prefixed by 
-  index and stores the key so the record can be found by value. Contains key so multiple 
-  references to same value can exist.
+Indexes allow range scans over value prefixes and disambiguate duplicates by appending the primary key.
   
-# Unique
-Unique stores a value which uniquely refers to a data record key. 
+## Unique (latest)
+`UNIQUE_REF || VALUE_BYTES` → `VERSION || KEY`
 
-- INDEX_REFERENCE:VALUE = VERSION-KEY. An indexed value is prefixed by index and stores the
-  key and version it was set so the record can be found by value. 
+Unique entries map a unique value (or composite) to exactly one record key.
   
-# Historic Table
-This table stores all versions of values by appending the version to the reference. 
+## Historic Table (all versions)
+Stores all versions of values by appending the inverted version to the qualifier. Newest versions sort first.
 
-- KEY = VERSION. The root key-value pair is always the first version 
-  indicating when the record was created. Is never changed afterwards.
-- KEY:SOFT_DELETE_INDICATOR:VERSION = Boolean. Indicates if the record was
-  soft deleted. SoftDelete indicator is 0. Boolean is a value of 0 or 1.
-- KEY:REFERENCE:VERSION = VALUE. All values are stored with a key and property 
-  reference and version.
+- `KEY` → `VERSION` – Creation version (also stored in historic).
+- `KEY || SOFT_DELETE_INDICATOR || inverted(VERSION)` → empty value (flag marker).
+- `KEY || QUALIFIER || inverted(VERSION)` → `VALUE`.
 
-# Historic Index
-An index to search values at or before older versions.
+## Historic Index
+Supports “as of” queries on indexes.
 
-- INDEX_REFERENCE:VALUE:KEY:VERSION = EMPTY/FALSE. An indexed value and key is prefixed 
-  by index so the record can be found by value.  Contains key so multiple 
-  references to same value can exist. Stores the version so a unique value can be 
-  searched at or before a version. EMPTY/FALSE indicates if the index is set or unset. Empty means set and false (0) 
-  means unset 
-  An old index value is always unset at same version when a new value is set.
+- `INDEX_REF || VALUE_BYTES || KEY || inverted(VERSION)` → empty (set) or `[0x00]` (unset) marker.
+  When an index value changes, the previous value is recorded as an `unset` at the same version.
 
-# Historic Unique
-Stores unique values by version 
+## Historic Unique
+Stores unique value history.
 
-- INDEX_REFERENCE:VALUE:VERSION = KEY/EMPTY. A versioned value to key pair for a unique value. Empty means it was unset 
+- `UNIQUE_REF || VALUE_BYTES || inverted(VERSION)` → `KEY` (set) or empty (unset tombstone).
+
+This enables resolving which key owned a unique value at or before a given version.

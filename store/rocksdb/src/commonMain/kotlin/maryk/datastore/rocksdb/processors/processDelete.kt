@@ -24,6 +24,7 @@ import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
+import maryk.rocksdb.OptimisticTransactionDB
 
 internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     dataModel: DM,
@@ -126,14 +127,15 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                 if (hardDelete) {
                     cache.delete(dbIndex, key)
 
-                    db.delete(columnFamilies.keys, key.bytes)
-                    db.deleteRange(
+                    val baseDB = db.baseDB
+                    baseDB.delete(columnFamilies.keys, key.bytes)
+                    baseDB.deleteRange(
                         columnFamilies.table,
                         key.bytes,
                         key.bytes.nextByteInSameLength()
                     )
                     if (columnFamilies is HistoricTableColumnFamilies) {
-                        db.deleteRange(
+                        baseDB.deleteRange(
                             columnFamilies.historic.table,
                             key.bytes,
                             key.bytes.nextByteInSameLength()

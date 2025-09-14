@@ -84,10 +84,10 @@ import maryk.rocksdb.ColumnFamilyOptions
 import maryk.rocksdb.ComparatorOptions
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.RocksDB
+import maryk.rocksdb.OptimisticTransactionDB
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.defaultColumnFamily
-import maryk.rocksdb.openRocksDB
+import maryk.rocksdb.openOptimisticTransactionDB
 
 class RocksDBDataStore private constructor(
     override val keepAllVersions: Boolean = true,
@@ -111,7 +111,7 @@ class RocksDBDataStore private constructor(
             DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)
         } else null
 
-    internal val db: RocksDB
+    internal val db: OptimisticTransactionDB
 
     private val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {
@@ -128,7 +128,7 @@ class RocksDBDataStore private constructor(
         }
 
         val handles = mutableListOf<ColumnFamilyHandle>()
-        this.db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
+        this.db = openOptimisticTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
 
         try {
             var handleIndex = 1

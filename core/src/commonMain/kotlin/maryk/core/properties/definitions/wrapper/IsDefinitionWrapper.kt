@@ -89,8 +89,8 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     }
 
     /** DSL support: inject via += inside a create { } block */
-    infix fun with(inject: Inject<*, *>?) {
-        inject?.let { ValuesCollectorContext.add(ValueItem(this.index, it)) }
+    infix fun with(inject: Inject<*, *>) {
+        inject.let { ValuesCollectorContext.add(ValueItem(this.index, it)) }
     }
 
     /** Get a reference to this definition inside [parentRef] */

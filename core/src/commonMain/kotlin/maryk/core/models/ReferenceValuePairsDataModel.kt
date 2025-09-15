@@ -116,7 +116,7 @@ abstract class ReferenceValuePairsDataModel<DO: Any, DM: ReferenceValuePairsData
                     else -> break@walker
                 }
                 reader.nextToken()
-            } while (token !is JsonToken.Stopped)
+            } while (true)
 
             return model.create(context) {
                 model.referenceValuePairs -= listOfTypePairs

@@ -105,7 +105,7 @@ open class ReferenceMappedDataModelSerializer<DO : Any, CDO : DefinedByReference
                 else -> break@walker
             }
             reader.nextToken()
-        } while (token !is JsonToken.Stopped)
+        } while (true)
 
         return ObjectValues(
             model,

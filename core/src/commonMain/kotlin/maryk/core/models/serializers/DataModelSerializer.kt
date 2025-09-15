@@ -202,7 +202,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                 else -> break@walker
             }
             reader.nextToken()
-        } while (token !is JsonToken.Stopped)
+        } while (true)
     }
 
     override fun calculateProtoBufLength(values: V, cacher: WriteCacheWriter, context: CX?): Int {

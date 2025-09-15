@@ -2,7 +2,7 @@
 
 [versions]
 
-kotlin = "2.2.0"
+kotlin = "2.2.20"
 android = "8.10.0"
 
 [libraries]

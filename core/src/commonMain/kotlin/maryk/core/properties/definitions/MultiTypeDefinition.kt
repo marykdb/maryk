@@ -142,19 +142,15 @@ fun <E : MultiTypeEnum<out T>, T: Any> IsValuesDataModel.multiType(
     default: TypedValue<E, T>? = null,
     alternativeNames: Set<String>? = null
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
-    MultiTypeDefinitionWrapper<E, T, TypedValue<MultiTypeEnum<out Any>, Any>, ContainsDefinitionsContext, Any>(
+    MultiTypeDefinitionWrapper(
         index = index,
         name = name ?: propName,
         definition = MultiTypeDefinition(required, final, typeEnum, typeIsFinal, default),
         alternativeNames = alternativeNames,
         toSerializable = { value, _ ->
-            @Suppress("UNCHECKED_CAST")
-            value?.let { TypedValue(it.type as E, it.value as T) }
+            value?.let { TypedValue(it.type, it.value) }
         },
-        fromSerializable = { typed ->
-            @Suppress("UNCHECKED_CAST")
-            typed as TypedValue<MultiTypeEnum<out Any>, Any>?
-        }
+        fromSerializable = { typed -> typed }
     )
 }
 

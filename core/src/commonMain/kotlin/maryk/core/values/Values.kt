@@ -2,6 +2,7 @@ package maryk.core.values
 
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.TypedValuesDataModel
+import maryk.core.models.ValuesCollectorContext
 import maryk.core.models.validate
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
@@ -28,9 +29,18 @@ data class Values<DM : IsValuesDataModel> internal constructor(
     override val values: IsValueItems,
     override val context: RequestContext? = null
 ) : AbstractValues<Any, DM>() {
-    /** make a copy of Values and add new pairs from [pairCreator] */
-    fun copy(pairCreator: DM.() -> List<ValueItem>) =
-        Values(dataModel, values.copyAdding(pairCreator(dataModel)), context)
+    /** make a copy of Values and add new pairs from [block] */
+    fun copy(block: DM.() -> Unit): Values<DM> {
+        val items = ValuesCollectorContext.push(false)
+        items.fillWithPairs(dataModel, values, false)
+        try {
+            dataModel.block()
+        } finally {
+            ValuesCollectorContext.pop()
+        }
+
+        return Values(dataModel, items, context)
+    }
 
     fun copy(values: IsValueItems) =
         Values(dataModel, values.copyAdding(values), context)

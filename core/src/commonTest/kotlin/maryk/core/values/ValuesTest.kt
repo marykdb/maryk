@@ -26,10 +26,8 @@ class ValuesTest {
         }
 
         val copy = original.copy {
-            listOf(
-                string asValueItem "bye world",
-                enum asValueItem V2
-            )
+            string with "bye world"
+            enum with V2
         }
 
         expect(6) { copy.size }

@@ -130,10 +130,21 @@ value class MutableValueItems(
     fun fillWithPairs(dataModel: IsTypedDataModel<*>, pairs: Array<out ValueItem?>, setDefaults: Boolean) {
         pairs.filterNotNull().forEach { this += it }
         if (setDefaults) {
-            dataModel.allWithDefaults
-                .filter { this[it.index] == null }
-                .forEach { this[it.index] = (it.definition as HasDefaultValueDefinition<*>).default!! }
+            setWithDefaults(dataModel)
         }
+    }
+
+    fun fillWithPairs(dataModel: IsTypedDataModel<*>, pairs: IsValueItems, setDefaults: Boolean) {
+        pairs.forEach { this += it }
+        if (setDefaults) {
+            setWithDefaults(dataModel)
+        }
+    }
+
+    private fun setWithDefaults(dataModel: IsTypedDataModel<*>) {
+        dataModel.allWithDefaults
+            .filter { this[it.index] == null }
+            .forEach { this[it.index] = (it.definition as HasDefaultValueDefinition<*>).default!! }
     }
 
     override fun toString() = list.joinToString(separator = ", ", prefix = "{", postfix = "}")

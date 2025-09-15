@@ -7,7 +7,9 @@ import maryk.core.values.ValueItem
 object ValuesCollectorContext {
     private data class Frame(val items: MutableValueItems, val setDefaults: Boolean)
     private val stack = mutableListOf<Frame>()
-    fun push(setDefaults: Boolean): MutableValueItems = MutableValueItems().also { stack.add(Frame(it, setDefaults)) }
+    fun push(setDefaults: Boolean): MutableValueItems = MutableValueItems().also {
+        stack.add(Frame(it, setDefaults))
+    }
     fun currentItems(): MutableValueItems? = stack.lastOrNull()?.items
     fun currentSetDefaults(): Boolean = stack.lastOrNull()?.setDefaults ?: true
     fun pop(): MutableValueItems = stack.removeAt(stack.lastIndex).items

@@ -40,13 +40,18 @@ class QualifierFuzzyMatcher(
     fun firstPossible() = qualifierParts.first()
 
     /** Compare current [qualifier] at [offset] */
-    fun isMatch(qualifier: ByteArray, offset: Int, length: Int = qualifier.size): FuzzyMatchResult {
+    fun isMatch(
+        qualifier: ByteArray,
+        offset: Int,
+        length: Int = qualifier.size - offset
+    ): FuzzyMatchResult {
         var index = offset
-        val lastIndexPlusOne = offset + length
+        // Clamp end to the physical array end
+        val endExclusive = (offset + length).coerceAtMost(qualifier.size)
 
         qualifierParts.forEachIndexed { qIndex, qPart ->
             if (!qPart.all { byte ->
-                if (index >= lastIndexPlusOne) return NO_MATCH
+                if (index >= endExclusive) return NO_MATCH
                 qualifier[index++] == byte
             }) {
                 return if (qIndex == 0) OUT_OF_RANGE else NO_MATCH
@@ -55,8 +60,8 @@ class QualifierFuzzyMatcher(
             if (qIndex <= fuzzyMatchers.lastIndex) {
                 try {
                     fuzzyMatchers[qIndex].skip {
-                        if (index >= lastIndexPlusOne) {
-                            // So JS skips out.
+                        if (index >= endExclusive) {
+                            // Force controlled exit for JS; Wasm would trap otherwise
                             throw IndexOutOfBoundsException()
                         }
                         qualifier[index++]

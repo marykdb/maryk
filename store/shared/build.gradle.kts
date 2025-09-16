@@ -12,7 +12,6 @@ kotlin {
                 api(KotlinX.coroutines.core)
                 api(projects.lib)
                 api(projects.core)
-                implementation("com.mayakapps.kache:kache:_")
             }
         }
         commonTest {

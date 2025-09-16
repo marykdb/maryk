@@ -5,9 +5,20 @@ import maryk.lib.recyclableByteArray
 private const val MIN_SUPPLEMENTARY_CODE_POINT = 0x010000
 
 private const val SURROGATE_OFFSET = MIN_SUPPLEMENTARY_CODE_POINT - (Char.MIN_HIGH_SURROGATE.code shl 10) - Char.MIN_LOW_SURROGATE.code
+private const val MAX_CODE_POINT = 0x10FFFF
 
-expect fun fromCodePoint(value: Int): String
-expect fun codePointAt(string: String, index: Int): Int
+fun fromCodePoint(value: Int): String {
+    require(value in 0..MAX_CODE_POINT) { "Invalid Unicode code point: $value" }
+
+    return if (value < MIN_SUPPLEMENTARY_CODE_POINT) {
+        charArrayOf(value.toChar()).concatToString()
+    } else {
+        val adjusted = value - MIN_SUPPLEMENTARY_CODE_POINT
+        val high = (Char.MIN_HIGH_SURROGATE.code + (adjusted ushr 10)).toChar()
+        val low = (Char.MIN_LOW_SURROGATE.code + (adjusted and 0x3FF)).toChar()
+        charArrayOf(high, low).concatToString()
+    }
+}
 
 fun initString(length: Int, reader: () -> Byte): String =
     if (length > recyclableByteArray.size) {

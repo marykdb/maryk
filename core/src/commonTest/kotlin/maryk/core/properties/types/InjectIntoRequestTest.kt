@@ -108,13 +108,12 @@ class InjectIntoRequestTest {
         converted: ObjectValues<GetRequest<*>, GetRequest.Companion>,
         original: ObjectValues<GetRequest<*>, GetRequest.Companion>
     ) {
-        @Suppress("RemoveExplicitTypeArguments")
-        when (val originalKeys = converted.original { keys } as Any?) {
+        when (val originalKeys = converted.originalAny { keys }) {
             null -> error("Keys should not be null")
             is ObjectValues<*, *> ->
-                assertEquals<Any?>(originalKeys.toDataObject(), original.original { keys })
+                assertEquals(originalKeys.toDataObject(), original.originalAny { keys })
             else ->
-                expect<Any?>(original.original { keys }) { originalKeys }
+                expect(original.originalAny { keys }) { originalKeys }
         }
         assertEquals(original { where }, converted { where })
     }

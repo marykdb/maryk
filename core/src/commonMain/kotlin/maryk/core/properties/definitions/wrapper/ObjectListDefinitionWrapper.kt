@@ -11,6 +11,7 @@ import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnySpecificWrappedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListAnyValuePropertyReference
 
 /**
  * Contains a List property [definition] which contains values of type [ODO] and [DM]
@@ -91,14 +92,16 @@ data class ObjectListDefinitionWrapper<
     /** Reference values to references from [referenceGetter] at any item of list */
     fun <T : Any, W : IsDefinitionWrapper<T, *, *, *>, R : IsPropertyReference<T, W, *>> atAny(
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
-    ): (AnyOutPropertyReference?) -> R =
+    ): (AnyOutPropertyReference?) -> IsPropertyReference<List<T>, IsListDefinition<T, IsPropertyContext>, *> =
         @Suppress("UNCHECKED_CAST")
         {
             val objectValuesDefinition = this.definition.valueDefinition as EmbeddedObjectDefinition<ODO, DM, *, *>
 
-            objectValuesDefinition.dataModel(
-                this.getAnyItemRef(it),
-                referenceGetter as IsObjectDataModel<*>.() -> (AnyOutPropertyReference?) -> R
+            ListAnyValuePropertyReference(
+                objectValuesDefinition.dataModel(
+                    this.getAnyItemRef(it),
+                    referenceGetter as IsObjectDataModel<*>.() -> (AnyOutPropertyReference?) -> R
+                )
             )
         }
 }

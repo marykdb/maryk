@@ -111,6 +111,12 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
         return this.values[index] as T?
     }
 
+    /** Retrieve the raw stored value for [getProperty] without casting */
+    fun originalAny(getProperty: DM.() -> IsDefinitionWrapper<*, *, *, DO>): Any? {
+        val index = getProperty(this.dataModel).index
+        return this.values[index]
+    }
+
     /** Get ValueItem at [index] from internal list */
     fun getByInternalListIndex(index: Int) = (this.values as IsValueItemsImpl).list[index]
 

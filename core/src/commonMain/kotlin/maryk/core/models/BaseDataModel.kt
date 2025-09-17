@@ -5,6 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -12,6 +13,8 @@ import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.HasEmbeddedPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListAnyItemReference
+import maryk.core.properties.references.ListAnyValuePropertyReference
 import maryk.core.properties.references.decodeStorageIndex
 import maryk.lib.exceptions.ParseException
 
@@ -98,7 +101,9 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
             } ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
         }
 
-        return propertyReference ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
+        val resolved = propertyReference ?: throw DefNotFoundException("Property reference «$referenceName» does not exist")
+
+        return wrapListReferenceIfNeeded(resolved)
     }
 
     /** Get PropertyReference by bytes from [reader] with [length] */
@@ -126,7 +131,9 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
             } ?: throw DefNotFoundException("Property reference does not exist")
         }
 
-        return propertyReference ?: throw DefNotFoundException("Property reference does not exist")
+        val resolved = propertyReference ?: throw DefNotFoundException("Property reference does not exist")
+
+        return wrapListReferenceIfNeeded(resolved)
     }
 
     /** Get PropertyReference by storage bytes from [reader] with [length] */
@@ -141,11 +148,11 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
             reader()
         }
 
-        return decodeStorageIndex(lengthReader) { index, referenceType ->
+        val resolved = decodeStorageIndex(lengthReader) { index, referenceType ->
             val propertyReference = this[index]?.ref()
             when {
                 propertyReference == null -> throw DefNotFoundException("Property reference does not exist")
-                readLength >= length -> propertyReference
+                readLength >= length -> wrapListReferenceIfNeeded(propertyReference)
                 propertyReference is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbeddedStorageRef(
                     lengthReader,
                     context,
@@ -153,6 +160,21 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
                 ) { readLength >= length }
                 else -> throw DefNotFoundException("More property references found on property that cannot have any: $propertyReference")
             }
+        }
+        return wrapListReferenceIfNeeded(resolved)
+    }
+
+    private fun wrapListReferenceIfNeeded(reference: AnyPropertyReference): AnyPropertyReference {
+        if (reference.propertyDefinition is IsListDefinition<*, *>) return reference
+        if (reference is ListAnyValuePropertyReference<*>) return reference
+
+        return if (reference.unwrap(null).any { it is ListAnyItemReference<*, *> }) {
+            @Suppress("UNCHECKED_CAST")
+            ListAnyValuePropertyReference(
+                reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
+            )
+        } else {
+            reference
         }
     }
 

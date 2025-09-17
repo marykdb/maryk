@@ -3,9 +3,10 @@
 
 # Maryk: Cross-Platform Data Modeling and Storage
 
-Maryk is a **Kotlin Multiplatform** framework for defining, validating, serializing, and storing data models consistently across multiple platforms, including **iOS**, **macOS**, **Linux**, **Windows**, **Android**, **JVM**, and **JavaScript**. With a fully version-aware data store and flexible querying, Maryk makes it easy to maintain complex data structures while ensuring backward compatibility and efficient data handling.
+Maryk is a **Kotlin Multiplatform** framework for defining, validating, serializing, and storing data models consistently across multiple platforms, including **iOS**, **macOS**, **Linux**, **Windows**, **Android**, **JVM**, **JavaScript** and **Wasm**. With a fully version-aware data store and flexible querying, Maryk makes it easy to maintain complex data structures while ensuring backward compatibility and efficient data handling.
 
-The RocksDB persistence layer is available for the **JVM**, **iOS**, **macOS**, **Android** and **Linux**.
+The [RocksDB](/store/rocksdb/README.md) persistence layer is available for the **JVM**, **iOS**, **macOS**, **Android** and **Linux**.
+The [FoundationDB](/store/foundationdb/README.md) persistence layer is only available for the **JVM**
 
 ## Key Features
 
@@ -15,7 +16,7 @@ The RocksDB persistence layer is available for the **JVM**, **iOS**, **macOS**, 
 
 - **Built-in Validation**: Enforce data quality with [validations](core/docs/properties/README.md#validation) such as required fields, uniqueness, min/max constraints, and regex checks.
 
-- **Cross-Platform Serialization**: Seamlessly [serialize and deserialize](core/docs/serialization.md) data as JSON, YAML, or Protocol Buffers, facilitating easy communication between clients and services.
+- **Cross-Platform Serialization**: Seamlessly [serialize and deserialize](core/docs/serialization/README.md) data as JSON, YAML, or Protocol Buffers, facilitating easy communication between clients and services.
 
 - **Model Serialization & Compatibility**: Serialize your schemas themselves and run compatibility checks across different clients, ensuring smooth upgrades and migrations.
 

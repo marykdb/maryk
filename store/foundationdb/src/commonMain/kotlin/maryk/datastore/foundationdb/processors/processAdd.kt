@@ -138,7 +138,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                 }
             }
 
-            launch {
+            launch(updateDispatcher) {
                 updateSharedFlow.emit(
                     Update.Addition(
                         dataModel,

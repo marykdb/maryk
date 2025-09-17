@@ -94,6 +94,9 @@ class FoundationDBDataStore private constructor(
     private val tenantDB = tenantName?.let { db.openTenant(tenantName) }
     internal val tc: TransactionContext = tenantDB ?: db
 
+    // Keep the actor single-threaded for transactional safety while dispatching updates on IO.
+    internal val updateDispatcher = Dispatchers.IO
+
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
 
     private lateinit var rootDirectory: DirectorySubspace

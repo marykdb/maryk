@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.invert
 import maryk.core.models.IsRootDataModel
@@ -25,7 +26,7 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
+internal fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
@@ -165,9 +166,11 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                 transaction.commit()
             }
 
-            updateSharedFlow.emit(
-                Deletion(dataModel, key, version.timestamp, hardDelete)
-            )
+            launch(updateDispatcher) {
+                updateSharedFlow.emit(
+                    Deletion(dataModel, key, version.timestamp, hardDelete)
+                )
+            }
 
             DeleteSuccess(version.timestamp)
         }

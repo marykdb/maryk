@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
@@ -38,7 +39,7 @@ import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
+internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     dataModel: DM,
     transaction: Transaction,
     columnFamilies: TableColumnFamilies,
@@ -148,9 +149,11 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
 
             val changes = listOf<IsChange>()
 
-            updateSharedFlow.emit(
-                Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
-            )
+            launch(updateDispatcher) {
+                updateSharedFlow.emit(
+                    Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
+                )
+            }
 
             AddSuccess(key, version.timestamp, changes)
         } else {

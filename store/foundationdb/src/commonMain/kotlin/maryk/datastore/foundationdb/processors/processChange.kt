@@ -593,7 +593,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 }
             }
 
-            launch {
+            launch(updateDispatcher) {
                 updateSharedFlow.emit(Update.Change(dataModel, key, version.timestamp, changes + outChanges))
             }
 

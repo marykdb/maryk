@@ -139,7 +139,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         }
 
         // Emit update and return success
-        launch {
+        launch(updateDispatcher) {
             updateSharedFlow.emit(
                 Update.Deletion(
                     dataModel,

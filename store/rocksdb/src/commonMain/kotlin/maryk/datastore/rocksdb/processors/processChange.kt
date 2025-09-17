@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -97,7 +98,7 @@ import maryk.datastore.shared.updates.Update
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
-internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
+internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
@@ -151,7 +152,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
 /**
  * Apply [changes] to a specific [transaction] and record them as [version]
  */
-private suspend fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
+private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
     dataModel: DM,
     dbIndex: UInt,
     transaction: Transaction,
@@ -521,7 +522,7 @@ private suspend fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     for (value in it) {
                                         val setItemRef = setDefinition.itemRef(value, setReference)
                                         try {
-                                            setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef }
+                                            setDefinition.valueDefinition.validateWithRef(null, value) { setItemRef as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>? }
 
                                             val keyAndReference = setItemRef.toStorageByteArray(key.bytes)
 
@@ -688,9 +689,11 @@ private suspend fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             }
         }
 
-        updateSharedFlow.emit(
-            Update.Change(dataModel, key, version.timestamp, changes + outChanges)
-        )
+        launch(updateDispatcher) {
+            updateSharedFlow.emit(
+                Update.Change(dataModel, key, version.timestamp, changes + outChanges)
+            )
+        }
 
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)

@@ -6,6 +6,7 @@ import maryk.core.models.graph
 import maryk.core.properties.graph.graph
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.invoke
+import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option.V2
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
@@ -225,5 +226,82 @@ class ValuesTest {
             assertEquals(expected.first, propertyReference)
             assertEquals(expected.second, value)
         }
+    }
+
+    @Test
+    fun mutateAddsAndUpdatesValues() {
+        val values = TestMarykModel.create {
+            string with "original"
+            int with 3
+        }
+
+        values.mutate {
+            arrayOf(
+                string asValueItem "mutated",
+                uint asValueItem 6u
+            )
+        }
+
+        expect("mutated") { values { string } }
+        expect(3) { values { int } }
+        expect(6u) { values { uint } }
+    }
+
+    @Test
+    fun mutateRemovesValuesWithUnit() {
+        val values = TestMarykModel.create {
+            string with "kept"
+            int with 42
+        }
+
+        values.mutate {
+            arrayOf(
+                int asValueItem Unit
+            )
+        }
+
+        expect("kept") { values { string } }
+        assertNull(values { int })
+    }
+
+    @Test
+    fun mutateReplacesEmbeddedValues() {
+        val values = TestMarykModel.create {
+            embeddedValues with {
+                value with "initial"
+            }
+        }
+
+        expect("initial") { values { embeddedValues } / { value } }
+
+        values.mutate {
+            arrayOf(
+                embeddedValues asValueItem EmbeddedMarykModel.create {
+                    value with "mutated"
+                    model with {
+                        value with "nested"
+                    }
+                }
+            )
+        }
+
+        expect("mutated") { values { embeddedValues } / { value } }
+        expect("nested") { values { embeddedValues } / { model } / { value } }
+    }
+
+    @Test
+    fun getValueItemByInternalIndex() {
+        val values = TestMarykModel.create {
+            string with "first"
+            int with 2
+        }
+
+        val first = values.getByInternalListIndex(0)
+        val second = values.getByInternalListIndex(1)
+
+        assertEquals(1u, first.index)
+        assertEquals("first", first.value)
+        assertEquals(2u, second.index)
+        assertEquals(2, second.value)
     }
 }

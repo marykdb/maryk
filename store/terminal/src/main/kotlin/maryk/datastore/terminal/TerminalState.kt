@@ -46,6 +46,8 @@ class TerminalState(initialMode: UiMode) {
     val isConnecting = mutableStateOf(false)
     val connectionDescription = mutableStateOf<String?>(null)
     val shouldExit = mutableStateOf(false)
+    val outputTitle = mutableStateOf<String?>(null)
+    val outputLines = mutableStateListOf<String>()
 
     private val models = mutableStateListOf<StoredModel>()
     private val driver = mutableStateOf<StoreDriver?>(null)
@@ -74,9 +76,21 @@ class TerminalState(initialMode: UiMode) {
         this.driver.value = driver
     }
 
+    fun showOutput(title: String?, lines: List<String>) {
+        outputTitle.value = title
+        outputLines.clear()
+        outputLines.addAll(lines)
+    }
+
+    fun clearOutput() {
+        outputTitle.value = null
+        outputLines.clear()
+    }
+
     fun close() {
         driver.value?.close()
         models.clear()
+        clearOutput()
     }
 }
 
@@ -130,11 +144,13 @@ class TerminalController(
 
     fun startWithConfig(config: StoreConnectionConfig) {
         state.updateMode(UiMode.Prompt(input = ""))
+        state.clearOutput()
         connect(config)
     }
 
     fun beginWizard() {
         state.updateMode(UiMode.SelectStore(selectedIndex = 0))
+        state.clearOutput()
     }
 
     fun handleKey(event: KeyEvent): Boolean = when (val mode = state.mode.value) {
@@ -250,6 +266,7 @@ class TerminalController(
                 val command = mode.input.trim()
                 state.updateMode(mode.copy(input = ""))
                 if (command.isNotEmpty()) {
+                    state.clearOutput()
                     executeCommand(command)
                 }
                 true
@@ -288,6 +305,7 @@ class TerminalController(
             }
             "Enter" -> {
                 mode.models.getOrNull(mode.selectedIndex)?.let { model ->
+                    state.clearOutput()
                     displayModel(model.name)
                 }
                 state.updateMode(UiMode.Prompt(input = ""))
@@ -331,17 +349,16 @@ class TerminalController(
 
     private fun showHelp(argument: String) {
         if (argument.isBlank()) {
-            state.appendLog("Available commands:")
-            helpEntries.values.forEach { state.appendLog("  $it") }
+            state.showOutput("Commands", helpEntries.values.map { it })
         } else {
             val key = argument.lowercase()
             val match = helpEntries.entries.firstOrNull { (cmd, _) ->
                 cmd == key || cmd.startsWith(key)
             }
             if (match != null) {
-                state.appendLog(match.value)
+                state.showOutput("Help: ${match.key}", listOf(match.value))
             } else {
-                state.appendLog("No help available for '$argument'.")
+                state.showOutput("Help", listOf("No help available for '$argument'."))
             }
         }
     }
@@ -357,14 +374,13 @@ class TerminalController(
             try {
                 val models = driver.listModels()
                 state.setModels(models)
-                if (models.isEmpty()) {
-                    state.appendLog("No models found in store.")
+                val title = "Models (${models.size})"
+                val lines = if (models.isEmpty()) {
+                    listOf("<none>")
                 } else {
-                    state.appendLog("Models:")
-                    models.forEach { model ->
-                        state.appendLog("  • ${model.name} (v${model.version})")
-                    }
+                    models.map { "• ${it.name} (v${it.version})" }
                 }
+                state.showOutput(title, lines)
             } catch (e: Exception) {
                 state.appendLog("Failed to list models: ${e.message}")
             }
@@ -408,7 +424,9 @@ class TerminalController(
                     state.appendLog("Model '$name' not found.")
                 } else {
                     val lines = renderModelDefinition(model)
-                    lines.forEach { state.appendLog(it) }
+                    val title = lines.firstOrNull()
+                    val body = if (lines.size > 1) lines.drop(1) else emptyList()
+                    state.showOutput(title, body)
                 }
             } catch (e: Exception) {
                 state.appendLog("Failed to load model '$name': ${e.message}")
@@ -451,6 +469,7 @@ class TerminalController(
 
     private fun connect(config: StoreConnectionConfig) {
         state.isConnecting.value = true
+        state.clearOutput()
         state.appendLog("Connecting to ${config.type.displayName}...")
 
         scope.launch {
@@ -464,6 +483,7 @@ class TerminalController(
                 state.connectionDescription.value = driver.description
                 state.appendLog("Connected to ${driver.description}")
                 state.isConnecting.value = false
+                state.clearOutput()
                 state.updateMode(UiMode.Prompt(input = ""))
             }.onFailure { error ->
                 state.isConnecting.value = false

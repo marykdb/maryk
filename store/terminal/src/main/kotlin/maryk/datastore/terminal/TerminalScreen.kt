@@ -35,6 +35,10 @@ fun TerminalScreen(
 
         Spacer(modifier = Modifier.height(1))
 
+        OutputView(state)
+
+        Spacer(modifier = Modifier.height(1))
+
         LogView(state)
 
         Spacer(modifier = Modifier.height(1))
@@ -65,15 +69,28 @@ private fun Header(state: TerminalState) {
 
 @Composable
 private fun LogView(state: TerminalState) {
-    val lines = if (state.logLines.size <= 14) {
-        state.logLines
-    } else {
-        state.logLines.takeLast(14)
-    }
+    val lines = if (state.logLines.size <= 12) state.logLines else state.logLines.takeLast(12)
+    Text("Logs:")
     if (lines.isEmpty()) {
-        Text("Logs will appear here after commands are executed.")
+        Text("  <none>")
     } else {
-        Text("Logs:")
+        lines.forEach { Text("  $it") }
+    }
+}
+
+@Composable
+private fun OutputView(state: TerminalState) {
+    val title = state.outputTitle.value
+    val lines = state.outputLines
+    if (title == null && lines.isEmpty()) {
+        Text("Output:")
+        Text("  <none>")
+        return
+    }
+    Text(title ?: "Output:")
+    if (lines.isEmpty()) {
+        Text("  <none>")
+    } else {
         lines.forEach { Text("  $it") }
     }
 }
@@ -105,7 +122,6 @@ private fun PromptView(mode: UiMode.Prompt) {
         Text("> ")
         Text(mode.input)
     }
-    Text("Commands: help, list, model, exit")
 }
 
 @Composable

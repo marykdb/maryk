@@ -1,11 +1,21 @@
 package maryk.datastore.terminal
 
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.HasDefaultValueDefinition
+import maryk.core.properties.definitions.HasSizeDefinition
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
-import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.PropertyDefinitionType
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.enum.IndexedEnum
 import maryk.datastore.terminal.driver.StoredModel
 
 fun renderModelDefinition(model: StoredModel): List<String> {
@@ -39,44 +49,35 @@ private fun describeProperty(
     indent: String,
 ): List<String> {
     val definition = wrapper.definition
-    val details = buildString {
+    val summary = buildString {
         append(indent)
         append("- ")
         append(wrapper.index)
         append(": ")
         append(wrapper.name)
         append(" (")
-        append(definition::class.simpleName ?: definition::class.qualifiedName)
+        append(definition.documentationTypeName())
         append(')')
-        val flags = mutableListOf<String>()
-        if (definition.required) flags += "required"
-        if (definition.final) flags += "final"
-        if (flags.isNotEmpty()) {
-            append(" [")
-            append(flags.joinToString(", "))
-            append(']')
-        }
-        when (definition) {
-            is IsListDefinition<*, *> -> {
-                append(" element=")
-                append(definition.valueDefinition::class.simpleName ?: definition.valueDefinition::class.qualifiedName)
-            }
-            is IsSetDefinition<*, *> -> {
-                append(" element=")
-                append(definition.valueDefinition::class.simpleName ?: definition.valueDefinition::class.qualifiedName)
-            }
-            is IsMapDefinition<*, *, *> -> {
-                append(" key=")
-                append(definition.keyDefinition::class.simpleName ?: definition.keyDefinition::class.qualifiedName)
-                append(", value=")
-                append(definition.valueDefinition::class.simpleName ?: definition.valueDefinition::class.qualifiedName)
-            }
-        }
     }
 
-    val lines = mutableListOf(details)
-    if (wrapper.definition is IsEmbeddedDefinition<*>) {
-        val nested = (wrapper.definition as IsEmbeddedDefinition<*>).dataModel
+    val lines = mutableListOf(summary)
+    collectAttributes(definition)?.forEach { attribute ->
+        lines += "$indent    $attribute"
+    }
+
+    if (definition is IsListDefinition<*, *>) {
+        lines += "$indent    element type: ${definition.valueDefinition.documentationTypeName()}"
+    }
+    if (definition is IsSetDefinition<*, *>) {
+        lines += "$indent    element type: ${definition.valueDefinition.documentationTypeName()}"
+    }
+    if (definition is IsMapDefinition<*, *, *>) {
+        lines += "$indent    key type: ${definition.keyDefinition.documentationTypeName()}"
+        lines += "$indent    value type: ${definition.valueDefinition.documentationTypeName()}"
+    }
+
+    if (definition is IsEmbeddedDefinition<*>) {
+        val nested = definition.dataModel
         if (nested.iterator().hasNext()) {
             for (child in nested) {
                 lines.addAll(describeProperty(child, "$indent    "))
@@ -86,4 +87,66 @@ private fun describeProperty(
         }
     }
     return lines
+}
+
+private fun collectAttributes(definition: IsPropertyDefinition<*>): List<String>? {
+    val attributes = mutableListOf<String>()
+
+    if (!definition.required) {
+        attributes += "optional"
+    }
+    if (definition.final) {
+        attributes += "final"
+    }
+
+    if (definition is IsComparableDefinition<*, *>) {
+        if (definition.unique) {
+            attributes += "unique"
+        }
+        definition.minValue?.let { attributes += "min value: $it" }
+        definition.maxValue?.let { attributes += "max value: $it" }
+    }
+
+    if (definition is HasSizeDefinition) {
+        definition.minSize?.let { attributes += "min size: $it" }
+        definition.maxSize?.let { attributes += "max size: $it" }
+    }
+
+    if (definition is HasDefaultValueDefinition<*>) {
+        definition.default?.let { attributes += "default: $it" }
+    }
+
+    when (definition) {
+        is NumberDefinition<*> -> {
+            attributes += "number type: ${definition.type.type.name}"
+            if (definition.reversedStorage == true) {
+                attributes += "reversed storage"
+            }
+        }
+        is StringDefinition -> {
+            definition.regEx?.let { attributes += "regex: $it" }
+        }
+        is EnumDefinition<*> -> {
+            attributes += "enum: ${definition.enum.name}"
+            @Suppress("UNCHECKED_CAST")
+            val cases = definition.enum.cases()
+                .map { enumCase -> (enumCase as IndexedEnum).name }
+                .joinToString()
+            if (cases.isNotBlank()) {
+                attributes += "cases: $cases"
+            }
+        }
+    }
+
+    return attributes.takeIf { it.isNotEmpty() }
+}
+
+private fun IsPropertyDefinition<*>.documentationTypeName(): String {
+    val transportable = this as? IsTransportablePropertyDefinitionType<*>
+    val propertyType = transportable?.propertyDefinitionType
+    val mapped = when (propertyType) {
+        PropertyDefinitionType.Value -> "ValueObject"
+        else -> propertyType?.name
+    }
+    return mapped ?: this::class.simpleName ?: this::class.qualifiedName ?: "Unknown"
 }

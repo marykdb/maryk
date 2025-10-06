@@ -1,6 +1,7 @@
 package maryk.datastore.terminal.driver
 
 import java.io.IOException
+import java.nio.ByteBuffer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import maryk.core.definitions.Definitions
@@ -9,8 +10,11 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.terminal.StoreConnectionConfig.RocksDb
+import org.rocksdb.AbstractComparator
 import org.rocksdb.ColumnFamilyDescriptor
 import org.rocksdb.ColumnFamilyHandle
+import org.rocksdb.ColumnFamilyOptions
+import org.rocksdb.ComparatorOptions
 import org.rocksdb.DBOptions
 import org.rocksdb.Options
 import org.rocksdb.RocksDB
@@ -35,6 +39,9 @@ class RocksDbStoreDriver(
     private lateinit var db: RocksDB
     private lateinit var handles: MutableList<ColumnFamilyHandle>
     private lateinit var modelColumnFamilies: List<ModelColumnFamily>
+    private val columnFamilyOptions = mutableListOf<ColumnFamilyOptions>()
+    private var versionedComparator: AbstractComparator? = null
+    private var comparatorOptions: ComparatorOptions? = null
     private var dbOptions: DBOptions? = null
     private var initialized = false
 
@@ -42,16 +49,25 @@ class RocksDbStoreDriver(
         withContext(Dispatchers.IO) {
             RocksDB.loadLibrary()
             Options().use { options ->
+                resetColumnFamilyResources()
                 val columnFamilyNames = RocksDB.listColumnFamilies(options, config.path)
                 if (columnFamilyNames.isEmpty()) {
                     throw IOException("No column families found in RocksDB at ${config.path}")
                 }
 
-                val descriptors = columnFamilyNames.map { ColumnFamilyDescriptor(it) }
-                handles = mutableListOf()
+                val descriptors = columnFamilyNames.map { createDescriptor(it) }
+                val handleList = mutableListOf<ColumnFamilyHandle>()
                 val optionsForDb = DBOptions().setCreateIfMissing(false)
+                val openedDb = try {
+                    RocksDB.openReadOnly(optionsForDb, config.path, descriptors, handleList)
+                } catch (e: Throwable) {
+                    runCatching { optionsForDb.close() }
+                    resetColumnFamilyResources()
+                    throw e
+                }
+                handles = handleList
                 dbOptions = optionsForDb
-                db = RocksDB.openReadOnly(optionsForDb, config.path, descriptors, handles)
+                db = openedDb
                 modelColumnFamilies = descriptors.zip(handles)
                     .mapNotNull { (descriptor, handle) ->
                         parseModelDescriptor(descriptor.name, handle)
@@ -149,5 +165,81 @@ class RocksDbStoreDriver(
         }
         runCatching { db.close() }
         runCatching { dbOptions?.close() }
+        resetColumnFamilyResources()
+    }
+
+    private fun resetColumnFamilyResources() {
+        columnFamilyOptions.forEach { options ->
+            runCatching { options.close() }
+        }
+        columnFamilyOptions.clear()
+        runCatching { versionedComparator?.close() }
+        versionedComparator = null
+        runCatching { comparatorOptions?.close() }
+        comparatorOptions = null
+    }
+
+    private fun createDescriptor(name: ByteArray): ColumnFamilyDescriptor {
+        val type = name.firstOrNull()?.let(ColumnFamilyType::fromByte)
+        return if (type?.requiresVersionedComparator == true) {
+            val options = ColumnFamilyOptions()
+            options.setComparator(ensureVersionedComparator())
+            columnFamilyOptions += options
+            ColumnFamilyDescriptor(name, options)
+        } else {
+            ColumnFamilyDescriptor(name)
+        }
+    }
+
+    private fun ensureVersionedComparator(): AbstractComparator {
+        val existing = versionedComparator
+        if (existing != null) {
+            return existing
+        }
+        val options = ComparatorOptions()
+        comparatorOptions = options
+        return MarykVersionedComparator(options).also { comparator ->
+            versionedComparator = comparator
+        }
+    }
+}
+
+private enum class ColumnFamilyType(val marker: Byte, val requiresVersionedComparator: Boolean) {
+    Model(1, false),
+    Keys(2, false),
+    Table(3, false),
+    Index(4, false),
+    Unique(5, false),
+    HistoricTable(6, true),
+    HistoricIndex(7, true),
+    HistoricUnique(8, true);
+
+    companion object {
+        fun fromByte(marker: Byte): ColumnFamilyType? = entries.firstOrNull { it.marker == marker }
+    }
+}
+
+private class MarykVersionedComparator(
+    comparatorOptions: ComparatorOptions,
+) : AbstractComparator(comparatorOptions) {
+    override fun name(): String = "maryk.VersionedComparator"
+
+    override fun compare(a: ByteBuffer, b: ByteBuffer): Int {
+        val startA = a.position()
+        val startB = b.position()
+        val lengthA = a.limit() - startA
+        val lengthB = b.limit() - startB
+        val minLength = minOf(lengthA, lengthB)
+        var index = 0
+        while (index < minLength) {
+            val byteA = a.get(startA + index).toInt() and 0xFF
+            val byteB = b.get(startB + index).toInt() and 0xFF
+            val difference = byteA - byteB
+            if (difference != 0) {
+                return difference
+            }
+            index++
+        }
+        return lengthA - lengthB
     }
 }

@@ -8,7 +8,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
-import maryk.datastore.terminal.driver.StoreConnectionConfig.RocksDb
+import maryk.datastore.terminal.StoreConnectionConfig.RocksDb
 import org.rocksdb.ColumnFamilyDescriptor
 import org.rocksdb.ColumnFamilyHandle
 import org.rocksdb.DBOptions

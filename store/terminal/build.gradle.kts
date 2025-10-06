@@ -1,6 +1,7 @@
 plugins {
     id("maryk.conventions.kotlin-jvm")
     kotlin("plugin.compose")
+    application
 }
 
 dependencies {
@@ -15,4 +16,8 @@ dependencies {
     implementation("org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:_")
     implementation("org.foundationdb:fdb-java:_")
     implementation("org.rocksdb:rocksdbjni:_")
+}
+
+application {
+    mainClass.set("maryk.datastore.terminal.TerminalClientKt")
 }

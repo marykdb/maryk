@@ -33,16 +33,18 @@ fun TerminalScreen(
     ) {
         Header(state)
 
-        Spacer(modifier = Modifier.height(1))
-
-        OutputView(state)
-
-        Spacer(modifier = Modifier.height(1))
-
-        LogView(state)
+        state.bannerMessage.value?.let { banner ->
+            Spacer(modifier = Modifier.height(1))
+            BannerView(banner)
+        }
 
         Spacer(modifier = Modifier.height(1))
+        ActiveResponseView(state)
 
+        Spacer(modifier = Modifier.height(1))
+        HistoryView(state)
+
+        Spacer(modifier = Modifier.height(1))
         when (val currentMode = mode) {
             is UiMode.SelectStore -> StoreSelectionView(currentMode)
             is UiMode.ConfigureStore -> ConfigureStoreView(currentMode)
@@ -59,39 +61,64 @@ fun TerminalScreen(
 @Composable
 private fun Header(state: TerminalState) {
     Text("Maryk DataStore Terminal")
-    state.connectionDescription.value?.let {
-        Text("Connected: $it")
-    } ?: Text("No store connected. Use the wizard to configure a store.")
-    if (state.isConnecting.value) {
-        Text("Connecting...")
+    val connection = when {
+        state.isConnecting.value -> "Status: Connecting…"
+        state.connectionDescription.value != null -> "Status: Connected — ${state.connectionDescription.value}"
+        else -> "Status: Not connected"
     }
+    Text(connection)
 }
 
 @Composable
-private fun LogView(state: TerminalState) {
-    val lines = if (state.logLines.size <= 12) state.logLines else state.logLines.takeLast(12)
-    Text("Logs:")
-    if (lines.isEmpty()) {
-        Text("  <none>")
-    } else {
-        lines.forEach { Text("  $it") }
-    }
+private fun BannerView(banner: BannerMessage) {
+    val icon = banner.style.icon()
+    Text("$icon ${banner.message}")
 }
 
 @Composable
-private fun OutputView(state: TerminalState) {
-    val title = state.outputTitle.value
-    val lines = state.outputLines
-    if (title == null && lines.isEmpty()) {
-        Text("Output:")
-        Text("  <none>")
+private fun ActiveResponseView(state: TerminalState) {
+    Text("Active response:")
+    val entry = state.activeHistoryEntry()
+    val pageIndex by state.activePageIndex
+    if (entry == null) {
+        Text("  No responses yet. Run 'help' to see available commands.")
         return
     }
-    Text(title ?: "Output:")
+    val icon = entry.style.icon()
+    val heading = entry.heading ?: entry.summary
+    val commandLabel = entry.label ?: "system"
+    Text("  $icon $heading")
+    Text("  Command: $commandLabel")
+    val lines = entry.page(pageIndex)
     if (lines.isEmpty()) {
-        Text("  <none>")
+        Text("    (no additional details)")
     } else {
-        lines.forEach { Text("  $it") }
+        lines.forEach { line -> Text("    $line") }
+    }
+    val totalPages = entry.totalPages()
+    if (totalPages > 1) {
+        Text("    Page ${pageIndex + 1} of $totalPages — use PgUp/PgDn to scroll")
+    }
+}
+
+@Composable
+private fun HistoryView(state: TerminalState) {
+    Text("Recent responses:")
+    val history = state.history
+    val selectedIndex by state.selectedHistoryIndex
+    if (history.isEmpty()) {
+        Text("  No history yet.")
+        return
+    }
+
+    history.withIndex().take(5).forEach { (index, entry) ->
+        val indicator = if (index == selectedIndex) "➤" else " "
+        val icon = entry.style.icon()
+        val label = entry.label ?: "system"
+        Text("  $indicator $icon $label — ${entry.summary}")
+    }
+    if (history.size > 5) {
+        Text("  … ${history.size - 5} more (use ↑/↓ to browse)")
     }
 }
 
@@ -102,7 +129,7 @@ private fun StoreSelectionView(mode: UiMode.SelectStore) {
         val prefix = if (index == mode.selectedIndex) "➤" else " "
         Text("$prefix ${storeType.displayName}")
     }
-    Text("Commands are available after selecting and connecting to a store.")
+    Text("Commands become available after connecting to a store.")
 }
 
 @Composable
@@ -113,15 +140,17 @@ private fun ConfigureStoreView(mode: UiMode.ConfigureStore) {
     field.description?.let { Text("  $it") }
     field.defaultValue?.takeIf { it.isNotEmpty() }?.let { Text("  Default: $it") }
     Text("  Input: ${mode.input}")
-    Text("Press Enter to confirm, Tab to accept default, or Esc to cancel.")
+    Text("Press Enter to confirm, Tab to accept default, Esc to switch store.")
 }
 
 @Composable
 private fun PromptView(mode: UiMode.Prompt) {
+    Text("Enter a command:")
     Row {
         Text("> ")
-        Text(mode.input)
+        Text(mode.input + "█")
     }
+    Text("Use ↑/↓ to navigate responses, PgUp/PgDn to scroll details, 'help' for commands.")
 }
 
 @Composable
@@ -135,4 +164,11 @@ private fun ModelSelectionView(mode: UiMode.ModelSelection) {
         val prefix = if (index == mode.selectedIndex) "➤" else " "
         Text("$prefix ${model.name} (v${model.version})")
     }
+}
+
+private fun PanelStyle.icon(): String = when (this) {
+    PanelStyle.Info -> "ℹ"
+    PanelStyle.Success -> "✔"
+    PanelStyle.Warning -> "⚠"
+    PanelStyle.Error -> "✖"
 }

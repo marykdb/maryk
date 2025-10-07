@@ -14,7 +14,41 @@ import maryk.datastore.terminal.driver.StoreType
 import maryk.datastore.terminal.driver.createStoreDriver
 import maryk.datastore.terminal.renderModelDefinition
 
-private const val MAX_LOG_LINES = 200
+private const val MAX_HISTORY_ENTRIES = 50
+private const val PAGE_LINES = 24
+
+enum class PanelStyle {
+    Info,
+    Success,
+    Warning,
+    Error,
+}
+
+data class BannerMessage(
+    val message: String,
+    val style: PanelStyle,
+)
+
+data class HistoryEntry(
+    val id: Int,
+    val label: String?,
+    val heading: String?,
+    val lines: List<String>,
+    val style: PanelStyle,
+    val summary: String,
+) {
+    fun totalPages(): Int {
+        if (lines.isEmpty()) return 1
+        val pageCount = lines.size / PAGE_LINES + if (lines.size % PAGE_LINES == 0) 0 else 1
+        return pageCount.coerceAtLeast(1)
+    }
+
+    fun page(pageIndex: Int): List<String> {
+        if (lines.isEmpty()) return emptyList()
+        val start = (pageIndex * PAGE_LINES).coerceAtMost(lines.lastIndex)
+        return lines.drop(start).take(PAGE_LINES)
+    }
+}
 
 /** A single field in the connection wizard. */
 data class StoreField(
@@ -42,25 +76,20 @@ sealed interface UiMode {
 
 class TerminalState(initialMode: UiMode) {
     val mode = mutableStateOf(initialMode)
-    val logLines = mutableStateListOf<String>()
     val isConnecting = mutableStateOf(false)
     val connectionDescription = mutableStateOf<String?>(null)
     val shouldExit = mutableStateOf(false)
-    val outputTitle = mutableStateOf<String?>(null)
-    val outputLines = mutableStateListOf<String>()
+    val bannerMessage = mutableStateOf<BannerMessage?>(null)
+    val history = mutableStateListOf<HistoryEntry>()
+    val selectedHistoryIndex = mutableStateOf(0)
+    val activePageIndex = mutableStateOf(0)
 
     private val models = mutableStateListOf<StoredModel>()
     private val driver = mutableStateOf<StoreDriver?>(null)
+    private var nextEntryId = 1
 
     fun updateMode(mode: UiMode) {
         this.mode.value = mode
-    }
-
-    fun appendLog(line: String) {
-        if (logLines.size >= MAX_LOG_LINES) {
-            logLines.removeFirst()
-        }
-        logLines.add(line)
     }
 
     fun currentModels(): List<StoredModel> = models.toList()
@@ -76,21 +105,66 @@ class TerminalState(initialMode: UiMode) {
         this.driver.value = driver
     }
 
-    fun showOutput(title: String?, lines: List<String>) {
-        outputTitle.value = title
-        outputLines.clear()
-        outputLines.addAll(lines)
+    fun recordHistory(
+        label: String?,
+        heading: String?,
+        lines: List<String>,
+        style: PanelStyle,
+        summary: String? = null,
+    ) {
+        val effectiveSummary = summary
+            ?: heading
+            ?: lines.firstOrNull()
+            ?: "(no details)"
+        val entry = HistoryEntry(
+            id = nextEntryId++,
+            label = label,
+            heading = heading,
+            lines = lines,
+            style = style,
+            summary = effectiveSummary,
+        )
+        history.add(0, entry)
+        while (history.size > MAX_HISTORY_ENTRIES) {
+            history.removeLast()
+        }
+        selectedHistoryIndex.value = 0
+        activePageIndex.value = 0
     }
 
-    fun clearOutput() {
-        outputTitle.value = null
-        outputLines.clear()
+    fun activeHistoryEntry(): HistoryEntry? = history.getOrNull(selectedHistoryIndex.value)
+
+    fun moveHistorySelection(delta: Int) {
+        if (history.isEmpty()) return
+        val newIndex = (selectedHistoryIndex.value + delta).coerceIn(0, history.lastIndex)
+        if (newIndex != selectedHistoryIndex.value) {
+            selectedHistoryIndex.value = newIndex
+            activePageIndex.value = 0
+        }
+    }
+
+    fun changeActivePage(delta: Int) {
+        val entry = activeHistoryEntry() ?: return
+        val totalPages = entry.totalPages()
+        val newPage = (activePageIndex.value + delta).coerceIn(0, totalPages - 1)
+        if (newPage != activePageIndex.value) {
+            activePageIndex.value = newPage
+        }
+    }
+
+    fun showBanner(message: String, style: PanelStyle) {
+        bannerMessage.value = BannerMessage(message, style)
+    }
+
+    fun clearBanner() {
+        bannerMessage.value = null
     }
 
     fun close() {
         driver.value?.close()
         models.clear()
-        clearOutput()
+        history.clear()
+        bannerMessage.value = null
     }
 }
 
@@ -144,13 +218,15 @@ class TerminalController(
 
     fun startWithConfig(config: StoreConnectionConfig) {
         state.updateMode(UiMode.Prompt(input = ""))
-        state.clearOutput()
+        state.clearBanner()
         connect(config)
     }
 
-    fun beginWizard() {
+    fun beginWizard(showHint: Boolean = true) {
         state.updateMode(UiMode.SelectStore(selectedIndex = 0))
-        state.clearOutput()
+        if (showHint) {
+            state.showBanner("Select a store configuration to continue.", PanelStyle.Info)
+        }
     }
 
     fun handleKey(event: KeyEvent): Boolean = when (val mode = state.mode.value) {
@@ -203,6 +279,7 @@ class TerminalController(
                 true
             }
             "Escape" -> {
+                state.clearBanner()
                 beginWizard()
                 true
             }
@@ -213,7 +290,7 @@ class TerminalController(
                     !mode.currentField.defaultValue.isNullOrEmpty() -> mode.currentField.defaultValue
                     mode.currentField.optional -> null
                     else -> {
-                        state.appendLog("${mode.currentField.label} is required.")
+                        state.showBanner("${mode.currentField.label} is required.", PanelStyle.Error)
                         return true
                     }
                 }
@@ -262,11 +339,35 @@ class TerminalController(
                 }
                 true
             }
+            "ArrowUp" -> {
+                if (mode.input.isEmpty()) {
+                    state.moveHistorySelection(-1)
+                    true
+                } else {
+                    false
+                }
+            }
+            "ArrowDown" -> {
+                if (mode.input.isEmpty()) {
+                    state.moveHistorySelection(1)
+                    true
+                } else {
+                    false
+                }
+            }
+            "PageUp" -> {
+                state.changeActivePage(-1)
+                true
+            }
+            "PageDown" -> {
+                state.changeActivePage(1)
+                true
+            }
             "Enter" -> {
                 val command = mode.input.trim()
                 state.updateMode(mode.copy(input = ""))
                 if (command.isNotEmpty()) {
-                    state.clearOutput()
+                    state.clearBanner()
                     executeCommand(command)
                 }
                 true
@@ -305,8 +406,8 @@ class TerminalController(
             }
             "Enter" -> {
                 mode.models.getOrNull(mode.selectedIndex)?.let { model ->
-                    state.clearOutput()
-                    displayModel(model.name)
+                    state.clearBanner()
+                    displayModel("model ${model.name}", model.name)
                 }
                 state.updateMode(UiMode.Prompt(input = ""))
                 true
@@ -325,54 +426,92 @@ class TerminalController(
         val argument = parts.getOrNull(1)?.trim().orEmpty()
 
         if (state.isConnecting.value) {
-            state.appendLog("Connection in progress. Please wait...")
+            state.showBanner("Connection in progress. Please wait...", PanelStyle.Warning)
             return
         }
 
         when (action) {
-            "help", "h" -> showHelp(argument)
-            "list", "l" -> listModels()
+            "help", "h" -> showHelp(command, argument)
+            "list", "l" -> listModels(command)
             "model" -> {
                 if (argument.isNotEmpty()) {
-                    displayModel(argument)
+                    displayModel(command, argument)
                 } else {
                     openModelSelector()
                 }
             }
-            "exit" -> exit()
+            "exit" -> exit(command)
             "connect" -> {
-                state.appendLog("Reconnect is not supported from the prompt. Restart the client to choose another store.")
+                state.showBanner(
+                    "Reconnect is not supported. Restart the client to choose another store.",
+                    PanelStyle.Warning,
+                )
+                state.recordHistory(
+                    label = command,
+                    heading = "Reconnect not supported",
+                    lines = listOf("Restart the client to connect to a different store."),
+                    style = PanelStyle.Warning,
+                )
             }
-            else -> state.appendLog("Unknown command '$action'. Type 'help' to see available commands.")
+            else -> {
+                val message = "Unknown command '$action'. Type 'help' to see available commands."
+                state.showBanner(message, PanelStyle.Error)
+                state.recordHistory(
+                    label = command,
+                    heading = "Unknown command",
+                    lines = listOf(message),
+                    style = PanelStyle.Error,
+                )
+            }
         }
     }
 
-    private fun showHelp(argument: String) {
+    private fun showHelp(commandLabel: String, argument: String) {
+        val title: String
+        val lines: List<String>
         if (argument.isBlank()) {
-            state.showOutput("Commands", helpEntries.values.map { it })
+            title = "Commands"
+            lines = helpEntries.values.map { it }
         } else {
             val key = argument.lowercase()
             val match = helpEntries.entries.firstOrNull { (cmd, _) ->
                 cmd == key || cmd.startsWith(key)
             }
             if (match != null) {
-                state.showOutput("Help: ${match.key}", listOf(match.value))
+                title = "Help: ${match.key}"
+                lines = listOf(match.value)
             } else {
-                state.showOutput("Help", listOf("No help available for '$argument'."))
+                title = "Help"
+                lines = listOf("No help available for '$argument'.")
             }
         }
+        state.recordHistory(
+            label = commandLabel,
+            heading = title,
+            lines = lines,
+            style = PanelStyle.Info,
+        )
     }
 
-    private fun listModels() {
+    private fun listModels(commandLabel: String) {
         val driver = state.driver()
         if (driver == null) {
-            state.appendLog("No store connected. Complete the wizard first.")
+            val message = "No store connected. Complete the wizard first."
+            state.showBanner(message, PanelStyle.Warning)
+            state.recordHistory(
+                label = commandLabel,
+                heading = "No connection",
+                lines = listOf(message),
+                style = PanelStyle.Warning,
+            )
             return
         }
 
+        state.showBanner("Loading models...", PanelStyle.Info)
         scope.launch {
-            try {
-                val models = driver.listModels()
+            runCatching {
+                driver.listModels()
+            }.onSuccess { models ->
                 state.setModels(models)
                 val title = "Models (${models.size})"
                 val lines = if (models.isEmpty()) {
@@ -380,9 +519,23 @@ class TerminalController(
                 } else {
                     models.map { "• ${it.name} (v${it.version})" }
                 }
-                state.showOutput(title, lines)
-            } catch (e: Exception) {
-                state.appendLog("Failed to list models: ${e.message}")
+                state.recordHistory(
+                    label = commandLabel,
+                    heading = title,
+                    lines = lines,
+                    style = PanelStyle.Info,
+                )
+                val summary = if (models.isEmpty()) "No models found" else "${models.size} models loaded"
+                state.showBanner(summary, PanelStyle.Success)
+            }.onFailure { error ->
+                val message = "Failed to list models: ${error.message ?: error::class.simpleName}".trim()
+                state.recordHistory(
+                    label = commandLabel,
+                    heading = "List failed",
+                    lines = listOf(message),
+                    style = PanelStyle.Error,
+                )
+                state.showBanner(message, PanelStyle.Error)
             }
         }
     }
@@ -390,7 +543,7 @@ class TerminalController(
     private fun openModelSelector() {
         val driver = state.driver()
         if (driver == null) {
-            state.appendLog("No store connected. Complete the wizard first.")
+            state.showBanner("No store connected. Complete the wizard first.", PanelStyle.Warning)
             return
         }
 
@@ -398,38 +551,75 @@ class TerminalController(
             try {
                 val models = if (state.currentModels().isEmpty()) driver.listModels() else state.currentModels()
                 if (models.isEmpty()) {
-                    state.appendLog("No models found in store.")
+                    state.showBanner("No models found in store.", PanelStyle.Warning)
                     state.updateMode(UiMode.Prompt(input = ""))
                 } else {
                     state.setModels(models)
                     state.updateMode(UiMode.ModelSelection(models.toList(), selectedIndex = 0))
+                    state.showBanner("Select a model to inspect.", PanelStyle.Info)
                 }
             } catch (e: Exception) {
-                state.appendLog("Failed to load models: ${e.message}")
+                val message = "Failed to load models: ${e.message ?: e::class.simpleName}".trim()
+                state.recordHistory(
+                    label = "model",
+                    heading = "Load models failed",
+                    lines = listOf(message),
+                    style = PanelStyle.Error,
+                )
+                state.showBanner(message, PanelStyle.Error)
             }
         }
     }
 
-    private fun displayModel(name: String) {
+    private fun displayModel(commandLabel: String, name: String) {
         val driver = state.driver()
         if (driver == null) {
-            state.appendLog("No store connected. Complete the wizard first.")
+            val message = "No store connected. Complete the wizard first."
+            state.showBanner(message, PanelStyle.Warning)
+            state.recordHistory(
+                label = commandLabel,
+                heading = "No connection",
+                lines = listOf(message),
+                style = PanelStyle.Warning,
+            )
             return
         }
 
+        state.showBanner("Loading model '$name'...", PanelStyle.Info)
         scope.launch {
-            try {
-                val model = driver.loadModel(name)
+            runCatching {
+                driver.loadModel(name)
+            }.onSuccess { model ->
                 if (model == null) {
-                    state.appendLog("Model '$name' not found.")
+                    val message = "Model '$name' not found."
+                    state.recordHistory(
+                        label = commandLabel,
+                        heading = "Model missing",
+                        lines = listOf(message),
+                        style = PanelStyle.Warning,
+                    )
+                    state.showBanner(message, PanelStyle.Warning)
                 } else {
                     val lines = renderModelDefinition(model)
-                    val title = lines.firstOrNull()
+                    val heading = lines.firstOrNull() ?: "Model ${model.name}"
                     val body = if (lines.size > 1) lines.drop(1) else emptyList()
-                    state.showOutput(title, body)
+                    state.recordHistory(
+                        label = commandLabel,
+                        heading = heading,
+                        lines = body,
+                        style = PanelStyle.Info,
+                    )
+                    state.showBanner("Model '${model.name}' loaded.", PanelStyle.Success)
                 }
-            } catch (e: Exception) {
-                state.appendLog("Failed to load model '$name': ${e.message}")
+            }.onFailure { error ->
+                val message = "Failed to load model '$name': ${error.message ?: error::class.simpleName}".trim()
+                state.recordHistory(
+                    label = commandLabel,
+                    heading = "Model load failed",
+                    lines = listOf(message),
+                    style = PanelStyle.Error,
+                )
+                state.showBanner(message, PanelStyle.Error)
             }
         }
     }
@@ -438,7 +628,7 @@ class TerminalController(
         StoreType.RocksDb -> {
             val path = values["path"]?.trim().orEmpty()
             if (path.isBlank()) {
-                state.appendLog("RocksDB path is required.")
+                state.showBanner("RocksDB path is required.", PanelStyle.Error)
                 null
             } else {
                 StoreConnectionConfig.RocksDb(path)
@@ -453,7 +643,7 @@ class TerminalController(
                 .filter { it.isNotEmpty() }
             val apiVersion = values["apiVersion"]?.trim().orEmpty().ifBlank { "730" }.toIntOrNull()
             if (apiVersion == null) {
-                state.appendLog("Invalid API version. Provide a numeric value.")
+                state.showBanner("Invalid API version. Provide a numeric value.", PanelStyle.Error)
                 null
             } else {
                 val tenant = tenantValue?.let { Tuple.from(it) }
@@ -469,8 +659,7 @@ class TerminalController(
 
     private fun connect(config: StoreConnectionConfig) {
         state.isConnecting.value = true
-        state.clearOutput()
-        state.appendLog("Connecting to ${config.type.displayName}...")
+        state.showBanner("Connecting to ${config.type.displayName}...", PanelStyle.Info)
 
         scope.launch {
             val driver = createStoreDriver(config)
@@ -481,21 +670,39 @@ class TerminalController(
                 state.setDriver(driver)
                 state.setModels(emptyList())
                 state.connectionDescription.value = driver.description
-                state.appendLog("Connected to ${driver.description}")
+                state.recordHistory(
+                    label = "connect",
+                    heading = "Connected",
+                    lines = listOf("Connected to ${driver.description}"),
+                    style = PanelStyle.Success,
+                )
+                state.showBanner("Connected to ${driver.description}", PanelStyle.Success)
                 state.isConnecting.value = false
-                state.clearOutput()
                 state.updateMode(UiMode.Prompt(input = ""))
             }.onFailure { error ->
                 state.isConnecting.value = false
-                state.appendLog("Failed to connect: ${error.message}")
+                val message = "Failed to connect: ${error.message ?: error::class.simpleName}. Use the wizard to try again.".trim()
+                state.recordHistory(
+                    label = "connect",
+                    heading = "Connection failed",
+                    lines = listOf(message),
+                    style = PanelStyle.Error,
+                )
+                state.showBanner(message, PanelStyle.Error)
                 driver.close()
-                beginWizard()
+                beginWizard(showHint = false)
             }
         }
     }
 
-    private fun exit() {
-        state.appendLog("Closing terminal client.")
+    private fun exit(commandLabel: String?) {
+        state.recordHistory(
+            label = commandLabel,
+            heading = "Closing terminal client",
+            lines = listOf("Goodbye."),
+            style = PanelStyle.Info,
+        )
+        state.showBanner("Closing terminal client...", PanelStyle.Info)
         state.shouldExit.value = true
         scope.launch {
             withContext(Dispatchers.IO) {

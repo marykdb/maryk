@@ -28,7 +28,12 @@ fun main(args: Array<String>) {
 
         LaunchedEffect(config) {
             if (config != null) {
-                state.appendLog("Using connection parameters from command line arguments.")
+                state.recordHistory(
+                    label = "startup",
+                    heading = "Command line configuration",
+                    lines = listOf("Using connection parameters from command line arguments."),
+                    style = PanelStyle.Info,
+                )
                 controller.startWithConfig(config)
             } else {
                 controller.beginWizard()

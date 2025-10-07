@@ -4,17 +4,22 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.jakewharton.mosaic.LocalTerminalState
 import com.jakewharton.mosaic.layout.height
 import com.jakewharton.mosaic.layout.onKeyEvent
 import com.jakewharton.mosaic.layout.padding
+import com.jakewharton.mosaic.layout.width
 import com.jakewharton.mosaic.modifier.Modifier
 import com.jakewharton.mosaic.ui.Column
 import com.jakewharton.mosaic.ui.Row
 import com.jakewharton.mosaic.ui.Spacer
 import com.jakewharton.mosaic.ui.Text
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import maryk.datastore.terminal.driver.StoreType
-import kotlin.math.max
 
 @Composable
 fun TerminalScreen(
@@ -22,6 +27,22 @@ fun TerminalScreen(
     controller: TerminalController,
 ) {
     val mode by state.mode
+    val terminal = LocalTerminalState.current
+    val totalColumns = terminal.size.columns.coerceAtLeast(1)
+    val totalRows = terminal.size.rows.coerceAtLeast(1)
+    val banner = state.bannerMessage.value
+    val historyWindow = state.currentHistoryWindow()
+    val activeEntry = state.activeHistoryEntry()
+    val historyRows = historyLineCount(historyWindow)
+    val activeBaseRows = activeBaseLineCount(activeEntry, historyWindow.totalCount)
+    val modeRows = modeLineCount(mode)
+    val bannerRows = if (banner != null) 2 else 0
+    val staticRows = 2 + 2 + 1 + bannerRows + historyRows + 1 + activeBaseRows + 1 + modeRows
+    val detailCapacity = (totalRows - staticRows).coerceAtLeast(1)
+
+    LaunchedEffect(detailCapacity) {
+        state.updateDetailLinesPerPage(detailCapacity)
+    }
 
     DisposableEffect(Unit) {
         onDispose { state.close() }
@@ -29,14 +50,16 @@ fun TerminalScreen(
 
     Column(
         modifier = Modifier
+            .width(totalColumns)
+            .height(totalRows)
             .padding(horizontal = 2, vertical = 1)
             .onKeyEvent { controller.handleKey(it) },
     ) {
         Header(state)
 
-        state.bannerMessage.value?.let { banner ->
+        banner?.let { message ->
             Spacer(modifier = Modifier.height(1))
-            BannerView(banner)
+            BannerView(message)
         }
 
         Spacer(modifier = Modifier.height(1))
@@ -102,6 +125,7 @@ private fun ActiveResponseView(state: TerminalState) {
     Text(coloredSubheading("Active response"))
     val entry = state.activeHistoryEntry()
     val lineOffset by state.activeLineOffset
+    val detailPageSize by state.detailLinesPerPage
     if (entry == null) {
         Text("  No responses yet. Run 'help' to see available commands.")
         return
@@ -111,7 +135,7 @@ private fun ActiveResponseView(state: TerminalState) {
     val commandLabel = entry.label ?: "system"
     Text(colorize("  $icon $heading ", entry.style.foreground(), entry.style.background(), bold = true))
     Text("  Command: $commandLabel")
-    val lines = entry.visibleLines(lineOffset)
+    val lines = entry.visibleLines(lineOffset, detailPageSize)
     if (lines.isEmpty()) {
         Text("    (no additional details)")
     } else {
@@ -129,29 +153,19 @@ private fun ActiveResponseView(state: TerminalState) {
 @Composable
 private fun HistoryView(state: TerminalState) {
     Text(coloredSubheading("Recent responses"))
-    val history = state.history
     val selectedIndex by state.selectedHistoryIndex
-    if (history.isEmpty()) {
+    val window = state.currentHistoryWindow()
+    if (window.totalCount == 0) {
         Text("  No history yet.")
         return
     }
 
-    val windowSize = 5
-    val maxStart = max(0, history.size - windowSize)
-    val windowStart = when {
-        history.size <= windowSize -> 0
-        selectedIndex <= 1 -> 0
-        selectedIndex >= history.size - 2 -> maxStart
-        else -> (selectedIndex - 2).coerceIn(0, maxStart)
-    }
-    val window = history.drop(windowStart).take(windowSize)
-
-    if (windowStart > 0) {
-        Text("  ↑ ${windowStart} newer (PgDn)")
+    if (window.newerCount > 0) {
+        Text("  ↑ ${window.newerCount} newer (PgDn)")
     }
 
-    window.forEachIndexed { offset, entry ->
-        val index = windowStart + offset
+    window.entries.forEachIndexed { offset, entry ->
+        val index = window.startIndex + offset
         val isSelected = index == selectedIndex
         val indicator = if (isSelected) "➤" else " "
         val icon = entry.style.icon()
@@ -165,9 +179,8 @@ private fun HistoryView(state: TerminalState) {
         Text("  $text")
     }
 
-    val remaining = history.size - (windowStart + window.size)
-    if (remaining > 0) {
-        Text("  ↓ $remaining older (PgUp)")
+    if (window.olderCount > 0) {
+        Text("  ↓ ${window.olderCount} older (PgUp)")
     }
 }
 
@@ -195,9 +208,17 @@ private fun ConfigureStoreView(mode: UiMode.ConfigureStore) {
 @Composable
 private fun PromptView(mode: UiMode.Prompt) {
     Text("Enter a command:")
+    var cursorVisible by remember { mutableStateOf(true) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(500)
+            cursorVisible = !cursorVisible
+        }
+    }
     Row {
         Text("> ")
-        Text(mode.input + "█")
+        val cursor = if (cursorVisible) "▋" else " "
+        Text(mode.input + cursor)
     }
     Text("Use ↑/↓ to scroll response details, PgUp/PgDn to browse history, 'help' for commands.")
 }
@@ -213,6 +234,37 @@ private fun ModelSelectionView(mode: UiMode.ModelSelection) {
         val prefix = if (index == mode.selectedIndex) "➤" else " "
         Text("$prefix ${model.name} (v${model.version})")
     }
+}
+
+private fun historyLineCount(window: HistoryWindowState): Int {
+    var count = 1 // heading
+    if (window.totalCount == 0) {
+        return count + 1
+    }
+    count += window.entries.size
+    if (window.newerCount > 0) count += 1
+    if (window.olderCount > 0) count += 1
+    return count
+}
+
+private fun activeBaseLineCount(entry: HistoryEntry?, historySize: Int): Int {
+    if (entry == null) return 2
+    val base = 3 // heading, summary, command
+    val trailing = 1 // indicator or "no additional details" message
+    val historyHint = if (historySize > 1) 1 else 0
+    return base + trailing + historyHint
+}
+
+private fun modeLineCount(mode: UiMode): Int = when (mode) {
+    is UiMode.SelectStore -> 1 + StoreType.entries.size + 1
+    is UiMode.ConfigureStore -> {
+        var count = 4 // configure line, label, input, instructions
+        if (!mode.currentField.description.isNullOrEmpty()) count += 1
+        if (!mode.currentField.defaultValue.isNullOrEmpty()) count += 1
+        count
+    }
+    is UiMode.Prompt -> 3
+    is UiMode.ModelSelection -> if (mode.models.isEmpty()) 1 else 1 + mode.models.size
 }
 
 private fun PanelStyle.icon(): String = when (this) {

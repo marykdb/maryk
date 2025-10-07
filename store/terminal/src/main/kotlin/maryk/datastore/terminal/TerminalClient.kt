@@ -14,33 +14,42 @@ import maryk.datastore.terminal.driver.StoreType
 fun main(args: Array<String>) {
     val config = parseConnectionArgs(args)
 
-    runMosaicMain {
-        val scope = remember { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
-        val initialMode = remember(config) {
-            if (config != null) UiMode.Prompt(input = "") else UiMode.SelectStore(selectedIndex = 0)
-        }
-        val state = remember { TerminalState(initialMode) }
-        val controller = remember { TerminalController(scope, state) { scope.cancel() } }
-
-        DisposableEffect(Unit) {
-            onDispose { scope.cancel() }
-        }
-
-        LaunchedEffect(config) {
-            if (config != null) {
-                state.recordHistory(
-                    label = "startup",
-                    heading = "Command line configuration",
-                    lines = listOf("Using connection parameters from command line arguments."),
-                    style = PanelStyle.Info,
-                )
-                controller.startWithConfig(config)
-            } else {
-                controller.beginWizard()
+    val hideCursor = "\u001B[?25l"
+    val showCursor = "\u001B[?25h"
+    print(hideCursor)
+    System.out.flush()
+    try {
+        runMosaicMain {
+            val scope = remember { CoroutineScope(SupervisorJob() + Dispatchers.Default) }
+            val initialMode = remember(config) {
+                if (config != null) UiMode.Prompt(input = "") else UiMode.SelectStore(selectedIndex = 0)
             }
-        }
+            val state = remember { TerminalState(initialMode) }
+            val controller = remember { TerminalController(scope, state) { scope.cancel() } }
 
-        TerminalScreen(state, controller)
+            DisposableEffect(Unit) {
+                onDispose { scope.cancel() }
+            }
+
+            LaunchedEffect(config) {
+                if (config != null) {
+                    state.recordHistory(
+                        label = "startup",
+                        heading = "Command line configuration",
+                        lines = listOf("Using connection parameters from command line arguments."),
+                        style = PanelStyle.Info,
+                    )
+                    controller.startWithConfig(config)
+                } else {
+                    controller.beginWizard()
+                }
+            }
+
+            TerminalScreen(state, controller)
+        }
+    } finally {
+        print(showCursor)
+        System.out.flush()
     }
 }
 

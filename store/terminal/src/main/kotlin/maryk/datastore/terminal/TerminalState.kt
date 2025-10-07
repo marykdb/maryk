@@ -15,7 +15,8 @@ import maryk.datastore.terminal.driver.createStoreDriver
 import maryk.datastore.terminal.renderModelDefinition
 
 private const val MAX_HISTORY_ENTRIES = 50
-private const val PAGE_LINES = 24
+private const val DEFAULT_DETAIL_PAGE_LINES = 24
+private const val HISTORY_WINDOW_SIZE = 5
 private const val HISTORY_PAGE_STEP = 5
 
 enum class PanelStyle {
@@ -38,15 +39,18 @@ data class HistoryEntry(
     val style: PanelStyle,
     val summary: String,
 ) {
-    fun maxLineOffset(): Int {
+    fun maxLineOffset(pageSize: Int): Int {
         if (lines.isEmpty()) return 0
-        return (lines.size - PAGE_LINES).coerceAtLeast(0)
+        val effectivePageSize = pageSize.coerceAtLeast(1)
+        return (lines.size - effectivePageSize).coerceAtLeast(0)
     }
 
-    fun visibleLines(offset: Int): List<String> {
+    fun visibleLines(offset: Int, pageSize: Int): List<String> {
         if (lines.isEmpty()) return emptyList()
-        val safeOffset = offset.coerceIn(0, lines.lastIndex)
-        return lines.drop(safeOffset).take(PAGE_LINES)
+        val effectivePageSize = pageSize.coerceAtLeast(1)
+        val maxOffset = maxLineOffset(effectivePageSize)
+        val safeOffset = offset.coerceIn(0, maxOffset)
+        return lines.drop(safeOffset).take(effectivePageSize)
     }
 }
 
@@ -83,6 +87,7 @@ class TerminalState(initialMode: UiMode) {
     val history = mutableStateListOf<HistoryEntry>()
     val selectedHistoryIndex = mutableStateOf(0)
     val activeLineOffset = mutableStateOf(0)
+    val detailLinesPerPage = mutableStateOf(DEFAULT_DETAIL_PAGE_LINES)
 
     private val models = mutableStateListOf<StoredModel>()
     private val driver = mutableStateOf<StoreDriver?>(null)
@@ -136,10 +141,21 @@ class TerminalState(initialMode: UiMode) {
 
     fun scrollActiveLines(delta: Int) {
         val entry = activeHistoryEntry() ?: return
-        val maxOffset = entry.maxLineOffset()
+        val maxOffset = entry.maxLineOffset(detailLinesPerPage.value)
         val newOffset = (activeLineOffset.value + delta).coerceIn(0, maxOffset)
         if (newOffset != activeLineOffset.value) {
             activeLineOffset.value = newOffset
+        }
+    }
+
+    fun updateDetailLinesPerPage(lines: Int) {
+        val effective = lines.coerceAtLeast(1)
+        if (effective == detailLinesPerPage.value) return
+        detailLinesPerPage.value = effective
+        val entry = activeHistoryEntry() ?: return
+        val maxOffset = entry.maxLineOffset(effective)
+        if (activeLineOffset.value > maxOffset) {
+            activeLineOffset.value = maxOffset
         }
     }
 
@@ -151,6 +167,38 @@ class TerminalState(initialMode: UiMode) {
             selectedHistoryIndex.value = newIndex
             activeLineOffset.value = 0
         }
+    }
+
+    fun currentHistoryWindow(): HistoryWindowState {
+        val total = history.size
+        if (total == 0) {
+            return HistoryWindowState(
+                totalCount = 0,
+                startIndex = 0,
+                entries = emptyList(),
+                newerCount = 0,
+                olderCount = 0,
+            )
+        }
+        val selectedIndex = selectedHistoryIndex.value.coerceIn(0, total - 1)
+        val windowSize = HISTORY_WINDOW_SIZE.coerceAtMost(total)
+        val maxStart = (total - windowSize).coerceAtLeast(0)
+        val start = when {
+            total <= HISTORY_WINDOW_SIZE -> 0
+            selectedIndex <= 1 -> 0
+            selectedIndex >= total - 2 -> maxStart
+            else -> (selectedIndex - 2).coerceIn(0, maxStart)
+        }
+        val entries = history.drop(start).take(windowSize)
+        val newer = start
+        val older = total - (start + entries.size)
+        return HistoryWindowState(
+            totalCount = total,
+            startIndex = start,
+            entries = entries,
+            newerCount = newer,
+            olderCount = older,
+        )
     }
 
     fun showBanner(message: String, style: PanelStyle) {
@@ -168,6 +216,14 @@ class TerminalState(initialMode: UiMode) {
         bannerMessage.value = null
     }
 }
+
+data class HistoryWindowState(
+    val totalCount: Int,
+    val startIndex: Int,
+    val entries: List<HistoryEntry>,
+    val newerCount: Int,
+    val olderCount: Int,
+)
 
 class TerminalController(
     private val scope: CoroutineScope,

@@ -16,6 +16,7 @@ import maryk.datastore.terminal.renderModelDefinition
 
 private const val MAX_HISTORY_ENTRIES = 50
 private const val PAGE_LINES = 24
+private const val HISTORY_PAGE_STEP = 5
 
 enum class PanelStyle {
     Info,
@@ -37,16 +38,15 @@ data class HistoryEntry(
     val style: PanelStyle,
     val summary: String,
 ) {
-    fun totalPages(): Int {
-        if (lines.isEmpty()) return 1
-        val pageCount = lines.size / PAGE_LINES + if (lines.size % PAGE_LINES == 0) 0 else 1
-        return pageCount.coerceAtLeast(1)
+    fun maxLineOffset(): Int {
+        if (lines.isEmpty()) return 0
+        return (lines.size - PAGE_LINES).coerceAtLeast(0)
     }
 
-    fun page(pageIndex: Int): List<String> {
+    fun visibleLines(offset: Int): List<String> {
         if (lines.isEmpty()) return emptyList()
-        val start = (pageIndex * PAGE_LINES).coerceAtMost(lines.lastIndex)
-        return lines.drop(start).take(PAGE_LINES)
+        val safeOffset = offset.coerceIn(0, lines.lastIndex)
+        return lines.drop(safeOffset).take(PAGE_LINES)
     }
 }
 
@@ -82,7 +82,7 @@ class TerminalState(initialMode: UiMode) {
     val bannerMessage = mutableStateOf<BannerMessage?>(null)
     val history = mutableStateListOf<HistoryEntry>()
     val selectedHistoryIndex = mutableStateOf(0)
-    val activePageIndex = mutableStateOf(0)
+    val activeLineOffset = mutableStateOf(0)
 
     private val models = mutableStateListOf<StoredModel>()
     private val driver = mutableStateOf<StoreDriver?>(null)
@@ -129,26 +129,27 @@ class TerminalState(initialMode: UiMode) {
             history.removeLast()
         }
         selectedHistoryIndex.value = 0
-        activePageIndex.value = 0
+        activeLineOffset.value = 0
     }
 
     fun activeHistoryEntry(): HistoryEntry? = history.getOrNull(selectedHistoryIndex.value)
 
-    fun moveHistorySelection(delta: Int) {
-        if (history.isEmpty()) return
-        val newIndex = (selectedHistoryIndex.value + delta).coerceIn(0, history.lastIndex)
-        if (newIndex != selectedHistoryIndex.value) {
-            selectedHistoryIndex.value = newIndex
-            activePageIndex.value = 0
+    fun scrollActiveLines(delta: Int) {
+        val entry = activeHistoryEntry() ?: return
+        val maxOffset = entry.maxLineOffset()
+        val newOffset = (activeLineOffset.value + delta).coerceIn(0, maxOffset)
+        if (newOffset != activeLineOffset.value) {
+            activeLineOffset.value = newOffset
         }
     }
 
-    fun changeActivePage(delta: Int) {
-        val entry = activeHistoryEntry() ?: return
-        val totalPages = entry.totalPages()
-        val newPage = (activePageIndex.value + delta).coerceIn(0, totalPages - 1)
-        if (newPage != activePageIndex.value) {
-            activePageIndex.value = newPage
+    fun pageHistory(delta: Int) {
+        if (history.isEmpty()) return
+        val step = if (delta > 0) HISTORY_PAGE_STEP else -HISTORY_PAGE_STEP
+        val newIndex = (selectedHistoryIndex.value + step).coerceIn(0, history.lastIndex)
+        if (newIndex != selectedHistoryIndex.value) {
+            selectedHistoryIndex.value = newIndex
+            activeLineOffset.value = 0
         }
     }
 
@@ -341,7 +342,7 @@ class TerminalController(
             }
             "ArrowUp" -> {
                 if (mode.input.isEmpty()) {
-                    state.moveHistorySelection(-1)
+                    state.scrollActiveLines(-1)
                     true
                 } else {
                     false
@@ -349,19 +350,27 @@ class TerminalController(
             }
             "ArrowDown" -> {
                 if (mode.input.isEmpty()) {
-                    state.moveHistorySelection(1)
+                    state.scrollActiveLines(1)
                     true
                 } else {
                     false
                 }
             }
             "PageUp" -> {
-                state.changeActivePage(-1)
-                true
+                if (mode.input.isEmpty()) {
+                    state.pageHistory(1)
+                    true
+                } else {
+                    false
+                }
             }
             "PageDown" -> {
-                state.changeActivePage(1)
-                true
+                if (mode.input.isEmpty()) {
+                    state.pageHistory(-1)
+                    true
+                } else {
+                    false
+                }
             }
             "Enter" -> {
                 val command = mode.input.trim()

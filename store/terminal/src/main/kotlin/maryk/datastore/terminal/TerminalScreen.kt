@@ -66,7 +66,7 @@ fun TerminalScreen(
         HistoryView(state)
 
         Spacer(modifier = Modifier.height(1))
-        ActiveResponseView(state)
+        ActiveResponseView(state, totalColumns)
 
         Spacer(modifier = Modifier.height(1))
         when (val currentMode = mode) {
@@ -121,7 +121,7 @@ private fun BannerView(banner: BannerMessage) {
 }
 
 @Composable
-private fun ActiveResponseView(state: TerminalState) {
+private fun ActiveResponseView(state: TerminalState, totalColumns: Int) {
     Text(coloredSubheading("Active response"))
     val entry = state.activeHistoryEntry()
     val lineOffset by state.activeLineOffset
@@ -130,23 +130,94 @@ private fun ActiveResponseView(state: TerminalState) {
         Text("  No responses yet. Run 'help' to see available commands.")
         return
     }
+    val scanState = entry.scanState
     val icon = entry.style.icon()
     val heading = entry.heading ?: entry.summary
     val commandLabel = entry.label ?: "system"
     Text(colorize("  $icon $heading ", entry.style.foreground(), entry.style.background(), bold = true))
     Text("  Command: $commandLabel")
-    val lines = entry.visibleLines(lineOffset, detailPageSize)
-    if (lines.isEmpty()) {
-        Text("    (no additional details)")
+    if (scanState != null) {
+        ScanResponseView(entry, scanState, detailPageSize, totalColumns)
     } else {
-        lines.forEach { line -> Text("    $line") }
-        val totalLines = entry.lines.size
-        val lastVisibleLine = (lineOffset + lines.size).coerceAtMost(totalLines)
-        val indicator = "    Lines ${lineOffset + 1}-${lastVisibleLine} of $totalLines — use ↑/↓ to scroll"
-        Text(indicator)
+        val lines = entry.visibleLines(lineOffset, detailPageSize)
+        if (lines.isEmpty()) {
+            Text("    (no additional details)")
+        } else {
+            lines.forEach { line -> Text("    $line") }
+            val totalLines = entry.lines.size
+            val lastVisibleLine = (lineOffset + lines.size).coerceAtMost(totalLines)
+            val indicator = "    Lines ${lineOffset + 1}-${lastVisibleLine} of $totalLines — use ↑/↓ to scroll"
+            Text(indicator)
+        }
+        if (state.history.size > 1) {
+            Text("    Use PgUp/PgDn to switch responses.")
+        }
     }
-    if (state.history.size > 1) {
-        Text("    Use PgUp/PgDn to switch responses.")
+}
+
+@Composable
+private fun ScanResponseView(
+    entry: HistoryEntry,
+    scan: ScanSession,
+    detailPageSize: Int,
+    totalColumns: Int,
+) {
+    if (scan.rows.isEmpty()) {
+        Text("    <no rows>")
+        return
+    }
+
+    when (scan.displayMode.value) {
+        ScanDisplayMode.List -> {
+            val start = scan.listOffset.value.coerceAtLeast(0)
+            val end = (start + detailPageSize).coerceAtMost(scan.rows.size)
+            val visible = scan.rows.subList(start, end)
+            visible.forEachIndexed { index, row ->
+                val absoluteIndex = start + index
+                val isSelected = absoluteIndex == scan.selectedIndex.value
+                val prefix = if (isSelected) "➤" else " "
+                val summaryText = row.summary.joinToString(" | ") { (name, value) -> "$name=$value" }
+                val baseLine = "$prefix ${row.keyBase64} | $summaryText"
+                val truncated = truncateToWidth(baseLine, totalColumns - 4)
+                val content = "  $truncated"
+                if (isSelected) {
+                    Text(colorize(" $content ", entry.style.foreground(), entry.style.background(), bold = true))
+                } else {
+                    Text(content)
+                }
+            }
+            val total = scan.rows.size
+            val lastVisible = (start + visible.size).coerceAtMost(total)
+            Text("    Rows ${start + 1}-$lastVisible of $total — use ↑/↓ to navigate")
+            if (scan.nextStartAfterKey != null) {
+                Text("    Reach the end to load more rows automatically.")
+            }
+        }
+        ScanDisplayMode.Detail -> {
+            val row = scan.currentRow()
+            if (row == null) {
+                Text("    <no selection>")
+                return
+            }
+            val offset = scan.yamlOffset.value.coerceAtLeast(0)
+            val lines = row.yamlLines.drop(offset).take(detailPageSize)
+            lines.forEach { line ->
+                val truncated = truncateToWidth(line, totalColumns - 4)
+                Text("    $truncated")
+            }
+            val total = row.yamlLines.size
+            val lastVisible = (offset + lines.size).coerceAtMost(total)
+            Text("    Lines ${offset + 1}-${lastVisible} of $total — use ↑/↓ to scroll")
+        }
+    }
+}
+
+private fun truncateToWidth(text: String, maxWidth: Int): String {
+    if (maxWidth <= 0) return text
+    return if (text.length <= maxWidth) {
+        text
+    } else {
+        if (maxWidth <= 1) "…" else text.take(maxWidth - 1).trimEnd() + "…"
     }
 }
 

@@ -2,6 +2,7 @@ package maryk.datastore.terminal.driver
 
 import maryk.core.models.RootDataModel
 import maryk.core.properties.types.Version
+import maryk.core.values.Values
 
 /**
  * Enum describing the supported backing stores that the terminal client can connect to.
@@ -20,8 +21,13 @@ data class StoredModel(
     val definition: RootDataModel<*>,
 )
 
-data class ScanKeysResult(
-    val keys: List<ByteArray>,
+data class ScanRecord(
+    val key: ByteArray,
+    val values: Values<*>,
+)
+
+data class ScanResult(
+    val records: List<ScanRecord>,
     val nextStartAfterKey: ByteArray?,
 )
 
@@ -43,11 +49,11 @@ interface StoreDriver : AutoCloseable {
     /** Load a single model by name. */
     suspend fun loadModel(name: String): StoredModel?
 
-    /** Scan keys for a model returning up to [limit] keys starting after [startAfterKey]. */
-    suspend fun scanKeys(
+    /** Scan records for a model returning up to [limit] results starting after [startAfterKey]. */
+    suspend fun scanRecords(
         name: String,
         startAfterKey: ByteArray? = null,
         descending: Boolean = false,
         limit: Int = 100,
-    ): ScanKeysResult
+    ): ScanResult
 }

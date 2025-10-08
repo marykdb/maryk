@@ -1,8 +1,10 @@
 package maryk.datastore.terminal.driver
 
 import com.apple.foundationdb.FDB
+import com.apple.foundationdb.KeySelector
 import com.apple.foundationdb.directory.DirectoryLayer
 import com.apple.foundationdb.directory.DirectorySubspace
+import com.apple.foundationdb.Range
 import com.apple.foundationdb.tuple.Tuple
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -34,6 +36,7 @@ class FoundationDbStoreDriver(
 
     private val conversionContext = DefinitionsConversionContext()
     private val modelsByName = linkedMapOf<String, StoredModel>()
+    private val keysPrefixesByModel = mutableMapOf<String, ByteArray>()
 
     private lateinit var fdb: FDB
     private lateinit var database: com.apple.foundationdb.Database
@@ -76,10 +79,14 @@ class FoundationDbStoreDriver(
 
     private fun loadAllModels() {
         modelsByName.clear()
+        keysPrefixesByModel.clear()
         val modelNames = DirectoryLayer.getDefault().list(database, rootPath).join()
         val loaded = modelNames.mapNotNull { modelName ->
             val metaPath = rootDirectory.path + listOf(modelName, "meta")
             val metaDirectory = DirectoryLayer.getDefault().open(database, metaPath, null).join()
+            val keysPath = rootDirectory.path + listOf(modelName, "keys")
+            val keysDirectory = DirectoryLayer.getDefault().open(database, keysPath, null).join()
+            keysDirectory.pack()?.let { keysPrefixesByModel[modelName] = it }
             loadModelDefinition(modelName, metaDirectory)
         }.sortedBy { it.name }
 
@@ -125,8 +132,63 @@ class FoundationDbStoreDriver(
         }
     }
 
+    override suspend fun scanKeys(
+        name: String,
+        startAfterKey: ByteArray?,
+        descending: Boolean,
+        limit: Int,
+    ): ScanKeysResult = withContext(Dispatchers.IO) {
+        ensureInitialized()
+        if (modelsByName.isEmpty()) {
+            loadAllModels()
+        }
+        val keysPrefix = ensureKeysPrefix(name)
+        val range = Range.startsWith(keysPrefix)
+        val limitPlusOne = (limit.coerceAtLeast(1) + 1)
+        val beginSelector = if (descending) {
+            KeySelector.firstGreaterOrEqual(range.begin)
+        } else {
+            startAfterKey?.let { KeySelector.firstGreaterThan(keysPrefix + it) }
+                ?: KeySelector.firstGreaterOrEqual(range.begin)
+        }
+        val endSelector = if (descending) {
+            startAfterKey?.let { KeySelector.firstGreaterOrEqual(keysPrefix + it) }
+                ?: KeySelector.firstGreaterOrEqual(range.end)
+        } else {
+            KeySelector.firstGreaterOrEqual(range.end)
+        }
+
+        val kvs = database.read { tr ->
+            tr.getRange(beginSelector, endSelector, limitPlusOne, descending).asList().join()
+        }
+        val hasMore = kvs.size == limitPlusOne
+        val visible = if (hasMore) kvs.subList(0, kvs.size - 1) else kvs
+        val keys = visible.map { kv ->
+            kv.key.copyOfRange(keysPrefix.size, kv.key.size)
+        }
+        val continuation = if (hasMore && keys.isNotEmpty()) {
+            keys.last().copyOf()
+        } else {
+            null
+        }
+        ScanKeysResult(keys, continuation)
+    }
+
+    private fun ensureKeysPrefix(modelName: String): ByteArray {
+        val existing = keysPrefixesByModel[modelName]
+        if (existing != null) {
+            return existing
+        }
+        val keysPath = rootDirectory.path + listOf(modelName, "keys")
+        val directory = DirectoryLayer.getDefault().open(database, keysPath, null).join()
+        val packed = directory.pack() ?: throw IOException("Keys directory missing for '$modelName'")
+        keysPrefixesByModel[modelName] = packed
+        return packed
+    }
+
     override fun close() {
         modelsByName.clear()
+        keysPrefixesByModel.clear()
         runCatching { database.close() }
     }
 

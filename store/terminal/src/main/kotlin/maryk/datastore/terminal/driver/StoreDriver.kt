@@ -20,6 +20,11 @@ data class StoredModel(
     val definition: RootDataModel<*>,
 )
 
+data class ScanKeysResult(
+    val keys: List<ByteArray>,
+    val nextStartAfterKey: ByteArray?,
+)
+
 /**
  * Common contract for store specific drivers that can be queried by the terminal client.
  */
@@ -37,4 +42,12 @@ interface StoreDriver : AutoCloseable {
 
     /** Load a single model by name. */
     suspend fun loadModel(name: String): StoredModel?
+
+    /** Scan keys for a model returning up to [limit] keys starting after [startAfterKey]. */
+    suspend fun scanKeys(
+        name: String,
+        startAfterKey: ByteArray? = null,
+        descending: Boolean = false,
+        limit: Int = 100,
+    ): ScanKeysResult
 }

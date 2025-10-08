@@ -20,6 +20,7 @@ import org.rocksdb.Options
 import org.rocksdb.RocksDB
 
 private const val MODEL_TABLE_PREFIX: Byte = 1
+private const val VERSION_BYTE_SIZE = ULong.SIZE_BYTES
 
 private data class ModelColumnFamily(
     val tableIndex: UInt,
@@ -41,6 +42,7 @@ class RocksDbStoreDriver(
     private lateinit var modelColumnFamilies: List<ModelColumnFamily>
     private val columnFamilyOptions = mutableListOf<ColumnFamilyOptions>()
     private val keysColumnFamilies = mutableMapOf<UInt, ColumnFamilyHandle>()
+    private val tableColumnFamilies = mutableMapOf<UInt, ColumnFamilyHandle>()
     private val modelIndexesByName = mutableMapOf<String, UInt>()
     private var versionedComparator: AbstractComparator? = null
     private var comparatorOptions: ComparatorOptions? = null
@@ -79,6 +81,11 @@ class RocksDbStoreDriver(
                                 keysColumnFamilies[index] = handle
                                 null
                             }
+                            ColumnFamilyType.Table -> {
+                                val index = parseVarUInt(descriptor.name, start = 1)
+                                tableColumnFamilies[index] = handle
+                                null
+                            }
                             ColumnFamilyType.Model -> parseModelDescriptor(descriptor.name, handle)
                             else -> null
                         }
@@ -104,22 +111,26 @@ class RocksDbStoreDriver(
         modelsByName[name]
     }
 
-    override suspend fun scanKeys(
+    override suspend fun scanRecords(
         name: String,
         startAfterKey: ByteArray?,
         descending: Boolean,
         limit: Int,
-    ): ScanKeysResult = withContext(Dispatchers.IO) {
+    ): ScanResult = withContext(Dispatchers.IO) {
         ensureInitialized()
         if (modelsByName.isEmpty()) {
             loadAllModels()
         }
         val modelIndex = modelIndexesByName[name]
             ?: throw IOException("Model '$name' not found in store")
-        val handle = keysColumnFamilies[modelIndex]
+        val keysHandle = keysColumnFamilies[modelIndex]
             ?: throw IOException("Keys column family missing for model '$name'")
+        val tableHandle = tableColumnFamilies[modelIndex]
+            ?: throw IOException("Table column family missing for model '$name'")
+        val model = modelsByName[name]
+            ?: throw IOException("Model '$name' not found in store")
         RocksDB.loadLibrary()
-        db.newIterator(handle).use { iterator ->
+        db.newIterator(keysHandle).use { iterator ->
             val limitPlusOne = (limit.coerceAtLeast(1) + 1)
             val keys = mutableListOf<ByteArray>()
             if (descending) {
@@ -158,8 +169,44 @@ class RocksDbStoreDriver(
             } else {
                 null
             }
-            ScanKeysResult(visible.map { it.copyOf() }, continuation)
+            val records = visible.map { keyBytes ->
+                val entries = collectTableEntries(tableHandle, keyBytes)
+                val values = model.definition.decodeStorageEntries(entries)
+                ScanRecord(keyBytes.copyOf(), values)
+            }
+            ScanResult(records, continuation)
         }
+    }
+
+    private fun collectTableEntries(
+        handle: ColumnFamilyHandle,
+        keyBytes: ByteArray,
+    ): List<StorageEntry> {
+        RocksDB.loadLibrary()
+        db.newIterator(handle).use { iterator ->
+            iterator.seek(keyBytes)
+            if (!iterator.isValid) return emptyList()
+            val entries = mutableListOf<StorageEntry>()
+            while (iterator.isValid) {
+                val rawKey = iterator.key()
+                if (!rawKey.startsWith(keyBytes)) {
+                    break
+                }
+                val qualifier = rawKey.copyOfRange(keyBytes.size, rawKey.size)
+                val valueBytes = iterator.value().copyOf()
+                entries += StorageEntry(qualifier, valueBytes, VERSION_BYTE_SIZE)
+                iterator.next()
+            }
+            return entries
+        }
+    }
+
+    private fun ByteArray.startsWith(prefix: ByteArray): Boolean {
+        if (this.size < prefix.size) return false
+        for (index in prefix.indices) {
+            if (this[index] != prefix[index]) return false
+        }
+        return true
     }
 
     private fun parseModelDescriptor(name: ByteArray, handle: ColumnFamilyHandle): ModelColumnFamily? {
@@ -232,6 +279,7 @@ class RocksDbStoreDriver(
         modelsByName.clear()
         modelIndexesByName.clear()
         keysColumnFamilies.clear()
+        tableColumnFamilies.clear()
         if (this::handles.isInitialized) {
             handles.forEach { handle ->
                 runCatching { handle.close() }

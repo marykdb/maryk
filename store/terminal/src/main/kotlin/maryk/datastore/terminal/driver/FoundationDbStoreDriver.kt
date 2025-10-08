@@ -17,6 +17,7 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.terminal.StoreConnectionConfig
 
 private const val DEFAULT_API_VERSION = 730
+private const val VERSION_BYTE_SIZE = ULong.SIZE_BYTES
 
 class FoundationDbStoreDriver(
     private val config: StoreConnectionConfig.FoundationDb,
@@ -37,6 +38,7 @@ class FoundationDbStoreDriver(
     private val conversionContext = DefinitionsConversionContext()
     private val modelsByName = linkedMapOf<String, StoredModel>()
     private val keysPrefixesByModel = mutableMapOf<String, ByteArray>()
+    private val tablePrefixesByModel = mutableMapOf<String, ByteArray>()
 
     private lateinit var fdb: FDB
     private lateinit var database: com.apple.foundationdb.Database
@@ -87,6 +89,9 @@ class FoundationDbStoreDriver(
             val keysPath = rootDirectory.path + listOf(modelName, "keys")
             val keysDirectory = DirectoryLayer.getDefault().open(database, keysPath, null).join()
             keysDirectory.pack()?.let { keysPrefixesByModel[modelName] = it }
+            val tablePath = rootDirectory.path + listOf(modelName, "table")
+            val tableDirectory = DirectoryLayer.getDefault().open(database, tablePath, null).join()
+            tableDirectory.pack()?.let { tablePrefixesByModel[modelName] = it }
             loadModelDefinition(modelName, metaDirectory)
         }.sortedBy { it.name }
 
@@ -132,17 +137,20 @@ class FoundationDbStoreDriver(
         }
     }
 
-    override suspend fun scanKeys(
+    override suspend fun scanRecords(
         name: String,
         startAfterKey: ByteArray?,
         descending: Boolean,
         limit: Int,
-    ): ScanKeysResult = withContext(Dispatchers.IO) {
+    ): ScanResult = withContext(Dispatchers.IO) {
         ensureInitialized()
         if (modelsByName.isEmpty()) {
             loadAllModels()
         }
         val keysPrefix = ensureKeysPrefix(name)
+        val tablePrefix = ensureTablePrefix(name)
+        val model = modelsByName[name]
+            ?: throw IOException("Model '$name' not found in store")
         val range = Range.startsWith(keysPrefix)
         val limitPlusOne = (limit.coerceAtLeast(1) + 1)
         val beginSelector = if (descending) {
@@ -163,15 +171,18 @@ class FoundationDbStoreDriver(
         }
         val hasMore = kvs.size == limitPlusOne
         val visible = if (hasMore) kvs.subList(0, kvs.size - 1) else kvs
-        val keys = visible.map { kv ->
-            kv.key.copyOfRange(keysPrefix.size, kv.key.size)
+        val records = visible.map { kv ->
+            val keyBytes = kv.key.copyOfRange(keysPrefix.size, kv.key.size)
+            val entries = readTableEntries(tablePrefix, keyBytes)
+            val values = model.definition.decodeStorageEntries(entries)
+            ScanRecord(keyBytes, values)
         }
-        val continuation = if (hasMore && keys.isNotEmpty()) {
-            keys.last().copyOf()
+        val continuation = if (hasMore && records.isNotEmpty()) {
+            records.last().key.copyOf()
         } else {
             null
         }
-        ScanKeysResult(keys, continuation)
+        ScanResult(records, continuation)
     }
 
     private fun ensureKeysPrefix(modelName: String): ByteArray {
@@ -186,9 +197,36 @@ class FoundationDbStoreDriver(
         return packed
     }
 
+    private fun ensureTablePrefix(modelName: String): ByteArray {
+        val existing = tablePrefixesByModel[modelName]
+        if (existing != null) {
+            return existing
+        }
+        val tablePath = rootDirectory.path + listOf(modelName, "table")
+        val directory = DirectoryLayer.getDefault().open(database, tablePath, null).join()
+        val packed = directory.pack() ?: throw IOException("Table directory missing for '$modelName'")
+        tablePrefixesByModel[modelName] = packed
+        return packed
+    }
+
+    private fun readTableEntries(
+        tablePrefix: ByteArray,
+        keyBytes: ByteArray,
+    ): List<StorageEntry> {
+        val startKey = tablePrefix + keyBytes
+        val range = Range.startsWith(startKey)
+        return database.read { tr ->
+            tr.getRange(range).asList().join().map { kv ->
+                val qualifier = kv.key.copyOfRange(startKey.size, kv.key.size)
+                StorageEntry(qualifier, kv.value, VERSION_BYTE_SIZE)
+            }
+        }
+    }
+
     override fun close() {
         modelsByName.clear()
         keysPrefixesByModel.clear()
+        tablePrefixesByModel.clear()
         runCatching { database.close() }
     }
 

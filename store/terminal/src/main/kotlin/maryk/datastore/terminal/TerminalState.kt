@@ -12,14 +12,169 @@ import maryk.datastore.terminal.driver.StoredModel
 import maryk.datastore.terminal.driver.StoreDriver
 import maryk.datastore.terminal.driver.StoreType
 import maryk.datastore.terminal.driver.createStoreDriver
+import maryk.datastore.terminal.driver.ScanRecord
 import maryk.datastore.terminal.renderModelDefinition
+import maryk.core.models.serializers.IsJsonSerializer
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.types.TypedValue
+import maryk.core.values.Values
 import java.util.Base64
+import maryk.yaml.YamlWriter
 
 private const val MAX_HISTORY_ENTRIES = 50
 private const val DEFAULT_DETAIL_PAGE_LINES = 24
 private const val HISTORY_WINDOW_SIZE = 5
 private const val HISTORY_PAGE_STEP = 5
 private const val DEFAULT_SCAN_LIMIT = 100
+private const val SUMMARY_FIELD_LIMIT = 4
+private const val SUMMARY_VALUE_MAX = 28
+
+enum class ScanDisplayMode {
+    List,
+    Detail,
+}
+
+class ScanRowState(
+    val index: Int,
+    val keyBytes: ByteArray,
+    val keyBase64: String,
+    val values: Values<*>,
+    val summary: List<Pair<String, String>>,
+    val yamlLines: List<String>,
+)
+
+class ScanSession(
+    val commandLabel: String,
+    val model: StoredModel,
+    private val driver: StoreDriver,
+    val descending: Boolean,
+    initialRecords: List<ScanRecord>,
+    nextStartAfterKey: ByteArray?,
+) {
+    val rows = mutableStateListOf<ScanRowState>()
+    val selectedIndex = mutableStateOf(if (initialRecords.isEmpty()) -1 else 0)
+    val listOffset = mutableStateOf(0)
+    val displayMode = mutableStateOf(ScanDisplayMode.List)
+    val yamlOffset = mutableStateOf(0)
+    val isLoading = mutableStateOf(false)
+
+    var nextStartAfterKey: ByteArray? = nextStartAfterKey
+        private set
+
+    init {
+        appendRecords(initialRecords)
+    }
+
+    fun currentRow(): ScanRowState? = rows.getOrNull(selectedIndex.value.coerceAtLeast(0))
+
+    fun appendRecords(records: List<ScanRecord>) {
+        if (records.isEmpty()) return
+        val startIndex = rows.size
+        records.forEachIndexed { offset, record ->
+            rows += record.toRowState(model, startIndex + offset)
+        }
+        if (selectedIndex.value < 0 && rows.isNotEmpty()) {
+            selectedIndex.value = 0
+        }
+    }
+
+    fun ensureVisible(pageSize: Int) {
+        if (rows.isEmpty()) {
+            listOffset.value = 0
+            return
+        }
+        val index = selectedIndex.value.coerceIn(0, rows.lastIndex)
+        val offset = listOffset.value
+        val maxVisible = offset + pageSize - 1
+        when {
+            index < offset -> listOffset.value = index
+            index > maxVisible -> listOffset.value = (index - pageSize + 1).coerceAtLeast(0)
+        }
+    }
+
+    fun resetYamlOffset() {
+        yamlOffset.value = 0
+    }
+
+    fun adjustYamlOffset(delta: Int, pageSize: Int) {
+        val row = currentRow() ?: return
+        val maxOffset = (row.yamlLines.size - pageSize).coerceAtLeast(0)
+        val newOffset = (yamlOffset.value + delta).coerceIn(0, maxOffset)
+        if (newOffset != yamlOffset.value) {
+            yamlOffset.value = newOffset
+        }
+    }
+
+    suspend fun loadMore(limit: Int): Boolean {
+        val startKey = nextStartAfterKey ?: return false
+        if (isLoading.value) return false
+        isLoading.value = true
+        return try {
+            val result = driver.scanRecords(
+                name = model.name,
+                startAfterKey = startKey,
+                descending = descending,
+                limit = limit,
+            )
+            appendRecords(result.records)
+            nextStartAfterKey = result.nextStartAfterKey
+            result.records.isNotEmpty()
+        } finally {
+            isLoading.value = false
+        }
+    }
+}
+
+private fun ScanRecord.toRowState(model: StoredModel, index: Int): ScanRowState {
+    val summary = renderSummary(model, values)
+    val yaml = renderYaml(model, values)
+    val keyBase64 = Base64.getEncoder().encodeToString(key)
+    return ScanRowState(index, key.copyOf(), keyBase64, values, summary, yaml)
+}
+
+private fun renderSummary(model: StoredModel, values: Values<*>): List<Pair<String, String>> {
+    val result = mutableListOf<Pair<String, String>>()
+    var count = 0
+    for (wrapper in model.definition) {
+        if (count >= SUMMARY_FIELD_LIMIT) break
+        val raw = values.original(wrapper.index)
+        val formatted = ellipsize(formatSummaryValue(raw), SUMMARY_VALUE_MAX)
+        result += wrapper.name to formatted
+        count++
+    }
+    return if (result.isEmpty()) listOf("<no fields>" to "") else result
+}
+
+private fun renderYaml(model: StoredModel, values: Values<*>): List<String> {
+    val builder = StringBuilder()
+    val writer = YamlWriter { builder.append(it) }
+    @Suppress("UNCHECKED_CAST")
+    val serializer = values.dataModel.Serializer as IsJsonSerializer<in Values<*>, IsPropertyContext>
+    serializer.writeJson(values, writer, null)
+    val text = builder.toString().trimEnd()
+    return if (text.isBlank()) {
+        listOf("{}")
+    } else {
+        text.split('\n')
+    }
+}
+
+private fun formatSummaryValue(value: Any?): String = when (value) {
+    null -> "null"
+    is String -> value
+    is ByteArray -> Base64.getEncoder().encodeToString(value)
+    is Values<*> -> value.toString()
+    is TypedValue<*, *> -> "${value.type.name}:${formatSummaryValue(value.value)}"
+    is List<*> -> value.joinToString(prefix = "[", postfix = "]", limit = 3) { formatSummaryValue(it) }
+    is Set<*> -> value.joinToString(prefix = "{", postfix = "}", limit = 3) { formatSummaryValue(it) }
+    is Map<*, *> -> value.entries.joinToString(prefix = "{", postfix = "}", limit = 3) { (key, v) ->
+        "${formatSummaryValue(key)}=${formatSummaryValue(v)}"
+    }
+    else -> value.toString()
+}
+
+private fun ellipsize(text: String, maxLength: Int): String =
+    if (text.length <= maxLength) text else text.take(maxLength - 1).trimEnd() + "…"
 
 enum class PanelStyle {
     Info,
@@ -40,6 +195,7 @@ data class HistoryEntry(
     val lines: List<String>,
     val style: PanelStyle,
     val summary: String,
+    val scanState: ScanSession? = null,
 ) {
     fun maxLineOffset(pageSize: Int): Int {
         if (lines.isEmpty()) return 0
@@ -118,6 +274,7 @@ class TerminalState(initialMode: UiMode) {
         lines: List<String>,
         style: PanelStyle,
         summary: String? = null,
+        scanState: ScanSession? = null,
     ) {
         val effectiveSummary = summary
             ?: heading
@@ -130,6 +287,7 @@ class TerminalState(initialMode: UiMode) {
             lines = lines,
             style = style,
             summary = effectiveSummary,
+            scanState = scanState,
         )
         history.add(0, entry)
         while (history.size > MAX_HISTORY_ENTRIES) {
@@ -140,6 +298,8 @@ class TerminalState(initialMode: UiMode) {
     }
 
     fun activeHistoryEntry(): HistoryEntry? = history.getOrNull(selectedHistoryIndex.value)
+
+    fun activeScanSession(): ScanSession? = activeHistoryEntry()?.scanState
 
     fun scrollActiveLines(delta: Int) {
         val entry = activeHistoryEntry() ?: return
@@ -272,7 +432,7 @@ class TerminalController(
         "help" to "help [command] - Show commands or detailed help for a command.",
         "list" to "list | l - List all models stored in the connected database.",
         "model" to "model [name] - Display the stored model structure. Without name opens a selector.",
-        "scan" to "scan [desc] <model> - Show up to $DEFAULT_SCAN_LIMIT keys for a model. Add 'desc' for descending order.",
+        "scan" to "scan [desc] <model> - Show up to $DEFAULT_SCAN_LIMIT rows for a model. Add 'desc' for descending order.",
         "exit" to "exit - Close the terminal client.",
     )
 
@@ -401,32 +561,117 @@ class TerminalController(
             }
             "ArrowUp" -> {
                 if (mode.input.isEmpty()) {
-                    state.scrollActiveLines(-1)
-                    true
+                    val scan = state.activeScanSession()
+                    if (scan != null) {
+                        val pageSize = state.detailLinesPerPage.value
+                        if (scan.displayMode.value == ScanDisplayMode.List) {
+                            if (scan.rows.isNotEmpty()) {
+                                val newIndex = (scan.selectedIndex.value - 1).coerceAtLeast(0)
+                                if (newIndex != scan.selectedIndex.value) {
+                                    scan.selectedIndex.value = newIndex
+                                    scan.ensureVisible(pageSize)
+                                    scan.resetYamlOffset()
+                                }
+                            }
+                        } else {
+                            scan.adjustYamlOffset(-1, pageSize)
+                        }
+                        true
+                    } else {
+                        state.scrollActiveLines(-1)
+                        true
+                    }
                 } else {
                     false
                 }
             }
             "ArrowDown" -> {
                 if (mode.input.isEmpty()) {
-                    state.scrollActiveLines(1)
-                    true
+                    val scan = state.activeScanSession()
+                    if (scan != null) {
+                        val pageSize = state.detailLinesPerPage.value
+                        if (scan.displayMode.value == ScanDisplayMode.List) {
+                            if (scan.rows.isNotEmpty()) {
+                                val lastIndex = scan.rows.lastIndex
+                                if (scan.selectedIndex.value < lastIndex) {
+                                    scan.selectedIndex.value = (scan.selectedIndex.value + 1).coerceAtMost(lastIndex)
+                                    scan.ensureVisible(pageSize)
+                                    scan.resetYamlOffset()
+                                } else if (scan.nextStartAfterKey != null && !scan.isLoading.value) {
+                                    scope.launch {
+                                        if (scan.loadMore(DEFAULT_SCAN_LIMIT)) {
+                                            scan.selectedIndex.value = scan.rows.lastIndex
+                                            scan.ensureVisible(pageSize)
+                                            scan.resetYamlOffset()
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            scan.adjustYamlOffset(1, pageSize)
+                        }
+                        true
+                    } else {
+                        state.scrollActiveLines(1)
+                        true
+                    }
                 } else {
                     false
                 }
             }
             "PageUp" -> {
                 if (mode.input.isEmpty()) {
-                    state.pageHistory(1)
-                    true
+                    val scan = state.activeScanSession()
+                    if (scan != null && scan.displayMode.value == ScanDisplayMode.Detail) {
+                        val pageSize = state.detailLinesPerPage.value
+                        scan.adjustYamlOffset(-pageSize, pageSize)
+                        true
+                    } else {
+                        state.pageHistory(1)
+                        true
+                    }
                 } else {
                     false
                 }
             }
             "PageDown" -> {
                 if (mode.input.isEmpty()) {
-                    state.pageHistory(-1)
-                    true
+                    val scan = state.activeScanSession()
+                    if (scan != null && scan.displayMode.value == ScanDisplayMode.Detail) {
+                        val pageSize = state.detailLinesPerPage.value
+                        scan.adjustYamlOffset(pageSize, pageSize)
+                        true
+                    } else {
+                        state.pageHistory(-1)
+                        true
+                    }
+                } else {
+                    false
+                }
+            }
+            "ArrowRight" -> {
+                if (mode.input.isEmpty()) {
+                    val scan = state.activeScanSession()
+                    if (scan != null && scan.displayMode.value == ScanDisplayMode.List && scan.rows.isNotEmpty()) {
+                        scan.displayMode.value = ScanDisplayMode.Detail
+                        scan.resetYamlOffset()
+                        true
+                    } else {
+                        false
+                    }
+                } else {
+                    false
+                }
+            }
+            "ArrowLeft" -> {
+                if (mode.input.isEmpty()) {
+                    val scan = state.activeScanSession()
+                    if (scan != null && scan.displayMode.value == ScanDisplayMode.Detail) {
+                        scan.displayMode.value = ScanDisplayMode.List
+                        true
+                    } else {
+                        false
+                    }
                 } else {
                     false
                 }
@@ -628,52 +873,52 @@ class TerminalController(
 
         scope.launch {
             runCatching {
-                driver.scanKeys(
+                val model = driver.loadModel(modelName)
+                    ?: throw IllegalStateException("Model '$modelName' not found in store")
+                val result = driver.scanRecords(
                     name = modelName,
                     startAfterKey = null,
                     descending = descending,
                     limit = DEFAULT_SCAN_LIMIT,
                 )
-            }.onSuccess { result ->
-                val encoder = Base64.getEncoder()
-                val keyLines = if (result.keys.isEmpty()) {
-                    listOf("<no keys>")
-                } else {
-                    result.keys.mapIndexed { index, key ->
-                        val encoded = encoder.encodeToString(key)
-                        "${index + 1}. $encoded"
-                    }
-                }
-                val lines = keyLines.toMutableList()
-                if (result.nextStartAfterKey != null) {
-                    if (lines.isNotEmpty()) {
-                        lines += ""
-                    }
-                    lines += "More keys available beyond the first $DEFAULT_SCAN_LIMIT."
-                }
+                model to result
+            }.onSuccess { (model, result) ->
+                val session = ScanSession(
+                    commandLabel = commandLabel,
+                    model = model,
+                    driver = driver,
+                    descending = descending,
+                    initialRecords = result.records,
+                    nextStartAfterKey = result.nextStartAfterKey,
+                )
                 val heading = buildString {
-                    append("Keys for $modelName")
+                    append("Scan results for $modelName")
                     append(if (descending) " (descending)" else " (ascending)")
                 }
-                val summary = if (result.keys.isEmpty()) {
-                    "No keys found for $modelName"
-                } else {
-                    val moreSuffix = if (result.nextStartAfterKey != null) " (partial)" else ""
-                    "${result.keys.size} key(s) listed$moreSuffix"
+                val summary = when {
+                    result.records.isEmpty() -> "No rows found for $modelName"
+                    result.nextStartAfterKey != null -> "${result.records.size} row(s) listed (partial)"
+                    else -> "${result.records.size} row(s) listed"
+                }
+                val lines = buildList {
+                    add("Use ↑/↓ to navigate rows, → for YAML, ← to return to the list.")
+                    add("Use PgUp/PgDn to scroll details when viewing YAML.")
+                    if (result.nextStartAfterKey != null) {
+                        add("Scroll past the end of the list to load more rows.")
+                    }
                 }
                 state.recordHistory(
                     label = commandLabel,
                     heading = heading,
                     lines = lines,
-                    style = PanelStyle.Info,
+                    style = if (result.records.isEmpty()) PanelStyle.Info else PanelStyle.Success,
                     summary = summary,
+                    scanState = session,
                 )
-                val banner = if (result.keys.isEmpty()) {
-                    "No keys found for $modelName"
-                } else if (result.nextStartAfterKey != null) {
-                    "Showing ${result.keys.size} keys for $modelName (more available)"
-                } else {
-                    "Showing ${result.keys.size} keys for $modelName"
+                val banner = when {
+                    result.records.isEmpty() -> "No rows found for $modelName"
+                    result.nextStartAfterKey != null -> "Showing ${result.records.size} rows for $modelName (more available)"
+                    else -> "Showing ${result.records.size} rows for $modelName"
                 }
                 state.showBanner(banner, PanelStyle.Success)
             }.onFailure { error ->

@@ -13,11 +13,13 @@ import maryk.datastore.terminal.driver.StoreDriver
 import maryk.datastore.terminal.driver.StoreType
 import maryk.datastore.terminal.driver.createStoreDriver
 import maryk.datastore.terminal.renderModelDefinition
+import java.util.Base64
 
 private const val MAX_HISTORY_ENTRIES = 50
 private const val DEFAULT_DETAIL_PAGE_LINES = 24
 private const val HISTORY_WINDOW_SIZE = 5
 private const val HISTORY_PAGE_STEP = 5
+private const val DEFAULT_SCAN_LIMIT = 100
 
 enum class PanelStyle {
     Info,
@@ -270,6 +272,7 @@ class TerminalController(
         "help" to "help [command] - Show commands or detailed help for a command.",
         "list" to "list | l - List all models stored in the connected database.",
         "model" to "model [name] - Display the stored model structure. Without name opens a selector.",
+        "scan" to "scan [desc] <model> - Show up to $DEFAULT_SCAN_LIMIT keys for a model. Add 'desc' for descending order.",
         "exit" to "exit - Close the terminal client.",
     )
 
@@ -486,9 +489,10 @@ class TerminalController(
     }
 
     private fun executeCommand(command: String) {
-        val parts = command.split(Regex("\\s+"), limit = 2)
-        val action = parts.first().lowercase()
-        val argument = parts.getOrNull(1)?.trim().orEmpty()
+        val tokens = command.split(Regex("\\s+")).filter { it.isNotEmpty() }
+        if (tokens.isEmpty()) return
+        val action = tokens.first().lowercase()
+        val argument = tokens.drop(1).joinToString(" ")
 
         if (state.isConnecting.value) {
             state.showBanner("Connection in progress. Please wait...", PanelStyle.Warning)
@@ -505,6 +509,7 @@ class TerminalController(
                     openModelSelector()
                 }
             }
+            "scan" -> scanModel(command, tokens.drop(1))
             "exit" -> exit(command)
             "connect" -> {
                 state.showBanner(
@@ -556,6 +561,132 @@ class TerminalController(
             lines = lines,
             style = PanelStyle.Info,
         )
+    }
+
+    private fun scanModel(commandLabel: String, args: List<String>) {
+        val driver = state.driver()
+        if (driver == null) {
+            val message = "No store connected. Complete the wizard first."
+            state.showBanner(message, PanelStyle.Warning)
+            state.recordHistory(
+                label = commandLabel,
+                heading = "No connection",
+                lines = listOf(message),
+                style = PanelStyle.Warning,
+            )
+            return
+        }
+
+        if (args.isEmpty()) {
+            val message = "Usage: scan [desc] <model>"
+            state.showBanner(message, PanelStyle.Warning)
+            state.recordHistory(
+                label = commandLabel,
+                heading = "Scan usage",
+                lines = listOf(message),
+                style = PanelStyle.Warning,
+            )
+            return
+        }
+
+        val tokens = args.toMutableList()
+        var descending = false
+        if (tokens.firstOrNull()?.equals("desc", ignoreCase = true) == true) {
+            descending = true
+            tokens.removeAt(0)
+        }
+        if (tokens.isEmpty()) {
+            val message = "Missing model name. Usage: scan [desc] <model>"
+            state.showBanner(message, PanelStyle.Warning)
+            state.recordHistory(
+                label = commandLabel,
+                heading = "Scan usage",
+                lines = listOf(message),
+                style = PanelStyle.Warning,
+            )
+            return
+        }
+        if (tokens.lastOrNull()?.equals("desc", ignoreCase = true) == true) {
+            descending = true
+            tokens.removeAt(tokens.lastIndex)
+        }
+        if (tokens.isEmpty()) {
+            val message = "Missing model name. Usage: scan [desc] <model>"
+            state.showBanner(message, PanelStyle.Warning)
+            state.recordHistory(
+                label = commandLabel,
+                heading = "Scan usage",
+                lines = listOf(message),
+                style = PanelStyle.Warning,
+            )
+            return
+        }
+
+        val modelName = tokens.joinToString(" ")
+        val orderLabel = if (descending) "descending" else "ascending"
+        state.showBanner("Scanning $modelName ($orderLabel)...", PanelStyle.Info)
+
+        scope.launch {
+            runCatching {
+                driver.scanKeys(
+                    name = modelName,
+                    startAfterKey = null,
+                    descending = descending,
+                    limit = DEFAULT_SCAN_LIMIT,
+                )
+            }.onSuccess { result ->
+                val encoder = Base64.getEncoder()
+                val keyLines = if (result.keys.isEmpty()) {
+                    listOf("<no keys>")
+                } else {
+                    result.keys.mapIndexed { index, key ->
+                        val encoded = encoder.encodeToString(key)
+                        "${index + 1}. $encoded"
+                    }
+                }
+                val lines = keyLines.toMutableList()
+                if (result.nextStartAfterKey != null) {
+                    if (lines.isNotEmpty()) {
+                        lines += ""
+                    }
+                    lines += "More keys available beyond the first $DEFAULT_SCAN_LIMIT."
+                }
+                val heading = buildString {
+                    append("Keys for $modelName")
+                    append(if (descending) " (descending)" else " (ascending)")
+                }
+                val summary = if (result.keys.isEmpty()) {
+                    "No keys found for $modelName"
+                } else {
+                    val moreSuffix = if (result.nextStartAfterKey != null) " (partial)" else ""
+                    "${result.keys.size} key(s) listed$moreSuffix"
+                }
+                state.recordHistory(
+                    label = commandLabel,
+                    heading = heading,
+                    lines = lines,
+                    style = PanelStyle.Info,
+                    summary = summary,
+                )
+                val banner = if (result.keys.isEmpty()) {
+                    "No keys found for $modelName"
+                } else if (result.nextStartAfterKey != null) {
+                    "Showing ${result.keys.size} keys for $modelName (more available)"
+                } else {
+                    "Showing ${result.keys.size} keys for $modelName"
+                }
+                state.showBanner(banner, PanelStyle.Success)
+            }.onFailure { error ->
+                val message = "Failed to scan $modelName: ${error.message ?: error::class.simpleName}".trim()
+                state.recordHistory(
+                    label = commandLabel,
+                    heading = "Scan failed",
+                    lines = listOf(message),
+                    style = PanelStyle.Error,
+                )
+                state.showBanner(message, PanelStyle.Error)
+            }
+        }
     }
 
     private fun listModels(commandLabel: String) {

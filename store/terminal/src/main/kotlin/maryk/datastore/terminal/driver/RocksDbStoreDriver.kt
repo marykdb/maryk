@@ -40,6 +40,8 @@ class RocksDbStoreDriver(
     private lateinit var handles: MutableList<ColumnFamilyHandle>
     private lateinit var modelColumnFamilies: List<ModelColumnFamily>
     private val columnFamilyOptions = mutableListOf<ColumnFamilyOptions>()
+    private val keysColumnFamilies = mutableMapOf<UInt, ColumnFamilyHandle>()
+    private val modelIndexesByName = mutableMapOf<String, UInt>()
     private var versionedComparator: AbstractComparator? = null
     private var comparatorOptions: ComparatorOptions? = null
     private var dbOptions: DBOptions? = null
@@ -68,9 +70,18 @@ class RocksDbStoreDriver(
                 handles = handleList
                 dbOptions = optionsForDb
                 db = openedDb
+                keysColumnFamilies.clear()
                 modelColumnFamilies = descriptors.zip(handles)
                     .mapNotNull { (descriptor, handle) ->
-                        parseModelDescriptor(descriptor.name, handle)
+                        when (ColumnFamilyType.fromByte(descriptor.name.firstOrNull() ?: return@mapNotNull null)) {
+                            ColumnFamilyType.Keys -> {
+                                val index = parseVarUInt(descriptor.name, start = 1)
+                                keysColumnFamilies[index] = handle
+                                null
+                            }
+                            ColumnFamilyType.Model -> parseModelDescriptor(descriptor.name, handle)
+                            else -> null
+                        }
                     }
             }
         }
@@ -91,6 +102,64 @@ class RocksDbStoreDriver(
             loadAllModels()
         }
         modelsByName[name]
+    }
+
+    override suspend fun scanKeys(
+        name: String,
+        startAfterKey: ByteArray?,
+        descending: Boolean,
+        limit: Int,
+    ): ScanKeysResult = withContext(Dispatchers.IO) {
+        ensureInitialized()
+        if (modelsByName.isEmpty()) {
+            loadAllModels()
+        }
+        val modelIndex = modelIndexesByName[name]
+            ?: throw IOException("Model '$name' not found in store")
+        val handle = keysColumnFamilies[modelIndex]
+            ?: throw IOException("Keys column family missing for model '$name'")
+        RocksDB.loadLibrary()
+        db.newIterator(handle).use { iterator ->
+            val limitPlusOne = (limit.coerceAtLeast(1) + 1)
+            val keys = mutableListOf<ByteArray>()
+            if (descending) {
+                if (startAfterKey != null) {
+                    iterator.seekForPrev(startAfterKey)
+                    if (iterator.isValid && iterator.key().contentEquals(startAfterKey)) {
+                        iterator.prev()
+                    } else if (!iterator.isValid) {
+                        iterator.seekToLast()
+                    }
+                } else {
+                    iterator.seekToLast()
+                }
+                while (iterator.isValid && keys.size < limitPlusOne) {
+                    keys += iterator.key().copyOf()
+                    iterator.prev()
+                }
+            } else {
+                if (startAfterKey != null) {
+                    iterator.seek(startAfterKey)
+                    if (iterator.isValid && iterator.key().contentEquals(startAfterKey)) {
+                        iterator.next()
+                    }
+                } else {
+                    iterator.seekToFirst()
+                }
+                while (iterator.isValid && keys.size < limitPlusOne) {
+                    keys += iterator.key().copyOf()
+                    iterator.next()
+                }
+            }
+            val hasMore = keys.size == limitPlusOne
+            val visible = if (hasMore) keys.subList(0, keys.size - 1) else keys
+            val continuation = if (hasMore && visible.isNotEmpty()) {
+                visible.last().copyOf()
+            } else {
+                null
+            }
+            ScanKeysResult(visible.map { it.copyOf() }, continuation)
+        }
     }
 
     private fun parseModelDescriptor(name: ByteArray, handle: ColumnFamilyHandle): ModelColumnFamily? {
@@ -119,6 +188,7 @@ class RocksDbStoreDriver(
 
     private fun loadAllModels() {
         modelsByName.clear()
+        modelIndexesByName.clear()
         val loaded = modelColumnFamilies.mapNotNull { loadModelDefinition(it) }
             .sortedBy { it.name }
         loaded.forEach { modelsByName[it.name] = it }
@@ -147,6 +217,8 @@ class RocksDbStoreDriver(
 
         conversionContext.dataModels[name] = DataModelReference(storedModel)
 
+        modelIndexesByName[name] = entry.tableIndex
+
         return StoredModel(name, version, storedModel)
     }
 
@@ -158,6 +230,8 @@ class RocksDbStoreDriver(
 
     override fun close() {
         modelsByName.clear()
+        modelIndexesByName.clear()
+        keysColumnFamilies.clear()
         if (this::handles.isInitialized) {
             handles.forEach { handle ->
                 runCatching { handle.close() }

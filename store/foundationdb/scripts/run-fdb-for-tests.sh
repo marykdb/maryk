@@ -33,9 +33,11 @@ esac
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+server_started=false
+
 start_server() {
   if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
-    echo "fdbserver already running with PID $(cat "$PID_FILE")"
+    server_started=false
     return 0
   fi
   rm -f "$PID_FILE"
@@ -61,6 +63,7 @@ start_server() {
     >"$LOG_DIR/fdbserver.out" 2>&1 &
   set +x
   echo $! > "$PID_FILE"
+  server_started=true
 }
 
 wait_ready() {
@@ -92,7 +95,12 @@ configure_if_needed() {
 
 start_server
 
-echo "fdbserver started with PID $(cat "$PID_FILE")"
+PID="$(cat "$PID_FILE")"
+if [[ "$server_started" == "true" ]]; then
+  echo "fdbserver started with PID $PID"
+else
+  echo "Reusing existing fdbserver (PID $PID)"
+fi
 
 # Fail fast if server exited immediately
 sleep 0.5

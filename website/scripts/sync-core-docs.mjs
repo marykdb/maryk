@@ -43,7 +43,7 @@ const map = [
   ['src/content/docs/data-modeling/properties/types/incrementing-map.mdx', 'properties/types/incrementingMap.md'],
   ['src/content/docs/data-modeling/properties/types/list.mdx', 'properties/types/list.md'],
   ['src/content/docs/data-modeling/properties/types/map.mdx', 'properties/types/map.md'],
-  ['src/content/docs/data-modeling/properties/types/multi-type.mdx', 'properties/types/multi-type.md'],
+  ['src/content/docs/data-modeling/properties/types/multi-type.mdx', 'properties/types/multiType.md'],
   ['src/content/docs/data-modeling/properties/types/number.mdx', 'properties/types/number.md'],
   ['src/content/docs/data-modeling/properties/types/reference.mdx', 'properties/types/reference.md'],
   ['src/content/docs/data-modeling/properties/types/set.mdx', 'properties/types/set.md'],

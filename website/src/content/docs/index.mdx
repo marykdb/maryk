@@ -8,9 +8,9 @@ hero:
     file: ../../assets/maryk-logo-optimized.webp
   actions:
     - text: Get Started
-      link: /getting-started/
+      link: getting-started/
     - text: What & Why
-      link: /what/
+      link: what/
       variant: secondary
     - text: View on GitHub
       link: https://github.com/marykdb/maryk/
@@ -81,17 +81,14 @@ val json = person.toJson(pretty = true)
 
 ## Learn more
 
-Start with the overview in [What is Maryk?](/what/) and the short case for [Why Maryk?](/why/).
+Start with the overview in [What is Maryk?](what/) and the short case for [Why Maryk?](why/).
 
 When you’re ready to dig in:
 
-- [Data Models](/core-concepts/datamodels/) and [Properties](/core-concepts/properties/) (types, operations, references)
-- [Querying](/core-concepts/querying/) with filters, [reference graphs](/core-concepts/querying/reference-graphs/), ordering, and [aggregations](/core-concepts/querying/aggregations/)
-- [Serialization](/core-concepts/serialization/) (YAML/JSON/ProtoBuf) and [ProtoBuf transport](/core-concepts/serialization/protobuf-transport/)
-- [Versioning](/core-concepts/versioning/) for historic views and change/update streams
+- [Data Models](data-modeling/datamodels/) and [Properties](data-modeling/properties/) (types, operations, references)
+- [Querying](querying/) with filters, [reference graphs](querying/reference-graphs/), ordering, and [aggregations](querying/aggregations/)
+- [Serialization](serialization/) (YAML/JSON/ProtoBuf)
+- [Versioning](data-modeling/versioning/) for historic views and change/update streams
 
-Picking storage? See [Stores](/stores/) for the overview, or jump straight to
-[In‑Memory](/stores/memory/), [RocksDB](/stores/rocksdb/), or [FoundationDB](/stores/foundationdb/).
-
-Tools and extras live under [Supporting Libraries](/support/): streaming [JSON](/support/json/) and [YAML](/support/yaml/), the
-[Generator](/support/generator/) for Kotlin/ProtoBuf, [DataFrame helpers](/support/dataframe/), and testing utilities.
+Picking storage? See [Stores](stores/) for the overview, or jump straight to
+[In‑Memory](stores/memory/), [RocksDB](stores/rocksdb/), or [FoundationDB](stores/foundationdb/).

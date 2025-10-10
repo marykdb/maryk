@@ -1,5 +1,6 @@
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
+    id("maryk.conventions.kotlin-multiplatform-android-library")
     id("maryk.conventions.kotlin-multiplatform-js")
     id("maryk.conventions.kotlin-multiplatform-native")
 }

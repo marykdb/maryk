@@ -15,7 +15,6 @@ kotlin {
 
 android {
     namespace = "io.maryk"
-    buildToolsVersion = "32.0.0"
     compileSdk = 32
     defaultConfig {
         minSdk = 21

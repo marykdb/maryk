@@ -85,10 +85,16 @@ wait_ready() {
 
 configure_if_needed() {
   export FDB_CLUSTER_FILE="$CLUSTER_FILE"
-  # Configure a single-memory test database only if the database is unavailable/uninitialized.
+  # Configure a single-memory test database; ignore errors if it already exists.
   if [[ -x "$BIN_DIR/fdbcli" ]]; then
-    if "$BIN_DIR/fdbcli" --exec "status minimal" 2>/dev/null | grep -qi "The database is unavailable"; then
-      "$BIN_DIR/fdbcli" --exec "configure new single memory" || true
+    local configure_output
+    configure_output="$("$BIN_DIR/fdbcli" --timeout 15 --exec "configure new single memory" 2>&1 || true)"
+    if grep -qi "Database created" <<<"$configure_output"; then
+      echo "$configure_output"
+    elif grep -qi "Database already exists" <<<"$configure_output"; then
+      echo "Reusing existing FoundationDB configuration"
+    elif [[ -n "$configure_output" ]]; then
+      echo "$configure_output" >&2
     fi
   fi
 }

@@ -50,6 +50,73 @@ safe_copy() {
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+copy_libs_from_dir() {
+  local dir="$1"
+  [[ -d "$dir" ]] || return 1
+  shopt -s nullglob
+  local found_any=0
+  for lib in "$dir"/libfdb_c.*; do
+    safe_copy "$lib" "$LIB_DIR"
+    found_any=1
+  done
+  shopt -u nullglob
+  if [[ "$found_any" -eq 1 ]]; then
+    return 0
+  fi
+  return 1
+}
+
+link_existing_install() {
+  local server
+  if ! server="$(command -v fdbserver 2>/dev/null)"; then
+    return 1
+  fi
+
+  safe_copy "$server" "$BIN_DIR"
+  chmod +x "$BIN_DIR/fdbserver" 2>/dev/null || true
+
+  if command -v fdbcli >/dev/null 2>&1; then
+    safe_copy "$(command -v fdbcli)" "$BIN_DIR"
+    chmod +x "$BIN_DIR/fdbcli" 2>/dev/null || true
+  fi
+
+  local copied_lib=0
+
+  if command -v ldconfig >/dev/null 2>&1; then
+    while IFS= read -r libpath; do
+      [[ -n "$libpath" ]] || continue
+      safe_copy "$libpath" "$LIB_DIR"
+      copied_lib=1
+    done < <((ldconfig -p 2>/dev/null | awk '/libfdb_c\./ {print $4}' | sort -u) || true)
+  fi
+
+  local server_dir
+  server_dir="$(dirname "$server")"
+  for candidate in \
+    "$server_dir" \
+    "$server_dir/.." \
+    "$server_dir/../lib" \
+    "$server_dir/../lib64" \
+    "/usr/lib" "/usr/lib64" "/usr/local/lib" "/usr/local/lib64" \
+    "/usr/lib/x86_64-linux-gnu" "/usr/lib/aarch64-linux-gnu" \
+    "/opt/foundationdb/lib" "/opt/foundationdb/lib64"; do
+    if copy_libs_from_dir "$candidate"; then
+      copied_lib=1
+    fi
+  done
+
+  if [[ ! -x "$BIN_DIR/fdbserver" ]]; then
+    return 1
+  fi
+
+  if [[ "$copied_lib" -eq 0 ]]; then
+    warn "libfdb_c not found next to system installation; continuing"
+  fi
+
+  log "Linked existing FoundationDB installation from PATH ($server)"
+  return 0
+}
+
 macos_pkg_arch() {
   case "$(uname -m)" in
     arm64|aarch64) echo "arm64" ;;
@@ -160,38 +227,136 @@ install_linux_from_deb() {
   extract_deb "$tmp/$clients_pkg"
   extract_deb "$tmp/$server_pkg"
 
-  # Copy binaries and libs from extracted tree
-  if [[ -x "$tmp/root/usr/bin/fdbserver" ]]; then
-    cp -f "$tmp/root/usr/bin/fdbserver" "$BIN_DIR/"
-    chmod +x "$BIN_DIR/fdbserver"
-  fi
-  if [[ -x "$tmp/root/usr/bin/fdbcli" ]]; then
-    cp -f "$tmp/root/usr/bin/fdbcli" "$BIN_DIR/"
-    chmod +x "$BIN_DIR/fdbcli"
-  fi
-  # Libraries may reside under /usr/lib or /usr/lib/x86_64-linux-gnu
+  local server_found=0
+  for candidate in \
+    "$tmp/root/usr/bin/fdbserver" \
+    "$tmp/root/usr/sbin/fdbserver" \
+    "$tmp/root/usr/lib/foundationdb/fdbserver" \
+    "$tmp/root/usr/libexec/fdbserver"; do
+    if [[ -x "$candidate" ]]; then
+      safe_copy "$candidate" "$BIN_DIR"
+      chmod +x "$BIN_DIR/fdbserver" 2>/dev/null || true
+      server_found=1
+      break
+    fi
+  done
+
+  local cli_found=0
+  for candidate in \
+    "$tmp/root/usr/bin/fdbcli" \
+    "$tmp/root/usr/lib/foundationdb/fdbcli"; do
+    if [[ -x "$candidate" ]]; then
+      safe_copy "$candidate" "$BIN_DIR"
+      chmod +x "$BIN_DIR/fdbcli" 2>/dev/null || true
+      cli_found=1
+      break
+    fi
+  done
+
+  # Libraries may reside under a number of lib directories
   shopt -s nullglob
-  for lib in "$tmp/root"/usr/lib*/libfdb_c.*; do
-    cp -f "$lib" "$LIB_DIR/"
+  local libs_found=0
+  for lib in \
+    "$tmp/root"/usr/lib*/libfdb_c.* \
+    "$tmp/root"/usr/lib/foundationdb/libfdb_c.* \
+    "$tmp/root"/usr/local/lib/libfdb_c.*; do
+    if [[ -f "$lib" ]]; then
+      safe_copy "$lib" "$LIB_DIR"
+      libs_found=1
+    fi
   done
   shopt -u nullglob
+
+  if [[ "$server_found" -ne 1 ]]; then
+    warn "fdbserver binary not found in extracted packages"
+    return 1
+  fi
+
+  if [[ "$cli_found" -ne 1 ]]; then
+    warn "fdbcli binary not found in extracted packages"
+  fi
+
+  if [[ "$libs_found" -ne 1 ]]; then
+    warn "libfdb_c library not found in extracted packages"
+  fi
 
   log "Installed FoundationDB binaries into $BIN_DIR"
 }
 
-install_linux() {
-  # Prefer using system packages if available and user has privileges
-  if have apt-get && have sudo; then
-    warn "Attempting apt install (may require sudo password)"
-    sudo apt-get update || true
-    sudo apt-get install -y foundationdb-clients foundationdb-server || true
-  elif have dnf && have sudo; then
-    warn "Attempting dnf install (may require sudo password)"
-    sudo dnf install -y foundationdb || true
-  else
-    log "Falling back to downloading .deb packages from GitHub releases"
-    install_linux_from_deb || warn "Deb extraction method failed"
+install_linux_with_apt() {
+  local sudo_prefix=()
+  if (( EUID != 0 )); then
+    if have sudo; then
+      sudo_prefix=(sudo -n)
+    else
+      warn "apt-get found but no sudo/root privileges; skipping"
+      return 1
+    fi
   fi
+
+  "${sudo_prefix[@]}" apt-get update || return 1
+  if ! "${sudo_prefix[@]}" apt-get install -y foundationdb-clients foundationdb-server; then
+    return 1
+  fi
+
+  if ! link_existing_install; then
+    warn "apt install succeeded but linking binaries failed"
+    return 1
+  fi
+
+  return 0
+}
+
+install_linux_with_dnf() {
+  local sudo_prefix=()
+  if (( EUID != 0 )); then
+    if have sudo; then
+      sudo_prefix=(sudo -n)
+    else
+      warn "dnf found but no sudo/root privileges; skipping"
+      return 1
+    fi
+  fi
+
+  if ! "${sudo_prefix[@]}" dnf install -y foundationdb; then
+    return 1
+  fi
+
+  if ! link_existing_install; then
+    warn "dnf install succeeded but linking binaries failed"
+    return 1
+  fi
+
+  return 0
+}
+
+install_linux() {
+  if link_existing_install; then
+    return 0
+  fi
+
+  local installed=1
+
+  if have apt-get; then
+    warn "Attempting apt-based installation of FoundationDB"
+    if install_linux_with_apt; then
+      installed=0
+    fi
+  elif have dnf; then
+    warn "Attempting dnf-based installation of FoundationDB"
+    if install_linux_with_dnf; then
+      installed=0
+    fi
+  fi
+
+  if [[ "$installed" -ne 0 ]]; then
+    log "Falling back to downloading .deb packages from GitHub releases"
+    if ! install_linux_from_deb; then
+      warn "Deb extraction method failed"
+    fi
+  fi
+
+  link_existing_install || true
 }
 
 main() {

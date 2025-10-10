@@ -79,6 +79,6 @@ RocksDBDataStore.open(
 
 ## Platform Support
 
-This module is Kotlin Multiplatform and works on JVM, iOS, macOS, Android, and Linux via the `rocksdb-multiplatform` bindings.
+This module is Kotlin Multiplatform and works on JVM, iOS, macOS, tvOS, watchOS, Android, Android Native and Linux via the `rocksdb-multiplatform` bindings.
 
 For a deeper dive into how data is laid out and how queries execute, check the [Architecture](documentation/architecture.md) and [Storage Layout](documentation/storage.md) docs.

@@ -14,4 +14,13 @@ kotlin {
     iosSimulatorArm64()
     macosArm64()
     macosX64()
+    watchosArm64()
+    watchosDeviceArm64()
+    watchosSimulatorArm64()
+    tvosArm64()
+    tvosSimulatorArm64()
+    androidNativeArm32()
+    androidNativeArm64()
+    androidNativeX86()
+    androidNativeX64()
 }

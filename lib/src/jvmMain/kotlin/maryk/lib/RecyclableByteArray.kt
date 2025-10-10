@@ -1,5 +1,8 @@
 package maryk.lib
 
-val localB1 = ThreadLocal.withInitial { ByteArray(10000) }!!
+private val localB1 = object : ThreadLocal<ByteArray>() {
+    override fun initialValue() = ByteArray(10_000)
+}
 
-actual val recyclableByteArray get() = localB1.get()!!
+actual val recyclableByteArray: ByteArray
+    get() = localB1.get()!!

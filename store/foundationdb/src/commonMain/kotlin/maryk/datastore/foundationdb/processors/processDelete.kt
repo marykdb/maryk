@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.atomicfu.update
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
@@ -138,6 +139,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 byteArrayOf(TRUE)
             )
         }
+
+        lastVersion.update { old ->
+            if (old < version.timestamp.toLong()) version.timestamp.toLong() else old
+        }
+        tr.set(updateSignalKey, versionBytes)
 
         // Emit update and return success
         launch(updateDispatcher) {

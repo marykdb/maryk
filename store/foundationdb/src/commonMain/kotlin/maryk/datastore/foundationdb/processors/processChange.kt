@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.atomicfu.update
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
@@ -593,6 +594,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                     outChanges += IndexChange(it)
                 }
             }
+
+            this.lastVersion.update { old ->
+                if (old < version.timestamp.toLong()) version.timestamp.toLong() else old
+            }
+            tr.set(updateSignalKey, versionBytes)
 
             launch(updateDispatcher) {
                 updateSharedFlow.emit(Update.Change(dataModel, key, version.timestamp, changes + outChanges))

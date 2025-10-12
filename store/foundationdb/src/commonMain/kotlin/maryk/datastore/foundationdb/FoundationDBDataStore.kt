@@ -7,10 +7,12 @@ import com.apple.foundationdb.TransactionContext
 import com.apple.foundationdb.directory.DirectoryLayer
 import com.apple.foundationdb.directory.DirectorySubspace
 import com.apple.foundationdb.tuple.Tuple
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.future.await
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
@@ -38,12 +40,14 @@ import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.query.responses.updates.RemovalReason
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.foundationdb.model.storeModelDefinition
@@ -75,6 +79,7 @@ import maryk.datastore.foundationdb.processors.processScanUpdatesRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.updates.Update
 import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
@@ -114,6 +119,9 @@ class FoundationDBDataStore private constructor(
     private lateinit var rootDirectory: DirectorySubspace
     internal val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
 
+    internal val lastVersion = atomic(0L)
+    internal lateinit var updateSignalKey: ByteArray
+
     internal inline fun <T> runTransaction(
         crossinline block: (Transaction) -> T
     ): T =
@@ -132,6 +140,13 @@ class FoundationDBDataStore private constructor(
         rootDirectory = runTransactionAsync { tr ->
             DirectoryLayer.getDefault().createOrOpen(tr, directoryRootPath)
         }.await()
+
+        updateSignalKey = rootDirectory.pack(Tuple.from("_updates"))
+        tc.run { tr ->
+            tr.get(updateSignalKey).join()
+        }?.let {
+            lastVersion.value = HLC.fromStorageBytes(it).timestamp.toLong()
+        }
 
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index] = openTableDirs(dataModel.Meta.name, historic = keepAllVersions)
@@ -294,6 +309,65 @@ class FoundationDBDataStore private constructor(
                     val pending = storeChannel.tryReceive().getOrNull() ?: break
                     pending.response.completeExceptionally(CancellationException("Datastore closing"))
                 }
+            }
+        }
+
+        this.launch {
+            var localLast = lastVersion.value.toULong()
+            while (isActive) {
+                val watch = tc.run { tr -> tr.watch(updateSignalKey) }
+                try {
+                    watch.await()
+                } catch (_: CancellationException) {
+                    break
+                }
+                val newVersion = runTransaction { tr ->
+                    tr.get(updateSignalKey).awaitResult()?.let { HLC.fromStorageBytes(it).timestamp } ?: 0uL
+                }
+                if (newVersion > localLast) {
+                    emitUpdatesFromDatabase(localLast + 1u, newVersion)
+                    lastVersion.value = newVersion.toLong()
+                    localLast = newVersion
+                }
+            }
+        }
+    }
+
+    private suspend fun emitUpdatesFromDatabase(fromVersion: ULong, toVersion: ULong) {
+        for (dataModel in dataModelsById.values) {
+            emitUpdatesForModel(dataModel, fromVersion, toVersion)
+        }
+    }
+
+    private suspend fun <DM : IsRootDataModel> emitUpdatesForModel(
+        dataModel: DM,
+        fromVersion: ULong,
+        toVersion: ULong,
+    ) {
+        val response = execute(
+            dataModel.scanUpdates(
+                fromVersion = fromVersion,
+                toVersion = toVersion,
+                limit = UInt.MAX_VALUE
+            )
+        )
+        for (update in response.updates) {
+            when (update) {
+                is OrderedKeysUpdate<DM> -> Unit
+                is AdditionUpdate<DM> -> updateSharedFlow.emit(
+                    Update.Addition(dataModel, update.key, update.version, update.values)
+                )
+                is ChangeUpdate<DM> -> updateSharedFlow.emit(
+                    Update.Change(dataModel, update.key, update.version, update.changes)
+                )
+                is RemovalUpdate<DM> -> updateSharedFlow.emit(
+                    Update.Deletion(
+                        dataModel,
+                        update.key,
+                        update.version,
+                        update.reason == RemovalReason.HardDelete
+                    )
+                )
             }
         }
     }

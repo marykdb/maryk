@@ -1,6 +1,8 @@
 package maryk.datastore.foundationdb
 
+import com.apple.foundationdb.DatabaseOptions
 import com.apple.foundationdb.FDB
+import com.apple.foundationdb.Transaction
 import com.apple.foundationdb.TransactionContext
 import com.apple.foundationdb.directory.DirectoryLayer
 import com.apple.foundationdb.directory.DirectorySubspace
@@ -56,6 +58,7 @@ import maryk.datastore.foundationdb.processors.AnyScanChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.processAddRequest
 import maryk.datastore.foundationdb.processors.processAdditionUpdate
 import maryk.datastore.foundationdb.processors.processChangeRequest
@@ -72,6 +75,8 @@ import maryk.datastore.foundationdb.processors.processScanUpdatesRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
+import java.util.concurrent.CompletableFuture
+import java.util.function.Function
 
 /**
  * FoundationDB DataStore (JVM-only).
@@ -83,6 +88,7 @@ class FoundationDBDataStore private constructor(
     val directoryRootPath: List<String> = listOf("maryk"),
     dataModelsById: Map<UInt, IsRootDataModel>,
     private val onlyCheckModelVersion: Boolean = false,
+    val databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
     val migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
     val versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
 ) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
@@ -94,6 +100,12 @@ class FoundationDBDataStore private constructor(
     private val tenantDB = tenantName?.let { db.openTenant(tenantName) }
     internal val tc: TransactionContext = tenantDB ?: db
 
+    init {
+        db.options().apply {
+            databaseOptionsSetter()
+        }
+    }
+
     // Keep the actor single-threaded for transactional safety while dispatching updates on IO.
     internal val updateDispatcher = Dispatchers.IO
 
@@ -102,8 +114,22 @@ class FoundationDBDataStore private constructor(
     private lateinit var rootDirectory: DirectorySubspace
     internal val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
 
+    internal inline fun <T> runTransaction(
+        crossinline block: (Transaction) -> T
+    ): T =
+        tc.run(Function { tr ->
+            block(tr)
+        })
+
+    internal inline fun <T> runTransactionAsync(
+        crossinline block: (Transaction) -> CompletableFuture<T>
+    ): CompletableFuture<T> =
+        tc.runAsync(Function { tr ->
+            block(tr)
+        })
+
     suspend fun initAsync() {
-        rootDirectory = tc.runAsync { tr ->
+        rootDirectory = runTransactionAsync { tr ->
             DirectoryLayer.getDefault().createOrOpen(tr, directoryRootPath)
         }.await()
 
@@ -171,12 +197,12 @@ class FoundationDBDataStore private constructor(
     private fun openTableDirs(
         modelName: String,
         historic: Boolean = false
-    ): IsTableDirectories = tc.run { tr ->
-        val modelDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "meta")).join()
-        val keysDir         = rootDirectory.createOrOpen(tr, listOf(modelName, "keys")).join()
-        val tableDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "table")).join()
-        val uniqueDir       = rootDirectory.createOrOpen(tr, listOf(modelName, "unique")).join()
-        val indexDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "index")).join()
+    ): IsTableDirectories = runTransaction { tr ->
+        val modelDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "meta")).awaitResult()
+        val keysDir         = rootDirectory.createOrOpen(tr, listOf(modelName, "keys")).awaitResult()
+        val tableDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "table")).awaitResult()
+        val uniqueDir       = rootDirectory.createOrOpen(tr, listOf(modelName, "unique")).awaitResult()
+        val indexDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "index")).awaitResult()
 
         if (!historic) {
             TableDirectories(
@@ -188,9 +214,9 @@ class FoundationDBDataStore private constructor(
                 index  = indexDir
             )
         } else {
-            val histTableDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "table_versioned")).join()
-            val histIndexDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "index_versioned")).join()
-            val histUniqueDir   = rootDirectory.createOrOpen(tr, listOf(modelName, "unique_versioned")).join()
+            val histTableDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "table_versioned")).awaitResult()
+            val histIndexDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "index_versioned")).awaitResult()
+            val histUniqueDir   = rootDirectory.createOrOpen(tr, listOf(modelName, "unique_versioned")).awaitResult()
 
             HistoricTableDirectories(
                 dataStore     = this,
@@ -305,6 +331,7 @@ class FoundationDBDataStore private constructor(
             tenantName: Tuple? = null,
             dataModelsById: Map<UInt, IsRootDataModel>,
             onlyCheckModelVersion: Boolean = false,
+            databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
             migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
             versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
         ) = FoundationDBDataStore(
@@ -314,8 +341,9 @@ class FoundationDBDataStore private constructor(
             tenantName = tenantName,
             dataModelsById = dataModelsById,
             onlyCheckModelVersion = onlyCheckModelVersion,
+            databaseOptionsSetter = databaseOptionsSetter,
             migrationHandler = migrationHandler,
-            versionUpdateHandler = versionUpdateHandler
+            versionUpdateHandler = versionUpdateHandler,
         ).apply {
             try {
                 initAsync()

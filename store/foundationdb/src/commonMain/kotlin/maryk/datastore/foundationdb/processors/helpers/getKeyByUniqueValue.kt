@@ -18,7 +18,7 @@ internal fun Transaction.getKeyByUniqueValue(
     handle: (keyBytes: ByteArray, setAtVersion: ULong) -> Unit
 ) {
     if (toVersion == null) {
-        val value = this.get(packKey(tableDirs.uniquePrefix, reference)).join()
+        val value = this.get(packKey(tableDirs.uniquePrefix, reference)).awaitResult()
         if (value != null && value.size >= VERSION_BYTE_SIZE) {
             val setAtVersion = value.readVersionBytes()
             val keyBytes = value.copyOfRange(VERSION_BYTE_SIZE, value.size)

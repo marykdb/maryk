@@ -50,7 +50,7 @@ internal fun handleMapAdditionCount(
 
     @Suppress("UNCHECKED_CAST")
     val parentRef = reference.parentReference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *>
-    val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, parentRef.toStorageByteArray())).join()
+    val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, parentRef.toStorageByteArray())).awaitResult()
     val prevCount = countEntry?.let { arr ->
         var ri = VERSION_BYTE_SIZE
         maryk.core.extensions.bytes.initIntByVar { arr[ri++] }

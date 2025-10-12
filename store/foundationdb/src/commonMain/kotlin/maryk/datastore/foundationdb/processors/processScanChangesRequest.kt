@@ -17,7 +17,7 @@ internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootData
 /** Processes a ScanChangesRequest in a [storeAction] into a [FoundationDBDataStore] */
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
 ) {
     val scanRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
@@ -29,7 +29,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
     val dataFetchType = this.processScan(
         scanRequest = scanRequest,
         tableDirs = tableDirs,
-        scanSetup = { /* no-op */ }
+        scanSetup = { /* no-op */ },
     ) { key, creationVersion, sortingKey ->
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
             runBlocking {
@@ -37,7 +37,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
             }
         }
 
-        val change = this.tc.run { tr ->
+        val change = this.runTransaction { tr ->
             scanRequest.dataModel.readTransactionIntoObjectChanges(
                 tr = tr,
                 creationVersion = creationVersion,
@@ -62,4 +62,3 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
         )
     )
 }
-

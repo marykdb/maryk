@@ -62,7 +62,6 @@ suspend fun openStore() = FoundationDBDataStore.open(
     },
     versionUpdateHandler = { fdbStore, storedModel, newModel ->
         // seed or backfill after a successful migration/update
-        Unit
     }
 )
 ```
@@ -75,6 +74,19 @@ Model changes that generally do NOT require a migration: adding models, indexes,
 - `fdbClusterFilePath`: Optional path to an FDB cluster file; uses default environment if null.
 - `tenantName`: Optional `Tuple` to open a tenant.
 - `directoryPath`: Subspace root path under which model directories are created.
+- `databaseOptionsSetter`: Lambda executed once during startup on the underlying `DatabaseOptions`. Use this to enable tracing, tweak locality, or set transaction logging limits without forking Maryk.
+
+Example: set custom transaction retry limits
+
+```kotlin
+val store = FoundationDBDataStore.open(
+    dataModelsById = mapOf(1u to Account),
+    databaseOptionsSetter = {
+        setTransactionRetryLimit(3)
+        setTransactionMaxRetryDelay(5000)
+    }
+)
+```
 
 ## Operational Tips
 

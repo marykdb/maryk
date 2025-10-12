@@ -9,6 +9,7 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.FetchByKey
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
@@ -21,7 +22,7 @@ internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootDataMo
 /** Processes a GetChangesRequest in a [storeAction] into a [FoundationDBDataStore] */
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesRequest(
     storeAction: GetChangesStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
 ) {
     val getRequest = storeAction.request
     val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
@@ -33,8 +34,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
     val tableDirs = getTableDirs(dbIndex)
 
     keyWalk@ for (key in getRequest.keys) {
-        val changes: DataObjectVersionedChange<DM>? = tc.run { tr ->
-            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).join()
+        val changes: DataObjectVersionedChange<DM>? = runTransaction { tr ->
+            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
             if (existing == null) {
                 null
             } else {
@@ -86,4 +87,3 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
         )
     )
 }
-

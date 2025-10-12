@@ -16,6 +16,7 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
@@ -38,12 +39,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
     hardDelete: Boolean,
     cache: Cache,
 ): IsDeleteResponseStatus<DM> = try {
-    tc.run<IsDeleteResponseStatus<DM>> { tr ->
-        val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).join() != null
+        runTransaction { tr ->
+            val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult() != null
 
-        if (!exists) {
-            return@run DoesNotExist(key)
-        }
+            if (!exists) {
+                return@runTransaction DoesNotExist(key)
+            }
 
         val versionBytes = HLC.toStorageBytes(version)
 
@@ -63,7 +64,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         run {
             val prefix = packKey(tableDirs.tablePrefix, key.bytes)
             val range = FDBRange.startsWith(prefix)
-            val kvs = tr.getRange(range).asList().join()
+            val kvs = tr.getRange(range).asList().awaitResult()
             for (kv in kvs) {
                 val fullKey = kv.key
                 // Skip meta latest-version entry

@@ -45,7 +45,7 @@ internal fun createValueWriter(
                 if (isComparableUnique) {
                     val uniqueRef = reference + valueBytes
                     try {
-                        val uniqueExists = tr.get(packKey(tableDirs.uniquePrefix, uniqueRef)).join()
+                        val uniqueExists = tr.get(packKey(tableDirs.uniquePrefix, uniqueRef)).awaitResult()
                         if (uniqueExists != null) {
                             val existingKeyBytes = uniqueExists.copyOfRange(
                                 VERSION_BYTE_SIZE,
@@ -55,7 +55,7 @@ internal fun createValueWriter(
                         }
 
                         // Remove old unique entry if present for this qualifier
-                        val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, reference)).join()
+                        val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, reference)).awaitResult()
                         if (currentTop != null) {
                             val prevValueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
                             val oldUniqueRef = reference + prevValueBytes

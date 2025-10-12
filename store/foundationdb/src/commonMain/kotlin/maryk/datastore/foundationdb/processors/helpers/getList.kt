@@ -20,7 +20,7 @@ internal fun <T : Any> Transaction.getList(
     val referenceBytes = reference.toStorageByteArray()
 
     val prefix = packKey(tableDirs.tablePrefix, keyBytes, referenceBytes)
-    val kvs = this.getRange(Range.startsWith(prefix)).asList().join()
+    val kvs = this.getRange(Range.startsWith(prefix)).asList().awaitResult()
     if (kvs.isEmpty()) return mutableListOf()
 
     // First entry holds the count (version || varint count)

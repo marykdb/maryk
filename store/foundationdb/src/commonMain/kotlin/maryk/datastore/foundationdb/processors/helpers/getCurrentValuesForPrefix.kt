@@ -17,7 +17,7 @@ internal fun getCurrentValuesForPrefix(
 ): List<Pair<ByteArray, ByteArray>> {
     val prefix = packKey(tableDirs.tablePrefix, key.bytes, referencePrefix)
     val list = mutableListOf<Pair<ByteArray, ByteArray>>()
-    val kvs = tr.getRange(Range.startsWith(prefix)).asList().join()
+    val kvs = tr.getRange(Range.startsWith(prefix)).asList().awaitResult()
     for (kv in kvs) {
         // Extract qualifier after (tablePrefix + key)
         val qualifier = kv.key.copyOfRange(prefix.size - referencePrefix.size, kv.key.size)

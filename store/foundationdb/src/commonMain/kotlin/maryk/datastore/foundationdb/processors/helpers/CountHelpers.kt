@@ -14,7 +14,7 @@ internal fun getContainerCount(
     key: Key<*>,
     parentRef: IsPropertyReference<*, *, *>
 ): Int {
-    val packed = tr.get(packKey(tableDirs.tablePrefix, key.bytes, parentRef.toStorageByteArray())).join()
+    val packed = tr.get(packKey(tableDirs.tablePrefix, key.bytes, parentRef.toStorageByteArray())).awaitResult()
     return packed?.let { arr ->
         var ri = VERSION_BYTE_SIZE
         initIntByVar { arr[ri++] }

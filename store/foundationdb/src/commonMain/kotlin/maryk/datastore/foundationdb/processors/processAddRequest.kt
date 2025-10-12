@@ -31,7 +31,13 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAddRequ
                 val key = addRequest.keysForObjects?.getOrNull(index)
                     ?: addRequest.dataModel.key(objectToAdd)
 
-                val status = processAdd(tableDirs, addRequest.dataModel, key, version, objectToAdd)
+                val status = processAdd(
+                    tableDirs = tableDirs,
+                    dataModel = addRequest.dataModel,
+                    key = key,
+                    version = version,
+                    objectToAdd = objectToAdd,
+                )
 
                 statuses += status
             }

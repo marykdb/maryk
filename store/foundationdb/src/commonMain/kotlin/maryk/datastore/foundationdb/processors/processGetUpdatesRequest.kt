@@ -16,6 +16,7 @@ import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.shared.Cache
@@ -29,7 +30,7 @@ internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootDataMo
 /** Processes a GetUpdatesRequest in a [storeAction] into a [FoundationDBDataStore] */
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesRequest(
     storeAction: GetUpdatesStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
 ) {
     val getRequest = storeAction.request
 
@@ -46,9 +47,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
     var insertionIndex = -1
 
     keyWalk@ for (key in getRequest.keys) {
-        val result = this.tc.run {
-            tr ->
-            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).join()
+        val result = this.runTransaction { tr ->
+            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
             if (existing == null) {
                 Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
             } else {

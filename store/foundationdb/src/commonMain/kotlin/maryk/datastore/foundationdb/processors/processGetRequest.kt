@@ -13,6 +13,7 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.shared.Cache
@@ -36,8 +37,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
     getRequest.checkToVersion(keepAllVersions)
 
     keyWalk@ for (key in getRequest.keys) {
-        val valuesWithMetaData = tc.run<ValuesWithMetaData<DM>?> { tr ->
-            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).join()
+        val valuesWithMetaData = runTransaction { tr ->
+            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
             if (existing == null) {
                 null
             } else {
@@ -71,7 +72,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
         aggregator?.aggregate {
             @Suppress("UNCHECKED_CAST")
             valuesWithMetaData.values[it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>]
-                ?: tc.run { tr ->
+                ?: runTransaction { tr ->
                     tr.getValue(
                         tableDirs = tableDirs,
                         toVersion = getRequest.toVersion,

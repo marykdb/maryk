@@ -11,6 +11,6 @@ internal fun getLastVersion(
     tableDirs: IsTableDirectories,
     key: Key<*>
 ): ULong {
-    val latest = tr.get(packKey(tableDirs.tablePrefix, key.bytes)).join() ?: return 0u
+    val latest = tr.get(packKey(tableDirs.tablePrefix, key.bytes)).awaitResult() ?: return 0u
     return HLC.fromStorageBytes(latest).timestamp
 }

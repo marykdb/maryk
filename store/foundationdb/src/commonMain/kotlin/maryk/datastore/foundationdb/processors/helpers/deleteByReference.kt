@@ -135,7 +135,7 @@ internal fun <T : Any> deleteByReference(
     // Maintain unique index for top-level comparable unique values
     val def = reference.propertyDefinition
     if (def is IsComparableDefinition<*, *> && def.unique) {
-        val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes)).join()
+        val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes)).awaitResult()
         if (currentTop != null) {
             val valueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
             val uniqueRef = referenceBytes + valueBytes

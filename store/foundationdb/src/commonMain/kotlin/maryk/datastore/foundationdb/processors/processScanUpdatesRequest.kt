@@ -25,6 +25,7 @@ import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
@@ -41,7 +42,7 @@ internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootData
 /** Processes a ScanUpdatesRequest in a [storeAction] into a [FoundationDBDataStore] */
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequest(
     storeAction: ScanUpdatesStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
 ) {
     val scanRequest = storeAction.request
     val dbIndex = getDataModelId(scanRequest.dataModel)
@@ -59,8 +60,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
     scanRequest.checkMaxVersions(keepAllVersions)
 
-    fun getSingleValues(key: Key<DM>, creationVersion: ULong, cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?): ValuesWithMetaData<DM>? {
-        return this.tc.run { tr ->
+    fun getSingleValues(
+        key: Key<DM>,
+        creationVersion: ULong,
+        cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
+    ): ValuesWithMetaData<DM>? {
+        return this.runTransaction { tr ->
             scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                 tr = tr,
                 creationVersion = creationVersion,
@@ -81,7 +86,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 sortingKeys = mutableListOf()
                 sortingIndex = indexScan.index
             }
-        }
+        },
     ) { key, creationVersion, sortingKey ->
         insertionIndex++
 
@@ -89,7 +94,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
         // Add sorting index if requested
         sortingIndex?.let { idx ->
-            this.tc.run { tr ->
+            this.runTransaction { tr ->
                 val getter = StoreValuesGetter(tr, tableDirs)
                 getter.moveToKey(key.bytes, scanRequest.toVersion)
                 idx.toStorageByteArrayForIndex(getter, key.bytes)?.let { indexableBytes ->
@@ -99,7 +104,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
         }
 
         // Determine last known version for ordered response metadata
-        this.tc.run { tr ->
+        this.runTransaction { tr ->
             val last = getLastVersion(tr, tableDirs, key)
             lastResponseVersion = maxOf(lastResponseVersion, last)
         }
@@ -110,7 +115,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
             }
         }
 
-        val objectChange = this.tc.run { tr ->
+        val objectChange = this.runTransaction { tr ->
             scanRequest.dataModel.readTransactionIntoObjectChanges(
                 tr = tr,
                 creationVersion = creationVersion,
@@ -182,9 +187,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
     scanRequest.orderedKeys?.let { orderedKeys ->
         // Removals for keys no longer in range
         orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
-            this.tc.run { tr ->
+            this.runTransaction { tr ->
                 for (removedKey in removedKeys) {
-                    val exists = tr.get(packKey(tableDirs.keysPrefix, removedKey.bytes)).join()
+                    val exists = tr.get(packKey(tableDirs.keysPrefix, removedKey.bytes)).awaitResult()
                     updates += RemovalUpdate(
                         key = removedKey,
                         version = lastResponseVersion,
@@ -200,9 +205,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
         // Additions for keys newly added in range relative to old orderedKeys
         matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
-            this.tc.run { tr ->
+            this.runTransaction { tr ->
                 for (addedKey in addedKeys) {
-                    val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).join()
+                    val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).awaitResult()
                     if (createdBytes != null) {
                         val createdVersion = HLC.fromStorageBytes(createdBytes).timestamp
 

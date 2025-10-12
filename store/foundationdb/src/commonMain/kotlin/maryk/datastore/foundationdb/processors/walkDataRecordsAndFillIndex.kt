@@ -10,6 +10,7 @@ import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
@@ -71,7 +72,7 @@ internal fun walkDataRecordsAndFillIndex(
             val kv = it.next()
             val fullKey = kv.key
             val keyBytes = fullKey.copyOfRange(tableDirectories.keysPrefix.size, fullKey.size)
-            val latestVersion = tr.get(packKey(tableDirectories.tablePrefix, keyBytes)).join() ?: continue
+            val latestVersion = tr.get(packKey(tableDirectories.tablePrefix, keyBytes)).awaitResult() ?: continue
             processKey(keyBytes, latestVersion)
         }
     }

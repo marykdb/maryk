@@ -26,6 +26,7 @@ import maryk.core.values.Values
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setCreatedVersion
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
@@ -46,10 +47,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()
 
-    tc.run<IsAddResponseStatus<DM>> { tr ->
+    runTransaction { tr ->
         val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
 
-        val existing = tr.get(packedKey).join()
+        val existing = tr.get(packedKey).awaitResult()
         if (existing != null) {
             AlreadyExists(key)
         } else {
@@ -84,7 +85,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                             val uniqueRef = reference + valueBytes
                             checks += {
                                 val uniqueKey = packKey(tableDirs.uniquePrefix, uniqueRef)
-                                val uniqueExists = tr.get(uniqueKey).join()
+                                val uniqueExists = tr.get(uniqueKey).awaitResult()
                                 if (uniqueExists != null) {
                                     // Stored as (version || key)
                                     val existingKeyBytes = uniqueExists.copyOfRange(

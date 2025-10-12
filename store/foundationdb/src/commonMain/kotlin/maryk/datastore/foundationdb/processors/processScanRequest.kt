@@ -21,7 +21,7 @@ internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel>
 /** Processes a ScanRequest in a [storeAction] into a [FoundationDBDataStore] */
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
     storeAction: ScanStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
 ) {
     val scanRequest = storeAction.request
     val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
@@ -30,7 +30,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
 
     val aggregator = scanRequest.aggregations?.let { Aggregator(it) }
 
-    val responseFetchType = tc.run { tr ->
+    val responseFetchType = runTransaction { tr ->
         this@processScanRequest.processScan(
             scanRequest = scanRequest,
             tableDirs = tableDirs,

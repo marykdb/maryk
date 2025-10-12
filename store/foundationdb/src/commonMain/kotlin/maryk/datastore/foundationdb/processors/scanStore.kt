@@ -41,7 +41,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanStore(
         responseStopKey = scanRange.ranges.last().getAscendingStartKey()
     }
 
-    tc.run { tr ->
+    runTransaction { tr ->
         val it = tr.getRange(Range.startsWith(prefix)).iterator()
         var streamed = 0u
         val start = scanRange.startKey

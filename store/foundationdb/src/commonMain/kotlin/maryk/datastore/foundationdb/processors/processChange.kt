@@ -65,6 +65,7 @@ import maryk.core.values.Values
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.checkParentReference
 import maryk.datastore.foundationdb.processors.helpers.createValueWriter
 import maryk.datastore.foundationdb.processors.helpers.deleteByReference
@@ -107,16 +108,16 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 ): IsChangeResponseStatus<DM> {
     var checkFailed = false
     val result: IsChangeResponseStatus<DM> = try {
-        tc.run { tr ->
-            tr.get(packKey(tableDirs.keysPrefix, key.bytes)).join()
-                ?: return@run DoesNotExist(key)
+        runTransaction { tr ->
+            tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
+                ?: return@runTransaction DoesNotExist(key)
 
             // Validate expected last version if provided
-            val latest = tr.get(packKey(tableDirs.tablePrefix, key.bytes)).join()
-                ?: return@run DoesNotExist(key)
+            val latest = tr.get(packKey(tableDirs.tablePrefix, key.bytes)).awaitResult()
+                ?: return@runTransaction DoesNotExist(key)
             val latestHlc = HLC.fromStorageBytes(latest)
             if (lastVersion != null && latestHlc.timestamp != lastVersion) {
-                return@run ValidationFail(
+                return@runTransaction ValidationFail(
                     listOf(InvalidValueException(null, "Version of object was different than given: $lastVersion < ${latestHlc.timestamp}"))
                 )
             }
@@ -159,7 +160,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 if (exceptions.isNotEmpty()) {
                     throw EarlyStatus(ValidationFail<DM>(exceptions))
                 } else {
-                    return@run ChangeSuccess(version.timestamp, emptyList())
+                    return@runTransaction ChangeSuccess(version.timestamp, emptyList())
                 }
             }
 
@@ -203,7 +204,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         is Check -> {
                             for ((reference, expected) in change.referenceValuePairs) {
                                 val refBytes = reference.toStorageByteArray()
-                                val packed = tr.get(packKey(tableDirs.tablePrefix, key.bytes, refBytes)).join()
+                                val packed = tr.get(packKey(tableDirs.tablePrefix, key.bytes, refBytes)).awaitResult()
                                 if (packed == null) {
                                     addValidation(InvalidValueException(reference, expected.toString()))
                                 } else {
@@ -478,7 +479,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 }
 
                                 if (countChange != 0) {
-                                    val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, setChange.reference.toStorageByteArray())).join()
+                                    val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, setChange.reference.toStorageByteArray())).awaitResult()
                                     val prevCount = countEntry?.let { arr ->
                                         var ri = VERSION_BYTE_SIZE
                                         initIntByVar { arr[ri++] }
@@ -516,7 +517,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         )
                                     }
 
-                                    val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, valueChange.reference.toStorageByteArray())).join()
+                                    val countEntry = tr.get(packKey(tableDirs.tablePrefix, key.bytes, valueChange.reference.toStorageByteArray())).awaitResult()
                                     val prevCount = countEntry?.let { arr ->
                                         var ri = VERSION_BYTE_SIZE
                                         initIntByVar { arr[ri++] }
@@ -526,7 +527,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 }
                             }
                         }
-                        else -> return@run ServerFail("Unsupported operation $change")
+                        else -> return@runTransaction ServerFail("Unsupported operation $change")
                     }
                 }
             } catch (e: ValidationUmbrellaException) {

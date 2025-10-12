@@ -22,7 +22,7 @@ internal fun <T : Any> Transaction.getValue(
 ): T? {
     return if (toVersion == null) {
         val packedKey = packKey(tableDirs.tablePrefix, keyAndReference)
-        val value = this.get(packedKey).join() ?: return null
+        val value = this.get(packedKey).awaitResult() ?: return null
         handleResult(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
     } else {
         val historicDirs = tableDirs as? HistoricTableDirectories

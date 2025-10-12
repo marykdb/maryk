@@ -11,6 +11,7 @@ import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 
 fun checkModelIfMigrationIsNeeded(
@@ -29,8 +30,8 @@ fun checkModelIfMigrationIsNeeded(
     val (name, version) = tc.run { tr ->
         val nameF = tr.get(nameKey)
         val versionF = tr.get(versionKey)
-        val nameBytes = nameF.join()
-        val versionBytes = versionF.join()
+        val nameBytes = nameF.awaitResult()
+        val versionBytes = versionF.awaitResult()
 
         val readName = nameBytes?.decodeToString()
         val readVersion = versionBytes?.let { bytes ->
@@ -47,7 +48,7 @@ fun checkModelIfMigrationIsNeeded(
     return if (dataModel.Meta.version != version || !onlyCheckModelVersion) {
         // Ensure dependent model definitions are available in the conversion context
         tc.run { tr ->
-            val depBytes = tr.get(dependentsDefKey).join()
+            val depBytes = tr.get(dependentsDefKey).awaitResult()
             if (depBytes != null) {
                 var readIndex = 0
                 Definitions.Serializer
@@ -58,7 +59,7 @@ fun checkModelIfMigrationIsNeeded(
 
         // Load stored model definition
         val storedDataModel = tc.run { tr ->
-            val modelBytes = tr.get(modelDefKey).join()
+            val modelBytes = tr.get(modelDefKey).awaitResult()
                 ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.Meta.name}")
 
             var readIndex = 0

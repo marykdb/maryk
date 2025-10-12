@@ -13,7 +13,7 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.shared.StoreAction
 
 /** Processes a Change UpdateResponse into FoundationDB */
-internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeUpdate(
+internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeUpdate(
     storeAction: StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>,
 ) {
     val dataModel = storeAction.request.dataModel
@@ -50,4 +50,3 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeU
         )
     }
 }
-

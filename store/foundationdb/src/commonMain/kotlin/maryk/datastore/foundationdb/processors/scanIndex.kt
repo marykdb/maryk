@@ -20,6 +20,7 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
@@ -55,7 +56,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
     // Compute response metadata start/stop
     // Build a helper valuesGetter for computing index start from the startKey (respecting toVersion)
     val startIndexKey: ByteArray? = scanRequest.startKey?.let { startKey ->
-        tc.run { tr ->
+        runTransaction { tr ->
             val getter = object : IsValuesGetter {
                 override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
                     propertyReference: IsPropertyReference<T, D, C>
@@ -83,7 +84,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
     data class Rec(val sort: ByteArray, val keyBytes: ByteArray, val created: ULong)
     val collected = mutableListOf<Rec>()
 
-    tc.run { tr ->
+    runTransaction { tr ->
         if (!useHistoric) {
             // Iterate per computed index range segment
             val base = packKey(tableDirs.indexPrefix, indexReference)
@@ -111,7 +112,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
 
                     val keyOffset = valueOffset + valueSize
                     val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
-                    val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).join() ?: continue
+                    val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                     val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
                     if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion)) continue
                     collected += Rec(sortingKey, keyBytes, createdVersion)
@@ -170,7 +171,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
                     // For historic filter checks, pass null as creationVersion to avoid excluding records created after toVersion
                     if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion)) continue
 
-                    val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).join() ?: continue
+                    val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                     val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
                     val version = k.readReversedVersionBytes(versionOffset)
                     val rec = Rec(valueAndKey, keyBytes, createdVersion)

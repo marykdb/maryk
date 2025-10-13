@@ -19,11 +19,18 @@ jobs:
   build:
     strategy:
       matrix:
-        os:
-          - macos-latest
-          #- ubuntu-latest
-          #- windows-latest
+        include:
+          - os: macos-latest
+            gradle_task: "macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test iosSimulatorArm64Test"
+            job_name: macOS Apple tests
+          - os: ubuntu-latest
+            gradle_task: allTests
+            job_name: Linux all tests
+          - os: windows-latest
+            gradle_task: mingwX64Test
+            job_name: Windows MinGW tests
       fail-fast: false
+    name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.os }}
     env:
       FDB_VERSION: '7.3.69'
@@ -86,10 +93,20 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-home-cache-cleanup: true
+          cache-cleanup: on-success
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      - name: Build the project
+      - name: Run Gradle tasks
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g
-        run: ./gradlew build --stacktrace --parallel --build-cache
+        shell: bash
+        run: ./gradlew ${{ matrix.gradle_task }} --stacktrace --parallel --build-cache --scan
+
+      - name: Upload build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: final-build-report-${{ runner.os }}
+          path: build/reports
+          if-no-files-found: ignore
+          compression-level: 9

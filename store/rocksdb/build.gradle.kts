@@ -1,6 +1,7 @@
 import org.gradle.kotlin.dsl.support.serviceOf
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
+import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
@@ -53,6 +54,12 @@ tasks.withType<Test>().configureEach {
 }
 
 kotlin.targets.withType<KotlinNativeTarget>().configureEach {
+    if (konanTarget.family == Family.MINGW) {
+        binaries.all {
+            linkerOpts("-lrpcrt4")
+        }
+    }
+
     binaries.withType<TestExecutable>().all {
         tasks.findByName("${this.target.name}Test")?.apply {
             configureTestDatabase()

@@ -1,5 +1,8 @@
+@file:OptIn(ExperimentalForeignApi::class)
+
 package maryk
 
+import kotlinx.cinterop.ExperimentalForeignApi
 import platform.posix.opendir
 
 actual fun doesFolderExist(path: String): Boolean {

@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
@@ -140,7 +141,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         }
 
         // Emit update and return success
-        launch(updateDispatcher) {
+        launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
             updateSharedFlow.emit(
                 Update.Deletion(
                     dataModel,

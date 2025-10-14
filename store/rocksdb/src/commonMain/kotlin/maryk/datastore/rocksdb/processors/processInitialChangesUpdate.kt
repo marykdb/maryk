@@ -11,7 +11,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
-import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
 
 /** Processes a UpdateResponse with Change in a [storeAction] into a [RocksDBDataStore] */
@@ -29,7 +29,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
 
     val changeStatuses = mutableListOf<IsAddOrChangeResponseStatus<DM>>()
 
-    Transaction(this).use { transaction ->
+    withTransaction { transaction ->
         for (change in update.changes) {
             for (versionedChange in change.changes) {
                 if (versionedChange.changes.contains(ObjectCreate)) {

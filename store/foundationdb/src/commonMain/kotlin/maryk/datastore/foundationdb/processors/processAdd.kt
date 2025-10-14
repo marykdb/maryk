@@ -1,5 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
@@ -139,7 +140,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                 }
             }
 
-            launch(updateDispatcher) {
+            launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
                 updateSharedFlow.emit(
                     Update.Addition(
                         dataModel,

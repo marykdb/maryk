@@ -136,3 +136,14 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         return if (index >= 0) columnChanges[index] else null
     }
 }
+
+internal suspend fun <T> RocksDBDataStore.withTransaction(
+    block: suspend (Transaction) -> T
+): T {
+    val transaction = Transaction(this)
+    try {
+        return block(transaction)
+    } finally {
+        transaction.close()
+    }
+}

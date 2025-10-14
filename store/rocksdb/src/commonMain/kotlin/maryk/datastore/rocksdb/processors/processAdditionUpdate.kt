@@ -8,7 +8,7 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
-import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
 
 internal typealias ProcessUpdateResponseStoreAction<DM> = StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>
@@ -29,7 +29,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAdditionUpda
     val dbIndex = getDataModelId(dataModel)
     val columnFamilies = getColumnFamilies(dbIndex)
 
-    val result = Transaction(this).use { transaction ->
+    val result = withTransaction { transaction ->
         processAdd(
             dataModel,
             transaction,

@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.invert
@@ -17,6 +18,7 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
+import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.bytes.combineToByteArray
@@ -26,7 +28,7 @@ import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
-internal fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
+internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     dataModel: DM,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
@@ -45,7 +47,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
 
     when {
         exists -> {
-            Transaction(this).use { transaction ->
+            withTransaction { transaction ->
                 // Create version bytes
                 val versionBytes = HLC.toStorageBytes(version)
 
@@ -166,7 +168,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                 transaction.commit()
             }
 
-            launch(updateDispatcher) {
+            launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
                 updateSharedFlow.emit(
                     Deletion(dataModel, key, version.timestamp, hardDelete)
                 )

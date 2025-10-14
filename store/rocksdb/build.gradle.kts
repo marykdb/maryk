@@ -20,11 +20,6 @@ kotlin {
                 api(projects.store.shared)
             }
         }
-        androidUnitTest {
-            dependencies {
-                implementation("io.maryk.rocksdb:rocksdb-multiplatform-jvm:_")
-            }
-        }
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
@@ -33,6 +28,10 @@ kotlin {
             }
         }
     }
+}
+
+kotlin.sourceSets.findByName("androidUnitTest")?.dependencies {
+    implementation("io.maryk.rocksdb:rocksdb-multiplatform-jvm:_")
 }
 
 fun Task.configureTestDatabase() {

@@ -113,7 +113,6 @@ class RocksDBDataStore private constructor(
 
     internal val db: RocksDB
 
-    // Keep the actor single-threaded while emitting updates on the shared IO dispatcher.
     internal val updateDispatcher = Dispatchers.IO
 
     private val defaultWriteOptions = WriteOptions()

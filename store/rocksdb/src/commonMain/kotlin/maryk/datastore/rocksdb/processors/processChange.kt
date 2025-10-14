@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
@@ -689,7 +690,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             }
         }
 
-        launch(updateDispatcher) {
+        launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
             updateSharedFlow.emit(
                 Update.Change(dataModel, key, version.timestamp, changes + outChanges)
             )

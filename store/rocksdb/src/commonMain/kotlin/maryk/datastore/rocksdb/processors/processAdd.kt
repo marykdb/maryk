@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors
 
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
@@ -149,7 +150,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
 
             val changes = listOf<IsChange>()
 
-            launch(updateDispatcher) {
+            launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
                 updateSharedFlow.emit(
                     Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
                 )

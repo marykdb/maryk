@@ -22,7 +22,10 @@ jobs:
         include:
           - os: macos-latest
             gradle_task: "macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test iosSimulatorArm64Test"
-            job_name: macOS Apple tests
+            job_name: macOS Apple Arm tests
+          - os: macos-15-intel
+            gradle_task: "macosX64Test"
+            job_name: macOS Apple Intel tests
           - os: ubuntu-latest
             gradle_task: allTests
             job_name: Linux all tests
@@ -106,7 +109,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: final-build-report-${{ runner.os }}
+          name: final-build-report-${{ runner.os }}-${{ runner.arch }}
           path: build/reports
           if-no-files-found: ignore
           compression-level: 9

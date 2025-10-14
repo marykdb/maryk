@@ -14,9 +14,6 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         google()
-        maven {
-            url = uri("https://central.sonatype.com/repository/maven-snapshots/")
-        }
     }
 }
 

@@ -30,7 +30,6 @@ jobs:
             gradle_task: linuxX64Test jsTest jvmTest
             job_name: Linux all tests
           - os: windows-latest
-            prewarm_tasks: ":lib:compileKotlinMingwX64"
             gradle_task: mingwX64Test :core:jvmTest
             job_name: Windows MinGW tests
       fail-fast: false
@@ -92,7 +91,7 @@ jobs:
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g
         shell: bash
-        run: ./gradlew ${{ matrix.gradle_task }} --stacktrace --build-cache
+        run: ./gradlew ${{ matrix.gradle_task }} --stacktrace --build-cache --no-parallel
 
       - name: Upload build reports
         if: always()

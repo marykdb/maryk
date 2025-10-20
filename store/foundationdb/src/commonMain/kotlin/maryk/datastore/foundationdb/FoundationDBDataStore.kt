@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.future.await
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.isActive
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
@@ -284,7 +285,9 @@ class FoundationDBDataStore private constructor(
                         }
                     } catch (e: CancellationException) {
                         storeAction.response.cancel(e)
-                        throw e
+                        if (!isActive) {
+                            throw e
+                        }
                     } catch (e: Throwable) {
                         storeAction.response.completeExceptionally(e)
                     }

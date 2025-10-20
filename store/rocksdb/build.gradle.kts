@@ -31,10 +31,6 @@ kotlin {
     }
 }
 
-kotlin.sourceSets.findByName("androidUnitTest")?.dependencies {
-    implementation("io.maryk.rocksdb:rocksdb-multiplatform-jvm:_")
-}
-
 fun Task.configureTestDatabase() {
     val testDatabaseDir = layout.buildDirectory.dir("test-database")
 

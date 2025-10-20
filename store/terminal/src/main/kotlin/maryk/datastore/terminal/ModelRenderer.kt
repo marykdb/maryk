@@ -24,7 +24,7 @@ fun renderModelDefinition(model: StoredModel): List<String> {
     val meta = model.definition.Meta
     lines += "  Key definition: ${meta.keyDefinition::class.simpleName ?: meta.keyDefinition}".trimEnd()
     meta.indexes?.takeIf { it.isNotEmpty() }?.let { indexes ->
-        lines += "  Indexes:" 
+        lines += "  Indexes:"
         indexes.forEach { index -> lines += "    - $index" }
     }
     meta.reservedNames?.takeIf { it.isNotEmpty() }?.let { names ->
@@ -129,9 +129,7 @@ private fun collectAttributes(definition: IsPropertyDefinition<*>): List<String>
         is EnumDefinition<*> -> {
             attributes += "enum: ${definition.enum.name}"
             @Suppress("UNCHECKED_CAST")
-            val cases = definition.enum.cases()
-                .map { enumCase -> (enumCase as IndexedEnum).name }
-                .joinToString()
+            val cases = definition.enum.cases().joinToString { enumCase -> (enumCase as IndexedEnum).name }
             if (cases.isNotBlank()) {
                 attributes += "cases: $cases"
             }

@@ -26,7 +26,7 @@ Below is a practical overview of each engine, why it was chosen, and when to use
 ### RocksDB
 
 - Type: Embedded, persistent key‑value store with column families.
-- Strengths: Ordered keyspace and efficient range scans; column family isolation; robust single‑node performance; broad platform support (JVM, iOS, macOS, Android, Linux).
+- Strengths: Ordered keyspace and efficient range scans; column family isolation; robust single‑node performance; broad platform support (JVM, iOS, macOS, watchOS, tvOS, Android, Windows, Linux).
 - Why it’s a great fit: Maryk stores each model in multiple column families (keys/table/index/unique and historic variants when `keepAllVersions` is enabled). RocksDB’s ordered iteration and prefix/range reads map directly to Maryk’s layout, making latest and historic queries efficient without extra services.
 - Typical use cases: Local‑first/embedded apps, desktop/mobile deployments, single‑node servers, moderate‑to‑large datasets without a separate database process.
 - Learn more: `store/rocksdb/README.md` and `store/rocksdb/documentation/storage.md`.

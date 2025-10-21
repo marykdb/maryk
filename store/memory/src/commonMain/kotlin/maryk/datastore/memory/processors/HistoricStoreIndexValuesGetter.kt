@@ -37,7 +37,7 @@ internal object HistoricStoreIndexValuesWalker {
                         getter.latestOverallVersion ?: throw StorageException("Latest overall version not set")
                     )
                 }
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 // skip failing index reference generation
             }
 

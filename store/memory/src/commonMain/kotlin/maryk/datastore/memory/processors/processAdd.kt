@@ -2,8 +2,8 @@ package maryk.datastore.memory.processors
 
 import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
-import maryk.core.processors.datastore.writeToStorage
 import maryk.core.models.IsRootDataModel
+import maryk.core.processors.datastore.writeToStorage
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.properties.exceptions.ValidationException
@@ -54,7 +54,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                 ?: return@forEach // skip if no complete values to index are found
 
             if (toIndex == null) toIndex = mutableMapOf()
-            toIndex?.let {
+            toIndex.let {
                 it[indexDefinition.referenceStorageByteArray.bytes] = valueBytes
             }
         }
@@ -67,7 +67,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                 dataStore.validateUniqueNotExists(comparableValue, dataRecord)
                 when (uniquesToIndex) {
                     null -> uniquesToIndex = mutableListOf(comparableValue)
-                    else -> uniquesToIndex!!.add(comparableValue)
+                    else -> uniquesToIndex.add(comparableValue)
                 }
             }
             recordValues += dataRecordValue

@@ -1,7 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsComparableDefinition
@@ -40,12 +38,13 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
     hardDelete: Boolean,
     cache: Cache,
 ): IsDeleteResponseStatus<DM> = try {
-        runTransaction { tr ->
-            val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult() != null
+    var updateToEmit: Update<DM>? = null
+    runTransaction { tr ->
+        val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult() != null
 
-            if (!exists) {
-                return@runTransaction DoesNotExist(key)
-            }
+        if (!exists) {
+            return@runTransaction DoesNotExist(key)
+        }
 
         val versionBytes = HLC.toStorageBytes(version)
 
@@ -140,19 +139,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
             )
         }
 
-        // Emit update and return success
-        launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
-            updateSharedFlow.emit(
-                Update.Deletion(
-                    dataModel,
-                    key,
-                    version.timestamp,
-                    hardDelete
-                )
-            )
-        }
+        updateToEmit = Update.Deletion(dataModel, key, version.timestamp, hardDelete)
 
         DeleteSuccess(version.timestamp)
+    }.also {
+        emitUpdate(updateToEmit)
     }
 } catch (e: Throwable) {
     ServerFail(e.toString(), e)

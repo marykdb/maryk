@@ -13,6 +13,7 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.updates.Update
 
 /** Processes a UpdateResponse with Change in a [storeAction] into a [RocksDBDataStore] */
 internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChangesUpdate(
@@ -53,6 +54,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
                     }
                 } else {
                     changeStatuses += try {
+                        var updateToEmit: Update<DM>? = null
                         val response = processChange(
                             dataModel,
                             columnFamilies,
@@ -62,8 +64,12 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
                             transaction,
                             dbIndex,
                             HLC(versionedChange.version),
-                        )
+                        ){
+                            updateToEmit = it
+                        }
                         transaction.commit()
+
+                        emitUpdate(updateToEmit)
 
                         response
                     } catch (e: Throwable) {

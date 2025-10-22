@@ -13,6 +13,7 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.updates.Update
 
 /** Processes a UpdateResponse with Change in a [storeAction] into a [RocksDBDataStore] */
 internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeUpdate(
@@ -31,6 +32,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeUpdate
         val addedValues = dataModel.fromChanges(null, update.changes)
 
         val status = withTransaction { transaction ->
+            var updateToEmit: Update<DM>? = null
             processAdd(
                 dataModel = dataModel,
                 transaction = transaction,
@@ -39,7 +41,13 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeUpdate
                 key = update.key,
                 version = HLC(update.version),
                 objectToAdd = addedValues,
-            )
+            ) {
+                updateToEmit = it
+            }.also {
+                transaction.commit()
+
+                emitUpdate(updateToEmit)
+            }
         }
 
         storeAction.response.complete(
@@ -48,6 +56,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeUpdate
     } else {
         val status = try {
             withTransaction { transaction ->
+                var updateToEmit: Update<DM>? = null
                 val response = processChange(
                     dataModel,
                     columnFamilies,
@@ -57,8 +66,12 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeUpdate
                     transaction,
                     dbIndex,
                     HLC(update.version),
-                )
+                ) {
+                    updateToEmit = it
+                }
                 transaction.commit()
+
+                emitUpdate(updateToEmit)
 
                 response
             }

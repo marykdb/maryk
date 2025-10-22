@@ -8,6 +8,7 @@ import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.updates.Update
 
 internal typealias ChangeStoreAction<DM> = StoreAction<DM, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootDataModel>
@@ -26,6 +27,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeReques
         val columnFamilies = getColumnFamilies(dbIndex)
 
         withTransaction { transaction ->
+            val updatesToEmit = mutableListOf<Update<DM>>()
+
             for (objectChange in changeRequest.objects) {
                 statuses += processChange(
                     changeRequest.dataModel,
@@ -36,9 +39,13 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeReques
                     transaction,
                     dbIndex,
                     version,
-                )
+                ) {
+                    updatesToEmit += it
+                }
             }
             transaction.commit()
+
+            emitUpdates(updatesToEmit)
         }
     }
 

@@ -1,7 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.invert
 import maryk.core.models.IsRootDataModel
@@ -168,11 +166,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                 transaction.commit()
             }
 
-            launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
-                updateSharedFlow.emit(
-                    Deletion(dataModel, key, version.timestamp, hardDelete)
-                )
-            }
+            emitUpdate(Deletion(dataModel, key, version.timestamp, hardDelete))
 
             DeleteSuccess(version.timestamp)
         }

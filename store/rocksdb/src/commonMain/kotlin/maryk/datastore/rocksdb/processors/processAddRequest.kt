@@ -9,6 +9,7 @@ import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.updates.Update
 
 internal typealias AddStoreAction<DM> = StoreAction<DM, AddRequest<DM>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootDataModel>
@@ -30,6 +31,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAddRequest(
                 val key = addRequest.keysForObjects?.getOrNull(index)
                     ?: addRequest.dataModel.key(objectToAdd)
 
+                var updateToEmit: Update<DM>? = null
+
                 statuses += processAdd(
                     addRequest.dataModel,
                     transaction,
@@ -38,7 +41,13 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAddRequest(
                     key,
                     version,
                     objectToAdd,
-                )
+                ) { update ->
+                    updateToEmit = update
+                }
+
+                transaction.commit()
+
+                emitUpdate(updateToEmit)
             }
         }
     }

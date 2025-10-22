@@ -8,11 +8,12 @@ import com.apple.foundationdb.directory.DirectoryLayer
 import com.apple.foundationdb.directory.DirectorySubspace
 import com.apple.foundationdb.tuple.Tuple
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.future.await
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
@@ -76,6 +77,7 @@ import maryk.datastore.foundationdb.processors.processScanUpdatesRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.updates.Update
 import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
@@ -319,6 +321,15 @@ class FoundationDBDataStore private constructor(
     internal fun getTableDirs(dbIndex: UInt) =
         directoriesByDataModelIndex[dbIndex]
             ?: throw DefNotFoundException("DataModel definition not found for $dbIndex")
+
+    internal fun emitUpdate(update: Update<*>?) {
+        if (update == null) return
+        launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
+            updateSharedFlow.emit(
+                update
+            )
+        }
+    }
 
     override suspend fun close() {
         this.tenantDB?.close()

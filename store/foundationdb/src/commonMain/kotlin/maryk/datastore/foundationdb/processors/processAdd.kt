@@ -1,7 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
@@ -47,6 +45,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     objectToAdd: Values<DM>,
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()
+
+    var updateToEmit: Update<DM>? = null
 
     runTransaction { tr ->
         val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
@@ -140,18 +140,18 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                 }
             }
 
-            launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
-                updateSharedFlow.emit(
-                    Update.Addition(
-                        dataModel,
-                        key,
-                        version.timestamp,
-                        objectToAdd.change(emptyList())
-                    )
-                )
-            }
+            updateToEmit = Update.Addition(
+                dataModel,
+                key,
+                version.timestamp,
+                objectToAdd.change(emptyList())
+            )
 
             AddSuccess(key, version.timestamp, emptyList())
+        }
+    }.also {
+        if (it is AddSuccess<DM>) {
+            emitUpdate(updateToEmit)
         }
     }
 } catch (e: ValidationUmbrellaException) {

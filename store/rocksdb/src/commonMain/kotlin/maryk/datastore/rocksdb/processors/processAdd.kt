@@ -1,7 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
@@ -36,6 +34,7 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
@@ -48,6 +47,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     key: Key<DM>,
     version: HLC,
     objectToAdd: Values<DM>,
+    updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsAddResponseStatus<DM> {
     return try {
         objectToAdd.validate()
@@ -146,15 +146,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                 check()
             }
 
-            transaction.commit()
-
             val changes = listOf<IsChange>()
 
-            launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
-                updateSharedFlow.emit(
-                    Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
-                )
-            }
+            updateHandler?.invoke(Addition(dataModel, key, version.timestamp, objectToAdd.change(changes)))
 
             AddSuccess(key, version.timestamp, changes)
         } else {

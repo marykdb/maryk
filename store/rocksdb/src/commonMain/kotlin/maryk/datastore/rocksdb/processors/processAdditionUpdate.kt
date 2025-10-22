@@ -10,6 +10,7 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.updates.Update
 
 internal typealias ProcessUpdateResponseStoreAction<DM> = StoreAction<DM, UpdateResponse<DM>, ProcessResponse<DM>>
 internal typealias AnyProcessUpdateResponseStoreAction = ProcessUpdateResponseStoreAction<IsRootDataModel>
@@ -30,6 +31,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAdditionUpda
     val columnFamilies = getColumnFamilies(dbIndex)
 
     val result = withTransaction { transaction ->
+        var updateToEmit: Update<DM>? = null
+
         processAdd(
             dataModel,
             transaction,
@@ -38,7 +41,13 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAdditionUpda
             update.key,
             HLC(update.version),
             update.values,
-        )
+        ) {
+            updateToEmit = it
+        }.also {
+            transaction.commit()
+
+            this.emitUpdate(updateToEmit)
+        }
     }
 
     storeAction.response.complete(

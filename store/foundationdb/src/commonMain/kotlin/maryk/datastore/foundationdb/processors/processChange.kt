@@ -1,7 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -109,6 +107,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 ): IsChangeResponseStatus<DM> {
     var checkFailed = false
     val result: IsChangeResponseStatus<DM> = try {
+        var updateToEmit: Update<DM>? = null
+
         runTransaction { tr ->
             tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
                 ?: return@runTransaction DoesNotExist(key)
@@ -595,11 +595,13 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 }
             }
 
-            launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
-                updateSharedFlow.emit(Update.Change(dataModel, key, version.timestamp, changes + outChanges))
-            }
+            updateToEmit = Update.Change(dataModel, key, version.timestamp, changes + outChanges)
 
             ChangeSuccess(version.timestamp, outChanges)
+        }.also {
+            if (it is ChangeSuccess<DM>) {
+                emitUpdate(updateToEmit)
+            }
         }
     } catch (e: EarlyStatus) {
         @Suppress("UNCHECKED_CAST")

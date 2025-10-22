@@ -2,9 +2,12 @@ package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
@@ -78,6 +81,7 @@ import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.updates.Update
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
@@ -391,6 +395,20 @@ class RocksDBDataStore private constructor(
                 }
                 this += key.copyOfRange(1, key.size)
             }
+        }
+    }
+
+    internal fun emitUpdate(updateToEmit: Update<*>?) {
+        if (updateToEmit != null) {
+            launch(this.updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
+                updateSharedFlow.emit(updateToEmit)
+            }
+        }
+    }
+
+    internal fun emitUpdates(updatesToEmit: List<Update<*>>) {
+        launch(this.updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
+            updateSharedFlow.emitAll(updatesToEmit.asFlow())
         }
     }
 

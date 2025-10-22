@@ -1,7 +1,5 @@
 package maryk.datastore.rocksdb.processors
 
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -108,6 +106,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
     transaction: Transaction,
     dbIndex: UInt,
     version: HLC,
+    updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsChangeResponseStatus<DM> {
     val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
     return if (mayExist) {
@@ -140,6 +139,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
                 key,
                 changes,
                 version,
+                updateHandler,
             )
         } else {
             DoesNotExist(key)
@@ -161,6 +161,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
     key: Key<DM>,
     changes: List<IsChange>,
     version: HLC,
+    updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -690,11 +691,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             }
         }
 
-        launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
-            updateSharedFlow.emit(
-                Update.Change(dataModel, key, version.timestamp, changes + outChanges)
-            )
-        }
+        updateHandler?.invoke(Update.Change(dataModel, key, version.timestamp, changes + outChanges))
 
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)

@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.aggregations.Aggregator
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
@@ -37,7 +36,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
             scanSetup = { /* nothing */ }
         ) { key, creationVersion, _ ->
             val cacheReader = { ref: IsPropertyReferenceForCache<*, *>, version: ULong, reader: () -> Any? ->
-                runBlocking { cache.readValue(dbIndex, key, ref, version, reader) }
+                cache.readValue(dbIndex, key, ref, version, reader)
             }
 
             val vwm = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(

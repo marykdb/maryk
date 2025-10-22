@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
@@ -110,9 +109,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
         }
 
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-            runBlocking {
-                cache.readValue(dbIndex, key, reference, version, valueReader)
-            }
+            cache.readValue(dbIndex, key, reference, version, valueReader)
         }
 
         val objectChange = this.runTransaction { tr ->
@@ -212,9 +209,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                         val createdVersion = HLC.fromStorageBytes(createdBytes).timestamp
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                            runBlocking {
-                                cache.readValue(dbIndex, addedKey, reference, version, valueReader)
-                            }
+                            cache.readValue(dbIndex, addedKey, reference, version, valueReader)
                         }
 
                         getSingleValues(addedKey, createdVersion, cacheReader)?.let { valuesWithMeta ->

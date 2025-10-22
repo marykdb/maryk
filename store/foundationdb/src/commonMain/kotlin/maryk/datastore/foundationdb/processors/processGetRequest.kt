@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.aggregations.Aggregator
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
@@ -48,9 +47,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                     null
                 } else {
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        runBlocking {
-                            cache.readValue(dbIndex, key, reference, version, valueReader)
-                        }
+                        cache.readValue(dbIndex, key, reference, version, valueReader)
                     }
 
                     getRequest.dataModel.readTransactionIntoValuesWithMetaData(

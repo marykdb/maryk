@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -32,9 +31,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
         scanSetup = { /* no-op */ },
     ) { key, creationVersion, sortingKey ->
         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-            runBlocking {
-                cache.readValue(dbIndex, key, reference, version, valueReader)
-            }
+            cache.readValue(dbIndex, key, reference, version, valueReader)
         }
 
         val change = this.runTransaction { tr ->

@@ -32,17 +32,18 @@ internal fun Transaction.getKeyByUniqueValue(
         // is >= inverted(toVersion) (equivalent to version <= toVersion)
         val toVersionBytes = toVersion.toReversedVersionBytes()
         val prefix = packKey(historic.historicUniquePrefix, encodeZeroFreeUsing01(reference))
-        val it = this.getRange(Range.startsWith(prefix)).iterator()
-        while (it.hasNext()) {
-            val kv = it.next()
-            val versionOffset = kv.key.size - toVersionBytes.size
-            if (toVersionBytes.compareToWithOffsetLength(kv.key, versionOffset) <= 0) {
-                val version = kv.key.readReversedVersionBytes(versionOffset)
-                val keyBytes = kv.value
-                if (keyBytes.isNotEmpty()) {
-                    handle(keyBytes, version)
+        FDBIterator(this.getRange(Range.startsWith(prefix)).iterator()).use { iterator ->
+            while (iterator.hasNext()) {
+                val kv = iterator.next()
+                val versionOffset = kv.key.size - toVersionBytes.size
+                if (toVersionBytes.compareToWithOffsetLength(kv.key, versionOffset) <= 0) {
+                    val version = kv.key.readReversedVersionBytes(versionOffset)
+                    val keyBytes = kv.value
+                    if (keyBytes.isNotEmpty()) {
+                        handle(keyBytes, version)
+                    }
+                    break
                 }
-                break
             }
         }
     }

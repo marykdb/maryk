@@ -14,6 +14,7 @@ import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getValue
@@ -64,33 +65,35 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         run {
             val prefix = packKey(tableDirs.tablePrefix, key.bytes)
             val range = FDBRange.startsWith(prefix)
-            val kvs = tr.getRange(range).asList().awaitResult()
-            for (kv in kvs) {
-                val fullKey = kv.key
-                // Skip meta latest-version entry
-                if (fullKey.size == prefix.size) continue
+            FDBIterator(tr.getRange(range).iterator()).use { iterator ->
+                while (iterator.hasNext()) {
+                    val kv = iterator.next()
+                    val fullKey = kv.key
+                    // Skip meta latest-version entry
+                    if (fullKey.size == prefix.size) continue
 
-                val reference = fullKey.copyOfRange(prefix.size, fullKey.size)
+                    val reference = fullKey.copyOfRange(prefix.size, fullKey.size)
 
-                // Skip soft delete indicator entries here; they are handled below
-                if (reference.size == 1 && reference[0] == SOFT_DELETE_INDICATOR) continue
+                    // Skip soft delete indicator entries here; they are handled below
+                    if (reference.size == 1 && reference[0] == SOFT_DELETE_INDICATOR) continue
 
-                // Map reference bytes to property reference; if unique -> delete unique index
-                var idx = 0
-                val propRef = dataModel.getPropertyReferenceByStorageBytes(reference.size, { reference[idx++] })
-                val def = propRef.comparablePropertyDefinition
-                if (def is IsComparableDefinition<*, *> && def.unique) {
-                    val value = kv.value
-                    // Stored as (version || value)
-                    val valueBytes = value.copyOfRange(VERSION_BYTE_SIZE, value.size)
-                    val uniqueRef = combineToByteArray(reference, valueBytes)
+                    // Map reference bytes to property reference; if unique -> delete unique index
+                    var idx = 0
+                    val propRef = dataModel.getPropertyReferenceByStorageBytes(reference.size, { reference[idx++] })
+                    val def = propRef.comparablePropertyDefinition
+                    if (def is IsComparableDefinition<*, *> && def.unique) {
+                        val value = kv.value
+                        // Stored as (version || value)
+                        val valueBytes = value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        val uniqueRef = combineToByteArray(reference, valueBytes)
 
-                    // Delete current unique entry
-                    tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))
+                        // Delete current unique entry
+                        tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))
 
-                    // For soft delete, append a historic tombstone so history reflects the change
-                    if (!hardDelete && tableDirs is HistoricTableDirectories) {
-                        writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
+                        // For soft delete, append a historic tombstone so history reflects the change
+                        if (!hardDelete && tableDirs is HistoricTableDirectories) {
+                            writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
+                        }
                     }
                 }
             }

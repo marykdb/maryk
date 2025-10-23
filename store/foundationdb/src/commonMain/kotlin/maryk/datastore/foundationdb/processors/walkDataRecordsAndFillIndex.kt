@@ -11,6 +11,7 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
@@ -31,8 +32,22 @@ internal fun walkDataRecordsAndFillIndex(
 ) {
     if (indexesToIndex.isEmpty()) return
 
-    tc.run { tr ->
-        fun processKey(keyBytes: ByteArray, latestVersion: ByteArray) {
+    val prefix = tableDirectories.keysPrefix
+    val baseRange = Range.startsWith(prefix)
+    val end = baseRange.end
+    val batchLimit = 100
+
+    fun incrementKey(key: ByteArray): ByteArray {
+        val next = key.copyOf(key.size + 1)
+        next[next.lastIndex] = 0
+        return next
+    }
+
+    var nextBegin = baseRange.begin
+
+    while (true) {
+        val lastKeyInBatch = tc.run { tr ->
+            fun processKey(keyBytes: ByteArray, latestVersion: ByteArray) {
             // Simple values getter to retrieve latest values for the key
             val getter = object : IsValuesGetter {
                 override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
@@ -67,13 +82,23 @@ internal fun walkDataRecordsAndFillIndex(
             }
         }
 
-        val it = tr.getRange(Range.startsWith(tableDirectories.keysPrefix)).iterator()
-        while (it.hasNext()) {
-            val kv = it.next()
-            val fullKey = kv.key
-            val keyBytes = fullKey.copyOfRange(tableDirectories.keysPrefix.size, fullKey.size)
-            val latestVersion = tr.get(packKey(tableDirectories.tablePrefix, keyBytes)).awaitResult() ?: continue
-            processKey(keyBytes, latestVersion)
+            var processed = 0
+            var lastKey: ByteArray? = null
+            FDBIterator(tr.getRange(nextBegin, end, batchLimit, false).iterator()).use { iterator ->
+                while (iterator.hasNext()) {
+                    val kv = iterator.next()
+                    val fullKey = kv.key
+                    lastKey = fullKey
+                    val keyBytes = fullKey.copyOfRange(tableDirectories.keysPrefix.size, fullKey.size)
+                    val latestVersion = tr.get(packKey(tableDirectories.tablePrefix, keyBytes)).awaitResult() ?: continue
+                    processKey(keyBytes, latestVersion)
+                    processed++
+                }
+            }
+            if (processed == 0) null else lastKey
         }
+
+        if (lastKeyInBatch == null) break
+        nextBegin = incrementKey(lastKeyInBatch)
     }
 }

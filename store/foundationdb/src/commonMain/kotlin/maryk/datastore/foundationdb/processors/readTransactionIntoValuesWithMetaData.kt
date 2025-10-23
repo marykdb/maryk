@@ -58,78 +58,78 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     } else if (toVersion == null) {
         val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
 
-        val iterator = FDBIterator(
+        FDBIterator(
             tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).iterator()
-        )
+        ).use { iterator ->
+            checkExistence(iterator, prefixWithKeyRange)
 
-        checkExistence(iterator, prefixWithKeyRange)
+            // Will start by going to next key so will miss the creation timestamp
+            val getQualifier = iterator.nonHistoricQualifierRetriever(prefixWithKeyRange)
 
-        // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = iterator.nonHistoricQualifierRetriever(prefixWithKeyRange)
+            var index: Int
+            this.readStorageToValues(
+                getQualifier = getQualifier,
+                select = select,
+                processValue = { storageType, reference ->
+                    val currentVersion: ULong
+                    val value = iterator.current.value
 
-        var index: Int
-        this.readStorageToValues(
-            getQualifier = getQualifier,
-            select = select,
-            processValue = { storageType, reference ->
-                val currentVersion: ULong
-                val value = iterator.current.value
+                    when (storageType) {
+                        ObjectDelete -> {
+                            currentVersion = maxOf(value.readVersionBytes(), maxVersion)
+                            index = VERSION_BYTE_SIZE
+                            isDeleted = value[index] == TRUE
+                            true
+                        }
+                        Value -> {
+                            currentVersion = value.readVersionBytes()
 
-                when (storageType) {
-                    ObjectDelete -> {
-                        currentVersion = maxOf(value.readVersionBytes(), maxVersion)
-                        index = VERSION_BYTE_SIZE
-                        isDeleted = value[index] == TRUE
-                        true
-                    }
-                    Value -> {
-                        currentVersion = value.readVersionBytes()
+                            index = VERSION_BYTE_SIZE
+                            val reader = { value[index++] }
 
-                        index = VERSION_BYTE_SIZE
-                        val reader = { value[index++] }
+                            cachedRead(reference, currentVersion) {
+                                val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                    ?: reference.propertyDefinition
 
-                        cachedRead(reference, currentVersion) {
-                            val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                                ?: reference.propertyDefinition
-
-                            readValue(definition, reader) {
-                                value.size - index
+                                readValue(definition, reader) {
+                                    value.size - index
+                                }
                             }
                         }
-                    }
-                    ListSize -> {
-                        currentVersion = value.readVersionBytes()
-                        index = VERSION_BYTE_SIZE
+                        ListSize -> {
+                            currentVersion = value.readVersionBytes()
+                            index = VERSION_BYTE_SIZE
 
-                        cachedRead(reference, currentVersion) {
-                            initIntByVar { value[index++] }
+                            cachedRead(reference, currentVersion) {
+                                initIntByVar { value[index++] }
+                            }
                         }
-                    }
-                    SetSize -> {
-                        currentVersion = value.readVersionBytes()
-                        index = VERSION_BYTE_SIZE
+                        SetSize -> {
+                            currentVersion = value.readVersionBytes()
+                            index = VERSION_BYTE_SIZE
 
-                        cachedRead(reference, currentVersion) {
-                            initIntByVar { value[index++] }
+                            cachedRead(reference, currentVersion) {
+                                initIntByVar { value[index++] }
+                            }
                         }
-                    }
-                    MapSize -> {
-                        currentVersion = value.readVersionBytes()
+                        MapSize -> {
+                            currentVersion = value.readVersionBytes()
 
-                        index = VERSION_BYTE_SIZE
-                        cachedRead(reference, currentVersion) {
-                            initIntByVar { value[index++] }
+                            index = VERSION_BYTE_SIZE
+                            cachedRead(reference, currentVersion) {
+                                initIntByVar { value[index++] }
+                            }
                         }
+                        Embed -> {
+                            currentVersion = value.readVersionBytes()
+                        }
+                        TypeValue -> throw StorageException("Not used in direct encoding")
+                    }.also {
+                        maxVersion = maxOf(currentVersion, maxVersion)
                     }
-                    Embed -> {
-                        currentVersion = value.readVersionBytes()
-                    }
-                    TypeValue -> throw StorageException("Not used in direct encoding")
-                }.also {
-                    maxVersion = maxOf(currentVersion, maxVersion)
                 }
-            }
-        )
+            )
+        }
     } else {
         if (tableDirs !is HistoricTableDirectories) {
             throw RequestException("No historic table present so cannot use `toVersion` on get")
@@ -137,64 +137,64 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
         val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
 
-        val iterator = FDBIterator(
+        FDBIterator(
             tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).iterator()
-        )
+        ).use { iterator ->
+            checkExistence(iterator, prefixWithKeyRange)
 
-        checkExistence(iterator, prefixWithKeyRange)
+            var currentVersion = 0uL
+            // Will start by going to next key so will miss the creation timestamp
+            val getQualifier = iterator.historicQualifierRetriever(prefixWithKeyRange, toVersion, 1u) { version ->
+                currentVersion = version
+                maxVersion = maxOf(currentVersion, maxVersion)
+            }
 
-        var currentVersion = 0uL
-        // Will start by going to next key so will miss the creation timestamp
-        val getQualifier = iterator.historicQualifierRetriever(prefixWithKeyRange, toVersion, 1u) { version ->
-            currentVersion = version
-            maxVersion = maxOf(currentVersion, maxVersion)
-        }
-
-        var index: Int
-        this.readStorageToValues(
-            getQualifier = getQualifier,
-            select = select,
-            processValue = { storageType, reference ->
-                cachedRead(reference, currentVersion) {
-                    val key = iterator.current.key
-                    val value = iterator.current.value
-                    when (storageType) {
-                        ObjectDelete -> {
-                            if (key[prefixWithKeyRange.size] == SOFT_DELETE_INDICATOR) {
-                                val value = value
-                                isDeleted = value[0] == TRUE
-                                isDeleted
-                            } else null
-                        }
-                        Value -> {
-                            index = 0
-                            val reader = { value[index++] }
-
-                            val definition =
-                                (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                                    ?: reference.propertyDefinition
-                            readValue(definition, reader) {
-                                value.size - index
+            var index: Int
+            this.readStorageToValues(
+                getQualifier = getQualifier,
+                select = select,
+                processValue = { storageType, reference ->
+                    cachedRead(reference, currentVersion) {
+                        val key = iterator.current.key
+                        val value = iterator.current.value
+                        when (storageType) {
+                            ObjectDelete -> {
+                                if (key[prefixWithKeyRange.size] == SOFT_DELETE_INDICATOR) {
+                                    val value = value
+                                    isDeleted = value[0] == TRUE
+                                    isDeleted
+                                } else null
                             }
+                            Value -> {
+                                index = 0
+                                val reader = { value[index++] }
+
+                                val definition =
+                                    (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                        ?: reference.propertyDefinition
+                                readValue(definition, reader) {
+                                    value.size - index
+                                }
+                            }
+                            ListSize -> {
+                                index = 0
+                                initIntByVar { value[index++] }
+                            }
+                            SetSize -> {
+                                index = 0
+                                initIntByVar { value[index++] }
+                            }
+                            MapSize -> {
+                                index = 0
+                                initIntByVar { value[index++] }
+                            }
+                            Embed -> {}
+                            TypeValue -> throw StorageException("Not used in direct encoding")
                         }
-                        ListSize -> {
-                            index = 0
-                            initIntByVar { value[index++] }
-                        }
-                        SetSize -> {
-                            index = 0
-                            initIntByVar { value[index++] }
-                        }
-                        MapSize -> {
-                            index = 0
-                            initIntByVar { value[index++] }
-                        }
-                        Embed -> {}
-                        TypeValue -> throw StorageException("Not used in direct encoding")
                     }
                 }
-            }
-        )
+            )
+        }
     }
 
     // Return null if no values where found but values where selected

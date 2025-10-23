@@ -26,23 +26,24 @@ internal fun <R : Any> Transaction.iterateValues(
     return if (toVersion == null) {
         val tablePrefix = tableDirectories.tablePrefix
         val asyncIterable = this.getRange(Range.startsWith(packKey(tablePrefix, reference)))
-        val it = FDBIterator(asyncIterable.iterator())
-
-        while (it.hasNext()) {
-            val kv = it.next()
-            val referenceBytes = kv.key
-            val value = kv.value
-            val refOffset = tablePrefix.size + keyLength
-            val refLength = referenceBytes.size - refOffset
-            handleValue(
-                referenceBytes,
-                refOffset,
-                refLength,
-                value,
-                VERSION_BYTE_SIZE,
-                value.size - VERSION_BYTE_SIZE
-            )?.let { return it }
+        FDBIterator(asyncIterable.iterator()).use { iterator ->
+            while (iterator.hasNext()) {
+                val kv = iterator.next()
+                val referenceBytes = kv.key
+                val value = kv.value
+                val refOffset = tablePrefix.size + keyLength
+                val refLength = referenceBytes.size - refOffset
+                handleValue(
+                    referenceBytes,
+                    refOffset,
+                    refLength,
+                    value,
+                    VERSION_BYTE_SIZE,
+                    value.size - VERSION_BYTE_SIZE
+                )?.let { return it }
+            }
         }
+
         null
     } else {
         // Historic values require a historic table. Keys are [reference]+[reversedVersion].
@@ -57,41 +58,42 @@ internal fun <R : Any> Transaction.iterateValues(
             combineToByteArray(keyPart, encodeZeroFreeUsing01(qualPart))
         } else reference
         val baseRefBytes = combineToByteArray(histPrefix, keyPart)
-        val it = FDBIterator(this.getRange(Range.startsWith(packKey(histPrefix, encodedRef))).iterator())
-
         val toVersionBytes = toVersion.toReversedVersionBytes()
 
-        while (it.hasNext()) {
-            val kv = it.next()
-            val keyBytes = kv.key
-            val versionOffset = keyBytes.size - toVersionBytes.size
-            val refOffset = histPrefix.size + keyLength
-            val sepIndex = versionOffset - 1
-            // Validate separator and ranges
-            if (versionOffset <= 0 || sepIndex < refOffset || keyBytes[sepIndex] != 0.toByte()) throw Exception("Invalid qualifier for versioned iterateValues")
-            val encRefLength = sepIndex - refOffset
+        FDBIterator(this.getRange(Range.startsWith(packKey(histPrefix, encodedRef))).iterator()).use { iterator ->
+            while (iterator.hasNext()) {
+                val kv = iterator.next()
+                val keyBytes = kv.key
+                val versionOffset = keyBytes.size - toVersionBytes.size
+                val refOffset = histPrefix.size + keyLength
+                val sepIndex = versionOffset - 1
+                // Validate separator and ranges
+                if (versionOffset <= 0 || sepIndex < refOffset || keyBytes[sepIndex] != 0.toByte()) throw Exception("Invalid qualifier for versioned iterateValues")
+                val encRefLength = sepIndex - refOffset
 
-            if (toVersionBytes.compareToWithOffsetLength(keyBytes, versionOffset) <= 0) {
-                val value = kv.value
-                // Decode qualifier before handing to caller
-                val decodedQualifier = if (encRefLength > 0) {
-                    val encQual = keyBytes.copyOfRange(refOffset, sepIndex)
-                    decodeZeroFreeUsing01(encQual)
-                } else ByteArray(0)
-                val refBytesForCaller = if (decodedQualifier.isNotEmpty()) combineToByteArray(
-                    baseRefBytes,
-                    decodedQualifier
-                ) else baseRefBytes
-                handleValue(
-                    refBytesForCaller,
-                    histPrefix.size + keyLength,
-                    decodedQualifier.size,
-                    value,
-                    0,
-                    value.size
-                )?.let { return it }
+                if (toVersionBytes.compareToWithOffsetLength(keyBytes, versionOffset) <= 0) {
+                    val value = kv.value
+                    // Decode qualifier before handing to caller
+                    val decodedQualifier = if (encRefLength > 0) {
+                        val encQual = keyBytes.copyOfRange(refOffset, sepIndex)
+                        decodeZeroFreeUsing01(encQual)
+                    } else ByteArray(0)
+                    val refBytesForCaller = if (decodedQualifier.isNotEmpty()) combineToByteArray(
+                        baseRefBytes,
+                        decodedQualifier
+                    ) else baseRefBytes
+                    handleValue(
+                        refBytesForCaller,
+                        histPrefix.size + keyLength,
+                        decodedQualifier.size,
+                        value,
+                        0,
+                        value.size
+                    )?.let { return it }
+                }
             }
         }
+
         null
     }
 }

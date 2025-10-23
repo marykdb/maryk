@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.packKey
@@ -61,11 +62,15 @@ private class HistoricStoreIndexValuesGetter(
 ) : IsValuesGetter {
     private data class IterableReference(
         val referenceAsBytes: ByteArray,
-        val iterator: com.apple.foundationdb.async.AsyncIterator<com.apple.foundationdb.KeyValue>,
+        val iterator: FDBIterator,
         var lastVersion: ULong? = null,
         var lastValue: ByteArray? = null,
         var isPastBeginning: Boolean = false
-    )
+    ) {
+        fun cancel() {
+            iterator.cancel()
+        }
+    }
 
     private val iterableReferenceMap = mutableMapOf<IsPropertyReference<*, *, *>, IterableReference>()
 
@@ -100,6 +105,7 @@ private class HistoricStoreIndexValuesGetter(
     }
 
     private fun reset() {
+        iterableReferenceMap.values.forEach { it.cancel() }
         iterableReferenceMap.clear()
         latestVersion = null
         versionToSkip = null
@@ -112,8 +118,7 @@ private class HistoricStoreIndexValuesGetter(
             val refBytes = propertyReference.toStorageByteArray()
             val encRef = encodeZeroFreeUsing01(refBytes)
             val prefix = packKey(tableDirs.historicTablePrefix, key, encRef)
-            val it = tr.getRange(Range.startsWith(prefix)).iterator()
-            IterableReference(refBytes, it)
+            IterableReference(refBytes, FDBIterator(tr.getRange(Range.startsWith(prefix)).iterator()))
         }
 
         val iterator = iterableReference.iterator
@@ -129,6 +134,7 @@ private class HistoricStoreIndexValuesGetter(
                 val sepIndex = versionOffset - 1
                 if (sepIndex < 0 || keyBytes[sepIndex] != 0.toByte()) {
                     iterableReference.isPastBeginning = true
+                    iterableReference.cancel()
                     return null
                 }
 
@@ -142,6 +148,7 @@ private class HistoricStoreIndexValuesGetter(
                 latestVersion = latestVersion?.let { maxOf(lastVersion, it) } ?: lastVersion
             } else {
                 iterableReference.isPastBeginning = true
+                iterableReference.cancel()
                 return null
             }
         } else {
@@ -157,4 +164,3 @@ private class HistoricStoreIndexValuesGetter(
         return lastValue.convertToValue(propertyReference, 0, lastValue.size)
     }
 }
-

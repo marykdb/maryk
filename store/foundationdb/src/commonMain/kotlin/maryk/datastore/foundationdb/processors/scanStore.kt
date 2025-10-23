@@ -15,6 +15,7 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.lib.extensions.compare.compareDefinedTo
 
 internal fun <DM : IsRootDataModel> scanStore(
@@ -42,45 +43,46 @@ internal fun <DM : IsRootDataModel> scanStore(
         responseStopKey = scanRange.ranges.last().getAscendingStartKey()
     }
 
-    val it = tr.getRange(Range.startsWith(prefix)).iterator()
-    var streamed = 0u
-    val start = scanRange.startKey
-    while (it.hasNext()) {
-        val kv: KeyValue = it.next()
-        val modelKeyBytes = kv.key.copyOfRange(prefix.size, kv.key.size)
+    FDBIterator(tr.getRange(Range.startsWith(prefix)).iterator()).use { iterator ->
+        var streamed = 0u
+        val start = scanRange.startKey
+        while (iterator.hasNext()) {
+            val kv: KeyValue = iterator.next()
+            val modelKeyBytes = kv.key.copyOfRange(prefix.size, kv.key.size)
 
-        if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) continue
-        if (!scanRange.matchesPartials(modelKeyBytes)) continue
+            if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) continue
+            if (!scanRange.matchesPartials(modelKeyBytes)) continue
 
-        val key = scanRequest.dataModel.key(modelKeyBytes)
-        val creationVersion = HLC.fromStorageBytes(kv.value).timestamp
-        if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) continue
+            val key = scanRequest.dataModel.key(modelKeyBytes)
+            val creationVersion = HLC.fromStorageBytes(kv.value).timestamp
+            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) continue
 
-        if (direction == ASC) {
-            // Apply startKey slicing for ASC
-            if (start != null) {
-                val cmp = modelKeyBytes.compareDefinedTo(start, 0, scanRange.keySize)
-                if (cmp < 0) continue
-                if (!scanRange.includeStart && cmp == 0) continue
-            }
-            // Stream directly and stop at limit
-            processStoreValue(key, creationVersion, null)
-            streamed++
-            if (streamed >= scanRequest.limit) break
-        } else {
-            // DESC: only include keys up to startKey (if defined)
-            if (start != null) {
-                val cmp = modelKeyBytes.compareDefinedTo(start, 0, scanRange.keySize)
-                when {
-                    cmp > 0 -> break // past start; remaining will be greater too
-                    cmp == 0 && !scanRange.includeStart -> break // equal but excluded; next ones will be > start
-                    // else: <= start (or equal and included) -> include
+            if (direction == ASC) {
+                // Apply startKey slicing for ASC
+                if (start != null) {
+                    val cmp = modelKeyBytes.compareDefinedTo(start, 0, scanRange.keySize)
+                    if (cmp < 0) continue
+                    if (!scanRange.includeStart && cmp == 0) continue
                 }
-            }
+                // Stream directly and stop at limit
+                processStoreValue(key, creationVersion, null)
+                streamed++
+                if (streamed >= scanRequest.limit) break
+            } else {
+                // DESC: only include keys up to startKey (if defined)
+                if (start != null) {
+                    val cmp = modelKeyBytes.compareDefinedTo(start, 0, scanRange.keySize)
+                    when {
+                        cmp > 0 -> break // past start; remaining will be greater too
+                        cmp == 0 && !scanRange.includeStart -> break // equal but excluded; next ones will be > start
+                        // else: <= start (or equal and included) -> include
+                    }
+                }
 
-            buffer!!.addLast(modelKeyBytes to creationVersion)
-            if (buffer.size.toUInt() > limit) {
-                buffer.removeFirst()
+                buffer!!.addLast(modelKeyBytes to creationVersion)
+                if (buffer.size.toUInt() > limit) {
+                    buffer.removeFirst()
+                }
             }
         }
     }

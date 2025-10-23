@@ -38,16 +38,17 @@ internal fun <T : Any> Transaction.getValue(
 
         val prefixForKey = packKey(historicDirs.historicTablePrefix, encodedRef)
 
-        val it = this.getRange(Range.startsWith(prefixForKey)).iterator()
-        while (it.hasNext()) {
-            val kv = it.next()
-            val key = kv.key
-            val versionOffset = key.size - toVersionBytes.size
-            if (versionOffset <= 0) throw Exception("Invalid qualifier for versioned get Value")
-            if (key[versionOffset - 1] != 0.toByte()) throw Exception("Missing separator in qualifier for versioned get Value")
-            if (toVersionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
-                val result = kv.value
-                return handleResult(result, 0, result.size)
+        FDBIterator(this.getRange(Range.startsWith(prefixForKey)).iterator()).use { iterator ->
+            while (iterator.hasNext()) {
+                val kv = iterator.next()
+                val key = kv.key
+                val versionOffset = key.size - toVersionBytes.size
+                if (versionOffset <= 0) throw Exception("Invalid qualifier for versioned get Value")
+                if (key[versionOffset - 1] != 0.toByte()) throw Exception("Missing separator in qualifier for versioned get Value")
+                if (toVersionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
+                    val result = kv.value
+                    return handleResult(result, 0, result.size)
+                }
             }
         }
         null

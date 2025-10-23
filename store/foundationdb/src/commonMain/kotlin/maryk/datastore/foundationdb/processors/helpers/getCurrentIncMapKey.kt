@@ -20,23 +20,23 @@ internal fun getCurrentIncMapKey(
     val refBytes = reference.toStorageByteArray()
     val base = packKey(tableDirs.tablePrefix, key.bytes)
     val prefix = packKey(tableDirs.tablePrefix, key.bytes, refBytes)
-    val iter = tr.getRange(Range.startsWith(prefix)).iterator()
-    return if (iter.hasNext()) {
-        // First is count; advance
-        iter.next()
-        if (iter.hasNext()) {
-            val firstItemKey = iter.next().key
-            firstItemKey.copyOfRange(base.size, firstItemKey.size)
+    FDBIterator(tr.getRange(Range.startsWith(prefix)).iterator()).use { iterator ->
+        return if (iterator.hasNext()) {
+            // First is count; advance
+            iterator.next()
+            if (iterator.hasNext()) {
+                val firstItemKey = iterator.next().key
+                firstItemKey.copyOfRange(base.size, firstItemKey.size)
+            } else {
+                // No items yet; create a starting qualifier [refBytes + keySizeMarker + 0xFF..]
+                val refSize = refBytes.size
+                val mapKeySize = reference.propertyDefinition.definition.keyDefinition.byteSize
+                ByteArray(mapKeySize + refSize + 1) { i -> if (i < refSize) refBytes[i] else if (i == refSize) mapKeySize.toByte() else 0xFF.toByte() }
+            }
         } else {
-            // No items yet; create a starting qualifier [refBytes + keySizeMarker + 0xFF..]
             val refSize = refBytes.size
             val mapKeySize = reference.propertyDefinition.definition.keyDefinition.byteSize
             ByteArray(mapKeySize + refSize + 1) { i -> if (i < refSize) refBytes[i] else if (i == refSize) mapKeySize.toByte() else 0xFF.toByte() }
         }
-    } else {
-        val refSize = refBytes.size
-        val mapKeySize = reference.propertyDefinition.definition.keyDefinition.byteSize
-        ByteArray(mapKeySize + refSize + 1) { i -> if (i < refSize) refBytes[i] else if (i == refSize) mapKeySize.toByte() else 0xFF.toByte() }
     }
 }
-

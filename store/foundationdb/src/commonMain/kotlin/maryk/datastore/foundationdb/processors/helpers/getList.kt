@@ -20,25 +20,25 @@ internal fun <T : Any> Transaction.getList(
     val referenceBytes = reference.toStorageByteArray()
 
     val prefix = packKey(tableDirs.tablePrefix, keyBytes, referenceBytes)
-    val kvs = this.getRange(Range.startsWith(prefix)).asList().awaitResult()
-    if (kvs.isEmpty()) return mutableListOf()
+    FDBIterator(this.getRange(Range.startsWith(prefix)).iterator()).use { iterator ->
+        if (!iterator.hasNext()) return mutableListOf()
 
-    // First entry holds the count (version || varint count)
-    val countValue = kvs.first().value
-    var readIndex = VERSION_BYTE_SIZE
-    val count = initIntByVar { countValue[readIndex++] }
+        // First entry holds the count (version || varint count)
+        val countValue = iterator.next().value
+        var readIndex = VERSION_BYTE_SIZE
+        val count = initIntByVar { countValue[readIndex++] }
 
-    val list = ArrayList<T>(count)
-    // Process item values
-    for (i in 1 until kvs.size) {
-        val valueBytes = kvs[i].value
-        var idx = VERSION_BYTE_SIZE
-        val reader = { valueBytes[idx++] }
-        @Suppress("UNCHECKED_CAST")
-        readValue(reference.comparablePropertyDefinition.valueDefinition, reader) {
-            valueBytes.size - idx
-        }?.let { list.add(it as T) }
+        val list = ArrayList<T>(count)
+        // Process item values
+        while (iterator.hasNext()) {
+            val valueBytes = iterator.next().value
+            var idx = VERSION_BYTE_SIZE
+            val reader = { valueBytes[idx++] }
+            @Suppress("UNCHECKED_CAST")
+            readValue(reference.comparablePropertyDefinition.valueDefinition, reader) {
+                valueBytes.size - idx
+            }?.let { list.add(it as T) }
+        }
+        return list
     }
-    return list
 }
-

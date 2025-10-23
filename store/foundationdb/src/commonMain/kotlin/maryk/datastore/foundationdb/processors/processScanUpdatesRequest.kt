@@ -59,13 +59,13 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
     scanRequest.checkMaxVersions(keepAllVersions)
 
-    fun getSingleValues(
-        key: Key<DM>,
-        creationVersion: ULong,
-        cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
-    ): ValuesWithMetaData<DM>? {
-        return this.runTransaction { tr ->
-            scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
+    runTransaction { tr ->
+        fun getSingleValues(
+            key: Key<DM>,
+            creationVersion: ULong,
+            cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
+        ): ValuesWithMetaData<DM>? {
+            return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                 tr = tr,
                 creationVersion = creationVersion,
                 tableDirs = tableDirs,
@@ -75,45 +75,40 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 cachedRead = cacheReader
             )
         }
-    }
 
-    val dataFetchType = this.processScan(
-        scanRequest = scanRequest,
-        tableDirs = tableDirs,
-        scanSetup = {
-            (it as? IndexScan)?.let { indexScan ->
-                sortingKeys = mutableListOf()
-                sortingIndex = indexScan.index
-            }
-        },
-    ) { key, creationVersion, sortingKey ->
-        insertionIndex++
+        val dataFetchType = this.processScan(
+            tr = tr,
+            scanRequest = scanRequest,
+            tableDirs = tableDirs,
+            scanSetup = {
+                (it as? IndexScan)?.let { indexScan ->
+                    sortingKeys = mutableListOf()
+                    sortingIndex = indexScan.index
+                }
+            },
+        ) { key, creationVersion, sortingKey ->
+            insertionIndex++
 
-        matchingKeys.add(key)
+            matchingKeys.add(key)
 
-        // Add sorting index if requested
-        sortingIndex?.let { idx ->
-            this.runTransaction { tr ->
+            // Add sorting index if requested
+            sortingIndex?.let { idx ->
                 val getter = StoreValuesGetter(tr, tableDirs)
                 getter.moveToKey(key.bytes, scanRequest.toVersion)
                 idx.toStorageByteArrayForIndex(getter, key.bytes)?.let { indexableBytes ->
                     sortingKeys?.add(indexableBytes)
                 }
             }
-        }
 
-        // Determine last known version for ordered response metadata
-        this.runTransaction { tr ->
+            // Determine last known version for ordered response metadata
             val last = getLastVersion(tr, tableDirs, key)
             lastResponseVersion = maxOf(lastResponseVersion, last)
-        }
 
-        val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-            cache.readValue(dbIndex, key, reference, version, valueReader)
-        }
+            val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                cache.readValue(dbIndex, key, reference, version, valueReader)
+            }
 
-        val objectChange = this.runTransaction { tr ->
-            scanRequest.dataModel.readTransactionIntoObjectChanges(
+            val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
                 tr = tr,
                 creationVersion = creationVersion,
                 tableDirs = tableDirs,
@@ -125,66 +120,64 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 sortingKey = sortingKey,
                 cachedRead = cacheReader
             )
-        }
 
-        objectChange?.let { oc ->
-            for (versionedChange in oc.changes) {
-                val changes = versionedChange.changes
-                val update = if (changes.find { it is ObjectCreate } != null) {
-                    val addedValues = scanRequest.dataModel.fromChanges(null, changes)
-                    AdditionUpdate(
-                        key = oc.key,
-                        version = versionedChange.version,
-                        firstVersion = versionedChange.version,
-                        insertionIndex = insertionIndex,
-                        isDeleted = false,
-                        values = addedValues
-                    )
-                } else {
-                    if (scanRequest.orderedKeys?.contains(oc.key) != false) {
-                        ChangeUpdate(
+            objectChange?.let { oc ->
+                for (versionedChange in oc.changes) {
+                    val changes = versionedChange.changes
+                    val update = if (changes.find { it is ObjectCreate } != null) {
+                        val addedValues = scanRequest.dataModel.fromChanges(null, changes)
+                        AdditionUpdate(
                             key = oc.key,
                             version = versionedChange.version,
-                            index = insertionIndex,
-                            changes = changes
+                            firstVersion = versionedChange.version,
+                            insertionIndex = insertionIndex,
+                            isDeleted = false,
+                            values = addedValues
                         )
                     } else {
-                        getSingleValues(key, creationVersion, cacheReader)?.let { valuesWithMeta ->
-                            AdditionUpdate(
+                        if (scanRequest.orderedKeys?.contains(oc.key) != false) {
+                            ChangeUpdate(
                                 key = oc.key,
                                 version = versionedChange.version,
-                                firstVersion = valuesWithMeta.firstVersion,
-                                insertionIndex = insertionIndex,
-                                isDeleted = valuesWithMeta.isDeleted,
-                                values = valuesWithMeta.values
+                                index = insertionIndex,
+                                changes = changes
                             )
+                        } else {
+                            getSingleValues(key, creationVersion, cacheReader)?.let { valuesWithMeta ->
+                                AdditionUpdate(
+                                    key = oc.key,
+                                    version = versionedChange.version,
+                                    firstVersion = valuesWithMeta.firstVersion,
+                                    insertionIndex = insertionIndex,
+                                    isDeleted = valuesWithMeta.isDeleted,
+                                    values = valuesWithMeta.values
+                                )
+                            }
                         }
                     }
+                    update?.also { updates += it }
                 }
-                update?.also { updates += it }
             }
         }
-    }
 
-    // Sort updates by version ascending
-    updates.sortBy { it.version }
+        // Sort updates by version ascending
+        updates.sortBy { it.version }
 
-    lastResponseVersion = minOf(scanRequest.toVersion ?: ULong.MAX_VALUE, lastResponseVersion)
+        lastResponseVersion = minOf(scanRequest.toVersion ?: ULong.MAX_VALUE, lastResponseVersion)
 
-    updates.add(
-        0,
-        OrderedKeysUpdate(
-            version = lastResponseVersion,
-            keys = matchingKeys,
-            sortingKeys = sortingKeys?.map { Bytes(it) }
+        updates.add(
+            0,
+            OrderedKeysUpdate(
+                version = lastResponseVersion,
+                keys = matchingKeys,
+                sortingKeys = sortingKeys?.map { Bytes(it) }
+            )
         )
-    )
 
-    // orderedKeys reconciliation
-    scanRequest.orderedKeys?.let { orderedKeys ->
-        // Removals for keys no longer in range
-        orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
-            this.runTransaction { tr ->
+        // orderedKeys reconciliation
+        scanRequest.orderedKeys?.let { orderedKeys ->
+            // Removals for keys no longer in range
+            orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
                 for (removedKey in removedKeys) {
                     val exists = tr.get(packKey(tableDirs.keysPrefix, removedKey.bytes)).awaitResult()
                     updates += RemovalUpdate(
@@ -198,11 +191,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                     )
                 }
             }
-        }
 
-        // Additions for keys newly added in range relative to old orderedKeys
-        matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
-            this.runTransaction { tr ->
+            // Additions for keys newly added in range relative to old orderedKeys
+            matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
                 for (addedKey in addedKeys) {
                     val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).awaitResult()
                     if (createdBytes != null) {
@@ -226,15 +217,15 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 }
             }
         }
-    }
 
-    storeAction.response.complete(
-        UpdatesResponse(
-            dataModel = scanRequest.dataModel,
-            updates = updates,
-            dataFetchType = dataFetchType,
+        storeAction.response.complete(
+            UpdatesResponse(
+                dataModel = scanRequest.dataModel,
+                updates = updates,
+                dataFetchType = dataFetchType,
+            )
         )
-    )
+    }
 }
 
 /** Simple getter to compute index values for current key within a single transaction */

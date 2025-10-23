@@ -25,17 +25,18 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
 
     scanRequest.checkMaxVersions(keepAllVersions)
 
-    val dataFetchType = this.processScan(
-        scanRequest = scanRequest,
-        tableDirs = tableDirs,
-        scanSetup = { /* no-op */ },
-    ) { key, creationVersion, sortingKey ->
-        val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-            cache.readValue(dbIndex, key, reference, version, valueReader)
-        }
+    this.runTransaction { tr ->
+        val dataFetchType = this.processScan(
+            tr = tr,
+            scanRequest = scanRequest,
+            tableDirs = tableDirs,
+            scanSetup = { /* no-op */ },
+        ) { key, creationVersion, sortingKey ->
+            val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                cache.readValue(dbIndex, key, reference, version, valueReader)
+            }
 
-        val change = this.runTransaction { tr ->
-            scanRequest.dataModel.readTransactionIntoObjectChanges(
+            val change = scanRequest.dataModel.readTransactionIntoObjectChanges(
                 tr = tr,
                 creationVersion = creationVersion,
                 tableDirs = tableDirs,
@@ -47,15 +48,16 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
                 sortingKey = sortingKey,
                 cachedRead = cacheReader
             )
+            change?.let { objectChanges += it }
         }
-        change?.let { objectChanges += it }
-    }
 
-    storeAction.response.complete(
-        ChangesResponse(
-            dataModel = scanRequest.dataModel,
-            changes = objectChanges,
-            dataFetchType = dataFetchType,
+
+        storeAction.response.complete(
+            ChangesResponse(
+                dataModel = scanRequest.dataModel,
+                changes = objectChanges,
+                dataFetchType = dataFetchType,
+            )
         )
-    )
+    }
 }

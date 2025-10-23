@@ -35,62 +35,62 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
 
     getRequest.checkToVersion(keepAllVersions)
 
-    keyWalk@ for (key in getRequest.keys) {
-        val valuesWithMetaData = runTransaction { tr ->
-            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-            if (existing == null) {
-                null
-            } else {
-                val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
-
-                if (getRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, getRequest.toVersion)) {
+    runTransaction { tr ->
+        keyWalk@ for (key in getRequest.keys) {
+            val valuesWithMetaData = run {
+                val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
+                if (existing == null) {
                     null
                 } else {
-                    val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        cache.readValue(dbIndex, key, reference, version, valueReader)
-                    }
+                    val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
 
-                    getRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                        tr = tr,
-                        creationVersion = creationVersion,
-                        tableDirs = tableDirs,
-                        key = key,
-                        select = getRequest.select,
-                        toVersion = getRequest.toVersion,
-                        cachedRead = cacheReader
-                    )
-                }
-            }
-        }
+                    if (getRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, getRequest.toVersion)) {
+                        null
+                    } else {
+                        val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                            cache.readValue(dbIndex, key, reference, version, valueReader)
+                        }
 
-        if (valuesWithMetaData == null) continue@keyWalk
-        valuesWithMeta.add(valuesWithMetaData)
-
-        aggregator?.aggregate {
-            @Suppress("UNCHECKED_CAST")
-            valuesWithMetaData.values[it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>]
-                ?: runTransaction { tr ->
-                    tr.getValue(
-                        tableDirs = tableDirs,
-                        toVersion = getRequest.toVersion,
-                        keyAndReference = it.toStorageByteArray()
-                    ) { valueBytes, offset, length ->
-                        (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(
-                            valueBytes,
-                            offset,
-                            length
+                        getRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                            tr = tr,
+                            creationVersion = creationVersion,
+                            tableDirs = tableDirs,
+                            key = key,
+                            select = getRequest.select,
+                            toVersion = getRequest.toVersion,
+                            cachedRead = cacheReader
                         )
                     }
                 }
-        }
-    }
+            }
 
-    storeAction.response.complete(
-        ValuesResponse(
-            dataModel = getRequest.dataModel,
-            values = valuesWithMeta,
-            aggregations = aggregator?.toResponse(),
-            dataFetchType = FetchByKey,
+            if (valuesWithMetaData == null) continue@keyWalk
+            valuesWithMeta.add(valuesWithMetaData)
+
+            aggregator?.aggregate {
+                @Suppress("UNCHECKED_CAST")
+                valuesWithMetaData.values[it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>]
+                    ?: tr.getValue(
+                            tableDirs = tableDirs,
+                            toVersion = getRequest.toVersion,
+                            keyAndReference = it.toStorageByteArray()
+                        ) { valueBytes, offset, length ->
+                            (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(
+                                valueBytes,
+                                offset,
+                                length
+                            )
+                        }
+            }
+        }
+
+        storeAction.response.complete(
+            ValuesResponse(
+                dataModel = getRequest.dataModel,
+                values = valuesWithMeta,
+                aggregations = aggregator?.toResponse(),
+                dataFetchType = FetchByKey,
+            )
         )
-    )
+    }
 }

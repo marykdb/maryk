@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
 import com.apple.foundationdb.Range
+import com.apple.foundationdb.Transaction
 import maryk.core.clock.HLC
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
@@ -16,7 +17,6 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.values.IsValuesGetter
-import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
@@ -34,7 +34,8 @@ import maryk.lib.extensions.compare.compareDefinedTo
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 
-internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
+internal fun <DM : IsRootDataModel> scanIndex(
+    tr: Transaction,
     tableDirs: IsTableDirectories,
     scanRequest: IsScanRequest<DM, *>,
     indexScan: ScanType.IndexScan,
@@ -56,19 +57,17 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
     // Compute response metadata start/stop
     // Build a helper valuesGetter for computing index start from the startKey (respecting toVersion)
     val startIndexKey: ByteArray? = scanRequest.startKey?.let { startKey ->
-        runTransaction { tr ->
-            val getter = object : IsValuesGetter {
-                override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
-                    propertyReference: IsPropertyReference<T, D, C>
-                ): T? {
-                    val keyAndRef = combineToByteArray(startKey.bytes, propertyReference.toStorageByteArray())
-                    return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef, startKey.size) { valueBytes, offset, length ->
-                        valueBytes.convertToValue(propertyReference, offset, length) as T?
-                    }
+        val getter = object : IsValuesGetter {
+            override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
+                propertyReference: IsPropertyReference<T, D, C>
+            ): T? {
+                val keyAndRef = combineToByteArray(startKey.bytes, propertyReference.toStorageByteArray())
+                return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef, startKey.size) { valueBytes, offset, length ->
+                    valueBytes.convertToValue(propertyReference, offset, length) as T?
                 }
             }
-            indexScan.index.toStorageByteArrayForIndex(getter, startKey.bytes)
         }
+        indexScan.index.toStorageByteArrayForIndex(getter, startKey.bytes)
     }
 
     val responseStartKey = when (indexScan.direction) {
@@ -84,105 +83,103 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.scanIndex(
     data class Rec(val sort: ByteArray, val keyBytes: ByteArray, val created: ULong)
     val collected = mutableListOf<Rec>()
 
-    runTransaction { tr ->
-        if (!useHistoric) {
-            // Iterate per computed index range segment
-            val base = packKey(tableDirs.indexPrefix, indexReference)
-            val baseEnd = Range.startsWith(base).end
-            indexScanRange.ranges.forEachIndexed { i, range ->
-                val startSeg = when (indexScan.direction) {
-                    ASC -> range.getAscendingStartKey(startIndexKey.takeIf { i == 0 }, if (i == 0) scanRequest.includeStart else true)
-                    DESC -> range.getAscendingStartKey(null, true)
-                }
-                val endExclusiveSeg = range.getDescendingStartKey()
-                val begin = combineToByteArray(base, startSeg)
-                val end = if (endExclusiveSeg == null || endExclusiveSeg.isEmpty()) baseEnd else combineToByteArray(base, endExclusiveSeg)
-
-                val it = tr.getRange(Range(begin, end)).iterator()
-                while (it.hasNext()) {
-                    val kv = it.next()
-                    val indexKeyBytes = kv.key
-                    val totalLen = indexKeyBytes.size
-                    val valueSize = totalLen - valueOffset - keySize - versionSize
-                    if (valueSize < 0) continue
-
-                    val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
-
-                    if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
-
-                    val keyOffset = valueOffset + valueSize
-                    val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
-                    val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
-                    val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
-                    if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion)) continue
-                    collected += Rec(sortingKey, keyBytes, createdVersion)
-                }
+    if (!useHistoric) {
+        // Iterate per computed index range segment
+        val base = packKey(tableDirs.indexPrefix, indexReference)
+        val baseEnd = Range.startsWith(base).end
+        indexScanRange.ranges.forEachIndexed { i, range ->
+            val startSeg = when (indexScan.direction) {
+                ASC -> range.getAscendingStartKey(startIndexKey.takeIf { i == 0 }, if (i == 0) scanRequest.includeStart else true)
+                DESC -> range.getAscendingStartKey(null, true)
             }
-        } else {
-            // Historic index scan: iterate per segment over versioned index
-            require(tableDirs is HistoricTableDirectories)
-            val histBase = tableDirs.historicIndexPrefix
-            val basePrefix = encodeZeroFreeUsing01(indexReference)
-            val baseEnd = Range.startsWith(packKey(histBase, basePrefix)).end
-            val versionFloor = scanRequest.toVersion!!.toReversedVersionBytes()
-            val toVersionBytes = versionFloor
-            data class Rev(val version: ULong, val rec: Rec)
-            val latestByKey = mutableMapOf<Int, Rev>() // keep the max version per key
+            val endExclusiveSeg = range.getDescendingStartKey()
+            val begin = combineToByteArray(base, startSeg)
+            val end = if (endExclusiveSeg == null || endExclusiveSeg.isEmpty()) baseEnd else combineToByteArray(base, endExclusiveSeg)
 
-            indexScanRange.ranges.forEachIndexed { i, range ->
-                val startSeg = when (indexScan.direction) {
-                    ASC -> range.getAscendingStartKey(startIndexKey.takeIf { i == 0 }, if (i == 0) scanRequest.includeStart else true)
-                    DESC -> range.getAscendingStartKey(null, true)
-                }
-                val endExclusiveSeg = range.getDescendingStartKey()
+            val it = tr.getRange(Range(begin, end)).iterator()
+            while (it.hasNext()) {
+                val kv = it.next()
+                val indexKeyBytes = kv.key
+                val totalLen = indexKeyBytes.size
+                val valueSize = totalLen - valueOffset - keySize - versionSize
+                if (valueSize < 0) continue
 
-                val beginQualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, startSeg))
-                val begin = packKey(histBase, beginQualifier, byteArrayOf(0), versionFloor)
-                val end = if (endExclusiveSeg == null || endExclusiveSeg.isEmpty()) {
-                    baseEnd
-                } else {
-                    val endQualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, endExclusiveSeg))
-                    packKey(histBase, endQualifier)
-                }
+                val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
 
-                val it = tr.getRange(Range(begin, end)).iterator()
-                var lastQualifierEncoded: ByteArray? = null
-                while (it.hasNext()) {
-                    val kv = it.next()
-                    val k = kv.key
-                    val versionOffset = k.size - toVersionBytes.size
-                    val sepIndex = versionOffset - 1
-                    if (sepIndex < histBase.size || k[sepIndex] != 0.toByte()) continue
-                    if (toVersionBytes.compareToWithOffsetLength(k, versionOffset) > 0) continue
+                if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
 
-                    val encQualifier = k.copyOfRange(histBase.size, sepIndex)
-                    // Only process first entry per qualifier (this is the latest <= toVersion)
-                    val prevEnc = lastQualifierEncoded
-                    if (prevEnc != null && prevEnc.contentEquals(encQualifier)) continue
-                    lastQualifierEncoded = encQualifier
-                    val qualifier = decodeZeroFreeUsing01(encQualifier)
-                    if (qualifier.size <= indexReference.size) continue
-                    val valueAndKey = qualifier.copyOfRange(indexReference.size, qualifier.size)
-
-                    if (!indexScanRange.matchesPartials(valueAndKey, 0, valueAndKey.size - keySize)) continue
-
-                    val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
-                    val keyId = keyBytes.contentHashCode()
-                    // For historic filter checks, pass null as creationVersion to avoid excluding records created after toVersion
-                    if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion)) continue
-
-                    val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
-                    val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
-                    val version = k.readReversedVersionBytes(versionOffset)
-                    val rec = Rec(valueAndKey, keyBytes, createdVersion)
-                    val prev = latestByKey[keyId]
-                    if (prev == null || version > prev.version) {
-                        latestByKey[keyId] = Rev(version, rec)
-                    }
-                }
+                val keyOffset = valueOffset + valueSize
+                val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
+                val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
+                val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion)) continue
+                collected += Rec(sortingKey, keyBytes, createdVersion)
             }
-            collected += latestByKey.values.map { it.rec }
         }
+    } else {
+        // Historic index scan: iterate per segment over versioned index
+        require(tableDirs is HistoricTableDirectories)
+        val histBase = tableDirs.historicIndexPrefix
+        val basePrefix = encodeZeroFreeUsing01(indexReference)
+        val baseEnd = Range.startsWith(packKey(histBase, basePrefix)).end
+        val versionFloor = scanRequest.toVersion!!.toReversedVersionBytes()
+        val toVersionBytes = versionFloor
+        data class Rev(val version: ULong, val rec: Rec)
+        val latestByKey = mutableMapOf<Int, Rev>() // keep the max version per key
+
+        indexScanRange.ranges.forEachIndexed { i, range ->
+            val startSeg = when (indexScan.direction) {
+                ASC -> range.getAscendingStartKey(startIndexKey.takeIf { i == 0 }, if (i == 0) scanRequest.includeStart else true)
+                DESC -> range.getAscendingStartKey(null, true)
+            }
+            val endExclusiveSeg = range.getDescendingStartKey()
+
+            val beginQualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, startSeg))
+            val begin = packKey(histBase, beginQualifier, byteArrayOf(0), versionFloor)
+            val end = if (endExclusiveSeg == null || endExclusiveSeg.isEmpty()) {
+                baseEnd
+            } else {
+                val endQualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, endExclusiveSeg))
+                packKey(histBase, endQualifier)
+            }
+
+            val it = tr.getRange(Range(begin, end)).iterator()
+            var lastQualifierEncoded: ByteArray? = null
+            while (it.hasNext()) {
+                val kv = it.next()
+                val k = kv.key
+                val versionOffset = k.size - toVersionBytes.size
+                val sepIndex = versionOffset - 1
+                if (sepIndex < histBase.size || k[sepIndex] != 0.toByte()) continue
+                if (toVersionBytes.compareToWithOffsetLength(k, versionOffset) > 0) continue
+
+                val encQualifier = k.copyOfRange(histBase.size, sepIndex)
+                // Only process first entry per qualifier (this is the latest <= toVersion)
+                val prevEnc = lastQualifierEncoded
+                if (prevEnc != null && prevEnc.contentEquals(encQualifier)) continue
+                lastQualifierEncoded = encQualifier
+                val qualifier = decodeZeroFreeUsing01(encQualifier)
+                if (qualifier.size <= indexReference.size) continue
+                val valueAndKey = qualifier.copyOfRange(indexReference.size, qualifier.size)
+
+                if (!indexScanRange.matchesPartials(valueAndKey, 0, valueAndKey.size - keySize)) continue
+
+                val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
+                val keyId = keyBytes.contentHashCode()
+                // For historic filter checks, pass null as creationVersion to avoid excluding records created after toVersion
+                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion)) continue
+
+                val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
+                val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                val version = k.readReversedVersionBytes(versionOffset)
+                val rec = Rec(valueAndKey, keyBytes, createdVersion)
+                val prev = latestByKey[keyId]
+                if (prev == null || version > prev.version) {
+                    latestByKey[keyId] = Rev(version, rec)
+                }
+            }
+        }
+        collected += latestByKey.values.map { it.rec }
     }
 
     // Ensure deterministic ordering by sorting on sortingKey asc

@@ -32,48 +32,51 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
     val dbIndex = getDataModelId(getRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 
-    keyWalk@ for (key in getRequest.keys) {
-        val changes: DataObjectVersionedChange<DM>? = runTransaction { tr ->
-            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-            if (existing == null) {
-                null
-            } else {
-                val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
-
-                if (getRequest.shouldBeFiltered(
-                        transaction = tr,
-                        tableDirs = tableDirs,
-                        key = key.bytes,
-                        keyOffset = 0,
-                        keyLength = key.size,
-                        createdVersion = creationVersion,
-                        toVersion = getRequest.toVersion
-                    )
-                ) {
+    runTransaction { tr ->
+        keyWalk@ for (key in getRequest.keys) {
+            val changes: DataObjectVersionedChange<DM>? = run {
+                val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
+                if (existing == null) {
                     null
                 } else {
-                    val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        cache.readValue(dbIndex, key, reference, version, valueReader)
-                    }
+                    val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
 
-                    getRequest.dataModel.readTransactionIntoObjectChanges(
-                        tr = tr,
-                        creationVersion = creationVersion,
-                        tableDirs = tableDirs,
-                        key = key,
-                        select = getRequest.select,
-                        fromVersion = getRequest.fromVersion,
-                        toVersion = getRequest.toVersion,
-                        maxVersions = getRequest.maxVersions,
-                        sortingKey = null,
-                        cachedRead = cacheReader
-                    )
+                    if (getRequest.shouldBeFiltered(
+                            transaction = tr,
+                            tableDirs = tableDirs,
+                            key = key.bytes,
+                            keyOffset = 0,
+                            keyLength = key.size,
+                            createdVersion = creationVersion,
+                            toVersion = getRequest.toVersion
+                        )
+                    ) {
+                        null
+                    } else {
+                        val cacheReader =
+                            { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                                cache.readValue(dbIndex, key, reference, version, valueReader)
+                            }
+
+                        getRequest.dataModel.readTransactionIntoObjectChanges(
+                            tr = tr,
+                            creationVersion = creationVersion,
+                            tableDirs = tableDirs,
+                            key = key,
+                            select = getRequest.select,
+                            fromVersion = getRequest.fromVersion,
+                            toVersion = getRequest.toVersion,
+                            maxVersions = getRequest.maxVersions,
+                            sortingKey = null,
+                            cachedRead = cacheReader
+                        )
+                    }
                 }
             }
-        }
 
-        if (changes == null) continue@keyWalk
-        objectChanges += changes
+            if (changes == null) continue@keyWalk
+            objectChanges += changes
+        }
     }
 
     storeAction.response.complete(

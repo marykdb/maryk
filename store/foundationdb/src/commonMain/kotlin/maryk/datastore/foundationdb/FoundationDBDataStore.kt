@@ -8,7 +8,6 @@ import com.apple.foundationdb.directory.DirectoryLayer
 import com.apple.foundationdb.directory.DirectorySubspace
 import com.apple.foundationdb.tuple.Tuple
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.future.await
@@ -120,9 +119,9 @@ class FoundationDBDataStore private constructor(
     internal inline fun <T> runTransaction(
         crossinline block: (Transaction) -> T
     ): T =
-        tc.run(Function { tr ->
+        tc.run { tr ->
             block(tr)
-        })
+        }
 
     internal inline fun <T> runTransactionAsync(
         crossinline block: (Transaction) -> CompletableFuture<T>
@@ -324,7 +323,7 @@ class FoundationDBDataStore private constructor(
 
     internal fun emitUpdate(update: Update<*>?) {
         if (update == null) return
-        launch(updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
+        launch(updateDispatcher) {
             updateSharedFlow.emit(
                 update
             )

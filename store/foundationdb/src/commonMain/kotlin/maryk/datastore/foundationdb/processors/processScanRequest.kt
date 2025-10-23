@@ -31,6 +31,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
 
     val responseFetchType = runTransaction { tr ->
         this@processScanRequest.processScan(
+            tr = tr,
             scanRequest = scanRequest,
             tableDirs = tableDirs,
             scanSetup = { /* nothing */ }

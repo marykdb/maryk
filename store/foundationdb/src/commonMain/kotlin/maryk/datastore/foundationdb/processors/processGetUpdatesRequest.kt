@@ -45,102 +45,105 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
     var lastResponseVersion = 0uL
     var insertionIndex = -1
 
-    keyWalk@ for (key in getRequest.keys) {
-        val result = this.runTransaction { tr ->
-            val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-            if (existing == null) {
-                Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
-            } else {
-                val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
-
-                if (getRequest.shouldBeFiltered(
-                        transaction = tr,
-                        tableDirs = tableDirs,
-                        key = key.bytes,
-                        keyOffset = 0,
-                        keyLength = key.size,
-                        createdVersion = creationVersion,
-                        toVersion = getRequest.toVersion
-                    )
-                ) {
+    this.runTransaction { tr ->
+        keyWalk@ for (key in getRequest.keys) {
+            val result = run {
+                val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
+                if (existing == null) {
                     Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
                 } else {
-                    // Determine last known version for ordered response metadata
-                    val last = getLastVersion(tr, tableDirs, key)
+                    val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
 
-                    val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        cache.readValue(dbIndex, key, reference, version, valueReader)
+                    if (getRequest.shouldBeFiltered(
+                            transaction = tr,
+                            tableDirs = tableDirs,
+                            key = key.bytes,
+                            keyOffset = 0,
+                            keyLength = key.size,
+                            createdVersion = creationVersion,
+                            toVersion = getRequest.toVersion
+                        )
+                    ) {
+                        Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
+                    } else {
+                        // Determine last known version for ordered response metadata
+                        val last = getLastVersion(tr, tableDirs, key)
+
+                        val cacheReader =
+                            { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                                cache.readValue(dbIndex, key, reference, version, valueReader)
+                            }
+
+                        val objChanges = getRequest.dataModel.readTransactionIntoObjectChanges(
+                            tr = tr,
+                            creationVersion = creationVersion,
+                            tableDirs = tableDirs,
+                            key = key,
+                            select = getRequest.select,
+                            fromVersion = getRequest.fromVersion,
+                            toVersion = getRequest.toVersion,
+                            maxVersions = getRequest.maxVersions,
+                            sortingKey = null,
+                            cachedRead = cacheReader
+                        )
+
+                        Pair(last, objChanges)
                     }
+                }
+            }
 
-                    val objChanges = getRequest.dataModel.readTransactionIntoObjectChanges(
-                        tr = tr,
-                        creationVersion = creationVersion,
-                        tableDirs = tableDirs,
-                        key = key,
-                        select = getRequest.select,
-                        fromVersion = getRequest.fromVersion,
-                        toVersion = getRequest.toVersion,
-                        maxVersions = getRequest.maxVersions,
-                        sortingKey = null,
-                        cachedRead = cacheReader
-                    )
+            val (keyLastVersion, changes) = result
+            if (keyLastVersion != null) {
+                // Track ordered keys and response version regardless of initial changes
+                lastResponseVersion = maxOf(lastResponseVersion, keyLastVersion)
+                insertionIndex++
+                matchingKeys.add(key)
+            }
 
-                    Pair(last, objChanges)
+            changes?.let { oc ->
+                updates += oc.changes.map { versionedChange ->
+                    val ch = versionedChange.changes
+                    if (ch.contains(ObjectCreate)) {
+                        val addedValues = getRequest.dataModel.fromChanges(null, ch)
+                        AdditionUpdate(
+                            key = oc.key,
+                            version = versionedChange.version,
+                            firstVersion = versionedChange.version,
+                            insertionIndex = insertionIndex,
+                            isDeleted = false,
+                            values = addedValues
+                        )
+                    } else {
+                        ChangeUpdate(
+                            key = oc.key,
+                            version = versionedChange.version,
+                            index = insertionIndex,
+                            changes = ch
+                        )
+                    }
                 }
             }
         }
 
-        val (keyLastVersion, changes) = result
-        if (keyLastVersion != null) {
-            // Track ordered keys and response version regardless of initial changes
-            lastResponseVersion = maxOf(lastResponseVersion, keyLastVersion)
-            insertionIndex++
-            matchingKeys.add(key)
-        }
+        // Sort all updates on version ascending
+        updates.sortBy { it.version }
 
-        changes?.let { oc ->
-            updates += oc.changes.map { versionedChange ->
-                val ch = versionedChange.changes
-                if (ch.contains(ObjectCreate)) {
-                    val addedValues = getRequest.dataModel.fromChanges(null, ch)
-                    AdditionUpdate(
-                        key = oc.key,
-                        version = versionedChange.version,
-                        firstVersion = versionedChange.version,
-                        insertionIndex = insertionIndex,
-                        isDeleted = false,
-                        values = addedValues
-                    )
-                } else {
-                    ChangeUpdate(
-                        key = oc.key,
-                        version = versionedChange.version,
-                        index = insertionIndex,
-                        changes = ch
-                    )
-                }
-            }
-        }
+        lastResponseVersion = minOf(getRequest.toVersion ?: ULong.MAX_VALUE, lastResponseVersion)
+
+        updates.add(
+            0,
+            OrderedKeysUpdate(
+                version = lastResponseVersion,
+                keys = matchingKeys
+            )
+        )
+
+        storeAction.response.complete(
+            UpdatesResponse(
+                dataModel = getRequest.dataModel,
+                updates = updates,
+                dataFetchType = FetchByKey,
+            )
+        )
     }
-
-    // Sort all updates on version ascending
-    updates.sortBy { it.version }
-
-    lastResponseVersion = minOf(getRequest.toVersion ?: ULong.MAX_VALUE, lastResponseVersion)
-
-    updates.add(
-        0,
-        OrderedKeysUpdate(
-            version = lastResponseVersion,
-            keys = matchingKeys
-        )
-    )
-
-    storeAction.response.complete(
-        UpdatesResponse(
-            dataModel = getRequest.dataModel,
-            updates = updates,
-            dataFetchType = FetchByKey,
-        )
-    )
 }

@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
 import com.apple.foundationdb.Range
+import com.apple.foundationdb.ReadTransaction
 import com.apple.foundationdb.Transaction
 import maryk.core.clock.HLC
 import maryk.core.exceptions.StorageException
@@ -19,6 +20,7 @@ import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
@@ -28,6 +30,7 @@ import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEn
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
+import maryk.datastore.foundationdb.processors.helpers.asByteArrayKey
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.lib.bytes.combineToByteArray
@@ -81,72 +84,129 @@ internal fun <DM : IsRootDataModel> scanIndex(
         DESC -> indexScanRange.ranges.last().getAscendingStartKey()
     }
 
-    // Collect matching records (valueAndKey slice + (key, createdVersion))
     data class Rec(val sort: ByteArray, val keyBytes: ByteArray, val created: ULong)
-    val collected = mutableListOf<Rec>()
 
     if (!useHistoric) {
-        // Iterate per computed index range segment
         val base = packKey(tableDirs.indexPrefix, indexReference)
         val baseEnd = Range.startsWith(base).end
         val ranges = indexScanRange.ranges
-        val descendingStartKey = startIndexKey
-        var descendingUpperBoundApplied = false
-        for (i in ranges.indices) {
-            val range = ranges[i]
-            if (indexScan.direction == DESC && descendingStartKey != null &&
-                range.keyBeforeStart(descendingStartKey, 0, descendingStartKey.size)
-            ) {
-                continue
-            }
+        var emitted = 0u
 
-            val startSeg = when (indexScan.direction) {
-                ASC -> range.getAscendingStartKey(startIndexKey.takeIf { i == 0 }, if (i == 0) scanRequest.includeStart else true)
-                DESC -> range.getAscendingStartKey(null, true)
-            }
-            val begin = combineToByteArray(base, startSeg)
-            val end = if (indexScan.direction == DESC && descendingStartKey != null &&
-                !descendingUpperBoundApplied &&
-                !range.keyOutOfRange(descendingStartKey, 0, descendingStartKey.size)
-            ) {
-                descendingUpperBoundApplied = true
-                packDescendingExclusiveEnd(scanRequest.includeStart, base, descendingStartKey)
-            } else {
-                when (val endExclusiveSeg = range.getDescendingStartKey()) {
-                    null -> baseEnd
-                    else -> if (endExclusiveSeg.isEmpty()) baseEnd else combineToByteArray(base, endExclusiveSeg)
+        when (indexScan.direction) {
+            ASC -> {
+                var startKeyFilter = startIndexKey
+                var includeStartFilter = scanRequest.includeStart
+                for (i in ranges.indices) {
+                    if (emitted >= scanRequest.limit) break
+                    val range = ranges[i]
+
+                    val startSeg = range.getAscendingStartKey(startKeyFilter.takeIf { i == 0 }, if (i == 0) includeStartFilter else true)
+                    val begin = combineToByteArray(base, startSeg)
+                    val end = when (val endExclusiveSeg = range.getDescendingStartKey()) {
+                        null -> baseEnd
+                        else -> if (endExclusiveSeg.isEmpty()) baseEnd else combineToByteArray(base, endExclusiveSeg)
+                    }
+
+                    val cmpLength = min(begin.size, end.size)
+                    val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+                        0 -> begin.size >= end.size
+                        else -> cmp > 0
+                    }
+                    if (beginGteEnd) continue
+
+                    val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, false).iterator()
+                    while (iterator.hasNext() && emitted < scanRequest.limit) {
+                        val kv = iterator.next()
+                        val indexKeyBytes = kv.key
+                        val totalLen = indexKeyBytes.size
+                        val valueSize = totalLen - valueOffset - keySize - versionSize
+                        if (valueSize < 0) continue
+                        val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
+                        if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
+                        val keyOffset = valueOffset + valueSize
+                        val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
+                        val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
+                        val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion)) continue
+
+                        if (startKeyFilter != null) {
+                            val cmp = sortingKey.compareDefinedTo(startKeyFilter)
+                            if (cmp < 0) continue
+                            if (!includeStartFilter && cmp == 0) continue
+                        }
+
+                        val key = scanRequest.dataModel.key(keyBytes)
+                        processStoreValue(key, createdVersion, sortingKey)
+                        emitted++
+                    }
+
+                    if (startKeyFilter != null) {
+                        startKeyFilter = null
+                        includeStartFilter = true
+                    }
                 }
             }
+            DESC -> {
+                var startUpperBoundApplied = false
+                for (rangeIndex in ranges.indices.reversed()) {
+                    if (emitted >= scanRequest.limit) break
+                    val range = ranges[rangeIndex]
 
-            val cmpLength = min(begin.size, end.size)
-            val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
-                0 -> begin.size >= end.size
-                else -> cmp > 0
-            }
-            if (beginGteEnd) continue
+                    if (!startUpperBoundApplied && startIndexKey != null &&
+                        range.keyBeforeStart(startIndexKey, 0, startIndexKey.size)
+                    ) {
+                        continue
+                    }
 
-            val it = tr.getRange(Range(begin, end)).iterator()
-            while (it.hasNext()) {
-                val kv = it.next()
-                val indexKeyBytes = kv.key
-                val totalLen = indexKeyBytes.size
-                val valueSize = totalLen - valueOffset - keySize - versionSize
-                if (valueSize < 0) continue
+                    val startSeg = range.getAscendingStartKey(null, true)
+                    val begin = combineToByteArray(base, startSeg)
+                    val end = if (!startUpperBoundApplied && startIndexKey != null &&
+                        !range.keyOutOfRange(startIndexKey, 0, startIndexKey.size)
+                    ) {
+                        startUpperBoundApplied = true
+                        packDescendingExclusiveEnd(scanRequest.includeStart, base, startIndexKey)
+                    } else {
+                        when (val endExclusiveSeg = range.getDescendingStartKey()) {
+                            null -> baseEnd
+                            else -> if (endExclusiveSeg.isEmpty()) baseEnd else combineToByteArray(base, endExclusiveSeg)
+                        }
+                    }
 
-                val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
+                    val cmpLength = min(begin.size, end.size)
+                    val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+                        0 -> begin.size >= end.size
+                        else -> cmp > 0
+                    }
+                    if (beginGteEnd) continue
 
-                if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
+                    val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, true).iterator()
+                    while (iterator.hasNext() && emitted < scanRequest.limit) {
+                        val kv = iterator.next()
+                        val indexKeyBytes = kv.key
+                        val totalLen = indexKeyBytes.size
+                        val valueSize = totalLen - valueOffset - keySize - versionSize
+                        if (valueSize < 0) continue
+                        val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
+                        if (startIndexKey != null) {
+                            val cmp = sortingKey.compareDefinedTo(startIndexKey)
+                            if (cmp > 0) continue
+                            if (!scanRequest.includeStart && cmp == 0) continue
+                        }
+                        if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
+                        val keyOffset = valueOffset + valueSize
+                        val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
+                        val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
+                        val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion)) continue
 
-                val keyOffset = valueOffset + valueSize
-                val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
-                val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
-                val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
-                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion)) continue
-                collected += Rec(sortingKey, keyBytes, createdVersion)
+                        val key = scanRequest.dataModel.key(keyBytes)
+                        processStoreValue(key, createdVersion, sortingKey)
+                        emitted++
+                    }
+                }
             }
         }
     } else {
-        // Historic index scan: iterate per segment over versioned index
         require(tableDirs is HistoricTableDirectories)
         val histBase = tableDirs.historicIndexPrefix
         val basePrefix = encodeZeroFreeUsing01(indexReference)
@@ -154,7 +214,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
         val versionFloor = scanRequest.toVersion!!.toReversedVersionBytes()
         val toVersionBytes = versionFloor
         data class Rev(val version: ULong, val rec: Rec)
-        val latestByKey = mutableMapOf<Int, Rev>() // keep the max version per key
+        val latestByKey = mutableMapOf<ByteArrayKey, Rev>()
         var descendingUpperBoundApplied = false
 
         val ranges = indexScanRange.ranges
@@ -212,7 +272,6 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 if (toVersionBytes.compareToWithOffsetLength(k, versionOffset) > 0) continue
 
                 val encQualifier = k.copyOfRange(histBase.size, sepIndex)
-                // Only process first entry per qualifier (this is the latest <= toVersion)
                 val prevEnc = lastQualifierEncoded
                 if (prevEnc != null && prevEnc.contentEquals(encQualifier)) continue
                 lastQualifierEncoded = encQualifier
@@ -223,53 +282,50 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 if (!indexScanRange.matchesPartials(valueAndKey, 0, valueAndKey.size - keySize)) continue
 
                 val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
-                val keyId = keyBytes.contentHashCode()
-                // For historic filter checks, pass null as creationVersion to avoid excluding records created after toVersion
                 if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion)) continue
 
                 val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                 val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
                 val version = k.readReversedVersionBytes(versionOffset)
                 val rec = Rec(valueAndKey, keyBytes, createdVersion)
-                val prev = latestByKey[keyId]
+                val keyRef = keyBytes.asByteArrayKey()
+                val prev = latestByKey[keyRef]
                 if (prev == null || version > prev.version) {
-                    latestByKey[keyId] = Rev(version, rec)
+                    latestByKey[keyRef] = Rev(version, rec)
                 }
             }
         }
-        collected += latestByKey.values.map { it.rec }
-    }
 
-    // Ensure deterministic ordering by sorting on sortingKey asc
-    collected.sortWith { a, b -> a.sort compareTo b.sort }
+        val results = latestByKey.values.map { it.rec }.toMutableList()
+        results.sortWith { a, b -> a.sort compareTo b.sort }
 
-    // Emit according to direction with start slicing and limit
-    var emitted = 0u
-    when (indexScan.direction) {
-        ASC -> {
-            var idx = 0
-            startIndexKey?.let { si ->
-                while (idx < collected.size && collected[idx].sort.compareDefinedTo(si) < 0) idx++
-                if (!scanRequest.includeStart && idx < collected.size && collected[idx].sort.contentEquals(si)) idx++
+        var emitted = 0u
+        when (indexScan.direction) {
+            ASC -> {
+                var idx = 0
+                startIndexKey?.let { si ->
+                    while (idx < results.size && results[idx].sort.compareDefinedTo(si) < 0) idx++
+                    if (!scanRequest.includeStart && idx < results.size && results[idx].sort.contentEquals(si)) idx++
+                }
+                while (idx < results.size && emitted < scanRequest.limit) {
+                    val rec = results[idx++]
+                    val key = scanRequest.dataModel.key(rec.keyBytes)
+                    processStoreValue(key, rec.created, rec.sort)
+                    emitted++
+                }
             }
-            while (idx < collected.size && emitted < scanRequest.limit) {
-                val rec = collected[idx++]
-                val key = scanRequest.dataModel.key(rec.keyBytes)
-                processStoreValue(key, rec.created, rec.sort)
-                emitted++
-            }
-        }
-        DESC -> {
-            var idx = collected.lastIndex
-            startIndexKey?.let { si ->
-                idx = collected.indexOfLast { it.sort.compareDefinedTo(si) <= 0 }
-                if (!scanRequest.includeStart && idx >= 0 && collected[idx].sort.contentEquals(si)) idx--
-            }
-            while (idx >= 0 && emitted < scanRequest.limit) {
-                val rec = collected[idx--]
-                val key = scanRequest.dataModel.key(rec.keyBytes)
-                processStoreValue(key, rec.created, rec.sort)
-                emitted++
+            DESC -> {
+                var idx = results.lastIndex
+                startIndexKey?.let { si ->
+                    while (idx >= 0 && results[idx].sort.compareDefinedTo(si) > 0) idx--
+                    if (!scanRequest.includeStart && idx >= 0 && results[idx].sort.contentEquals(si)) idx--
+                }
+                while (idx >= 0 && emitted < scanRequest.limit) {
+                    val rec = results[idx--]
+                    val key = scanRequest.dataModel.key(rec.keyBytes)
+                    processStoreValue(key, rec.created, rec.sort)
+                    emitted++
+                }
             }
         }
     }

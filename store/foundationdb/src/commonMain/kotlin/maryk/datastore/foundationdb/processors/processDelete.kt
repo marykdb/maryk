@@ -16,6 +16,7 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
@@ -88,9 +89,14 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     // Delete current unique entry
                     tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))
 
-                    // For soft delete, append a historic tombstone so history reflects the change
-                    if (!hardDelete && tableDirs is HistoricTableDirectories) {
-                        writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
+                    if (tableDirs is HistoricTableDirectories) {
+                        if (hardDelete) {
+                            val historicPrefix = packKey(tableDirs.historicUniquePrefix, encodeZeroFreeUsing01(uniqueRef))
+                            tr.clear(FDBRange.startsWith(historicPrefix))
+                        } else {
+                            // For soft delete, append a historic tombstone so history reflects the change
+                            writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
+                        }
                     }
                 }
             }
@@ -112,7 +118,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     tr.clear(FDBRange.startsWith(histPrefix))
                 } else if (tableDirs is HistoricTableDirectories) {
                     // Non-hard delete: write a deletion marker into historic index
-                    writeHistoricIndex(tr, tableDirs, key.bytes, valueAndKey, versionBytes, EMPTY_BYTEARRAY)
+                    writeHistoricIndex(tr, tableDirs, indexReference, valueAndKey, versionBytes, EMPTY_BYTEARRAY)
                 }
             }
         }

@@ -63,7 +63,9 @@ import maryk.core.values.IsValuesGetter
 import maryk.core.values.Values
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.asByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.checkParentReference
 import maryk.datastore.foundationdb.processors.helpers.createValueWriter
@@ -171,13 +173,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             fun addValidation(e: ValidationException) { validationExceptions += e }
 
             // Keep track of new values for index computation (overlay)
-            val overlay = mutableMapOf<ByteArray, Any?>(
-                // Use content-based equality via ByteArray keys by copying
-            )
+            val overlay = mutableMapOf<ByteArrayKey, Any?>()
 
             // Helper to put overlay value
             fun putOverlay(reference: IsPropertyReference<*, *, *>, value: Any?) {
-                overlay[reference.toStorageByteArray()] = value
+                overlay[reference.toStorageByteArray().asByteArrayKey(copy = true)] = value
             }
 
             // Snapshot getter no longer needed for 'old' — we captured initial values already
@@ -188,7 +188,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 ): T? {
                     val refBytes = propertyReference.toStorageByteArray()
                     // First check overlay map
-                    overlay.entries.firstOrNull { it.key.contentEquals(refBytes) }?.let { @Suppress("UNCHECKED_CAST") return it.value as T? }
+                    overlay[refBytes.asByteArrayKey()]?.let { @Suppress("UNCHECKED_CAST") return it as T? }
                     // Fallback to current store
                     return storeGetter[propertyReference]
                 }

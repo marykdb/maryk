@@ -45,6 +45,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     }
 
     val limit = scanRequest.limit
+
     when (direction) {
         ASC -> {
             var streamed = 0u
@@ -81,7 +82,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                 }
                 if (beginGteEnd) continue
 
-                val iterator = tr.getRange(Range(begin, end)).iterator()
+                val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, false).iterator()
                 while (iterator.hasNext() && streamed < limit) {
                     val kv: KeyValue = iterator.next()
                     val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)

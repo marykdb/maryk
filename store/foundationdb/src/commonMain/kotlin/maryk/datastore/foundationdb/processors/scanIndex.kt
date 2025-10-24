@@ -24,6 +24,7 @@ import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
+import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
@@ -33,6 +34,7 @@ import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareDefinedTo
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToWithOffsetLength
+import kotlin.math.min
 
 internal fun <DM : IsRootDataModel> scanIndex(
     tr: Transaction,
@@ -87,14 +89,41 @@ internal fun <DM : IsRootDataModel> scanIndex(
         // Iterate per computed index range segment
         val base = packKey(tableDirs.indexPrefix, indexReference)
         val baseEnd = Range.startsWith(base).end
-        indexScanRange.ranges.forEachIndexed { i, range ->
+        val ranges = indexScanRange.ranges
+        val descendingStartKey = startIndexKey
+        var descendingUpperBoundApplied = false
+        for (i in ranges.indices) {
+            val range = ranges[i]
+            if (indexScan.direction == DESC && descendingStartKey != null &&
+                range.keyBeforeStart(descendingStartKey, 0, descendingStartKey.size)
+            ) {
+                continue
+            }
+
             val startSeg = when (indexScan.direction) {
                 ASC -> range.getAscendingStartKey(startIndexKey.takeIf { i == 0 }, if (i == 0) scanRequest.includeStart else true)
                 DESC -> range.getAscendingStartKey(null, true)
             }
-            val endExclusiveSeg = range.getDescendingStartKey()
             val begin = combineToByteArray(base, startSeg)
-            val end = if (endExclusiveSeg == null || endExclusiveSeg.isEmpty()) baseEnd else combineToByteArray(base, endExclusiveSeg)
+            val end = if (indexScan.direction == DESC && descendingStartKey != null &&
+                !descendingUpperBoundApplied &&
+                !range.keyOutOfRange(descendingStartKey, 0, descendingStartKey.size)
+            ) {
+                descendingUpperBoundApplied = true
+                packDescendingExclusiveEnd(scanRequest.includeStart, base, descendingStartKey)
+            } else {
+                when (val endExclusiveSeg = range.getDescendingStartKey()) {
+                    null -> baseEnd
+                    else -> if (endExclusiveSeg.isEmpty()) baseEnd else combineToByteArray(base, endExclusiveSeg)
+                }
+            }
+
+            val cmpLength = min(begin.size, end.size)
+            val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+                0 -> begin.size >= end.size
+                else -> cmp > 0
+            }
+            if (beginGteEnd) continue
 
             val it = tr.getRange(Range(begin, end)).iterator()
             while (it.hasNext()) {
@@ -126,22 +155,51 @@ internal fun <DM : IsRootDataModel> scanIndex(
         val toVersionBytes = versionFloor
         data class Rev(val version: ULong, val rec: Rec)
         val latestByKey = mutableMapOf<Int, Rev>() // keep the max version per key
+        var descendingUpperBoundApplied = false
 
-        indexScanRange.ranges.forEachIndexed { i, range ->
+        val ranges = indexScanRange.ranges
+        for (i in ranges.indices) {
+            val range = ranges[i]
+            if (indexScan.direction == DESC && startIndexKey != null &&
+                range.keyBeforeStart(startIndexKey, 0, startIndexKey.size)
+            ) {
+                continue
+            }
+
             val startSeg = when (indexScan.direction) {
                 ASC -> range.getAscendingStartKey(startIndexKey.takeIf { i == 0 }, if (i == 0) scanRequest.includeStart else true)
                 DESC -> range.getAscendingStartKey(null, true)
             }
-            val endExclusiveSeg = range.getDescendingStartKey()
 
             val beginQualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, startSeg))
             val begin = packKey(histBase, beginQualifier, byteArrayOf(0), versionFloor)
-            val end = if (endExclusiveSeg == null || endExclusiveSeg.isEmpty()) {
-                baseEnd
+            val end = if (indexScan.direction == DESC && startIndexKey != null &&
+                !descendingUpperBoundApplied &&
+                !range.keyOutOfRange(startIndexKey, 0, startIndexKey.size)
+            ) {
+                descendingUpperBoundApplied = true
+                val qualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, startIndexKey))
+                packDescendingExclusiveEnd(scanRequest.includeStart, histBase, qualifier, byteArrayOf(0), versionFloor)
             } else {
-                val endQualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, endExclusiveSeg))
-                packKey(histBase, endQualifier)
+                when (val endExclusiveSeg = range.getDescendingStartKey()) {
+                    null -> baseEnd
+                    else -> {
+                        if (endExclusiveSeg.isEmpty()) {
+                            baseEnd
+                        } else {
+                            val endQualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, endExclusiveSeg))
+                            packKey(histBase, endQualifier)
+                        }
+                    }
+                }
             }
+
+            val cmpLength = min(begin.size, end.size)
+            val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+                0 -> begin.size >= end.size
+                else -> cmp > 0
+            }
+            if (beginGteEnd) continue
 
             val it = tr.getRange(Range(begin, end)).iterator()
             var lastQualifierEncoded: ByteArray? = null

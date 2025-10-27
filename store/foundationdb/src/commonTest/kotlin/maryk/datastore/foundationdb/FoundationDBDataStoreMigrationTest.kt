@@ -3,6 +3,7 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.test.runTest
+import maryk.core.exceptions.StorageException
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -21,6 +22,7 @@ import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
 import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.ModelWithDependents
+import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -270,5 +272,26 @@ class FoundationDBDataStoreMigrationTest {
         assertEquals(1, preChangeHistoric.values[3].values { newNumber })
 
         dataStore.close()
+    }
+
+    @Test
+    fun failsWhenModelIdIsReusedForDifferentModelName() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-name-mismatch", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelWithDependents)
+        ).close()
+
+        assertFailsWith<StorageException> {
+            FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to SimpleMarykModel)
+            )
+        }
     }
 }

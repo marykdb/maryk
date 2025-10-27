@@ -7,10 +7,14 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
+import maryk.datastore.foundationdb.metadata.ensureModelNameMapping
+import maryk.datastore.foundationdb.metadata.toMetadataBytes
 import maryk.datastore.foundationdb.processors.helpers.packKey
 
 fun storeModelDefinition(
     tc: TransactionContext,
+    metadataPrefix: ByteArray,
+    modelId: UInt,
     model: ByteArray,
     dataModel: IsRootDataModel
 ) {
@@ -40,7 +44,10 @@ fun storeModelDefinition(
         }
     } else null
 
+    val modelIdMetadataKey = packKey(metadataPrefix, modelId.toMetadataBytes())
+
     tc.run { tr ->
+        ensureModelNameMapping(tr, modelIdMetadataKey, dataModel.Meta.name)
         tr.set(packKey(model, modelNameKey), nameBytes)
         tr.set(packKey(model, modelVersionKey), versionBytes)
         tr.set(packKey(model, modelDefinitionKey), modelBytes)

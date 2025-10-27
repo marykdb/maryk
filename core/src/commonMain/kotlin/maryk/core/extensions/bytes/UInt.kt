@@ -17,7 +17,7 @@ fun UInt.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
 }
 
 /** Creates Unsigned Integer by reading bytes from [reader] */
-internal fun initUInt(reader: () -> Byte, length: Int = 4): UInt {
+fun initUInt(reader: () -> Byte, length: Int = 4): UInt {
     var int = 0u
     val firstByte = reader()
     // Skip bytes if below certain length

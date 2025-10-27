@@ -1,21 +1,23 @@
 package maryk.datastore.foundationdb.model
 
 import com.apple.foundationdb.TransactionContext
-import maryk.core.definitions.Definitions
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
+import maryk.datastore.foundationdb.metadata.toMetadataBytes
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import kotlin.text.encodeToByteArray
 
 fun checkModelIfMigrationIsNeeded(
     tc: TransactionContext,
+    metadataPrefix: ByteArray,
+    modelId: UInt,
     model: ByteArray,
     dataModel: IsRootDataModel,
     onlyCheckModelVersion: Boolean,
@@ -23,52 +25,56 @@ fun checkModelIfMigrationIsNeeded(
 ): MigrationStatus {
     val nameKey = packKey(model, modelNameKey)
     val versionKey = packKey(model, modelVersionKey)
-    val modelDefKey = packKey(model, modelDefinitionKey)
-    val dependentsDefKey = packKey(model, modelDependentsDefinitionKey)
+    val modelIdMetadataKey = packKey(metadataPrefix, modelId.toMetadataBytes())
 
     // Read name and version within a single transaction
     val (name, version) = tc.run { tr ->
-        val nameF = tr.get(nameKey)
-        val versionF = tr.get(versionKey)
-        val nameBytes = nameF.awaitResult()
-        val versionBytes = versionF.awaitResult()
+        val metadataFuture = tr.get(modelIdMetadataKey)
+        val nameFuture = tr.get(nameKey)
+        val versionFuture = tr.get(versionKey)
 
-        val readName = nameBytes?.decodeToString()
+        val metadataName = metadataFuture.awaitResult()?.decodeToString()
+        val modelStoredName = nameFuture.awaitResult()?.decodeToString()
+
+        val resolvedName = when {
+            metadataName == null && modelStoredName == null -> null
+            metadataName == null -> {
+                tr.set(modelIdMetadataKey, modelStoredName!!.encodeToByteArray())
+                modelStoredName
+            }
+            modelStoredName == null -> metadataName
+            metadataName != modelStoredName -> throw StorageException(
+                "Model id $modelId is mapped to stored model \"$metadataName\" but metadata column contains \"$modelStoredName\""
+            )
+            else -> metadataName
+        }
+
+        val versionBytes = versionFuture.awaitResult()
         val readVersion = versionBytes?.let { bytes ->
             var i = 0
             Version.Serializer.readFromBytes { bytes[i++] }
         }
-        readName to readVersion
+
+        resolvedName to readVersion
     }
 
     if (name == null || version == null) {
         return NewModel
     }
 
+    if (name != dataModel.Meta.name) {
+        throw StorageException("Model id $modelId is mapped to stored model \"$name\" but configured as \"${dataModel.Meta.name}\"")
+    }
+
     return if (dataModel.Meta.version != version || !onlyCheckModelVersion) {
-        // Ensure dependent model definitions are available in the conversion context
-        tc.run { tr ->
-            val depBytes = tr.get(dependentsDefKey).awaitResult()
-            if (depBytes != null) {
-                var readIndex = 0
-                Definitions.Serializer
-                    .readProtoBuf(depBytes.size, { depBytes[readIndex++] }, conversionContext)
-                    .toDataObject()
-            }
-        }
+        val storedDataModel = readStoredModelDefinition(tc, model, conversionContext)
+            ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.Meta.name}")
 
-        // Load stored model definition
-        val storedDataModel = tc.run { tr ->
-            val modelBytes = tr.get(modelDefKey).awaitResult()
-                ?: throw StorageException("Model is unexpectedly missing in metadata for ${dataModel.Meta.name}")
-
-            var readIndex = 0
-            RootDataModel.Model.Serializer
-                .readProtoBuf(modelBytes.size, { modelBytes[readIndex++] }, conversionContext)
-                .toDataObject()
-        }
-
-        conversionContext.dataModels[dataModel.Meta.name] = DataModelReference(storedDataModel)
+        // Ensure the conversion context references the stored model by the requested name
+        val reference = conversionContext.dataModels[storedDataModel.Meta.name]
+            ?: DataModelReference(storedDataModel)
+        conversionContext.dataModels[dataModel.Meta.name] =
+            conversionContext.dataModels[dataModel.Meta.name] ?: reference
 
         // Defer to the model diff to determine migration status
         dataModel.isMigrationNeeded(storedDataModel)

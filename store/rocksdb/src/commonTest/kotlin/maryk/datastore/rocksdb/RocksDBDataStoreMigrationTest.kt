@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.test.runTest
+import maryk.core.exceptions.StorageException
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -21,6 +22,7 @@ import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
 import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.ModelWithDependents
+import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -234,6 +236,27 @@ class RocksDBDataStoreMigrationTest {
         assertEquals(40, historicScanResponse.values[3].values { newNumber })
 
         dataStore.close()
+    
+        deleteFolder(path)
+    }
+
+    @Test
+    fun failsWhenModelIdIsReusedForDifferentModelName() = runTest {
+        val path = createTestDBFolder("migrationNameMismatch")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelWithDependents)
+        ).close()
+
+        assertFailsWith<StorageException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to SimpleMarykModel)
+            )
+        }
 
         deleteFolder(path)
     }

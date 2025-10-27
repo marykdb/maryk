@@ -51,6 +51,7 @@ import maryk.datastore.rocksdb.TableType.Keys
 import maryk.datastore.rocksdb.TableType.Model
 import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.Unique
+import maryk.datastore.rocksdb.metadata.readStoredModelNames
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.rocksdb.model.storeModelDefinition
 import maryk.datastore.rocksdb.processors.AnyAddStoreAction
@@ -93,6 +94,8 @@ import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 
+private val storeMetadataColumnFamilyName = byteArrayOf(0)
+
 class RocksDBDataStore private constructor(
     override val keepAllVersions: Boolean = true,
     relativePath: String,
@@ -119,6 +122,8 @@ class RocksDBDataStore private constructor(
 
     internal val updateDispatcher = Dispatchers.IO
 
+    private val metadataColumnFamily: ColumnFamilyHandle
+
     private val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {
         setPrefixSameAsStart(true)
@@ -129,6 +134,7 @@ class RocksDBDataStore private constructor(
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
         descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily))
+        descriptors.add(ColumnFamilyDescriptor(storeMetadataColumnFamilyName))
         for ((index, db) in dataModelsById) {
             createColumnFamilyHandles(descriptors, index, db)
         }
@@ -137,7 +143,9 @@ class RocksDBDataStore private constructor(
         this.db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, relativePath, descriptors, handles)
 
         try {
-            var handleIndex = 1
+            metadataColumnFamily = handles[1]
+
+            var handleIndex = 2
             if (keepAllVersions) {
                 for ((index, db) in dataModelsById) {
                     prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Meta.keyByteSize
@@ -178,25 +186,35 @@ class RocksDBDataStore private constructor(
 
         for ((index, dataModel) in dataModelsById) {
             columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
-                when (val migrationStatus = checkModelIfMigrationIsNeeded(db, tableColumnFamilies.model, dataModel, onlyCheckModelVersion, conversionContext)) {
+                when (
+                    val migrationStatus = checkModelIfMigrationIsNeeded(
+                        db,
+                        metadataColumnFamily,
+                        index,
+                        tableColumnFamilies.model,
+                        dataModel,
+                        onlyCheckModelVersion,
+                        conversionContext
+                    )
+                ) {
                     UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                     NewModel -> {
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, null, dataModel)
-                            storeModelDefinition(db, tableColumnFamilies.model, dataModel)
+                            storeModelDefinition(db, metadataColumnFamily, index, tableColumnFamilies.model, dataModel)
                         }
                     }
                     is OnlySafeAdds -> {
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(db, tableColumnFamilies.model, dataModel)
+                            storeModelDefinition(db, metadataColumnFamily, index, tableColumnFamilies.model, dataModel)
                         }
                     }
                     is NewIndicesOnExistingProperties -> {
                         fillIndex(migrationStatus.indexesToIndex, tableColumnFamilies)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(db, tableColumnFamilies.model, dataModel)
+                            storeModelDefinition(db, metadataColumnFamily, index, tableColumnFamilies.model, dataModel)
                         }
                     }
                     is NeedsMigration -> {
@@ -212,7 +230,7 @@ class RocksDBDataStore private constructor(
                         }
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(db, tableColumnFamilies.model, dataModel)
+                            storeModelDefinition(db, metadataColumnFamily, index, tableColumnFamilies.model, dataModel)
                         }
                     }
                 }
@@ -348,6 +366,7 @@ class RocksDBDataStore private constructor(
         columnFamilyHandlesByDataModelIndex.values.forEach {
             it.close()
         }
+        metadataColumnFamily.close()
         db.close()
     }
 
@@ -358,6 +377,9 @@ class RocksDBDataStore private constructor(
     internal fun getColumnFamilies(dataModel: IsRootDataModel) =
         columnFamilyHandlesByDataModelIndex[dataModelIdsByString[dataModel.Meta.name]]
             ?: throw DefNotFoundException("DataModel definition not found for ${dataModel.Meta.name}")
+
+    internal fun readStoredModelNamesById(): Map<UInt, String> =
+        readStoredModelNames(db, metadataColumnFamily)
 
     /** Get the unique indexes for [dbIndex] and [uniqueHandle] */
     internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =

@@ -46,6 +46,7 @@ import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.datastore.foundationdb.metadata.readStoredModelNames
 import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
@@ -79,6 +80,8 @@ import maryk.datastore.shared.Cache
 import maryk.datastore.shared.updates.Update
 import java.util.concurrent.CompletableFuture
 import java.util.function.Function
+
+private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
 
 /**
  * FoundationDB DataStore (JVM-only).
@@ -114,6 +117,8 @@ class FoundationDBDataStore private constructor(
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
 
     private lateinit var rootDirectory: DirectorySubspace
+    private lateinit var metadataDirectory: DirectorySubspace
+    private lateinit var metadataPrefix: ByteArray
     internal val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
 
     internal inline fun <T> runTransaction(
@@ -135,6 +140,11 @@ class FoundationDBDataStore private constructor(
             DirectoryLayer.getDefault().createOrOpen(tr, directoryRootPath)
         }.await()
 
+        metadataDirectory = runTransaction { tr ->
+            rootDirectory.createOrOpen(tr, storeMetadataModelsByIdDirectoryPath).awaitResult()
+        }
+        metadataPrefix = metadataDirectory.pack()!!
+
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index] = openTableDirs(dataModel.Meta.name, historic = keepAllVersions)
         }
@@ -143,11 +153,21 @@ class FoundationDBDataStore private constructor(
 
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index]?.let { tableDirectories ->
-                when (val migrationStatus = checkModelIfMigrationIsNeeded(tc, tableDirectories.modelPrefix, dataModel, onlyCheckModelVersion, conversionContext)) {
+                when (
+                    val migrationStatus = checkModelIfMigrationIsNeeded(
+                        tc,
+                        metadataPrefix,
+                        index,
+                        tableDirectories.modelPrefix,
+                        dataModel,
+                        onlyCheckModelVersion,
+                        conversionContext
+                    )
+                ) {
                     UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                     NewModel -> {
                         // Persist model metadata immediately to ensure subsequent opens see it
-                        storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
+                        storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, null, dataModel)
                         }
@@ -159,14 +179,14 @@ class FoundationDBDataStore private constructor(
                                 fillIndex(idxs, tableDirectories)
                             }
                         }
-                        storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
+                        storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                         }
                     }
                     is NewIndicesOnExistingProperties -> {
                         fillIndex(migrationStatus.indexesToIndex, tableDirectories)
-                        storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
+                        storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                         }
@@ -182,7 +202,7 @@ class FoundationDBDataStore private constructor(
                         migrationStatus.indexesToIndex?.let {
                             fillIndex(it, tableDirectories)
                         }
-                        storeModelDefinition(tc, tableDirectories.modelPrefix, dataModel)
+                        storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                         }
@@ -320,6 +340,9 @@ class FoundationDBDataStore private constructor(
     internal fun getTableDirs(dbIndex: UInt) =
         directoriesByDataModelIndex[dbIndex]
             ?: throw DefNotFoundException("DataModel definition not found for $dbIndex")
+
+    internal fun readStoredModelNamesById(): Map<UInt, String> =
+        readStoredModelNames(tc, metadataPrefix)
 
     internal fun emitUpdate(update: Update<*>?) {
         if (update == null) return

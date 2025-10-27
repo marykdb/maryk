@@ -12,6 +12,15 @@ This document explains how Maryk stores data in FoundationDB (FDB): what subspac
 
 ---
 
+### Store metadata directory
+
+In addition to the per-model directories, the store reserves a shared directory at `['__meta__', 'models_by_id']`. It keeps a simple map from model id to model name so the datastore can verify that the configured `dataModelsById` matches what was previously persisted before touching any model data. Entries are stored as:
+
+- **Key:** directory prefix + 4-byte big-endian model id.
+- **Value:** UTF-8 encoded model name.
+
+The dedicated directory already isolates this metadata, so no extra prefix byte is required.
+
 ## Directory (Subspace) Layout
 
 Per DataModel (e.g. `Log`, `Person`) we create these subspaces:

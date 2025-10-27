@@ -1,5 +1,14 @@
 # RocksDB Record Storage Structure
 
+## Store metadata column family
+
+Besides the per‑model column families, Maryk keeps a single metadata column family shared by the entire RocksDB store. Its byte is `0`. It contains the mapping from *model id → model name*, persisted as:
+
+- **Key:** one byte prefix `0x01` (defined as `MODEL_NAME_METADATA_PREFIX`) followed by the model id encoded as a fixed 4‑byte big‑endian `UInt`.
+- **Value:** UTF‑8 encoded model name.
+
+This metadata is written whenever a model definition is stored and read during startup to verify that the configured `dataModelsById` still matches the persisted schema. Because the keys are namespaced with the prefix byte, the same column family can later host new metadata types without risking collisions.
+
 ## Column Family Layout
 
 Each DataModel is represented by multiple column families that hold the actual data. At minimum a model has `Model`, `Keys`, `Table`, `Index` and `Unique`. When `keepAllVersions = true` the historic variants are also created to store previous versions.

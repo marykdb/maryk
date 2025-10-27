@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.query.requests.IsFetchRequest
@@ -43,6 +44,12 @@ abstract class AbstractDataStore(
     coroutineContext: CoroutineContext,
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = coroutineContext + SupervisorJob() + CoroutineName("MarykDataStore")
+
+    init {
+        dataModelsById[0u]?.let {
+            throw StorageException("Model 0 is reserved for Meta Data and cannot be used")
+        }
+    }
 
     final override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (index, dataModel) ->
         Pair(dataModel.Meta.name, index)

@@ -60,6 +60,14 @@ start_server() {
     --locality-machineid maryk-tests \
     --locality-zoneid local-test \
     --knob_max_outstanding=400 \
+    --knob_desired_teams_per_server=1 \
+    --knob_desired_machine_teams_per_machine=1 \
+    --knob_dd_storage_team_required=1 \
+    --knob_disable_posix_kernel_aio=1 \
+    --knob_min_available_space_ratio=0.001 \
+    --memory 512MiB \
+    --storage-memory 256MiB \
+    --cache-memory 64MiB \
     >"$LOG_DIR/fdbserver.out" 2>&1 &
   set +x
   echo $! > "$PID_FILE"
@@ -88,7 +96,7 @@ configure_if_needed() {
   # Configure a single-memory test database; ignore errors if it already exists.
   if [[ -x "$BIN_DIR/fdbcli" ]]; then
     local configure_output
-    configure_output="$("$BIN_DIR/fdbcli" --timeout 15 --exec "configure new single memory" 2>&1 || true)"
+    configure_output="$("$BIN_DIR/fdbcli" --timeout 15 --exec "configure new single memory logs=1 commit_proxies=1 grv_proxies=1" 2>&1 || true)"
     if grep -qi "Database created" <<<"$configure_output"; then
       echo "$configure_output"
     elif grep -qi "Database already exists" <<<"$configure_output"; then

@@ -1,3 +1,4 @@
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.konan.target.Family
 
@@ -31,11 +32,31 @@ kotlin {
         }
     }
 
-    targets.withType<KotlinNativeTarget>().matching { it.konanTarget.family == Family.OSX }.configureEach {
+    targets.withType<KotlinNativeTarget>().configureEach {
+        val target = this
         val libDir = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
-        binaries.withType<org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable>().configureEach {
-            linkerOpts("-L$libDir", "-lfdb_c", "-rpath", libDir)
-            linkTaskProvider.configure { dependsOn(installFoundationDB) }
+        val (libExt, envVar) = when (target.konanTarget.family) {
+            Family.OSX -> "dylib" to "DYLD_LIBRARY_PATH"
+            Family.LINUX -> "so" to "LD_LIBRARY_PATH"
+            else -> null to null
+        }
+
+        if (libExt != null && envVar != null) {
+            val libFile = rootProject.projectDir.resolve("store/foundationdb/bin/lib/libfdb_c.$libExt")
+
+            binaries.withType<org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable>().configureEach {
+                linkerOpts("-L$libDir", "-lfdb_c", "-rpath", libDir)
+                linkTaskProvider.configure {
+                    dependsOn(installFoundationDB)
+                    onlyIf {
+                        val available = libFile.exists()
+                        if (!available) {
+                            logger.lifecycle("Skipping ${name} because ${libFile.name} is absent (FoundationDB native client not installed for ${target.konanTarget.family}).")
+                        }
+                        available
+                    }
+                }
+            }
         }
     }
 
@@ -107,11 +128,36 @@ tasks.named("jvmTest").configure {
     finalizedBy(stopFoundationDBForTests)
 }
 
+val kotlinExt = extensions.getByType<KotlinMultiplatformExtension>()
+
 tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest>().configureEach {
-    val libDir = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
-    environment("DYLD_LIBRARY_PATH", libDir)
-    environment("LD_LIBRARY_PATH", libDir)
-    environment("FDB_CLUSTER_FILE", rootProject.projectDir.resolve("store/foundationdb/fdb.cluster").absolutePath)
-    dependsOn(installFoundationDB, startFoundationDBForTests)
-    finalizedBy(stopFoundationDBForTests)
+    val target = kotlinExt.targets.withType<KotlinNativeTarget>().firstOrNull { nativeTarget ->
+        name.startsWith(nativeTarget.name)
+    }
+    val family = target?.konanTarget?.family
+    val libExt = when (family) {
+        Family.OSX -> "dylib"
+        Family.LINUX -> "so"
+        else -> null
+    }
+
+    if (libExt != null) {
+        val libDir = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
+        val libFile = rootProject.projectDir.resolve("store/foundationdb/bin/lib/libfdb_c.$libExt")
+        environment("DYLD_LIBRARY_PATH", libDir)
+        environment("LD_LIBRARY_PATH", libDir)
+        environment("FDB_CLUSTER_FILE", rootProject.projectDir.resolve("store/foundationdb/fdb.cluster").absolutePath)
+        dependsOn(installFoundationDB, startFoundationDBForTests)
+        finalizedBy(stopFoundationDBForTests)
+
+        onlyIf {
+            val available = libFile.exists()
+            if (!available && family != null) {
+                logger.lifecycle("Skipping ${name} because ${libFile.name} is absent (FoundationDB native client not installed for $family).")
+            }
+            available
+        }
+    } else {
+        onlyIf { false }
+    }
 }

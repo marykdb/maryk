@@ -20,6 +20,7 @@ import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
+import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.helpers.setValue
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
@@ -152,5 +153,6 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         emitUpdate(updateToEmit)
     }
 } catch (e: Throwable) {
-    ServerFail(e.toString(), e)
+    val cause = e.unwrapFdb()
+    ServerFail(cause.toString(), cause)
 }

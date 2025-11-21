@@ -54,6 +54,7 @@ import maryk.datastore.foundationdb.processors.AnyScanStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.processAddRequest
 import maryk.datastore.foundationdb.processors.processAdditionUpdate
 import maryk.datastore.foundationdb.processors.processChangeRequest
@@ -309,7 +310,7 @@ class FoundationDBDataStore private constructor(
                             throw e
                         }
                     } catch (e: Throwable) {
-                        storeAction.response.completeExceptionally(e)
+                        storeAction.response.completeExceptionally(e.unwrapFdb())
                     }
                 }
             } finally {
@@ -384,7 +385,7 @@ class FoundationDBDataStore private constructor(
                 initAsync()
             } catch (e: Throwable) {
                 this.close()
-                throw e
+                throw e.unwrapFdb()
             }
         }
     }

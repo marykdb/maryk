@@ -82,6 +82,7 @@ import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.setListValue
 import maryk.datastore.foundationdb.processors.helpers.setValue
 import maryk.datastore.foundationdb.processors.helpers.unsetNonChangedValues
+import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.helpers.withCountUpdate
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricTable
@@ -607,12 +608,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
         @Suppress("UNCHECKED_CAST")
         e.status as IsChangeResponseStatus<DM>
     } catch (t: Throwable) {
-        val cause = t.cause
+        val cause = t.unwrapFdb()
         if (cause is EarlyStatus) {
             @Suppress("UNCHECKED_CAST")
             cause.status as IsChangeResponseStatus<DM>
         } else {
-            ServerFail(t.toString(), t)
+            ServerFail(cause.toString(), cause)
         }
     }
     return if (checkFailed) {

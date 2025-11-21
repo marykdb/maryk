@@ -34,6 +34,7 @@ import maryk.datastore.foundationdb.processors.helpers.setTypedValue
 import maryk.datastore.foundationdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.foundationdb.processors.helpers.setValue
 import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.Update
 
@@ -168,5 +169,6 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
         listOf(AlreadyExistsException(ref, ue.key))
     )
 } catch (t: Throwable) {
-    ServerFail(t.toString(), t)
+    val cause = t.unwrapFdb()
+    ServerFail(cause.toString(), cause)
 }

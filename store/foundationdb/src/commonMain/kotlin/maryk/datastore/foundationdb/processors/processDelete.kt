@@ -27,7 +27,7 @@ import maryk.datastore.shared.Cache
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.updates.Update
 import maryk.lib.bytes.combineToByteArray
-import com.apple.foundationdb.Range as FDBRange
+import maryk.foundationdb.Range as FDBRange
 
 /** Process the deletion of the value at [key]/[version] from FoundationDB */
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(

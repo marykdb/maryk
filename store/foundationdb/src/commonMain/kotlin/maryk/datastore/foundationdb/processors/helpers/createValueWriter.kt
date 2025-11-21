@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Transaction
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsValuesDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed

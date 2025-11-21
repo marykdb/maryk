@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
 import maryk.core.exceptions.StorageException
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -12,6 +12,7 @@ import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.shared.helpers.convertToValue
 
 /**
@@ -61,7 +62,7 @@ private class HistoricStoreIndexValuesGetter(
 ) : IsValuesGetter {
     private data class IterableReference(
         val referenceAsBytes: ByteArray,
-        val iterator: com.apple.foundationdb.async.AsyncIterator<com.apple.foundationdb.KeyValue>,
+        val iterator: maryk.foundationdb.async.AsyncIterator<maryk.foundationdb.KeyValue>,
         var lastVersion: ULong? = null,
         var lastValue: ByteArray? = null,
         var isPastBeginning: Boolean = false
@@ -121,7 +122,7 @@ private class HistoricStoreIndexValuesGetter(
         // Only advance to next version if needed
         if (!iterableReference.isPastBeginning && (iterableReference.lastVersion == null || versionToSkip == iterableReference.lastVersion)) {
             if (iterator.hasNext()) {
-                val kv = iterator.next()
+                val kv = iterator.nextBlocking()
                 val keyBytes = kv.key
 
                 // Historic key layout: historicTablePrefix + key + encodedRef + 0x00 + reversedVersion
@@ -157,4 +158,3 @@ private class HistoricStoreIndexValuesGetter(
         return lastValue.convertToValue(propertyReference, 0, lastValue.size)
     }
 }
-

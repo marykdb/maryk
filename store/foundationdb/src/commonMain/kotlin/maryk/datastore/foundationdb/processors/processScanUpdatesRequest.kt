@@ -230,7 +230,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
 /** Simple getter to compute index values for current key within a single transaction */
 private class StoreValuesGetter(
-    private val tr: com.apple.foundationdb.Transaction,
+    private val tr: maryk.foundationdb.Transaction,
     private val tableDirs: IsTableDirectories
 ) : IsValuesGetter {
     private lateinit var keyBytes: ByteArray

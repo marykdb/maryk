@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Transaction
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories

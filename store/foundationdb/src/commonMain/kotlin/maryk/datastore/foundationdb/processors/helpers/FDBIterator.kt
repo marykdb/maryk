@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.KeyValue
-import com.apple.foundationdb.async.AsyncIterator
+import maryk.foundationdb.KeyValue
+import maryk.foundationdb.async.AsyncIterator
 
 class FDBIterator(
     private val iterator: AsyncIterator<KeyValue>
@@ -9,5 +9,5 @@ class FDBIterator(
     lateinit var current: KeyValue
 
     override fun hasNext() = iterator.hasNext()
-    override fun next(): KeyValue = iterator.next().also { this.current = it }
+    override fun next(): KeyValue = iterator.nextBlocking().also { this.current = it }
 }

@@ -1,8 +1,8 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.ReadTransaction
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Range
+import maryk.foundationdb.ReadTransaction
+import maryk.foundationdb.Transaction
 import maryk.core.clock.HLC
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
@@ -23,6 +23,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
@@ -116,7 +117,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
                     val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, false).iterator()
                     while (iterator.hasNext() && emitted < scanRequest.limit) {
-                        val kv = iterator.next()
+                        val kv = iterator.nextBlocking()
                         val indexKeyBytes = kv.key
                         val totalLen = indexKeyBytes.size
                         val valueSize = totalLen - valueOffset - keySize - versionSize
@@ -181,7 +182,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
                     val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, true).iterator()
                     while (iterator.hasNext() && emitted < scanRequest.limit) {
-                        val kv = iterator.next()
+                        val kv = iterator.nextBlocking()
                         val indexKeyBytes = kv.key
                         val totalLen = indexKeyBytes.size
                         val valueSize = totalLen - valueOffset - keySize - versionSize
@@ -264,7 +265,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
             val it = tr.getRange(Range(begin, end)).iterator()
             var lastQualifierEncoded: ByteArray? = null
             while (it.hasNext()) {
-                val kv = it.next()
+                val kv = it.nextBlocking()
                 val k = kv.key
                 val versionOffset = k.size - toVersionBytes.size
                 val sepIndex = versionOffset - 1

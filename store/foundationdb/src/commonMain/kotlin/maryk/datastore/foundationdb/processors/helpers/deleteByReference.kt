@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext

@@ -1,7 +1,6 @@
 package maryk.datastore.foundationdb.processors.helpers
 
 // Avoid UInt.writeBytes to keep compatibility here; we'll encode manually
-import com.apple.foundationdb.Transaction
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.ListReference
@@ -10,6 +9,7 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 import maryk.datastore.shared.TypeIndicator
+import maryk.foundationdb.Transaction
 
 /**
  * Set a full list value for [reference] with [newList] and update count, deleting any tail items beyond new size.
@@ -65,8 +65,8 @@ internal fun <T : Any> setListValue(
 
 private fun combineToValue(version: ByteArray, value: ByteArray): ByteArray {
     val result = ByteArray(version.size + value.size)
-    System.arraycopy(version, 0, result, 0, version.size)
-    System.arraycopy(value, 0, result, version.size, value.size)
+    version.copyInto(destination = result, destinationOffset = 0)
+    value.copyInto(destination = result, destinationOffset = version.size)
     return result
 }
 

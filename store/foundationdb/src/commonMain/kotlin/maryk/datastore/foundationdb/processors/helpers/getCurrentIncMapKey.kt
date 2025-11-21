@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.types.Key
@@ -23,9 +23,9 @@ internal fun getCurrentIncMapKey(
     val iter = tr.getRange(Range.startsWith(prefix)).iterator()
     return if (iter.hasNext()) {
         // First is count; advance
-        iter.next()
+        iter.nextBlocking()
         if (iter.hasNext()) {
-            val firstItemKey = iter.next().key
+            val firstItemKey = iter.nextBlocking().key
             firstItemKey.copyOfRange(base.size, firstItemKey.size)
         } else {
             // No items yet; create a starting qualifier [refBytes + keySizeMarker + 0xFF..]
@@ -39,4 +39,3 @@ internal fun getCurrentIncMapKey(
         ByteArray(mapKeySize + refSize + 1) { i -> if (i < refSize) refBytes[i] else if (i == refSize) mapKeySize.toByte() else 0xFF.toByte() }
     }
 }
-

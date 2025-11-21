@@ -1,12 +1,13 @@
 package maryk.datastore.foundationdb.metadata
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.Transaction
-import com.apple.foundationdb.TransactionContext
+import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
+import maryk.foundationdb.TransactionContext
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.writeBytes
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 
 private const val ID_KEY_SIZE = UInt.SIZE_BYTES
 
@@ -49,7 +50,7 @@ internal fun readStoredModelNames(
     val range = Range.startsWith(metadataPrefix)
     val iterator = tr.getRange(range).iterator()
     while (iterator.hasNext()) {
-        val kv = iterator.next()
+        val kv = iterator.nextBlocking()
         stored[decodeModelIdFromKey(kv.key, metadataPrefix.size)] = kv.value.decodeToString()
     }
     stored

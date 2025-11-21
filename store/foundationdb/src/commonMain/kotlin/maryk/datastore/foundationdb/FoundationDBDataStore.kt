@@ -1,16 +1,9 @@
 package maryk.datastore.foundationdb
 
-import com.apple.foundationdb.DatabaseOptions
-import com.apple.foundationdb.FDB
-import com.apple.foundationdb.Transaction
-import com.apple.foundationdb.TransactionContext
-import com.apple.foundationdb.directory.DirectoryLayer
-import com.apple.foundationdb.directory.DirectorySubspace
-import com.apple.foundationdb.tuple.Tuple
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.future.await
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
@@ -78,8 +71,14 @@ import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.updates.Update
-import java.util.concurrent.CompletableFuture
-import java.util.function.Function
+import maryk.foundationdb.DatabaseOptions
+import maryk.foundationdb.FDB
+import maryk.foundationdb.FdbFuture
+import maryk.foundationdb.Transaction
+import maryk.foundationdb.TransactionContext
+import maryk.foundationdb.directory.DirectoryLayer
+import maryk.foundationdb.directory.DirectorySubspace
+import maryk.foundationdb.tuple.Tuple
 
 private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
 
@@ -129,11 +128,11 @@ class FoundationDBDataStore private constructor(
         }
 
     internal inline fun <T> runTransactionAsync(
-        crossinline block: (Transaction) -> CompletableFuture<T>
-    ): CompletableFuture<T> =
-        tc.runAsync(Function { tr ->
+        crossinline block: (Transaction) -> FdbFuture<T>
+    ): FdbFuture<T> =
+        tc.runAsync { tr ->
             block(tr)
-        })
+        }
 
     suspend fun initAsync() {
         rootDirectory = runTransactionAsync { tr ->
@@ -143,7 +142,7 @@ class FoundationDBDataStore private constructor(
         metadataDirectory = runTransaction { tr ->
             rootDirectory.createOrOpen(tr, storeMetadataModelsByIdDirectoryPath).awaitResult()
         }
-        metadataPrefix = metadataDirectory.pack()!!
+        metadataPrefix = metadataDirectory.pack()
 
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index] = openTableDirs(dataModel.Meta.name, historic = keepAllVersions)

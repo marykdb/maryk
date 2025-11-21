@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
@@ -30,7 +30,7 @@ import maryk.datastore.foundationdb.processors.helpers.nonHistoricQualifierRetri
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.readValue
-import com.apple.foundationdb.Range as FDBRange
+import maryk.foundationdb.Range as FDBRange
 
 /**
  * Read values for [key] from a FoundationDB [tr] into a ValuesWithMeta object.

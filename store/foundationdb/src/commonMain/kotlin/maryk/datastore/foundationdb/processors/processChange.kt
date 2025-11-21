@@ -607,7 +607,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
         @Suppress("UNCHECKED_CAST")
         e.status as IsChangeResponseStatus<DM>
     } catch (t: Throwable) {
-        val cause = (t as? java.util.concurrent.CompletionException)?.cause
+        val cause = t.cause
         if (cause is EarlyStatus) {
             @Suppress("UNCHECKED_CAST")
             cause.status as IsChangeResponseStatus<DM>

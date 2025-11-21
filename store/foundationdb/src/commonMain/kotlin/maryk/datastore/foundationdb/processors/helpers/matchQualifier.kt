@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Transaction
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE

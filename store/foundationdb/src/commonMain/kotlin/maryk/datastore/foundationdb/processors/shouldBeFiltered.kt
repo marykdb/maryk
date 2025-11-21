@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Transaction
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.filters.matchesFilter
 import maryk.core.query.requests.IsFetchRequest

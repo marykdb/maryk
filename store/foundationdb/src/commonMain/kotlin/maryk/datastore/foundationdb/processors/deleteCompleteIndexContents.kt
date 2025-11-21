@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.TransactionContext
+import maryk.foundationdb.Range
+import maryk.foundationdb.TransactionContext
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories

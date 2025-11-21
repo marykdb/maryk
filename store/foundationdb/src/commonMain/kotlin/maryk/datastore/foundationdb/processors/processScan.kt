@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Transaction
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key

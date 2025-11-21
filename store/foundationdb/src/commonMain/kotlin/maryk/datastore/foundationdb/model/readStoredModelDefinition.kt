@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.model
 
-import com.apple.foundationdb.TransactionContext
+import maryk.foundationdb.TransactionContext
 import maryk.core.definitions.Definitions
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.contextual.DataModelReference

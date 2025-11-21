@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.IsTableDirectories
 

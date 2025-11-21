@@ -1,17 +1,10 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.FDBException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutionException
+import kotlinx.coroutines.runBlocking
+import maryk.foundationdb.FdbFuture
 
 /**
- * Await [CompletableFuture] results while surfacing [FDBException] directly so FoundationDB's retry
- * machinery can observe the failure.
+ * Bridge the Maryk [FdbFuture] into a blocking wait for existing call sites that are not yet
+ * suspending. This keeps behaviour identical to the previous Java client usages.
  */
-internal fun <T> CompletableFuture<T>.awaitResult(): T {
-    return try {
-        this.get()
-    } catch (error: ExecutionException) {
-        throw error.cause ?: error
-    }
-}
+internal fun <T> FdbFuture<T>.awaitResult(): T = runBlocking { await() }

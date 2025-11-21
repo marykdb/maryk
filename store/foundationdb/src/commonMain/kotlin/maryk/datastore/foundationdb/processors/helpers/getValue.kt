@@ -1,10 +1,11 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareToWithOffsetLength
 
@@ -40,7 +41,7 @@ internal fun <T : Any> Transaction.getValue(
 
         val it = this.getRange(Range.startsWith(prefixForKey)).iterator()
         while (it.hasNext()) {
-            val kv = it.next()
+            val kv = it.nextBlocking()
             val key = kv.key
             val versionOffset = key.size - toVersionBytes.size
             if (versionOffset <= 0) throw Exception("Invalid qualifier for versioned get Value")

@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.TransactionContext
+import maryk.foundationdb.Range
+import maryk.foundationdb.TransactionContext
 import maryk.core.clock.HLC
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -11,6 +11,7 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
@@ -69,7 +70,7 @@ internal fun walkDataRecordsAndFillIndex(
 
         val it = tr.getRange(Range.startsWith(tableDirectories.keysPrefix)).iterator()
         while (it.hasNext()) {
-            val kv = it.next()
+            val kv = it.nextBlocking()
             val fullKey = kv.key
             val keyBytes = fullKey.copyOfRange(tableDirectories.keysPrefix.size, fullKey.size)
             val latestVersion = tr.get(packKey(tableDirectories.tablePrefix, keyBytes)).awaitResult() ?: continue

@@ -35,7 +35,7 @@ internal fun decodeZeroFreeUsing01(encoded: ByteArray): ByteArray {
             val orig = when (v) {
                 0x01 -> 0x00
                 0x02 -> 0x01
-                else -> error("Invalid escape: 0x01 0x%02X".format(v))
+                else -> error("Invalid escape: 0x01 0x${v.toString(16).padStart(2, '0')}")
             }
             out.add(orig.toByte())
             i += 2
@@ -43,4 +43,3 @@ internal fun decodeZeroFreeUsing01(encoded: ByteArray): ByteArray {
     }
     return out.toByteArray()
 }
-

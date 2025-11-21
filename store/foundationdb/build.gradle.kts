@@ -1,5 +1,9 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.konan.target.Family
+
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
+    id("maryk.conventions.kotlin-multiplatform-native-desktop")
     id("maryk.conventions.publishing")
 }
 
@@ -27,13 +31,21 @@ kotlin {
         }
     }
 
+    targets.withType<KotlinNativeTarget>().matching { it.konanTarget.family == Family.OSX }.configureEach {
+        val libDir = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
+        binaries.withType<org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable>().configureEach {
+            linkerOpts("-L$libDir", "-lfdb_c", "-rpath", libDir)
+            linkTaskProvider.configure { dependsOn(installFoundationDB) }
+        }
+    }
+
     sourceSets {
         val commonMain by getting {
             dependencies {
                 api(projects.lib)
                 api(projects.core)
                 api(projects.store.shared)
-                api("org.foundationdb:fdb-java:_")
+                api("io.maryk.foundationdb:foundationdb-multiplatform:_")
             }
         }
         val commonTest by getting {
@@ -92,5 +104,14 @@ val stopFoundationDBForTests by tasks.registering(Exec::class) {
 
 tasks.named("jvmTest").configure {
     dependsOn(startFoundationDBForTests)
+    finalizedBy(stopFoundationDBForTests)
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest>().configureEach {
+    val libDir = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
+    environment("DYLD_LIBRARY_PATH", libDir)
+    environment("LD_LIBRARY_PATH", libDir)
+    environment("FDB_CLUSTER_FILE", rootProject.projectDir.resolve("store/foundationdb/fdb.cluster").absolutePath)
+    dependsOn(installFoundationDB, startFoundationDBForTests)
     finalizedBy(stopFoundationDBForTests)
 }

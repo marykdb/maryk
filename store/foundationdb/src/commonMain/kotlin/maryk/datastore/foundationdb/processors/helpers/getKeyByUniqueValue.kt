@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
@@ -34,7 +34,7 @@ internal fun Transaction.getKeyByUniqueValue(
         val prefix = packKey(historic.historicUniquePrefix, encodeZeroFreeUsing01(reference))
         val it = this.getRange(Range.startsWith(prefix)).iterator()
         while (it.hasNext()) {
-            val kv = it.next()
+            val kv = it.nextBlocking()
             val versionOffset = kv.key.size - toVersionBytes.size
             if (toVersionBytes.compareToWithOffsetLength(kv.key, versionOffset) <= 0) {
                 val version = kv.key.readReversedVersionBytes(versionOffset)

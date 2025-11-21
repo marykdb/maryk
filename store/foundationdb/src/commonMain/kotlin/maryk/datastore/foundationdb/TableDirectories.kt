@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb
 
-import com.apple.foundationdb.directory.DirectorySubspace
+import maryk.foundationdb.directory.DirectorySubspace
 
 sealed interface IsTableDirectories {
     val dataStore: FoundationDBDataStore

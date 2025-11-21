@@ -1,9 +1,9 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.KeyValue
-import com.apple.foundationdb.Range
-import com.apple.foundationdb.ReadTransaction
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.KeyValue
+import maryk.foundationdb.Range
+import maryk.foundationdb.ReadTransaction
+import maryk.foundationdb.Transaction
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -18,6 +18,7 @@ import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.lib.extensions.compare.compareDefinedTo
 import kotlin.math.min
 
@@ -84,7 +85,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
                 val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, false).iterator()
                 while (iterator.hasNext() && streamed < limit) {
-                    val kv: KeyValue = iterator.next()
+                    val kv: KeyValue = iterator.nextBlocking()
                     val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
                     if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) continue
@@ -154,7 +155,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
                 val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, true).iterator()
                 while (iterator.hasNext() && emitted < limit) {
-                    val kv: KeyValue = iterator.next()
+                    val kv: KeyValue = iterator.nextBlocking()
                     val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
                     if (startKeyFilter != null) {

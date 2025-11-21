@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.model
 
-import com.apple.foundationdb.TransactionContext
+import maryk.foundationdb.TransactionContext
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationStatus

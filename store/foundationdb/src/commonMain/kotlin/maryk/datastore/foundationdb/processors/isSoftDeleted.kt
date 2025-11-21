@@ -1,6 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
-import com.apple.foundationdb.Transaction
+import maryk.foundationdb.Transaction
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.getValue
 

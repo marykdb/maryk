@@ -4,7 +4,12 @@ package io.maryk.cli
  * Minimal command line parser that supports whitespace separated tokens and quoted arguments.
  */
 internal object CommandLineParser {
-    fun parse(input: String): List<String> {
+    sealed interface ParseResult {
+        data class Success(val tokens: List<String>) : ParseResult
+        data class Error(val message: String) : ParseResult
+    }
+
+    fun parse(input: String): ParseResult {
         val tokens = mutableListOf<String>()
         val current = StringBuilder()
 
@@ -18,15 +23,9 @@ internal object CommandLineParser {
                     current.append(char)
                     escaping = false
                 }
-                char == '\\' -> {
-                    escaping = true
-                }
-                inQuotes && char == quoteChar -> {
-                    inQuotes = false
-                }
-                inQuotes -> {
-                    current.append(char)
-                }
+                char == '\\' -> escaping = true
+                inQuotes && char == quoteChar -> inQuotes = false
+                inQuotes -> current.append(char)
                 char == '"' || char == '\'' -> {
                     inQuotes = true
                     quoteChar = char
@@ -37,21 +36,23 @@ internal object CommandLineParser {
                         current.setLength(0)
                     }
                 }
-                else -> {
-                    current.append(char)
-                }
+                else -> current.append(char)
             }
         }
 
         if (escaping) {
-            current.append('\\')
+            return ParseResult.Error("Command ended with an unfinished escape (trailing \\).")
+        }
+
+        if (inQuotes) {
+            return ParseResult.Error("Missing closing $quoteChar quote.")
         }
 
         if (current.isNotEmpty()) {
             tokens.add(current.toString())
         }
 
-        return tokens
+        return ParseResult.Success(tokens)
     }
 
     private fun StringBuilder.isNotEmpty(): Boolean = this.length > 0

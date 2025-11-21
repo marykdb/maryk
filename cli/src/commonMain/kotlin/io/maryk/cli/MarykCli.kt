@@ -8,6 +8,7 @@ import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import io.maryk.cli.commands.CommandRegistry
+import io.maryk.cli.commands.CommandResult
 import io.maryk.cli.commands.HelpCommand
 
 fun main() {
@@ -25,6 +26,18 @@ class MarykCli(
 ) {
     fun run() = session {
         val prompt = "> "
+        val renderOutput: (String, List<String>) -> Unit = { input, lines ->
+            section {
+                textLine("$prompt$input")
+                if (lines.isEmpty()) {
+                    textLine()
+                } else {
+                    lines.forEach { line ->
+                        textLine(line)
+                    }
+                }
+            }.run()
+        }
 
         section {
             textLine("Maryk CLI")
@@ -55,23 +68,34 @@ class MarykCli(
             }
 
             val tokens = CommandLineParser.parse(trimmed)
-            if (tokens.isEmpty()) {
+            val parsedTokens = when (val result = tokens) {
+                is CommandLineParser.ParseResult.Success -> result.tokens
+                is CommandLineParser.ParseResult.Error -> {
+                    renderOutput(trimmed, listOf("Parse error: ${result.message}"))
+                    continue
+                }
+            }
+
+            if (parsedTokens.isEmpty()) {
                 continue
             }
-            val commandName = tokens.first()
-            val arguments = if (tokens.size > 1) tokens.drop(1) else emptyList()
-            val result = registry.execute(commandName, arguments)
 
-            section {
-                textLine("$prompt$trimmed")
-                if (result.lines.isEmpty()) {
-                    textLine()
-                } else {
-                    result.lines.forEach { line ->
-                        textLine(line)
-                    }
-                }
-            }.run()
+            val commandName = parsedTokens.first()
+            val arguments = if (parsedTokens.size > 1) parsedTokens.drop(1) else emptyList()
+
+            val result = try {
+                registry.execute(commandName, arguments)
+            } catch (e: Exception) {
+                CommandResult(
+                    lines = listOf(
+                        "Error executing `$commandName`: ${e.message ?: e::class.simpleName}",
+                        "Run `help` for available commands."
+                    ),
+                    isError = true
+                )
+            }
+
+            renderOutput(trimmed, result.lines)
 
             if (result.shouldExit) {
                 break

@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Install or link FoundationDB locally for the current platform.
 # - Installs/symlinks into: store/foundationdb/bin
-# - Configurable version via FDB_VERSION env var or --version flag (e.g. 7.3.69)
+# - Configurable version via FDB_VERSION env var or --version flag (e.g. 7.3.71)
 # - Strategy:
 #   * If fdbserver already in bin, skip.
 #   * Else if fdbserver found on PATH, symlink into bin (and try to locate/copy libfdb_c.*).
@@ -17,7 +17,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BIN_DIR="$ROOT_DIR/store/foundationdb/bin"
 LIB_DIR="$BIN_DIR/lib"
 
-FDB_VERSION_DEFAULT="7.3.69"
+FDB_VERSION_DEFAULT="7.3.71"
 FDB_VERSION="${FDB_VERSION:-$FDB_VERSION_DEFAULT}"
 
 if [[ "${1:-}" == "--version" && -n "${2:-}" ]]; then
@@ -33,6 +33,48 @@ warn() { echo "[install-foundationdb][WARN] $*" >&2; }
 err() { echo "[install-foundationdb][ERROR] $*" >&2; exit 1; }
 
 debug() { [[ "${VERBOSE:-0}" == "1" ]] && echo "[install-foundationdb][DEBUG] $*"; }
+checksum_cmd() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    echo "sha256sum"
+  elif command -v shasum >/dev/null 2>&1; then
+    echo "shasum -a 256"
+  else
+    echo ""
+  fi
+}
+compute_sha256() {
+  local file="$1"
+  local cmd
+  cmd="$(checksum_cmd)"
+  [[ -n "$cmd" ]] || err "No sha256 checksum tool found (install sha256sum or shasum)."
+  $cmd "$file" | awk '{print $1}'
+}
+verify_checksum() {
+  local file="$1"
+  local checksum_url="$2"
+  local checksum_file="$file.sha256"
+
+  if ! curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$checksum_url" -o "$checksum_file"; then
+    warn "Checksum not available for $(basename "$file") at $checksum_url; skipping verification"
+    return 0
+  fi
+
+  local expected
+  expected=$(awk '{print $1}' "$checksum_file" | tr -d '\r')
+  if [[ -z "$expected" ]]; then
+    warn "Checksum file $checksum_url contained no hash; skipping verification"
+    return 0
+  fi
+
+  local actual
+  actual=$(compute_sha256 "$file")
+
+  if [[ "$expected" != "$actual" ]]; then
+    err "Checksum mismatch for $(basename "$file") (expected $expected, got $actual)"
+  fi
+
+  log "Checksum verified for $(basename "$file")"
+}
 safe_copy() {
   # Usage: safe_copy <src> <dst_dir>
   local src
@@ -138,6 +180,7 @@ install_macos() {
 
   log "Downloading $pkg from FoundationDB releases"
   curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$url" -o "$tmp/$pkg"
+  verify_checksum "$tmp/$pkg" "$url.sha256"
 
   # Expand meta-pkg
   pkgutil --expand-full "$tmp/$pkg" "$tmp/expanded"
@@ -207,8 +250,10 @@ install_linux_from_deb() {
   local server_pkg="foundationdb-server_${FDB_VERSION}-1_${deb_arch}.deb"
 
   log "Downloading $clients_pkg and $server_pkg"
-  curl -fsSL "$base/$clients_pkg" -o "$tmp/$clients_pkg"
-  curl -fsSL "$base/$server_pkg" -o "$tmp/$server_pkg"
+  curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$base/$clients_pkg" -o "$tmp/$clients_pkg"
+  verify_checksum "$tmp/$clients_pkg" "$base/$clients_pkg.sha256"
+  curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$base/$server_pkg" -o "$tmp/$server_pkg"
+  verify_checksum "$tmp/$server_pkg" "$base/$server_pkg.sha256"
 
   extract_deb() {
     local deb="$1"

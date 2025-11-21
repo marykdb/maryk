@@ -27,7 +27,7 @@ jobs:
             gradle_task: "macosX64Test"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest
-            gradle_task: linuxX64Test jsTest jvmTest
+            gradle_task: linuxX64Test wasmJsTest jsTest jvmTest
             job_name: Linux all tests
           - os: windows-latest
             gradle_task: mingwX64Test :core:jvmTest
@@ -36,7 +36,7 @@ jobs:
     name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.os }}
     env:
-      FDB_VERSION: '7.3.69'
+      FDB_VERSION: '7.3.71'
 
     steps:
       - uses: actions/checkout@v5

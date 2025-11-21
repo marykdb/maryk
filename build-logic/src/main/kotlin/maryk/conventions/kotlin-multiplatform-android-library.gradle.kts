@@ -15,11 +15,11 @@ kotlin {
 
 android {
     namespace = "io.maryk"
-    compileSdk = 32
+    compileSdk = 34
     defaultConfig {
         minSdk = 21
         multiDexEnabled = true
-        testInstrumentationRunner = "android.support.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

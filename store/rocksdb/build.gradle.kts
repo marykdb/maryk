@@ -19,6 +19,7 @@ kotlin {
                 api(projects.lib)
                 api(projects.core)
                 api(projects.store.shared)
+                api(projects.file)
             }
         }
         commonTest {

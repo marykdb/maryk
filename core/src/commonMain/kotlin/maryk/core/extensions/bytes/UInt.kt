@@ -63,6 +63,16 @@ internal fun initUIntByVar(reader: () -> Byte): UInt {
     throw ParseException("Malformed varUInt")
 }
 
+/** Reads a varUInt starting at [startIndex]. Returns null if the data ends prematurely. */
+fun ByteArray.decodeVarUInt(startIndex: Int = 0): UInt? {
+    var index = startIndex
+    return try {
+        initUIntByVar { this.getOrNull(index++) ?: throw ParseException("EOF") }
+    } catch (_: Throwable) {
+        null
+    }
+}
+
 
 /** Calculates the byte length of the variable unsigned int */
 fun UInt.calculateVarByteLength(): Int = when {

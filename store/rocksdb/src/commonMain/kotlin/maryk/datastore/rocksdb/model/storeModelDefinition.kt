@@ -6,18 +6,21 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
-import maryk.datastore.rocksdb.metadata.storeModelNameMapping
+import maryk.datastore.rocksdb.metadata.ModelMeta
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
 
 fun storeModelDefinition(
     rocksDB: RocksDB,
-    metadataColumnFamily: ColumnFamilyHandle,
+    modelMetas: MutableMap<UInt, ModelMeta>,
     modelId: UInt,
     modelColumnFamily: ColumnFamilyHandle,
     dataModel: IsRootDataModel,
 ) {
-    storeModelNameMapping(rocksDB, metadataColumnFamily, modelId, dataModel.Meta.name)
+    modelMetas[modelId] = ModelMeta(
+        name = dataModel.Meta.name,
+        keySize = dataModel.Meta.keyByteSize
+    )
     rocksDB.put(modelColumnFamily, modelNameKey, dataModel.Meta.name.encodeToByteArray())
     rocksDB.put(modelColumnFamily, modelVersionKey, dataModel.Meta.version.toByteArray())
 

@@ -37,6 +37,7 @@ include(
     ":json",
     ":yaml",
     ":core",
+    ":file",
     ":dataframe",
     ":testmodels",
     ":generator",
@@ -46,5 +47,5 @@ include(
     ":store:memory",
     ":store:rocksdb",
     ":store:foundationdb",
-    ":file",
+    ":cli",
 )

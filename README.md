@@ -76,6 +76,7 @@ For detailed information, check out:
 
 - [Core](core/README.md) – Data models, queries, parsers, readers.
 - [Library](lib/README.md) – Shared utilities for things like Strings and ByteArrays.
+- [File](file/README.md) – Minimal cross-platform file IO layer used by tooling and stores.
 - [JSON](json/README.md) & [YAML](yaml/README.md) – Streaming parsers and writers.
 - [Generator](generator/README.md) – Code generation from YAML and JSON models.
 - [Test Library](testlib/README.md) – Testing utilities and helpers.

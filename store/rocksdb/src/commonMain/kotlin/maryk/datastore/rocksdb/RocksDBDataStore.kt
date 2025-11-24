@@ -236,11 +236,12 @@ class RocksDBDataStore private constructor(
             }
         }
 
-        writeMetaFile(storePath, modelMetas)
-
         startFlows()
 
-        scheduledVersionUpdateHandlers.forEach { it() }
+        scheduledVersionUpdateHandlers.forEach {
+            it()
+            writeMetaFile(storePath, modelMetas)
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

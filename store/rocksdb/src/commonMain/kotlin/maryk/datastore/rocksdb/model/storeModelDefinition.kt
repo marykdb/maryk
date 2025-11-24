@@ -17,24 +17,17 @@ fun storeModelDefinition(
     modelColumnFamily: ColumnFamilyHandle,
     dataModel: IsRootDataModel,
 ) {
-    modelMetas[modelId] = ModelMeta(
-        name = dataModel.Meta.name,
-        keySize = dataModel.Meta.keyByteSize
-    )
     rocksDB.put(modelColumnFamily, modelNameKey, dataModel.Meta.name.encodeToByteArray())
     rocksDB.put(modelColumnFamily, modelVersionKey, dataModel.Meta.version.toByteArray())
 
     val context = DefinitionsConversionContext()
 
     val modelCache = WriteCache()
-
     val modelByteSize = RootDataModel.Model.Serializer.calculateObjectProtoBufLength(dataModel as RootDataModel<*>, modelCache, context)
-
-    val bytes = ByteArray(modelByteSize)
+    val modelBytes = ByteArray(modelByteSize)
     var writeIndex = 0
-    RootDataModel.Model.Serializer.writeObjectProtoBuf(dataModel, modelCache, { bytes[writeIndex++] = it }, context)
-
-    rocksDB.put(modelColumnFamily, modelDefinitionKey, bytes)
+    RootDataModel.Model.Serializer.writeObjectProtoBuf(dataModel, modelCache, { modelBytes[writeIndex++] = it }, context)
+    rocksDB.put(modelColumnFamily, modelDefinitionKey, modelBytes)
 
     val dependencies = mutableListOf<MarykPrimitive>()
     dataModel.getAllDependencies(dependencies)
@@ -50,4 +43,9 @@ fun storeModelDefinition(
 
         rocksDB.put(modelColumnFamily, modelDependentsDefinitionKey, dependentBytes)
     }
+
+    modelMetas[modelId] = ModelMeta(
+        name = dataModel.Meta.name,
+        keySize = dataModel.Meta.keyByteSize
+    )
 }

@@ -5,7 +5,6 @@ import maryk.core.extensions.bytes.decodeVarUInt
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsConversionContext
-import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableType
 import maryk.datastore.rocksdb.metadata.readMetaFile
 import maryk.datastore.rocksdb.processors.VersionedComparator
@@ -19,40 +18,11 @@ import maryk.rocksdb.RocksDB
 import maryk.rocksdb.listColumnFamilies
 import maryk.rocksdb.openRocksDB
 
-fun readStoredModelDefinitionsById(
-    dataStore: RocksDBDataStore,
-): Map<UInt, RootDataModel<*>> {
-    if (dataStore.dataModelsById.isEmpty()) {
-        return emptyMap()
-    }
-
-    val storedNamesById = dataStore.readStoredModelNamesById()
-    if (storedNamesById.isEmpty()) {
-        return emptyMap()
-    }
-
-    val conversionContext = DefinitionsConversionContext()
-    val storedModelsById = mutableMapOf<UInt, RootDataModel<*>>()
-
-    for ((id, _) in storedNamesById) {
-        if (!dataStore.dataModelsById.containsKey(id)) {
-            continue
-        }
-        val columnFamily = dataStore.getColumnFamilies(id).model
-        val storedModel = readStoredModelDefinition(dataStore.db, columnFamily, conversionContext)
-        if (storedModel != null) {
-            storedModelsById[id] = storedModel
-        }
-    }
-
-    return storedModelsById
-}
-
 /**
  * Open an existing RocksDB at [path], discover its column families, and read all stored model
  * definitions by id. Returns a map of id -> RootDataModel. All handles and the DB are closed before return.
  */
-fun readStoredModelDefinitionsById(
+fun readStoredModelDefinitionsFromPath(
     path: String,
     listOptions: Options = Options(),
     dbOptions: DBOptions = DBOptions(),

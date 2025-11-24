@@ -1,9 +1,15 @@
 package io.maryk.cli.commands
 
+import io.maryk.cli.CliEnvironment
+import io.maryk.cli.CliState
+
 /**
  * Central registry for available CLI commands.
  */
-class CommandRegistry {
+class CommandRegistry(
+    internal val state: CliState,
+    internal val environment: CliEnvironment,
+) {
     private val commands = linkedMapOf<String, Command>()
 
     fun register(command: Command): CommandRegistry {
@@ -16,7 +22,7 @@ class CommandRegistry {
     fun execute(commandName: String, arguments: List<String>): CommandResult {
         val command = commands[commandName]
         return if (command != null) {
-            val context = CommandContext(this)
+            val context = CommandContext(this, state, environment)
             command.execute(context, arguments)
         } else {
             CommandResult(

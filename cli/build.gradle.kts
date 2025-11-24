@@ -35,11 +35,14 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation("com.varabyte.kotter:kotter:_")
+                implementation(projects.store.rocksdb)
+                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:_")
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation(projects.testmodels)
             }
         }
     }

@@ -1,5 +1,8 @@
 package io.maryk.cli.commands
 
+import io.maryk.cli.CliEnvironment
+import io.maryk.cli.CliState
+
 /**
  * Represents a single CLI command.
  */
@@ -15,6 +18,8 @@ interface Command {
  */
 class CommandContext internal constructor(
     internal val registry: CommandRegistry,
+    val state: CliState,
+    val environment: CliEnvironment,
 )
 
 /**

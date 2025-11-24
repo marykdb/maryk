@@ -1,5 +1,7 @@
 package io.maryk.cli.commands
 
+import io.maryk.cli.BasicCliEnvironment
+import io.maryk.cli.CliState
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -7,7 +9,7 @@ import kotlin.test.assertTrue
 class HelpCommandTest {
     @Test
     fun listsCommandsAlphabetically() {
-        val registry = CommandRegistry()
+        val registry = CommandRegistry(CliState(), BasicCliEnvironment)
             .register(
                 object : Command {
                     override val name: String = "connect"
@@ -34,7 +36,8 @@ class HelpCommandTest {
 
     @Test
     fun returnsErrorForUnknownCommand() {
-        val registry = CommandRegistry().register(HelpCommand())
+        val registry = CommandRegistry(CliState(), BasicCliEnvironment)
+            .register(HelpCommand())
 
         val result = registry.execute("missing", emptyList())
 

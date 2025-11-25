@@ -9,35 +9,6 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 
-fun readStoredModelDefinitionsById(
-    dataStore: FoundationDBDataStore,
-): Map<UInt, RootDataModel<*>> {
-    if (dataStore.dataModelsById.isEmpty()) {
-        return emptyMap()
-    }
-
-    val storedNamesById = dataStore.readStoredModelNamesById()
-    if (storedNamesById.isEmpty()) {
-        return emptyMap()
-    }
-
-    val conversionContext = DefinitionsConversionContext()
-    val storedModelsById = mutableMapOf<UInt, RootDataModel<*>>()
-
-    for ((id, _) in storedNamesById) {
-        if (!dataStore.dataModelsById.containsKey(id)) {
-            continue
-        }
-        val modelPrefix = dataStore.getTableDirs(id).modelPrefix
-        val storedModel = readStoredModelDefinition(dataStore.tc, modelPrefix, conversionContext)
-        if (storedModel != null) {
-            storedModelsById[id] = storedModel
-        }
-    }
-
-    return storedModelsById
-}
-
 fun readStoredModelDefinition(
     tc: TransactionContext,
     modelPrefix: ByteArray,

@@ -76,8 +76,8 @@ class ReadStoredModelDefinitionTest {
     }
 
     @Test
-    fun readsAllStoredModelDefinitionsById() = runTest {
-        val dirPath = listOf("maryk", "test", "fdb-read-model-all", Uuid.random().toString())
+    fun readsStoredModelDefinitionsFromDirectoryWithoutConfiguredMap() = runTest {
+        val dirPath = listOf("maryk", "test", "fdb-read-model-from-directory", Uuid.random().toString())
         val dataStore = FoundationDBDataStore.open(
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
@@ -88,63 +88,27 @@ class ReadStoredModelDefinitionTest {
             )
         )
 
-        try {
-            val storedNames = dataStore.readStoredModelNamesById()
-            assertEquals(
-                mapOf(
-                    1u to ModelWithDependents.Meta.name,
-                    2u to SimpleMarykModel.Meta.name,
-                ),
-                storedNames
-            )
+        dataStore.close()
 
-            val storedModels = readStoredModelDefinitionsById(dataStore)
+        val storedModels = readStoredModelDefinitionsFromDirectory(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+        )
 
-            assertEquals(setOf(1u, 2u), storedModels.keys)
-
-            val storedModelOne = storedModels[1u]
-            assertNotNull(storedModelOne)
-            assertEquals(ModelWithDependents.Meta.name, storedModelOne.Meta.name)
-            assertEquals(ModelWithDependents.Meta.version, storedModelOne.Meta.version)
-
-            val storedModelTwo = storedModels[2u]
-            assertNotNull(storedModelTwo)
-            assertEquals(SimpleMarykModel.Meta.name, storedModelTwo.Meta.name)
-            assertEquals(SimpleMarykModel.Meta.version, storedModelTwo.Meta.version)
-        } finally {
-            dataStore.close()
-        }
+        assertEquals(setOf(1u, 2u), storedModels.keys)
+        assertEquals(ModelWithDependents.Meta.name, storedModels[1u]?.Meta?.name)
+        assertEquals(SimpleMarykModel.Meta.name, storedModels[2u]?.Meta?.name)
     }
 
     @Test
-    fun skipsMissingModelDefinitionsWhenReadingAll() = runTest {
-        val dirPath = listOf("maryk", "test", "fdb-read-model-all-missing", Uuid.random().toString())
-        val dataStore = FoundationDBDataStore.open(
-            keepAllVersions = true,
+    fun returnsEmptyWhenDirectoryTreeMissing() = runTest {
+        val dirPath = listOf("maryk", "test", "fdb-read-model-missing-root", Uuid.random().toString())
+
+        val storedModels = readStoredModelDefinitionsFromDirectory(
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(
-                1u to ModelWithDependents,
-                2u to SimpleMarykModel,
-            )
         )
 
-        val modelPrefixTwo = dataStore.getTableDirs(2u).modelPrefix
-
-        dataStore.tc.run { tr ->
-            tr.clear(packKey(modelPrefixTwo, modelDefinitionKey))
-            tr.clear(packKey(modelPrefixTwo, modelDependentsDefinitionKey))
-        }
-
-        try {
-            val storedModels = readStoredModelDefinitionsById(dataStore)
-
-            assertEquals(setOf(1u), storedModels.keys)
-            val storedModel = storedModels[1u]
-            assertNotNull(storedModel)
-            assertEquals(ModelWithDependents.Meta.name, storedModel.Meta.name)
-        } finally {
-            dataStore.close()
-        }
+        assertTrue(storedModels.isEmpty())
     }
 }

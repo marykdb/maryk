@@ -1,6 +1,6 @@
 # Maryk CLI
 
-The Maryk CLI is an interactive terminal client that communicates with Maryk stores. It is built with the [Kotter](https://github.com/varabyte/kotter) terminal UI library to provide a block-oriented command experience.
+The Maryk CLI is an interactive terminal client that communicates with Maryk stores. It is built with the [Kotter](https://github.com/varabyte/kotter) terminal UI library to provide a block-oriented command experience. It can connect to both RocksDB and FoundationDB stores.
 
 ## Status
 
@@ -23,6 +23,11 @@ For release builds on macOS, you can run:
 When executed in a non-interactive environment (like Gradle), the release binary prints the bundled help text and exits cleanly.
 
 Once running interactively, type `help` to see the available commands. Use `Ctrl+C` to exit the session.
+
+### Connecting to a store
+
+- RocksDB: `connect rocksdb --dir /path/to/rocksdb`
+- FoundationDB: `connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]`
 
 ## Development Notes
 

@@ -8,24 +8,25 @@ plugins {
     id("maryk.conventions.publishing")
 }
 
+private val localFoundationDbLibDir = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
+private val systemFoundationDbLibDir = "/usr/local/lib"
+private val pathSeparator = File.pathSeparator
+
 kotlin {
     jvm {
         testRuns["test"].executionTask.configure {
             // FoundationDB Java client may need opens depending on reflection
-            val localLib = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
-            val sysLib = "/usr/local/lib"
-            val pathSep = System.getProperty("path.separator")
             jvmArgs(
                 "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
                 "--add-opens", "java.base/java.lang=ALL-UNNAMED",
                 // Include local FoundationDB lib dir first so libfdb_c can be found, then common system dir
-                "-Djava.library.path=${localLib}${pathSep}${sysLib}"
+                "-Djava.library.path=${localFoundationDbLibDir}${pathSeparator}${systemFoundationDbLibDir}"
             )
             // Also pass platform library path env vars for native lib discovery
             environment(
                 mapOf(
-                    "DYLD_LIBRARY_PATH" to localLib,
-                    "LD_LIBRARY_PATH" to localLib,
+                    "DYLD_LIBRARY_PATH" to localFoundationDbLibDir,
+                    "LD_LIBRARY_PATH" to localFoundationDbLibDir,
                     "FDB_CLUSTER_FILE" to rootProject.projectDir.resolve("store/foundationdb/fdb.cluster").absolutePath,
                 )
             )
@@ -160,4 +161,30 @@ tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
     } else {
         onlyIf { false }
     }
+}
+
+tasks.register<JavaExec>("runFoundationDBTestRunner") {
+    group = "application"
+    description = "Seed FoundationDB with test models and keep the process alive for manual testing."
+    val jvmTarget = kotlinExt.targets.getByName("jvm")
+    val testCompilation = jvmTarget.compilations.getByName("test")
+    classpath(
+        testCompilation.output.allOutputs,
+        configurations.getByName("jvmTestRuntimeClasspath")
+    )
+    mainClass.set("maryk.datastore.foundationdb.FoundationDbTestRunnerKt")
+    dependsOn(tasks.named("jvmTestClasses"), startFoundationDBForTests)
+    finalizedBy(stopFoundationDBForTests)
+    environment(
+        mapOf(
+            "DYLD_LIBRARY_PATH" to localFoundationDbLibDir,
+            "LD_LIBRARY_PATH" to localFoundationDbLibDir,
+            "FDB_CLUSTER_FILE" to rootProject.projectDir.resolve("store/foundationdb/fdb.cluster").absolutePath,
+        )
+    )
+    jvmArgs(
+        "--add-opens", "java.base/java.lang.reflect=ALL-UNNAMED",
+        "--add-opens", "java.base/java.lang=ALL-UNNAMED",
+        "-Djava.library.path=${localFoundationDbLibDir}${pathSeparator}${systemFoundationDbLibDir}"
+    )
 }

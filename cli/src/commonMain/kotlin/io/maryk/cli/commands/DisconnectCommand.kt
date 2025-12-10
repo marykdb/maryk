@@ -1,5 +1,6 @@
 package io.maryk.cli.commands
 
+import io.maryk.cli.FoundationDbStoreConnection
 import io.maryk.cli.RocksDbStoreConnection
 import io.maryk.cli.StoreConnection
 
@@ -33,6 +34,7 @@ class DisconnectCommand : Command {
 
     private fun describe(connection: StoreConnection): String = when (connection) {
         is RocksDbStoreConnection -> "${connection.type.displayName} at ${connection.directory}"
+        is FoundationDbStoreConnection -> "${connection.type.displayName} at ${connection.directoryPath.joinToString("/")}"
         else -> connection.type.displayName
     }
 }

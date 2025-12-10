@@ -4,7 +4,7 @@ This document describes how the FoundationDB storage engine is structured inside
 
 ## Big Picture
 
-Maryk defines a storage‑engine‑independent core. Each engine implements the same high‑level operations (Add/Change/Delete/Get/Scan/GetChanges/ScanChanges/Updates). The FoundationDB engine provides a JVM implementation that maps those operations onto FoundationDB transactions, directories (subspaces), and range reads.
+Maryk defines a storage‑engine‑independent core. Each engine implements the same high‑level operations (Add/Change/Delete/Get/Scan/GetChanges/ScanChanges/Updates). The FoundationDB engine maps those operations onto FoundationDB transactions, directories (subspaces), and range reads.
 
 At runtime:
 

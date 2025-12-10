@@ -6,7 +6,7 @@
 Maryk is a **Kotlin Multiplatform** framework for defining, validating, serializing, and storing data models consistently across multiple platforms, including **iOS**, **macOS**, **watchOS**, **tvOS**, **Linux**, **Windows**, **Android**, **JVM**, **JavaScript** and **Wasm**. With a fully version-aware data store and flexible querying, Maryk makes it easy to maintain complex data structures while ensuring backward compatibility and efficient data handling.
 
 The [RocksDB](/store/rocksdb/README.md) persistence layer is available for the **JVM**, **iOS**, **macOS**, **tvOS**, **watchOS**, **Android**, **Android Native**, **Windows** and **Linux**.
-The [FoundationDB](/store/foundationdb/README.md) persistence layer is only available for the **JVM**
+The [FoundationDB](/store/foundationdb/README.md) persistence layer is available on supported platforms that have the FoundationDB client library (`libfdb_c`) present (JVM, macOS, linux).
 
 ## Key Features
 
@@ -66,7 +66,7 @@ val personFromJson = Person.readJson(json)
 5. **Choose a Data Store**:
   - [Memory](store/memory/README.md) — in‑memory, non‑persistent, fastest feedback for dev/tests.
   - [RocksDB](store/rocksdb/README.md) — embedded, persistent, high performance on a single node across desktop/mobile/server.
-  - [FoundationDB](store/foundationdb/README.md) — distributed, transactional persistence on the JVM with strong consistency and time‑travel support.
+  - [FoundationDB](store/foundationdb/README.md) — distributed, transactional persistence with strong consistency and time‑travel support (JVM bundled; native targets require `libfdb_c`).
   
   See the overview and guidance in [store/README.md](store/README.md) for when to pick each engine.
 
@@ -85,7 +85,7 @@ For detailed information, check out:
   - [Shared](store/shared/README.md) – Shared logic for building stores.
   - [Memory](store/memory/README.md) – In-memory store (non-persistent).
   - [RocksDB](store/rocksdb/README.md) – Persistent, high-performance store.
-  - [FoundationDB](store/foundationdb/README.md) – Persistent, scalable transactional store (JVM).
+  - [FoundationDB](store/foundationdb/README.md) – Persistent, scalable transactional store (multiplatform where `libfdb_c` is available).
   - [Tests](store/test/README.md) – Common tests to ensure store reliability.
 
 ## Contributing

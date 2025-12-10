@@ -9,7 +9,7 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 
 - Need the fastest feedback loop or CI determinism? Use Memory.
 - Want durable, embedded storage across desktop/mobile/server without running a service? Use RocksDB.
-- Need ACID transactions and scale‑out on the server (JVM)? Use FoundationDB.
+- Need ACID transactions and scale‑out (JVM or native with `libfdb_c` present)? Use FoundationDB.
 
 All engines share the same API surface, so you can start with Memory or RocksDB locally and move to FoundationDB on the server without changing your models or queries.
 
@@ -31,9 +31,9 @@ Below is a practical overview of each engine, why it was chosen, and when to use
 - Typical use cases: Local‑first/embedded apps, desktop/mobile deployments, single‑node servers, moderate‑to‑large datasets without a separate database process.
 - Learn more: `store/rocksdb/README.md` and `store/rocksdb/documentation/storage.md`.
 
-### FoundationDB (JVM)
+### FoundationDB
 
-- Type: Distributed, transactional key‑value store accessed via the FoundationDB Java client.
+- Type: Distributed, transactional key‑value store accessed via the FoundationDB multiplatform client.
 - Strengths: Strict ACID transactions, ordered key space with fast range reads, subspaces/directories, horizontal scalability, and operational resilience.
 - Why it’s a great fit: Maryk maps models to FDB directories and encodes versions so “latest” and “as‑of” reads are both efficient. Historic index scanning is supported when `keepAllVersions` is enabled, aligning with Maryk’s version‑aware queries. Strong consistency makes complex multi‑key updates safe.
 - Typical use cases: Server‑side deployments needing strong consistency, online growth, and cluster operations; applications that benefit from time‑travel queries and transactional semantics.

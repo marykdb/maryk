@@ -3,6 +3,7 @@ package io.maryk.cli.commands
 import io.maryk.cli.CliEnvironment
 import io.maryk.cli.CliState
 import io.maryk.cli.DirectoryResolution
+import io.maryk.cli.FoundationDbStoreConnection
 import io.maryk.cli.InteractionResult
 import io.maryk.cli.RocksDbStoreConnection
 import kotlin.test.Test
@@ -27,7 +28,7 @@ class ConnectCommandTest {
                 RocksDbStoreConnection(path, dataStore),
             )
         }
-        val command = ConnectCommand(connector)
+        val command = ConnectCommand(connector, FakeFoundationDbConnector())
         val state = CliState()
         val environment = FakeEnvironment { DirectoryResolution.Success("/data/store") }
 
@@ -67,7 +68,7 @@ class ConnectCommandTest {
 
     @Test
     fun requiresDirectoryForRocksDb() {
-        val command = ConnectCommand(FakeRocksDbConnector())
+        val command = ConnectCommand(FakeRocksDbConnector(), FakeFoundationDbConnector())
         val state = CliState()
         val environment = FakeEnvironment { DirectoryResolution.Success("/data/store") }
 
@@ -86,7 +87,7 @@ class ConnectCommandTest {
                 RocksDbStoreConnection(path, dataStore),
             )
         }
-        val command = ConnectCommand(connector)
+        val command = ConnectCommand(connector, FakeFoundationDbConnector())
         val state = CliState()
         val environment = FakeEnvironment { DirectoryResolution.Success("/normalized/store") }
 
@@ -111,7 +112,7 @@ class ConnectCommandTest {
                 RocksDbStoreConnection(path, dataStore),
             )
         }
-        val command = ConnectCommand(connector)
+        val command = ConnectCommand(connector, FakeFoundationDbConnector())
         val state = CliState()
         val environment = FakeEnvironment { DirectoryResolution.Success("/store") }
         val context = buildContext(state, environment)
@@ -122,25 +123,31 @@ class ConnectCommandTest {
 
         assertTrue(result.isError)
         assertTrue(result.lines.any { it.contains("disconnect") })
-        assertEquals(listOf<String>(), connector.receivedPaths)
+        assertEquals(listOf(), connector.receivedPaths)
     }
 
     @Test
     fun handlesFoundationDbPlaceholder() {
-        val command = ConnectCommand(FakeRocksDbConnector())
         val state = CliState()
         val environment = FakeEnvironment { DirectoryResolution.Success("/store") }
 
-        val result = command.execute(buildContext(state, environment), listOf("foundationdb"))
+        val foundationConnector = FakeFoundationDbConnector { options ->
+            ConnectCommand.FoundationDbConnectionOutcome.Success(
+                FoundationDbStoreConnection(options.directoryPath, options.clusterFile, options.tenant, FakeDataStore()),
+            )
+        }
 
-        assertTrue(result.isError)
-        assertTrue(result.lines.last().contains("not available"))
-        assertNull(state.currentConnection)
+        val result = ConnectCommand(FakeRocksDbConnector(), foundationConnector)
+            .execute(buildContext(state, environment), listOf("foundationdb", "--dir", "maryk/test"))
+
+        assertFalse(result.isError)
+        assertTrue(foundationConnector.called)
+        assertEquals(listOf( "maryk", "test"), (state.currentConnection as FoundationDbStoreConnection).directoryPath)
     }
 
     @Test
     fun interactiveFlowCanBeCancelled() {
-        val command = ConnectCommand(FakeRocksDbConnector())
+        val command = ConnectCommand(FakeRocksDbConnector(), FakeFoundationDbConnector())
         val state = CliState()
         val environment = FakeEnvironment { DirectoryResolution.Success("/store") }
 
@@ -178,6 +185,20 @@ class ConnectCommandTest {
         override fun connect(path: String): ConnectCommand.RocksDbConnectionOutcome {
             receivedPaths += path
             return factory(path)
+        }
+    }
+
+    private class FakeFoundationDbConnector(
+        private val factory: (ConnectCommand.FoundationOptions) -> ConnectCommand.FoundationDbConnectionOutcome = {
+            ConnectCommand.FoundationDbConnectionOutcome.Success(
+                FoundationDbStoreConnection(it.directoryPath, it.clusterFile, it.tenant, FakeDataStore()),
+            )
+        },
+    ) : FoundationDbConnector {
+        var called = false
+        override fun connect(options: ConnectCommand.FoundationOptions): ConnectCommand.FoundationDbConnectionOutcome {
+            called = true
+            return factory(options)
         }
     }
 }

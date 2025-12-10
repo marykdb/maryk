@@ -17,15 +17,20 @@ import io.maryk.cli.commands.ListCommand
 import io.maryk.cli.commands.registerAll
 
 fun main() {
-    val state = CliState()
-    val environment = BasicCliEnvironment
-    val registry = defaultRegistry(state, environment)
-    if (!isInteractiveTerminal()) {
-        printNonInteractiveHelp(registry)
-        return
-    }
+    runCatching {
+        val state = CliState()
+        val environment = BasicCliEnvironment
+        val registry = defaultRegistry(state, environment)
+        if (!isInteractiveTerminal()) {
+            printNonInteractiveHelp(registry)
+            return
+        }
 
-    MarykCli(registry).run()
+        MarykCli(registry).run()
+    }.onFailure { t ->
+        println("CLI fatal error: ${t::class.simpleName}: ${t.message ?: "no message"}")
+        t.printStackTrace()
+    }
 }
 
 class MarykCli(

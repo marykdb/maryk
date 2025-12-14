@@ -1,5 +1,8 @@
 package maryk.datastore.foundationdb.model
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
+import kotlinx.coroutines.withContext
 import maryk.core.models.RootDataModel
 import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.foundationdb.metadata.readStoredModelNames
@@ -29,45 +32,66 @@ suspend fun readStoredModelDefinitionsFromDirectory(
     val tc: TransactionContext = tenantDb ?: db
 
     try {
-        val rootDirectory: DirectorySubspace = withTimeout(10_000) {
-            tc.runSuspend { tr ->
-                DirectoryLayer.getDefault().open(tr, directoryPath).await()
+        return withContext(Dispatchers.IO) {
+            val rootDirectory: DirectorySubspace = try {
+                withTimeout(10_000) {
+                    tc.runSuspend { tr ->
+                        DirectoryLayer.getDefault().open(tr, directoryPath).await()
+                    }
+                }
+            } catch (e: Throwable) {
+                if (e.isNoSuchDirectory()) return@withContext emptyMap()
+                throw e
             }
-        }
 
-        val metadataDirectory: DirectorySubspace = withTimeout(10_000) {
-            tc.runSuspend { tr ->
-                rootDirectory.open(tr, storeMetadataModelsByIdDirectoryPath).await()
+            val metadataDirectory: DirectorySubspace = try {
+                withTimeout(10_000) {
+                    tc.runSuspend { tr ->
+                        rootDirectory.open(tr, storeMetadataModelsByIdDirectoryPath).await()
+                    }
+                }
+            } catch (e: Throwable) {
+                if (e.isNoSuchDirectory()) return@withContext emptyMap()
+                throw e
             }
-        }
-        val metadataPrefix = metadataDirectory.pack()
+            val metadataPrefix = metadataDirectory.pack()
 
-        val storedNamesById = withTimeout(10_000) {
-            readStoredModelNames(tc, metadataPrefix)
-        }
-        if (storedNamesById.isEmpty()) {
-            return emptyMap()
-        }
+            val storedNamesById = withTimeout(10_000) {
+                readStoredModelNames(tc, metadataPrefix)
+            }
+            if (storedNamesById.isEmpty()) {
+                return@withContext emptyMap()
+            }
 
-        val conversionContext = DefinitionsConversionContext()
-        val storedModelsById = mutableMapOf<UInt, RootDataModel<*>>()
+            val conversionContext = DefinitionsConversionContext()
+            val storedModelsById = mutableMapOf<UInt, RootDataModel<*>>()
 
-        for ((id, modelName) in storedNamesById) {
-            val modelPrefix = withTimeout(10_000) {
-                tc.runSuspend { tr ->
-                    rootDirectory.open(tr, listOf(modelName, "meta")).await().pack()
+            for ((id, modelName) in storedNamesById) {
+                val modelPrefix = withTimeout(10_000) {
+                    tc.runSuspend { tr ->
+                        rootDirectory.open(tr, listOf(modelName, "meta")).await().pack()
+                    }
+                }
+
+                val model = readStoredModelDefinition(tc, modelPrefix, conversionContext)
+                if (model != null) {
+                    storedModelsById[id] = model
                 }
             }
 
-            val model = readStoredModelDefinition(tc, modelPrefix, conversionContext)
-            if (model != null) {
-                storedModelsById[id] = model
-            }
+            storedModelsById
         }
-
-        return storedModelsById
     } finally {
         tenantDb?.close()
         db.close()
     }
+}
+
+private fun Throwable.isNoSuchDirectory(): Boolean {
+    var current: Throwable? = this
+    while (current != null) {
+        if (current::class.simpleName == "NoSuchDirectoryException") return true
+        current = current.cause
+    }
+    return false
 }

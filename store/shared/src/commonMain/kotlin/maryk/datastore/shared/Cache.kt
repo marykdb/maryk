@@ -30,7 +30,7 @@ class Cache {
         return if (value != null && version == value.version) {
             value.value
         } else {
-            return valueReader().also { readValue ->
+            valueReader().also { readValue ->
                 if (value == null || value.version < version) {
                     refMap.put(reference, CachedValue(version, readValue))
                 }
@@ -40,7 +40,11 @@ class Cache {
 
     /** Delete [key] from the table with [dbIndex] */
     fun delete(dbIndex: UInt, key: Key<*>) {
-        cachePerDbPerKey.remove(dbIndex)?.remove(key)
+        val cachePerKey = cachePerDbPerKey[dbIndex] ?: return
+        cachePerKey.remove(key)
+        if (cachePerKey.isEmpty()) {
+            cachePerDbPerKey.remove(dbIndex)
+        }
     }
 }
 

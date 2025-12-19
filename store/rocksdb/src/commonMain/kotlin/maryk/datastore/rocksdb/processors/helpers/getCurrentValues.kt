@@ -4,7 +4,6 @@ import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.lib.extensions.compare.compareDefinedTo
-import maryk.rocksdb.ReadOptions
 
 internal fun getCurrentValues(
     transaction: Transaction,
@@ -15,7 +14,7 @@ internal fun getCurrentValues(
     val prefix = key.bytes + referenceAsBytes
     val currentValues = mutableListOf<Pair<ByteArray, ByteArray>>()
 
-    val iterator = transaction.getIterator(ReadOptions(), columnFamilies.table)
+    val iterator = transaction.getIterator(transaction.rocksDBDataStore.defaultReadOptions, columnFamilies.table)
     iterator.seek(prefix)
 
     while (iterator.isValid() && prefix.compareDefinedTo(iterator.key()) == 0) {

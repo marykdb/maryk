@@ -1,11 +1,11 @@
 plugins {
-    id("com.google.protobuf")
+    alias(libs.plugins.protobuf)
     id("maryk.conventions.kotlin-jvm")
 }
 
 protobuf {
     protoc {
-        artifact = "com.google.protobuf:protoc:_"
+        artifact = libs.protoc.get().toString()
     }
 }
 
@@ -13,6 +13,6 @@ dependencies {
     api(projects.generator)
 
     testImplementation(projects.testmodels)
-    testImplementation("com.google.protobuf:protobuf-kotlin:_")
+    testImplementation(libs.protobuf.kotlin)
     testImplementation(kotlin("test"))
 }

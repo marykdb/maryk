@@ -11,6 +11,8 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IncMapReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.query.RequestContext
@@ -42,7 +44,7 @@ data class IncMapChange internal constructor(
                     try {
                         mapDefinition.valueDefinition.validateWithRef(null, value) {
                             @Suppress("UNCHECKED_CAST")
-                            mapDefinition.anyValueRef(reference) as? IsPropertyReferenceForValues<Any, *, *, *>
+                            mapDefinition.anyValueRef(reference) as? IsPropertyReference<Any, *, *>
                         }
                     } catch (e: ValidationException) {
                         addException(e)
@@ -61,21 +63,12 @@ data class IncMapChange internal constructor(
 
             fun valueChanger(originalValue: Any?, newValue: Any?): Any? {
                 val currentRef = mutableReferenceList.getOrNull(referenceIndex++)
-                @Suppress("UNCHECKED_CAST")
-                val descriptor = (valueChange.reference.propertyDefinition.definition.keyNumberDescriptor as NumberDescriptor<Comparable<Any>>)
-                val one = descriptor.ofInt(1)
 
                 return if (currentRef == null) {
                     when (newValue) {
                         is MutableMap<*, *> -> {
                             valueChange.addValues?.let { addValues ->
-                                @Suppress("UNCHECKED_CAST")
-                                var latestKeyedItem = (newValue as MutableMap<Comparable<Any>, Any>).maxByOrNull { it.key }!!.key
-
-                                for (value in addValues) {
-                                    latestKeyedItem = descriptor.sum(latestKeyedItem, one)
-                                    newValue[latestKeyedItem] = value
-                                }
+                                appendValues(valueChange.reference, newValue, addValues)
                             }
                         }
                         null -> throw RequestException("Cannot set incrementing map changes on non existing value")
@@ -128,5 +121,21 @@ data class IncMapChange internal constructor(
                 writeReferenceValueMap(writer, obj.valueChanges, context)
             }
         }
+    }
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun <K : Comparable<K>, V : Any> appendValues(
+    reference: IncMapReference<K, V, *>,
+    map: MutableMap<*, *>,
+    addValues: List<*>
+) {
+    val descriptor: NumberDescriptor<K> = reference.propertyDefinition.definition.keyNumberDescriptor
+    val one = descriptor.ofInt(1)
+    val typedMap = map as MutableMap<K, V>
+    var latestKeyedItem = typedMap.maxByOrNull { it.key }!!.key
+    for (value in addValues) {
+        latestKeyedItem = descriptor.sum(latestKeyedItem, one)
+        typedMap[latestKeyedItem] = value as V
     }
 }

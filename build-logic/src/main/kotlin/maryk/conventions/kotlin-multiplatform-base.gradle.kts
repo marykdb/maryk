@@ -1,6 +1,6 @@
 package maryk.conventions
 
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_2
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
 
 /**
  * Base configuration for all Kotlin/Multiplatform conventions.
@@ -24,8 +24,8 @@ kotlin {
     jvmToolchain(21)
 
     compilerOptions {
-        apiVersion = KOTLIN_2_2
-        languageVersion = KOTLIN_2_2
+        apiVersion = KOTLIN_2_3
+        languageVersion = KOTLIN_2_3
         allWarningsAsErrors = true
         freeCompilerArgs.addAll("-progressive", "-Xconsistent-data-class-copy-visibility")
     }

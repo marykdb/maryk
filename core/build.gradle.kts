@@ -13,8 +13,8 @@ kotlin {
                 api(projects.lib)
                 api(projects.json)
                 api(projects.yaml)
-                api("org.jetbrains.kotlinx:atomicfu:_")
-                implementation(KotlinX.collections.immutable)
+                api(libs.atomicfu)
+                implementation(libs.kotlinx.collections.immutable)
             }
         }
         commonTest {

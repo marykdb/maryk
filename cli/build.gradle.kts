@@ -65,10 +65,10 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation("com.varabyte.kotter:kotter:_")
+                implementation(libs.kotter)
                 implementation(projects.store.rocksdb)
                 implementation(projects.store.foundationdb)
-                implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:_")
+                implementation(libs.kotlinx.coroutines.core)
             }
         }
         val commonTest by getting {

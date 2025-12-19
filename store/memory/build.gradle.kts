@@ -18,8 +18,8 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                api(projects.testmodels)
-                api(projects.store.test)
+                implementation(projects.testmodels)
+                implementation(projects.store.test)
             }
         }
     }

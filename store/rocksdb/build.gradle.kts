@@ -14,7 +14,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api("io.maryk.rocksdb:rocksdb-multiplatform:_")
+                api(libs.maryk.rocksdb.multiplatform)
 
                 api(projects.lib)
                 api(projects.core)
@@ -25,8 +25,8 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                api(projects.testmodels)
-                api(projects.store.test)
+                implementation(projects.testmodels)
+                implementation(projects.store.test)
             }
         }
     }

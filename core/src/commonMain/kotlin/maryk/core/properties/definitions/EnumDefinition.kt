@@ -214,18 +214,19 @@ data class EnumDefinition<E : IndexedEnumComparable<E>>(
     }
 }
 
-private fun areEnumsEqual(enumValues: List<IndexedEnum>, otherValues: List<IndexedEnum>) = when {
-    enumValues === otherValues -> true
-    otherValues.size != enumValues.size -> false
-    else -> {
-        enumValues.forEachIndexed { index, item ->
-            if (item.index != otherValues[index].index) {
-                return false
-            }
-        }
-
-        true
+private fun areEnumsEqual(enumValues: List<IndexedEnum>, otherValues: List<IndexedEnum>): Boolean {
+    if (enumValues === otherValues) {
+        return true
     }
+    if (otherValues.size != enumValues.size) {
+        return false
+    }
+    enumValues.forEachIndexed { index, item ->
+        if (item.index != otherValues[index].index) {
+            return false
+        }
+    }
+    return true
 }
 
 private fun enumsHashCode(enumValues: List<IndexedEnum>): Int {

@@ -1,5 +1,8 @@
+import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
+import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 import org.jetbrains.kotlin.konan.target.Family
 
 plugins {
@@ -45,7 +48,7 @@ kotlin {
         if (libExt != null && envVar != null) {
             val libFile = rootProject.projectDir.resolve("store/foundationdb/bin/lib/libfdb_c.$libExt")
 
-            binaries.withType<org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable>().configureEach {
+            binaries.withType<TestExecutable>().configureEach {
                 linkerOpts("-L$libDir", "-lfdb_c", "-rpath", libDir)
                 linkTaskProvider.configure {
                     dependsOn(installFoundationDB)
@@ -67,26 +70,21 @@ kotlin {
                 api(projects.lib)
                 api(projects.core)
                 api(projects.store.shared)
-                api("io.maryk.foundationdb:foundationdb-multiplatform:_")
+                api(libs.maryk.foundationdb.multiplatform)
             }
         }
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))
-                api(projects.testmodels)
-                api(projects.store.test)
-            }
-        }
-        val jvmTest by getting {
-            dependencies {
-                implementation(kotlin("test"))
+                implementation(projects.testmodels)
+                implementation(projects.store.test)
             }
         }
     }
 }
 
 // Utilities to run a local FoundationDB for tests
-val os = org.gradle.internal.os.OperatingSystem.current()
+val os = OperatingSystem.current()
 
 val scriptsDir = rootProject.projectDir.resolve("store/foundationdb/scripts")
 
@@ -131,7 +129,7 @@ tasks.named("jvmTest").configure {
 
 val kotlinExt = extensions.getByType<KotlinMultiplatformExtension>()
 
-tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest>().configureEach {
+tasks.withType<KotlinNativeTest>().configureEach {
     val target = kotlinExt.targets.withType<KotlinNativeTarget>().firstOrNull { nativeTarget ->
         name.startsWith(nativeTarget.name)
     }

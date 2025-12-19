@@ -54,7 +54,7 @@ class ListAnyValuePropertyReference<T : Any> internal constructor(
     private fun resolveToList(start: Any?): List<T>? {
         if (start == null) return null
 
-        var current: Any? = start
+        var current: Any = start
         var fuzzy = false
         val path = reference.unwrap(null)
 
@@ -76,7 +76,7 @@ class ListAnyValuePropertyReference<T : Any> internal constructor(
                 }
                 collected
             } else {
-                toResolve.resolveFromAny(current ?: return null)
+                toResolve.resolveFromAny(current)
             }
 
             if (!fuzzy && toResolve is IsFuzzyReference) {
@@ -84,7 +84,7 @@ class ListAnyValuePropertyReference<T : Any> internal constructor(
             }
         }
 
-        val result = current ?: return null
+        val result = current
 
         @Suppress("UNCHECKED_CAST")
         return when (result) {

@@ -10,7 +10,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                api(KotlinX.coroutines.core)
+                api(libs.kotlinx.coroutines.core)
                 api(projects.lib)
                 api(projects.core)
             }
@@ -18,8 +18,8 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(kotlin("test"))
-                api(projects.testmodels)
-                api(projects.store.test)
+                implementation(projects.testmodels)
+                implementation(projects.store.test)
             }
         }
     }

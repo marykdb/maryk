@@ -14,7 +14,7 @@ kotlin {
                 api(kotlin("test-common"))
                 api(kotlin("test-annotations-common"))
 
-                api(KotlinX.coroutines.core)
+                api(libs.kotlinx.coroutines.core)
             }
         }
         jsMain {

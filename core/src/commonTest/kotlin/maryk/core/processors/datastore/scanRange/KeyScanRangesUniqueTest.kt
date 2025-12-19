@@ -39,8 +39,10 @@ class KeyScanRangesUniqueTest {
 
         val scanRange = CompleteMarykModel.createScanRange(filter, null)
 
-        expect(4) { scanRange.uniques?.size }
-        scanRange.uniques?.get(0)?.let {
+        val uniques = scanRange.uniques ?: fail("Should be defined")
+
+        expect(4) { uniques.size }
+        uniques.get(0).let {
             expect("09") { it.reference.toHex() }
             expect(CompleteMarykModel.string.definition) {
                 it.definition as StringDefinition
@@ -48,9 +50,9 @@ class KeyScanRangesUniqueTest {
             expect("🦄") { it.value }
 
             true
-        } ?: fail("Should be defined")
+        }
 
-        scanRange.uniques?.get(3)?.let {
+        uniques.get(3).let {
             expect("09") { it.reference.toHex() }
             expect(CompleteMarykModel.string.definition) {
                 it.definition as StringDefinition
@@ -58,6 +60,6 @@ class KeyScanRangesUniqueTest {
             expect("🤖") { it.value }
 
             true
-        } ?: fail("Should be defined")
+        }
     }
 }

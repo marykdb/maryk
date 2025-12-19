@@ -8,7 +8,7 @@ kotlin {
         commonMain {
             dependencies {
                 api(projects.core)
-                api(KotlinX.dataframe)
+                api(libs.kotlinx.dataframe)
             }
         }
         commonTest {

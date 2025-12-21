@@ -122,8 +122,27 @@ val stopFoundationDBForTests by tasks.registering(Exec::class) {
     }
 }
 
+val resetFoundationDBTestData by tasks.registering {
+    group = "verification"
+    description = "Stop local fdbserver and reset FoundationDB test data directory"
+    doNotTrackState("Always reset FoundationDB test data before local runs.")
+    doLast {
+        if (!os.isWindows) {
+            project.providers.exec {
+                commandLine("bash", scriptsDir.resolve("stop-fdb-for-tests.sh").absolutePath)
+                setIgnoreExitValue(true)
+            }.result.get()
+        }
+        project.delete(
+            layout.buildDirectory.dir("testdatastore/data"),
+            layout.buildDirectory.dir("testdatastore/logs"),
+            layout.buildDirectory.file("testdatastore/fdbserver.pid")
+        )
+    }
+}
+
 tasks.named("jvmTest").configure {
-    dependsOn(startFoundationDBForTests)
+    dependsOn(resetFoundationDBTestData, startFoundationDBForTests)
     finalizedBy(stopFoundationDBForTests)
 }
 
@@ -162,7 +181,7 @@ tasks.withType<KotlinNativeTest>().configureEach {
 }
 
 tasks.register<JavaExec>("runFoundationDBTestRunner") {
-    group = "application"
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
     description = "Seed FoundationDB with test models and keep the process alive for manual testing."
     val jvmTarget = kotlinExt.targets.getByName("jvm")
     val testCompilation = jvmTarget.compilations.getByName("test")
@@ -171,7 +190,7 @@ tasks.register<JavaExec>("runFoundationDBTestRunner") {
         configurations.getByName("jvmTestRuntimeClasspath")
     )
     mainClass.set("maryk.datastore.foundationdb.FoundationDbTestRunnerKt")
-    dependsOn(tasks.named("jvmTestClasses"), startFoundationDBForTests)
+    dependsOn(tasks.named("jvmTestClasses"), resetFoundationDBTestData, startFoundationDBForTests)
     finalizedBy(stopFoundationDBForTests)
     environment(
         mapOf(

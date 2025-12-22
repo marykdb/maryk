@@ -40,6 +40,38 @@ internal class JsonWriterTest {
         )
     }
 
+    @Test
+    fun writeStringWithNewlinesIsEscaped() {
+        val output = buildString {
+            val writer = JsonWriter { append(it) }
+            writer.writeStartObject()
+            writer.writeFieldName("note")
+            writer.writeString("Line one\nLine two\r\nLine three")
+            writer.writeEndObject()
+        }
+
+        assertEquals(
+            """{"note":"Line one\nLine two\r\nLine three"}""",
+            output
+        )
+    }
+
+    @Test
+    fun writeFieldNameEscapesQuotes() {
+        val output = buildString {
+            val writer = JsonWriter { append(it) }
+            writer.writeStartObject()
+            writer.writeFieldName("say \"hi\"")
+            writer.writeString("value")
+            writer.writeEndObject()
+        }
+
+        assertEquals(
+            """{"say \"hi\"":"value"}""",
+            output
+        )
+    }
+
     private fun writeJson(writer: IsJsonLikeWriter) {
         writer.apply {
             writeStartArray()

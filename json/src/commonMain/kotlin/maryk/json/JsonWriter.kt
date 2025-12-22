@@ -45,11 +45,11 @@ class JsonWriter(
             makePretty()
         }
         super.writeFieldName(name)
-        writer("\"$name\"$colonSpace")
+        writer("\"${escapeJson(name)}\"$colonSpace")
     }
 
     /** Writes a string value including quotes */
-    override fun writeString(value: String) = writeValue("\"$value\"")
+    override fun writeString(value: String) = writeValue("\"${escapeJson(value)}\"")
 
     /** Writes a value excluding quotes */
     override fun writeValue(value: String) = if (typeStack.isNotEmpty()) {
@@ -81,5 +81,31 @@ class JsonWriter(
         if (pretty) {
             writer("\n${indent.repeat(typeStack.count { it is Object })}")
         }
+    }
+
+    private fun escapeJson(value: String): String {
+        if (value.isEmpty()) return value
+        val builder = StringBuilder(value.length + 8)
+        value.forEach { char ->
+            when (char) {
+                '\\' -> builder.append("\\\\")
+                '"' -> builder.append("\\\"")
+                '\b' -> builder.append("\\b")
+                '\u000C' -> builder.append("\\f")
+                '\n' -> builder.append("\\n")
+                '\r' -> builder.append("\\r")
+                '\t' -> builder.append("\\t")
+                else -> {
+                    if (char < ' ') {
+                        builder.append("\\u")
+                        val hex = char.code.toString(16).padStart(4, '0')
+                        builder.append(hex)
+                    } else {
+                        builder.append(char)
+                    }
+                }
+            }
+        }
+        return builder.toString()
     }
 }

@@ -1,6 +1,8 @@
 package maryk.core.properties.definitions
 
 import maryk.core.exceptions.RequestException
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.ContextualDataModel
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsValuesDataModel
@@ -15,7 +17,13 @@ import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.protobuf.ByteLengthContainer
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.ObjectValues
+import maryk.json.IsJsonLikeWriter
 
 /** Definition for Map property in which the key auto increments */
 data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsPropertyContext> internal constructor(
@@ -123,6 +131,17 @@ data class IncrementingMapDefinition<K : Comparable<K>, V : Any, CX : IsProperty
                 ),
                 valueDefinition = values(6u)
             )
+    }
+
+    override fun writeJsonValue(value: Map<K, V>, writer: IsJsonLikeWriter, context: CX?) {
+        writer.writeStartObject()
+        value.entries.sortedBy { it.key }.forEach { (key, item) ->
+            writer.writeFieldName(
+                keyDefinition.asString(key, context)
+            )
+            valueDefinition.writeJsonValue(item, writer, context)
+        }
+        writer.writeEndObject()
     }
 }
 

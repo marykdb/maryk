@@ -17,6 +17,7 @@ import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
+import maryk.yaml.YamlWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -51,6 +52,13 @@ internal class IncrementingMapDefinitionTest {
         30uL to "#thirty",
         100uL to "#hundred",
         1000uL to "#thousand"
+    )
+
+    private val value2 = mapOf(
+        1000uL to "#thousand",
+        100uL to "#hundred",
+        30uL to "#thirty",
+        12uL to "#twelve"
     )
 
     @Test
@@ -132,12 +140,12 @@ internal class IncrementingMapDefinitionTest {
         }
 
         val mutableMap = mutableMapOf<ULong, String>()
-
-        for (it in this.value) {
+        repeat(this.value.size) {
             readKey()
             readValue(mutableMap)
-            expect(it.value) { mutableMap[it.key] }
         }
+
+        assertEquals(this.value, mutableMap)
     }
 
     @Test
@@ -156,6 +164,24 @@ internal class IncrementingMapDefinitionTest {
         val converted = def.readJson(reader)
 
         assertEquals(this.value, converted)
+    }
+
+    @Test
+    fun convertValuesToYAMLStringInAscendingOrder() {
+        val output = buildString {
+            def.writeJsonValue(value2, YamlWriter { append(it) })
+        }
+
+        assertEquals(
+            """
+            12: '#twelve'
+            30: '#thirty'
+            100: '#hundred'
+            1000: '#thousand'
+
+            """.trimIndent(),
+            output
+        )
     }
 
     @Test

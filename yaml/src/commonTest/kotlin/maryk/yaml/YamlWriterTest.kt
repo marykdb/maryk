@@ -149,6 +149,54 @@ internal class YamlWriterTest {
     }
 
     @Test
+    fun writeMultilineStringInObject() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject()
+                writeFieldName("note")
+                writeValue(
+                    "Line one\nLine two\nLine three"
+                )
+                writeEndObject()
+            }
+        }
+
+        assertEquals(
+            """
+            note: |
+              Line one
+              Line two
+              Line three
+
+            """.trimIndent(),
+            output
+        )
+    }
+
+    @Test
+    fun writeMultilineStringInArray() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartArray()
+                writeValue(
+                    "Line one\nLine two"
+                )
+                writeEndArray()
+            }
+        }
+
+        assertEquals(
+            """
+            - |
+              Line one
+              Line two
+
+            """.trimIndent(),
+            output
+        )
+    }
+
+    @Test
     fun writeYamlInDoubleArray() {
         val output = buildString {
             YamlWriter {

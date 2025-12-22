@@ -190,53 +190,98 @@ class YamlWriter(
     override fun writeString(value: String) = writeValue(value)
 
     /** Writes a [value] excluding quotes */
-    override fun writeValue(value: String) = if (typeStack.isNotEmpty()) {
-        val valueToWrite = this.sanitizeValue(value)
-        val lastTypeBeforeOperation = this.lastType
+    override fun writeValue(value: String) {
+        if (typeStack.isNotEmpty()) {
+            val lastTypeBeforeOperation = this.lastType
 
-        if ((lastTypeBeforeOperation == TAG && value != "") || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
-            writer(" ")
-        }
+            if ((lastTypeBeforeOperation == TAG && value != "") || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
+                writer(" ")
+            }
 
-        when (typeStack.last()) {
-            is Object -> {
-                super.checkObjectValueAllowed()
-                if (lastTypeBeforeOperation == FIELD_NAME) {
-                    writer(" ")
-                }
+            when (typeStack.last()) {
+                is Object -> {
+                    super.checkObjectValueAllowed()
+                    if (lastTypeBeforeOperation == FIELD_NAME) {
+                        writer(" ")
+                    }
 
-                if (this.lastIsCompact) {
-                    writer(valueToWrite)
-                } else {
-                    writer("$valueToWrite\n")
+                    if (this.lastIsCompact) {
+                        writer(this.sanitizeValue(value))
+                    } else {
+                        if (value.contains('\n')) {
+                            writeMultilineValue(value)
+                        } else {
+                            writer("${this.sanitizeValue(value)}\n")
+                            this.prefixWasWritten = false
+                        }
+                        return
+                    }
                     this.prefixWasWritten = false
+                }
+                is JsonEmbedType.Array -> {
+                    super.checkArrayValueAllowed()
+                    if (this.lastIsCompact) {
+                        if (lastTypeBeforeOperation == ARRAY_VALUE) {
+                            writer(", ")
+                        }
+                        writer(this.sanitizeValue(value))
+                    } else {
+                        if (value.contains('\n')) {
+                            writeMultilineValue(value)
+                        } else {
+                            if (lastTypeBeforeOperation == TAG) {
+                                writer("${this.sanitizeValue(value)}\n")
+                            } else {
+                                writer("$prefixToWrite$arraySpacing${this.sanitizeValue(value)}\n")
+                            }
+                            this.prefixWasWritten = false
+                        }
+                        return
+                    }
+                }
+                is ComplexField -> {
+                    throw IllegalJsonOperation("Complex fields cannot contain values directly, start an array or object before adding them")
                 }
             }
-            is JsonEmbedType.Array -> {
-                super.checkArrayValueAllowed()
-                if (this.lastIsCompact) {
-                    if (lastTypeBeforeOperation == ARRAY_VALUE) {
-                        writer(", ")
-                    }
-                    writer(valueToWrite)
+        } else {
+            if (this.lastType == TAG) {
+                writer(" ")
+            }
+            writer(value)
+        }
+    }
+
+    private fun writeMultilineValue(value: String) {
+        val lastTypeBeforeOperation = this.lastType
+        val lines = value.split("\n")
+        when (typeStack.last()) {
+            is Object -> {
+                if (lastTypeBeforeOperation == FIELD_NAME) {
+                    writer(" |")
                 } else {
-                    if (lastTypeBeforeOperation == TAG) {
-                        writer("$valueToWrite\n")
-                    } else {
-                        writer("$prefixToWrite$arraySpacing$valueToWrite\n")
-                    }
-                    this.prefixWasWritten = false
+                    writer("|")
                 }
+                writer("\n")
+                lines.forEach { line ->
+                    writer("$prefix$spacing$line\n")
+                }
+                this.prefixWasWritten = false
+            }
+            is JsonEmbedType.Array -> {
+                if (lastTypeBeforeOperation == TAG) {
+                    writer(" |\n")
+                } else {
+                    writer("$prefixToWrite$arraySpacing|\n")
+                }
+                lines.forEach { line ->
+                    writer("$prefix$spacing$line\n")
+                }
+                this.prefixWasWritten = false
             }
             is ComplexField -> {
                 throw IllegalJsonOperation("Complex fields cannot contain values directly, start an array or object before adding them")
             }
         }
-    } else {
-        if (this.lastType == TAG) {
-            writer(" ")
-        }
-        writer(value)
     }
 
     /** Writes a [tag] to YAML output */

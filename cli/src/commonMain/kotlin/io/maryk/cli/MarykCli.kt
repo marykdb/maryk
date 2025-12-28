@@ -2,9 +2,12 @@ package io.maryk.cli
 
 import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.input.input
+import com.varabyte.kotter.foundation.input.getInput
 import com.varabyte.kotter.foundation.input.onInputEntered
 import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.input.runUntilInputEntered
+import com.varabyte.kotter.foundation.input.setInput
+import com.varabyte.kotter.foundation.input.Keys
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import io.maryk.cli.commands.CommandRegistry
@@ -40,6 +43,7 @@ class MarykCli(
         val prompt = "> "
         val commandCompleter = CliInputCompleter(registry)
         val state = registry.state
+        val commandHistory = mutableListOf<String>()
 
         fun renderOutput(
             lines: List<String>,
@@ -68,12 +72,43 @@ class MarykCli(
 
         fun promptForCommand(): String {
             var entered = ""
+            var historyIndex: Int? = null
+            var draftInput: String? = null
+            val inputId = "command-input"
             section {
                 text(prompt)
-                input(completer = commandCompleter)
+                input(completer = commandCompleter, id = inputId)
             }.runUntilInputEntered {
                 onInputEntered {
                     entered = input
+                }
+                onKeyPressed {
+                    when (key) {
+                        Keys.UP -> {
+                            if (commandHistory.isEmpty()) return@onKeyPressed
+                            val current = getInput(inputId).orEmpty()
+                            if (historyIndex == null) {
+                                draftInput = current
+                                historyIndex = commandHistory.lastIndex
+                            } else if (historyIndex!! > 0) {
+                                historyIndex = historyIndex!! - 1
+                            }
+                            val nextIndex = historyIndex ?: return@onKeyPressed
+                            setInput(commandHistory[nextIndex], id = inputId)
+                        }
+                        Keys.DOWN -> {
+                            val index = historyIndex ?: return@onKeyPressed
+                            val nextIndex = index + 1
+                            if (nextIndex >= commandHistory.size) {
+                                historyIndex = null
+                                setInput(draftInput.orEmpty(), id = inputId)
+                            } else {
+                                historyIndex = nextIndex
+                                setInput(commandHistory[nextIndex], id = inputId)
+                            }
+                        }
+                        else -> Unit
+                    }
                 }
             }
             return entered
@@ -284,6 +319,10 @@ class MarykCli(
             }
             if (trimmed.equals("exit", ignoreCase = true) || trimmed.equals("quit", ignoreCase = true)) {
                 break
+            }
+
+            if (commandHistory.lastOrNull() != trimmed) {
+                commandHistory.add(trimmed)
             }
 
             val parseResult = CommandLineParser.parse(trimmed)

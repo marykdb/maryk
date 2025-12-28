@@ -5,14 +5,10 @@ import io.maryk.cli.CliState
 import io.maryk.cli.DirectoryResolution
 import io.maryk.cli.InteractionResult
 import io.maryk.cli.RocksDbStoreConnection
-import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
-import maryk.core.definitions.PrimitiveType
 import maryk.core.models.RootDataModel
-import maryk.core.query.DefinitionsConversionContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
-import maryk.yaml.YamlReader
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -66,8 +62,7 @@ class ModelCommandTest {
         val result = command.execute(context, listOf(SimpleMarykModel.Meta.name))
 
         assertFalse(result.isError)
-        assertTrue(result.lines.any { it.startsWith("${SimpleMarykModel.Meta.name}:") })
-        assertContainsDefinition(result.lines, SimpleMarykModel.Meta.name, PrimitiveType.RootModel)
+        assertContainsModelLine(result.lines, SimpleMarykModel.Meta.name)
     }
 
     @Test
@@ -84,17 +79,7 @@ class ModelCommandTest {
         val result = command.execute(context, listOf("7"))
 
         assertFalse(result.isError)
-        assertTrue(result.lines.any { it.startsWith("${TestMarykModel.Meta.name}:") })
-        assertContainsDefinition(result.lines, TestMarykModel.Meta.name, PrimitiveType.RootModel)
-
-        val dependencies = mutableListOf<MarykPrimitive>()
-        TestMarykModel.getAllDependencies(dependencies)
-        assertTrue(dependencies.isNotEmpty(), "Expected TestMarykModel to have at least one dependency for this test.")
-        val dependencyName = dependencies.first().Meta.name
-        assertTrue(
-            result.lines.any { it.startsWith("$dependencyName:") },
-            "Expected dependency `$dependencyName` to be included as YAML key.",
-        )
+        assertContainsModelLine(result.lines, TestMarykModel.Meta.name)
     }
 
     @Test
@@ -115,13 +100,38 @@ class ModelCommandTest {
 
         assertFalse(result.isError)
         assertNotNull(state.currentInteraction)
-        assertTrue(result.lines.first().contains("Select a model"))
+        assertTrue(result.lines.isEmpty())
 
         val interaction = state.currentInteraction!!
         val outcome = interaction.onInput(TestMarykModel.Meta.name)
         val complete = assertIs<InteractionResult.Complete>(outcome)
-        assertTrue(complete.lines.any { it.startsWith("${TestMarykModel.Meta.name}:") })
-        assertContainsDefinition(complete.lines, TestMarykModel.Meta.name, PrimitiveType.RootModel)
+        assertContainsModelLine(complete.lines, TestMarykModel.Meta.name)
+    }
+
+    @Test
+    fun includesDependenciesWhenRequested() {
+        val store = FakeDataStore(
+            dataModelsById = mapOf(7u to TestMarykModel),
+        )
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+
+        val command = ModelCommand()
+        val context = buildContext(state, FakeEnvironment { it })
+        val result = command.execute(context, listOf("--with-deps", "7"))
+
+        assertFalse(result.isError)
+        assertContainsModelLine(result.lines, TestMarykModel.Meta.name)
+
+        val dependencies = mutableListOf<MarykPrimitive>()
+        TestMarykModel.getAllDependencies(dependencies)
+        assertTrue(dependencies.isNotEmpty(), "Expected TestMarykModel to have at least one dependency for this test.")
+        val dependencyName = dependencies.first().Meta.name
+        assertTrue(
+            result.lines.any { it.startsWith("$dependencyName:") },
+            "Expected dependency `$dependencyName` to be included as YAML key.",
+        )
     }
 
     @Test
@@ -175,29 +185,11 @@ class ModelCommandTest {
         assertEquals(listOf("No models found in the connected store."), result.lines)
     }
 
-    private fun assertContainsDefinition(lines: List<String>, name: String, primitiveType: PrimitiveType) {
-        val yaml = lines.joinToString(separator = "\n", postfix = "\n")
-        val context = DefinitionsConversionContext()
-        val reader = createYamlReader(yaml)
-        val values = Definitions.Serializer.readJson(reader, context)
-        val definitions = Definitions(values)
-
+    private fun assertContainsModelLine(lines: List<String>, name: String) {
         assertTrue(
-            definitions.definitions.any { it.Meta.name == name && it.Meta.primitiveType == primitiveType },
-            "Expected definition for $primitiveType `$name` in YAML output, got: ${definitions.definitions.map { it.Meta.name }}",
+            lines.any { it.startsWith("$name:") },
+            "Expected model `$name` definition header in output.",
         )
-    }
-
-    private fun createYamlReader(yaml: String) = run {
-        var index = 0
-        val defaultTag = "tag:maryk.io,2018:"
-        YamlReader(
-            defaultTag = defaultTag,
-            tagMap = mapOf(defaultTag to emptyMap()),
-            allowUnknownTags = true,
-        ) {
-            yaml.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
-        }
     }
 
     private object AlphaModel : RootDataModel<AlphaModel>()

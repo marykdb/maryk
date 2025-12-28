@@ -10,17 +10,38 @@ class OutputViewerInteraction(
     private val lines: List<String>,
     terminalHeight: Int,
     private val saveContext: SaveContext? = null,
+    private val deleteContext: DeleteContext? = null,
     private val headerLines: List<String> = emptyList(),
+    private val showChrome: Boolean = true,
 ) : CliInteraction {
     override val promptLabel: String = "view> "
-    override val introLines: List<String> = listOf(
-        "Viewing output. Use Up/Down to scroll, PgUp/PgDn for pages, Home/End for ends, q/quit/exit to close.",
-        "Commands: save <dir> [--yaml|--json|--proto] [--meta] | q | quit | exit",
-    )
+    override val introLines: List<String> = if (showChrome) {
+        val commandLine = buildList {
+            if (saveContext != null) {
+                add("save <dir> [--yaml|--json|--proto] [--meta]")
+            }
+            if (deleteContext != null) {
+                add("delete [--hard]")
+            }
+            addAll(EXIT_COMMANDS)
+        }.joinToString(separator = " | ")
+        listOf(
+            "Viewing output. Use Up/Down to scroll, PgUp/PgDn for pages, Home/End for ends, q/quit/exit to close.",
+            "Commands: $commandLine",
+        )
+    } else {
+        emptyList()
+    }
 
-    private val viewHeight: Int = max(1, terminalHeight - FOOTER_AND_PROMPT_LINES - headerLines.size)
+    private val viewHeight: Int = if (showChrome) {
+        max(1, terminalHeight - FOOTER_AND_PROMPT_LINES - headerLines.size)
+    } else {
+        max(1, lines.size + headerLines.size)
+    }
     private var offset: Int = 0
     private var statusMessage: String? = null
+    private var pendingDelete: Boolean = false
+    private var pendingHardDelete: Boolean = false
     private val completer: InputCompleter = object : InputCompleter {
         override fun complete(input: String): String? {
             val trimmed = input.trimStart()
@@ -32,8 +53,13 @@ class OutputViewerInteraction(
             val tokens = trimmed.split(WHITESPACE_REGEX).filter { it.isNotEmpty() }
             val currentToken = if (endsWithSpace) "" else tokens.lastOrNull().orEmpty()
 
+            if (pendingDelete) {
+                return completeToken(currentToken, YES_NO_OPTIONS)
+            }
+
             val command = tokens.first().lowercase()
             if (command == "save") {
+                if (saveContext == null) return null
                 if (tokens.size == 1 && !endsWithSpace) {
                     return completeToken(currentToken, listOf("save"))
                 }
@@ -46,7 +72,23 @@ class OutputViewerInteraction(
                 return null
             }
 
-            return completeToken(currentToken, listOf("q", "quit", "exit", "save"))
+            if (command == "delete") {
+                if (deleteContext == null) return null
+                if (currentToken.startsWith("--")) {
+                    return completeToken(currentToken, listOf("--hard"))
+                }
+                if (endsWithSpace) {
+                    return "--hard"
+                }
+                return null
+            }
+
+            val commands = buildList {
+                if (saveContext != null) add("save")
+                if (deleteContext != null) add("delete")
+                addAll(EXIT_COMMANDS)
+            }
+            return completeToken(currentToken, commands)
         }
     }
 
@@ -54,13 +96,21 @@ class OutputViewerInteraction(
 
     override fun promptLines(): List<String> {
         if (lines.isEmpty()) {
-            return headerLines + listOf("<no output>", footerLine(0, 0, 0))
+            return if (showChrome) {
+                headerLines + listOf("<no output>", footerLine(0, 0, 0))
+            } else {
+                headerLines
+            }
         }
 
         val end = min(lines.size, offset + viewHeight)
         val visible = lines.subList(offset, end)
-        val footer = footerLine(offset + 1, end, lines.size)
-        return headerLines + visible + footer
+        return if (showChrome) {
+            val footer = footerLine(offset + 1, end, lines.size)
+            headerLines + visible + footer
+        } else {
+            headerLines + visible
+        }
     }
 
     override fun onInput(input: String): InteractionResult {
@@ -68,6 +118,10 @@ class OutputViewerInteraction(
         if (trimmed.isEmpty()) {
             statusMessage = null
             return InteractionResult.Stay()
+        }
+
+        if (pendingDelete) {
+            return handleDeleteConfirmation(trimmed)
         }
 
         when {
@@ -79,6 +133,10 @@ class OutputViewerInteraction(
 
             trimmed.equals("save", ignoreCase = true)
                 || trimmed.startsWith("save ", ignoreCase = true) -> {
+                val resolvedSaveContext = saveContext ?: run {
+                    statusMessage = "Unknown command: save"
+                    return InteractionResult.Stay(lines = statusLines())
+                }
                 val args = CommandLineParser.parse(trimmed)
                 val tokens = when (args) {
                     is CommandLineParser.ParseResult.Success -> args.tokens
@@ -96,19 +154,38 @@ class OutputViewerInteraction(
                 }
 
                 val saveOptions = (parseResult as SaveOptionsResult.Success).options
-                if (saveContext == null) {
-                    statusMessage = "Save not available for this output."
-                    return InteractionResult.Stay(lines = statusLines())
-                }
 
                 try {
-                    statusMessage = saveContext.save(
+                    statusMessage = resolvedSaveContext.save(
                         directory = saveOptions.directory,
                         format = saveOptions.format,
                         includeMeta = saveOptions.includeMeta,
                     )
                 } catch (e: Throwable) {
                     statusMessage = "Save failed: ${e.message ?: e::class.simpleName}"
+                }
+                return InteractionResult.Stay(lines = statusLines())
+            }
+
+            trimmed.equals("delete", ignoreCase = true)
+                || trimmed.startsWith("delete ", ignoreCase = true) -> {
+                val resolvedDeleteContext = deleteContext ?: run {
+                    statusMessage = "Unknown command: delete"
+                    return InteractionResult.Stay(lines = statusLines())
+                }
+                val tokens = trimmed.split(WHITESPACE_REGEX).filter { it.isNotEmpty() }
+                val parseResult = parseDeleteOptions(tokens.drop(1))
+                if (parseResult is DeleteOptionsResult.Error) {
+                    statusMessage = parseResult.message
+                    return InteractionResult.Stay(lines = statusLines())
+                }
+                val options = (parseResult as DeleteOptionsResult.Success).options
+                pendingDelete = true
+                pendingHardDelete = options.hardDelete
+                statusMessage = buildString {
+                    append("Delete ${resolvedDeleteContext.label}")
+                    if (pendingHardDelete) append(" (hard)")
+                    append("? Type yes or no.")
                 }
                 return InteractionResult.Stay(lines = statusLines())
             }
@@ -129,6 +206,15 @@ class OutputViewerInteraction(
     private sealed class SaveOptionsResult {
         data class Success(val options: SaveOptions) : SaveOptionsResult()
         data class Error(val message: String) : SaveOptionsResult()
+    }
+
+    private data class DeleteOptions(
+        val hardDelete: Boolean,
+    )
+
+    private sealed class DeleteOptionsResult {
+        data class Success(val options: DeleteOptions) : DeleteOptionsResult()
+        data class Error(val message: String) : DeleteOptionsResult()
     }
 
     private fun parseSaveOptions(tokens: List<String>): SaveOptionsResult {
@@ -182,7 +268,46 @@ class OutputViewerInteraction(
         return if (current != null && current != next) null else next
     }
 
+    private fun parseDeleteOptions(tokens: List<String>): DeleteOptionsResult {
+        var hardDelete = false
+        tokens.forEach { token ->
+            when (token.lowercase()) {
+                "--hard" -> hardDelete = true
+                else -> if (token.startsWith("--")) {
+                    return DeleteOptionsResult.Error("Unknown option: $token")
+                } else {
+                    return DeleteOptionsResult.Error("Delete does not accept additional arguments.")
+                }
+            }
+        }
+        return DeleteOptionsResult.Success(DeleteOptions(hardDelete = hardDelete))
+    }
+
+    private fun handleDeleteConfirmation(input: String): InteractionResult {
+        val resolvedDeleteContext = deleteContext
+            ?: return InteractionResult.Stay(lines = listOf("Delete not available for this output."))
+        return when (input.lowercase()) {
+            "yes", "y" -> {
+                pendingDelete = false
+                val lines = try {
+                    resolvedDeleteContext.onDelete(pendingHardDelete)
+                } catch (e: Throwable) {
+                    listOf("Delete failed: ${e.message ?: e::class.simpleName}")
+                }
+                pendingHardDelete = false
+                InteractionResult.Stay(lines = lines)
+            }
+            "no", "n", "cancel" -> {
+                pendingDelete = false
+                pendingHardDelete = false
+                InteractionResult.Stay(lines = listOf("Delete cancelled."))
+            }
+            else -> InteractionResult.Stay(lines = listOf("Type yes or no."))
+        }
+    }
+
     override fun onKeyPressed(key: Key): InteractionKeyResult? {
+        if (!showChrome) return null
         val previous = offset
         val maxOffset = max(0, lines.size - viewHeight)
         when (key) {
@@ -204,6 +329,8 @@ class OutputViewerInteraction(
 
     private companion object {
         private const val FOOTER_AND_PROMPT_LINES = 3
+        private val EXIT_COMMANDS = listOf("q", "quit", "exit")
+        private val YES_NO_OPTIONS = listOf("yes", "no")
         private val WHITESPACE_REGEX = Regex("\\s+")
 
         private fun completeToken(current: String, candidates: List<String>): String? {

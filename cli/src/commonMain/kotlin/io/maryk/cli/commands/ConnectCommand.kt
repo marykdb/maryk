@@ -401,10 +401,14 @@ class ConnectCommand(
             }
         },
     )
+    {
+        override val allowViewerOnComplete: Boolean = false
+    }
 
     private inner class RocksDbDirectoryInteraction(
         private val context: CommandContext,
     ) : CliInteraction {
+        override val allowViewerOnComplete: Boolean = false
         override val promptLabel: String = "dir> "
         override val introLines: List<String> = listOf(
             "Enter the RocksDB store directory path:",
@@ -434,6 +438,7 @@ class ConnectCommand(
     private inner class FoundationDbDirectoryInteraction(
         private val context: CommandContext,
     ) : CliInteraction {
+        override val allowViewerOnComplete: Boolean = false
         override val promptLabel: String = "dir> "
         override val introLines: List<String> = listOf(
             "Enter the FoundationDB directory path (slash-separated).",

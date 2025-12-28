@@ -2,6 +2,7 @@ package io.maryk.cli.commands
 
 import io.maryk.cli.CliEnvironment
 import io.maryk.cli.CliState
+import io.maryk.cli.DeleteContext
 import io.maryk.cli.SaveContext
 
 /**
@@ -31,4 +32,5 @@ data class CommandResult(
     val isError: Boolean = false,
     val shouldExit: Boolean = false,
     val saveContext: SaveContext? = null,
+    val deleteContext: DeleteContext? = null,
 )

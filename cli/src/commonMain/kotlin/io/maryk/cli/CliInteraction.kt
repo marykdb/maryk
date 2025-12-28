@@ -10,6 +10,8 @@ import com.varabyte.kotter.foundation.input.Key
 interface CliInteraction {
     val promptLabel: String
     val introLines: List<String>
+    val allowViewerOnComplete: Boolean
+        get() = true
 
     /**
      * Lines that should be rendered before the prompt on every iteration while this interaction is active.
@@ -42,6 +44,8 @@ sealed class InteractionResult {
 
     data class Complete(
         val lines: List<String> = emptyList(),
+        val saveContext: SaveContext? = null,
+        val deleteContext: DeleteContext? = null,
     ) : InteractionResult()
 }
 
@@ -50,5 +54,7 @@ sealed class InteractionKeyResult {
     data class Complete(
         val lines: List<String> = emptyList(),
         val skipRender: Boolean = true,
+        val saveContext: SaveContext? = null,
+        val deleteContext: DeleteContext? = null,
     ) : InteractionKeyResult()
 }

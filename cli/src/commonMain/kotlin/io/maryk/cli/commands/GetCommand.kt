@@ -16,8 +16,10 @@ import maryk.core.query.requests.get
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
+import io.maryk.cli.DeleteContext
 import io.maryk.cli.SaveContext
 import maryk.yaml.YamlWriter
+import maryk.core.query.requests.delete
 
 class GetCommand : Command {
     override val name: String = "get"
@@ -109,7 +111,23 @@ class GetCommand : Command {
             valuesWithMetaData = valuesWithMetaData,
         )
 
-        return CommandResult(lines = lines, saveContext = saveContext)
+        val deleteContext = DeleteContext(
+            label = "${dataModel.Meta.name} $keyToken",
+        ) { hardDelete ->
+            val request = dataModel.delete(key, hardDelete = hardDelete)
+            runBlocking { dataStore.execute(request) }
+            if (hardDelete) {
+                listOf("Hard deleted ${dataModel.Meta.name} $keyToken.")
+            } else {
+                listOf("Deleted ${dataModel.Meta.name} $keyToken.")
+            }
+        }
+
+        return CommandResult(
+            lines = lines,
+            saveContext = saveContext,
+            deleteContext = deleteContext,
+        )
     }
 
     private fun resolveDataModel(

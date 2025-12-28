@@ -119,6 +119,8 @@ class MarykCli(
             val allowViewer: Boolean,
             val leadingBlank: Boolean,
             val trailingBlank: Boolean,
+            val saveContext: SaveContext?,
+            val deleteContext: DeleteContext?,
         )
 
         fun runInteraction(): InteractionOutcome {
@@ -128,17 +130,21 @@ class MarykCli(
                     allowViewer = true,
                     leadingBlank = true,
                     trailingBlank = true,
+                    saveContext = null,
+                    deleteContext = null,
                 )
 
             var currentInteraction = initial
             var messageLines: List<String> = emptyList()
             var completedLines: List<String> = emptyList()
+            var completedSaveContext: SaveContext? = null
+            var completedDeleteContext: DeleteContext? = null
             val transcriptLines = mutableListOf<String>()
             var finalRenderLines: List<String>? = null
             var finalizeInSection = false
             var finalRendered = false
             var finalizeSignal: (() -> Unit)? = null
-            var allowViewer = currentInteraction !is OutputViewerInteraction
+            var allowViewer = currentInteraction !is OutputViewerInteraction && currentInteraction.allowViewerOnComplete
             var renderActive = true
 
             val interactionSection = section {
@@ -207,7 +213,7 @@ class MarykCli(
                             state.markInteractionIntroShown()
                             state.replaceInteraction(result.next, result.showIntro)
                             currentInteraction = result.next
-                            allowViewer = currentInteraction !is OutputViewerInteraction
+                            allowViewer = currentInteraction !is OutputViewerInteraction && currentInteraction.allowViewerOnComplete
                             messageLines = result.lines
                             clearInput()
                             rerender()
@@ -215,7 +221,9 @@ class MarykCli(
                         is InteractionResult.Complete -> {
                             state.markInteractionIntroShown()
                             completedLines = result.lines
-                            allowViewer = currentInteraction !is OutputViewerInteraction
+                            completedSaveContext = result.saveContext
+                            completedDeleteContext = result.deleteContext
+                            allowViewer = currentInteraction !is OutputViewerInteraction && currentInteraction.allowViewerOnComplete
                             state.clearInteraction()
                             if (transcriptLines.isNotEmpty()) {
                                 val finalLines = if (completedLines.isEmpty()) {
@@ -239,7 +247,9 @@ class MarykCli(
                         is InteractionKeyResult.Rerender -> rerender()
                         is InteractionKeyResult.Complete -> {
                             completedLines = keyResult.lines
-                            allowViewer = currentInteraction !is OutputViewerInteraction
+                            completedSaveContext = keyResult.saveContext
+                            completedDeleteContext = keyResult.deleteContext
+                            allowViewer = currentInteraction !is OutputViewerInteraction && currentInteraction.allowViewerOnComplete
                             state.clearInteraction()
                             if (!keyResult.skipRender && transcriptLines.isNotEmpty()) {
                                 val finalLines = if (completedLines.isEmpty()) {
@@ -269,6 +279,8 @@ class MarykCli(
                     allowViewer = allowViewer,
                     leadingBlank = false,
                     trailingBlank = false,
+                    saveContext = completedSaveContext,
+                    deleteContext = completedDeleteContext,
                 )
             }
 
@@ -278,6 +290,8 @@ class MarykCli(
                 allowViewer = allowViewer,
                 leadingBlank = transcriptLines.isEmpty(),
                 trailingBlank = true,
+                saveContext = completedSaveContext,
+                deleteContext = completedDeleteContext,
             )
         }
 
@@ -294,11 +308,15 @@ class MarykCli(
             if (state.hasActiveInteraction()) {
                 val outcome = runInteraction()
                 if (outcome.lines.isNotEmpty()) {
-                    if (outcome.allowViewer && shouldOpenViewer(outcome.lines)) {
+                    if (outcome.allowViewer) {
+                        val showChrome = shouldShowViewerChrome(outcome.lines)
                         state.startInteraction(
                             OutputViewerInteraction(
                                 lines = outcome.lines,
                                 terminalHeight = terminalHeight(),
+                                saveContext = outcome.saveContext,
+                                deleteContext = outcome.deleteContext,
+                                showChrome = showChrome,
                             ),
                         )
                         continue
@@ -345,13 +363,16 @@ class MarykCli(
             if (result.shouldExit) break
 
             if (result.lines.isNotEmpty()) {
-                val canOpenViewer = !state.hasActiveInteraction() && shouldOpenViewer(result.lines)
+                val canOpenViewer = !state.hasActiveInteraction() && commandName !in VIEWER_EXCLUDED_COMMANDS
                 if (canOpenViewer) {
+                    val showChrome = shouldShowViewerChrome(result.lines)
                     state.startInteraction(
                         OutputViewerInteraction(
                             lines = result.lines,
                             terminalHeight = terminalHeight(),
                             saveContext = result.saveContext,
+                            deleteContext = result.deleteContext,
+                            showChrome = showChrome,
                         ),
                     )
                 } else {
@@ -386,15 +407,16 @@ private fun printNonInteractiveHelp(registry: CommandRegistry) {
     help.lines.forEach { println(it) }
 }
 
-private fun shouldOpenViewer(lines: List<String>): Boolean {
-    if (lines.isEmpty()) return false
-    val available = (terminalHeight() - 1).coerceAtLeast(1)
-    return lines.size + 1 > available
-}
-
 private val EXIT_TOKENS = setOf("q", "quit", "exit")
+private val VIEWER_EXCLUDED_COMMANDS = setOf("connect", "help", "list")
 
 private fun addTrailingBlank(lines: List<String>): List<String> {
     if (lines.isEmpty()) return lines
     return if (lines.last().isEmpty()) lines else lines + ""
+}
+
+private fun shouldShowViewerChrome(lines: List<String>): Boolean {
+    if (lines.isEmpty()) return false
+    val available = (terminalHeight() - 1).coerceAtLeast(1)
+    return lines.size + 1 > available
 }

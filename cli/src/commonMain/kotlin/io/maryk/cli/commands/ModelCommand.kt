@@ -5,6 +5,7 @@ import io.maryk.cli.InteractionResult
 import io.maryk.cli.OptionSelectorInteraction
 import io.maryk.cli.OptionSelectorInteraction.Option
 import io.maryk.cli.OptionSelectorInteraction.Selection
+import io.maryk.cli.SaveContext
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
@@ -12,6 +13,8 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.protobuf.WriteCache
+import maryk.json.JsonWriter
 import maryk.yaml.YamlWriter
 
 class ModelCommand : Command {
@@ -22,6 +25,13 @@ class ModelCommand : Command {
         if (arguments.any { it == "--help" || it == "-h" || it.equals("help", ignoreCase = true) }) {
             return CommandResult(lines = usageLines())
         }
+
+        val parsed = parseArguments(arguments)
+        if (parsed is ParseArgumentsResult.Error) {
+            return CommandResult(lines = parsed.lines, isError = true)
+        }
+        val options = (parsed as ParseArgumentsResult.Success).options
+        val query = parsed.query
 
         val connection = context.state.currentConnection
             ?: return CommandResult(
@@ -34,16 +44,21 @@ class ModelCommand : Command {
             return CommandResult(lines = listOf("No models found in the connected store."))
         }
 
-        if (arguments.isEmpty()) {
-            context.state.startInteraction(ModelSelectionInteraction(modelsById))
-            return CommandResult(
-                lines = listOf("Select a model to view its definition."),
+        if (query.isBlank()) {
+            context.state.startInteraction(
+                ModelSelectionInteraction(
+                    modelsById = modelsById,
+                    includeDependencies = options.includeDependencies,
+                )
             )
+            return CommandResult(lines = emptyList())
         }
 
-        val query = arguments.joinToString(separator = " ").trim()
         return when (val resolved = resolveModel(modelsById, query)) {
-            is ResolveResult.Found -> CommandResult(lines = resolved.model.toDefinitionYamlLines())
+            is ResolveResult.Found -> {
+                val rendered = renderModelDefinition(resolved.model, options.includeDependencies)
+                CommandResult(lines = rendered.lines, saveContext = rendered.saveContext)
+            }
             is ResolveResult.Error -> CommandResult(lines = resolved.lines, isError = true)
         }
     }
@@ -105,6 +120,7 @@ class ModelCommand : Command {
 
     private class ModelSelectionInteraction(
         private val modelsById: Map<UInt, IsRootDataModel>,
+        private val includeDependencies: Boolean,
     ) : CliInteraction by OptionSelectorInteraction(
         options = modelsById.entries
             .sortedBy { it.value.Meta.name.lowercase() }
@@ -114,7 +130,8 @@ class ModelCommand : Command {
         promptLabel = "model> ",
         introLines = listOf("Select a model (use up/down arrows and press Enter):"),
         onSelection = { option ->
-            InteractionResult.Complete(option.value.toDefinitionYamlLines())
+            val rendered = renderModelDefinition(option.value, includeDependencies)
+            InteractionResult.Complete(rendered.lines, saveContext = rendered.saveContext)
         },
         onCancel = { InteractionResult.Complete(listOf("Model command cancelled.")) },
         resolveSelection = { input, currentIndex, options ->
@@ -139,37 +156,145 @@ class ModelCommand : Command {
 
     private fun usageLines(): List<String> = listOf(
         "Usage:",
-        "  model",
-        "  model <name>",
-        "  model <id>",
+        "  model [--with-deps] [<name|id>]",
         "Examples:",
         "  model",
         "  model Person",
         "  model 1",
+        "  model --with-deps Person",
+    )
+
+    private data class ModelOptions(
+        val includeDependencies: Boolean,
+    )
+
+    private sealed class ParseArgumentsResult {
+        data class Success(val options: ModelOptions, val query: String) : ParseArgumentsResult()
+        data class Error(val lines: List<String>) : ParseArgumentsResult()
+    }
+
+    private fun parseArguments(arguments: List<String>): ParseArgumentsResult {
+        if (arguments.isEmpty()) {
+            return ParseArgumentsResult.Success(ModelOptions(includeDependencies = false), "")
+        }
+
+        val queryTokens = mutableListOf<String>()
+        var includeDependencies = false
+
+        arguments.forEach { token ->
+            when (token.lowercase()) {
+                "--with-deps", "--with-dependencies", "--deps", "--full" -> includeDependencies = true
+                else -> {
+                    if (token.startsWith("-")) {
+                        return ParseArgumentsResult.Error(
+                            listOf(
+                                "Unknown option `$token`.",
+                                "Use `model --help` to see available options.",
+                            )
+                        )
+                    }
+                    queryTokens.add(token)
+                }
+            }
+        }
+
+        return ParseArgumentsResult.Success(
+            ModelOptions(includeDependencies = includeDependencies),
+            queryTokens.joinToString(separator = " ").trim(),
+        )
+    }
+}
+
+private data class RenderedDefinition(
+    val lines: List<String>,
+    val saveContext: SaveContext,
+)
+
+private fun renderModelDefinition(
+    model: IsRootDataModel,
+    includeDependencies: Boolean,
+): RenderedDefinition {
+    val rootDataModel = model as? RootDataModel<*>
+        ?: return RenderedDefinition(
+            lines = listOf("Model definitions can only be rendered for RootDataModel instances."),
+            saveContext = SaveContext(
+                key = model.Meta.name,
+                dataYaml = "",
+                dataJson = "",
+                dataProto = ByteArray(0),
+                metaYaml = "",
+                metaJson = "",
+                metaProto = ByteArray(0),
+            ),
+        )
+
+    val displayDefinitions = buildDefinitions(rootDataModel, includeDependencies)
+    val fullDefinitions = buildDefinitions(rootDataModel, includeDependencies = true)
+
+    val displayYaml = serializeDefinitionsToYaml(displayDefinitions)
+    val displayLines = displayYaml.trimEnd().lines()
+
+    val fullYaml = serializeDefinitionsToYaml(fullDefinitions)
+    val fullJson = serializeDefinitionsToJson(fullDefinitions)
+    val fullProto = serializeDefinitionsToProto(fullDefinitions)
+
+    return RenderedDefinition(
+        lines = displayLines,
+        saveContext = SaveContext(
+            key = rootDataModel.Meta.name,
+            dataYaml = fullYaml,
+            dataJson = fullJson,
+            dataProto = fullProto,
+            metaYaml = fullYaml,
+            metaJson = fullJson,
+            metaProto = fullProto,
+        ),
     )
 }
 
-internal fun IsRootDataModel.toDefinitionYamlLines(): List<String> {
-    val rootDataModel = this as? RootDataModel<*>
-        ?: return listOf("Model definitions can only be rendered for RootDataModel instances.")
-
+private fun buildDefinitions(
+    rootDataModel: RootDataModel<*>,
+    includeDependencies: Boolean,
+): Definitions {
     val dependencies = mutableListOf<MarykPrimitive>()
-    rootDataModel.getAllDependencies(dependencies)
+    if (includeDependencies) {
+        rootDataModel.getAllDependencies(dependencies)
+    }
 
     val dedupedDependencies = dependencies
         .distinctBy { it.Meta.primitiveType to it.Meta.name }
         .filterNot { it.Meta.primitiveType == PrimitiveType.RootModel && it.Meta.name == rootDataModel.Meta.name }
         .sortedWith(compareBy({ it.Meta.primitiveType.name }, { it.Meta.name }))
 
-    val builder = StringBuilder()
-    val writer = YamlWriter { builder.append(it) }
-    val definitionsContext = DefinitionsContext()
-    val conversionContext = DefinitionsConversionContext(definitionsContext)
     val allDefinitions = buildList {
         addAll(dedupedDependencies)
         add(rootDataModel)
     }
-    val definitions = Definitions(allDefinitions)
+    return Definitions(allDefinitions)
+}
+
+private fun serializeDefinitionsToYaml(definitions: Definitions): String {
+    val builder = StringBuilder()
+    val writer = YamlWriter { builder.append(it) }
+    val conversionContext = DefinitionsConversionContext(DefinitionsContext())
     Definitions.Serializer.writeObjectAsJson(definitions, writer, conversionContext, skip = null)
-    return builder.toString().trimEnd().lines()
+    return builder.toString().trimEnd()
+}
+
+private fun serializeDefinitionsToJson(definitions: Definitions): String {
+    val builder = StringBuilder()
+    val writer = JsonWriter(pretty = true) { builder.append(it) }
+    val conversionContext = DefinitionsConversionContext(DefinitionsContext())
+    Definitions.Serializer.writeObjectAsJson(definitions, writer, conversionContext, skip = null)
+    return builder.toString().trimEnd()
+}
+
+private fun serializeDefinitionsToProto(definitions: Definitions): ByteArray {
+    val conversionContext = DefinitionsConversionContext(DefinitionsContext())
+    val cache = WriteCache()
+    val length = Definitions.Serializer.calculateObjectProtoBufLength(definitions, cache, conversionContext)
+    val bytes = ByteArray(length)
+    var index = 0
+    Definitions.Serializer.writeObjectProtoBuf(definitions, cache, { bytes[index++] = it }, conversionContext)
+    return bytes
 }

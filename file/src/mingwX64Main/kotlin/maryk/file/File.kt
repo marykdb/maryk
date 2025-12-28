@@ -85,6 +85,30 @@ actual object File {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun writeBytes(path: String, contents: ByteArray) {
+        val handle: HANDLE? = CreateFileW(
+            path,
+            GENERIC_WRITE.toUInt(),
+            0u,
+            null,
+            OPEN_ALWAYS.toUInt(),
+            FILE_ATTRIBUTE_NORMAL.toUInt(),
+            null
+        )
+        if (handle == null || handle == INVALID_HANDLE_VALUE) return
+        try {
+            contents.usePinned { pinned ->
+                memScoped {
+                    val written = alloc<DWORDVar>()
+                    WriteFile(handle, pinned.addressOf(0), contents.size.toUInt(), written.ptr, null)
+                }
+            }
+        } finally {
+            CloseHandle(handle)
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun appendText(path: String, contents: String) {
         val handle: HANDLE? = CreateFileW(
             path,

@@ -1,5 +1,6 @@
 package io.maryk.cli
 
+import com.varabyte.kotter.foundation.input.InputCompleter
 import com.varabyte.kotter.foundation.input.Key
 
 /**
@@ -23,6 +24,9 @@ interface CliInteraction {
      * Return [InteractionKeyResult.Rerender] when the UI should be redrawn after handling the key.
      */
     fun onKeyPressed(key: Key): InteractionKeyResult? = null
+
+    /** Optional completer for interactive prompts. */
+    fun inputCompleter(): InputCompleter? = null
 }
 
 sealed class InteractionResult {
@@ -43,4 +47,8 @@ sealed class InteractionResult {
 
 sealed class InteractionKeyResult {
     data object Rerender : InteractionKeyResult()
+    data class Complete(
+        val lines: List<String> = emptyList(),
+        val skipRender: Boolean = true,
+    ) : InteractionKeyResult()
 }

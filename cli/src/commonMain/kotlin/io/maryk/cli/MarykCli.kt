@@ -1,17 +1,16 @@
 package io.maryk.cli
 
+import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.input.input
 import com.varabyte.kotter.foundation.input.onInputEntered
 import com.varabyte.kotter.foundation.input.onKeyPressed
 import com.varabyte.kotter.foundation.input.runUntilInputEntered
-import com.varabyte.kotter.foundation.liveVarOf
-import com.varabyte.kotter.foundation.session
 import com.varabyte.kotter.foundation.text.text
 import com.varabyte.kotter.foundation.text.textLine
 import io.maryk.cli.commands.CommandRegistry
-import io.maryk.cli.commands.CommandResult
 import io.maryk.cli.commands.ConnectCommand
 import io.maryk.cli.commands.DisconnectCommand
+import io.maryk.cli.commands.GetCommand
 import io.maryk.cli.commands.HelpCommand
 import io.maryk.cli.commands.ListCommand
 import io.maryk.cli.commands.ModelCommand
@@ -39,144 +38,286 @@ class MarykCli(
 ) {
     fun run() = session {
         val prompt = "> "
-        val renderOutput: (String, List<String>) -> Unit = { input, lines ->
-            section {
-                textLine("$prompt$input")
-                if (lines.isEmpty()) {
-                    textLine()
-                } else {
-                    lines.forEach { line ->
-                        textLine(line)
-                    }
+        val commandCompleter = CliInputCompleter(registry)
+        val state = registry.state
+
+        fun renderOutput(
+            lines: List<String>,
+            leadingBlank: Boolean = false,
+            trailingBlank: Boolean = false,
+        ) {
+            // Normalize output to avoid leading/trailing blank lines while supporting a spacer.
+            if (lines.isEmpty() && !leadingBlank && !trailingBlank) return
+            val normalized = lines
+                .dropWhile { it.isEmpty() }
+                .dropLastWhile { it.isEmpty() }
+            val rendered = buildList {
+                if (leadingBlank && (normalized.isNotEmpty() || trailingBlank)) {
+                    add("")
                 }
+                addAll(normalized)
+                if (trailingBlank && (normalized.isNotEmpty() || leadingBlank)) {
+                    add("")
+                }
+            }
+            if (rendered.isEmpty()) return
+            section {
+                rendered.forEach { line -> textLine(line) }
             }.run()
         }
 
-        section {
-            textLine("Maryk CLI")
-            textLine("Type `help` to see available commands. Use Ctrl+C to exit.")
-            textLine()
-        }.run()
-
-        var hasRenderedOutput = false
-
-        while (true) {
-            var showPrompt by liveVarOf(true)
-            var commandLine by liveVarOf("")
-            val interaction = registry.state.currentInteraction
-            val promptLabel = interaction?.promptLabel ?: prompt
-            val inputId = if (interaction != null) "maryk-cli-interaction" else "maryk-cli-input"
-            var introDisplayedThisIteration = false
-
+        fun promptForCommand(): String {
+            var entered = ""
             section {
-                if (showPrompt) {
-                    if (hasRenderedOutput) {
-                        textLine()
-                    }
-                    val currentInteraction = registry.state.currentInteraction
-                    val shouldShowIntro = currentInteraction != null && !registry.state.interactionIntroShown()
-                    val introLines = if (shouldShowIntro) currentInteraction.introLines else emptyList()
-                    if (introLines.isNotEmpty()) {
-                        introLines.forEach { line -> textLine(line) }
-                        introDisplayedThisIteration = true
-                    }
-                    val promptLines = currentInteraction?.promptLines() ?: emptyList()
-                    promptLines.forEach { line -> textLine(line) }
-                    text(promptLabel)
-                    input(id = inputId)
-                }
+                text(prompt)
+                input(completer = commandCompleter)
             }.runUntilInputEntered {
                 onInputEntered {
-                    commandLine = input
-                    showPrompt = false
-                    signal()
+                    entered = input
+                }
+            }
+            return entered
+        }
+
+        data class InteractionOutcome(
+            val lines: List<String>,
+            val allowViewer: Boolean,
+            val leadingBlank: Boolean,
+            val trailingBlank: Boolean,
+        )
+
+        fun runInteraction(): InteractionOutcome {
+            val initial = state.currentInteraction
+                ?: return InteractionOutcome(
+                    lines = emptyList(),
+                    allowViewer = true,
+                    leadingBlank = true,
+                    trailingBlank = true,
+                )
+
+            var currentInteraction = initial
+            var messageLines: List<String> = emptyList()
+            var completedLines: List<String> = emptyList()
+            val transcriptLines = mutableListOf<String>()
+            var finalRenderLines: List<String>? = null
+            var finalizeInSection = false
+            var finalRendered = false
+            var finalizeSignal: (() -> Unit)? = null
+            var allowViewer = currentInteraction !is OutputViewerInteraction
+            var renderActive = true
+
+            val interactionSection = section {
+                if (!renderActive) return@section
+                val finalLines = finalRenderLines
+                if (finalLines != null) {
+                    finalLines.forEach { line -> textLine(line) }
+                    return@section
+                }
+                val lines = buildList {
+                    if (!state.interactionIntroShown()) {
+                        addAll(currentInteraction.introLines)
+                    }
+                    addAll(currentInteraction.promptLines())
+                    if (messageLines.isNotEmpty()) {
+                        addAll(messageLines)
+                    }
+                }
+                lines.forEach { line -> textLine(line) }
+                text(currentInteraction.promptLabel)
+                input(completer = currentInteraction.inputCompleter())
+            }
+
+            interactionSection.onFinishing {
+                if (finalRenderLines == null) {
+                    renderActive = false
+                    messageLines = emptyList()
+                    interactionSection.requestRerender()
+                }
+            }
+
+            interactionSection.onRendered {
+                if (finalizeInSection && !finalRendered) {
+                    finalRendered = true
+                    finalizeSignal?.invoke()
+                    removeListener = true
+                }
+            }
+
+            interactionSection.run {
+                finalizeSignal = { signal() }
+                onInputEntered {
+                    val trimmed = input.trim()
+                    val result = currentInteraction.onInput(input)
+                    val resultLines = when (result) {
+                        is InteractionResult.Continue -> result.lines
+                        is InteractionResult.Stay -> result.lines
+                        is InteractionResult.Complete -> result.lines
+                    }
+                    if (currentInteraction is OutputViewerInteraction &&
+                        trimmed.isNotEmpty() &&
+                        trimmed.lowercase() !in EXIT_TOKENS &&
+                        resultLines.isNotEmpty()
+                    ) {
+                        transcriptLines.add("${currentInteraction.promptLabel}$trimmed")
+                        transcriptLines.addAll(resultLines)
+                    }
+                    when (result) {
+                        is InteractionResult.Stay -> {
+                            state.markInteractionIntroShown()
+                            messageLines = result.lines
+                            clearInput()
+                            rerender()
+                        }
+                        is InteractionResult.Continue -> {
+                            state.markInteractionIntroShown()
+                            state.replaceInteraction(result.next, result.showIntro)
+                            currentInteraction = result.next
+                            allowViewer = currentInteraction !is OutputViewerInteraction
+                            messageLines = result.lines
+                            clearInput()
+                            rerender()
+                        }
+                        is InteractionResult.Complete -> {
+                            state.markInteractionIntroShown()
+                            completedLines = result.lines
+                            allowViewer = currentInteraction !is OutputViewerInteraction
+                            state.clearInteraction()
+                            if (transcriptLines.isNotEmpty()) {
+                                val finalLines = if (completedLines.isEmpty()) {
+                                    transcriptLines
+                                } else {
+                                    transcriptLines + completedLines
+                                }
+                                finalRenderLines = addTrailingBlank(finalLines)
+                                finalizeInSection = true
+                                rerender()
+                            } else {
+                                signal()
+                            }
+                        }
+                    }
                 }
 
                 onKeyPressed {
-                    val currentInteraction = registry.state.currentInteraction
-                    val keyResult = currentInteraction?.onKeyPressed(key)
-                    if (keyResult is InteractionKeyResult.Rerender) {
-                        rerender()
-                    }
-                }
-            }
-
-            if (introDisplayedThisIteration) {
-                registry.state.markInteractionIntroShown()
-            }
-
-            val trimmed = commandLine.trim()
-
-            if (interaction != null) {
-                val outcome = interaction.onInput(trimmed)
-                val linesToShow = when (outcome) {
-                    is InteractionResult.Continue -> outcome.lines
-                    is InteractionResult.Stay -> outcome.lines
-                    is InteractionResult.Complete -> outcome.lines
-                }
-
-                section {
-                    textLine("$promptLabel$trimmed")
-                    if (linesToShow.isEmpty()) {
-                        textLine()
-                    } else {
-                        linesToShow.forEach { line ->
-                            textLine(line)
+                    val keyResult = currentInteraction.onKeyPressed(key) ?: return@onKeyPressed
+                    when (keyResult) {
+                        is InteractionKeyResult.Rerender -> rerender()
+                        is InteractionKeyResult.Complete -> {
+                            completedLines = keyResult.lines
+                            allowViewer = currentInteraction !is OutputViewerInteraction
+                            state.clearInteraction()
+                            if (!keyResult.skipRender && transcriptLines.isNotEmpty()) {
+                                val finalLines = if (completedLines.isEmpty()) {
+                                    transcriptLines
+                                } else {
+                                    transcriptLines + completedLines
+                                }
+                                finalRenderLines = addTrailingBlank(finalLines)
+                                finalizeInSection = true
+                                rerender()
+                            } else {
+                                if (!keyResult.skipRender) {
+                                    rerender()
+                                }
+                                signal()
+                            }
                         }
                     }
-                }.run()
-
-                when (outcome) {
-                    is InteractionResult.Continue -> registry.state.replaceInteraction(
-                        outcome.next,
-                        outcome.showIntro,
-                    )
-                    is InteractionResult.Stay -> Unit
-                    is InteractionResult.Complete -> registry.state.clearInteraction()
                 }
 
-                hasRenderedOutput = true
-                continue
+                waitForSignal()
             }
 
-            if (trimmed.isEmpty()) {
-                continue
-            }
-
-            val tokens = CommandLineParser.parse(trimmed)
-            val parsedTokens = when (val result = tokens) {
-                is CommandLineParser.ParseResult.Success -> result.tokens
-                is CommandLineParser.ParseResult.Error -> {
-                    renderOutput(trimmed, listOf("Parse error: ${result.message}"))
-                    continue
-                }
-            }
-
-            if (parsedTokens.isEmpty()) {
-                continue
-            }
-
-            val commandName = parsedTokens.first()
-            val arguments = if (parsedTokens.size > 1) parsedTokens.drop(1) else emptyList()
-
-            val result = try {
-                registry.execute(commandName, arguments)
-            } catch (e: Exception) {
-                CommandResult(
-                    lines = listOf(
-                        "Error executing `$commandName`: ${e.message ?: e::class.simpleName}",
-                        "Run `help` for available commands."
-                    ),
-                    isError = true
+            if (finalRenderLines != null) {
+                return InteractionOutcome(
+                    lines = emptyList(),
+                    allowViewer = allowViewer,
+                    leadingBlank = false,
+                    trailingBlank = false,
                 )
             }
 
-            renderOutput(trimmed, result.lines)
+            val finalLines = if (transcriptLines.isEmpty()) completedLines else transcriptLines + completedLines
+            return InteractionOutcome(
+                lines = finalLines,
+                allowViewer = allowViewer,
+                leadingBlank = transcriptLines.isEmpty(),
+                trailingBlank = true,
+            )
+        }
 
-            hasRenderedOutput = true
+        // Initial banner.
+        renderOutput(
+            listOf(
+                "Maryk CLI",
+                "Type `help` to see available commands. Use Ctrl+C to exit.",
+            ),
+            trailingBlank = true,
+        )
 
-            if (result.shouldExit) {
+        while (true) {
+            if (state.hasActiveInteraction()) {
+                val outcome = runInteraction()
+                if (outcome.lines.isNotEmpty()) {
+                    if (outcome.allowViewer && shouldOpenViewer(outcome.lines)) {
+                        state.startInteraction(
+                            OutputViewerInteraction(
+                                lines = outcome.lines,
+                                terminalHeight = terminalHeight(),
+                            ),
+                        )
+                        continue
+                    }
+                    renderOutput(
+                        outcome.lines,
+                        leadingBlank = outcome.leadingBlank,
+                        trailingBlank = outcome.trailingBlank,
+                    )
+                }
+                continue
+            }
+
+            val entered = promptForCommand()
+            val trimmed = entered.trim()
+            if (trimmed.isEmpty()) {
+                continue
+            }
+            if (trimmed.equals("exit", ignoreCase = true) || trimmed.equals("quit", ignoreCase = true)) {
                 break
+            }
+
+            val parseResult = CommandLineParser.parse(trimmed)
+            val tokens = when (parseResult) {
+                is CommandLineParser.ParseResult.Success -> parseResult.tokens
+                is CommandLineParser.ParseResult.Error -> {
+                    renderOutput(
+                        listOf("Command parse error: ${parseResult.message}"),
+                        leadingBlank = true,
+                        trailingBlank = true,
+                    )
+                    continue
+                }
+            }
+            if (tokens.isEmpty()) continue
+
+            val commandName = tokens.first().lowercase()
+            val arguments = tokens.drop(1)
+            val result = registry.execute(commandName, arguments)
+            if (result.shouldExit) break
+
+            if (result.lines.isNotEmpty()) {
+                val canOpenViewer = !state.hasActiveInteraction() && shouldOpenViewer(result.lines)
+                if (canOpenViewer) {
+                    state.startInteraction(
+                        OutputViewerInteraction(
+                            lines = result.lines,
+                            terminalHeight = terminalHeight(),
+                            saveContext = result.saveContext,
+                        ),
+                    )
+                } else {
+                    renderOutput(result.lines, leadingBlank = true, trailingBlank = true)
+                }
             }
         }
     }
@@ -192,6 +333,7 @@ private fun defaultRegistry(
                 HelpCommand(),
                 ConnectCommand(),
                 DisconnectCommand(),
+                GetCommand(),
                 ListCommand(),
                 ModelCommand(),
             )
@@ -203,4 +345,17 @@ private fun printNonInteractiveHelp(registry: CommandRegistry) {
     println("Type `help` to see available commands. Use Ctrl+C to exit.")
     val help = registry.execute("help", emptyList())
     help.lines.forEach { println(it) }
+}
+
+private fun shouldOpenViewer(lines: List<String>): Boolean {
+    if (lines.isEmpty()) return false
+    val available = (terminalHeight() - 1).coerceAtLeast(1)
+    return lines.size + 1 > available
+}
+
+private val EXIT_TOKENS = setOf("q", "quit", "exit")
+
+private fun addTrailingBlank(lines: List<String>): List<String> {
+    if (lines.isEmpty()) return lines
+    return if (lines.last().isEmpty()) lines else lines + ""
 }

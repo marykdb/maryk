@@ -11,7 +11,7 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.shared.IsDataStore
 
-class FakeDataStore(
+open class FakeDataStore(
     override val dataModelsById: Map<UInt, IsRootDataModel> = emptyMap(),
     override val keepAllVersions: Boolean = true,
 ) : IsDataStore {

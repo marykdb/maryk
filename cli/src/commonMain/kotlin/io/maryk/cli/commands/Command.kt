@@ -2,6 +2,7 @@ package io.maryk.cli.commands
 
 import io.maryk.cli.CliEnvironment
 import io.maryk.cli.CliState
+import io.maryk.cli.SaveContext
 
 /**
  * Represents a single CLI command.
@@ -29,4 +30,5 @@ data class CommandResult(
     val lines: List<String>,
     val isError: Boolean = false,
     val shouldExit: Boolean = false,
+    val saveContext: SaveContext? = null,
 )

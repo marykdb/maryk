@@ -1,8 +1,11 @@
+@file:OptIn(UnsafeNumber::class)
 package maryk.file
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.usePinned
@@ -41,9 +44,9 @@ actual object File {
         try {
             val buffer = ByteArray(size.toInt())
             buffer.usePinned { pinned ->
-                val readBytes = read(fd, pinned.addressOf(0), size.toULong())
-                if (readBytes < 0) return null
-                return buffer.decodeToString(endIndex = readBytes.toInt())
+                val readBytes: ULong = read(fd, pinned.addressOf(0), size.convert()).convert()
+                if (readBytes < 0uL) return null
+                return buffer.decodeToString(endIndex = readBytes.convert())
             }
         } finally {
             close(fd)
@@ -57,7 +60,20 @@ actual object File {
         try {
             val bytes = contents.encodeToByteArray()
             bytes.usePinned { pinned ->
-                write(fd, pinned.addressOf(0), bytes.size.toULong())
+                write(fd, pinned.addressOf(0), bytes.size.convert())
+            }
+        } finally {
+            close(fd)
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun writeBytes(path: String, contents: ByteArray) {
+        val fd = open(path, O_WRONLY or O_CREAT or O_TRUNC, 0x1A4) // 0644
+        if (fd < 0) return
+        try {
+            contents.usePinned { pinned ->
+                write(fd, pinned.addressOf(0), contents.size.convert())
             }
         } finally {
             close(fd)
@@ -71,7 +87,7 @@ actual object File {
         try {
             val bytes = contents.encodeToByteArray()
             bytes.usePinned { pinned ->
-                write(fd, pinned.addressOf(0), bytes.size.toULong())
+                write(fd, pinned.addressOf(0), bytes.size.convert())
             }
         } finally {
             close(fd)

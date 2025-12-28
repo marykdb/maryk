@@ -8,6 +8,7 @@ package maryk.file
 expect object File {
     fun readText(path: String): String?
     fun writeText(path: String, contents: String)
+    fun writeBytes(path: String, contents: ByteArray)
     fun appendText(path: String, contents: String)
     fun delete(path: String): Boolean
 }

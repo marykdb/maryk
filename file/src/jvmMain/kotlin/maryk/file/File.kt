@@ -14,6 +14,12 @@ actual object File {
         file.writeText(contents)
     }
 
+    actual fun writeBytes(path: String, contents: ByteArray) {
+        val file = File(path)
+        file.parentFile?.mkdirs()
+        file.writeBytes(contents)
+    }
+
     actual fun appendText(path: String, contents: String) {
         val file = File(path)
         file.parentFile?.mkdirs()

@@ -40,7 +40,7 @@ class CliInputCompleter(
     }
 
     private fun completeModelToken(tokens: List<String>, endsWithSpace: Boolean, currentToken: String): String? {
-        val options = listOf("--with-deps")
+        val options = listOf("--with-deps", "--all")
         if (currentToken.startsWith("--")) {
             return completeToken(currentToken, options)
         }

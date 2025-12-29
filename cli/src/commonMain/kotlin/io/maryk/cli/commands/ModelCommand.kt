@@ -5,6 +5,7 @@ import io.maryk.cli.InteractionResult
 import io.maryk.cli.OptionSelectorInteraction
 import io.maryk.cli.OptionSelectorInteraction.Option
 import io.maryk.cli.OptionSelectorInteraction.Selection
+import io.maryk.cli.KotlinSaveResult
 import io.maryk.cli.SaveContext
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
@@ -15,6 +16,7 @@ import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonWriter
+import maryk.generator.kotlin.generateKotlin
 import maryk.yaml.YamlWriter
 
 class ModelCommand : Command {
@@ -42,6 +44,11 @@ class ModelCommand : Command {
         val modelsById = connection.dataStore.dataModelsById
         if (modelsById.isEmpty()) {
             return CommandResult(lines = listOf("No models found in the connected store."))
+        }
+
+        if (options.allModels) {
+            val rendered = renderAllModels(modelsById, options.includeDependencies)
+            return CommandResult(lines = rendered.lines, saveContext = rendered.saveContext)
         }
 
         if (query.isBlank()) {
@@ -157,15 +164,18 @@ class ModelCommand : Command {
     private fun usageLines(): List<String> = listOf(
         "Usage:",
         "  model [--with-deps] [<name|id>]",
+        "  model --all [--with-deps]",
         "Examples:",
         "  model",
         "  model Person",
         "  model 1",
         "  model --with-deps Person",
+        "  model --all --with-deps",
     )
 
     private data class ModelOptions(
         val includeDependencies: Boolean,
+        val allModels: Boolean,
     )
 
     private sealed class ParseArgumentsResult {
@@ -175,15 +185,17 @@ class ModelCommand : Command {
 
     private fun parseArguments(arguments: List<String>): ParseArgumentsResult {
         if (arguments.isEmpty()) {
-            return ParseArgumentsResult.Success(ModelOptions(includeDependencies = false), "")
+            return ParseArgumentsResult.Success(ModelOptions(includeDependencies = false, allModels = false), "")
         }
 
         val queryTokens = mutableListOf<String>()
         var includeDependencies = false
+        var allModels = false
 
         arguments.forEach { token ->
             when (token.lowercase()) {
                 "--with-deps", "--with-dependencies", "--deps", "--full" -> includeDependencies = true
+                "--all", "--all" -> allModels = true
                 else -> {
                     if (token.startsWith("-")) {
                         return ParseArgumentsResult.Error(
@@ -198,9 +210,19 @@ class ModelCommand : Command {
             }
         }
 
+        val query = queryTokens.joinToString(separator = " ").trim()
+        if (allModels && query.isNotEmpty()) {
+            return ParseArgumentsResult.Error(
+                listOf(
+                    "`--all` cannot be combined with a model name or id.",
+                    "Usage: model --all [--with-deps]",
+                )
+            )
+        }
+
         return ParseArgumentsResult.Success(
-            ModelOptions(includeDependencies = includeDependencies),
-            queryTokens.joinToString(separator = " ").trim(),
+            ModelOptions(includeDependencies = includeDependencies, allModels = allModels),
+            query,
         )
     }
 }
@@ -230,6 +252,7 @@ private fun renderModelDefinition(
 
     val displayDefinitions = buildDefinitions(rootDataModel, includeDependencies)
     val fullDefinitions = buildDefinitions(rootDataModel, includeDependencies = true)
+    val noDepsDefinitions = buildDefinitions(rootDataModel, includeDependencies = false)
 
     val displayYaml = serializeDefinitionsToYaml(displayDefinitions)
     val displayLines = displayYaml.trimEnd().lines()
@@ -237,6 +260,16 @@ private fun renderModelDefinition(
     val fullYaml = serializeDefinitionsToYaml(fullDefinitions)
     val fullJson = serializeDefinitionsToJson(fullDefinitions)
     val fullProto = serializeDefinitionsToProto(fullDefinitions)
+    val noDepsYaml = serializeDefinitionsToYaml(noDepsDefinitions)
+    val noDepsJson = serializeDefinitionsToJson(noDepsDefinitions)
+    val noDepsProto = serializeDefinitionsToProto(noDepsDefinitions)
+
+    val kotlinGenerator: (String) -> KotlinSaveResult = { packageName ->
+        generateKotlinFiles(fullDefinitions, packageName)
+    }
+    val kotlinNoDepsGenerator: (String) -> KotlinSaveResult = { packageName ->
+        generateKotlinFiles(noDepsDefinitions, packageName)
+    }
 
     return RenderedDefinition(
         lines = displayLines,
@@ -248,10 +281,100 @@ private fun renderModelDefinition(
             metaYaml = fullYaml,
             metaJson = fullJson,
             metaProto = fullProto,
+            noDepsYaml = noDepsYaml,
+            noDepsJson = noDepsJson,
+            noDepsProto = noDepsProto,
+            kotlinGenerator = kotlinGenerator,
+            kotlinNoDepsGenerator = kotlinNoDepsGenerator,
         ),
     )
 }
 
+private fun renderAllModels(
+    modelsById: Map<UInt, IsRootDataModel>,
+    includeDependencies: Boolean,
+): RenderedDefinition {
+    val ordered = modelsById.entries.sortedBy { it.key }.map { it.value }
+    val displayDefinitions = buildList<MarykPrimitive> {
+        ordered.forEach { model ->
+            val root = model as? RootDataModel<*> ?: return@forEach
+            val definitions = buildDefinitions(root, includeDependencies = includeDependencies).definitions
+            addAll(definitions)
+        }
+    }.distinctBy { it.Meta.primitiveType to it.Meta.name }
+    val display = Definitions(displayDefinitions)
+
+    val fullDefinitions = buildList<MarykPrimitive> {
+        ordered.forEach { model ->
+            val root = model as? RootDataModel<*> ?: return@forEach
+            val definitions = buildDefinitions(root, includeDependencies = true).definitions
+            addAll(definitions)
+        }
+    }.distinctBy { it.Meta.primitiveType to it.Meta.name }
+    val full = Definitions(fullDefinitions)
+
+    val noDepsDefinitions = buildList<MarykPrimitive> {
+        ordered.forEach { model ->
+            val root = model as? RootDataModel<*> ?: return@forEach
+            val definitions = buildDefinitions(root, includeDependencies = false).definitions
+            addAll(definitions)
+        }
+    }.distinctBy { it.Meta.primitiveType to it.Meta.name }
+    val noDeps = Definitions(noDepsDefinitions)
+
+    val yaml = serializeDefinitionsToYaml(full)
+    val json = serializeDefinitionsToJson(full)
+    val proto = serializeDefinitionsToProto(full)
+    val noDepsYaml = serializeDefinitionsToYaml(noDeps)
+    val noDepsJson = serializeDefinitionsToJson(noDeps)
+    val noDepsProto = serializeDefinitionsToProto(noDeps)
+
+    val kotlinGenerator: (String) -> KotlinSaveResult = { packageName ->
+        generateKotlinFiles(full, packageName)
+    }
+    val kotlinNoDepsGenerator: (String) -> KotlinSaveResult = { packageName ->
+        generateKotlinFiles(noDeps, packageName)
+    }
+
+    val header = listOf(
+        "All models: ${ordered.size}",
+        "Definitions: ${display.definitions.size}",
+    )
+    val lines = header + serializeDefinitionsToYaml(display).trimEnd().lines()
+
+    return RenderedDefinition(
+        lines = lines,
+        saveContext = SaveContext(
+            key = "models",
+            dataYaml = yaml,
+            dataJson = json,
+            dataProto = proto,
+            metaYaml = yaml,
+            metaJson = json,
+            metaProto = proto,
+            noDepsYaml = noDepsYaml,
+            noDepsJson = noDepsJson,
+            noDepsProto = noDepsProto,
+            kotlinGenerator = kotlinGenerator,
+            kotlinNoDepsGenerator = kotlinNoDepsGenerator,
+        ),
+    )
+}
+
+private fun generateKotlinFiles(
+    definitions: Definitions,
+    packageName: String,
+): KotlinSaveResult {
+    val outputs = linkedMapOf<String, StringBuilder>()
+    definitions.generateKotlin(packageName) { name ->
+        val builder = StringBuilder()
+        outputs[name] = builder
+        { chunk -> builder.append(chunk) }
+    }
+    return KotlinSaveResult(
+        files = outputs.mapKeys { "${it.key}.kt" }.mapValues { it.value.toString() },
+    )
+}
 private fun buildDefinitions(
     rootDataModel: RootDataModel<*>,
     includeDependencies: Boolean,

@@ -18,7 +18,13 @@ class OutputViewerInteraction(
     override val introLines: List<String> = if (showChrome) {
         val commandLine = buildList {
             if (saveContext != null) {
-                add("save <dir> [--yaml|--json|--proto] [--meta]")
+                val formatOptions = if (saveContext.kotlinGenerator != null) {
+                    "--yaml|--json|--proto|--kotlin"
+                } else {
+                    "--yaml|--json|--proto"
+                }
+                val noDepsSuffix = if (saveContext.supportsNoDeps) " [--no-deps]" else ""
+                add("save <dir> [$formatOptions] [--package <name>] [--meta]$noDepsSuffix")
             }
             if (deleteContext != null) {
                 add("delete [--hard]")
@@ -64,10 +70,19 @@ class OutputViewerInteraction(
                     return completeToken(currentToken, listOf("save"))
                 }
                 if (currentToken.startsWith("--")) {
-                    return completeToken(currentToken, listOf("--yaml", "--json", "--proto", "--meta"))
+                    val options = buildList {
+                        add("--yaml")
+                        add("--json")
+                        add("--proto")
+                        if (saveContext.kotlinGenerator != null) add("--kotlin")
+                        add("--package")
+                        add("--meta")
+                        if (saveContext.supportsNoDeps) add("--no-deps")
+                    }
+                    return completeToken(currentToken, options)
                 }
                 if (endsWithSpace) {
-                    return "--yaml"
+                    return if (saveContext.kotlinGenerator != null) "--kotlin" else "--yaml"
                 }
                 return null
             }
@@ -160,6 +175,8 @@ class OutputViewerInteraction(
                         directory = saveOptions.directory,
                         format = saveOptions.format,
                         includeMeta = saveOptions.includeMeta,
+                        packageName = saveOptions.packageName,
+                        noDeps = saveOptions.noDeps,
                     )
                 } catch (e: Throwable) {
                     statusMessage = "Save failed: ${e.message ?: e::class.simpleName}"
@@ -201,6 +218,8 @@ class OutputViewerInteraction(
         val directory: String,
         val format: SaveFormat,
         val includeMeta: Boolean,
+        val packageName: String?,
+        val noDeps: Boolean,
     )
 
     private sealed class SaveOptionsResult {
@@ -221,45 +240,88 @@ class OutputViewerInteraction(
         var directory: String? = null
         var includeMeta = false
         var format: SaveFormat? = null
+        var packageName: String? = null
+        var noDeps = false
+        var index = 0
 
-        tokens.forEach { token ->
-            when (token.lowercase()) {
-                "--meta" -> includeMeta = true
-                "--yaml" -> {
+        while (index < tokens.size) {
+            val token = tokens[index]
+            val lowered = token.lowercase()
+            when {
+                lowered == "--meta" -> includeMeta = true
+                lowered == "--yaml" -> {
                     val next = selectFormat(format, SaveFormat.YAML) ?: return SaveOptionsResult.Error(
-                        "Choose only one format: --yaml, --json, or --proto"
+                        "Choose only one format: --yaml, --json, --proto, or --kotlin"
                     )
                     format = next
                 }
-                "--json" -> {
+                lowered == "--json" -> {
                     val next = selectFormat(format, SaveFormat.JSON) ?: return SaveOptionsResult.Error(
-                        "Choose only one format: --yaml, --json, or --proto"
+                        "Choose only one format: --yaml, --json, --proto, or --kotlin"
                     )
                     format = next
                 }
-                "--proto" -> {
+                lowered == "--proto" -> {
                     val next = selectFormat(format, SaveFormat.PROTO) ?: return SaveOptionsResult.Error(
-                        "Choose only one format: --yaml, --json, or --proto"
+                        "Choose only one format: --yaml, --json, --proto, or --kotlin"
                     )
                     format = next
                 }
-                else -> if (token.startsWith("--")) {
-                    return SaveOptionsResult.Error("Unknown option: $token")
-                } else if (directory == null) {
-                    directory = token
-                } else {
-                    return SaveOptionsResult.Error("Unexpected argument: $token")
+                lowered == "--kotlin" -> {
+                    if (saveContext?.kotlinGenerator == null) {
+                        return SaveOptionsResult.Error("Kotlin output not available for this data.")
+                    }
+                    val next = selectFormat(format, SaveFormat.KOTLIN) ?: return SaveOptionsResult.Error(
+                        "Choose only one format: --yaml, --json, --proto, or --kotlin"
+                    )
+                    format = next
                 }
+                lowered == "--no-deps" -> {
+                    if (saveContext?.supportsNoDeps != true) {
+                        return SaveOptionsResult.Error("No-deps output not available for this data.")
+                    }
+                    noDeps = true
+                }
+                lowered.startsWith("--package=") -> {
+                    packageName = token.substringAfter("=", missingDelimiterValue = "").ifBlank {
+                        return SaveOptionsResult.Error("`--package` requires a value.")
+                    }
+                }
+                lowered == "--package" -> {
+                    if (index + 1 >= tokens.size) {
+                        return SaveOptionsResult.Error("`--package` requires a value.")
+                    }
+                    packageName = tokens[index + 1]
+                    index += 1
+                }
+                token.startsWith("--") -> {
+                    return SaveOptionsResult.Error("Unknown option: $token")
+                }
+                directory == null -> directory = token
+                else -> return SaveOptionsResult.Error("Unexpected argument: $token")
             }
+            index += 1
         }
 
         val resolvedDir = directory ?: "./"
+        val resolvedFormat = format ?: SaveFormat.YAML
+        if (packageName != null && resolvedFormat != SaveFormat.KOTLIN) {
+            return SaveOptionsResult.Error("`--package` is only valid with --kotlin.")
+        }
+        if (resolvedFormat == SaveFormat.KOTLIN && packageName.isNullOrBlank()) {
+            return SaveOptionsResult.Error("`--package` is required for --kotlin.")
+        }
+        if (noDeps && saveContext?.supportsNoDeps != true) {
+            return SaveOptionsResult.Error("No-deps output not available for this data.")
+        }
 
         return SaveOptionsResult.Success(
             SaveOptions(
                 directory = resolvedDir,
-                format = format ?: SaveFormat.YAML,
+                format = resolvedFormat,
                 includeMeta = includeMeta,
+                packageName = packageName,
+                noDeps = noDeps,
             )
         )
     }

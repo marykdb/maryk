@@ -363,7 +363,9 @@ class MarykCli(
             if (result.shouldExit) break
 
             if (result.lines.isNotEmpty()) {
-                val canOpenViewer = !state.hasActiveInteraction() && commandName !in VIEWER_EXCLUDED_COMMANDS
+                val canOpenViewer = !result.isError &&
+                    !state.hasActiveInteraction() &&
+                    commandName !in VIEWER_EXCLUDED_COMMANDS
                 if (canOpenViewer) {
                     val showChrome = shouldShowViewerChrome(result.lines)
                     state.startInteraction(

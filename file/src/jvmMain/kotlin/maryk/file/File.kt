@@ -8,6 +8,11 @@ actual object File {
         return if (file.exists()) file.readText() else null
     }
 
+    actual fun readBytes(path: String): ByteArray? {
+        val file = File(path)
+        return if (file.exists()) file.readBytes() else null
+    }
+
     actual fun writeText(path: String, contents: String) {
         val file = File(path)
         file.parentFile?.mkdirs()

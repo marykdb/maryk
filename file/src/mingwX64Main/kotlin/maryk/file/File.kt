@@ -60,6 +60,40 @@ actual object File {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun readBytes(path: String): ByteArray? {
+        val handle: HANDLE? = CreateFileW(
+            path,
+            GENERIC_READ,
+            0u,
+            null,
+            OPEN_EXISTING.toUInt(),
+            FILE_ATTRIBUTE_NORMAL.toUInt(),
+            null
+        )
+        if (handle == null || handle == INVALID_HANDLE_VALUE) return null
+        try {
+            val size = memScoped {
+                val li = alloc<LARGE_INTEGER>()
+                if (GetFileSizeEx(handle, li.ptr) != 0) li.QuadPart.toInt() else 0
+            }
+            if (size <= 0) return ByteArray(0)
+            val buffer = ByteArray(size)
+            buffer.usePinned { pinned ->
+                memScoped {
+                    val read = alloc<DWORDVar>()
+                    if (ReadFile(handle, pinned.addressOf(0), size.toUInt(), read.ptr, null) != 0) {
+                        val readCount = read.value.toInt()
+                        return if (readCount == buffer.size) buffer else buffer.copyOf(readCount)
+                    }
+                }
+            }
+        } finally {
+            CloseHandle(handle)
+        }
+        return null
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun writeText(path: String, contents: String) {
         val handle: HANDLE? = CreateFileW(
             path,

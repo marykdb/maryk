@@ -54,6 +54,26 @@ actual object File {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun readBytes(path: String): ByteArray? {
+        if (!fileExists(path)) return null
+        val size = fileSize(path)
+        if (size <= 0) return ByteArray(0)
+        val fd = open(path, O_RDONLY, 0)
+        if (fd < 0) return null
+        try {
+            val buffer = ByteArray(size.toInt())
+            buffer.usePinned { pinned ->
+                val readBytes: ULong = read(fd, pinned.addressOf(0), size.convert()).convert()
+                if (readBytes < 0uL) return null
+                val readCount = readBytes.toInt()
+                return if (readCount == buffer.size) buffer else buffer.copyOf(readCount)
+            }
+        } finally {
+            close(fd)
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun writeText(path: String, contents: String) {
         val fd = open(path, O_WRONLY or O_CREAT or O_TRUNC, 0x1A4) // 0644
         if (fd < 0) return

@@ -4,11 +4,14 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsStorableDataModel
 import maryk.core.properties.definitions.IsEmbeddedDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.ReferenceToMax
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.UUIDKey
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.SimpleTypedValueReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
 import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
@@ -103,11 +106,18 @@ private fun IsIndexable.generateKotlin(
         addImport("maryk.core.properties.definitions.index.Reversed")
         "Reversed(${this.reference.generateRef(packageName, name, addImport)})"
     }
+    is ReferenceToMax<*> -> {
+        addImport("maryk.core.properties.definitions.index.ReferenceToMax")
+        "ReferenceToMax(${this.reference.generateRef(packageName, name, addImport)})"
+    }
     is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
         generateRef(packageName, name, addImport)
     }
     is ValueWithFlexBytesPropertyReference<*, *, *, *> -> {
         generateRef(packageName, name, addImport)
+    }
+    is SimpleTypedValueReference<*, *, *> -> {
+        generateKotlin(packageName, name, addImport)
     }
     is Multiple -> {
         addImport("maryk.core.properties.definitions.index.Multiple")
@@ -149,4 +159,28 @@ private fun IsPropertyReferenceForValues<*, *, *, *>.generateRef(
         addImport("$packageName.$modelName.Properties.${this.name}")
     }
     return "${this.name}.$refFunction($parent)"
+}
+
+private fun SimpleTypedValueReference<*, *, *>.generateKotlin(
+    packageName: String,
+    modelName: String,
+    addImport: (String) -> Unit
+): String {
+    val parentRef = this.parentReference as? IsPropertyReferenceForValues<*, *, *, *>
+        ?: throw TypeException("SimpleTypedValueReference is missing a parent reference: $this")
+    parentRef.generateRef(packageName, modelName, addImport)
+
+    val multiTypeDefinition = parentRef.propertyDefinition as? IsMultiTypeDefinition<*, *, *>
+        ?: throw TypeException("SimpleTypedValueReference parent is not a multi type definition: $parentRef")
+
+    val typeEnumName = multiTypeDefinition.typeEnum.name
+    val typeName = this.type.name
+    val segments = parentRef.completeName.split(".")
+
+    var expression = "${segments.last()} simpleRefAtType $typeEnumName.$typeName"
+    for (segment in segments.dropLast(1).asReversed()) {
+        expression = "$segment { $expression }"
+    }
+
+    return "$modelName { $expression }"
 }

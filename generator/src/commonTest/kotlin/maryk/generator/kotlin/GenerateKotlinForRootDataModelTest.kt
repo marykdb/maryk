@@ -2,11 +2,13 @@ package maryk.generator.kotlin
 
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
+import maryk.test.models.Measurement
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 val generatedKotlinForSimpleDataModel = """
 package maryk.test.models
@@ -378,5 +380,16 @@ class GenerateKotlinForRootDataModelTest {
         }
 
         assertEquals(generatedKotlinForCompleteDataModel, output)
+    }
+
+    @Test
+    fun generateKotlinForSimpleTypedValueReferenceIndex() {
+        val output = buildString {
+            Measurement.generateKotlin("maryk.test.models") {
+                append(it)
+            }
+        }
+
+        assertTrue(output.contains("simpleRefAtType MeasurementType.Number"))
     }
 }

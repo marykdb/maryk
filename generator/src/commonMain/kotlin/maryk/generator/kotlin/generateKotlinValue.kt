@@ -18,6 +18,7 @@ import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IsIndexedEnumDefinition
@@ -168,9 +169,10 @@ internal fun generateKotlinValue(
             is ContextualModelReferenceDefinition<*, *, *> -> {
                 when (val model =
                     (value as? IsValueDataModel<*, *>) ?:
+                    (value as? IsDataModelReference<*>)?.get?.invoke() ?:
                     (value as? () -> Any)?.invoke()?.let {
                         // Fix for JS comparison issue
-                        if (it is DataModelReference<*>)  {
+                        if (it is IsDataModelReference<*>)  {
                             it.get.invoke()
                         } else it
                     } ?:

@@ -121,6 +121,7 @@ class MarykCli(
             val trailingBlank: Boolean,
             val saveContext: SaveContext?,
             val deleteContext: DeleteContext?,
+            val loadContext: LoadContext?,
         )
 
         fun runInteraction(): InteractionOutcome {
@@ -132,6 +133,7 @@ class MarykCli(
                     trailingBlank = true,
                     saveContext = null,
                     deleteContext = null,
+                    loadContext = null,
                 )
 
             var currentInteraction = initial
@@ -139,6 +141,7 @@ class MarykCli(
             var completedLines: List<String> = emptyList()
             var completedSaveContext: SaveContext? = null
             var completedDeleteContext: DeleteContext? = null
+            var completedLoadContext: LoadContext? = null
             val transcriptLines = mutableListOf<String>()
             var finalRenderLines: List<String>? = null
             var finalizeInSection = false
@@ -223,6 +226,7 @@ class MarykCli(
                             completedLines = result.lines
                             completedSaveContext = result.saveContext
                             completedDeleteContext = result.deleteContext
+                            completedLoadContext = result.loadContext
                             allowViewer = currentInteraction !is OutputViewerInteraction && currentInteraction.allowViewerOnComplete
                             state.clearInteraction()
                             if (transcriptLines.isNotEmpty()) {
@@ -249,6 +253,7 @@ class MarykCli(
                             completedLines = keyResult.lines
                             completedSaveContext = keyResult.saveContext
                             completedDeleteContext = keyResult.deleteContext
+                            completedLoadContext = keyResult.loadContext
                             allowViewer = currentInteraction !is OutputViewerInteraction && currentInteraction.allowViewerOnComplete
                             state.clearInteraction()
                             if (!keyResult.skipRender && transcriptLines.isNotEmpty()) {
@@ -281,6 +286,7 @@ class MarykCli(
                     trailingBlank = false,
                     saveContext = completedSaveContext,
                     deleteContext = completedDeleteContext,
+                    loadContext = completedLoadContext,
                 )
             }
 
@@ -292,6 +298,7 @@ class MarykCli(
                 trailingBlank = true,
                 saveContext = completedSaveContext,
                 deleteContext = completedDeleteContext,
+                loadContext = completedLoadContext,
             )
         }
 
@@ -316,6 +323,7 @@ class MarykCli(
                                 terminalHeight = terminalHeight(),
                                 saveContext = outcome.saveContext,
                                 deleteContext = outcome.deleteContext,
+                                loadContext = outcome.loadContext,
                                 showChrome = showChrome,
                             ),
                         )
@@ -374,6 +382,7 @@ class MarykCli(
                             terminalHeight = terminalHeight(),
                             saveContext = result.saveContext,
                             deleteContext = result.deleteContext,
+                            loadContext = result.loadContext,
                             showChrome = showChrome,
                         ),
                     )

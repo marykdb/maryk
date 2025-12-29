@@ -46,6 +46,7 @@ sealed class InteractionResult {
         val lines: List<String> = emptyList(),
         val saveContext: SaveContext? = null,
         val deleteContext: DeleteContext? = null,
+        val loadContext: LoadContext? = null,
     ) : InteractionResult()
 }
 
@@ -56,5 +57,6 @@ sealed class InteractionKeyResult {
         val skipRender: Boolean = true,
         val saveContext: SaveContext? = null,
         val deleteContext: DeleteContext? = null,
+        val loadContext: LoadContext? = null,
     ) : InteractionKeyResult()
 }

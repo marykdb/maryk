@@ -17,6 +17,7 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import io.maryk.cli.DeleteContext
+import io.maryk.cli.LoadContext
 import io.maryk.cli.SaveContext
 import maryk.yaml.YamlWriter
 import maryk.core.query.requests.delete
@@ -111,6 +112,13 @@ class GetCommand : Command {
             valuesWithMetaData = valuesWithMetaData,
         )
 
+        val loadContext = LoadContext(
+            label = "${dataModel.Meta.name} $keyToken",
+            dataModel = dataModel,
+            key = key,
+            dataStore = dataStore,
+        )
+
         val deleteContext = DeleteContext(
             label = "${dataModel.Meta.name} $keyToken",
         ) { hardDelete ->
@@ -127,6 +135,7 @@ class GetCommand : Command {
             lines = lines,
             saveContext = saveContext,
             deleteContext = deleteContext,
+            loadContext = loadContext,
         )
     }
 

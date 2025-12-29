@@ -24,6 +24,27 @@ class YamlWriter(
     private val spacing: String = "  "
     private val arraySpacing: String = "- "
     private val toSanitizeRegex = Regex("[\\[{]+.*|.*[#:\n]+.*")
+    private val trueValues = setOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
+    private val falseValues = setOf("False", "FALSE", "false", "n", "N", "no", "NO", "No", "off", "OFF", "Off")
+    private val nullValues = setOf("~", "Null", "null", "NULL")
+    private val nanValues = setOf(".nan", ".NAN", ".Nan")
+    private val infinityRegEx = Regex("^([-+]?)(\\.inf|\\.Inf|\\.INF)$")
+    private val base2RegEx = Regex("^[-+]?0b([0-1_]+)$")
+    private val base8RegEx = Regex("^[-+]?0([0-7_]+)$")
+    private val base10RegEx = Regex("^[-+]?(0|[1-9][0-9_]*)$")
+    private val base16RegEx = Regex("^[-+]?0x([0-9a-fA-F_]+)$")
+    private val base60RegEx = Regex("^[-+]?([1-9][0-9_]*)(:([0-5]?[0-9]))+$")
+    private val floatRegEx = Regex("^[-+]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)([eE][-+]?[0-9]+)?$")
+    private val timestampRegex = Regex(
+        "^([0-9][0-9][0-9][0-9])" + // year
+            "-([0-9][0-9]?)" + // month
+            "-([0-9][0-9]?)" + // day
+            "(([Tt]|[ \\t]+)([0-9][0-9]?)" + // hour
+            ":([0-9][0-9])" + // minute
+            ":([0-9][0-9])" + // second
+            "(\\.([0-9]*))?" + // fraction
+            "(([ \\t]*)Z|([-+][0-9][0-9])?(:([0-9][0-9]))?)?)?$"  // time zone
+    )
 
     private var prefix: String = ""
     private var prefixWasWritten = false
@@ -187,12 +208,15 @@ class YamlWriter(
     }
 
     /** Writes a string [value] including quotes */
-    override fun writeString(value: String) = writeValue(value)
+    override fun writeString(value: String) = writeValueInternal(value, quoteStrings = true)
 
     /** Writes a [value] excluding quotes */
-    override fun writeValue(value: String) {
+    override fun writeValue(value: String) = writeValueInternal(value, quoteStrings = false)
+
+    private fun writeValueInternal(value: String, quoteStrings: Boolean) {
         if (typeStack.isNotEmpty()) {
             val lastTypeBeforeOperation = this.lastType
+            val renderedValue = if (quoteStrings) sanitizeValue(value) else value
 
             if ((lastTypeBeforeOperation == TAG && value != "") || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
                 writer(" ")
@@ -206,12 +230,12 @@ class YamlWriter(
                     }
 
                     if (this.lastIsCompact) {
-                        writer(this.sanitizeValue(value))
+                        writer(renderedValue)
                     } else {
                         if (value.contains('\n')) {
                             writeMultilineValue(value)
                         } else {
-                            writer("${this.sanitizeValue(value)}\n")
+                            writer("$renderedValue\n")
                             this.prefixWasWritten = false
                         }
                         return
@@ -224,15 +248,15 @@ class YamlWriter(
                         if (lastTypeBeforeOperation == ARRAY_VALUE) {
                             writer(", ")
                         }
-                        writer(this.sanitizeValue(value))
+                        writer(renderedValue)
                     } else {
                         if (value.contains('\n')) {
                             writeMultilineValue(value)
                         } else {
                             if (lastTypeBeforeOperation == TAG) {
-                                writer("${this.sanitizeValue(value)}\n")
+                                writer("$renderedValue\n")
                             } else {
-                                writer("$prefixToWrite$arraySpacing${this.sanitizeValue(value)}\n")
+                                writer("$prefixToWrite$arraySpacing$renderedValue\n")
                             }
                             this.prefixWasWritten = false
                         }
@@ -363,9 +387,27 @@ class YamlWriter(
 
     /** If value contains yaml incompatible values it will be surrounded by quotes */
     private fun sanitizeValue(value: String) =
-        if (value.matches(toSanitizeRegex)) {
+        if (shouldQuote(value)) {
             "'${value.replace("'", "''")}'"
         } else {
             value
         }
+
+    private fun shouldQuote(value: String): Boolean {
+        if (value.isEmpty() || value != value.trim()) return true
+        if (value.matches(toSanitizeRegex)) return true
+        if (value in nullValues || value in trueValues || value in falseValues || value in nanValues) return true
+        if (infinityRegEx.matches(value)) return true
+        if (base2RegEx.matches(value)
+            || base8RegEx.matches(value)
+            || base10RegEx.matches(value)
+            || base16RegEx.matches(value)
+            || base60RegEx.matches(value)
+            || floatRegEx.matches(value)
+            || timestampRegex.matches(value)
+        ) {
+            return true
+        }
+        return false
+    }
 }

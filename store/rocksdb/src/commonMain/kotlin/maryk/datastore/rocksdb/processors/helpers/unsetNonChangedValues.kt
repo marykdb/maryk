@@ -14,9 +14,10 @@ internal fun unsetNonChangedValues(
     currentValues: List<Pair<ByteArray, ByteArray>>,
     qualifiersToKeep: List<ByteArray>,
     versionBytes: ByteArray
-) {
+): Boolean {
     val sortedQualifiersToKeep = qualifiersToKeep.sortedWith { o1, o2 -> o1.compareTo(o2) }
     var minIndex = 0
+    var deleted = false
 
     for ((qualifier, _) in currentValues) {
         val index = sortedQualifiersToKeep.binarySearch(fromIndex = minIndex) {
@@ -25,9 +26,11 @@ internal fun unsetNonChangedValues(
         if (index < 0) {
             // Delete the value by setting it to the DeletedIndicator
             setValue(transaction, columnFamilies, qualifier, versionBytes, TypeIndicator.DeletedIndicator.byteArray)
+            deleted = true
         } else {
             // Start next time comparing with next value in qualifiersToKeep as they are ordered
             minIndex = index + 1
         }
     }
+    return deleted
 }

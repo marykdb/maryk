@@ -18,6 +18,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.TRUE
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
+import maryk.lib.extensions.compare.matchPart
 
 internal fun createValueWriter(
     tr: Transaction,
@@ -26,7 +27,21 @@ internal fun createValueWriter(
     versionBytes: ByteArray,
     qualifiersToKeep: MutableList<ByteArray>? = null,
     currentValues: List<Pair<ByteArray, ByteArray>>? = null,
+    onWrite: (() -> Unit)? = null,
 ): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
+    fun shouldSkip(referenceBytes: ByteArray, valueBytes: ByteArray): Boolean =
+        currentValues?.any {
+            val stored = it.second
+            it.first.contentEquals(referenceBytes) &&
+                stored.size > VERSION_BYTE_SIZE &&
+                stored.size - VERSION_BYTE_SIZE == valueBytes.size &&
+                stored.matchPart(
+                    fromOffset = VERSION_BYTE_SIZE,
+                    bytes = valueBytes,
+                    fromLength = stored.size - VERSION_BYTE_SIZE
+                )
+        } == true
+
     when (type) {
         ObjectDelete -> { /* not used here */ }
         Value -> {
@@ -34,8 +49,8 @@ internal fun createValueWriter(
             val valueBytes = storable.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
             qualifiersToKeep?.add(reference)
             // If current already contains same qualifier+value, skip write
-            val shouldSkip = currentValues?.any { it.first.contentEquals(reference) && it.second.size > VERSION_BYTE_SIZE && it.second.copyOfRange(VERSION_BYTE_SIZE, it.second.size).contentEquals(valueBytes) } == true
-            if (!shouldSkip) {
+            if (!shouldSkip(reference, valueBytes)) {
+                onWrite?.invoke()
                 // Handle unique indexes for comparable unique values on change/writes
                 val isComparableUnique = try {
                     val comp = (definition as? IsComparableDefinition<*, *>)
@@ -78,18 +93,30 @@ internal fun createValueWriter(
         ListSize, SetSize, MapSize -> {
             val intBytes = (value as Int).toVarBytes()
             qualifiersToKeep?.add(reference)
-            val shouldSkip = currentValues?.any { it.first.contentEquals(reference) && it.second.size > VERSION_BYTE_SIZE && it.second.copyOfRange(VERSION_BYTE_SIZE, it.second.size).contentEquals(intBytes) } == true
-            if (!shouldSkip) {
+            if (!shouldSkip(reference, intBytes)) {
+                onWrite?.invoke()
                 setValue(tr, tableDirs, key.bytes, reference, versionBytes, intBytes)
             }
         }
         TypeValue -> {
-            setTypedValue(value, definition, tr, tableDirs, key, reference, versionBytes, qualifiersToKeep)
+            val shouldWrite = if (currentValues == null && onWrite == null) {
+                null
+            } else {
+                { referenceBytes: ByteArray, valueBytes: ByteArray ->
+                    val skip = shouldSkip(referenceBytes, valueBytes)
+                    if (!skip) onWrite?.invoke()
+                    !skip
+                }
+            }
+            setTypedValue(value, definition, tr, tableDirs, key, reference, versionBytes, qualifiersToKeep, shouldWrite)
         }
         Embed -> {
             qualifiersToKeep?.add(reference)
             val valueBytes = byteArrayOf(TypeIndicator.EmbedIndicator.byte, TRUE)
-            setValue(tr, tableDirs, key.bytes, reference, versionBytes, valueBytes)
+            if (!shouldSkip(reference, valueBytes)) {
+                onWrite?.invoke()
+                setValue(tr, tableDirs, key.bytes, reference, versionBytes, valueBytes)
+            }
         }
     }
 }

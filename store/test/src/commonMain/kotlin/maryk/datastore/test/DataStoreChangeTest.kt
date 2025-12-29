@@ -53,6 +53,7 @@ class DataStoreChangeTest(
         "executeChangeListRequest" to ::executeChangeListRequest,
         "executeChangeSetRequest" to ::executeChangeSetRequest,
         "executeChangeMapRequest" to ::executeChangeMapRequest,
+        "executeChangeNoOpListAndMapRequest" to ::executeChangeNoOpListAndMapRequest,
         "executeChangeIncMapRequest" to ::executeChangeIncMapRequest
     )
 
@@ -469,6 +470,57 @@ class DataStoreChangeTest(
                 LocalTime(2, 3, 4) to "test2"
             )
         ) { getResponse.values.first().values { map } }
+    }
+
+    private suspend fun executeChangeNoOpListAndMapRequest() {
+        val initialResponse = dataStore.execute(
+            TestMarykModel.get(keys[1])
+        )
+        val initialValues = initialResponse.values.first()
+        val initialVersion = initialValues.lastVersion
+        val initialList = assertNotNull(initialValues.values { list })
+        val initialMap = assertNotNull(initialValues.values { map })
+
+        val listValue = initialList[1]
+        val listChangeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[1].change(
+                    ListChange(
+                        TestMarykModel { list::ref }.change(
+                            deleteValues = listOf(listValue),
+                            addValuesAtIndex = mapOf(1u to listValue)
+                        )
+                    )
+                )
+            )
+        )
+
+        expect(1) { listChangeResponse.statuses.size }
+        assertStatusIs<ChangeSuccess<*>>(listChangeResponse.statuses[0])
+
+        val afterListChange = dataStore.execute(
+            TestMarykModel.get(keys[1])
+        ).values.first()
+        expect(initialVersion) { afterListChange.lastVersion }
+
+        val fullChangeResponse = dataStore.execute(
+            TestMarykModel.change(
+                keys[1].change(
+                    Change(
+                        TestMarykModel { list::ref } with initialList,
+                        TestMarykModel { map::ref } with initialMap
+                    )
+                )
+            )
+        )
+
+        expect(1) { fullChangeResponse.statuses.size }
+        assertStatusIs<ChangeSuccess<*>>(fullChangeResponse.statuses[0])
+
+        val afterFullChange = dataStore.execute(
+            TestMarykModel.get(keys[1])
+        ).values.first()
+        expect(initialVersion) { afterFullChange.lastVersion }
     }
 
     private suspend fun executeChangeIncMapRequest() {

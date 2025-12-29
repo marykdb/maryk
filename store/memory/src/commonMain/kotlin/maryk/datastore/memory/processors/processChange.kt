@@ -72,9 +72,11 @@ import maryk.datastore.memory.processors.changers.setListValue
 import maryk.datastore.memory.processors.changers.setValue
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataRecord
+import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.memory.records.DeletedValue
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
@@ -200,9 +202,9 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                     @Suppress("UNCHECKED_CAST")
                                     val mapReference = reference as IsPropertyReference<Map<Any, Any>, IsPropertyDefinition<Map<Any, Any>>, *>
 
-                                    // Delete all existing values in placeholder
-                                    val hadPrevValue =
-                                        deleteByReference(newValueList, mapReference, version, keepAllVersions)
+                                    val referenceBytes = reference.toStorageByteArray()
+                                    val currentValues = getCurrentValuesForPrefix(newValueList, referenceBytes)
+                                    val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
                                     mapDefinition.validateWithRef(
@@ -210,9 +212,27 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         value as Map<Any, Any>
                                     ) { mapReference }
 
-                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
-
                                     checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
+
+                                    val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
+                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
+                                        expectedValues.add(qualifier to mapValue)
+                                    }
+                                    writeMapToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        collectingWriter,
+                                        mapDefinition,
+                                        value
+                                    )
+                                    if (hasSameStorageValues(currentValues, expectedValues)) {
+                                        continue
+                                    }
+
+                                    // Delete all existing values in placeholder
+                                    deleteByReference(newValueList, mapReference, version, keepAllVersions)
+
+                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
                                     writeMapToStorage(
                                         reference.calculateStorageByteLength(),
@@ -221,14 +241,16 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         mapDefinition,
                                         value
                                     )
+                                    setChanged(true)
                                 }
                                 is List<*> -> {
                                     @Suppress("UNCHECKED_CAST")
                                     val listDefinition = reference.propertyDefinition as? IsListDefinition<Any, IsPropertyContext>
                                         ?: throw TypeException("Expected a Reference to IsListDefinition for List change")
 
-                                    // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
+                                    val referenceBytes = reference.toStorageByteArray()
+                                    val currentValues = getCurrentValuesForPrefix(newValueList, referenceBytes)
+                                    val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
                                     listDefinition.validateWithRef(
@@ -236,9 +258,27 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         value as List<Any>
                                     ) { reference as IsPropertyReference<List<Any>, IsPropertyDefinition<List<Any>>, *> }
 
-                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
-
                                     checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
+
+                                    val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
+                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
+                                        expectedValues.add(qualifier to mapValue)
+                                    }
+                                    writeListToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        collectingWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
+                                    if (hasSameStorageValues(currentValues, expectedValues)) {
+                                        continue
+                                    }
+
+                                    // Delete all existing values in placeholder
+                                    deleteByReference(newValueList, reference, version, keepAllVersions)
+
+                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
                                     writeListToStorage(
                                         reference.calculateStorageByteLength(),
@@ -247,14 +287,16 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         reference.propertyDefinition,
                                         value
                                     )
+                                    setChanged(true)
                                 }
                                 is Set<*> -> {
                                     @Suppress("UNCHECKED_CAST")
                                     val setDefinition = reference.propertyDefinition as? IsSetDefinition<Any, IsPropertyContext>
                                         ?: throw TypeException("Expected a Reference to IsSetDefinition for Set change")
 
-                                    // Delete all existing values in placeholder
-                                    val hadPrevValue = deleteByReference(newValueList, reference, version, keepAllVersions)
+                                    val referenceBytes = reference.toStorageByteArray()
+                                    val currentValues = getCurrentValuesForPrefix(newValueList, referenceBytes)
+                                    val hadPrevValue = currentValues.isNotEmpty()
 
                                     @Suppress("UNCHECKED_CAST")
                                     setDefinition.validateWithRef(
@@ -262,9 +304,27 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         value as Set<Any>
                                     ) { reference as IsPropertyReference<Set<Any>, IsPropertyDefinition<Set<Any>>, *> }
 
-                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
-
                                     checkParentReference(reference, newValueList, version, keepAllVersions, ::addValidationFail)
+
+                                    val expectedValues = mutableListOf<Pair<ByteArray, Any?>>()
+                                    val collectingWriter: ValueWriter<IsPropertyDefinition<*>> = { _, qualifier, _, mapValue ->
+                                        expectedValues.add(qualifier to mapValue)
+                                    }
+                                    writeSetToStorage(
+                                        reference.calculateStorageByteLength(),
+                                        reference::writeStorageBytes,
+                                        collectingWriter,
+                                        reference.propertyDefinition,
+                                        value
+                                    )
+                                    if (hasSameStorageValues(currentValues, expectedValues)) {
+                                        continue
+                                    }
+
+                                    // Delete all existing values in placeholder
+                                    deleteByReference(newValueList, reference, version, keepAllVersions)
+
+                                    val valueWriter = createValueWriter(newValueList, version, keepAllVersions)
 
                                     writeSetToStorage(
                                         reference.calculateStorageByteLength(),
@@ -273,6 +333,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         reference.propertyDefinition,
                                         value
                                     )
+                                    setChanged(true)
                                 }
                                 is TypedValue<*, *> -> {
                                     if (reference.propertyDefinition !is IsMultiTypeDefinition<*, *, *>) {
@@ -313,6 +374,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         reference.propertyDefinition,
                                         value
                                     )
+                                    setChanged(true)
                                 }
                                 is Values<*> -> {
                                     // Process any reference containing values
@@ -357,6 +419,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                         reference::writeStorageBytes,
                                         valueWriter
                                     )
+                                    setChanged(true)
                                 }
                                 else -> {
                                     setValue(
@@ -426,6 +489,10 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                 for (value in it) {
                                     list.add(value)
                                 }
+                            }
+
+                            if ((originalList == null && list.isEmpty()) || (originalList != null && list == originalList)) {
+                                continue
                             }
 
                             try {
@@ -692,4 +759,70 @@ private fun createValueWriter(
     setValueAtIndex(
         newValueList, valueIndex, qualifier, mapValue, version, keepAllVersions
     )
+}
+
+private fun getCurrentValuesForPrefix(
+    values: List<DataRecordNode>,
+    referenceBytes: ByteArray
+): List<Pair<ByteArray, Any?>> {
+    val startIndex = values.binarySearch {
+        it.reference compareTo referenceBytes
+    }.let { if (it < 0) it * -1 - 1 else it }
+    val currentValues = mutableListOf<Pair<ByteArray, Any?>>()
+
+    for (index in startIndex until values.size) {
+        val node = values[index]
+        if (!node.reference.startsWith(referenceBytes)) break
+
+        val currentValue = when (node) {
+            is DataRecordValue<*> -> node.value
+            is DataRecordHistoricValues<*> -> {
+                val latest = node.toAdd ?: node.history.lastOrNull()
+                when (latest) {
+                    is DataRecordValue<*> -> latest.value
+                    else -> null
+                }
+            }
+            is DeletedValue<*> -> null
+        }
+
+        if (currentValue != null) {
+            currentValues.add(node.reference to currentValue)
+        }
+    }
+
+    return currentValues
+}
+
+private fun hasSameStorageValues(
+    currentValues: List<Pair<ByteArray, Any?>>,
+    expectedValues: List<Pair<ByteArray, Any?>>
+): Boolean {
+    if (currentValues.size != expectedValues.size) return false
+
+    val sortedCurrent = currentValues.sortedWith { left, right -> left.first.compareTo(right.first) }
+    val sortedExpected = expectedValues.sortedWith { left, right -> left.first.compareTo(right.first) }
+
+    for (index in sortedCurrent.indices) {
+        val current = sortedCurrent[index]
+        val expected = sortedExpected[index]
+        if (!current.first.contentEquals(expected.first)) return false
+        if (!valuesEqual(current.second, expected.second)) return false
+    }
+
+    return true
+}
+
+private fun valuesEqual(left: Any?, right: Any?): Boolean =
+    when {
+        left is ByteArray && right is ByteArray -> left.contentEquals(right)
+        else -> left == right
+    }
+
+private fun ByteArray.startsWith(prefix: ByteArray): Boolean {
+    if (prefix.size > this.size) return false
+    for (index in prefix.indices) {
+        if (this[index] != prefix[index]) return false
+    }
+    return true
 }

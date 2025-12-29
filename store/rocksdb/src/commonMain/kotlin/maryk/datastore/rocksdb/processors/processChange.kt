@@ -78,6 +78,7 @@ import maryk.datastore.rocksdb.processors.helpers.createCountUpdater
 import maryk.datastore.rocksdb.processors.helpers.deleteByReference
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.getCurrentIncMapKey
 import maryk.datastore.rocksdb.processors.helpers.getCurrentValues
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
@@ -94,6 +95,7 @@ import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.updates.Update
+import maryk.lib.extensions.compare.matchPart
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
@@ -250,8 +252,16 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
 
+                                    var didWrite = false
                                     val valueWriter = createValueWriter(
-                                        dbIndex, transaction, columnFamilies, key, versionBytes, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues)
+                                        dbIndex,
+                                        transaction,
+                                        columnFamilies,
+                                        key,
+                                        versionBytes,
+                                        qualifiersToKeep,
+                                        doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                        onWrite = { didWrite = true }
                                     )
 
                                     checkParentReference(reference, transaction, columnFamilies, key, versionBytes)
@@ -265,7 +275,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     )
 
                                     // Delete unneeded old values
-                                    unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
+                                    val didDelete = unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
+                                    setChanged(didWrite || didDelete)
                                 }
                                 is List<*> -> {
                                     @Suppress("UNCHECKED_CAST")
@@ -284,8 +295,16 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
 
+                                    var didWrite = false
                                     val valueWriter = createValueWriter(
-                                        dbIndex, transaction, columnFamilies, key, versionBytes, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues)
+                                        dbIndex,
+                                        transaction,
+                                        columnFamilies,
+                                        key,
+                                        versionBytes,
+                                        qualifiersToKeep,
+                                        doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                        onWrite = { didWrite = true }
                                     )
 
                                     checkParentReference(reference, transaction, columnFamilies, key, versionBytes)
@@ -299,7 +318,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     )
 
                                     // Delete unneeded old values
-                                    unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
+                                    val didDelete = unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
+                                    setChanged(didWrite || didDelete)
                                 }
                                 is Set<*> -> {
                                     @Suppress("UNCHECKED_CAST")
@@ -318,8 +338,16 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
 
+                                    var didWrite = false
                                     val valueWriter = createValueWriter(
-                                        dbIndex, transaction, columnFamilies, key, versionBytes, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues)
+                                        dbIndex,
+                                        transaction,
+                                        columnFamilies,
+                                        key,
+                                        versionBytes,
+                                        qualifiersToKeep,
+                                        doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                        onWrite = { didWrite = true }
                                     )
 
                                     checkParentReference(reference, transaction, columnFamilies, key, versionBytes)
@@ -333,7 +361,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     )
 
                                     // Delete unneeded old values
-                                    unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
+                                    val didDelete = unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
+                                    setChanged(didWrite || didDelete)
                                 }
                                 is TypedValue<*, *> -> {
                                     if (reference.propertyDefinition !is IsMultiTypeDefinition<*, *, *>) {
@@ -371,6 +400,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                         reference.propertyDefinition,
                                         value
                                     )
+                                    setChanged(true)
                                 }
                                 is Values<*> -> {
                                     // Process any reference containing values
@@ -395,7 +425,13 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     val qualifiersToKeep = mutableListOf<ByteArray>()
                                     val valueWriter = createValueWriter(
-                                        dbIndex, transaction, columnFamilies, key, versionBytes, qualifiersToKeep, doesCurrentNotContainExactQualifierAndValue(currentValues)
+                                        dbIndex,
+                                        transaction,
+                                        columnFamilies,
+                                        key,
+                                        versionBytes,
+                                        qualifiersToKeep,
+                                        doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues)
                                     )
 
                                     // Write complex values existence indicator
@@ -416,6 +452,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
                                     // Delete unneeded old values
                                     unsetNonChangedValues(transaction, columnFamilies, key, currentValues, qualifiersToKeep, versionBytes)
+                                    setChanged(true)
                                 }
                                 else -> {
                                     try {
@@ -484,6 +521,10 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                 for (value in it) {
                                     list.add(value)
                                 }
+                            }
+
+                            if (list == originalList) {
+                                continue
                             }
 
                             try {
@@ -757,6 +798,7 @@ private fun RocksDBDataStore.createValueWriter(
     versionBytes: ByteArray,
     qualifiersToKeep: MutableList<ByteArray>? = null,
     shouldWrite: ((ByteArray, ByteArray) -> Boolean)? = null,
+    onWrite: (() -> Unit)? = null,
 ): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
     when (type) {
         ObjectDelete -> {} // Cannot happen on new add
@@ -766,6 +808,7 @@ private fun RocksDBDataStore.createValueWriter(
 
             qualifiersToKeep?.add(reference)
             if (shouldWrite?.invoke(reference, valueBytes) != false) {
+                onWrite?.invoke()
                 // If a unique index, check if exists, and then write
                 if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                     val uniqueReference = reference + valueBytes
@@ -814,10 +857,22 @@ private fun RocksDBDataStore.createValueWriter(
 
             qualifiersToKeep?.add(reference)
             if (shouldWrite?.invoke(reference, valueBytes) != false) {
+                onWrite?.invoke()
                 setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
             }
         }
-        TypeValue -> setTypedValue(value, definition, transaction, columnFamilies, key, reference, versionBytes, qualifiersToKeep, shouldWrite)
+        TypeValue -> {
+            val wrappedShouldWrite = if (shouldWrite == null && onWrite == null) {
+                null
+            } else {
+                { referenceBytes: ByteArray, valueBytes: ByteArray ->
+                    val allowed = shouldWrite?.invoke(referenceBytes, valueBytes) != false
+                    if (allowed) onWrite?.invoke()
+                    allowed
+                }
+            }
+            setTypedValue(value, definition, transaction, columnFamilies, key, reference, versionBytes, qualifiersToKeep, wrappedShouldWrite)
+        }
         Embed -> {
             // Indicates value exists and is an embed
             // Is for the root of embed
@@ -825,15 +880,32 @@ private fun RocksDBDataStore.createValueWriter(
 
             qualifiersToKeep?.add(reference)
             if (shouldWrite?.invoke(reference, valueBytes) != false) {
+                onWrite?.invoke()
                 setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
             }
         }
     }
 }
 
-private fun doesCurrentNotContainExactQualifierAndValue(currentValues: List<Pair<ByteArray, ByteArray>>): (ByteArray, ByteArray) -> Boolean =
+private fun doesCurrentNotContainExactQualifierAndValue(
+    keyBytes: ByteArray,
+    currentValues: List<Pair<ByteArray, ByteArray>>
+): (ByteArray, ByteArray) -> Boolean =
     { qualifier, value ->
         currentValues.none { (currentQualifier, currentValue) ->
-            currentQualifier.contentEquals(qualifier) && currentValue.contentEquals(value)
+            currentQualifier.size > keyBytes.size &&
+                currentQualifier.size - keyBytes.size == qualifier.size &&
+                currentQualifier.matchPart(
+                    fromOffset = keyBytes.size,
+                    bytes = qualifier,
+                    fromLength = currentQualifier.size - keyBytes.size
+                ) &&
+                currentValue.size > VERSION_BYTE_SIZE &&
+                currentValue.size - VERSION_BYTE_SIZE == value.size &&
+                currentValue.matchPart(
+                    fromOffset = VERSION_BYTE_SIZE,
+                    bytes = value,
+                    fromLength = currentValue.size - VERSION_BYTE_SIZE
+                )
         }
     }

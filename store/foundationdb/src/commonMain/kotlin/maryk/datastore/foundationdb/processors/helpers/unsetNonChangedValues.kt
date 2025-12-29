@@ -17,13 +17,16 @@ internal fun unsetNonChangedValues(
     currentValues: List<Pair<ByteArray, ByteArray>>,
     qualifiersToKeep: List<ByteArray>,
     versionBytes: ByteArray,
-) {
+): Boolean {
     val qualifierSet = qualifiersToKeep.mapTo(mutableSetOf()) { it.asByteArrayKey(copy = true) }
+    var deleted = false
     for ((qualifier, _) in currentValues) {
         val keep = qualifierSet.contains(qualifier.asByteArrayKey())
         if (!keep) {
             tr.clear(packKey(tableDirs.tablePrefix, key.bytes, qualifier))
             writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, EMPTY_BYTEARRAY)
+            deleted = true
         }
     }
+    return deleted
 }

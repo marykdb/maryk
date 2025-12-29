@@ -273,12 +273,13 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             mapDef.validateWithRef(if (hadPrev) mapOf() else null, value as Map<Any, Any>) { reference as MapReference<Any, Any, IsPropertyContext> }
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current)
+                                        var didWrite = false
+                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
                                         checkParentReference(reference)
                                         @Suppress("UNCHECKED_CAST")
                                         writeMapToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, mapDef, value as Map<Any, Any>)
-                                        unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
-                                        isChanged = true
+                                        val didDelete = unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
+                                        if (didWrite || didDelete) isChanged = true
                                         putOverlay(reference, value)
                                     }
                                     is List<*> -> {
@@ -292,11 +293,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             listDef.validateWithRef(if (hadPrev) listOf() else null, value as List<Any>) { reference as ListReference<Any, IsPropertyContext> }
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current)
+                                        var didWrite = false
+                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
                                         checkParentReference(reference)
                                         writeListToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
-                                        unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
-                                        isChanged = true
+                                        val didDelete = unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
+                                        if (didWrite || didDelete) isChanged = true
                                         putOverlay(reference, value)
                                     }
                                     is Set<*> -> {
@@ -310,11 +312,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             setDef.validateWithRef(if (hadPrev) setOf() else null, value as Set<Any>) { reference as SetReference<Any, IsPropertyContext> }
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current)
+                                        var didWrite = false
+                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
                                         checkParentReference(reference)
                                         writeSetToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
-                                        unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
-                                        isChanged = true
+                                        val didDelete = unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
+                                        if (didWrite || didDelete) isChanged = true
                                         putOverlay(reference, value)
                                     }
                                     is TypedValue<*, *> -> {
@@ -328,7 +331,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, EMPTY_BYTEARRAY)
                                         }
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current)
+                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, null)
                                         checkParentReference(reference)
                                         writeTypedValueToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
                                         isChanged = true
@@ -432,6 +435,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 listChange.deleteValues?.forEach { list.remove(it) }
                                 listChange.addValuesAtIndex?.forEach { (idx, v) -> list.add(idx.toInt(), v) }
                                 listChange.addValuesToEnd?.forEach { list.add(it) }
+
+                                if (list == originalList) {
+                                    continue
+                                }
 
                                 try {
                                     @Suppress("UNCHECKED_CAST")

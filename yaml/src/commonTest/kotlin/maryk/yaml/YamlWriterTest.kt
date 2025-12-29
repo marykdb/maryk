@@ -40,7 +40,7 @@ internal class YamlWriterTest {
             - true
             - test: false
               test2: value
-            - another: 'yes'
+            - another: yes
 
             """.trimIndent(),
             output

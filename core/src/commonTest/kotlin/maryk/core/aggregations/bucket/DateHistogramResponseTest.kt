@@ -89,13 +89,13 @@ class DateHistogramResponseTest {
             """
             of: dateTime
             buckets:
-            - key: '2010-01-01T00:00'
+            - key: 2010-01-01T00:00
               aggregations:
                 total: !Sum
                   of: int
                   value: 123456789
               count: 15
-            - key: '2011-01-01T00:00'
+            - key: 2011-01-01T00:00
               aggregations:
                 total: !Sum
                   of: int

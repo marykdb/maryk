@@ -11,6 +11,7 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
+import maryk.yaml.YamlWriter
 import maryk.json.JsonToken.StartDocument
 import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
@@ -51,7 +52,12 @@ data class Version(
                 context: IsPropertyContext?,
                 skip: List<IsDefinitionWrapper<*, *, *, Version>>?
             ) {
-                writer.writeString(obj.toString())
+                val stringValue = obj.toString()
+                if (writer is YamlWriter) {
+                    writer.writeValue(stringValue)
+                } else {
+                    writer.writeString(stringValue)
+                }
             }
 
             override fun readJsonToMap(reader: IsJsonLikeReader, context: IsPropertyContext?): MutableValueItems {

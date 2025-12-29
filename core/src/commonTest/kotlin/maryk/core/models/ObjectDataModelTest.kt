@@ -264,7 +264,7 @@ internal class ObjectDataModelTest {
             int: 4
             uint: 32
             double: 3.555
-            dateTime: '2017-12-04T12:13'
+            dateTime: 2017-12-04T12:13
             bool: true
             enum: V1(1)
             list: [34, 2352, 3423, 766]
@@ -274,7 +274,7 @@ internal class ObjectDataModelTest {
               10:03: ahum
             valueObject:
               int: 6
-              dateTime: '2017-04-01T12:55'
+              dateTime: 2017-04-01T12:55
               bool: true
             embeddedObject:
               value: test

@@ -72,7 +72,7 @@ class UpdatesResponseTest {
                 int: 4
                 uint: 53
                 double: 3.5555
-                dateTime: '2017-12-05T12:40'
+                dateTime: 2017-12-05T12:40
                 bool: true
                 enum: V1(1)
             - !Change

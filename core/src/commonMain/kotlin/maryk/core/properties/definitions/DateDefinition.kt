@@ -21,6 +21,8 @@ import maryk.core.properties.types.writeBytes
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.values.SimpleObjectValues
+import maryk.json.IsJsonLikeWriter
+import maryk.yaml.YamlWriter
 import maryk.lib.exceptions.ParseException
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -79,6 +81,15 @@ data class DateDefinition(
             value is LocalDate -> value
             value is LocalDateTime && value.hour == 0 && value.minute == 0 && value.second == 0 && value.nanosecond == 0 -> value.date
             else -> null
+        }
+    }
+
+    override fun writeJsonValue(value: LocalDate, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        val stringValue = this.asString(value, context)
+        if (writer is YamlWriter) {
+            writer.writeValue(stringValue)
+        } else {
+            writer.writeString(stringValue)
         }
     }
 

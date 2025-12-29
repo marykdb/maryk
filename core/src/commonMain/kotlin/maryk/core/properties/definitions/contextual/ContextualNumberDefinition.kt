@@ -15,6 +15,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
+import maryk.yaml.YamlWriter
 import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 
@@ -75,14 +76,34 @@ class ContextualNumberDefinition<in CX : IsPropertyContext>(
         }
     }
 
-    override fun writeJsonValue(value: Comparable<Any>, writer: IsJsonLikeWriter, context: CX?) = when {
-        contextualResolver(context) !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
-            writer.writeValue(
+    override fun writeJsonValue(value: Comparable<Any>, writer: IsJsonLikeWriter, context: CX?) = when (
+        contextualResolver(context)
+    ) {
+        UInt64 -> {
+            val stringValue = value.toString()
+            val canWriteAsValue = writer is YamlWriter &&
+                (value as? ULong)?.let { it <= Long.MAX_VALUE.toULong() } == true
+            if (canWriteAsValue) {
+                writer.writeValue(stringValue)
+            } else {
+                writer.writeString(stringValue)
+            }
+        }
+        Float64, Float32 -> {
+            val stringValue = value.toString()
+            if (writer is YamlWriter) {
+                writer.writeValue(stringValue)
+            } else {
+                writer.writeString(stringValue)
+            }
+        }
+        SInt64 -> {
+            writer.writeString(
                 value.toString()
             )
         }
         else -> {
-            writer.writeString(
+            writer.writeValue(
                 value.toString()
             )
         }

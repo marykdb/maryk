@@ -7,6 +7,7 @@ import maryk.core.properties.WriteCacheFailer
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.BIT_32
 import maryk.core.protobuf.WireType.VAR_INT
@@ -199,6 +200,18 @@ internal class NumberDefinitionTest {
         ) {
             checkYamlConversion(this.defMaxDefined, NumberDefinition.Model)
         }
+    }
+
+    @Test
+    fun writeUInt64InYamlWithoutQuotes() {
+        val defUInt64 = NumberDefinition(
+            type = UInt64,
+            default = 42uL
+        )
+
+        val yaml = checkYamlConversion(defUInt64, NumberDefinition.Model)
+        assertTrue(yaml.contains("default: 42"))
+        assertFalse(yaml.contains("default: '42'"))
     }
 
     @Test

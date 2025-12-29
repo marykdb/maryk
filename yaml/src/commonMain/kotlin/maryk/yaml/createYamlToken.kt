@@ -23,8 +23,8 @@ import kotlin.math.pow
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-private val trueValues = setOf("True", "TRUE", "true", "y", "Y", "yes", "YES", "Yes", "on", "ON", "On")
-private val falseValues = setOf("False", "FALSE", "false", "n", "N", "no", "NO", "No", "off", "OFF", "Off")
+private val trueValues = setOf("True", "TRUE", "true")
+private val falseValues = setOf("False", "FALSE", "false")
 private val nullValues = setOf("~", "Null", "null", "NULL")
 private val nanValues = setOf(".nan", ".NAN", ".Nan")
 private val infinityRegEx = Regex("^([-+]?)(\\.inf|\\.Inf|\\.INF)$")

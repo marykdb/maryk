@@ -39,7 +39,7 @@ class LessThanTest {
         expect(
             """
             int: 2
-            dateTime: '2018-01-01T13:22:34'
+            dateTime: 2018-01-01T13:22:34
 
             """.trimIndent()
         ) {

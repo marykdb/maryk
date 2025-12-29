@@ -20,6 +20,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
+import maryk.yaml.YamlWriter
 import maryk.lib.exceptions.ParseException
 import kotlin.experimental.xor
 
@@ -89,12 +90,28 @@ data class NumberDefinition<T : Comparable<T>>(
     override fun fromNativeType(value: Any) = fromNativeType(this.type, value)
 
     override fun writeJsonValue(value: T, writer: IsJsonLikeWriter, context: IsPropertyContext?) = when (type) {
-        !in arrayOf(UInt64, SInt64, Float64, Float32) -> {
+        UInt64 -> {
+            val stringValue = this.asString(value)
+            if (writer is YamlWriter && (value as? ULong)?.let { it <= Long.MAX_VALUE.toULong() } == true) {
+                writer.writeValue(stringValue)
+            } else {
+                writer.writeString(stringValue)
+            }
+        }
+        Float64, Float32 -> {
+            val stringValue = this.asString(value)
+            if (writer is YamlWriter) {
+                writer.writeValue(stringValue)
+            } else {
+                writer.writeString(stringValue)
+            }
+        }
+        SInt64 -> super.writeJsonValue(value, writer, context)
+        else -> {
             writer.writeValue(
                 this.asString(value)
             )
         }
-        else -> super.writeJsonValue(value, writer, context)
     }
 
     override fun compatibleWith(

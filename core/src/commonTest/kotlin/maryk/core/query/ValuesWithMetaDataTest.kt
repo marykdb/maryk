@@ -59,7 +59,7 @@ class ValuesWithMetaDataTest {
               int: 5123123
               uint: 555
               double: 6.33
-              dateTime: '2017-12-05T01:33:55'
+              dateTime: 2017-12-05T01:33:55
               bool: true
               enum: V3(3)
             firstVersion: 12

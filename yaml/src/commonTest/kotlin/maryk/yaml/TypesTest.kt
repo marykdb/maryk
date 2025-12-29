@@ -12,8 +12,9 @@ class TypesTest {
     @Test
     fun readAutoTypedValues() {
         createYamlReader("""
-        |- [yes, Yes, YES, Y, on, ON, On, true, True, TRUE]
-        |- [no, No, NO, N, off, OFF, Off, false, False, FALSE]
+        |- [true, True, TRUE]
+        |- [false, False, FALSE]
+        |- [yes, Yes, YES, Y, on, ON, On, no, No, NO, N, off, OFF, Off]
         |- [~, null, NULL, Null]
         |- [.Nan, .NAN, .nan]
         |- [.Inf, .INF, .inf, +.Inf, +.INF, +.inf, -.Inf, -.INF, -.inf]
@@ -30,8 +31,9 @@ class TypesTest {
     @Test
     fun readStrongTypedValues() {
         createYamlReader("""
-        |- [!!bool yes, !!bool Yes, !!bool YES, !!bool Y, !!bool on, !!bool ON, !!bool On, !!bool true, !!bool True, !!bool TRUE]
-        |- [!!bool no, !!bool No, !!bool NO, !!bool N, !!bool off, !!bool OFF, !!bool Off, !!bool false, !!bool False, !!bool FALSE]
+        |- [!!bool true, !!bool True, !!bool TRUE]
+        |- [!!bool false, !!bool False, !!bool FALSE]
+        |- [!!str yes, !!str Yes, !!str YES, !!str Y, !!str on, !!str ON, !!str On, !!str no, !!str No, !!str NO, !!str N, !!str off, !!str OFF, !!str Off]
         |- [!!null ~, !!null null, !!null NULL, !!null Null]
         |- [!!float .Nan, !!float .NAN, !!float .nan]
         |- [!!float .Inf, !!float .INF, !!float .inf, !!float +.Inf, !!float +.INF, !!float +.inf, !!float -.Inf, !!float -.INF, !!float -.inf]
@@ -96,30 +98,35 @@ class TypesTest {
     private fun IsJsonLikeReader.testForValues() {
         assertStartArray()
         assertStartArray()
-        for (it in 1..10) {
+        listOf("true", "True", "TRUE").forEach {
             assertValue(true, ValueType.Bool)
         }
         assertEndArray()
         assertStartArray()
-        for (it in 1..10) {
+        listOf("false", "False", "FALSE").forEach {
             assertValue(false, ValueType.Bool)
         }
         assertEndArray()
         assertStartArray()
-        for (it in 1..4) {
+        listOf("yes", "Yes", "YES", "Y", "on", "ON", "On", "no", "No", "NO", "N", "off", "OFF", "Off").forEach {
+            assertValue(it, ValueType.String)
+        }
+        assertEndArray()
+        assertStartArray()
+        repeat(4) {
             assertValue(null, ValueType.Null)
         }
         assertEndArray()
         assertStartArray()
-        for (it in 1..3) {
+        repeat(3) {
             assertValue(Double.NaN, ValueType.Float)
         }
         assertEndArray()
         assertStartArray()
-        for (it in 1..6) {
+        repeat(6) {
             assertValue(Double.POSITIVE_INFINITY, ValueType.Float)
         }
-        for (it in 1..3) {
+        repeat(3) {
             assertValue(Double.NEGATIVE_INFINITY, ValueType.Float)
         }
         assertEndArray()

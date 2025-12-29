@@ -134,15 +134,15 @@ internal class ValueObjectDefinitionTest {
             dataModel: TestValueObject
             minValue:
               int: 0
-              dateTime: '2007-12-05T00:00'
+              dateTime: 2007-12-05T00:00
               bool: false
             maxValue:
               int: 999
-              dateTime: '2017-12-05T00:00'
+              dateTime: 2017-12-05T00:00
               bool: true
             default:
               int: 10
-              dateTime: '2010-10-10T00:00'
+              dateTime: 2010-10-10T00:00
               bool: true
 
             """.trimIndent()

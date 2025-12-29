@@ -122,7 +122,7 @@ class AggregationsResponseTest {
               valueCount: 32
             the least: !Min
               of: dateTime
-              value: '2019-12-01T12:03:45'
+              value: 2019-12-01T12:03:45
             the most: !Max
               of: double
               value: 3456.231

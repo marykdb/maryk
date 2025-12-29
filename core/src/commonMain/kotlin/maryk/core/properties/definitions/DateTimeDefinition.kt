@@ -27,6 +27,8 @@ import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
+import maryk.json.IsJsonLikeWriter
+import maryk.yaml.YamlWriter
 import maryk.lib.exceptions.ParseException
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -101,6 +103,15 @@ data class DateTimeDefinition(
     }
 
     override fun fromNativeType(value: Any) = value as? LocalDateTime
+
+    override fun writeJsonValue(value: LocalDateTime, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
+        val stringValue = this.asString(value, context)
+        if (writer is YamlWriter) {
+            writer.writeValue(stringValue)
+        } else {
+            writer.writeString(stringValue)
+        }
+    }
 
     object Model : ContextualDataModel<DateTimeDefinition, Model, ContainsDefinitionsContext, DateTimeDefinitionContext>(
         contextTransformer = { DateTimeDefinitionContext() },

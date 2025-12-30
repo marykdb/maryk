@@ -1,15 +1,40 @@
 package io.maryk.cli
 
+import com.varabyte.kotter.foundation.input.InputCompleter
 import com.varabyte.kotter.foundation.input.Key
 import com.varabyte.kotter.foundation.input.Keys
-import com.varabyte.kotter.foundation.input.InputCompleter
+import maryk.core.properties.IsPropertyContext
+import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsListDefinition
+import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSetDefinition
+import maryk.core.properties.definitions.wrapper.IsValueDefinitionWrapper
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ListItemReference
+import maryk.core.properties.references.ListReference
+import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.SetItemReference
+import maryk.core.properties.references.TypeReference
+import maryk.core.properties.types.TypedValue
+import maryk.core.properties.enum.TypeEnum
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.SetChange
+import maryk.core.query.changes.change
+import maryk.core.query.pairs.IsReferenceValueOrNullPair
+import maryk.core.query.pairs.with
+import maryk.core.values.Values
 import kotlin.math.max
 import kotlin.math.min
 
 class OutputViewerInteraction(
-    private val lines: List<String>,
+    private var lines: List<String>,
     terminalHeight: Int,
-    private val saveContext: SaveContext? = null,
+    private var saveContext: SaveContext? = null,
     private val deleteContext: DeleteContext? = null,
     private val loadContext: LoadContext? = null,
     private val headerLines: List<String> = emptyList(),
@@ -17,18 +42,23 @@ class OutputViewerInteraction(
 ) : CliInteraction {
     override val promptLabel: String = "view> "
     override val introLines: List<String> = if (showChrome) {
+        val introSaveContext = saveContext
         val commandLine = buildList {
-            if (saveContext != null) {
-                val formatOptions = if (saveContext.kotlinGenerator != null) {
+            if (introSaveContext != null) {
+                val formatOptions = if (introSaveContext.kotlinGenerator != null) {
                     "--yaml|--json|--proto|--kotlin"
                 } else {
                     "--yaml|--json|--proto"
                 }
-                val noDepsSuffix = if (saveContext.supportsNoDeps) " [--no-deps]" else ""
+                val noDepsSuffix = if (introSaveContext.supportsNoDeps) " [--no-deps]" else ""
                 add("save <dir> [$formatOptions] [--package <name>] [--meta]$noDepsSuffix")
             }
             if (loadContext != null) {
                 add("load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]")
+                add("set <ref> <value> [--if-version <n>]")
+                add("unset <ref> [--if-version <n>]")
+                add("append <ref> <value> [--if-version <n>]")
+                add("remove <ref> <value> [--if-version <n>]")
             }
             if (deleteContext != null) {
                 add("delete [--hard]")
@@ -69,7 +99,7 @@ class OutputViewerInteraction(
 
             val command = tokens.first().lowercase()
             if (command == "save") {
-                if (saveContext == null) return null
+                val resolvedSaveContext = saveContext ?: return null
                 if (tokens.size == 1 && !endsWithSpace) {
                     return completeToken(currentToken, listOf("save"))
                 }
@@ -78,15 +108,15 @@ class OutputViewerInteraction(
                         add("--yaml")
                         add("--json")
                         add("--proto")
-                        if (saveContext.kotlinGenerator != null) add("--kotlin")
+                        if (resolvedSaveContext.kotlinGenerator != null) add("--kotlin")
                         add("--package")
                         add("--meta")
-                        if (saveContext.supportsNoDeps) add("--no-deps")
+                        if (resolvedSaveContext.supportsNoDeps) add("--no-deps")
                     }
                     return completeToken(currentToken, options)
                 }
                 if (endsWithSpace) {
-                    return if (saveContext.kotlinGenerator != null) "--kotlin" else "--yaml"
+                    return if (resolvedSaveContext.kotlinGenerator != null) "--kotlin" else "--yaml"
                 }
                 return null
             }
@@ -105,6 +135,17 @@ class OutputViewerInteraction(
                 return null
             }
 
+            if (command == "set" || command == "unset" || command == "append" || command == "remove") {
+                if (loadContext == null) return null
+                if (tokens.size == 1 && !endsWithSpace) {
+                    return completeToken(currentToken, listOf(command))
+                }
+                if (currentToken.startsWith("--")) {
+                    return completeToken(currentToken, listOf("--if-version"))
+                }
+                return null
+            }
+
             if (command == "delete") {
                 if (deleteContext == null) return null
                 if (currentToken.startsWith("--")) {
@@ -119,6 +160,12 @@ class OutputViewerInteraction(
             val commands = buildList {
                 if (saveContext != null) add("save")
                 if (loadContext != null) add("load")
+                if (loadContext != null) {
+                    add("set")
+                    add("unset")
+                    add("append")
+                    add("remove")
+                }
                 if (deleteContext != null) add("delete")
                 addAll(EXIT_COMMANDS)
             }
@@ -227,17 +274,39 @@ class OutputViewerInteraction(
 
                 val loadOptions = (parseResult as LoadOptionsResult.Success).options
 
-                try {
-                    statusMessage = resolvedLoadContext.load(
+                val loadResult = try {
+                    resolvedLoadContext.loadResult(
                         path = loadOptions.path,
                         format = loadOptions.format,
                         ifVersion = loadOptions.ifVersion,
                         useMeta = loadOptions.useMeta,
                     )
                 } catch (e: Throwable) {
-                    statusMessage = "Load failed: ${e.message ?: e::class.simpleName}"
+                    ApplyResult("Load failed: ${e.message ?: e::class.simpleName}", success = false)
                 }
+                val refreshError = if (loadResult.success) refreshView() else null
+                statusMessage = mergeStatusMessage(loadResult.message, refreshError)
                 return InteractionResult.Stay(lines = statusLines())
+            }
+
+            trimmed.equals("set", ignoreCase = true)
+                || trimmed.startsWith("set ", ignoreCase = true) -> {
+                return handleInlineEdit("set", trimmed)
+            }
+
+            trimmed.equals("unset", ignoreCase = true)
+                || trimmed.startsWith("unset ", ignoreCase = true) -> {
+                return handleInlineEdit("unset", trimmed)
+            }
+
+            trimmed.equals("append", ignoreCase = true)
+                || trimmed.startsWith("append ", ignoreCase = true) -> {
+                return handleInlineEdit("append", trimmed)
+            }
+
+            trimmed.equals("remove", ignoreCase = true)
+                || trimmed.startsWith("remove ", ignoreCase = true) -> {
+                return handleInlineEdit("remove", trimmed)
             }
 
             trimmed.equals("delete", ignoreCase = true)
@@ -293,6 +362,17 @@ class OutputViewerInteraction(
     private sealed class LoadOptionsResult {
         data class Success(val options: LoadOptions) : LoadOptionsResult()
         data class Error(val message: String) : LoadOptionsResult()
+    }
+
+    private data class InlineOptions(
+        val reference: String,
+        val value: String?,
+        val ifVersion: ULong?,
+    )
+
+    private sealed class InlineOptionsResult {
+        data class Success(val options: InlineOptions) : InlineOptionsResult()
+        data class Error(val message: String) : InlineOptionsResult()
     }
 
     private data class DeleteOptions(
@@ -467,6 +547,288 @@ class OutputViewerInteraction(
                 useMeta = useMeta,
             )
         )
+    }
+
+    private fun handleInlineEdit(command: String, input: String): InteractionResult {
+        val resolvedLoadContext = loadContext ?: run {
+            statusMessage = "Unknown command: $command"
+            return InteractionResult.Stay(lines = statusLines())
+        }
+
+        val args = CommandLineParser.parse(input)
+        val tokens = when (args) {
+            is CommandLineParser.ParseResult.Success -> args.tokens
+            is CommandLineParser.ParseResult.Error -> {
+                statusMessage = "${command.replaceFirstChar { it.uppercase() }} failed: ${args.message}"
+                return InteractionResult.Stay(lines = statusLines())
+            }
+        }
+
+        val parseResult = parseInlineOptions(tokens.drop(1), requiresValue = command != "unset")
+        if (parseResult is InlineOptionsResult.Error) {
+            statusMessage = parseResult.message
+            return InteractionResult.Stay(lines = statusLines())
+        }
+        val options = (parseResult as InlineOptionsResult.Success).options
+
+        val result = try {
+            when (command) {
+                "set" -> applySet(resolvedLoadContext, options)
+                "unset" -> applyUnset(resolvedLoadContext, options)
+                "append" -> applyAppend(resolvedLoadContext, options)
+                "remove" -> applyRemove(resolvedLoadContext, options)
+                else -> ApplyResult("Unknown command: $command", success = false)
+            }
+        } catch (e: Throwable) {
+            ApplyResult(
+                "${command.replaceFirstChar { it.uppercase() }} failed: ${e.message ?: e::class.simpleName}",
+                success = false,
+            )
+        }
+
+        val refreshError = if (result.success) refreshView() else null
+        statusMessage = mergeStatusMessage(result.message, refreshError)
+        return InteractionResult.Stay(lines = statusLines())
+    }
+
+    private fun parseInlineOptions(tokens: List<String>, requiresValue: Boolean): InlineOptionsResult {
+        val positional = mutableListOf<String>()
+        var ifVersion: ULong? = null
+        var index = 0
+
+        while (index < tokens.size) {
+            val token = tokens[index]
+            val lowered = token.lowercase()
+            when {
+                lowered.startsWith("--if-version=") -> {
+                    val value = token.substringAfter("=", missingDelimiterValue = "").ifBlank {
+                        return InlineOptionsResult.Error("`--if-version` requires a value.")
+                    }
+                    ifVersion = value.toULongOrNull()
+                        ?: return InlineOptionsResult.Error("Invalid `--if-version` value: $value")
+                }
+                lowered == "--if-version" -> {
+                    if (index + 1 >= tokens.size) {
+                        return InlineOptionsResult.Error("`--if-version` requires a value.")
+                    }
+                    val value = tokens[index + 1]
+                    ifVersion = value.toULongOrNull()
+                        ?: return InlineOptionsResult.Error("Invalid `--if-version` value: $value")
+                    index += 1
+                }
+                token.startsWith("--") -> {
+                    return InlineOptionsResult.Error("Unknown option: $token")
+                }
+                else -> positional.add(token)
+            }
+            index += 1
+        }
+
+        if (positional.isEmpty()) {
+            return InlineOptionsResult.Error("Reference path is required.")
+        }
+        if (requiresValue && positional.size < 2) {
+            return InlineOptionsResult.Error("Value is required.")
+        }
+
+        val reference = positional.first()
+        val value = if (requiresValue) {
+            positional.drop(1).joinToString(" ")
+        } else {
+            null
+        }
+
+        return InlineOptionsResult.Success(
+            InlineOptions(
+                reference = reference,
+                value = value,
+                ifVersion = ifVersion,
+            )
+        )
+    }
+
+    private fun applySet(loadContext: LoadContext, options: InlineOptions): ApplyResult {
+        val rawValue = options.value ?: return ApplyResult("Set requires a value.", success = false)
+        val reference = loadContext.resolveReference(options.reference)
+        val value = loadContext.parseValueForReference(reference, rawValue)
+        val change = Change(createReferencePair(reference, value))
+        return loadContext.applyChangesResult(listOf(change), ifVersion = options.ifVersion)
+    }
+
+    private fun applyUnset(loadContext: LoadContext, options: InlineOptions): ApplyResult {
+        val reference = loadContext.resolveReference(options.reference)
+        val change = Change(createReferencePair(reference, null))
+        return loadContext.applyChangesResult(listOf(change), ifVersion = options.ifVersion)
+    }
+
+    private fun applyAppend(loadContext: LoadContext, options: InlineOptions): ApplyResult {
+        val rawValue = options.value ?: return ApplyResult("Append requires a value.", success = false)
+        val reference = loadContext.resolveReference(options.reference)
+        return when (reference) {
+            is ListReference<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                val listRef = reference as ListReference<Any, IsPropertyContext>
+                val value = loadContext.parseValueForDefinition(
+                    listRef.propertyDefinition.definition.valueDefinition,
+                    rawValue,
+                    listRef,
+                )
+                val change = ListChange(
+                    listRef.change(addValuesToEnd = listOf(value))
+                )
+                loadContext.applyChangesResult(listOf(change), ifVersion = options.ifVersion)
+            }
+            is SetReference<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                val setRef = reference as SetReference<Any, IsPropertyContext>
+                val value = loadContext.parseValueForDefinition(
+                    setRef.propertyDefinition.definition.valueDefinition,
+                    rawValue,
+                    setRef,
+                )
+                val change = SetChange(
+                    setRef.change(addValues = setOf(value))
+                )
+                loadContext.applyChangesResult(listOf(change), ifVersion = options.ifVersion)
+            }
+            else -> ApplyResult("Append only supports list or set references.", success = false)
+        }
+    }
+
+    private fun applyRemove(loadContext: LoadContext, options: InlineOptions): ApplyResult {
+        val rawValue = options.value ?: return ApplyResult("Remove requires a value.", success = false)
+        val reference = loadContext.resolveReference(options.reference)
+        return when (reference) {
+            is ListReference<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                val listRef = reference as ListReference<Any, IsPropertyContext>
+                val value = loadContext.parseValueForDefinition(
+                    listRef.propertyDefinition.definition.valueDefinition,
+                    rawValue,
+                    listRef,
+                )
+                val change = ListChange(
+                    listRef.change(deleteValues = listOf(value))
+                )
+                loadContext.applyChangesResult(listOf(change), ifVersion = options.ifVersion)
+            }
+            is SetReference<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                val setRef = reference as SetReference<Any, IsPropertyContext>
+                val value = loadContext.parseValueForDefinition(
+                    setRef.propertyDefinition.definition.valueDefinition,
+                    rawValue,
+                    setRef,
+                )
+                val itemRef = setRef.propertyDefinition.definition.itemRef(value, setRef)
+                val change = Change(createReferencePair(itemRef, null))
+                loadContext.applyChangesResult(listOf(change), ifVersion = options.ifVersion)
+            }
+            else -> ApplyResult("Remove only supports list or set references.", success = false)
+        }
+    }
+
+    private fun refreshView(): String? {
+        val resolvedLoadContext = loadContext
+            ?: return "View refresh not available for this output."
+        return when (val result = resolvedLoadContext.refreshView()) {
+            is RefreshResult.Success -> {
+                lines = result.lines
+                saveContext = result.saveContext
+                offset = min(offset, max(0, lines.size - viewHeight))
+                null
+            }
+            is RefreshResult.Error -> result.message
+        }
+    }
+
+    private fun mergeStatusMessage(base: String, refreshError: String?): String =
+        if (refreshError == null) base else "$base (view refresh failed: $refreshError)"
+
+    @Suppress("UNCHECKED_CAST")
+    private fun createReferencePair(
+        reference: IsPropertyReference<*, IsPropertyDefinition<*>, *>,
+        value: Any?,
+    ): IsReferenceValueOrNullPair<Any> {
+        return when (reference) {
+            is ListItemReference<*, *> ->
+                reference.with(value)
+            is MapValueReference<*, *, *> ->
+                reference.with(value)
+            is SetItemReference<*, *> ->
+                reference.with(value)
+            is TypeReference<*, *, *> ->
+                (reference as TypeReference<TypeEnum<Any>, Any, IsPropertyContext>).with(value as TypeEnum<Any>?)
+            else -> {
+                val definition = reference.propertyDefinition
+                when (definition) {
+                    is IsValueDefinitionWrapper<*, *, *, *> -> {
+                        val typedRef =
+                            reference as IsPropertyReference<Any, IsValueDefinitionWrapper<Any, *, IsPropertyContext, *>, *>
+                        typedRef with value
+                    }
+                    is IsListDefinition<*, *> -> {
+                        val typedRef =
+                            reference as IsPropertyReference<List<Any>, IsListDefinition<Any, IsPropertyContext>, *>
+                        val listValue = when (value) {
+                            null -> null
+                            is List<*> -> value as List<Any>
+                            else -> throw IllegalArgumentException("Expected list value for ${reference.completeName}.")
+                        }
+                        typedRef with listValue
+                    }
+                    is IsSetDefinition<*, *> -> {
+                        val typedRef =
+                            reference as IsPropertyReference<Set<Any>, IsSetDefinition<Any, IsPropertyContext>, *>
+                        val setValue = when (value) {
+                            null -> null
+                            is Set<*> -> value as Set<Any>
+                            else -> throw IllegalArgumentException("Expected set value for ${reference.completeName}.")
+                        }
+                        typedRef with setValue
+                    }
+                    is IsMapDefinition<*, *, *> -> {
+                        val typedRef =
+                            reference as IsPropertyReference<Map<Any, Any>, IsMapDefinition<Any, Any, IsPropertyContext>, *>
+                        val mapValue = when (value) {
+                            null -> null
+                            is Map<*, *> -> value as Map<Any, Any>
+                            else -> throw IllegalArgumentException("Expected map value for ${reference.completeName}.")
+                        }
+                        typedRef with mapValue
+                    }
+                    is IsMultiTypeDefinition<*, *, *> -> {
+                        val typedRef =
+                            reference as IsPropertyReference<
+                                TypedValue<TypeEnum<Any>, Any>,
+                                IsMultiTypeDefinition<TypeEnum<Any>, Any, IsPropertyContext>,
+                                *
+                            >
+                        val typedValue = when (value) {
+                            null -> null
+                            is TypedValue<*, *> -> value
+                            else -> throw IllegalArgumentException("Expected typed value for ${reference.completeName}.")
+                        }
+                        typedRef with typedValue
+                    }
+                    is IsEmbeddedValuesDefinition<*, *> -> {
+                        val typedRef =
+                            reference as IsPropertyReference<
+                                Values<IsValuesDataModel>,
+                                IsEmbeddedValuesDefinition<IsValuesDataModel, IsPropertyContext>,
+                                *
+                            >
+                        val embeddedValues = when (value) {
+                            null -> null
+                            is Values<*> -> value as Values<IsValuesDataModel>
+                            else -> throw IllegalArgumentException("Expected embedded values for ${reference.completeName}.")
+                        }
+                        typedRef with embeddedValues
+                    }
+                    else -> throw IllegalArgumentException("Unsupported reference type for set/unset.")
+                }
+            }
+        } as IsReferenceValueOrNullPair<Any>
     }
 
     private fun parseDeleteOptions(tokens: List<String>): DeleteOptionsResult {

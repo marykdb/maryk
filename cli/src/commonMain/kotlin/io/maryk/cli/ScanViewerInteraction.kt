@@ -61,6 +61,7 @@ class ScanViewerInteraction(
     private var pendingDelete = false
     private var pendingHardDelete = false
     private var displayFields: List<DisplayField> = emptyList()
+    private val referencePaths by lazy { collectReferencePaths(dataModel) }
 
     private val completer: InputCompleter = object : InputCompleter {
         override fun complete(input: String): String? {
@@ -77,6 +78,54 @@ class ScanViewerInteraction(
             val commands = listOf("get", "save", "load", "delete", "filter", "show", "q", "quit", "exit")
             if (tokens.size == 1 && !endsWithSpace) {
                 return completeToken(currentToken, commands)
+            }
+
+            val command = tokens.first().lowercase()
+            when (command) {
+                "save" -> {
+                    if (tokens.size == 1 && !endsWithSpace) {
+                        return completeToken(currentToken, listOf("save"))
+                    }
+                    if (currentToken.startsWith("--")) {
+                        return completeToken(currentToken, listOf("--yaml", "--json", "--proto", "--meta"))
+                    }
+                    if (endsWithSpace) {
+                        return "--yaml"
+                    }
+                }
+                "load" -> {
+                    if (tokens.size == 1 && !endsWithSpace) {
+                        return completeToken(currentToken, listOf("load"))
+                    }
+                    if (currentToken.startsWith("--")) {
+                        return completeToken(currentToken, listOf("--yaml", "--json", "--proto", "--if-version", "--meta"))
+                    }
+                    if (endsWithSpace && tokens.size > 1 && tokens.drop(1).any { !it.startsWith("--") }) {
+                        return "--yaml"
+                    }
+                }
+                "delete" -> {
+                    if (tokens.size == 1 && !endsWithSpace) {
+                        return completeToken(currentToken, listOf("delete"))
+                    }
+                    if (currentToken.startsWith("--")) {
+                        return completeToken(currentToken, listOf("--hard"))
+                    }
+                    if (endsWithSpace) {
+                        return "--hard"
+                    }
+                }
+                "show" -> {
+                    if (tokens.size == 1 && !endsWithSpace) {
+                        return completeToken(currentToken, listOf("show"))
+                    }
+                    if (tokens.size == 1 && endsWithSpace) {
+                        return completeReferenceListToken("", referencePaths)
+                    }
+                    if (tokens.size >= 2) {
+                        return completeReferenceListToken(currentToken, referencePaths)
+                    }
+                }
             }
             return null
         }

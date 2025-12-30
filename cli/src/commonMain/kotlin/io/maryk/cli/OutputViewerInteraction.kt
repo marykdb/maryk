@@ -92,6 +92,7 @@ class OutputViewerInteraction(
     private var statusMessage: String? = null
     private var pendingDelete: Boolean = false
     private var pendingHardDelete: Boolean = false
+    private val referencePaths by lazy { loadContext?.let { collectReferencePaths(it.dataModel) }.orEmpty() }
     private val completer: InputCompleter = object : InputCompleter {
         override fun complete(input: String): String? {
             val trimmed = input.trimStart()
@@ -149,6 +150,12 @@ class OutputViewerInteraction(
                 if (loadContext == null) return null
                 if (tokens.size == 1 && !endsWithSpace) {
                     return completeToken(currentToken, listOf(command))
+                }
+                if (tokens.size == 1 && endsWithSpace) {
+                    return completeToken("", referencePaths)
+                }
+                if (tokens.size == 2 && !endsWithSpace && !currentToken.startsWith("--")) {
+                    return completeToken(currentToken, referencePaths)
                 }
                 if (currentToken.startsWith("--")) {
                     return completeToken(currentToken, listOf("--if-version"))

@@ -7,6 +7,7 @@
 - `disconnect` — close the current store connection.
 - `list` — list available data models.
 - `model <name|id>` — render the schema for a model.
+- `model --key-index-format <name|id>` — include key and index format details.
 - `get <model> <key>` — fetch a record and open the viewer.
 - `scan <model> [options]` — browse records in a scrolling list.
 

@@ -45,6 +45,7 @@ Once running interactively, type `help` to see the available commands. Use `Ctrl
 - `disconnect`: Close the current store connection.
 - `list`: Show available data models.
 - `model <name|id>`: Inspect a model's schema.
+- `model --key-index-format <name|id>`: Include key and index format details.
 - `get <model> <key>`: Fetch a record and open a viewer.
 - `scan <model> [options]`: Browse records in a scrolling list.
 

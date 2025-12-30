@@ -12,6 +12,12 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.definitions.PrimitiveType
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.ReferenceToMax
+import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.protobuf.WriteCache
@@ -47,7 +53,7 @@ class ModelCommand : Command {
         }
 
         if (options.allModels) {
-            val rendered = renderAllModels(modelsById, options.includeDependencies)
+            val rendered = renderAllModels(modelsById, options.includeDependencies, options.includeFormats)
             return CommandResult(lines = rendered.lines, saveContext = rendered.saveContext)
         }
 
@@ -56,6 +62,7 @@ class ModelCommand : Command {
                 ModelSelectionInteraction(
                     modelsById = modelsById,
                     includeDependencies = options.includeDependencies,
+                    includeFormats = options.includeFormats,
                 )
             )
             return CommandResult(lines = emptyList())
@@ -63,7 +70,7 @@ class ModelCommand : Command {
 
         return when (val resolved = resolveModel(modelsById, query)) {
             is ResolveResult.Found -> {
-                val rendered = renderModelDefinition(resolved.model, options.includeDependencies)
+                val rendered = renderModelDefinition(resolved.model, options.includeDependencies, options.includeFormats)
                 CommandResult(lines = rendered.lines, saveContext = rendered.saveContext)
             }
             is ResolveResult.Error -> CommandResult(lines = resolved.lines, isError = true)
@@ -128,6 +135,7 @@ class ModelCommand : Command {
     private class ModelSelectionInteraction(
         private val modelsById: Map<UInt, IsRootDataModel>,
         private val includeDependencies: Boolean,
+        private val includeFormats: Boolean,
     ) : CliInteraction by OptionSelectorInteraction(
         options = modelsById.entries
             .sortedBy { it.value.Meta.name.lowercase() }
@@ -137,7 +145,7 @@ class ModelCommand : Command {
         promptLabel = "model> ",
         introLines = listOf("Select a model (use up/down arrows and press Enter):"),
         onSelection = { option ->
-            val rendered = renderModelDefinition(option.value, includeDependencies)
+            val rendered = renderModelDefinition(option.value, includeDependencies, includeFormats)
             InteractionResult.Complete(rendered.lines, saveContext = rendered.saveContext)
         },
         onCancel = { InteractionResult.Complete(listOf("Model command cancelled.")) },
@@ -163,19 +171,21 @@ class ModelCommand : Command {
 
     private fun usageLines(): List<String> = listOf(
         "Usage:",
-        "  model [--with-deps] [<name|id>]",
-        "  model --all [--with-deps]",
+        "  model [--with-deps] [--key-index-format] [<name|id>]",
+        "  model --all [--with-deps] [--key-index-format]",
         "Examples:",
         "  model",
         "  model Person",
         "  model 1",
         "  model --with-deps Person",
+        "  model --key-index-format Person",
         "  model --all --with-deps",
     )
 
     private data class ModelOptions(
         val includeDependencies: Boolean,
         val allModels: Boolean,
+        val includeFormats: Boolean,
     )
 
     private sealed class ParseArgumentsResult {
@@ -185,17 +195,22 @@ class ModelCommand : Command {
 
     private fun parseArguments(arguments: List<String>): ParseArgumentsResult {
         if (arguments.isEmpty()) {
-            return ParseArgumentsResult.Success(ModelOptions(includeDependencies = false, allModels = false), "")
+            return ParseArgumentsResult.Success(
+                ModelOptions(includeDependencies = false, allModels = false, includeFormats = false),
+                "",
+            )
         }
 
         val queryTokens = mutableListOf<String>()
         var includeDependencies = false
         var allModels = false
+        var includeFormats = false
 
         arguments.forEach { token ->
             when (token.lowercase()) {
                 "--with-deps", "--with-dependencies", "--deps", "--full" -> includeDependencies = true
                 "--all", "--all" -> allModels = true
+                "--key-index-format" -> includeFormats = true
                 else -> {
                     if (token.startsWith("-")) {
                         return ParseArgumentsResult.Error(
@@ -221,7 +236,11 @@ class ModelCommand : Command {
         }
 
         return ParseArgumentsResult.Success(
-            ModelOptions(includeDependencies = includeDependencies, allModels = allModels),
+            ModelOptions(
+                includeDependencies = includeDependencies,
+                allModels = allModels,
+                includeFormats = includeFormats,
+            ),
             query,
         )
     }
@@ -235,6 +254,7 @@ private data class RenderedDefinition(
 private fun renderModelDefinition(
     model: IsRootDataModel,
     includeDependencies: Boolean,
+    includeFormats: Boolean,
 ): RenderedDefinition {
     val rootDataModel = model as? RootDataModel<*>
         ?: return RenderedDefinition(
@@ -256,6 +276,12 @@ private fun renderModelDefinition(
 
     val displayYaml = serializeDefinitionsToYaml(displayDefinitions)
     val displayLines = displayYaml.trimEnd().lines()
+    val formatLines = if (includeFormats) buildFormatLines(rootDataModel) else emptyList()
+    val lines = if (formatLines.isEmpty()) {
+        displayLines
+    } else {
+        formatLines + "" + displayLines
+    }
 
     val fullYaml = serializeDefinitionsToYaml(fullDefinitions)
     val fullJson = serializeDefinitionsToJson(fullDefinitions)
@@ -272,7 +298,7 @@ private fun renderModelDefinition(
     }
 
     return RenderedDefinition(
-        lines = displayLines,
+        lines = lines,
         saveContext = SaveContext(
             key = rootDataModel.Meta.name,
             dataYaml = fullYaml,
@@ -293,6 +319,7 @@ private fun renderModelDefinition(
 private fun renderAllModels(
     modelsById: Map<UInt, IsRootDataModel>,
     includeDependencies: Boolean,
+    includeFormats: Boolean,
 ): RenderedDefinition {
     val ordered = modelsById.entries.sortedBy { it.key }.map { it.value }
     val displayDefinitions = buildList<MarykPrimitive> {
@@ -340,7 +367,13 @@ private fun renderAllModels(
         "All models: ${ordered.size}",
         "Definitions: ${display.definitions.size}",
     )
-    val lines = header + serializeDefinitionsToYaml(display).trimEnd().lines()
+    val formatLines = if (includeFormats) buildFormatSummaryLines(ordered) else emptyList()
+    val definitionLines = serializeDefinitionsToYaml(display).trimEnd().lines()
+    val lines = if (formatLines.isEmpty()) {
+        header + definitionLines
+    } else {
+        header + formatLines + "" + definitionLines
+    }
 
     return RenderedDefinition(
         lines = lines,
@@ -394,6 +427,50 @@ private fun buildDefinitions(
         add(rootDataModel)
     }
     return Definitions(allDefinitions)
+}
+
+private fun buildFormatLines(model: IsRootDataModel): List<String> {
+    val keyFormat = formatIndexable(model.Meta.keyDefinition)
+    val lines = mutableListOf(
+        "Key format: $keyFormat",
+        "Key bytes: ${model.Meta.keyByteSize}",
+    )
+
+    val indexes = model.Meta.indexes.orEmpty()
+    if (indexes.isEmpty()) {
+        lines.add("Indexes: <none>")
+    } else {
+        lines.add("Indexes:")
+        indexes.forEach { index ->
+            lines.add("  - ${formatIndexable(index)}")
+        }
+    }
+
+    return lines
+}
+
+private fun buildFormatSummaryLines(models: List<IsRootDataModel>): List<String> {
+    if (models.isEmpty()) return emptyList()
+    return buildList {
+        add("Key/index formats:")
+        models.forEach { model ->
+            add("- ${model.Meta.name}")
+            buildFormatLines(model).forEach { line ->
+                add("  $line")
+            }
+        }
+    }
+}
+
+private fun formatIndexable(indexable: IsIndexable): String {
+    return when (indexable) {
+        UUIDKey -> "uuid"
+        is Multiple -> "multiple(${indexable.references.joinToString(", ") { formatIndexable(it) }})"
+        is Reversed<*> -> "reversed(${formatIndexable(indexable.reference)})"
+        is ReferenceToMax<*> -> "refToMax(${formatIndexable(indexable.reference)})"
+        is IsIndexablePropertyReference<*> -> indexable.toString()
+        else -> indexable.toString()
+    }
 }
 
 private fun serializeDefinitionsToYaml(definitions: Definitions): String {

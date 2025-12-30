@@ -85,6 +85,13 @@ class MarykCli(
                 }
                 onKeyPressed {
                     when (key) {
+                        Keys.TAB -> {
+                            val current = getInput(inputId).orEmpty()
+                            val completion = commandCompleter.complete(current)
+                            if (!completion.isNullOrEmpty()) {
+                                setInput(current + completion, id = inputId)
+                            }
+                        }
                         Keys.UP -> {
                             if (commandHistory.isEmpty()) return@onKeyPressed
                             val current = getInput(inputId).orEmpty()
@@ -247,6 +254,16 @@ class MarykCli(
                 }
 
                 onKeyPressed {
+                    if (key == Keys.TAB) {
+                        val completer = currentInteraction.inputCompleter()
+                            ?: return@onKeyPressed
+                        val current = getInput().orEmpty()
+                        val completion = completer.complete(current)
+                        if (!completion.isNullOrEmpty()) {
+                            setInput(current + completion)
+                        }
+                        return@onKeyPressed
+                    }
                     val keyResult = currentInteraction.onKeyPressed(key) ?: return@onKeyPressed
                     when (keyResult) {
                         is InteractionKeyResult.Rerender -> rerender()

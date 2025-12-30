@@ -22,6 +22,7 @@ import maryk.datastore.shared.ScanType.TableScan
 fun <DM: IsRootDataModel> DM.optimizeTableScan(
     tableScan: TableScan,
     keyScanRanges: KeyScanRanges,
+    allowTableScan: Boolean = false,
 ): ScanType {
     val equalPairs = keyScanRanges.equalPairs
     this.Meta.indexes?.let { indexes ->
@@ -54,7 +55,7 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
 
     val minimumKeyScanByteRange = this.Meta.minimumKeyScanByteRange ?: this.Meta.keyByteSize.toUInt()
 
-    if (keyScanRanges.equalBytes < minimumKeyScanByteRange) {
+    if (!allowTableScan && keyScanRanges.equalBytes < minimumKeyScanByteRange) {
         throw StorageException("${this.Meta.name}: Key scan bytes (${keyScanRanges.equalBytes}) must be more or equal than minimum key scan bytes ($minimumKeyScanByteRange). Or set an order to guide scan to an index")
     }
 

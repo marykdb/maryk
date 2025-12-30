@@ -89,7 +89,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
             val scanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs)
 
             val processedScanIndex = if (scanIndex is TableScan) {
-                scanRequest.dataModel.optimizeTableScan(scanIndex, keyScanRange)
+                scanRequest.dataModel.optimizeTableScan(
+                    scanIndex,
+                    keyScanRange,
+                    allowTableScan = scanRequest.allowTableScan
+                )
             } else scanIndex
 
             scanSetup?.invoke(processedScanIndex)

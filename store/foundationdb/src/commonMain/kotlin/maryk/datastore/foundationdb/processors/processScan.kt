@@ -78,7 +78,13 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
     }
 
     val processedScanIndex = scanRequest.dataModel.orderToScanType(scanRequest.order, keyScanRange.equalPairs).let {
-        if (it is ScanType.TableScan) scanRequest.dataModel.optimizeTableScan(it, keyScanRange) else it
+        if (it is ScanType.TableScan) {
+            scanRequest.dataModel.optimizeTableScan(
+                it,
+                keyScanRange,
+                allowTableScan = scanRequest.allowTableScan
+            )
+        } else it
     }
 
     scanSetup?.invoke(processedScanIndex)

@@ -34,6 +34,8 @@ interface IsScanRequest<DM : IsRootDataModel, RP : IsResponse> : IsFetchRequest<
     val order: IsOrder?
     val limit: UInt
     val includeStart: Boolean
+    val allowTableScan: Boolean
+        get() = false
 }
 
 internal fun <DO : IsScanRequest<*, *>, DM : IsRootDataModel> IsObjectDataModel<DO>.addStartKey(

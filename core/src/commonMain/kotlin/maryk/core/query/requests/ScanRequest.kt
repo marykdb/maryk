@@ -31,9 +31,22 @@ fun <DM : IsRootDataModel> DM.scan(
     includeStart: Boolean = true,
     toVersion: ULong? = null,
     filterSoftDeleted: Boolean = true,
-    aggregations: Aggregations? = null
+    aggregations: Aggregations? = null,
+    allowTableScan: Boolean = false
 ) =
-    ScanRequest(this, startKey, select, where, order, limit, includeStart, toVersion, filterSoftDeleted, aggregations)
+    ScanRequest(
+        dataModel = this,
+        startKey = startKey,
+        select = select,
+        where = where,
+        order = order,
+        limit = limit,
+        includeStart = includeStart,
+        toVersion = toVersion,
+        filterSoftDeleted = filterSoftDeleted,
+        aggregations = aggregations,
+        allowTableScan = allowTableScan,
+    )
 
 /**
  * A Request to scan DataObjects by key from [startKey] until [limit]
@@ -52,7 +65,8 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
     override val includeStart: Boolean = true,
     override val toVersion: ULong? = null,
     override val filterSoftDeleted: Boolean = true,
-    override val aggregations: Aggregations? = null
+    override val aggregations: Aggregations? = null,
+    override val allowTableScan: Boolean = false
 ) : IsScanRequest<DM, ValuesResponse<DM>>, IsTransportableRequest<ValuesResponse<DM>> {
     override val requestType = Scan
     override val responseModel = ValuesResponse

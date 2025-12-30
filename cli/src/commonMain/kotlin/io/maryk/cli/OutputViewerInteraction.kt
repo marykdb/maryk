@@ -37,6 +37,7 @@ class OutputViewerInteraction(
     private var saveContext: SaveContext? = null,
     private val deleteContext: DeleteContext? = null,
     private val loadContext: LoadContext? = null,
+    private val returnInteraction: CliInteraction? = null,
     private val headerLines: List<String> = emptyList(),
     private val showChrome: Boolean = true,
 ) : CliInteraction {
@@ -63,10 +64,19 @@ class OutputViewerInteraction(
             if (deleteContext != null) {
                 add("delete [--hard]")
             }
+            if (returnInteraction != null) {
+                add("close")
+            }
             addAll(EXIT_COMMANDS)
         }.joinToString(separator = " | ")
         listOf(
-            "Viewing output. Use Up/Down to scroll, PgUp/PgDn for pages, Home/End for ends, q/quit/exit to close.",
+            buildString {
+                append("Viewing output. Use Up/Down to scroll, PgUp/PgDn for pages, Home/End for ends, ")
+                if (returnInteraction != null) {
+                    append("close to return, ")
+                }
+                append("q/quit/exit to close.")
+            },
             "Commands: $commandLine",
         )
     } else {
@@ -167,6 +177,7 @@ class OutputViewerInteraction(
                     add("remove")
                 }
                 if (deleteContext != null) add("delete")
+                if (returnInteraction != null) add("close")
                 addAll(EXIT_COMMANDS)
             }
             return completeToken(currentToken, commands)
@@ -206,6 +217,16 @@ class OutputViewerInteraction(
         }
 
         when {
+            trimmed.equals("close", ignoreCase = true) -> {
+                val target = returnInteraction
+                return if (target != null) {
+                    InteractionResult.Continue(target, showIntro = false)
+                } else {
+                    statusMessage = "Unknown command: close"
+                    InteractionResult.Stay(lines = statusLines())
+                }
+            }
+
             trimmed.equals("q", ignoreCase = true)
                 || trimmed.equals("quit", ignoreCase = true)
                 || trimmed.equals("exit", ignoreCase = true) -> {
@@ -888,7 +909,13 @@ class OutputViewerInteraction(
     private fun statusLines(): List<String> = statusMessage?.takeIf { it.isNotBlank() }?.let { listOf(it) } ?: emptyList()
 
     private fun footerLine(start: Int, end: Int, total: Int): String =
-        "Lines $start-$end of $total  (Up/Down PgUp/PgDn Home/End q/quit/exit)"
+        buildString {
+            append("Lines $start-$end of $total  (Up/Down PgUp/PgDn Home/End")
+            if (returnInteraction != null) {
+                append(" close")
+            }
+            append(" q/quit/exit)")
+        }
 
     private companion object {
         private const val FOOTER_AND_PROMPT_LINES = 3

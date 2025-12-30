@@ -17,6 +17,7 @@ import io.maryk.cli.commands.GetCommand
 import io.maryk.cli.commands.HelpCommand
 import io.maryk.cli.commands.ListCommand
 import io.maryk.cli.commands.ModelCommand
+import io.maryk.cli.commands.ScanCommand
 import io.maryk.cli.commands.registerAll
 
 fun main() {
@@ -405,6 +406,7 @@ private fun defaultRegistry(
                 ConnectCommand(),
                 DisconnectCommand(),
                 GetCommand(),
+                ScanCommand(),
                 ListCommand(),
                 ModelCommand(),
             )

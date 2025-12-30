@@ -15,6 +15,10 @@ All engines share the same API surface, so you can start with Memory or RocksDB 
 
 Below is a practical overview of each engine, why it was chosen, and when to use it.
 
+## Inspecting data
+
+Use the Maryk CLI to connect to a store, scan records, and edit values interactively while you evaluate or debug storage behavior.
+
 ### Memory
 
 - Type: In‑memory, non‑persistent.

@@ -122,6 +122,20 @@ export default defineConfig({
                         },
                     ],
                 },
+                {
+                    label: 'Tools',
+                    collapsed: false,
+                    items: [
+                        {
+                            label: 'CLI',
+                            collapsed: true,
+                            items: [
+                                {label: 'Overview', slug: 'cli'},
+                                {label: 'Commands', slug: 'cli/commands'},
+                            ],
+                        },
+                    ],
+                },
             ],
         }),
     ],

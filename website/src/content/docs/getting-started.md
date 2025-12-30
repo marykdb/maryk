@@ -74,9 +74,13 @@ InMemoryDataStore.open(
 
 Then advance to [Stores](/stores/) for RocksDB or FoundationDB and migration tips.
 
+## CLI
+
+Use the [CLI](/cli/) to explore models and records, run scans, and edit values without writing code.
+
 ## Next steps
 
 - Learn how models and properties work in [Data design](/data-modeling/data-design/).
 - Explore queries, filters, and aggregations in [Querying](/querying/).
 - Check out how to persist data in [Stores](/stores/).
-
+- Browse and edit data interactively with the [CLI](/cli/).

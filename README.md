@@ -24,6 +24,8 @@ The [FoundationDB](/store/foundationdb/README.md) persistence layer is available
 
 - **Data Aggregations & Insights**: Perform [aggregations](core/docs/aggregations.md) (count, sum, average, min/max, grouped by time intervals or enums) for richer analytics and decision-making.
 
+- **CLI tooling**: Browse and edit records in a terminal via the [Maryk CLI](cli/README.md).
+
 ## Getting Started
 
 1. **Add Maryk Core Dependency**:  
@@ -81,6 +83,7 @@ For detailed information, check out:
 - [Generator](generator/README.md) – Code generation from YAML and JSON models.
 - [Test Library](testlib/README.md) – Testing utilities and helpers.
 - [DataFrame Integration](dataframe/README.md) – DataFrame helper functions for Maryk objects.
+- [CLI](cli/README.md) – Interactive terminal client for browsing and editing stores.
 - **Stores**:
   - [Shared](store/shared/README.md) – Shared logic for building stores.
   - [Memory](store/memory/README.md) – In-memory store (non-persistent).

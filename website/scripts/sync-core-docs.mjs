@@ -61,6 +61,9 @@ const map = [
   ['src/content/docs/stores/foundationdb/architecture.mdx', '../store/foundationdb/docs/architecture.md'],
   ['src/content/docs/stores/foundationdb/storage.mdx', '../store/foundationdb/docs/storage.md'],
   ['src/content/docs/stores/foundationdb/local-testing.mdx', '../store/foundationdb/docs/local-testing.md'],
+
+  // CLI
+  ['src/content/docs/cli/commands.mdx', '../cli/docs/commands.md'],
 ];
 
   function rewriteLinks(md) {

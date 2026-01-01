@@ -34,8 +34,11 @@ class CliInputCompleter(
         }
 
         return when (command) {
-            "get", "model" -> completeModelToken(tokens, endsWithSpace, currentToken)
+            "get" -> completeGetToken(tokens, endsWithSpace, currentToken)
+            "model" -> completeModelToken(tokens, endsWithSpace, currentToken)
             "add" -> completeAddToken(tokens, endsWithSpace, currentToken)
+            "changes" -> completeChangesToken(tokens, endsWithSpace, currentToken)
+            "undelete" -> completeUndeleteToken(tokens, endsWithSpace, currentToken)
             "scan" -> completeScanToken(tokens, endsWithSpace, currentToken)
             "connect" -> completeConnectToken(tokens, endsWithSpace, currentToken)
             else -> null
@@ -79,6 +82,31 @@ class CliInputCompleter(
         return null
     }
 
+    private fun completeGetToken(tokens: List<String>, endsWithSpace: Boolean, currentToken: String): String? {
+        val options = listOf("--include-deleted")
+        val subcommands = listOf("save", "load", "set", "unset", "append", "remove", "delete", "undelete")
+
+        if (tokens.size == 1) {
+            return if (endsWithSpace) {
+                completeToken("", modelNames())
+            } else {
+                null
+            }
+        }
+        if (tokens.size == 2 && !endsWithSpace && !currentToken.startsWith("--")) {
+            return completeToken(currentToken, modelNames())
+        }
+
+        if (currentToken.startsWith("--")) {
+            return completeToken(currentToken, options)
+        }
+
+        if (endsWithSpace) {
+            return completeToken("", options + subcommands)
+        }
+        return null
+    }
+
     private fun completeAddToken(tokens: List<String>, endsWithSpace: Boolean, currentToken: String): String? {
         val options = listOf("--yaml", "--json", "--proto", "--meta", "--key")
 
@@ -97,6 +125,52 @@ class CliInputCompleter(
             return completeToken(currentToken, options)
         }
 
+        if (endsWithSpace) {
+            return completeToken("", options)
+        }
+        return null
+    }
+
+    private fun completeChangesToken(tokens: List<String>, endsWithSpace: Boolean, currentToken: String): String? {
+        val options = listOf("--from-version", "--to-version", "--limit", "--include-deleted")
+
+        if (tokens.size == 1) {
+            return if (endsWithSpace) {
+                completeToken("", modelNames())
+            } else {
+                null
+            }
+        }
+        if (tokens.size == 2 && !endsWithSpace && !currentToken.startsWith("--")) {
+            return completeToken(currentToken, modelNames())
+        }
+
+        if (currentToken.startsWith("--")) {
+            return completeToken(currentToken, options)
+        }
+        if (endsWithSpace) {
+            return completeToken("", options)
+        }
+        return null
+    }
+
+    private fun completeUndeleteToken(tokens: List<String>, endsWithSpace: Boolean, currentToken: String): String? {
+        val options = listOf("--if-version")
+
+        if (tokens.size == 1) {
+            return if (endsWithSpace) {
+                completeToken("", modelNames())
+            } else {
+                null
+            }
+        }
+        if (tokens.size == 2 && !endsWithSpace && !currentToken.startsWith("--")) {
+            return completeToken(currentToken, modelNames())
+        }
+
+        if (currentToken.startsWith("--")) {
+            return completeToken(currentToken, options)
+        }
         if (endsWithSpace) {
             return completeToken("", options)
         }

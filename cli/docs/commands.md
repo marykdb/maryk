@@ -9,7 +9,9 @@
 - `model [--with-deps] [--key-index-format] [<name|id>]` — render the schema for a model.
 - `model --all [--with-deps] [--key-index-format]` — render schemas for all models.
 - `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]` — add a new record from a file.
-- `get <model> <key> [subcommand ...]` — fetch a record and open the viewer, or run a record action inline.
+- `get <model> <key> [--include-deleted] [subcommand ...]` — fetch a record and open the viewer, or run a record action inline.
+- `undelete <model> <key> [--if-version <n>]` — restore a soft-deleted record.
+- `changes <model> <key> [options]` — show versioned changes for a record.
 - `scan <model> [options]` — browse records in a scrolling list.
 
 ## Quick example
@@ -74,6 +76,7 @@ Examples:
 add Client ./client.yaml
 add Client ./client.meta.yaml --meta
 add Client ./client.yaml --key AbCdEf123
+add Client - --yaml < ./client.yaml
 ```
 
 Notes:
@@ -81,6 +84,8 @@ Notes:
 - `--meta` expects a metadata file saved via `save --meta`; its key is used (version/deleted flags are ignored).
 - If `--key` is omitted, the key is derived from the values (UUID keys generate a new random key).
 - `--key` must match the metadata key when `--meta` is used.
+- YAML/JSON files can contain a list of objects to add multiple records.
+- Use `-` as the file path to read from stdin.
 
 ## Reference paths
 
@@ -103,6 +108,7 @@ Commands:
 - `append <ref> <value> [--if-version <n>]` — append to a list or add to a set.
 - `remove <ref> <value> [--if-version <n>]` — remove from a list or set.
 - `delete [--hard]` — soft delete (default) or hard delete.
+- `undelete [--if-version <n>]` — restore a soft-deleted record.
 - `close` (when opened from a scan) — return to the scan list.
 - `q|quit|exit` — leave the viewer.
 
@@ -121,6 +127,8 @@ Notes:
 - `--if-version` applies optimistic concurrency checks.
 - `save --meta` stores the record metadata; `load --meta` uses metadata from the file (key/version).
 - `append`/`remove` only support list or set references.
+- Use `get --include-deleted` to access soft-deleted records.
+- Use `-` as the load file path to read from stdin.
 
 ## Scan viewer
 
@@ -138,6 +146,7 @@ Commands:
 - `save <dir> [--yaml|--json|--proto] [--meta]` — export the selected record.
 - `load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]` — apply values to the selected record.
 - `delete [--hard]` — soft delete (default) or hard delete.
+- `undelete [--if-version <n>]` — restore a soft-deleted record.
 - `close` — leave the scan viewer.
 - `q|quit|exit` — leave the scan.
 
@@ -169,6 +178,27 @@ Scan options (from the `scan` command):
 - `--select <ref,...>`
 - `--show <ref,...>`
 - `--max-chars <n>`
+
+## Undelete
+
+```text
+undelete <model> <key> [--if-version <n>]
+```
+
+Restores a soft-deleted record.
+
+## Changes
+
+```text
+changes <model> <key> [--from-version <n>] [--to-version <n>] [--limit <n>] [--include-deleted]
+```
+
+Examples:
+
+```text
+changes Client AbCdEf123 --from-version 10
+changes Client AbCdEf123 --include-deleted --limit 100
+```
 
 Notes:
 - Results are fetched in pages (default 100) and the viewer auto-loads more as you scroll.

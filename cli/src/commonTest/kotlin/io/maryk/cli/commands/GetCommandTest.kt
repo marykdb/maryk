@@ -148,4 +148,43 @@ class GetCommandTest {
             result.lines,
         )
     }
+
+    @Test
+    fun includeDeletedDisablesSoftDeleteFilter() {
+        val values = SimpleMarykModel.create {
+            value with "hello"
+        }
+        val keyString = SimpleMarykModel.key(values).toString()
+
+        var captured: GetRequest<IsRootDataModel>? = null
+        val store = object : FakeDataStore(
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        ) {
+            @Suppress("UNCHECKED_CAST")
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP {
+                captured = request as GetRequest<IsRootDataModel>
+                val response = ValuesResponse(
+                    dataModel = request.dataModel,
+                    values = emptyList(),
+                )
+                @Suppress("UNCHECKED_CAST")
+                return response as RP
+            }
+        }
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+
+        val result = GetCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel", keyString, "--include-deleted"),
+        )
+
+        val request = requireNotNull(captured)
+        assertFalse(request.filterSoftDeleted)
+        assertTrue(result.isError)
+        assertTrue(result.lines.first().contains("No data found"))
+    }
 }

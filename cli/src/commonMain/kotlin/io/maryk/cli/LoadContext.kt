@@ -52,6 +52,7 @@ data class LoadContext(
     val dataModel: IsRootDataModel,
     val key: Key<IsRootDataModel>,
     val dataStore: IsDataStore,
+    val includeDeleted: Boolean = false,
 ) {
     fun load(
         path: String,
@@ -171,7 +172,7 @@ data class LoadContext(
 
     fun refreshView(): RefreshResult {
         val response = runBlocking {
-            dataStore.execute(dataModel.get(key))
+            dataStore.execute(dataModel.get(key, filterSoftDeleted = !includeDeleted))
         }
 
         val valuesWithMetaData = response.values.firstOrNull()

@@ -47,7 +47,9 @@ Once running interactively, type `help` to see the available commands, or `help 
 - `model [--with-deps] [--key-index-format] [<name|id>]`: Inspect a model's schema.
 - `model --all [--with-deps] [--key-index-format]`: Inspect all model schemas.
 - `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]`: Add a new record from a file.
-- `get <model> <key> [subcommand ...]`: Fetch a record and open a viewer, or run a record action inline.
+- `get <model> <key> [--include-deleted] [subcommand ...]`: Fetch a record and open a viewer, or run a record action inline.
+- `undelete <model> <key> [--if-version <n>]`: Restore a soft-deleted record.
+- `changes <model> <key> [options]`: Show versioned changes for a record.
 - `scan <model> [options]`: Browse records in a scrolling list.
 
 Tip: run `help <command>` for detailed usage, options, and subcommands.
@@ -74,6 +76,8 @@ Notes:
 - `--meta` expects a metadata file saved via `save --meta`.
 - If `--key` is omitted, the key is derived from the values (UUID keys generate a new random key).
 - `add` works in both interactive and one-shot mode.
+- YAML/JSON files can contain multiple objects to add in one call.
+- Use `-` as the file path to read from stdin.
 
 ## One-shot mode
 

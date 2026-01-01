@@ -88,11 +88,13 @@ class HelpCommand : Command {
                 "  --meta                 Load metadata file saved via `save --meta`.",
                 "  --key <base64>          Provide an explicit key for the new record.",
                 "Notes:",
+                "  - YAML/JSON files can contain a list of objects to add multiple records.",
+                "  - Use `-` as the file path to read from stdin.",
                 "  - If --key is omitted, the key is derived from values (UUID keys generate a new random key).",
                 "  - When --meta is used, --key must match the metadata key.",
             )
             "get" -> listOf(
-                "get <model> <key> [subcommand ...]",
+                "get <model> <key> [--include-deleted] [subcommand ...]",
                 "Fetch a record by key and show it in YAML, or run a subcommand inline.",
                 "Subcommands:",
                 "  save <dir> [--yaml|--json|--proto] [--meta]",
@@ -102,10 +104,25 @@ class HelpCommand : Command {
                 "  append <ref> <value> [--if-version <n>]",
                 "  remove <ref> <value> [--if-version <n>]",
                 "  delete [--hard]",
+                "  undelete [--if-version <n>]",
                 "Notes:",
                 "  - Values are parsed as Maryk YAML scalars for the referenced type.",
                 "  - `append`/`remove` only support list or set references.",
                 "  - `--if-version` applies optimistic concurrency checks.",
+                "  - Use `--include-deleted` to access soft-deleted records.",
+            )
+            "changes" -> listOf(
+                "changes <model> <key> [--from-version <n>] [--to-version <n>] [--limit <n>] [--include-deleted]",
+                "Show versioned changes for a record.",
+                "Options:",
+                "  --from-version <n>  Start version (inclusive, default 0).",
+                "  --to-version <n>    End version (inclusive).",
+                "  --limit <n>         Max versions to return (default 1000).",
+                "  --include-deleted   Include soft-deleted records.",
+            )
+            "undelete" -> listOf(
+                "undelete <model> <key> [--if-version <n>]",
+                "Restore a soft-deleted record.",
             )
             "scan" -> listOf(
                 "scan <model> [options]",

@@ -16,8 +16,16 @@ import maryk.core.query.RequestContext
 import maryk.core.query.filters.And
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.orders.IsOrder
+import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.changes.change
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.ChangeResponse
+import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DoesNotExist
+import maryk.core.query.responses.statuses.ServerFail
+import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
@@ -45,7 +53,7 @@ class ScanViewerInteraction(
     override val promptLabel: String = "scan> "
     override val introLines: List<String> = listOf(
         "Scanning ${dataModel.Meta.name}. Use Up/Down to move, PgUp/PgDn for pages, q/quit/exit to close.",
-        "Commands: get | save <dir> [--yaml|--json|--proto] [--meta] | load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta] | delete [--hard] | filter <expr> | show <refs>",
+        "Commands: get | save <dir> [--yaml|--json|--proto] [--meta] | load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta] | delete [--hard] | undelete [--if-version <n>] | filter <expr> | show <refs>",
     )
 
     private var currentWhere: IsFilter? = where
@@ -75,7 +83,7 @@ class ScanViewerInteraction(
                 return completeToken(currentToken, YES_NO_OPTIONS)
             }
 
-            val commands = listOf("get", "save", "load", "delete", "filter", "show", "q", "quit", "exit")
+            val commands = listOf("get", "save", "load", "delete", "undelete", "filter", "show", "q", "quit", "exit")
             if (tokens.size == 1 && !endsWithSpace) {
                 return completeToken(currentToken, commands)
             }
@@ -113,6 +121,14 @@ class ScanViewerInteraction(
                     }
                     if (endsWithSpace) {
                         return "--hard"
+                    }
+                }
+                "undelete" -> {
+                    if (tokens.size == 1 && !endsWithSpace) {
+                        return completeToken(currentToken, listOf("undelete"))
+                    }
+                    if (currentToken.startsWith("--")) {
+                        return completeToken(currentToken, listOf("--if-version"))
                     }
                 }
                 "show" -> {
@@ -195,6 +211,7 @@ class ScanViewerInteraction(
             "save" -> handleSave(arguments)
             "load" -> handleLoad(arguments)
             "delete" -> handleDelete(arguments)
+            "undelete" -> handleUndelete(arguments)
             "filter" -> handleFilter(arguments)
             "show" -> handleShow(arguments)
             else -> {
@@ -255,6 +272,7 @@ class ScanViewerInteraction(
             dataModel = dataModel,
             key = row.key,
             dataStore = dataStore,
+            includeDeleted = !filterSoftDeleted,
         )
         val refresh = loadContext.refreshView()
         return when (refresh) {
@@ -299,6 +317,7 @@ class ScanViewerInteraction(
             dataModel = dataModel,
             key = row.key,
             dataStore = dataStore,
+            includeDeleted = !filterSoftDeleted,
         )
         val refresh = loadContext.refreshView()
         return when (refresh) {
@@ -338,6 +357,7 @@ class ScanViewerInteraction(
             dataModel = dataModel,
             key = row.key,
             dataStore = dataStore,
+            includeDeleted = !filterSoftDeleted,
         )
         val result = try {
             loadContext.loadResult(
@@ -369,6 +389,32 @@ class ScanViewerInteraction(
             "Delete ${currentRowLabel()} (hard)? Type yes or no."
         } else {
             "Delete ${currentRowLabel()}? Type yes or no."
+        }
+        return InteractionResult.Stay(lines = statusLines())
+    }
+
+    private fun handleUndelete(arguments: List<String>): InteractionResult {
+        val row = rows.getOrNull(selectedIndex) ?: return InteractionResult.Stay(lines = listOf("No row selected."))
+        val parseResult = parseVersionGuardOptions(arguments)
+        if (parseResult is VersionGuardOptionsResult.Error) {
+            statusMessage = parseResult.message
+            return InteractionResult.Stay(lines = statusLines())
+        }
+        val options = (parseResult as VersionGuardOptionsResult.Success).options
+        val label = "${dataModel.Meta.name} ${row.key}"
+        val request = dataModel.change(row.key.change(ObjectSoftDeleteChange(false), lastVersion = options.ifVersion))
+        val response: ChangeResponse<IsRootDataModel> = runBlocking { dataStore.execute(request) }
+        val status = response.statuses.firstOrNull()
+        statusMessage = when (status) {
+            is ChangeSuccess -> "Restored $label (version ${status.version})."
+            is DoesNotExist -> "Restore failed: $label does not exist."
+            is ValidationFail -> status.exceptions.joinToString(
+                prefix = "Restore failed: ",
+                separator = "; "
+            ) { it.message ?: it.toString() }
+            is ServerFail -> "Restore failed: ${status.reason}"
+            null -> "Restore failed: no response status for $label."
+            else -> "Restore failed: ${status.statusType}"
         }
         return InteractionResult.Stay(lines = statusLines())
     }

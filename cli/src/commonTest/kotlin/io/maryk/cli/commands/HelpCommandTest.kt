@@ -29,6 +29,7 @@ class HelpCommandTest {
             listOf(
                 "  connect  Connect to a Maryk store.",
                 "  help     Show available commands.",
+                "Use `help <command>` for details.",
             ),
             result.lines.drop(1),
         )

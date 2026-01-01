@@ -2,9 +2,11 @@ package io.maryk.cli.commands
 
 import io.maryk.cli.SaveFormat
 import io.maryk.cli.readRecordValues
+import io.maryk.cli.readRecordValuesList
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
+import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.add
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
@@ -13,6 +15,7 @@ import maryk.core.query.responses.statuses.AuthFail
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 
 class AddCommand : Command {
@@ -57,8 +60,8 @@ class AddCommand : Command {
             is AddOptionsResult.Success -> optionsResult.options
         }
 
-        val loaded = try {
-            readRecordValues(dataModel, options.path, options.format, options.useMeta)
+        val parsed = try {
+            parseAddInput(dataModel, options)
         } catch (e: Throwable) {
             return CommandResult(
                 lines = listOf("Add failed: ${e.message ?: e::class.simpleName}"),
@@ -66,30 +69,43 @@ class AddCommand : Command {
             )
         }
 
-        val explicitKey = options.keyToken?.let { token ->
-            try {
-                dataModel.key(token)
-            } catch (e: Throwable) {
-                return CommandResult(
-                    lines = listOf("Add failed: invalid key: ${e.message ?: e::class.simpleName}"),
-                    isError = true,
-                )
+        val request = when (parsed) {
+            is AddInput.Single -> {
+                val explicitKey = parsed.keyToken?.let { token ->
+                    try {
+                        dataModel.key(token)
+                    } catch (e: Throwable) {
+                        return CommandResult(
+                            lines = listOf("Add failed: invalid key: ${e.message ?: e::class.simpleName}"),
+                            isError = true,
+                        )
+                    }
+                }
+
+                val metaKey = parsed.meta?.key
+                if (explicitKey != null && metaKey != null && explicitKey != metaKey) {
+                    return CommandResult(
+                        lines = listOf("Add failed: `--key` does not match metadata key."),
+                        isError = true,
+                    )
+                }
+
+                val key = explicitKey ?: metaKey
+                if (key != null) {
+                    dataModel.add(key to parsed.values)
+                } else {
+                    dataModel.add(parsed.values)
+                }
             }
-        }
-
-        val metaKey = loaded.meta?.key
-        if (explicitKey != null && metaKey != null && explicitKey != metaKey) {
-            return CommandResult(
-                lines = listOf("Add failed: `--key` does not match metadata key."),
-                isError = true,
-            )
-        }
-
-        val key = explicitKey ?: metaKey
-        val request = if (key != null) {
-            dataModel.add(key to loaded.values)
-        } else {
-            dataModel.add(loaded.values)
+            is AddInput.Multi -> {
+                if (parsed.keyToken != null) {
+                    return CommandResult(
+                        lines = listOf("Add failed: `--key` cannot be used with multiple objects."),
+                        isError = true,
+                    )
+                }
+                dataModel.add(*parsed.values.toTypedArray())
+            }
         }
 
         val response: AddResponse<IsRootDataModel> = runBlocking { dataStore.execute(request) }
@@ -120,6 +136,19 @@ class AddCommand : Command {
         val useMeta: Boolean,
         val keyToken: String?,
     )
+
+    private sealed class AddInput {
+        data class Single(
+            val values: Values<IsRootDataModel>,
+            val meta: ValuesWithMetaData<IsRootDataModel>?,
+            val keyToken: String?,
+        ) : AddInput()
+
+        data class Multi(
+            val values: List<Values<IsRootDataModel>>,
+            val keyToken: String?,
+        ) : AddInput()
+    }
 
     private sealed class AddOptionsResult {
         data class Success(val options: AddOptions) : AddOptionsResult()
@@ -192,6 +221,30 @@ class AddCommand : Command {
                 keyToken = keyToken,
             )
         )
+    }
+
+    private fun parseAddInput(
+        dataModel: IsRootDataModel,
+        options: AddOptions,
+    ): AddInput {
+        if (options.useMeta) {
+            val loaded = readRecordValues(dataModel, options.path, options.format, useMeta = true)
+            return AddInput.Single(loaded.values, loaded.meta, options.keyToken)
+        }
+
+        val multi = runCatching {
+            readRecordValuesList(dataModel, options.path, options.format)
+        }.getOrNull()
+
+        return if (multi != null) {
+            if (multi.isEmpty()) {
+                throw IllegalArgumentException("No objects found in ${options.path}.")
+            }
+            AddInput.Multi(values = multi, keyToken = options.keyToken)
+        } else {
+            val loaded = readRecordValues(dataModel, options.path, options.format, useMeta = false)
+            AddInput.Single(loaded.values, loaded.meta, options.keyToken)
+        }
     }
 
     private fun selectFormat(current: SaveFormat?, next: SaveFormat): SaveFormat? =

@@ -19,6 +19,8 @@ import io.maryk.cli.commands.ListCommand
 import io.maryk.cli.commands.ModelCommand
 import io.maryk.cli.commands.ScanCommand
 import io.maryk.cli.commands.AddCommand
+import io.maryk.cli.commands.ChangesCommand
+import io.maryk.cli.commands.UndeleteCommand
 import io.maryk.cli.commands.registerAll
 
 fun main(args: Array<String>) {
@@ -436,7 +438,9 @@ private fun defaultRegistry(
                 ConnectCommand(),
                 DisconnectCommand(),
                 AddCommand(),
+                UndeleteCommand(),
                 GetCommand(),
+                ChangesCommand(),
                 ScanCommand(),
                 ListCommand(),
                 ModelCommand(),
@@ -582,7 +586,7 @@ internal fun runOneShot(
 }
 
 private val EXIT_TOKENS = setOf("q", "quit", "exit")
-private val VIEWER_EXCLUDED_COMMANDS = setOf("add", "connect", "help", "list")
+private val VIEWER_EXCLUDED_COMMANDS = setOf("add", "changes", "connect", "help", "list", "undelete")
 
 private fun addTrailingBlank(lines: List<String>): List<String> {
     if (lines.isEmpty()) return lines

@@ -38,7 +38,7 @@ class GetCommand : Command {
         if (arguments.size < 2) {
             return CommandResult(
                 lines = listOf(
-                    "Usage: get <model> <base64-key>",
+                    "Usage: get <model> <base64-key> [--include-deleted] [subcommand ...]",
                     "Example: get SimpleMarykModel AbCdEf123",
                 ),
                 isError = true,
@@ -67,7 +67,8 @@ class GetCommand : Command {
             )
         }
 
-        val request: GetRequest<IsRootDataModel> = dataModel.get(key)
+        val (includeDeleted, subcommandTokens) = parseOptions(arguments.drop(2))
+        val request: GetRequest<IsRootDataModel> = dataModel.get(key, filterSoftDeleted = !includeDeleted)
         val response = runBlocking {
             dataStore.execute(request)
         }
@@ -79,7 +80,6 @@ class GetCommand : Command {
             )
 
         val values = valuesWithMetaData.values
-        val subcommandTokens = arguments.drop(2)
         val subcommandName = subcommandTokens.firstOrNull()?.lowercase()
 
         val saveContext = if (subcommandTokens.isEmpty() || subcommandName == "save") {
@@ -98,6 +98,7 @@ class GetCommand : Command {
             dataModel = dataModel,
             key = key,
             dataStore = dataStore,
+            includeDeleted = includeDeleted,
         )
 
         val deleteContext = DeleteContext(
@@ -183,6 +184,22 @@ class GetCommand : Command {
         return withoutAnsi.filter { char ->
             char == '\n' || char == '\t' || !char.isISOControl()
         }
+    }
+
+    private fun parseOptions(tokens: List<String>): Pair<Boolean, List<String>> {
+        if (tokens.isEmpty()) return false to emptyList()
+        var includeDeleted = false
+        var index = 0
+        while (index < tokens.size) {
+            val token = tokens[index]
+            if (token.equals("--include-deleted", ignoreCase = true)) {
+                includeDeleted = true
+                index += 1
+                continue
+            }
+            break
+        }
+        return includeDeleted to tokens.drop(index)
     }
 
     private fun buildSaveContext(

@@ -13,7 +13,7 @@ internal fun runRecordSubcommand(
 ): RecordSubcommandResult {
     if (tokens.isEmpty()) {
         return RecordSubcommandResult.Error(
-            "Missing subcommand. Use save, load, set, unset, append, remove, or delete."
+            "Missing subcommand. Use save, load, set, unset, append, remove, delete, or undelete."
         )
     }
 
@@ -80,6 +80,30 @@ internal fun runRecordSubcommand(
                     } catch (e: Throwable) {
                         ApplyResult(
                             "${command.replaceFirstChar { it.uppercase() }} failed: ${e.message ?: e::class.simpleName}",
+                            success = false,
+                        )
+                    }
+                    if (result.success) {
+                        RecordSubcommandResult.Success(listOf(result.message))
+                    } else {
+                        RecordSubcommandResult.Error(result.message)
+                    }
+                }
+            }
+        }
+        "undelete", "restore" -> {
+            val resolvedLoadContext = loadContext
+                ?: return RecordSubcommandResult.Error("Undelete not available for this record.")
+            when (val parseResult = parseVersionGuardOptions(options)) {
+                is VersionGuardOptionsResult.Error -> RecordSubcommandResult.Error(
+                    "Undelete failed: ${parseResult.message}"
+                )
+                is VersionGuardOptionsResult.Success -> {
+                    val result = try {
+                        applyUndelete(resolvedLoadContext, parseResult.options)
+                    } catch (e: Throwable) {
+                        ApplyResult(
+                            "Undelete failed: ${e.message ?: e::class.simpleName}",
                             success = false,
                         )
                     }

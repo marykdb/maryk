@@ -20,6 +20,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.IsReferenceValueOrNullPair
@@ -69,6 +70,15 @@ internal data class DeleteOptions(
 internal sealed class DeleteOptionsResult {
     data class Success(val options: DeleteOptions) : DeleteOptionsResult()
     data class Error(val message: String) : DeleteOptionsResult()
+}
+
+internal data class VersionGuardOptions(
+    val ifVersion: ULong?,
+)
+
+internal sealed class VersionGuardOptionsResult {
+    data class Success(val options: VersionGuardOptions) : VersionGuardOptionsResult()
+    data class Error(val message: String) : VersionGuardOptionsResult()
 }
 
 internal fun parseSaveOptions(tokens: List<String>, saveContext: SaveContext?): SaveOptionsResult {
@@ -369,6 +379,11 @@ internal fun applyRemove(loadContext: LoadContext, options: InlineOptions): Appl
     }
 }
 
+internal fun applyUndelete(loadContext: LoadContext, options: VersionGuardOptions): ApplyResult {
+    val change = ObjectSoftDeleteChange(false)
+    return loadContext.applyChangesResult(listOf(change), ifVersion = options.ifVersion, action = "Restored")
+}
+
 internal fun parseDeleteOptions(tokens: List<String>): DeleteOptionsResult {
     var hardDelete = false
     tokens.forEach { token ->
@@ -382,6 +397,37 @@ internal fun parseDeleteOptions(tokens: List<String>): DeleteOptionsResult {
         }
     }
     return DeleteOptionsResult.Success(DeleteOptions(hardDelete = hardDelete))
+}
+
+internal fun parseVersionGuardOptions(tokens: List<String>): VersionGuardOptionsResult {
+    var ifVersion: ULong? = null
+    var index = 0
+    while (index < tokens.size) {
+        val token = tokens[index]
+        val lowered = token.lowercase()
+        when {
+            lowered.startsWith("--if-version=") -> {
+                val value = token.substringAfter("=", missingDelimiterValue = "").ifBlank {
+                    return VersionGuardOptionsResult.Error("`--if-version` requires a value.")
+                }
+                ifVersion = value.toULongOrNull()
+                    ?: return VersionGuardOptionsResult.Error("Invalid `--if-version` value: $value")
+            }
+            lowered == "--if-version" -> {
+                if (index + 1 >= tokens.size) {
+                    return VersionGuardOptionsResult.Error("`--if-version` requires a value.")
+                }
+                val value = tokens[index + 1]
+                ifVersion = value.toULongOrNull()
+                    ?: return VersionGuardOptionsResult.Error("Invalid `--if-version` value: $value")
+                index += 1
+            }
+            token.startsWith("--") -> return VersionGuardOptionsResult.Error("Unknown option: $token")
+            else -> return VersionGuardOptionsResult.Error("Unexpected argument: $token")
+        }
+        index += 1
+    }
+    return VersionGuardOptionsResult.Success(VersionGuardOptions(ifVersion))
 }
 
 private fun selectFormat(current: SaveFormat?, next: SaveFormat): SaveFormat? {

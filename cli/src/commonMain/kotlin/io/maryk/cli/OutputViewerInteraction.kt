@@ -35,6 +35,7 @@ class OutputViewerInteraction(
                 add("unset <ref> [--if-version <n>]")
                 add("append <ref> <value> [--if-version <n>]")
                 add("remove <ref> <value> [--if-version <n>]")
+                add("undelete [--if-version <n>]")
             }
             if (deleteContext != null) {
                 add("delete [--hard]")
@@ -138,6 +139,17 @@ class OutputViewerInteraction(
                 return null
             }
 
+            if (command == "undelete") {
+                if (loadContext == null) return null
+                if (tokens.size == 1 && !endsWithSpace) {
+                    return completeToken(currentToken, listOf("undelete"))
+                }
+                if (currentToken.startsWith("--")) {
+                    return completeToken(currentToken, listOf("--if-version"))
+                }
+                return null
+            }
+
             if (command == "delete") {
                 if (deleteContext == null) return null
                 if (currentToken.startsWith("--")) {
@@ -157,6 +169,7 @@ class OutputViewerInteraction(
                     add("unset")
                     add("append")
                     add("remove")
+                    add("undelete")
                 }
                 if (deleteContext != null) add("delete")
                 if (returnInteraction != null) add("close")
@@ -332,6 +345,32 @@ class OutputViewerInteraction(
                     if (pendingHardDelete) append(" (hard)")
                     append("? Type yes or no.")
                 }
+                return InteractionResult.Stay(lines = statusLines())
+            }
+
+            trimmed.equals("undelete", ignoreCase = true)
+                || trimmed.startsWith("undelete ", ignoreCase = true) -> {
+                val resolvedLoadContext = loadContext ?: run {
+                    statusMessage = "Undelete not available for this output."
+                    return InteractionResult.Stay(lines = statusLines())
+                }
+                val tokens = trimmed.split(WHITESPACE_REGEX).filter { it.isNotEmpty() }
+                val parseResult = parseVersionGuardOptions(tokens.drop(1))
+                if (parseResult is VersionGuardOptionsResult.Error) {
+                    statusMessage = parseResult.message
+                    return InteractionResult.Stay(lines = statusLines())
+                }
+                val options = (parseResult as VersionGuardOptionsResult.Success).options
+                val result = try {
+                    applyUndelete(resolvedLoadContext, options)
+                } catch (e: Throwable) {
+                    ApplyResult(
+                        "Undelete failed: ${e.message ?: e::class.simpleName}",
+                        success = false,
+                    )
+                }
+                val refreshError = if (result.success) refreshView() else null
+                statusMessage = mergeStatusMessage(result.message, refreshError)
                 return InteractionResult.Stay(lines = statusLines())
             }
 

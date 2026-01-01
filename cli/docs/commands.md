@@ -2,7 +2,7 @@
 
 ## Global commands
 
-- `help` — show available commands.
+- `help [command]` — show available commands or details for one command.
 - `connect` — connect to a store.
 - `disconnect` — close the current store connection.
 - `list` — list available data models.
@@ -82,20 +82,29 @@ Notes:
 - If `--key` is omitted, the key is derived from the values (UUID keys generate a new random key).
 - `--key` must match the metadata key when `--meta` is used.
 
+## Reference paths
+
+Many commands take property references (for `set`, `show`, `select`, `order`, etc.). Use dot notation:
+
+- `info.name.firstNames` — nested fields
+- `addresses.@0` — list item at index 0
+- `addresses.*` — list/map wildcard
+- `moment.*ShiftMetaDataType.executor` — multi-type list/map with type name
+
 ## Get viewer
 
 When `get` returns data, you enter a viewer with scrolling output.
 
 Commands:
-- `save <dir> [--yaml|--json|--proto] [--meta]`
-- `load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]`
-- `set <ref> <value> [--if-version <n>]`
-- `unset <ref> [--if-version <n>]`
-- `append <ref> <value> [--if-version <n>]`
-- `remove <ref> <value> [--if-version <n>]`
-- `delete [--hard]`
-- `close` (when opened from a scan)
-- `q|quit|exit`
+- `save <dir> [--yaml|--json|--proto] [--meta]` — export the record.
+- `load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]` — apply values from a file.
+- `set <ref> <value> [--if-version <n>]` — set or replace a value.
+- `unset <ref> [--if-version <n>]` — clear a value.
+- `append <ref> <value> [--if-version <n>]` — append to a list or add to a set.
+- `remove <ref> <value> [--if-version <n>]` — remove from a list or set.
+- `delete [--hard]` — soft delete (default) or hard delete.
+- `close` (when opened from a scan) — return to the scan list.
+- `q|quit|exit` — leave the viewer.
 
 If the viewer was opened from a scan, `close` returns to the scan list.
 
@@ -111,6 +120,7 @@ Notes:
 - Strings do not require quotes, but quoting is recommended for spaces or YAML special characters.
 - `--if-version` applies optimistic concurrency checks.
 - `save --meta` stores the record metadata; `load --meta` uses metadata from the file (key/version).
+- `append`/`remove` only support list or set references.
 
 ## Scan viewer
 
@@ -123,9 +133,12 @@ Navigation:
 
 Commands:
 - `get` — open the selected record in the viewer.
-- `show <ref,...>` — pick which fields to show for each row. This also updates the select graph so only those fields are fetched.
-- `filter <expr>` — add another `where` filter clause (Maryk YAML format).
-- `save`, `load`, `delete` — operate on the selected record.
+- `show <ref,...>` — choose fields to display (also updates the select graph).
+- `filter <expr>` — add another `where` clause (Maryk YAML format).
+- `save <dir> [--yaml|--json|--proto] [--meta]` — export the selected record.
+- `load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]` — apply values to the selected record.
+- `delete [--hard]` — soft delete (default) or hard delete.
+- `close` — leave the scan viewer.
 - `q|quit|exit` — leave the scan.
 
 Filtering examples (Maryk YAML tags):

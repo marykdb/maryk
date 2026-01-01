@@ -26,7 +26,7 @@ For release builds on macOS, you can run:
 
 When executed in a non-interactive environment (like Gradle), the release binary prints the bundled help text and exits cleanly.
 
-Once running interactively, type `help` to see the available commands. Use `Ctrl+C` to exit the session.
+Once running interactively, type `help` to see the available commands, or `help <command>` for detailed usage. Use `Ctrl+C` to exit the session.
 
 ### Connecting to a store
 
@@ -49,6 +49,8 @@ Once running interactively, type `help` to see the available commands. Use `Ctrl
 - `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]`: Add a new record from a file.
 - `get <model> <key> [subcommand ...]`: Fetch a record and open a viewer, or run a record action inline.
 - `scan <model> [options]`: Browse records in a scrolling list.
+
+Tip: run `help <command>` for detailed usage, options, and subcommands.
 
 Example session:
 

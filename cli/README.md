@@ -44,8 +44,8 @@ Once running interactively, type `help` to see the available commands. Use `Ctrl
 - `connect`: Connect to a store (`rocksdb` or `foundationdb`).
 - `disconnect`: Close the current store connection.
 - `list`: Show available data models.
-- `model <name|id>`: Inspect a model's schema.
-- `model --key-index-format <name|id>`: Include key and index format details.
+- `model [--with-deps] [--key-index-format] [<name|id>]`: Inspect a model's schema.
+- `model --all [--with-deps] [--key-index-format]`: Inspect all model schemas.
 - `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]`: Add a new record from a file.
 - `get <model> <key> [subcommand ...]`: Fetch a record and open a viewer, or run a record action inline.
 - `scan <model> [options]`: Browse records in a scrolling list.
@@ -94,7 +94,7 @@ Notes:
 
 ### Get viewer
 
-Commands: `save`, `load`, `set`, `unset`, `append`, `remove`, `delete`, `q/quit/exit`.
+Commands: `save`, `load`, `set`, `unset`, `append`, `remove`, `delete`, `close` (when opened from a scan), `q/quit/exit`.
 Edits apply immediately and refresh the view.
 
 Inline edit parsing:

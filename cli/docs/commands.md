@@ -6,8 +6,8 @@
 - `connect` — connect to a store.
 - `disconnect` — close the current store connection.
 - `list` — list available data models.
-- `model <name|id>` — render the schema for a model.
-- `model --key-index-format <name|id>` — include key and index format details.
+- `model [--with-deps] [--key-index-format] [<name|id>]` — render the schema for a model.
+- `model --all [--with-deps] [--key-index-format]` — render schemas for all models.
 - `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]` — add a new record from a file.
 - `get <model> <key> [subcommand ...]` — fetch a record and open the viewer, or run a record action inline.
 - `scan <model> [options]` — browse records in a scrolling list.
@@ -44,6 +44,22 @@ connect rocksdb --dir /path/to/rocksdb
 connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]
 ```
 
+## Model
+
+```text
+model [--with-deps] [--key-index-format] [<name|id>]
+model --all [--with-deps] [--key-index-format]
+```
+
+Options:
+- `--with-deps` includes dependent definitions.
+- `--key-index-format` prints key/index format details.
+- `--all` renders every model in the connected store.
+
+When the output viewer is shown, `save` supports YAML/JSON/PROTO, plus Kotlin output:
+- `save <dir> --kotlin --package <name>` (generates Kotlin files)
+- `save <dir> --no-deps` (export without dependencies)
+
 ## Add
 
 Add a new record from a file:
@@ -78,6 +94,7 @@ Commands:
 - `append <ref> <value> [--if-version <n>]`
 - `remove <ref> <value> [--if-version <n>]`
 - `delete [--hard]`
+- `close` (when opened from a scan)
 - `q|quit|exit`
 
 If the viewer was opened from a scan, `close` returns to the scan list.

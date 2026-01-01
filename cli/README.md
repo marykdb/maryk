@@ -57,6 +57,20 @@ list
 scan Client --show info.name.firstNames,info.name.familyName
 ```
 
+## One-shot mode
+
+Run a single command without the interactive UI:
+
+```text
+maryk --connect rocksdb --dir ./data --exec "list"
+maryk --connect rocksdb --dir ./data --exec "model Client"
+```
+
+Notes:
+- `--connect` is required for one-shot mode.
+- `--exec` is parsed the same way as CLI input (quoted arguments are supported).
+- Commands that open interactive viewers (`get`, `scan`, or `connect` without args) are rejected in one-shot mode.
+
 ## Interactive viewers
 
 ### Get viewer

@@ -20,17 +20,29 @@ import io.maryk.cli.commands.ModelCommand
 import io.maryk.cli.commands.ScanCommand
 import io.maryk.cli.commands.registerAll
 
-fun main() {
+fun main(args: Array<String>) {
     runCatching {
         val state = CliState()
         val environment = BasicCliEnvironment
         val registry = defaultRegistry(state, environment)
-        if (!isInteractiveTerminal()) {
-            printNonInteractiveHelp(registry)
-            return
+        when (val oneShot = parseOneShotArgs(args)) {
+            is OneShotParseResult.Error -> {
+                printOneShotUsage()
+                println("Error: ${oneShot.message}")
+                exitWithCode(1)
+            }
+            is OneShotParseResult.Success -> {
+                val exitCode = runOneShot(registry, oneShot.options)
+                exitWithCode(exitCode)
+            }
+            null -> {
+                if (!isInteractiveTerminal()) {
+                    printNonInteractiveHelp(registry)
+                    return
+                }
+                MarykCli(registry).run()
+            }
         }
-
-        MarykCli(registry).run()
     }.onFailure { t ->
         println("CLI fatal error: ${t::class.simpleName}: ${t.message ?: "no message"}")
         t.printStackTrace()
@@ -432,9 +444,136 @@ private fun defaultRegistry(
 
 private fun printNonInteractiveHelp(registry: CommandRegistry) {
     println("Maryk CLI")
+    println("One-shot usage: maryk --connect <store> [--dir <path>] [--cluster <file>] [--tenant <name>] --exec \"<command>\"")
     println("Type `help` to see available commands. Use Ctrl+C to exit.")
     val help = registry.execute("help", emptyList())
     help.lines.forEach { println(it) }
+}
+
+internal fun printOneShotUsage() {
+    println("One-shot usage:")
+    println("  maryk --connect <store> [--dir <path>] [--cluster <file>] [--tenant <name>] --exec \"<command>\"")
+}
+
+internal data class OneShotOptions(
+    val store: String,
+    val connectArgs: List<String>,
+    val commandLine: String,
+)
+
+internal sealed class OneShotParseResult {
+    data class Success(val options: OneShotOptions) : OneShotParseResult()
+    data class Error(val message: String) : OneShotParseResult()
+}
+
+internal fun parseOneShotArgs(args: Array<String>): OneShotParseResult? {
+    if (args.isEmpty()) return null
+    if (!args.contains("--exec")) return null
+
+    var store: String? = null
+    val connectArgs = mutableListOf<String>()
+    var exec: String? = null
+    var collectingConnect = false
+    var index = 0
+
+    while (index < args.size) {
+        val token = args[index]
+        when (token) {
+            "--connect" -> {
+                if (store != null) {
+                    return OneShotParseResult.Error("`--connect` can only be specified once.")
+                }
+                val value = args.getOrNull(index + 1)
+                    ?: return OneShotParseResult.Error("`--connect` requires a store type.")
+                store = value
+                collectingConnect = true
+                index += 1
+            }
+            "--exec" -> {
+                if (exec != null) {
+                    return OneShotParseResult.Error("`--exec` can only be specified once.")
+                }
+                val value = args.getOrNull(index + 1)
+                    ?: return OneShotParseResult.Error("`--exec` requires a command string.")
+                exec = value
+                collectingConnect = false
+                index += 1
+            }
+            else -> {
+                if (collectingConnect) {
+                    connectArgs += token
+                } else {
+                    return OneShotParseResult.Error("Unknown option: $token")
+                }
+            }
+        }
+        index += 1
+    }
+
+    if (store == null) {
+        return OneShotParseResult.Error("`--connect` is required for one-shot mode.")
+    }
+    if (exec == null) {
+        return OneShotParseResult.Error("`--exec` is required for one-shot mode.")
+    }
+
+    return OneShotParseResult.Success(
+        OneShotOptions(
+            store = store,
+            connectArgs = connectArgs,
+            commandLine = exec,
+        )
+    )
+}
+
+internal fun runOneShot(
+    registry: CommandRegistry,
+    options: OneShotOptions,
+): Int {
+    val state = registry.state
+    return try {
+        val connectionResult = registry.execute(
+            "connect",
+            listOf(options.store) + options.connectArgs,
+        )
+        if (connectionResult.isError) {
+            connectionResult.lines.forEach(::println)
+            return 1
+        }
+        if (state.hasActiveInteraction()) {
+            state.clearInteraction()
+            println("Connect requires interactive mode. Run without --exec to use it.")
+            return 1
+        }
+
+        val parsed = CommandLineParser.parse(options.commandLine)
+        val tokens = when (parsed) {
+            is CommandLineParser.ParseResult.Error -> {
+                println("Command parse error: ${parsed.message}")
+                return 1
+            }
+            is CommandLineParser.ParseResult.Success -> parsed.tokens
+        }
+
+        if (tokens.isEmpty()) {
+            println("No command provided for --exec.")
+            return 1
+        }
+
+        val commandName = tokens.first()
+        val result = registry.execute(commandName, tokens.drop(1))
+        result.lines.forEach(::println)
+
+        if (state.hasActiveInteraction()) {
+            state.clearInteraction()
+            println("Command `$commandName` requires interactive mode. Run without --exec to use it.")
+            return 1
+        }
+
+        if (result.isError) 1 else 0
+    } finally {
+        state.clearConnection()?.close()
+    }
 }
 
 private val EXIT_TOKENS = setOf("q", "quit", "exit")

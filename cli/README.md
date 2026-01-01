@@ -39,13 +39,14 @@ Once running interactively, type `help` to see the available commands. Use `Ctrl
 - The CLI uses a lightweight command line parser that supports quoted arguments, preparing the client for future commands like store connections and queries.
 - Tests live in `cli/src/commonTest/kotlin` and can be executed via `./gradlew :cli:jvmTest`.
 
-## Commands (non-interactive)
+## Commands
 
 - `connect`: Connect to a store (`rocksdb` or `foundationdb`).
 - `disconnect`: Close the current store connection.
 - `list`: Show available data models.
 - `model <name|id>`: Inspect a model's schema.
 - `model --key-index-format <name|id>`: Include key and index format details.
+- `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]`: Add a new record from a file.
 - `get <model> <key> [subcommand ...]`: Fetch a record and open a viewer, or run a record action inline.
 - `scan <model> [options]`: Browse records in a scrolling list.
 
@@ -57,6 +58,21 @@ list
 scan Client --show info.name.firstNames,info.name.familyName
 ```
 
+### Adding records
+
+Use `add` with a file produced by `save` (or authored manually):
+
+```text
+add Client ./client.yaml
+add Client ./client.meta.yaml --meta
+add Client ./client.yaml --key AbCdEf123
+```
+
+Notes:
+- `--meta` expects a metadata file saved via `save --meta`.
+- If `--key` is omitted, the key is derived from the values (UUID keys generate a new random key).
+- `add` works in both interactive and one-shot mode.
+
 ## One-shot mode
 
 Run a single command without the interactive UI:
@@ -64,6 +80,7 @@ Run a single command without the interactive UI:
 ```text
 maryk --connect rocksdb --dir ./data --exec "list"
 maryk --connect rocksdb --dir ./data --exec "model Client"
+maryk --connect rocksdb --dir ./data --exec "add Client ./client.yaml"
 ```
 
 Notes:

@@ -35,6 +35,7 @@ class CliInputCompleter(
 
         return when (command) {
             "get", "model" -> completeModelToken(tokens, endsWithSpace, currentToken)
+            "add" -> completeAddToken(tokens, endsWithSpace, currentToken)
             "scan" -> completeScanToken(tokens, endsWithSpace, currentToken)
             "connect" -> completeConnectToken(tokens, endsWithSpace, currentToken)
             else -> null
@@ -72,6 +73,30 @@ class CliInputCompleter(
         if (currentToken.startsWith("--")) {
             return completeToken(currentToken, options)
         }
+        if (endsWithSpace) {
+            return completeToken("", options)
+        }
+        return null
+    }
+
+    private fun completeAddToken(tokens: List<String>, endsWithSpace: Boolean, currentToken: String): String? {
+        val options = listOf("--yaml", "--json", "--proto", "--meta", "--key")
+
+        if (tokens.size == 1) {
+            return if (endsWithSpace) {
+                completeToken("", modelNames())
+            } else {
+                null
+            }
+        }
+        if (tokens.size == 2 && !endsWithSpace && !currentToken.startsWith("--")) {
+            return completeToken(currentToken, modelNames())
+        }
+
+        if (currentToken.startsWith("--")) {
+            return completeToken(currentToken, options)
+        }
+
         if (endsWithSpace) {
             return completeToken("", options)
         }

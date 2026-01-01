@@ -29,8 +29,6 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import maryk.core.yaml.MarykYamlReader
 import maryk.datastore.shared.IsDataStore
-import maryk.file.File
-import maryk.json.JsonReader
 import maryk.yaml.YamlWriter
 
 data class ApplyResult(
@@ -75,7 +73,7 @@ data class LoadContext(
         }
 
         val loaded = try {
-            readValues(path, format, useMeta)
+            readRecordValues(dataModel, path, format, useMeta)
         } catch (e: Throwable) {
             return ApplyResult(
                 "Load failed: ${e.message ?: e::class.simpleName}",
@@ -224,72 +222,6 @@ data class LoadContext(
         )
 
         return RefreshResult.Success(lines, saveContext)
-    }
-
-    private data class LoadedValues(
-        val values: Values<IsRootDataModel>,
-        val meta: ValuesWithMetaData<IsRootDataModel>? = null,
-    )
-
-    private fun readValues(path: String, format: SaveFormat, useMeta: Boolean): LoadedValues {
-        return if (useMeta) {
-            readMetaValues(path, format)
-        } else {
-            LoadedValues(readDataValues(path, format))
-        }
-    }
-
-    private fun readDataValues(path: String, format: SaveFormat): Values<IsRootDataModel> {
-        @Suppress("UNCHECKED_CAST")
-        val serializer = dataModel.Serializer as IsDataModelSerializer<
-            Values<IsRootDataModel>,
-            IsRootDataModel,
-            IsPropertyContext
-        >
-
-        return when (format) {
-            SaveFormat.YAML -> {
-                val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
-                serializer.readJson(MarykYamlReader(content), null)
-            }
-            SaveFormat.JSON -> {
-                val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
-                val iterator = content.iterator()
-                val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
-                serializer.readJson(reader, null)
-            }
-            SaveFormat.PROTO -> {
-                val bytes = File.readBytes(path) ?: throw IllegalArgumentException("File not found: $path")
-                var index = 0
-                serializer.readProtoBuf(bytes.size, reader = { bytes[index++] }, context = null)
-            }
-            SaveFormat.KOTLIN -> throw IllegalArgumentException("Kotlin input is not supported.")
-        }
-    }
-
-    private fun readMetaValues(path: String, format: SaveFormat): LoadedValues {
-        val requestContext = createRequestContext()
-        val metaValues = when (format) {
-            SaveFormat.YAML -> {
-                val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
-                ValuesWithMetaData.Serializer.readJson(MarykYamlReader(content), requestContext)
-            }
-            SaveFormat.JSON -> {
-                val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
-                val iterator = content.iterator()
-                val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
-                ValuesWithMetaData.Serializer.readJson(reader, requestContext)
-            }
-            SaveFormat.PROTO -> {
-                val bytes = File.readBytes(path) ?: throw IllegalArgumentException("File not found: $path")
-                var index = 0
-                ValuesWithMetaData.Serializer.readProtoBuf(bytes.size, reader = { bytes[index++] }, context = requestContext)
-            }
-            SaveFormat.KOTLIN -> throw IllegalArgumentException("Kotlin input is not supported.")
-        }
-
-        val meta = ValuesWithMetaData(metaValues)
-        return LoadedValues(meta.values, meta)
     }
 
     private fun createRequestContext(

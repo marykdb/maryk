@@ -8,6 +8,7 @@
 - `list` — list available data models.
 - `model <name|id>` — render the schema for a model.
 - `model --key-index-format <name|id>` — include key and index format details.
+- `add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]` — add a new record from a file.
 - `get <model> <key> [subcommand ...]` — fetch a record and open the viewer, or run a record action inline.
 - `scan <model> [options]` — browse records in a scrolling list.
 
@@ -26,6 +27,7 @@ Run a single command without the interactive UI:
 ```text
 maryk --connect rocksdb --dir ./data --exec "list"
 maryk --connect rocksdb --dir ./data --exec "model Client"
+maryk --connect rocksdb --dir ./data --exec "add Client ./client.yaml"
 ```
 
 Notes:
@@ -41,6 +43,28 @@ Notes:
 connect rocksdb --dir /path/to/rocksdb
 connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]
 ```
+
+## Add
+
+Add a new record from a file:
+
+```text
+add <model> <file> [--yaml|--json|--proto] [--meta] [--key <base64>]
+```
+
+Examples:
+
+```text
+add Client ./client.yaml
+add Client ./client.meta.yaml --meta
+add Client ./client.yaml --key AbCdEf123
+```
+
+Notes:
+- Format defaults to YAML.
+- `--meta` expects a metadata file saved via `save --meta`; its key is used (version/deleted flags are ignored).
+- If `--key` is omitted, the key is derived from the values (UUID keys generate a new random key).
+- `--key` must match the metadata key when `--meta` is used.
 
 ## Get viewer
 

@@ -18,7 +18,9 @@ import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import io.maryk.cli.DeleteContext
 import io.maryk.cli.LoadContext
+import io.maryk.cli.RecordSubcommandResult
 import io.maryk.cli.SaveContext
+import io.maryk.cli.runRecordSubcommand
 import maryk.yaml.YamlWriter
 import maryk.core.query.requests.delete
 
@@ -76,9 +78,58 @@ class GetCommand : Command {
                 isError = true,
             )
 
+        val values = valuesWithMetaData.values
+        val subcommandTokens = arguments.drop(2)
+        val subcommandName = subcommandTokens.firstOrNull()?.lowercase()
+
+        val saveContext = if (subcommandTokens.isEmpty() || subcommandName == "save") {
+            buildSaveContext(
+                dataModel = dataModel,
+                keyToken = keyToken,
+                values = values,
+                valuesWithMetaData = valuesWithMetaData,
+            )
+        } else {
+            null
+        }
+
+        val loadContext = LoadContext(
+            label = "${dataModel.Meta.name} $keyToken",
+            dataModel = dataModel,
+            key = key,
+            dataStore = dataStore,
+        )
+
+        val deleteContext = DeleteContext(
+            label = "${dataModel.Meta.name} $keyToken",
+        ) { hardDelete ->
+            val request = dataModel.delete(key, hardDelete = hardDelete)
+            runBlocking { dataStore.execute(request) }
+            if (hardDelete) {
+                listOf("Hard deleted ${dataModel.Meta.name} $keyToken.")
+            } else {
+                listOf("Deleted ${dataModel.Meta.name} $keyToken.")
+            }
+        }
+
+        if (subcommandTokens.isNotEmpty()) {
+            val result = runRecordSubcommand(
+                tokens = subcommandTokens,
+                saveContext = saveContext,
+                loadContext = loadContext,
+                deleteContext = deleteContext,
+            )
+            return when (result) {
+                is RecordSubcommandResult.Success -> CommandResult(lines = result.lines)
+                is RecordSubcommandResult.Error -> CommandResult(
+                    lines = listOf(result.message),
+                    isError = true,
+                )
+            }
+        }
+
         val yamlBuilder = StringBuilder()
         val yamlWriter = YamlWriter { yamlBuilder.append(it) }
-        val values = valuesWithMetaData.values
         @Suppress("UNCHECKED_CAST")
         val serializer = dataModel.Serializer as IsDataModelSerializer<Values<IsRootDataModel>, IsRootDataModel, IsPropertyContext>
         serializer.writeJson(values, yamlWriter)
@@ -103,32 +154,6 @@ class GetCommand : Command {
                 addAll(yamlLines)
             }
             add("----- End of record: ${dataModel.Meta.name} $keyToken -----")
-        }
-
-        val saveContext = buildSaveContext(
-            dataModel = dataModel,
-            keyToken = keyToken,
-            values = values,
-            valuesWithMetaData = valuesWithMetaData,
-        )
-
-        val loadContext = LoadContext(
-            label = "${dataModel.Meta.name} $keyToken",
-            dataModel = dataModel,
-            key = key,
-            dataStore = dataStore,
-        )
-
-        val deleteContext = DeleteContext(
-            label = "${dataModel.Meta.name} $keyToken",
-        ) { hardDelete ->
-            val request = dataModel.delete(key, hardDelete = hardDelete)
-            runBlocking { dataStore.execute(request) }
-            if (hardDelete) {
-                listOf("Hard deleted ${dataModel.Meta.name} $keyToken.")
-            } else {
-                listOf("Deleted ${dataModel.Meta.name} $keyToken.")
-            }
         }
 
         return CommandResult(

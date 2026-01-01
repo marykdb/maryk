@@ -577,6 +577,28 @@ class ScanViewerInteraction(
         return lines
     }
 
+    internal fun snapshotLines(
+        includeHeader: Boolean = true,
+        includeFooter: Boolean = false,
+        includeSelection: Boolean = true,
+    ): List<String> {
+        val lines = mutableListOf<String>()
+        if (includeHeader) {
+            lines.addAll(buildHeaderLines())
+        }
+        if (rows.isEmpty()) {
+            lines.add("<no results>")
+            return lines
+        }
+        rows.forEachIndexed { index, row ->
+            lines.add(formatRow(row, includeSelection && index == selectedIndex))
+        }
+        if (includeFooter) {
+            lines.add(footerLine(1, rows.size, rows.size))
+        }
+        return lines
+    }
+
     private fun currentRow(): ScanRow? = rows.getOrNull(selectedIndex)
 
     private fun currentRowLabel(): String =

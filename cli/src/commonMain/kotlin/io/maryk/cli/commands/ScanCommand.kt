@@ -124,8 +124,12 @@ class ScanCommand : Command {
             terminalHeight = terminalHeight(),
         )
 
-        context.state.startInteraction(interaction)
-        return CommandResult(lines = emptyList())
+        return if (context.state.isOneShotMode) {
+            CommandResult(lines = interaction.snapshotLines(includeHeader = true, includeFooter = false))
+        } else {
+            context.state.startInteraction(interaction)
+            CommandResult(lines = emptyList())
+        }
     }
 
     private data class ParsedOptions(

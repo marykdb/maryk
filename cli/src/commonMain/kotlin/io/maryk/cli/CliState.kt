@@ -11,12 +11,10 @@ import maryk.datastore.shared.IsDataStore
 class CliState {
     private var activeConnection: StoreConnection? = null
     private var activeInteraction: ActiveInteraction? = null
+    var isOneShotMode: Boolean = false
 
     val currentConnection: StoreConnection?
         get() = activeConnection
-
-    val currentDataStore: IsDataStore?
-        get() = activeConnection?.dataStore
 
     val currentInteraction: CliInteraction?
         get() = activeInteraction?.interaction

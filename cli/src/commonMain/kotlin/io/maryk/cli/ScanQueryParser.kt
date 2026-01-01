@@ -29,7 +29,7 @@ internal object ScanQueryParser {
         paths: List<String>,
     ): RootPropRefGraph<IsRootDataModel>? {
         if (paths.isEmpty()) return null
-        val yaml = paths.joinToString(separator = "\n") { "- $it" }
+        val yaml = buildSelectGraphYaml(paths)
         val reader = MarykYamlReader(yaml)
         val context = GraphContext(dataModel)
         val values = RootPropRefGraph.Serializer.readJson(reader, context)
@@ -78,7 +78,10 @@ internal object ScanQueryParser {
 
     private fun formatYamlField(name: String, raw: String): String {
         val trimmed = raw.trim()
-        return if (trimmed.startsWith("-") || trimmed.contains("\n")) {
+        val needsBlock = trimmed.startsWith("-")
+            || trimmed.contains("\n")
+            || (trimmed.contains(":") && !trimmed.startsWith("{") && !trimmed.startsWith("["))
+        return if (needsBlock) {
             val indented = trimmed.lineSequence().joinToString("\n") { "  $it" }
             "$name:\n$indented"
         } else {
@@ -108,5 +111,45 @@ internal object ScanQueryParser {
             mutableMapOf(dataModel.Meta.name to DataModelReference(dataModel))
         )
         return RequestContext(definitionsContext, dataModel = dataModel)
+    }
+
+    private fun buildSelectGraphYaml(paths: List<String>): String {
+        val root = SelectNode()
+        paths.forEach { raw ->
+            val trimmed = raw.trim()
+            if (trimmed.isEmpty()) return@forEach
+            val segments = trimmed.split('.').filter { it.isNotBlank() }
+            root.addPath(segments)
+        }
+        return root.toYamlLines(indent = 0).joinToString(separator = "\n")
+    }
+
+    private class SelectNode {
+        private val children: LinkedHashMap<String, SelectNode> = linkedMapOf()
+        private var isLeaf: Boolean = false
+
+        fun addPath(segments: List<String>, index: Int = 0) {
+            if (index >= segments.size) {
+                isLeaf = true
+                return
+            }
+            val key = segments[index]
+            val child = children.getOrPut(key) { SelectNode() }
+            child.addPath(segments, index + 1)
+        }
+
+        fun toYamlLines(indent: Int): List<String> {
+            val lines = mutableListOf<String>()
+            children.forEach { (name, child) ->
+                val prefix = " ".repeat(indent)
+                if (child.children.isEmpty()) {
+                    lines.add("$prefix- $name")
+                } else {
+                    lines.add("$prefix- $name:")
+                    lines.addAll(child.toYamlLines(indent + 2))
+                }
+            }
+            return lines
+        }
     }
 }

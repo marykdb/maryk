@@ -8,7 +8,7 @@
 - `list` — list available data models.
 - `model <name|id>` — render the schema for a model.
 - `model --key-index-format <name|id>` — include key and index format details.
-- `get <model> <key>` — fetch a record and open the viewer.
+- `get <model> <key> [subcommand ...]` — fetch a record and open the viewer, or run a record action inline.
 - `scan <model> [options]` — browse records in a scrolling list.
 
 ## Quick example
@@ -31,7 +31,9 @@ maryk --connect rocksdb --dir ./data --exec "model Client"
 Notes:
 - `--connect` is required for one-shot mode.
 - `--exec` is parsed like CLI input (quotes supported).
-- Commands that open interactive viewers (`get`, `scan`, or `connect` without args) are rejected in one-shot mode.
+- Commands that open interactive viewers (`get` without a subcommand or `connect` without args) are rejected in one-shot mode.
+- `scan` in one-shot mode returns a single page (respecting `--limit`) as plain output.
+- Use `get <model> <key> <subcommand ...>` to run `save`, `load`, `set`, `unset`, `append`, `remove`, or `delete` without entering the viewer.
 
 ## Connect
 
@@ -56,6 +58,13 @@ Commands:
 
 If the viewer was opened from a scan, `close` returns to the scan list.
 
+One-shot examples:
+
+```text
+maryk --connect rocksdb --dir ./data --exec "get Client AbCdEf123 save ./out --yaml"
+maryk --connect rocksdb --dir ./data --exec "get Client AbCdEf123 set info.name.nickname \"Captain Jasper\""
+```
+
 Notes:
 - Values are parsed as Maryk YAML scalars for the referenced type.
 - Strings do not require quotes, but quoting is recommended for spaces or YAML special characters.
@@ -78,13 +87,13 @@ Commands:
 - `save`, `load`, `delete` — operate on the selected record.
 - `q|quit|exit` — leave the scan.
 
-Filtering examples (Maryk YAML):
+Filtering examples (Maryk YAML tags):
 
 ```text
-scan Client --where "Equals: { info.name.familyName: \"Smith\" }"
-scan Client --where "And:
-  - Equals: { info.status: \"Active\" }
-  - GreaterThanEquals: { info.age: 21 }"
+scan Client --where "!Equals { info.name.familyName: \"Smith\" }"
+scan Client --where "!And
+  - !Equals { info.status: \"Active\" }
+  - !GreaterThanEquals { info.age: 21 }"
 ```
 
 Ordering examples:

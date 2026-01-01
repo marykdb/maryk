@@ -46,7 +46,7 @@ Once running interactively, type `help` to see the available commands. Use `Ctrl
 - `list`: Show available data models.
 - `model <name|id>`: Inspect a model's schema.
 - `model --key-index-format <name|id>`: Include key and index format details.
-- `get <model> <key>`: Fetch a record and open a viewer.
+- `get <model> <key> [subcommand ...]`: Fetch a record and open a viewer, or run a record action inline.
 - `scan <model> [options]`: Browse records in a scrolling list.
 
 Example session:
@@ -69,7 +69,9 @@ maryk --connect rocksdb --dir ./data --exec "model Client"
 Notes:
 - `--connect` is required for one-shot mode.
 - `--exec` is parsed the same way as CLI input (quoted arguments are supported).
-- Commands that open interactive viewers (`get`, `scan`, or `connect` without args) are rejected in one-shot mode.
+- Commands that open interactive viewers (`get` without a subcommand or `connect` without args) are rejected in one-shot mode.
+- `scan` in one-shot mode returns a single page (respecting `--limit`) as plain output.
+- Use `get <model> <key> <subcommand ...>` to run `save`, `load`, `set`, `unset`, `append`, `remove`, or `delete` without entering the viewer.
 
 ## Interactive viewers
 

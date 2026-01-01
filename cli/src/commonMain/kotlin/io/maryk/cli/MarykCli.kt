@@ -531,6 +531,8 @@ internal fun runOneShot(
     options: OneShotOptions,
 ): Int {
     val state = registry.state
+    val previousOneShot = state.isOneShotMode
+    state.isOneShotMode = true
     return try {
         val connectionResult = registry.execute(
             "connect",
@@ -572,6 +574,7 @@ internal fun runOneShot(
 
         if (result.isError) 1 else 0
     } finally {
+        state.isOneShotMode = previousOneShot
         state.clearConnection()?.close()
     }
 }

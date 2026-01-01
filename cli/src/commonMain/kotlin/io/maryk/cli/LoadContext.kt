@@ -6,6 +6,7 @@ import maryk.core.models.asValues
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -136,8 +137,23 @@ data class LoadContext(
             ?: throw IllegalArgumentException("Property is not a serializable value.")
 
         val context = createRequestContext(reference)
-        val reader = MarykYamlReader(rawValue)
-        return serializable.readJson(reader, context)
+        val trimmed = rawValue.trim()
+        val allowSimpleFallback = baseDefinition is IsSimpleValueDefinition<*, *> &&
+            trimmed.isNotEmpty() &&
+            trimmed.first() != '{' &&
+            trimmed.first() != '['
+
+        return try {
+            val reader = MarykYamlReader(rawValue)
+            serializable.readJson(reader, context)
+        } catch (e: Throwable) {
+            if (allowSimpleFallback) {
+                @Suppress("UNCHECKED_CAST")
+                val simple = baseDefinition as IsSimpleValueDefinition<Any, IsPropertyContext>
+                return simple.fromString(rawValue, context)
+            }
+            throw e
+        }
     }
 
     fun applyChangesResult(

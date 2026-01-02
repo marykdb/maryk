@@ -53,6 +53,7 @@ import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -203,6 +204,26 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             try {
                 changeLoop@ for (change in changes) {
                     when (change) {
+                        is ObjectSoftDeleteChange -> {
+                            val softDeleteKey = key.bytes + SOFT_DELETE_INDICATOR
+                            val wasDeleted = tr.getValue(tableDirs, null, softDeleteKey) { b, o, _ ->
+                                b[o] == TRUE
+                            } == true
+
+                            if (wasDeleted == change.isDeleted) {
+                                continue@changeLoop
+                            }
+
+                            setValue(
+                                tr,
+                                tableDirs,
+                                key.bytes,
+                                byteArrayOf(SOFT_DELETE_INDICATOR),
+                                versionBytes,
+                                byteArrayOf(if (change.isDeleted) TRUE else 0)
+                            )
+                            isChanged = true
+                        }
                         is Check -> {
                             for ((reference, expected) in change.referenceValuePairs) {
                                 val refBytes = reference.toStorageByteArray()

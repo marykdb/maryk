@@ -19,6 +19,11 @@ internal data class LoadedRecordValues(
     val meta: ValuesWithMetaData<IsRootDataModel>? = null,
 )
 
+internal sealed class ParsedRecordValues {
+    data class Single(val values: Values<IsRootDataModel>) : ParsedRecordValues()
+    data class Multi(val values: List<Values<IsRootDataModel>>) : ParsedRecordValues()
+}
+
 internal fun readRecordValues(
     dataModel: IsRootDataModel,
     path: String,
@@ -32,29 +37,41 @@ internal fun readRecordValues(
     }
 }
 
-internal fun readRecordValuesList(
+internal fun readRecordValuesInput(
     dataModel: IsRootDataModel,
     path: String,
     format: SaveFormat,
-): List<Values<IsRootDataModel>> {
+): ParsedRecordValues {
     @Suppress("UNCHECKED_CAST")
     val serializer = dataModel.Serializer as IsDataModelSerializer<
         Values<IsRootDataModel>,
         IsRootDataModel,
         IsPropertyContext
     >
+
     return when (format) {
         SaveFormat.YAML -> {
             val content = readTextInput(path)
-            readValuesList(MarykYamlReader(content), serializer)
+            val reader = MarykYamlReader(content)
+            val token = if (reader.currentToken == JsonToken.StartDocument) reader.nextToken() else reader.currentToken
+            when (token) {
+                is JsonToken.StartArray -> ParsedRecordValues.Multi(readValuesList(reader, serializer))
+                is JsonToken.StartObject -> ParsedRecordValues.Single(serializer.readJson(reader, null))
+                else -> throw IllegalArgumentException("Expected object or list at top level.")
+            }
         }
         SaveFormat.JSON -> {
             val content = readTextInput(path)
             val iterator = content.iterator()
             val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
-            readValuesList(reader, serializer)
+            val token = if (reader.currentToken == JsonToken.StartDocument) reader.nextToken() else reader.currentToken
+            when (token) {
+                is JsonToken.StartArray -> ParsedRecordValues.Multi(readValuesList(reader, serializer))
+                is JsonToken.StartObject -> ParsedRecordValues.Single(serializer.readJson(reader, null))
+                else -> throw IllegalArgumentException("Expected object or list at top level.")
+            }
         }
-        SaveFormat.PROTO -> throw IllegalArgumentException("Proto list input is not supported.")
+        SaveFormat.PROTO -> ParsedRecordValues.Single(readRecordDataValues(dataModel, path, format))
         SaveFormat.KOTLIN -> throw IllegalArgumentException("Kotlin input is not supported.")
     }
 }

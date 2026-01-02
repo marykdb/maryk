@@ -2,7 +2,8 @@ package io.maryk.cli.commands
 
 import io.maryk.cli.SaveFormat
 import io.maryk.cli.readRecordValues
-import io.maryk.cli.readRecordValuesList
+import io.maryk.cli.ParsedRecordValues
+import io.maryk.cli.readRecordValuesInput
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -232,18 +233,16 @@ class AddCommand : Command {
             return AddInput.Single(loaded.values, loaded.meta, options.keyToken)
         }
 
-        val multi = runCatching {
-            readRecordValuesList(dataModel, options.path, options.format)
-        }.getOrNull()
-
-        return if (multi != null) {
-            if (multi.isEmpty()) {
-                throw IllegalArgumentException("No objects found in ${options.path}.")
+        return when (val parsed = readRecordValuesInput(dataModel, options.path, options.format)) {
+            is ParsedRecordValues.Multi -> {
+                if (parsed.values.isEmpty()) {
+                    throw IllegalArgumentException("No objects found in ${options.path}.")
+                }
+                AddInput.Multi(values = parsed.values, keyToken = options.keyToken)
             }
-            AddInput.Multi(values = multi, keyToken = options.keyToken)
-        } else {
-            val loaded = readRecordValues(dataModel, options.path, options.format, useMeta = false)
-            AddInput.Single(loaded.values, loaded.meta, options.keyToken)
+            is ParsedRecordValues.Single -> {
+                AddInput.Single(parsed.values, meta = null, keyToken = options.keyToken)
+            }
         }
     }
 

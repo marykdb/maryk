@@ -56,6 +56,7 @@ import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -160,6 +161,25 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         for (change in changes) {
             try {
                 when (change) {
+                    is ObjectSoftDeleteChange -> {
+                        val wasDeleted = getValue<Boolean>(newValueList, objectSoftDeleteQualifier, version)?.value == true
+                        if (wasDeleted == change.isDeleted) {
+                            continue
+                        }
+
+                        val valueIndex = newValueList.binarySearch {
+                            it.reference compareTo objectSoftDeleteQualifier
+                        }
+                        setValueAtIndex(
+                            newValueList,
+                            valueIndex,
+                            objectSoftDeleteQualifier,
+                            change.isDeleted,
+                            version,
+                            keepAllVersions
+                        )
+                        setChanged(true)
+                    }
                     is Check -> {
                         for ((reference, value) in change.referenceValuePairs) {
                             if (objectToChange[reference] != value) {

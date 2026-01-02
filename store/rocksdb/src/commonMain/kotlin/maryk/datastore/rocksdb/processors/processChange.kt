@@ -64,6 +64,7 @@ import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.changes.ListChange
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.SetChange
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -72,6 +73,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.createCountUpdater
@@ -95,6 +97,8 @@ import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.updates.Update
+import maryk.lib.bytes.combineToByteArray
+import maryk.core.extensions.bytes.invert
 import maryk.lib.extensions.compare.matchPart
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
@@ -187,6 +191,35 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
         for (change in changes) {
             try {
                 when (change) {
+                    is ObjectSoftDeleteChange -> {
+                        val softDeleteQualifier = key.bytes + SOFT_DELETE_INDICATOR
+                        val wasDeleted = transaction.getValue(columnFamilies, defaultReadOptions, null, softDeleteQualifier) { b, o, l ->
+                            b[o + l - 1] == TRUE
+                        } == true
+
+                        if (wasDeleted == change.isDeleted) {
+                            continue
+                        }
+
+                        setLatestVersion(transaction, columnFamilies, key, versionBytes)
+                        transaction.put(
+                            columnFamilies.table,
+                            softDeleteQualifier,
+                            versionBytes + if (change.isDeleted) TRUE else FALSE
+                        )
+
+                        if (columnFamilies is HistoricTableColumnFamilies) {
+                            val historicReference = combineToByteArray(key.bytes, SOFT_DELETE_INDICATOR, versionBytes)
+                            historicReference.invert(historicReference.size - versionBytes.size)
+                            transaction.put(
+                                columnFamilies.historic.table,
+                                historicReference,
+                                EMPTY_ARRAY
+                            )
+                        }
+
+                        setChanged(true)
+                    }
                     is Check -> {
                         for ((reference, value) in change.referenceValuePairs) {
                             transaction.getValue(columnFamilies, defaultReadOptions, null, reference.toStorageByteArray(key.bytes)) { b, o, l ->

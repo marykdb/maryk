@@ -3,6 +3,7 @@
 android = "8.13.2"
 atomicfu = "0.29.0"
 benManesVersions = "0.53.0"
+compose = "1.7.0"
 kotlin = "2.3.0"
 kotlinxCollectionsImmutable = "0.4.0"
 kotlinxCoroutines = "1.10.2"
@@ -30,8 +31,12 @@ maryk-foundationdb-multiplatform = { module = "io.maryk.foundationdb:foundationd
 maryk-rocksdb-multiplatform = { module = "io.maryk.rocksdb:rocksdb-multiplatform", version.ref = "marykRocksdb" }
 protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf" }
 protoc = { module = "com.google.protobuf:protoc", version.ref = "protoc" }
+compose-material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "compose" }
+compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "compose" }
 
 [plugins]
 ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "benManesVersions" }
+compose = { id = "org.jetbrains.compose", version.ref = "compose" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 protobuf = { id = "com.google.protobuf", version.ref = "protobufPlugin" }
 version-catalog-update = { id = "nl.littlerobots.version-catalog-update", version.ref = "versionCatalogUpdate" }

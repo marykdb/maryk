@@ -84,6 +84,7 @@ For detailed information, check out:
 - [Test Library](testlib/README.md) – Testing utilities and helpers.
 - [DataFrame Integration](dataframe/README.md) – DataFrame helper functions for Maryk objects.
 - [CLI](cli/README.md) – Interactive terminal client for browsing and editing stores.
+- [App](app/README.md) – Desktop UI for browsing and editing stores.
 - **Stores**:
   - [Shared](store/shared/README.md) – Shared logic for building stores.
   - [Memory](store/memory/README.md) – In-memory store (non-persistent).

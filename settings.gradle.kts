@@ -14,6 +14,7 @@ dependencyResolutionManagement {
     repositories {
         mavenCentral()
         google()
+        maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
         maven("https://central.sonatype.com/repository/maven-snapshots/") {
             mavenContent { snapshotsOnly() }
         }
@@ -40,4 +41,5 @@ include(
     ":store:rocksdb",
     ":store:foundationdb",
     ":cli",
+    ":app",
 )

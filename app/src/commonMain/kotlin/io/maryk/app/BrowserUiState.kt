@@ -13,11 +13,17 @@ private const val keyInspectorOpen = "ui.inspector.open"
 private const val keyGridDensity = "ui.grid.density"
 private const val keyColumns = "ui.grid.columns"
 private const val keyLastModel = "ui.last.model"
+private const val keyResultsTab = "ui.results.tab"
 
 enum class GridDensity {
     COMPACT,
     STANDARD,
     COMFY,
+}
+
+enum class ResultsTab {
+    DATA,
+    MODEL,
 }
 
 @Stable
@@ -29,6 +35,9 @@ class BrowserUiState {
         private set
 
     var gridDensity by mutableStateOf(parseDensity(AppPreferences.getString(keyGridDensity, GridDensity.COMPACT.name)))
+        private set
+
+    var resultsTab by mutableStateOf(readResultsTab())
         private set
 
     var lastSelectedModelId by mutableStateOf(readLastModel())
@@ -66,6 +75,11 @@ class BrowserUiState {
         lastRefreshLabel = label
     }
 
+    fun updateResultsTab(tab: ResultsTab) {
+        resultsTab = tab
+        AppPreferences.putString(keyResultsTab, tab.name)
+    }
+
     fun setLastModel(modelId: UInt?) {
         lastSelectedModelId = modelId
         if (modelId != null) {
@@ -90,6 +104,11 @@ class BrowserUiState {
     private fun readLastModel(): UInt? {
         val raw = AppPreferences.getString(keyLastModel, "")
         return raw.toUIntOrNull()
+    }
+
+    private fun readResultsTab(): ResultsTab {
+        val raw = AppPreferences.getString(keyResultsTab, ResultsTab.DATA.name)
+        return runCatching { ResultsTab.valueOf(raw) }.getOrDefault(ResultsTab.DATA)
     }
 
     private fun parseDensity(value: String): GridDensity {

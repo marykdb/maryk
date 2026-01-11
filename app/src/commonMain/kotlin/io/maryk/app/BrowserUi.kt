@@ -165,7 +165,7 @@ fun Browser(
                                     rightPanelWidth = next
                                 },
                             )
-                            InspectorDrawer(state, modifier = Modifier.width(rightPanelWidth))
+                            InspectorDrawer(state, uiState, modifier = Modifier.width(rightPanelWidth))
                         }
                     }
                 }

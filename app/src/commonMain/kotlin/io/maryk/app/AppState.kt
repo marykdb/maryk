@@ -13,7 +13,6 @@ import kotlinx.coroutines.withContext
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.types.Key
-import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
@@ -49,6 +48,9 @@ class BrowserState(
         private set
 
     var recordDetails by mutableStateOf<RecordDetails?>(null)
+        private set
+
+    var selectedModelField by mutableStateOf<ModelFieldRef?>(null)
         private set
 
     var pendingHighlightKey by mutableStateOf<Key<IsRootDataModel>?>(null)
@@ -100,6 +102,7 @@ class BrowserState(
                         null
                     }
                     recordDetails = null
+                    selectedModelField = null
                     lastActionMessage = null
                     isWorking = false
                     if (selectedModelId != null) {
@@ -118,6 +121,7 @@ class BrowserState(
         scanResults = emptyList()
         scanCursor = ScanCursor()
         recordDetails = null
+        selectedModelField = null
         scanStatus = null
         modelRowCounts.clear()
         historyChanges = emptyList()
@@ -131,8 +135,13 @@ class BrowserState(
     fun selectModel(modelId: UInt) {
         selectedModelId = modelId
         recordDetails = null
+        selectedModelField = null
         historyChanges = emptyList()
         scanFromStart()
+    }
+
+    fun selectModelField(field: ModelFieldRef?) {
+        selectedModelField = field
     }
 
     fun openReference(
@@ -637,6 +646,13 @@ data class RecordDetails(
     val yaml: String,
     val editedYaml: String,
     val dirty: Boolean = false,
+)
+
+data class ModelFieldRef(
+    val path: String,
+    val wrapper: maryk.core.properties.definitions.wrapper.IsDefinitionWrapper<*, *, *, *>?,
+    val definition: maryk.core.properties.definitions.IsPropertyDefinition<*>? = null,
+    val typeIndex: UInt? = null,
 )
 
 data class ReferenceBackTarget(

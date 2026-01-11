@@ -42,6 +42,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -126,7 +128,7 @@ fun ResultsDataGrid(
         Column(modifier = Modifier.fillMaxHeight()) {
             state.referenceBackTarget?.let { target ->
                 Surface(
-                    color = MaterialTheme.colorScheme.surfaceVariant,
+                    color = Color(0xFFFFF3BF),
                     shape = RoundedCornerShape(8.dp),
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
                 ) {
@@ -153,136 +155,156 @@ fun ResultsDataGrid(
                     }
                 }
             }
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text("Results", style = MaterialTheme.typography.titleSmall)
-            }
-
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .onPreviewKeyEvent { event ->
-                        if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                        val selectedIndex = rows.indexOfFirst { uiState.selectedRowKeys[it.key] == true }
-                        when (event.key) {
-                            Key.DirectionDown -> {
-                                val nextIndex = (selectedIndex + 1).coerceAtMost(rows.lastIndex)
-                                updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
-                                true
+            Column(modifier = Modifier.fillMaxWidth()) {
+                val tabs = listOf(ResultsTab.DATA, ResultsTab.MODEL)
+                TabRow(
+                    selectedTabIndex = tabs.indexOf(uiState.resultsTab).coerceAtLeast(0),
+                    modifier = Modifier.height(28.dp)
+                ) {
+                    tabs.forEach { tab ->
+                        Tab(
+                            selected = uiState.resultsTab == tab,
+                            onClick = { uiState.updateResultsTab(tab) },
+                            modifier = Modifier.height(27.dp),
+                            unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            text = {
+                                Text(
+                                    tab.name.lowercase().replaceFirstChar { it.uppercase() },
+                                    style = MaterialTheme.typography.labelMedium
+                                )
                             }
-                            Key.DirectionUp -> {
-                                val nextIndex = (selectedIndex - 1).coerceAtLeast(0)
-                                updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
-                                true
-                            }
-                            Key.PageDown -> {
-                                val nextIndex = (selectedIndex + 10).coerceAtMost(rows.lastIndex)
-                                updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
-                                true
-                            }
-                            Key.PageUp -> {
-                                val nextIndex = (selectedIndex - 10).coerceAtLeast(0)
-                                updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
-                                true
-                            }
-                            Key.Enter -> {
-                                val selected = rows.getOrNull(selectedIndex)
-                                if (selected != null) {
-                                    state.openRecord(selected)
-                                }
-                                true
-                            }
-                            Key.Escape -> {
-                                uiState.selectedRowKeys.clear()
-                                true
-                            }
-                            else -> false
-                        }
-                    },
-            ) {
-                stickyHeader {
-                    GridHeaderRow(
-                        keyWidth = clampedKeyWidth,
-                        onResize = { delta ->
-                            keyColumnWidth = (keyColumnWidth + delta).coerceIn(140.dp, maxKeyWidth)
-                        },
-                    )
-                }
-                itemsIndexed(rows, key = { _, row -> row.key }) { index, row ->
-                    val selected = uiState.selectedRowKeys[row.key] == true
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .onPointerEvent(PointerEventType.Press) { event ->
-                                if (event.buttons.isSecondaryPressed) {
-                                    val position = event.changes.first().position
-                                    contextMenuOffset = with(density) { DpOffset(position.x.toDp(), position.y.toDp()) }
-                                    contextMenuRow = row
-                                }
-                            },
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(min = densityHeight)
-                                .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
-                                .clickable {
-                                    updateSelection(rows, index, uiState, null, anchorIndex) { anchorIndex = it }
-                                    state.openRecord(row)
-                                }
-                                .padding(horizontal = 8.dp, vertical = 3.dp),
-                            verticalAlignment = Alignment.Top,
-                            horizontalArrangement = Arrangement.Start,
-                        ) {
-                            Text(
-                                row.keyText,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = FontFamily.Monospace,
-                                modifier = Modifier.width(clampedKeyWidth),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                row.summary,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 3,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        if (contextMenuRow == row) {
-                            ResultRowContextMenu(
-                                offset = contextMenuOffset,
-                                onDismiss = { contextMenuRow = null },
-                                onCopyRowJson = {
-                                    val model = state.currentDataModel() ?: return@ResultRowContextMenu
-                                    val json = serializeValuesToJson(model, row.values, buildRequestContext(model))
-                                    clipboard.setText(AnnotatedString(json))
-                                },
-                                onCopyRowYaml = {
-                                    val model = state.currentDataModel() ?: return@ResultRowContextMenu
-                                    val yaml = serializeValuesToYaml(model, row.values, buildRequestContext(model))
-                                    clipboard.setText(AnnotatedString(yaml))
-                                },
-                                onCopyKey = { clipboard.setText(AnnotatedString(row.keyText)) },
-                                onDelete = {
-                                    deleteRow = row
-                                    hardDelete = false
-                                },
-                            )
-                        }
+                        )
                     }
                 }
             }
-            VerticalScrollbar(
-                adapter = rememberScrollbarAdapter(listState),
-                modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-            )
+
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                if (uiState.resultsTab == ResultsTab.DATA) {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .onPreviewKeyEvent { event ->
+                                if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
+                                val selectedIndex = rows.indexOfFirst { uiState.selectedRowKeys[it.key] == true }
+                                when (event.key) {
+                                    Key.DirectionDown -> {
+                                        val nextIndex = (selectedIndex + 1).coerceAtMost(rows.lastIndex)
+                                        updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
+                                        true
+                                    }
+                                    Key.DirectionUp -> {
+                                        val nextIndex = (selectedIndex - 1).coerceAtLeast(0)
+                                        updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
+                                        true
+                                    }
+                                    Key.PageDown -> {
+                                        val nextIndex = (selectedIndex + 10).coerceAtMost(rows.lastIndex)
+                                        updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
+                                        true
+                                    }
+                                    Key.PageUp -> {
+                                        val nextIndex = (selectedIndex - 10).coerceAtLeast(0)
+                                        updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
+                                        true
+                                    }
+                                    Key.Enter -> {
+                                        val selected = rows.getOrNull(selectedIndex)
+                                        if (selected != null) {
+                                            state.openRecord(selected)
+                                        }
+                                        true
+                                    }
+                                    Key.Escape -> {
+                                        uiState.selectedRowKeys.clear()
+                                        true
+                                    }
+                                    else -> false
+                                }
+                            },
+                    ) {
+                        stickyHeader {
+                            GridHeaderRow(
+                                keyWidth = clampedKeyWidth,
+                                onResize = { delta ->
+                                    keyColumnWidth = (keyColumnWidth + delta).coerceIn(140.dp, maxKeyWidth)
+                                },
+                            )
+                        }
+                        itemsIndexed(rows, key = { _, row -> row.key }) { index, row ->
+                            val selected = uiState.selectedRowKeys[row.key] == true
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .onPointerEvent(PointerEventType.Press) { event ->
+                                        if (event.buttons.isSecondaryPressed) {
+                                            val position = event.changes.first().position
+                                            contextMenuOffset = with(density) { DpOffset(position.x.toDp(), position.y.toDp()) }
+                                            contextMenuRow = row
+                                        }
+                                    },
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .heightIn(min = densityHeight)
+                                        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                                        .clickable {
+                                            updateSelection(rows, index, uiState, null, anchorIndex) { anchorIndex = it }
+                                            state.openRecord(row)
+                                        }
+                                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                                    verticalAlignment = Alignment.Top,
+                                    horizontalArrangement = Arrangement.Start,
+                                ) {
+                                    Text(
+                                        row.keyText,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = FontFamily.Monospace,
+                                        modifier = Modifier.width(clampedKeyWidth),
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Text(
+                                        row.summary,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.weight(1f),
+                                        maxLines = 3,
+                                        overflow = TextOverflow.Ellipsis,
+                                    )
+                                }
+                                if (contextMenuRow == row) {
+                                    ResultRowContextMenu(
+                                        offset = contextMenuOffset,
+                                        onDismiss = { contextMenuRow = null },
+                                        onCopyRowJson = {
+                                            val model = state.currentDataModel() ?: return@ResultRowContextMenu
+                                            val json = serializeValuesToJson(model, row.values, buildRequestContext(model))
+                                            clipboard.setText(AnnotatedString(json))
+                                        },
+                                        onCopyRowYaml = {
+                                            val model = state.currentDataModel() ?: return@ResultRowContextMenu
+                                            val yaml = serializeValuesToYaml(model, row.values, buildRequestContext(model))
+                                            clipboard.setText(AnnotatedString(yaml))
+                                        },
+                                        onCopyKey = { clipboard.setText(AnnotatedString(row.keyText)) },
+                                        onDelete = {
+                                            deleteRow = row
+                                            hardDelete = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    VerticalScrollbar(
+                        adapter = rememberScrollbarAdapter(listState),
+                        modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                    )
+                } else {
+                    ModelTabPanel(state, modifier = Modifier.fillMaxHeight().fillMaxWidth())
+                }
             }
         }
     }

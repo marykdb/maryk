@@ -53,7 +53,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.input.pointer.PointerEventType
@@ -93,11 +92,21 @@ import maryk.core.query.requests.get
 @Composable
 fun InspectorDrawer(
     state: BrowserState,
+    uiState: BrowserUiState,
     modifier: Modifier = Modifier,
 ) {
     val details = state.recordDetails
     val tooltipState = remember { TooltipState() }
     var tab by remember { mutableStateOf(InspectorTab.DATA) }
+    val inModelMode = uiState.resultsTab == ResultsTab.MODEL
+    val tabs = remember(inModelMode) {
+        if (inModelMode) listOf(InspectorTab.DATA, InspectorTab.RAW) else InspectorTab.entries.toList()
+    }
+    LaunchedEffect(inModelMode) {
+        if (tab !in tabs) {
+            tab = InspectorTab.DATA
+        }
+    }
     Box(
         modifier = modifier
             .fillMaxHeight()
@@ -107,17 +116,22 @@ fun InspectorDrawer(
             modifier = Modifier.fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            if (details == null) {
-                EmptyStateCard("No record selected", "Select a row to inspect details.")
-                return
+            if (inModelMode) {
+                ModelDetailsHeader(state)
+            } else {
+                if (details == null) {
+                    EmptyStateCard("No record selected", "Select a row to inspect details.")
+                    return
+                }
+                InspectorHeader(details)
             }
-            InspectorHeader(details)
-            TabRow(selectedTabIndex = tab.ordinal) {
-                InspectorTab.entries.forEach { item ->
+            TabRow(selectedTabIndex = tabs.indexOf(tab).coerceAtLeast(0)) {
+                tabs.forEach { item ->
                     Tab(
                         selected = tab == item,
                         onClick = { tab = item },
                         modifier = Modifier.height(28.dp),
+                        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                         text = {
                             Text(
                                 item.label,
@@ -129,14 +143,45 @@ fun InspectorDrawer(
                 }
             }
             when (tab) {
-                InspectorTab.DATA -> InspectorData(state, details, tooltipState)
-                InspectorTab.RAW -> InspectorRaw(state, details)
-                InspectorTab.HISTORY -> HistoryTimeline(
-                    versions = state.historyChanges,
-                )
+                InspectorTab.DATA -> {
+                    if (inModelMode) {
+                        ModelDetailsPanel(state, modifier = Modifier.fillMaxHeight())
+                    } else if (details != null) {
+                        InspectorData(state, details, tooltipState)
+                    }
+                }
+                InspectorTab.RAW -> {
+                    if (inModelMode) {
+                        ModelRawPanel(state, modifier = Modifier.fillMaxHeight())
+                    } else if (details != null) {
+                        InspectorRaw(state, details)
+                    }
+                }
+                InspectorTab.HISTORY -> {
+                    if (!inModelMode) {
+                        HistoryTimeline(
+                            versions = state.historyChanges,
+                        )
+                    }
+                }
             }
         }
         TooltipLayer(tooltipState)
+    }
+}
+
+@Composable
+private fun ModelDetailsHeader(
+    state: BrowserState,
+) {
+    val dataModel = state.currentDataModel()
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(
+            dataModel?.Meta?.name ?: "No model",
+            style = MaterialTheme.typography.titleSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

@@ -7,14 +7,21 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
+import androidx.compose.ui.window.rememberWindowState
+import java.awt.Toolkit
 import kotlin.uuid.Uuid
 
 fun main() = application {
     val repository = remember { StoreRepository() }
     val storesState = remember { StoresState(repository) }
     val sessions = remember { mutableStateListOf<BrowserSession>() }
+    val screenSize = remember { Toolkit.getDefaultToolkit().screenSize }
+    val defaultWidth = (screenSize.width * 0.9).toInt().coerceAtLeast(1100)
+    val defaultHeight = (screenSize.height * 0.9).toInt().coerceAtLeast(800)
+    val storesWindowState = rememberWindowState(width = defaultWidth.dp, height = defaultHeight.dp)
 
     LaunchedEffect(Unit) {
         storesState.loadStores()
@@ -24,6 +31,7 @@ fun main() = application {
         Window(
             onCloseRequest = ::exitApplication,
             title = "Maryk Stores",
+            state = storesWindowState,
         ) {
             StoresWindowContent(
                 storesState = storesState,
@@ -37,9 +45,11 @@ fun main() = application {
         }
 
         sessions.forEach { session ->
+            val sessionWindowState = rememberWindowState(width = defaultWidth.dp, height = defaultHeight.dp)
             Window(
                 onCloseRequest = { sessions.remove(session) },
                 title = "Maryk - ${session.store.name}",
+                state = sessionWindowState,
             ) {
                 val scope = rememberCoroutineScope()
                 val connector = remember { StoreConnector() }

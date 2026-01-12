@@ -1,5 +1,7 @@
 package io.maryk.app
 
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -31,8 +33,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
@@ -63,22 +63,17 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isSecondaryPressed
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 private val headerHeight = 32.dp
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ResultsDataGrid(
     state: BrowserState,
@@ -87,11 +82,8 @@ fun ResultsDataGrid(
 ) {
     val rows = state.scanResults
     val listState = rememberLazyListState()
-    var contextMenuRow by remember { mutableStateOf<ScanRow?>(null) }
-    var contextMenuOffset by remember { mutableStateOf(DpOffset.Zero) }
     var anchorIndex by remember { mutableStateOf<Int?>(null) }
     val clipboard = LocalClipboardManager.current
-    val density = LocalDensity.current
     var deleteRow by remember { mutableStateOf<ScanRow?>(null) }
     var hardDelete by remember { mutableStateOf(false) }
     val densityHeight = when (uiState.gridDensity) {
@@ -233,16 +225,26 @@ fun ResultsDataGrid(
                         }
                         itemsIndexed(rows, key = { _, row -> row.key }) { index, row ->
                             val selected = uiState.selectedRowKeys[row.key] == true
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .onPointerEvent(PointerEventType.Press) { event ->
-                                        if (event.buttons.isSecondaryPressed) {
-                                            val position = event.changes.first().position
-                                            contextMenuOffset = with(density) { DpOffset(position.x.toDp(), position.y.toDp()) }
-                                            contextMenuRow = row
-                                        }
-                                    },
+                            ContextMenuArea(
+                                items = {
+                                    resultRowContextItems(
+                                        onCopyRowJson = {
+                                            val model = state.currentDataModel() ?: return@resultRowContextItems
+                                            val json = serializeValuesToJson(model, row.values, buildRequestContext(model))
+                                            clipboard.setText(AnnotatedString(json))
+                                        },
+                                        onCopyRowYaml = {
+                                            val model = state.currentDataModel() ?: return@resultRowContextItems
+                                            val yaml = serializeValuesToYaml(model, row.values, buildRequestContext(model))
+                                            clipboard.setText(AnnotatedString(yaml))
+                                        },
+                                        onCopyKey = { clipboard.setText(AnnotatedString(row.keyText)) },
+                                        onDelete = {
+                                            deleteRow = row
+                                            hardDelete = false
+                                        },
+                                    )
+                                },
                             ) {
                                 Row(
                                     modifier = Modifier
@@ -272,27 +274,6 @@ fun ResultsDataGrid(
                                         modifier = Modifier.weight(1f),
                                         maxLines = 3,
                                         overflow = TextOverflow.Ellipsis,
-                                    )
-                                }
-                                if (contextMenuRow == row) {
-                                    ResultRowContextMenu(
-                                        offset = contextMenuOffset,
-                                        onDismiss = { contextMenuRow = null },
-                                        onCopyRowJson = {
-                                            val model = state.currentDataModel() ?: return@ResultRowContextMenu
-                                            val json = serializeValuesToJson(model, row.values, buildRequestContext(model))
-                                            clipboard.setText(AnnotatedString(json))
-                                        },
-                                        onCopyRowYaml = {
-                                            val model = state.currentDataModel() ?: return@ResultRowContextMenu
-                                            val yaml = serializeValuesToYaml(model, row.values, buildRequestContext(model))
-                                            clipboard.setText(AnnotatedString(yaml))
-                                        },
-                                        onCopyKey = { clipboard.setText(AnnotatedString(row.keyText)) },
-                                        onDelete = {
-                                            deleteRow = row
-                                            hardDelete = false
-                                        },
                                     )
                                 }
                             }
@@ -432,52 +413,17 @@ private fun ColumnResizeHandle(
     }
 }
 
-@Composable
-fun ResultRowContextMenu(
-    offset: DpOffset,
-    onDismiss: () -> Unit,
+private fun resultRowContextItems(
     onCopyRowJson: () -> Unit,
     onCopyRowYaml: () -> Unit,
     onCopyKey: () -> Unit,
     onDelete: () -> Unit,
-) {
-    val itemPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp)
-    val itemStyle = MaterialTheme.typography.labelSmall
-    DropdownMenu(expanded = true, onDismissRequest = onDismiss, offset = offset) {
-        DropdownMenuItem(
-            text = { Text("Copy key", style = itemStyle) },
-            contentPadding = itemPadding,
-            onClick = {
-                onCopyKey()
-                onDismiss()
-            },
-        )
-        DropdownMenuItem(
-            text = { Text("Copy data as JSON", style = itemStyle) },
-            contentPadding = itemPadding,
-            onClick = {
-                onCopyRowJson()
-                onDismiss()
-            },
-        )
-        DropdownMenuItem(
-            text = { Text("Copy data as YAML", style = itemStyle) },
-            contentPadding = itemPadding,
-            onClick = {
-                onCopyRowYaml()
-                onDismiss()
-            },
-        )
-        DropdownMenuItem(
-            text = { Text("Delete", color = MaterialTheme.colorScheme.error, style = itemStyle) },
-            contentPadding = itemPadding,
-            onClick = {
-                onDelete()
-                onDismiss()
-            },
-        )
-    }
-}
+): List<ContextMenuItem> = listOf(
+    ContextMenuItem("Copy key", onCopyKey),
+    ContextMenuItem("Copy data as JSON", onCopyRowJson),
+    ContextMenuItem("Copy data as YAML", onCopyRowYaml),
+    ContextMenuItem("Delete", onDelete),
+)
 
 private fun updateSelection(
     rows: List<ScanRow>,

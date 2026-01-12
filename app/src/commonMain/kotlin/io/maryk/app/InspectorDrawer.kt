@@ -1,5 +1,9 @@
 package io.maryk.app
 
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.TooltipArea
+import androidx.compose.foundation.TooltipPlacement
+import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,18 +14,17 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
@@ -48,19 +51,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.LayoutCoordinates
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -70,11 +65,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import maryk.core.models.IsRootDataModel
@@ -96,7 +88,6 @@ fun InspectorDrawer(
     modifier: Modifier = Modifier,
 ) {
     val details = state.recordDetails
-    val tooltipState = remember { TooltipState() }
     var tab by remember { mutableStateOf(InspectorTab.DATA) }
     val inModelMode = uiState.resultsTab == ResultsTab.MODEL
     val tabs = remember(inModelMode) {
@@ -147,7 +138,7 @@ fun InspectorDrawer(
                     if (inModelMode) {
                         ModelDetailsPanel(state, modifier = Modifier.fillMaxHeight())
                     } else if (details != null) {
-                        InspectorData(state, details, tooltipState)
+                        InspectorData(state, details)
                     }
                 }
                 InspectorTab.RAW -> {
@@ -166,7 +157,6 @@ fun InspectorDrawer(
                 }
             }
         }
-        TooltipLayer(tooltipState)
     }
 }
 
@@ -247,7 +237,7 @@ private fun TimestampRow(
 }
 
 @Composable
-private fun InspectorData(state: BrowserState, details: RecordDetails, tooltipState: TooltipState) {
+private fun InspectorData(state: BrowserState, details: RecordDetails) {
     var fieldSearch by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
@@ -302,7 +292,7 @@ private fun InspectorData(state: BrowserState, details: RecordDetails, tooltipSt
             Text("No matching fields.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             filtered.forEach { node ->
-                FieldNodeView(state, node, tooltipState)
+                FieldNodeView(state, node)
             }
         }
     }
@@ -523,7 +513,7 @@ private fun buildHighlightedLine(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState, tooltipState: TooltipState) {
+private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState) {
     val tooltip = field.type.ifBlank { "Unknown" }
     if (field.reference != null) {
         Row(
@@ -532,11 +522,10 @@ private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState, t
             verticalAlignment = Alignment.Top,
         ) {
             Text(field.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(140.dp))
-            ReferenceValue(state, field.reference, tooltipState)
+            ReferenceValue(state, field.reference)
         }
     } else {
         HoverTooltip(
-            state = tooltipState,
             text = tooltip,
             monospace = false,
         ) { hoverModifier ->
@@ -554,12 +543,11 @@ private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState, t
     }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun ReferenceValue(
     state: BrowserState,
     reference: ReferenceMeta,
-    tooltipState: TooltipState,
 ) {
     var preview by remember(reference.keyText, reference.modelName, state.activeConnection) { mutableStateOf<String?>(null) }
     var loading by remember(reference.keyText, reference.modelName, state.activeConnection) { mutableStateOf(false) }
@@ -584,7 +572,6 @@ private fun ReferenceValue(
         else -> preview.orEmpty()
     }
     HoverTooltip(
-        state = tooltipState,
         text = tooltipText,
         monospace = true,
     ) { hoverModifier ->
@@ -602,92 +589,27 @@ private fun ReferenceValue(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun HoverTooltip(
-    state: TooltipState,
     text: String,
     monospace: Boolean,
     content: @Composable (Modifier) -> Unit,
 ) {
-    val hoverId = remember { Any() }
-    var anchorCoordinates by remember { mutableStateOf<LayoutCoordinates?>(null) }
-    val density = LocalDensity.current
-    val windowInfo = LocalWindowInfo.current
-
-    val hoverModifier = Modifier
-        .onGloballyPositioned { anchorCoordinates = it }
-        .pointerInput(text, monospace) {
-            awaitPointerEventScope {
-                while (true) {
-                    val event = awaitPointerEvent()
-                    val coords = anchorCoordinates ?: continue
-                    val pointer = event.changes.firstOrNull()?.position ?: Offset.Zero
-                    val inside = pointer.x in 0f..coords.size.width.toFloat() &&
-                        pointer.y in 0f..coords.size.height.toFloat()
-                    if (inside && event.type != PointerEventType.Exit) {
-                        val windowOffset = coords.localToWindow(pointer)
-                        state.lastWindowOffset = windowOffset
-                        state.ownerId = hoverId
-                        state.text = text
-                        state.monospace = monospace
-                        state.offset = computeTooltipOffset(
-                            windowOffset = windowOffset,
-                            tooltipSize = state.size,
-                            windowSize = windowInfo.containerSize,
-                            density = density,
-                        )
-                        state.visible = true
-                    } else if (state.ownerId == hoverId) {
-                        state.visible = false
-                        state.ownerId = null
-                    }
-                }
-            }
-        }
-
-    LaunchedEffect(text, monospace, state.visible, state.size, state.ownerId) {
-        if (state.visible && state.ownerId == hoverId) {
-            state.text = text
-            state.monospace = monospace
-            state.lastWindowOffset?.let { windowOffset ->
-                state.offset = computeTooltipOffset(
-                    windowOffset = windowOffset,
-                    tooltipSize = state.size,
-                    windowSize = windowInfo.containerSize,
-                    density = density,
-                )
-            }
-        }
+    if (text.isBlank()) {
+        content(Modifier)
+        return
     }
-
-    content(hoverModifier)
-}
-
-private fun computeTooltipOffset(
-    windowOffset: Offset,
-    tooltipSize: IntSize,
-    windowSize: IntSize,
-    density: androidx.compose.ui.unit.Density,
-): IntOffset {
-    val padding = with(density) { 6.dp.toPx() }
-    val maxX = (windowSize.width - tooltipSize.width).coerceAtLeast(0)
-    val maxY = (windowSize.height - tooltipSize.height).coerceAtLeast(0)
-
-    val placeRight = windowOffset.x + padding + tooltipSize.width <= windowSize.width
-    val placeAbove = windowOffset.y - padding - tooltipSize.height >= 0
-    val placeBelow = windowOffset.y + padding + tooltipSize.height <= windowSize.height
-
-    val desiredX = if (placeRight) windowOffset.x + padding else windowOffset.x - tooltipSize.width - padding
-    val desiredY = when {
-        placeAbove -> windowOffset.y - tooltipSize.height - padding
-        placeBelow -> windowOffset.y + padding
-        else -> windowOffset.y - tooltipSize.height - padding
+    TooltipArea(
+        tooltip = { TooltipCard(text, monospace) },
+        delayMillis = 600,
+        tooltipPlacement = TooltipPlacement.CursorPoint(
+            alignment = Alignment.BottomEnd,
+            offset = DpOffset(12.dp, 8.dp),
+        ),
+    ) {
+        content(Modifier)
     }
-
-    val clampedX = desiredX.coerceIn(0f, maxX.toFloat())
-    val clampedY = desiredY.coerceIn(0f, maxY.toFloat())
-    return IntOffset(clampedX.toInt(), clampedY.toInt())
 }
 
 @Composable
@@ -726,43 +648,25 @@ private data class ReferenceMeta(
     val keyText: String,
 )
 
-private class TooltipState {
-    var visible by mutableStateOf(false)
-    var text by mutableStateOf("")
-    var monospace by mutableStateOf(false)
-    var offset by mutableStateOf(IntOffset.Zero)
-    var size by mutableStateOf(IntSize.Zero)
-    var ownerId: Any? = null
-    var lastWindowOffset: Offset? = null
-}
-
 @Composable
-private fun TooltipLayer(state: TooltipState) {
-    if (!state.visible || state.text.isBlank()) return
-    Popup(
-        offset = state.offset,
-        properties = PopupProperties(
-            focusable = false,
-            dismissOnClickOutside = false,
-        ),
+private fun TooltipCard(
+    text: String,
+    monospace: Boolean,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(6.dp),
+        shadowElevation = 6.dp,
     ) {
-        Box(modifier = Modifier.onGloballyPositioned { state.size = it.size }) {
-            Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(6.dp),
-                shadowElevation = 6.dp,
-            ) {
-                Text(
-                    state.text,
-                    style = if (state.monospace) {
-                        MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace)
-                    } else {
-                        MaterialTheme.typography.labelSmall
-                    },
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
-                )
-            }
-        }
+        Text(
+            text,
+            style = if (monospace) {
+                MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.Monospace)
+            } else {
+                MaterialTheme.typography.labelSmall
+            },
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp).widthIn(max = 320.dp),
+        )
     }
 }
 
@@ -923,15 +827,14 @@ private fun filterFieldNodes(nodes: List<FieldNode>, query: String): List<FieldN
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FieldNodeView(state: BrowserState, node: FieldNode, tooltipState: TooltipState, indent: Int = 0) {
+private fun FieldNodeView(state: BrowserState, node: FieldNode, indent: Int = 0) {
     if (node.children.isEmpty()) {
-        DataField(FieldEntry(node.label, node.value, node.type, node.reference), indent, state, tooltipState)
+        DataField(FieldEntry(node.label, node.value, node.type, node.reference), indent, state)
         return
     }
     var expanded by remember(node.label) { mutableStateOf(node.defaultExpanded) }
     val headerLabel = if (node.count != null) "${node.label} (${node.count})" else node.label
     HoverTooltip(
-        state = tooltipState,
         text = node.type.ifBlank { "Embedded" },
         monospace = false,
     ) { hoverModifier ->
@@ -960,7 +863,7 @@ private fun FieldNodeView(state: BrowserState, node: FieldNode, tooltipState: To
     }
     if (expanded) {
         node.children.forEach { child ->
-            FieldNodeView(state, child, tooltipState, indent + 1)
+            FieldNodeView(state, child, indent + 1)
         }
     }
 }

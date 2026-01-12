@@ -1,5 +1,7 @@
 package io.maryk.app
 
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -31,8 +33,6 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -53,9 +53,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.isSecondaryPressed
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -147,26 +144,19 @@ private fun StoreRow(
     onEdit: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    var menuExpanded by remember(store.id) { mutableStateOf(false) }
     val connectedColor = Color(0xFF3FB950)
     Surface(
         tonalElevation = 1.dp,
         shape = RoundedCornerShape(10.dp),
         modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f), RoundedCornerShape(10.dp)),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .pointerInput(store.id) {
-                    awaitPointerEventScope {
-                        while (true) {
-                            val event = awaitPointerEvent()
-                            if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed) {
-                                menuExpanded = true
-                            }
-                        }
-                    }
-                }
+        ContextMenuArea(
+            items = {
+                listOf(
+                    ContextMenuItem("Edit", onEdit),
+                    ContextMenuItem("Remove", onRemove),
+                )
+            },
         ) {
             Row(
                 modifier = Modifier
@@ -203,22 +193,6 @@ private fun StoreRow(
                             .border(1.dp, connectedColor.copy(alpha = 0.4f), shape = CircleShape),
                     )
                 }
-            }
-            DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                DropdownMenuItem(
-                    text = { Text("Edit") },
-                    onClick = {
-                        menuExpanded = false
-                        onEdit()
-                    },
-                )
-                DropdownMenuItem(
-                    text = { Text("Remove") },
-                    onClick = {
-                        menuExpanded = false
-                        onRemove()
-                    },
-                )
             }
         }
     }

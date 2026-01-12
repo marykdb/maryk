@@ -17,11 +17,12 @@ import kotlin.uuid.Uuid
 fun main() = application {
     val repository = remember { StoreRepository() }
     val storesState = remember { StoresState(repository) }
+    val storesWindowState = rememberWindowState(width = 600.dp, height = 700.dp)
+
     val sessions = remember { mutableStateListOf<BrowserSession>() }
     val screenSize = remember { Toolkit.getDefaultToolkit().screenSize }
-    val defaultWidth = (screenSize.width * 0.9).toInt().coerceAtLeast(1100)
-    val defaultHeight = (screenSize.height * 0.9).toInt().coerceAtLeast(800)
-    val storesWindowState = rememberWindowState(width = defaultWidth.dp, height = defaultHeight.dp)
+    val defaultWidth = (screenSize.width * 0.9).toInt().coerceAtLeast(1100).coerceAtMost(1600)
+    val defaultHeight = (screenSize.height * 0.9).toInt().coerceAtLeast(800).coerceAtMost(1200)
 
     LaunchedEffect(Unit) {
         storesState.loadStores()

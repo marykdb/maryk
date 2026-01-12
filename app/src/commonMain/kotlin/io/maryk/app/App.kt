@@ -81,10 +81,10 @@ fun StoresWindowContent(
             TopAppBar(
                 title = { Text("Stores") },
                 actions = {
-                    SmallButton(
+                    SmallOutlinedButton(
                         label = "Add store",
                         icon = Icons.Default.Add,
-                        colors = ButtonDefaults.buttonColors(contentColor = MaterialTheme.colorScheme.onTertiary, containerColor = MaterialTheme.colorScheme.tertiary),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         onClick = { storesState.openStoreEditor(null) },
                     )
                 }

@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -81,7 +82,7 @@ fun StoresWindowContent(
                     SmallOutlinedButton(
                         label = "Add store",
                         icon = Icons.Default.Add,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        tint = MaterialTheme.colorScheme.primary,
                         onClick = { storesState.openStoreEditor(null) },
                     )
                 }
@@ -395,6 +396,7 @@ private fun SmallOutlinedButton(
         onClick = onClick,
         enabled = enabled,
         contentPadding = denseButtonPadding,
+        border = BorderStroke(1.dp, tint),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = tint),
     ) {
         if (icon != null) {

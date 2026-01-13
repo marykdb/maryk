@@ -1,5 +1,6 @@
 package io.maryk.app
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ContextMenuArea
 import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -121,8 +122,7 @@ fun ResultsDataGrid(
             state.referenceBackTarget?.let { target ->
                 Surface(
                     color = Color(0xFFFFF3BF),
-                    shape = RoundedCornerShape(8.dp),
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                    modifier = Modifier.fillMaxWidth(),
                 ) {
                     Row(
                         modifier = Modifier
@@ -336,6 +336,8 @@ fun ResultsDataGrid(
                     OutlinedButton(
                         onClick = { deleteRow = null },
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                     ) {
                         Text("Cancel", style = MaterialTheme.typography.labelMedium)
                     }

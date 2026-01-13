@@ -4,6 +4,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.VerticalScrollbar
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -446,7 +447,8 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
                             isEditing = false
                         },
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                     ) {
                         Text("Cancel", style = MaterialTheme.typography.labelMedium)
                     }

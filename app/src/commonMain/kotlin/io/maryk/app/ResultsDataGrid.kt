@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +21,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -33,11 +34,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +54,7 @@ import androidx.compose.material3.TabRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,9 +77,23 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
+import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.ReferenceToMax
+import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.values.Values
 
 private val headerHeight = 32.dp
+private val indexColumnWidth = 160.dp
+private val valuesColumnWidth = 260.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -87,14 +108,34 @@ fun ResultsDataGrid(
     val clipboard = LocalClipboardManager.current
     var deleteRow by remember { mutableStateOf<ScanRow?>(null) }
     var hardDelete by remember { mutableStateOf(false) }
+    val dataModel = state.currentDataModel()
+    val indexColumns = remember(dataModel) { buildIndexColumns(dataModel) }
+    val sortOptions = remember(dataModel) { buildSortOptions(dataModel) }
+    var sortExpanded by remember { mutableStateOf(false) }
+    var selectedSort by remember(state.selectedModelId) { mutableStateOf(sortOptions.firstOrNull()) }
+    var sortDescending by remember(state.selectedModelId) { mutableStateOf(false) }
+    val horizontalScroll = rememberScrollState()
+    val indexColumnWidths = remember { mutableStateListOf<Dp>() }
     val densityHeight = when (uiState.gridDensity) {
         GridDensity.COMPACT -> 40.dp
         GridDensity.STANDARD -> 58.dp
         GridDensity.COMFY -> 70.dp
     }
 
+    LaunchedEffect(indexColumns) {
+        indexColumnWidths.clear()
+        repeat(indexColumns.size) { indexColumnWidths.add(indexColumnWidth) }
+    }
+
     LaunchedEffect(rows) {
         uiState.selectedRowKeys.clear()
+    }
+
+    LaunchedEffect(sortOptions, state.scanConfig.orderFields) {
+        val (paths, descending) = parseOrderFields(state.scanConfig.orderFields)
+        val match = sortOptions.firstOrNull { it.orderPaths == paths }
+        selectedSort = match ?: sortOptions.firstOrNull()
+        sortDescending = descending ?: false
     }
 
     val pendingKey = state.pendingHighlightKey
@@ -170,6 +211,63 @@ fun ResultsDataGrid(
                 }
             }
 
+            if (uiState.resultsTab == ResultsTab.DATA && sortOptions.isNotEmpty()) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    Text("Sort by", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                        OutlinedButton(
+                            onClick = { sortExpanded = true },
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                            shape = RoundedCornerShape(4.dp),
+                            modifier = Modifier.height(24.dp),
+                        ) {
+                            Text(selectedSort?.label ?: "Key", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Open sort options", modifier = Modifier.size(14.dp))
+                        }
+                        DropdownMenu(
+                            expanded = sortExpanded,
+                            onDismissRequest = { sortExpanded = false },
+                            offset = DpOffset(0.dp, 4.dp),
+                        ) {
+                            sortOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option.label, style = MaterialTheme.typography.labelSmall) },
+                                    onClick = {
+                                        sortExpanded = false
+                                        selectedSort = option
+                                        applySortSelection(state, option, sortDescending)
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    IconButton(
+                        onClick = {
+                            val next = !sortDescending
+                            sortDescending = next
+                            selectedSort?.let { applySortSelection(state, it, next) }
+                        },
+                        enabled = selectedSort != null,
+                        modifier = Modifier.size(28.dp),
+                    ) {
+                        Icon(
+                            if (sortDescending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                            contentDescription = if (sortDescending) "Descending" else "Ascending",
+                            modifier = Modifier.size(14.dp),
+                        )
+                    }
+                }
+            }
+
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
                 if (uiState.resultsTab == ResultsTab.DATA) {
                     LazyColumn(
@@ -218,8 +316,19 @@ fun ResultsDataGrid(
                         stickyHeader {
                             GridHeaderRow(
                                 keyWidth = clampedKeyWidth,
-                                onResize = { delta ->
+                                indexColumns = indexColumns,
+                                indexWidths = indexColumnWidths,
+                                valuesWidth = valuesColumnWidth,
+                                horizontalScroll = horizontalScroll,
+                                onResizeKey = { delta ->
                                     keyColumnWidth = (keyColumnWidth + delta).coerceIn(140.dp, maxKeyWidth)
+                                },
+                                onResizeIndex = { index, delta ->
+                                    val current = indexColumnWidths.getOrNull(index) ?: indexColumnWidth
+                                    val next = (current + delta).coerceIn(120.dp, 260.dp)
+                                    if (index < indexColumnWidths.size) {
+                                        indexColumnWidths[index] = next
+                                    }
                                 },
                             )
                         }
@@ -255,7 +364,8 @@ fun ResultsDataGrid(
                                             updateSelection(rows, index, uiState, null, anchorIndex) { anchorIndex = it }
                                             state.openRecord(row)
                                         }
-                                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                                        .padding(horizontal = 8.dp, vertical = 3.dp)
+                                        .horizontalScroll(horizontalScroll),
                                     verticalAlignment = Alignment.Top,
                                     horizontalArrangement = Arrangement.Start,
                                 ) {
@@ -268,10 +378,22 @@ fun ResultsDataGrid(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
+                                    indexColumns.forEachIndexed { colIndex, column ->
+                                        val value = formatValueForColumn(row.values, column)
+                                        val width = indexColumnWidths.getOrNull(colIndex) ?: indexColumnWidth
+                                        Text(
+                                            value,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            modifier = Modifier.width(width),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                    }
                                     Text(
                                         row.summary,
                                         style = MaterialTheme.typography.bodySmall,
-                                        modifier = Modifier.weight(1f),
+                                        modifier = Modifier.width(valuesColumnWidth),
                                         maxLines = 3,
                                         overflow = TextOverflow.Ellipsis,
                                     )
@@ -363,11 +485,21 @@ fun ResultsDataGrid(
 @Composable
 private fun GridHeaderRow(
     keyWidth: Dp,
-    onResize: (Dp) -> Unit,
+    indexColumns: List<IndexColumn>,
+    indexWidths: List<Dp>,
+    valuesWidth: Dp,
+    horizontalScroll: androidx.compose.foundation.ScrollState,
+    onResizeKey: (Dp) -> Unit,
+    onResizeIndex: (Int, Dp) -> Unit,
 ) {
     Column {
         Row(
-            modifier = Modifier.fillMaxWidth().height(headerHeight).background(MaterialTheme.colorScheme.surfaceVariant).padding(horizontal = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(headerHeight)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .padding(horizontal = 8.dp)
+                .horizontalScroll(horizontalScroll),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Start,
         ) {
@@ -376,16 +508,37 @@ private fun GridHeaderRow(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(keyWidth),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            ColumnResizeHandle(onResize = onResize)
-            HeaderCell("Values", 1f)
+            ColumnResizeHandle(onResize = onResizeKey)
+            indexColumns.forEachIndexed { index, column ->
+                val width = indexWidths.getOrNull(index) ?: indexColumnWidth
+                HeaderCell(column.label, width)
+                ColumnResizeHandle(onResize = { delta -> onResizeIndex(index, delta) })
+            }
+            Text(
+                "Values",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(valuesWidth),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
 
 @Composable
-private fun RowScope.HeaderCell(label: String, weight: Float) {
-    Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(weight))
+private fun HeaderCell(label: String, width: Dp) {
+    Text(
+        label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.width(width),
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 @Composable
@@ -451,4 +604,121 @@ private fun updateSelection(
     val current = uiState.selectedRowKeys[row.key] == true
     uiState.selectedRowKeys[row.key] = !current
     onAnchorChange(index)
+}
+
+private data class IndexColumn(
+    val label: String,
+    val reference: IsPropertyReference<*, IsPropertyDefinition<*>, *>,
+)
+
+private data class SortOption(
+    val label: String,
+    val orderPaths: List<String>,
+)
+
+private fun buildIndexColumns(dataModel: IsRootDataModel?): List<IndexColumn> {
+    if (dataModel == null) return emptyList()
+    val references = collectIndexReferences(dataModel.Meta.keyDefinition) +
+        dataModel.Meta.indexes.orEmpty().flatMap { collectIndexReferences(it) }
+    val seen = linkedSetOf<String>()
+    return references.mapNotNull { reference ->
+        @Suppress("UNCHECKED_CAST")
+        val castRef = reference as? IsPropertyReference<*, IsPropertyDefinition<*>, *> ?: return@mapNotNull null
+        val label = referenceLabel(reference)
+        if (!seen.add(label)) return@mapNotNull null
+        IndexColumn(label = label, reference = castRef)
+    }
+}
+
+private fun buildSortOptions(dataModel: IsRootDataModel?): List<SortOption> {
+    if (dataModel == null) return emptyList()
+    val options = mutableListOf<SortOption>()
+    val keyRefs = collectIndexReferences(dataModel.Meta.keyDefinition)
+    val keyPaths = keyRefs.mapNotNull { it as? AnyPropertyReference }.map { it.completeName }
+    options += SortOption(label = "Key", orderPaths = keyPaths)
+    dataModel.Meta.indexes.orEmpty().forEachIndexed { index, indexable ->
+        val refs = collectIndexReferences(indexable)
+        val paths = refs.mapNotNull { it as? AnyPropertyReference }.map { it.completeName }
+        val label = buildIndexSortLabel(index + 1, refs)
+        options += SortOption(label = label, orderPaths = paths)
+    }
+    return options
+}
+
+private fun collectIndexReferences(indexable: IsIndexable): List<IsIndexablePropertyReference<*>> {
+    return when (indexable) {
+        is UUIDKey -> emptyList()
+        is Multiple -> indexable.references
+        is Reversed<*> -> listOf(indexable.reference)
+        is ReferenceToMax<*> -> listOf(indexable.reference)
+        is IsIndexablePropertyReference<*> -> listOf(indexable)
+        else -> emptyList()
+    }
+}
+
+private fun referenceLabel(reference: IsIndexablePropertyReference<*>): String {
+    return (reference as? AnyPropertyReference)?.completeName ?: reference.toString()
+}
+
+private fun buildIndexSortLabel(
+    index: Int,
+    references: List<IsIndexablePropertyReference<*>>,
+): String {
+    if (references.isEmpty()) return "$index"
+    val labels = references.map(::referenceLabel)
+    val shown = labels.take(2)
+    val suffix = if (labels.size > shown.size) "${shown.joinToString(", ")}…" else shown.joinToString(", ")
+    return "$index • $suffix"
+}
+
+private fun formatValueForColumn(
+    values: Values<IsRootDataModel>,
+    column: IndexColumn,
+): String {
+    @Suppress("UNCHECKED_CAST")
+    val reference = column.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
+    val value = values[reference]
+    val text = formatValue(reference, value)
+    return text.ifBlank { "—" }
+}
+
+private fun parseOrderFields(raw: String): Pair<List<String>, Boolean?> {
+    if (raw.isBlank()) return emptyList<String>() to null
+    val tokens = raw.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+    if (tokens.isEmpty()) return emptyList<String>() to null
+    val paths = ArrayList<String>(tokens.size)
+    val directions = ArrayList<Boolean>(tokens.size)
+    for (token in tokens) {
+        val (path, descending) = parseOrderToken(token)
+        paths += path
+        directions += descending
+    }
+    val direction = if (directions.all { it }) true else if (directions.all { !it }) false else null
+    return paths to direction
+}
+
+private fun parseOrderToken(token: String): Pair<String, Boolean> {
+    val trimmed = token.trim()
+    return when {
+        trimmed.startsWith("-") -> trimmed.drop(1).trim() to true
+        trimmed.startsWith("+") -> trimmed.drop(1).trim() to false
+        trimmed.endsWith(":desc", ignoreCase = true) -> trimmed.dropLast(5).trim() to true
+        trimmed.endsWith(":asc", ignoreCase = true) -> trimmed.dropLast(4).trim() to false
+        else -> trimmed to false
+    }
+}
+
+private fun applySortSelection(
+    state: BrowserState,
+    option: SortOption,
+    descending: Boolean,
+) {
+    val orderFields = if (option.orderPaths.isEmpty()) {
+        ""
+    } else {
+        option.orderPaths.joinToString(", ") { path ->
+            if (descending) "-$path" else path
+        }
+    }
+    state.updateOrderFields(orderFields)
 }

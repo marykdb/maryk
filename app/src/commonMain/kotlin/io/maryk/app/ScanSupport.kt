@@ -222,7 +222,7 @@ private fun serializeValues(
     return output.toString()
 }
 
-private fun formatValue(
+internal fun formatValue(
     reference: IsPropertyReference<*, IsPropertyDefinition<*>, *>,
     value: Any?,
 ): String {

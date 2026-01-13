@@ -74,6 +74,7 @@ private data class ModelNode(
 @Composable
 private fun ModelKeyIndexSection(
     dataModel: IsRootDataModel,
+    onSelect: (String) -> Unit,
 ) {
     val indexes = dataModel.Meta.indexes.orEmpty()
     Surface(
@@ -89,6 +90,7 @@ private fun ModelKeyIndexSection(
                 label = "Key",
                 indexable = dataModel.Meta.keyDefinition,
                 tone = MaterialTheme.colorScheme.tertiary,
+                onSelect = onSelect,
             )
             if (indexes.isNotEmpty()) {
                 indexes.forEachIndexed { index, indexable ->
@@ -96,6 +98,7 @@ private fun ModelKeyIndexSection(
                         label = "Index ${index + 1}",
                         indexable = indexable,
                         tone = MaterialTheme.colorScheme.primary,
+                        onSelect = onSelect,
                     )
                 }
             }
@@ -108,6 +111,7 @@ private fun IndexDefinitionRow(
     label: String,
     indexable: IsIndexable,
     tone: Color,
+    onSelect: (String) -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -118,7 +122,7 @@ private fun IndexDefinitionRow(
             style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        IndexableChips(indexable = indexable, tone = tone)
+        IndexableChips(indexable = indexable, tone = tone, onSelect = onSelect)
     }
 }
 
@@ -126,6 +130,7 @@ private fun IndexDefinitionRow(
 private fun IndexableChips(
     indexable: IsIndexable,
     tone: Color,
+    onSelect: (String) -> Unit,
 ) {
     WrapRow(
         horizontalSpacing = 6.dp,
@@ -135,16 +140,16 @@ private fun IndexableChips(
             is UUIDKey -> Chip(label = "UUID key", tone = tone)
             is Multiple -> ChipGroupBox(tone = tone) {
                 indexable.references.forEach { reference ->
-                    ReferenceChip(reference = reference, tone = tone)
+                    ReferenceChip(reference = reference, tone = tone, onSelect = onSelect)
                 }
             }
             is Reversed<*> -> ChipContainer(label = "Reversed", tone = tone) {
-                ReferenceChip(reference = indexable.reference, tone = tone)
+                ReferenceChip(reference = indexable.reference, tone = tone, onSelect = onSelect)
             }
             is ReferenceToMax<*> -> ChipContainer(label = "Ref to Max", tone = tone) {
-                ReferenceChip(reference = indexable.reference, tone = tone)
+                ReferenceChip(reference = indexable.reference, tone = tone, onSelect = onSelect)
             }
-            is IsIndexablePropertyReference<*> -> ReferenceChip(reference = indexable, tone = tone)
+            is IsIndexablePropertyReference<*> -> ReferenceChip(reference = indexable, tone = tone, onSelect = onSelect)
             else -> Chip(label = indexable::class.simpleName.orEmpty(), tone = tone)
         }
     }
@@ -154,11 +159,14 @@ private fun IndexableChips(
 private fun ReferenceChip(
     reference: IsIndexablePropertyReference<*>,
     tone: Color,
+    onSelect: (String) -> Unit,
 ) {
+    val path = referenceLabel(reference)
     Chip(
-        label = referenceLabel(reference),
+        label = path,
         tone = tone,
         monospace = true,
+        onClick = { onSelect(path) },
     )
 }
 
@@ -216,10 +224,12 @@ private fun Chip(
     label: String,
     tone: Color,
     monospace: Boolean = false,
+    onClick: (() -> Unit)? = null,
 ) {
     Surface(
         color = tone.copy(alpha = 0.14f),
         shape = MaterialTheme.shapes.small,
+        modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
     ) {
         Text(
             label,
@@ -276,6 +286,18 @@ private fun WrapRow(
     }
 }
 
+private fun buildModelRefMap(model: IsRootDataModel): Map<String, ModelFieldRef> {
+    val nodes = buildModelNodes(model)
+    val map = mutableMapOf<String, ModelFieldRef>()
+    fun visit(node: ModelNode) {
+        node.wrapper?.let { map[node.path] = ModelFieldRef(node.path, it, definition = it.definition) }
+        node.subDefinition?.let { map[node.path] = ModelFieldRef(node.path, wrapper = null, definition = it) }
+        node.children.forEach(::visit)
+    }
+    nodes.forEach(::visit)
+    return map
+}
+
 @Composable
 fun ModelTabPanel(
     state: BrowserState,
@@ -289,11 +311,15 @@ fun ModelTabPanel(
         return
     }
     val nodes = remember(dataModel) { buildModelNodes(dataModel) }
+    val refMap = remember(dataModel) { buildModelRefMap(dataModel) }
     Column(
         modifier = modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        ModelKeyIndexSection(dataModel)
+        ModelKeyIndexSection(
+            dataModel = dataModel,
+            onSelect = { path -> refMap[path]?.let { state.selectModelField(it) } },
+        )
         nodes.forEach { node ->
             ModelNodeView(
                 node = node,

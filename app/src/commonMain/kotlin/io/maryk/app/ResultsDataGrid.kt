@@ -134,7 +134,7 @@ fun ResultsDataGrid(
         repeat(indexColumns.size) { indexColumnWidths.add(indexColumnWidth) }
     }
 
-    LaunchedEffect(rows) {
+    LaunchedEffect(state.scanGeneration) {
         uiState.selectedRowKeys.clear()
     }
 

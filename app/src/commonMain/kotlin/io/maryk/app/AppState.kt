@@ -44,7 +44,13 @@ class BrowserState(
     var scanStatus by mutableStateOf<String?>(null)
         private set
 
+    var scanGeneration by mutableStateOf(0)
+        private set
+
     var isWorking by mutableStateOf(false)
+        private set
+
+    var isScanning by mutableStateOf(false)
         private set
 
     var recordDetails by mutableStateOf<RecordDetails?>(null)
@@ -219,6 +225,7 @@ class BrowserState(
     fun scanFromStart() {
         scanResults = emptyList()
         scanCursor = ScanCursor()
+        scanGeneration += 1
         loadNextPage(reset = true)
     }
 
@@ -227,7 +234,7 @@ class BrowserState(
     }
 
     fun canLoadMoreScanResults(): Boolean {
-        return !scanCursor.endReached && !isWorking
+        return !scanCursor.endReached && !isScanning
     }
 
     fun hasMoreScanResults(): Boolean {
@@ -438,6 +445,7 @@ class BrowserState(
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return
         if (scanCursor.endReached && !reset) return
         isWorking = true
+        isScanning = true
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 buildScanPage(connection.dataStore, dataModel, reset)
@@ -446,12 +454,14 @@ class BrowserState(
                 is ScanPageResult.Error -> {
                     scanStatus = result.message
                     isWorking = false
+                    isScanning = false
                 }
                 is ScanPageResult.Success -> {
                     scanStatus = result.message
                     scanCursor = result.cursor
                     scanResults = if (reset) result.rows else scanResults + result.rows
                     isWorking = false
+                    isScanning = false
                 }
             }
         }
@@ -623,6 +633,7 @@ class BrowserState(
         scanResults = emptyList()
         scanCursor = ScanCursor()
         scanStatus = null
+        scanGeneration += 1
     }
 }
 

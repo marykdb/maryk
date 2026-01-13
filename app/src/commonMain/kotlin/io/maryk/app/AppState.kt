@@ -162,17 +162,15 @@ class BrowserState(
     fun openReference(
         modelName: String,
         key: Key<IsRootDataModel>,
-        keyText: String,
         setBackTarget: Boolean = true,
     ) {
         val (modelId, _) = resolveModelByName(modelName) ?: return
-        openReferenceById(modelId, key, keyText, setBackTarget)
+        openReferenceById(modelId, key, setBackTarget)
     }
 
     fun openReferenceById(
         modelId: UInt,
         key: Key<IsRootDataModel>,
-        keyText: String,
         setBackTarget: Boolean = true,
     ) {
         if (setBackTarget) {
@@ -206,7 +204,7 @@ class BrowserState(
     fun backToReferenceTarget() {
         val target = referenceBackTarget ?: return
         referenceBackTarget = null
-        openReferenceById(target.modelId, target.key, target.keyText, setBackTarget = false)
+        openReferenceById(target.modelId, target.key, setBackTarget = false)
     }
 
     fun clearReferenceBackTarget() {

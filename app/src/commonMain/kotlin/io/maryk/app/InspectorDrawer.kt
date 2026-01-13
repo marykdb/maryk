@@ -585,7 +585,7 @@ private fun ReferenceValue(
                 textDecoration = TextDecoration.Underline,
             ),
             modifier = hoverModifier.clickable {
-                state.openReference(reference.modelName, reference.key, reference.keyText)
+                state.openReference(reference.modelName, reference.key)
             },
         )
     }

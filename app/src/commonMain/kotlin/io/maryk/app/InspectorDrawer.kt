@@ -54,9 +54,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -308,6 +310,7 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
     var errorMessage by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
+    val clipboard = LocalClipboardManager.current
     val query = search.trim()
     val lines = remember(details.yaml) { details.yaml.lines() }
     val filteredLines = remember(query, lines) {
@@ -346,6 +349,17 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Raw", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
             IconButton(
+                onClick = { clipboard.setText(AnnotatedString(details.yaml)) },
+                modifier = Modifier.size(20.dp).alpha(0.65f),
+            ) {
+                Icon(
+                    Icons.Default.ContentCopy,
+                    contentDescription = "Copy raw data",
+                    modifier = Modifier.size(12.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                )
+            }
+            IconButton(
                 onClick = {
                     showSearch = !showSearch
                     if (!showSearch) {
@@ -377,24 +391,25 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
             )
         }
         Surface(shape = RoundedCornerShape(8.dp), color = Color.Transparent) {
-            if (query.isBlank()) {
-                Text(
-                    text = details.yaml,
-                    style = baseStyle,
-                    modifier = Modifier.padding(vertical = 12.dp),
-                )
-            } else {
-                Column(modifier = Modifier.padding(vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    highlightedLines.forEach { line ->
-                        Surface(
-                            color = highlightColor.copy(alpha = 0.12f),
-                            shape = RoundedCornerShape(4.dp),
-                        ) {
-                            Text(
-                                text = line,
-                                style = baseStyle,
-                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
-                            )
+            SelectionContainer {
+                if (query.isBlank()) {
+                    Text(
+                        text = details.yaml,
+                        style = baseStyle,
+                    )
+                } else {
+                    Column(modifier = Modifier.padding(vertical = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        highlightedLines.forEach { line ->
+                            Surface(
+                                color = highlightColor.copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(4.dp),
+                            ) {
+                                Text(
+                                    text = line,
+                                    style = baseStyle,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+                                )
+                            }
                         }
                     }
                 }

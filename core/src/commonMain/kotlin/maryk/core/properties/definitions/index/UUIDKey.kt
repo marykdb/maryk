@@ -53,6 +53,8 @@ object UUIDKey : IsFixedBytesPropertyReference<Uuid> {
         this.indexKeyPartType.index.writeVarBytes(writer)
     }
 
+    override fun toString() = "UUIDKey"
+
     override fun isCompatibleWithModel(dataModel: IsRootDataModel) = true
 
     internal object Model : DefinitionModel<UUIDKey>() {

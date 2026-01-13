@@ -1,5 +1,6 @@
 package io.maryk.app
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -14,13 +15,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,8 +29,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsTypedDataModel
@@ -47,6 +53,13 @@ import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.ReferenceToMax
+import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsIndexablePropertyReference
 
 private data class ModelNode(
     val path: String,
@@ -57,6 +70,211 @@ private data class ModelNode(
     val children: List<ModelNode> = emptyList(),
     val defaultExpanded: Boolean = true,
 )
+
+@Composable
+private fun ModelKeyIndexSection(
+    dataModel: IsRootDataModel,
+) {
+    val indexes = dataModel.Meta.indexes.orEmpty()
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth().padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            IndexDefinitionRow(
+                label = "Key",
+                indexable = dataModel.Meta.keyDefinition,
+                tone = MaterialTheme.colorScheme.tertiary,
+            )
+            if (indexes.isNotEmpty()) {
+                indexes.forEachIndexed { index, indexable ->
+                    IndexDefinitionRow(
+                        label = "Index ${index + 1}",
+                        indexable = indexable,
+                        tone = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun IndexDefinitionRow(
+    label: String,
+    indexable: IsIndexable,
+    tone: Color,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        IndexableChips(indexable = indexable, tone = tone)
+    }
+}
+
+@Composable
+private fun IndexableChips(
+    indexable: IsIndexable,
+    tone: Color,
+) {
+    WrapRow(
+        horizontalSpacing = 6.dp,
+        verticalSpacing = 6.dp,
+    ) {
+        when (indexable) {
+            is UUIDKey -> Chip(label = "UUID key", tone = tone)
+            is Multiple -> ChipGroupBox(tone = tone) {
+                indexable.references.forEach { reference ->
+                    ReferenceChip(reference = reference, tone = tone)
+                }
+            }
+            is Reversed<*> -> ChipContainer(label = "Reversed", tone = tone) {
+                ReferenceChip(reference = indexable.reference, tone = tone)
+            }
+            is ReferenceToMax<*> -> ChipContainer(label = "Ref to Max", tone = tone) {
+                ReferenceChip(reference = indexable.reference, tone = tone)
+            }
+            is IsIndexablePropertyReference<*> -> ReferenceChip(reference = indexable, tone = tone)
+            else -> Chip(label = indexable::class.simpleName.orEmpty(), tone = tone)
+        }
+    }
+}
+
+@Composable
+private fun ReferenceChip(
+    reference: IsIndexablePropertyReference<*>,
+    tone: Color,
+) {
+    Chip(
+        label = referenceLabel(reference),
+        tone = tone,
+        monospace = true,
+    )
+}
+
+private fun referenceLabel(reference: IsIndexablePropertyReference<*>): String {
+    return (reference as? AnyPropertyReference)?.completeName ?: reference.toString()
+}
+
+@Composable
+private fun ChipContainer(
+    label: String,
+    tone: Color,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        color = tone.copy(alpha = 0.12f),
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, tone.copy(alpha = 0.35f)),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = tone)
+            WrapRow(
+                horizontalSpacing = 6.dp,
+                verticalSpacing = 4.dp,
+            ) {
+                content()
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChipGroupBox(
+    tone: Color,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        color = tone.copy(alpha = 0.08f),
+        shape = MaterialTheme.shapes.small,
+        border = BorderStroke(1.dp, tone.copy(alpha = 0.3f)),
+    ) {
+        WrapRow(
+            modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+            horizontalSpacing = 6.dp,
+            verticalSpacing = 4.dp,
+        ) {
+            content()
+        }
+    }
+}
+@Composable
+private fun Chip(
+    label: String,
+    tone: Color,
+    monospace: Boolean = false,
+) {
+    Surface(
+        color = tone.copy(alpha = 0.14f),
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontFamily = if (monospace) FontFamily.Monospace else FontFamily.SansSerif,
+                fontWeight = FontWeight.SemiBold,
+            ),
+            color = tone,
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+        )
+    }
+}
+
+@Composable
+private fun WrapRow(
+    horizontalSpacing: Dp,
+    verticalSpacing: Dp,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Layout(content = content, modifier = modifier) { measurables, constraints ->
+        val hSpace = horizontalSpacing.roundToPx()
+        val vSpace = verticalSpacing.roundToPx()
+        val placeables = measurables.map { it.measure(constraints) }
+        val maxWidth = if (constraints.maxWidth == Constraints.Infinity) Int.MAX_VALUE else constraints.maxWidth
+        val positions = ArrayList<IntOffset>(placeables.size)
+        var x = 0
+        var y = 0
+        var rowHeight = 0
+        var layoutWidth = 0
+        for (placeable in placeables) {
+            val nextX = if (x == 0) placeable.width else x + hSpace + placeable.width
+            if (nextX > maxWidth && x != 0) {
+                layoutWidth = maxOf(layoutWidth, x)
+                x = 0
+                y += rowHeight + vSpace
+                rowHeight = 0
+            }
+            val placeX = if (x == 0) 0 else x + hSpace
+            positions.add(IntOffset(placeX, y))
+            x = placeX + placeable.width
+            rowHeight = maxOf(rowHeight, placeable.height)
+        }
+        layoutWidth = maxOf(layoutWidth, x)
+        val layoutHeight = y + rowHeight
+        val finalWidth = layoutWidth.coerceIn(constraints.minWidth, constraints.maxWidth)
+        val finalHeight = layoutHeight.coerceIn(constraints.minHeight, constraints.maxHeight)
+        layout(finalWidth, finalHeight) {
+            placeables.forEachIndexed { index, placeable ->
+                val position = positions[index]
+                placeable.placeRelative(position.x, position.y)
+            }
+        }
+    }
+}
 
 @Composable
 fun ModelTabPanel(
@@ -75,6 +293,7 @@ fun ModelTabPanel(
         modifier = modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
+        ModelKeyIndexSection(dataModel)
         nodes.forEach { node ->
             ModelNodeView(
                 node = node,

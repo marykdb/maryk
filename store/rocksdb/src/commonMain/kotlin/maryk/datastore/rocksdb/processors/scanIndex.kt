@@ -103,7 +103,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
 
                 if (indexStartKey == null || indexStartKey.isEmpty()) {
                     iterator.seek(indexReference.nextByteInSameLength())
-                    if (!iterator.isValid()) {
+                    if (iterator.isValid()) {
+                        iterator.prev()
+                    } else {
                         iterator.seekToLast()
                     }
                 } else {

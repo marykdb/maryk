@@ -28,7 +28,8 @@ class DataStoreScanWithMutableValueIndexTest(
 
     override val allTests = mapOf(
         "executeScanOnAscendingIndexRequest" to ::executeScanOnAscendingIndexRequest,
-        "executeScanChangesOnDescendingIndexRequest" to ::executeScanOnDescendingIndexRequest
+        "executeScanChangesOnDescendingIndexRequest" to ::executeScanOnDescendingIndexRequest,
+        "executeScanOnDescendingIndexNoStartKeyRequest" to ::executeScanOnDescendingIndexNoStartKeyRequest
     )
 
     private val objects = arrayOf(
@@ -138,6 +139,33 @@ class DataStoreScanWithMutableValueIndexTest(
             expect(keys[1]) { key }
         }
         scanResponse.values[1].apply {
+            expect(keys[3]) { key }
+        }
+    }
+
+    private suspend fun executeScanOnDescendingIndexNoStartKeyRequest() {
+        val scanResponse = dataStore.execute(
+            ModelV2ExtraIndex.scan(order = ModelV2ExtraIndex { newNumber::ref }.descending())
+        )
+
+        expect(4) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.DESC,
+            index = byteArrayOf(10, 17),
+            startKey = byteArrayOf(),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
+
+        scanResponse.values[0].apply {
+            expect(keys[2]) { key }
+        }
+        scanResponse.values[1].apply {
+            expect(keys[0]) { key }
+        }
+        scanResponse.values[2].apply {
+            expect(keys[1]) { key }
+        }
+        scanResponse.values[3].apply {
             expect(keys[3]) { key }
         }
     }

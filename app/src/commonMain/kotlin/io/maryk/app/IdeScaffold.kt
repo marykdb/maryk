@@ -39,7 +39,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import kotlinx.coroutines.delay
 
-private val topBarHeight = 80.dp
+private val topBarHeight = 60.dp
 
 @Composable
 fun AppScaffold(
@@ -54,11 +54,11 @@ fun AppScaffold(
         Surface(color = MaterialTheme.colorScheme.surface) {
             Column {
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(topBarHeight).padding(horizontal = 16.dp, vertical = 6.dp),
+                    modifier = Modifier.fillMaxWidth().height(topBarHeight).padding(horizontal = 12.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    IconButton(onClick = onToggleCatalog) {
+                    IconButton(onClick = onToggleCatalog, modifier = Modifier.size(32.dp)) {
                         val icon = if (uiState.showCatalog) {
                             Icons.AutoMirrored.Filled.ViewSidebar
                         } else {
@@ -72,7 +72,7 @@ fun AppScaffold(
                     }
                     StoreChrome(state = state)
                     Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = onToggleInspector) {
+                    IconButton(onClick = onToggleInspector, modifier = Modifier.size(32.dp)) {
                         val icon = if (uiState.showInspector) {
                             Icons.AutoMirrored.Filled.ViewSidebar
                         } else {

@@ -45,12 +45,15 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -221,6 +224,13 @@ private fun StoreEditorDialog(storesState: StoresState) {
     var clusterFile by remember(editing) { mutableStateOf(editing?.clusterFile.orEmpty()) }
     var tenant by remember(editing) { mutableStateOf(editing?.tenant.orEmpty()) }
     var error by remember(editing) { mutableStateOf<String?>(null) }
+    val nameFocusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(editing) {
+        if (editing == null) {
+            nameFocusRequester.requestFocus()
+        }
+    }
 
     ModalSurface(onDismiss = { storesState.closeStoreEditor() }) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -237,7 +247,7 @@ private fun StoreEditorDialog(storesState: StoresState) {
                     value = name,
                     onValueChange = { name = it },
                     label = "Name",
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().focusRequester(nameFocusRequester),
                 )
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Store type", style = MaterialTheme.typography.labelMedium)

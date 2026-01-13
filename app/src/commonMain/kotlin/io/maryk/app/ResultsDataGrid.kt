@@ -57,6 +57,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -81,6 +82,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.launch
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -92,6 +94,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.Values
+import kotlin.math.roundToInt
 
 private val headerHeight = 32.dp
 private val indexColumnWidth = 160.dp
@@ -106,6 +109,8 @@ fun ResultsDataGrid(
 ) {
     val rows = state.scanResults
     val listState = rememberLazyListState()
+    val listScope = rememberCoroutineScope()
+    val density = LocalDensity.current
     var anchorIndex by remember { mutableStateOf<Int?>(null) }
     val clipboard = LocalClipboardManager.current
     var deleteRow by remember { mutableStateOf<ScanRow?>(null) }
@@ -304,24 +309,69 @@ fun ResultsDataGrid(
                                     Key.DirectionDown -> {
                                         val nextIndex = (selectedIndex + 1).coerceAtMost(rows.lastIndex)
                                         updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
+                                        rows.getOrNull(nextIndex)?.let { state.openRecord(it) }
+                                        if (nextIndex >= rows.lastIndex && state.canLoadMoreScanResults()) {
+                                            state.loadMoreScanResults()
+                                        }
+                                        ensureSelectionVisible(
+                                            listState = listState,
+                                            scope = listScope,
+                                            index = nextIndex,
+                                            movingDown = true,
+                                            estimatedItemSizePx = with(density) { densityHeight.toPx().roundToInt() },
+                                        )
                                         true
                                     }
                                     Key.DirectionUp -> {
                                         val nextIndex = (selectedIndex - 1).coerceAtLeast(0)
                                         updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
+                                        rows.getOrNull(nextIndex)?.let { state.openRecord(it) }
+                                        ensureSelectionVisible(
+                                            listState = listState,
+                                            scope = listScope,
+                                            index = nextIndex,
+                                            movingDown = false,
+                                            estimatedItemSizePx = with(density) { densityHeight.toPx().roundToInt() },
+                                        )
                                         true
                                     }
                                     Key.PageDown -> {
                                         val nextIndex = (selectedIndex + 10).coerceAtMost(rows.lastIndex)
                                         updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
+                                        rows.getOrNull(nextIndex)?.let { state.openRecord(it) }
+                                        if (nextIndex >= rows.lastIndex && state.canLoadMoreScanResults()) {
+                                            state.loadMoreScanResults()
+                                        }
+                                        ensureSelectionVisible(
+                                            listState = listState,
+                                            scope = listScope,
+                                            index = nextIndex,
+                                            movingDown = true,
+                                            estimatedItemSizePx = with(density) { densityHeight.toPx().roundToInt() },
+                                        )
                                         true
                                     }
                                     Key.PageUp -> {
                                         val nextIndex = (selectedIndex - 10).coerceAtLeast(0)
                                         updateSelection(rows, nextIndex, uiState, event, anchorIndex) { anchorIndex = it }
+                                        rows.getOrNull(nextIndex)?.let { state.openRecord(it) }
+                                        ensureSelectionVisible(
+                                            listState = listState,
+                                            scope = listScope,
+                                            index = nextIndex,
+                                            movingDown = false,
+                                            estimatedItemSizePx = with(density) { densityHeight.toPx().roundToInt() },
+                                        )
                                         true
                                     }
                                     Key.Enter -> {
+                                        val selected = rows.getOrNull(selectedIndex)
+                                        if (selected != null) {
+                                            state.openRecord(selected)
+                                        }
+                                        true
+                                    }
+                                    Key.Spacebar -> {
                                         val selected = rows.getOrNull(selectedIndex)
                                         if (selected != null) {
                                             state.openRecord(selected)
@@ -722,6 +772,54 @@ private fun parseOrderFields(raw: String): Pair<List<String>, Boolean?> {
     }
     val direction = if (directions.all { it }) true else if (directions.all { !it }) false else null
     return paths to direction
+}
+
+private fun ensureSelectionVisible(
+    listState: androidx.compose.foundation.lazy.LazyListState,
+    scope: kotlinx.coroutines.CoroutineScope,
+    index: Int,
+    movingDown: Boolean,
+    estimatedItemSizePx: Int,
+) {
+    if (index < 0) return
+    val paddingPx = 15 // px padding; keep selected row at least this far from viewport edges
+    scope.launch {
+        val layoutInfo = listState.layoutInfo
+        val totalCount = layoutInfo.totalItemsCount
+        if (index >= totalCount) return@launch
+        val visible = layoutInfo.visibleItemsInfo
+        val itemInfo = visible.firstOrNull { it.index == index }
+
+        // viewportStartOffset can be negative (content padding/sticky headers). Use viewport height for scrollToItem offsets.
+        val viewportStart = layoutInfo.viewportStartOffset
+        val viewportEnd = layoutInfo.viewportEndOffset
+        val viewportHeight = viewportEnd - viewportStart
+
+        val itemSize = itemInfo?.size ?: estimatedItemSizePx
+        val bottomAlignedOffset = (viewportHeight - paddingPx - itemSize).coerceAtLeast(0)
+        val topAlignedOffset = paddingPx.coerceAtLeast(0)
+
+        // If the item isn't currently laid out, jump it into view at the preferred edge.
+        if (itemInfo == null) {
+            listState.scrollToItem(index, if (movingDown) bottomAlignedOffset else topAlignedOffset)
+            return@launch
+        }
+
+        val desiredStart = viewportStart + paddingPx
+        val desiredEnd = viewportEnd - paddingPx
+        val itemStart = itemInfo.offset
+        val itemEnd = itemInfo.offset + itemInfo.size
+
+        if (movingDown) {
+            if (itemEnd > desiredEnd) {
+                listState.scrollToItem(index, - (viewportHeight - (2 * itemSize) - 10))
+            }
+        } else {
+            if (itemStart < desiredStart) {
+                listState.scrollToItem(index, topAlignedOffset)
+            }
+        }
+    }
 }
 
 private fun parseOrderToken(token: String): Pair<String, Boolean> {

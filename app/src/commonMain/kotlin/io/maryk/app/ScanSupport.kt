@@ -13,6 +13,7 @@ import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.orders.IsOrder
+import maryk.core.query.orders.Order
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
@@ -26,6 +27,8 @@ internal data class DisplayField(
     val path: String,
     val reference: IsPropertyReference<*, IsPropertyDefinition<*>, *>,
 )
+
+internal const val KEY_ORDER_TOKEN = "\$key"
 
 internal object ScanQueryParser {
     fun parseFilter(dataModel: IsRootDataModel, raw: String): IsFilter {
@@ -54,8 +57,12 @@ internal object ScanQueryParser {
         val orders = parts.map { token ->
             val trimmed = token.trim()
             val (path, descending) = parseOrderToken(trimmed)
-            val reference = dataModel.getPropertyReferenceByName(path, context)
-            if (descending) reference.descending() else reference.ascending()
+            if (path == KEY_ORDER_TOKEN) {
+                if (descending) Order.descending else Order.ascending
+            } else {
+                val reference = dataModel.getPropertyReferenceByName(path, context)
+                if (descending) reference.descending() else reference.ascending()
+            }
         }
 
         return if (orders.size == 1) {
@@ -229,13 +236,13 @@ internal fun formatValue(
     if (value == null) return "null"
     val definition = reference.propertyDefinition
     val serializable = when (definition) {
-        is IsSerializablePropertyDefinition<*, *> -> {
-            @Suppress("UNCHECKED_CAST")
-            definition as IsSerializablePropertyDefinition<Any, IsPropertyContext>
-        }
         is IsValueDefinitionWrapper<*, *, *, *> -> {
             @Suppress("UNCHECKED_CAST")
             definition.definition as? IsSerializablePropertyDefinition<Any, IsPropertyContext>
+        }
+        is IsSerializablePropertyDefinition<*, *> -> {
+            @Suppress("UNCHECKED_CAST")
+            definition as IsSerializablePropertyDefinition<Any, IsPropertyContext>
         }
         else -> null
     }

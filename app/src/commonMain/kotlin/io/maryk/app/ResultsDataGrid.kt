@@ -634,7 +634,11 @@ private fun buildSortOptions(dataModel: IsRootDataModel?): List<SortOption> {
     if (dataModel == null) return emptyList()
     val options = mutableListOf<SortOption>()
     val keyRefs = collectIndexReferences(dataModel.Meta.keyDefinition)
-    val keyPaths = keyRefs.mapNotNull { it as? AnyPropertyReference }.map { it.completeName }
+    val keyPaths = if (keyRefs.isEmpty()) {
+        listOf(KEY_ORDER_TOKEN)
+    } else {
+        keyRefs.mapNotNull { it as? AnyPropertyReference }.map { it.completeName }
+    }
     options += SortOption(label = "Key", orderPaths = keyPaths)
     dataModel.Meta.indexes.orEmpty().forEachIndexed { index, indexable ->
         val refs = collectIndexReferences(indexable)

@@ -222,6 +222,18 @@ class BrowserState(
         loadNextPage(reset = true)
     }
 
+    fun loadMoreScanResults() {
+        loadNextPage(reset = false)
+    }
+
+    fun canLoadMoreScanResults(): Boolean {
+        return !scanCursor.endReached && !isWorking
+    }
+
+    fun hasMoreScanResults(): Boolean {
+        return !scanCursor.endReached
+    }
+
     fun openRecord(row: ScanRow) {
         val connection = activeConnection ?: return
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return

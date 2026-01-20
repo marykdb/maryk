@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
@@ -102,6 +103,7 @@ import kotlin.math.roundToInt
 private val headerHeight = 32.dp
 private val indexColumnWidth = 160.dp
 private val valuesColumnWidth = 260.dp
+private val pinnedColumnWidth = 200.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -122,6 +124,20 @@ fun ResultsDataGrid(
     var editRow by remember { mutableStateOf<ScanRow?>(null) }
     val dataModel = state.currentDataModel()
     val indexColumns = remember(dataModel) { buildIndexColumns(dataModel) }
+    val pinnedPaths = uiState.pinnedPaths(state.selectedModelId)
+    val pinnedColumns = remember(dataModel, pinnedPaths) {
+        if (dataModel == null || pinnedPaths.isEmpty()) {
+            emptyList()
+        } else {
+            val context = buildRequestContext(dataModel)
+            pinnedPaths.mapNotNull { path ->
+                runCatching {
+                    val reference = dataModel.getPropertyReferenceByName(path, context)
+                    PinnedColumn(path = path, label = path, reference = reference)
+                }.getOrNull()
+            }
+        }
+    }
     val sortOptions = remember(dataModel) { buildSortOptions(dataModel) }
     var sortExpanded by remember { mutableStateOf(false) }
     var selectedSort by remember(state.selectedModelId) { mutableStateOf(sortOptions.firstOrNull()) }
@@ -414,6 +430,7 @@ fun ResultsDataGrid(
                                 keyWidth = clampedKeyWidth,
                                 indexColumns = indexColumns,
                                 indexWidths = indexColumnWidths,
+                                pinnedColumns = pinnedColumns,
                                 valuesWidth = valuesColumnWidth,
                                 horizontalScroll = horizontalScroll,
                                 onResizeKey = { delta ->
@@ -425,6 +442,9 @@ fun ResultsDataGrid(
                                     if (index < indexColumnWidths.size) {
                                         indexColumnWidths[index] = next
                                     }
+                                },
+                                onUnpin = { path ->
+                                    uiState.togglePinned(state.selectedModelId, path)
                                 },
                             )
                         }
@@ -479,6 +499,17 @@ fun ResultsDataGrid(
                                         overflow = TextOverflow.Ellipsis,
                                     )
                                     Spacer(modifier = Modifier.width(6.dp))
+                                    pinnedColumns.forEach { column ->
+                                        val value = formatValueForPinned(row.values, column)
+                                        Text(
+                                            value,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            modifier = Modifier.width(pinnedColumnWidth),
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                    }
                                     indexColumns.forEachIndexed { colIndex, column ->
                                         val value = formatValueForColumn(row.values, column)
                                         val width = indexColumnWidths.getOrNull(colIndex) ?: indexColumnWidth
@@ -507,7 +538,7 @@ fun ResultsDataGrid(
                         modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                     )
                 } else {
-                    ModelTabPanel(state, modifier = Modifier.fillMaxHeight().fillMaxWidth())
+                    ModelTabPanel(state, uiState, modifier = Modifier.fillMaxHeight().fillMaxWidth())
                 }
             }
         }
@@ -615,10 +646,12 @@ private fun GridHeaderRow(
     keyWidth: Dp,
     indexColumns: List<IndexColumn>,
     indexWidths: List<Dp>,
+    pinnedColumns: List<PinnedColumn>,
     valuesWidth: Dp,
     horizontalScroll: androidx.compose.foundation.ScrollState,
     onResizeKey: (Dp) -> Unit,
     onResizeIndex: (Int, Dp) -> Unit,
+    onUnpin: (String) -> Unit,
 ) {
     Column {
         Row(
@@ -640,6 +673,13 @@ private fun GridHeaderRow(
                 overflow = TextOverflow.Ellipsis,
             )
             ColumnResizeHandle(onResize = onResizeKey)
+            pinnedColumns.forEach { column ->
+                PinnedHeaderCell(
+                    label = column.label,
+                    width = pinnedColumnWidth,
+                    onUnpin = { onUnpin(column.path) },
+                )
+            }
             indexColumns.forEachIndexed { index, column ->
                 val width = indexWidths.getOrNull(index) ?: indexColumnWidth
                 HeaderCell(column.label, width)
@@ -667,6 +707,31 @@ private fun HeaderCell(label: String, width: Dp) {
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )
+}
+
+@Composable
+private fun PinnedHeaderCell(
+    label: String,
+    width: Dp,
+    onUnpin: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.width(width),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = onUnpin, modifier = Modifier.size(18.dp)) {
+            Icon(Icons.Filled.PushPin, contentDescription = "Unpin", modifier = Modifier.size(12.dp))
+        }
+    }
 }
 
 @Composable
@@ -741,6 +806,12 @@ private data class IndexColumn(
     val reference: IsPropertyReference<*, IsPropertyDefinition<*>, *>,
 )
 
+private data class PinnedColumn(
+    val path: String,
+    val label: String,
+    val reference: AnyPropertyReference,
+)
+
 private data class SortOption(
     val label: String,
     val orderPaths: List<String>,
@@ -808,6 +879,17 @@ private fun buildIndexSortLabel(
 private fun formatValueForColumn(
     values: Values<IsRootDataModel>,
     column: IndexColumn,
+): String {
+    @Suppress("UNCHECKED_CAST")
+    val reference = column.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
+    val value = values[reference]
+    val text = formatValue(reference, value)
+    return text.ifBlank { "—" }
+}
+
+private fun formatValueForPinned(
+    values: Values<IsRootDataModel>,
+    column: PinnedColumn,
 ): String {
     @Suppress("UNCHECKED_CAST")
     val reference = column.reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>

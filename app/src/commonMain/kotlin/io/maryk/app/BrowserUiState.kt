@@ -14,6 +14,7 @@ private const val keyGridDensity = "ui.grid.density"
 private const val keyColumns = "ui.grid.columns"
 private const val keyLastModel = "ui.last.model"
 private const val keyResultsTab = "ui.results.tab"
+private const val keyPinned = "ui.model.pins"
 
 enum class GridDensity {
     COMPACT,
@@ -49,10 +50,14 @@ class BrowserUiState {
     val selectedRowKeys = mutableStateMapOf<Key<IsRootDataModel>, Boolean>()
 
     val columnVisibility = mutableStateMapOf<String, Set<String>>()
+    val pinnedProperties = mutableStateMapOf<UInt, Set<String>>()
 
     init {
         readColumns().forEach { (key, value) ->
             columnVisibility[key] = value
+        }
+        readPinned().forEach { (key, value) ->
+            pinnedProperties[key] = value
         }
     }
 
@@ -87,6 +92,38 @@ class BrowserUiState {
         }
     }
 
+    fun pinnedPaths(modelId: UInt?): Set<String> {
+        if (modelId == null) return emptySet()
+        return pinnedProperties[modelId].orEmpty()
+    }
+
+    fun isPinned(modelId: UInt?, path: String): Boolean {
+        if (modelId == null) return false
+        return pinnedProperties[modelId]?.contains(path) == true
+    }
+
+    fun togglePinned(modelId: UInt?, path: String) {
+        if (modelId == null) return
+        val current = pinnedProperties[modelId]?.toMutableSet() ?: mutableSetOf()
+        if (!current.add(path)) {
+            current.remove(path)
+        }
+        if (current.isEmpty()) {
+            pinnedProperties.remove(modelId)
+        } else {
+            pinnedProperties[modelId] = current
+        }
+        persistPinned()
+    }
+
+    fun ensureAutoPins(modelId: UInt?, paths: Set<String>) {
+        if (modelId == null) return
+        if (pinnedProperties[modelId]?.isNotEmpty() == true) return
+        if (paths.isEmpty()) return
+        pinnedProperties[modelId] = paths
+        persistPinned()
+    }
+
     private fun readColumns(): Map<String, Set<String>> {
         val raw = AppPreferences.getString(keyColumns, "")
         if (raw.isBlank()) return emptyMap()
@@ -99,6 +136,28 @@ class BrowserUiState {
                 key to values
             }
             .toMap()
+    }
+
+    private fun readPinned(): Map<UInt, Set<String>> {
+        val raw = AppPreferences.getString(keyPinned, "")
+        if (raw.isBlank()) return emptyMap()
+        return raw.split(";")
+            .mapNotNull { entry ->
+                val parts = entry.split("=")
+                if (parts.size != 2) return@mapNotNull null
+                val modelId = parts[0].toUIntOrNull() ?: return@mapNotNull null
+                val values = parts[1].split(",").filter { it.isNotBlank() }.toSet()
+                modelId to values
+            }
+            .toMap()
+    }
+
+    private fun persistPinned() {
+        val raw = pinnedProperties.entries.joinToString(";") { entry ->
+            val values = entry.value.joinToString(",")
+            "${entry.key}=$values"
+        }
+        AppPreferences.putString(keyPinned, raw)
     }
 
     private fun readLastModel(): UInt? {

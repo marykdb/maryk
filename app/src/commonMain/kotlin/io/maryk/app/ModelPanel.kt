@@ -27,7 +27,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +63,7 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsReferenceDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
@@ -309,6 +313,7 @@ private fun buildModelRefMap(model: IsRootDataModel): Map<String, ModelFieldRef>
 @Composable
 fun ModelTabPanel(
     state: BrowserState,
+    uiState: BrowserUiState,
     modifier: Modifier = Modifier,
 ) {
     val dataModel = state.currentDataModel()
@@ -320,6 +325,11 @@ fun ModelTabPanel(
     }
     val nodes = remember(dataModel) { buildModelNodes(dataModel) }
     val refMap = remember(dataModel) { buildModelRefMap(dataModel) }
+    val modelId = state.selectedModelId
+    LaunchedEffect(dataModel, modelId) {
+        val autoPins = collectAutoPinPaths(dataModel)
+        uiState.ensureAutoPins(modelId, autoPins)
+    }
     Column(
         modifier = modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
@@ -331,6 +341,8 @@ fun ModelTabPanel(
         nodes.forEach { node ->
             ModelNodeView(
                 node = node,
+                uiState = uiState,
+                modelId = modelId,
                 onSelect = { ref -> state.selectModelField(ref) },
                 selectedPath = state.selectedModelField?.path,
             )
@@ -341,6 +353,7 @@ fun ModelTabPanel(
 @Composable
 fun ModelDetailsPanel(
     state: BrowserState,
+    uiState: BrowserUiState,
     modifier: Modifier = Modifier,
 ) {
     val selected = state.selectedModelField
@@ -353,10 +366,10 @@ fun ModelDetailsPanel(
             return
         }
         val details = remember(selected) { buildModelDetails(selected) }
+        val definition = selected.wrapper?.definition ?: selected.definition
         details.forEach { detail ->
             DetailRow(detail.first, detail.second)
         }
-        val definition = selected.wrapper?.definition ?: selected.definition
         if (definition is IsMultiTypeDefinition<*, *, *>) {
             Spacer(modifier = Modifier.height(8.dp))
             Text("Types", style = MaterialTheme.typography.labelMedium)
@@ -457,11 +470,13 @@ private fun DetailRow(label: String, value: String) {
 private fun ModelNodeView(
     node: ModelNode,
     indent: Int = 0,
+    uiState: BrowserUiState,
+    modelId: UInt?,
     onSelect: (ModelFieldRef) -> Unit,
     selectedPath: String?,
 ) {
     if (node.children.isEmpty()) {
-        ModelLeafRow(node, indent, onSelect, selected = node.path == selectedPath)
+        ModelLeafRow(node, indent, uiState, modelId, onSelect, selected = node.path == selectedPath)
         return
     }
     var expanded by remember(node.path) { mutableStateOf(node.defaultExpanded) }
@@ -484,6 +499,22 @@ private fun ModelNodeView(
             ) {
                 Text(node.label, style = MaterialTheme.typography.bodySmall)
                 Spacer(modifier = Modifier.weight(1f))
+                val definition = node.wrapper?.definition
+                val pinnable = definition?.let(::isPinnableDefinition) == true && modelId != null
+                if (pinnable) {
+                    val pinned = uiState.isPinned(modelId, node.path)
+                    IconButton(
+                        onClick = { uiState.togglePinned(modelId, node.path) },
+                        modifier = Modifier.size(20.dp),
+                    ) {
+                        Icon(
+                            if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                            contentDescription = if (pinned) "Unpin" else "Pin",
+                            modifier = Modifier.size(12.dp),
+                            tint = if (pinned) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                        )
+                    }
+                }
                 Text(node.type, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Icon(
                     if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
@@ -494,7 +525,7 @@ private fun ModelNodeView(
     }
     if (expanded) {
         node.children.forEach { child ->
-            ModelNodeView(child, indent + 1, onSelect, selectedPath)
+            ModelNodeView(child, indent + 1, uiState, modelId, onSelect, selectedPath)
         }
     }
 }
@@ -503,6 +534,8 @@ private fun ModelNodeView(
 private fun ModelLeafRow(
     node: ModelNode,
     indent: Int,
+    uiState: BrowserUiState,
+    modelId: UInt?,
     onSelect: (ModelFieldRef) -> Unit,
     selected: Boolean = false,
 ) {
@@ -531,9 +564,68 @@ private fun ModelLeafRow(
                 ),
             )
             Spacer(modifier = Modifier.weight(1f))
+            val definition = node.wrapper?.definition
+            val pinnable = definition?.let(::isPinnableDefinition) == true && modelId != null
+            if (pinnable) {
+                val pinned = uiState.isPinned(modelId, node.path)
+                IconButton(
+                    onClick = { uiState.togglePinned(modelId, node.path) },
+                    modifier = Modifier.size(20.dp),
+                ) {
+                    Icon(
+                        if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
+                        contentDescription = if (pinned) "Unpin" else "Pin",
+                        modifier = Modifier.size(12.dp),
+                        tint = if (pinned) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                    )
+                }
+            }
             Text(node.type, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
+}
+
+private fun isPinnableDefinition(definition: IsPropertyDefinition<*>): Boolean {
+    return when (definition) {
+        is IsListDefinition<*, *> -> false
+        is IsSetDefinition<*, *> -> false
+        is IsMapDefinition<*, *, *> -> false
+        else -> true
+    }
+}
+
+private fun collectAutoPinPaths(
+    model: IsTypedDataModel<*>,
+    prefix: String = "",
+): Set<String> {
+    val result = mutableSetOf<String>()
+    model.forEach { wrapper ->
+        val label = wrapper.name
+        val path = if (prefix.isBlank()) label else "$prefix.$label"
+        val definition = wrapper.definition
+        if (definition is IsEmbeddedDefinition<*>) {
+            result += collectAutoPinPaths(definition.dataModel, path)
+            return@forEach
+        }
+        if (definition is ValueObjectDefinition<*, *>) {
+            result += collectAutoPinPaths(definition.dataModel, path)
+            return@forEach
+        }
+        if (!isPinnableDefinition(definition)) return@forEach
+        if (matchesAutoPin(label)) {
+            result.add(path)
+        }
+    }
+    return result
+}
+
+private fun matchesAutoPin(label: String): Boolean {
+    val lower = label.lowercase()
+    return lower == "name"
+        || lower == "title"
+        || lower.startsWith("firstname")
+        || lower == "lastname"
+        || lower == "surname"
 }
 
 private fun buildModelNodes(model: IsTypedDataModel<*>): List<ModelNode> {

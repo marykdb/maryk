@@ -1263,6 +1263,7 @@ private fun ReferenceInfoDialog(
     error: String?,
     onDismiss: () -> Unit,
 ) {
+    val uiState = remember { BrowserUiState() }
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surface) {
             Column(
@@ -1280,7 +1281,7 @@ private fun ReferenceInfoDialog(
                     error != null -> Text(error, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
                     details == null -> Text("Not found.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     else -> Box(modifier = Modifier.heightIn(min = 320.dp, max = 560.dp)) {
-                        InspectorData(state, details, showEdit = false)
+                        InspectorData(state, uiState, details, showEdit = false)
                     }
                 }
             }
@@ -2729,7 +2730,7 @@ private fun parseValue(definition: IsPropertyDefinition<*>, raw: String): ParseR
                 @Suppress("UNCHECKED_CAST")
                 val def = definition as IsValueDefinition<Any, IsPropertyContext>
                 ParseResult.Value(def.fromString(raw))
-            } catch (e: Throwable) {
+            } catch (_: Throwable) {
                 ParseResult.Error("Invalid format.")
             }
         }
@@ -2742,7 +2743,7 @@ private fun parseSimpleValue(definition: IsSimpleValueDefinition<*, *>, raw: Str
         @Suppress("UNCHECKED_CAST")
         val def = definition as IsSimpleValueDefinition<Any, IsPropertyContext>
         ParseResult.Value(def.fromString(raw))
-    } catch (e: Throwable) {
+    } catch (_: Throwable) {
         ParseResult.Error("Invalid key.")
     }
 }

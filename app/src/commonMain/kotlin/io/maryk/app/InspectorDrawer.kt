@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
@@ -140,9 +141,9 @@ fun InspectorDrawer(
             when (tab) {
                 InspectorTab.DATA -> {
                     if (inModelMode) {
-                        ModelDetailsPanel(state, modifier = Modifier.fillMaxHeight())
+                        ModelDetailsPanel(state, uiState, modifier = Modifier.fillMaxHeight())
                     } else if (details != null) {
-                        InspectorData(state, details)
+                        InspectorData(state, uiState, details)
                     }
                 }
                 InspectorTab.RAW -> {
@@ -243,6 +244,7 @@ private fun TimestampRow(
 @Composable
 internal fun InspectorData(
     state: BrowserState,
+    uiState: BrowserUiState,
     details: RecordDetails,
     showEdit: Boolean = true,
 ) {
@@ -314,7 +316,7 @@ internal fun InspectorData(
             Text("No matching fields.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
             filtered.forEach { node ->
-                FieldNodeView(state, node)
+                FieldNodeView(state, uiState, node)
             }
         }
     }
@@ -559,8 +561,10 @@ private fun buildHighlightedLine(
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState) {
+private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState, uiState: BrowserUiState) {
     val tooltip = field.type.ifBlank { "Unknown" }
+    val modelId = state.selectedModelId
+    val pinned = modelId != null && uiState.isPinned(modelId, field.path)
     if (field.reference != null) {
         Row(
             modifier = Modifier.padding(start = (indent * 12).dp),
@@ -569,6 +573,14 @@ private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState) {
         ) {
             Text(field.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(140.dp))
             ReferenceValue(state, field.reference)
+            if (pinned) {
+                Icon(
+                    Icons.Filled.PushPin,
+                    contentDescription = "Pinned",
+                    modifier = Modifier.size(12.dp),
+                    tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.85f),
+                )
+            }
         }
     } else {
         HoverTooltip(
@@ -583,6 +595,14 @@ private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState) {
                 ) {
                     Text(field.label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.width(140.dp))
                     Text(field.value.ifBlank { "—" }, style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold))
+                    if (pinned) {
+                        Icon(
+                            Icons.Filled.PushPin,
+                            contentDescription = "Pinned",
+                            modifier = Modifier.size(12.dp),
+                            tint = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.85f),
+                        )
+                    }
                 }
             }
         }
@@ -672,6 +692,7 @@ enum class InspectorTab(val label: String) {
 }
 
 private data class FieldEntry(
+    val path: String,
     val label: String,
     val value: String,
     val type: String,
@@ -679,6 +700,7 @@ private data class FieldEntry(
 )
 
 private data class FieldNode(
+    val path: String,
     val label: String,
     val value: String,
     val type: String,
@@ -724,42 +746,47 @@ private fun EmptyStateCard(title: String, message: String) {
     }
 }
 
-private fun buildFieldNodes(values: AbstractValues<*, *>): List<FieldNode> {
+private fun buildFieldNodes(values: AbstractValues<*, *>, prefix: String = ""): List<FieldNode> {
     val dataModel = values.dataModel
     val nodes = mutableListOf<FieldNode>()
     for (item in values) {
         val wrapper = dataModel[item.index] as? IsDefinitionWrapper<*, *, *, *>
         val label = wrapper?.name ?: item.index.toString()
+        val path = if (prefix.isBlank()) label else "$prefix.$label"
         val type = wrapper?.definition?.let { definitionTypeHint(it) }.orEmpty()
         val reference = buildReferenceMeta(wrapper, item.value)
         when (val value = item.value) {
             is AbstractValues<*, *> -> {
                 FieldNode(
+                    path = path,
                     label = label,
                     value = "",
                     type = type,
-                    children = buildFieldNodes(value),
+                    children = buildFieldNodes(value, path),
                     defaultExpanded = true,
                 )
             }
             is ValueDataObjectWithValues -> {
                 FieldNode(
+                    path = path,
                     label = label,
                     value = "",
                     type = type.ifBlank { "ValueObject" },
-                    children = buildFieldNodes(value.values),
+                    children = buildFieldNodes(value.values, path),
                     defaultExpanded = true,
                 )
             }
             is TypedValue<*, *> -> {
                 buildNodeForTypedValue(
                     label = label,
+                    path = path,
                     typedValue = value,
                     fallbackType = type,
                 )
             }
             is Map<*, *> -> {
                 FieldNode(
+                    path = path,
                     label = label,
                     value = "",
                     type = type.ifBlank { "Map" },
@@ -768,6 +795,7 @@ private fun buildFieldNodes(values: AbstractValues<*, *>): List<FieldNode> {
                             label = formatFieldValue(entry.key),
                             value = entry.value,
                             fallbackType = "Entry",
+                            path = "$path.${formatFieldValue(entry.key)}",
                         )
                     },
                     count = value.size,
@@ -776,6 +804,7 @@ private fun buildFieldNodes(values: AbstractValues<*, *>): List<FieldNode> {
             }
             is Collection<*> -> {
                 FieldNode(
+                    path = path,
                     label = label,
                     value = "",
                     type = type.ifBlank { "List" },
@@ -784,6 +813,7 @@ private fun buildFieldNodes(values: AbstractValues<*, *>): List<FieldNode> {
                             label = "Item ${index + 1}",
                             value = itemValue,
                             fallbackType = "Item",
+                            path = "$path[$index]",
                         )
                     },
                     count = value.size,
@@ -792,6 +822,7 @@ private fun buildFieldNodes(values: AbstractValues<*, *>): List<FieldNode> {
             }
             else -> {
                 FieldNode(
+                    path = path,
                     label = label,
                     value = formatFieldValue(value),
                     type = type,
@@ -807,23 +838,27 @@ private fun buildNodeForValue(
     label: String,
     value: Any?,
     fallbackType: String,
+    path: String,
 ): FieldNode = when (value) {
     is AbstractValues<*, *> -> FieldNode(
+        path = path,
         label = label,
         value = "",
         type = fallbackType,
-        children = buildFieldNodes(value),
+        children = buildFieldNodes(value, path),
         defaultExpanded = true,
     )
     is ValueDataObjectWithValues -> FieldNode(
+        path = path,
         label = label,
         value = "",
         type = fallbackType,
-        children = buildFieldNodes(value.values),
+        children = buildFieldNodes(value.values, path),
         defaultExpanded = true,
     )
-    is TypedValue<*, *> -> buildNodeForTypedValue(label, value, fallbackType)
+    is TypedValue<*, *> -> buildNodeForTypedValue(label, path, value, fallbackType)
     is Map<*, *> -> FieldNode(
+        path = path,
         label = label,
         value = "",
         type = fallbackType,
@@ -832,12 +867,14 @@ private fun buildNodeForValue(
                 label = formatFieldValue(entry.key),
                 value = entry.value,
                 fallbackType = "Entry",
+                path = "$path.${formatFieldValue(entry.key)}",
             )
         },
         count = value.size,
         defaultExpanded = false,
     )
     is Collection<*> -> FieldNode(
+        path = path,
         label = label,
         value = "",
         type = fallbackType,
@@ -846,12 +883,14 @@ private fun buildNodeForValue(
                 label = "Item ${index + 1}",
                 value = itemValue,
                 fallbackType = "Item",
+                path = "$path[$index]",
             )
         },
         count = value.size,
         defaultExpanded = false,
     )
     else -> FieldNode(
+        path = path,
         label = label,
         value = formatFieldValue(value),
         type = fallbackType,
@@ -873,9 +912,9 @@ private fun filterFieldNodes(nodes: List<FieldNode>, query: String): List<FieldN
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun FieldNodeView(state: BrowserState, node: FieldNode, indent: Int = 0) {
+private fun FieldNodeView(state: BrowserState, uiState: BrowserUiState, node: FieldNode, indent: Int = 0) {
     if (node.children.isEmpty()) {
-        DataField(FieldEntry(node.label, node.value, node.type, node.reference), indent, state)
+        DataField(FieldEntry(node.path, node.label, node.value, node.type, node.reference), indent, state, uiState)
         return
     }
     var expanded by remember(node.label) { mutableStateOf(node.defaultExpanded) }
@@ -910,7 +949,7 @@ private fun FieldNodeView(state: BrowserState, node: FieldNode, indent: Int = 0)
     }
     if (expanded) {
         node.children.forEach { child ->
-            FieldNodeView(state, child, indent + 1)
+            FieldNodeView(state, uiState, child, indent + 1)
         }
     }
 }
@@ -959,6 +998,7 @@ private fun definitionTypeHint(definition: IsPropertyDefinition<*>): String {
 
 private fun buildNodeForTypedValue(
     label: String,
+    path: String,
     typedValue: TypedValue<*, *>,
     fallbackType: String,
 ): FieldNode {
@@ -966,20 +1006,23 @@ private fun buildNodeForTypedValue(
     val inner = typedValue.value
     return when (inner) {
         is AbstractValues<*, *> -> FieldNode(
+            path = path,
             label = "$label ($typeLabel)",
             value = "",
             type = fallbackType,
-            children = buildFieldNodes(inner),
+            children = buildFieldNodes(inner, path),
             defaultExpanded = true,
         )
         is ValueDataObjectWithValues -> FieldNode(
+            path = path,
             label = "$label ($typeLabel)",
             value = "",
             type = fallbackType,
-            children = buildFieldNodes(inner.values),
+            children = buildFieldNodes(inner.values, path),
             defaultExpanded = true,
         )
         is Map<*, *> -> FieldNode(
+            path = path,
             label = "$label ($typeLabel)",
             value = "",
             type = fallbackType,
@@ -988,12 +1031,14 @@ private fun buildNodeForTypedValue(
                     label = formatFieldValue(entry.key),
                     value = entry.value,
                     fallbackType = "Entry",
+                    path = "$path.${formatFieldValue(entry.key)}",
                 )
             },
             count = inner.size,
             defaultExpanded = false,
         )
         is Collection<*> -> FieldNode(
+            path = path,
             label = "$label ($typeLabel)",
             value = "",
             type = fallbackType,
@@ -1002,12 +1047,14 @@ private fun buildNodeForTypedValue(
                     label = "Item ${index + 1}",
                     value = itemValue,
                     fallbackType = "Item",
+                    path = "$path[$index]",
                 )
             },
             count = inner.size,
             defaultExpanded = false,
         )
         else -> FieldNode(
+            path = path,
             label = "$label ($typeLabel)",
             value = formatFieldValue(inner),
             type = fallbackType,

@@ -27,6 +27,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.compose.material.icons.core)
                 implementation(libs.compose.material.icons.extended)
+                implementation(libs.kotlinx.datetime)
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)
@@ -41,6 +42,7 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation(compose.desktop.currentOs)
+                implementation(libs.kotlinx.datetime)
             }
         }
     }

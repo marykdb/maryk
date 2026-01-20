@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,6 +38,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -84,6 +86,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
@@ -115,6 +118,8 @@ fun ResultsDataGrid(
     val clipboard = LocalClipboardManager.current
     var deleteRow by remember { mutableStateOf<ScanRow?>(null) }
     var hardDelete by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) }
+    var editRow by remember { mutableStateOf<ScanRow?>(null) }
     val dataModel = state.currentDataModel()
     val indexColumns = remember(dataModel) { buildIndexColumns(dataModel) }
     val sortOptions = remember(dataModel) { buildSortOptions(dataModel) }
@@ -293,6 +298,24 @@ fun ResultsDataGrid(
                             modifier = Modifier.size(14.dp),
                         )
                     }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    OutlinedButton(
+                        onClick = { showAddDialog = true },
+                        enabled = dataModel != null,
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                        modifier = Modifier.height(28.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Default.Add, contentDescription = "Add record", modifier = Modifier.size(12.dp))
+                            Text(
+                                "Add",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.offset(y = (-1).dp),
+                            )
+                        }
+                    }
                 }
             }
 
@@ -410,6 +433,11 @@ fun ResultsDataGrid(
                             ContextMenuArea(
                                 items = {
                                     resultRowContextItems(
+                                        onEdit = {
+                                            if (state.currentDataModel() != null) {
+                                                editRow = row
+                                            }
+                                        },
                                         onCopyRowJson = {
                                             val model = state.currentDataModel() ?: return@resultRowContextItems
                                             val json = serializeValuesToJson(model, row.values, buildRequestContext(model))
@@ -553,6 +581,33 @@ fun ResultsDataGrid(
             }
         }
     }
+    if (showAddDialog && dataModel != null) {
+        val initialValues = remember(dataModel) {
+            @Suppress("UNCHECKED_CAST")
+            (dataModel as TypedValuesDataModel<IsRootDataModel>).create(setDefaults = true) {}
+        }
+        RecordEditorDialog(
+            state = state,
+            mode = RecordEditorMode.ADD,
+            dataModel = dataModel,
+            initialValues = initialValues,
+            initialKeyText = null,
+            onDismiss = { showAddDialog = false },
+        )
+    }
+    val editRowValue = editRow
+    if (editRowValue != null && dataModel != null) {
+        RecordEditorDialog(
+            state = state,
+            mode = RecordEditorMode.EDIT,
+            dataModel = dataModel,
+            initialValues = editRowValue.values,
+            initialKeyText = editRowValue.keyText,
+            onDismiss = { editRow = null },
+        )
+    } else if (editRowValue != null && dataModel == null) {
+        editRow = null
+    }
 }
 
 @Composable
@@ -642,11 +697,13 @@ private fun ColumnResizeHandle(
 }
 
 private fun resultRowContextItems(
+    onEdit: () -> Unit,
     onCopyRowJson: () -> Unit,
     onCopyRowYaml: () -> Unit,
     onCopyKey: () -> Unit,
     onDelete: () -> Unit,
 ): List<ContextMenuItem> = listOf(
+    ContextMenuItem("Edit", onEdit),
     ContextMenuItem("Copy key", onCopyKey),
     ContextMenuItem("Copy data as JSON", onCopyRowJson),
     ContextMenuItem("Copy data as YAML", onCopyRowYaml),

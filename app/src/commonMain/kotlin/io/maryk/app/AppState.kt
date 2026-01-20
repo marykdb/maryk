@@ -13,13 +13,22 @@ import kotlinx.coroutines.withContext
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.add
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
+import maryk.core.query.responses.AddResponse
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.AlreadyExists
+import maryk.core.query.responses.statuses.AuthFail
+import maryk.core.query.responses.statuses.ServerFail
+import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.query.responses.statuses.IsAddResponseStatus
 
 @Stable
 class BrowserState(
@@ -319,6 +328,61 @@ class BrowserState(
             isWorking = false
             if (result.success) {
                 refreshRecord()
+                scanFromStart()
+            }
+        }
+    }
+
+    fun applyRecordChanges(changes: List<IsChange>, useVersionGuard: Boolean = true) {
+        val connection = activeConnection ?: return
+        val details = recordDetails ?: return
+        isWorking = true
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                try {
+                    val ifVersion = if (useVersionGuard) details.lastVersion else null
+                    applyChanges(
+                        dataStore = connection.dataStore,
+                        dataModel = details.model,
+                        key = details.key,
+                        changes = changes,
+                        ifVersion = ifVersion,
+                        action = "Updated",
+                    )
+                } catch (e: Throwable) {
+                    ApplyResult("Update failed: ${e.message ?: e::class.simpleName}", success = false)
+                }
+            }
+            lastActionMessage = result.message
+            isWorking = false
+            if (result.success) {
+                refreshRecord()
+                scanFromStart()
+            }
+        }
+    }
+
+    fun addRecord(values: Values<IsRootDataModel>, key: Key<IsRootDataModel>?) {
+        val connection = activeConnection ?: return
+        val dataModel = currentDataModel() ?: return
+        isWorking = true
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                try {
+                    val request = if (key != null) dataModel.add(key to values) else dataModel.add(values)
+                    val response: AddResponse<IsRootDataModel> = connection.dataStore.execute(request)
+                    formatAddStatus(dataModel, response.statuses.firstOrNull())
+                } catch (e: Throwable) {
+                    ApplyResult("Add failed: ${e.message ?: e::class.simpleName}", success = false)
+                }
+            }
+            lastActionMessage = result.message
+            isWorking = false
+            if (result.success) {
+                result.targetKey?.let { newKey ->
+                    pendingHighlightKey = newKey
+                    pendingHighlightModelId = selectedModelId
+                }
                 scanFromStart()
             }
         }
@@ -632,6 +696,35 @@ class BrowserState(
         scanCursor = ScanCursor()
         scanStatus = null
         scanGeneration += 1
+    }
+}
+
+private fun formatAddStatus(
+    dataModel: IsRootDataModel,
+    status: IsAddResponseStatus<IsRootDataModel>?,
+): ApplyResult {
+    if (status == null) {
+        return ApplyResult("Add failed: no response status.", success = false)
+    }
+    return when (status) {
+        is AddSuccess -> ApplyResult(
+            "Added ${dataModel.Meta.name} ${status.key} (version ${status.version}).",
+            success = true,
+            targetKey = status.key,
+        )
+        is AlreadyExists -> ApplyResult(
+            "Add failed: ${dataModel.Meta.name} ${status.key} already exists.",
+            success = false,
+        )
+        is ValidationFail -> {
+            val details = status.exceptions.joinToString(separator = "; ") { exception ->
+                exception.message ?: exception.toString()
+            }
+            ApplyResult("Add failed: $details", success = false)
+        }
+        is AuthFail -> ApplyResult("Add failed: authorization error.", success = false)
+        is ServerFail -> ApplyResult("Add failed: ${status.reason}", success = false)
+        else -> ApplyResult("Add failed: ${status.statusType}.", success = false)
     }
 }
 

@@ -27,6 +27,7 @@ import maryk.core.properties.types.Key
 internal data class ApplyResult(
     val message: String,
     val success: Boolean,
+    val targetKey: Key<IsRootDataModel>? = null,
 )
 
 internal fun serializeValuesToYaml(

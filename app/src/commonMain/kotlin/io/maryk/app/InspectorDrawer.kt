@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.rememberScrollState
@@ -240,9 +241,14 @@ private fun TimestampRow(
 }
 
 @Composable
-private fun InspectorData(state: BrowserState, details: RecordDetails) {
+internal fun InspectorData(
+    state: BrowserState,
+    details: RecordDetails,
+    showEdit: Boolean = true,
+) {
     var fieldSearch by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
+    var showEditor by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
     val values = remember(details.yaml, details.model) {
         runCatching { parseValuesFromYaml(details.model, details.yaml) }.getOrNull()
@@ -263,6 +269,19 @@ private fun InspectorData(state: BrowserState, details: RecordDetails) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Data", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
+            if (showEdit) {
+                IconButton(
+                    onClick = { showEditor = true },
+                    modifier = Modifier.size(28.dp),
+                    enabled = values != null,
+                ) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Edit data",
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
             IconButton(
                 onClick = {
                     showSearch = !showSearch
@@ -298,6 +317,16 @@ private fun InspectorData(state: BrowserState, details: RecordDetails) {
                 FieldNodeView(state, node)
             }
         }
+    }
+    if (showEditor && values != null) {
+        RecordEditorDialog(
+            state = state,
+            mode = RecordEditorMode.EDIT,
+            dataModel = details.model,
+            initialValues = values,
+            initialKeyText = details.keyText,
+            onDismiss = { showEditor = false },
+        )
     }
 }
 
@@ -861,6 +890,7 @@ private fun FieldNodeView(state: BrowserState, node: FieldNode, indent: Int = 0)
             modifier = hoverModifier
                 .fillMaxWidth()
                 .padding(start = (indent * 12).dp, top = 2.dp, bottom = 0.dp)
+                .offset(x = (-6).dp)
                 .clickable { expanded = !expanded },
         ) {
             Row(

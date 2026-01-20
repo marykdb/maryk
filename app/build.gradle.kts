@@ -22,6 +22,7 @@ kotlin {
             dependencies {
                 implementation(projects.core)
                 implementation(projects.file)
+                implementation(projects.generator)
                 implementation(projects.store.rocksdb)
                 implementation(projects.store.foundationdb)
                 implementation(libs.kotlinx.coroutines.core)

@@ -3,6 +3,8 @@ package io.maryk.app
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ContextMenuArea
+import androidx.compose.foundation.ContextMenuItem
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,37 +75,47 @@ private fun CatalogRow(
     Surface(
         modifier = Modifier
             .padding(horizontal = 12.dp)
-            .fillMaxWidth()
-            .clickable { state.selectModel(model.id) },
+            .fillMaxWidth(),
         color = if (selected) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surface,
         shape = RoundedCornerShape(8.dp),
         tonalElevation = if (selected) 1.dp else 0.dp,
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 2.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ContextMenuArea(
+            items = {
+                listOf(
+                    ContextMenuItem("Export model…") { state.requestExportModelDialog(model.id) },
+                )
+            },
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(model.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Text(
-                        "ID ${model.id}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier.alignByBaseline(),
-                    )
-                    Badge("v1", modifier = Modifier.alignByBaseline())
-                    if (model.name.contains("deprecated", ignoreCase = true)) {
-                        Badge("WARN", modifier = Modifier.alignByBaseline())
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { state.selectModel(model.id) }
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(model.name, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Text(
+                            "ID ${model.id}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.alignByBaseline(),
+                        )
+                        Badge("v1", modifier = Modifier.alignByBaseline())
+                        if (model.name.contains("deprecated", ignoreCase = true)) {
+                            Badge("WARN", modifier = Modifier.alignByBaseline())
+                        }
+                        Spacer(modifier = Modifier.weight(1f))
+                        Badge(countLabel, modifier = Modifier.alignByBaseline())
                     }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Badge(countLabel, modifier = Modifier.alignByBaseline())
                 }
             }
         }

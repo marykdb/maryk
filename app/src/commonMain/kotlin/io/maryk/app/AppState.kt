@@ -80,6 +80,12 @@ class BrowserState(
     var lastActionMessage by mutableStateOf<String?>(null)
         private set
 
+    var exportDialog by mutableStateOf<ExportDialogRequest?>(null)
+        private set
+
+    var exportToastMessage by mutableStateOf<String?>(null)
+        private set
+
     var historyChanges by mutableStateOf<List<VersionedChanges>>(emptyList())
         private set
 
@@ -646,6 +652,71 @@ class BrowserState(
 
     fun modelRowCount(modelId: UInt): ModelRowCount? = modelRowCounts[modelId]
 
+    fun requestExportAllDialog() {
+        exportDialog = ExportDialogRequest(modelId = null)
+    }
+
+    fun requestExportModelDialog(modelId: UInt) {
+        exportDialog = ExportDialogRequest(modelId = modelId)
+    }
+
+    fun clearExportDialog() {
+        exportDialog = null
+    }
+
+    fun clearExportToast() {
+        exportToastMessage = null
+    }
+
+    fun exportModelById(modelId: UInt, format: ModelExportFormat) {
+        val connection = activeConnection ?: return
+        val model = connection.dataStore.dataModelsById[modelId] ?: return
+        val folder = pickDirectory("Export ${model.Meta.name}") ?: return
+        isWorking = true
+        exportToastMessage = null
+        scope.launch {
+            val allModels = buildAllModelsByName(connection)
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    exportModelToFolder(model, format, folder, allModels)
+                }
+            }
+            if (result.isSuccess) {
+                exportToastMessage = "Exported ${model.Meta.name} as ${format.label}."
+            } else {
+                lastActionMessage = "Export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+            }
+            isWorking = false
+        }
+    }
+
+    fun exportAllModels(format: ModelExportFormat) {
+        val connection = activeConnection ?: return
+        val folder = pickDirectory("Export all models") ?: return
+        isWorking = true
+        exportToastMessage = null
+        scope.launch {
+            val allModels = buildAllModelsByName(connection)
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    allModels.values.forEach { model ->
+                        exportModelToFolder(model, format, folder, allModels)
+                    }
+                }
+            }
+            if (result.isSuccess) {
+                exportToastMessage = "Exported ${allModels.size} models as ${format.label}."
+            } else {
+                lastActionMessage = "Export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+            }
+            isWorking = false
+        }
+    }
+
+    private fun buildAllModelsByName(connection: StoreConnection): Map<String, IsRootDataModel> {
+        return connection.dataStore.dataModelsById.values.associateBy { it.Meta.name }
+    }
+
     private fun refreshModelCounts(dataStore: IsDataStore) {
         val modelsSnapshot = models.toList()
         modelRowCounts.clear()
@@ -783,6 +854,10 @@ data class ReferenceBackTarget(
     val modelName: String,
     val key: Key<IsRootDataModel>,
     val keyText: String,
+)
+
+data class ExportDialogRequest(
+    val modelId: UInt?,
 )
 
 private data class ScanCursor(

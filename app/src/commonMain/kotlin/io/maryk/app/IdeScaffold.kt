@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ViewSidebar
 import androidx.compose.material.icons.automirrored.outlined.ViewSidebar
@@ -90,19 +91,30 @@ fun AppScaffold(
         Box(modifier = Modifier.weight(1f)) {
             content()
             state.lastActionMessage?.let { message ->
-                if (message.startsWith("Updated", ignoreCase = true)) {
-                    SuccessToast(
-                        message = message,
-                        onDismiss = { state.clearLastActionMessage() },
-                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
-                    )
-                } else {
+                val isError = message.contains("failed", ignoreCase = true) || message.contains("error", ignoreCase = true)
+                if (isError) {
                     ErrorBanner(
                         message = message,
                         onDismiss = { state.clearLastActionMessage() },
                         modifier = Modifier.align(Alignment.TopCenter).padding(top = 8.dp),
                     )
+                } else {
+                    SuccessToast(
+                        message = message,
+                        onDismiss = { state.clearLastActionMessage() },
+                        modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
+                    )
                 }
+            }
+            state.exportToastMessage?.let { message ->
+                LaunchedEffect(message) {
+                    delay(2800)
+                    state.clearExportToast()
+                }
+                ExportToast(
+                    message = message,
+                    modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
+                )
             }
         }
         bottomBar()
@@ -243,5 +255,27 @@ private fun SuccessToast(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ExportToast(
+    message: String,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        color = MaterialTheme.colorScheme.primary,
+        shape = RoundedCornerShape(12.dp),
+        tonalElevation = 6.dp,
+        shadowElevation = 6.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer),
+        modifier = modifier,
+    ) {
+        Text(
+            message,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+        )
     }
 }

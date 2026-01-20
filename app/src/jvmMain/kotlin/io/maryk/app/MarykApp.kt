@@ -124,6 +124,9 @@ fun main() = application {
                     Menu("Data") {
                         Item("Reload Results", onClick = { browserState.scanFromStart() }, shortcut = shortcutReload)
                     }
+                    Menu("Export") {
+                        Item("Export all models…", onClick = { browserState.requestExportAllDialog() })
+                    }
                     Menu("Stores") {
                         Item("New Store", onClick = { openStoreEditor() }, shortcut = shortcutNew)
                         if (!storesWindowOpen.value) {

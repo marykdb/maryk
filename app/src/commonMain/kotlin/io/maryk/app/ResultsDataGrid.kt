@@ -104,6 +104,7 @@ private val headerHeight = 32.dp
 private val indexColumnWidth = 160.dp
 private val valuesColumnWidth = 260.dp
 private val pinnedColumnWidth = 200.dp
+private val columnSpacing = 6.dp
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -501,7 +502,7 @@ fun ResultsDataGrid(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
-                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Spacer(modifier = Modifier.width(columnSpacing))
                                     pinnedColumns.forEach { column ->
                                         val value = formatValueForPinned(row.values, column)
                                         Text(
@@ -511,7 +512,7 @@ fun ResultsDataGrid(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(columnSpacing))
                                     }
                                     indexColumns.forEachIndexed { colIndex, column ->
                                         val value = formatValueForColumn(row.values, column)
@@ -523,7 +524,7 @@ fun ResultsDataGrid(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
-                                        Spacer(modifier = Modifier.width(6.dp))
+                                        Spacer(modifier = Modifier.width(columnSpacing))
                                     }
                                     Text(
                                         row.summary,
@@ -682,6 +683,7 @@ private fun GridHeaderRow(
                     width = pinnedColumnWidth,
                     onUnpin = { onUnpin(column.path) },
                 )
+                Spacer(modifier = Modifier.width(columnSpacing))
             }
             indexColumns.forEachIndexed { index, column ->
                 val width = indexWidths.getOrNull(index) ?: indexColumnWidth

@@ -89,6 +89,12 @@ class BrowserState(
     var dataExportFormatDialog by mutableStateOf<DataExportFormatDialogRequest?>(null)
         private set
 
+    var dataImportDialog by mutableStateOf<ImportDataDialogRequest?>(null)
+        private set
+
+    var dataImportModelDialog by mutableStateOf<ImportModelDialogRequest?>(null)
+        private set
+
     var exportToastMessage by mutableStateOf<String?>(null)
         private set
 
@@ -670,6 +676,10 @@ class BrowserState(
         dataExportDialog = ExportDataDialogRequest(defaultModelId = selectedModelId)
     }
 
+    fun requestImportDataDialog() {
+        dataImportDialog = ImportDataDialogRequest(defaultModelId = selectedModelId)
+    }
+
     fun requestExportRowDialog(row: ScanRow) {
         val modelId = selectedModelId ?: return
         dataExportFormatDialog = DataExportFormatDialogRequest(
@@ -695,6 +705,14 @@ class BrowserState(
 
     fun clearDataExportDialog() {
         dataExportDialog = null
+    }
+
+    fun clearDataImportDialog() {
+        dataImportDialog = null
+    }
+
+    fun clearDataImportModelDialog() {
+        dataImportModelDialog = null
     }
 
     fun clearDataExportFormatDialog() {
@@ -841,6 +859,86 @@ class BrowserState(
             }
             isWorking = false
         }
+    }
+
+    fun importData(
+        modelId: UInt,
+        format: DataExportFormat,
+        importScope: DataImportScope,
+        path: String? = null,
+    ) {
+        val connection = activeConnection ?: return
+        val model = connection.dataStore.dataModelsById[modelId] ?: return
+        val extensions = format.extensionsForImport()
+        val filePath = path?.trim().takeIf { !it.isNullOrEmpty() }
+            ?: pickFile("Import ${model.Meta.name} data", extensions) ?: return
+        isWorking = true
+        exportToastMessage = null
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    importDataFromFile(
+                        dataStore = connection.dataStore,
+                        model = model,
+                        format = format,
+                        scope = importScope,
+                        path = filePath,
+                    )
+                }
+            }
+            if (result.isSuccess) {
+                val summary = result.getOrNull()
+                exportToastMessage = "Imported ${summary?.imported ?: 0} records."
+                if (summary != null && summary.failed > 0) {
+                    lastActionMessage = "Import finished with ${summary.failed} failures."
+                }
+                scanFromStart()
+            } else {
+                lastActionMessage = "Import failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+            }
+            isWorking = false
+        }
+    }
+
+    fun startImportFromPath(path: String) {
+        val cleanPath = path.trim()
+        if (cleanPath.isEmpty()) return
+        isWorking = true
+        exportToastMessage = null
+        scope.launch {
+            val detection = withContext(Dispatchers.IO) {
+                val format = detectImportFormatFromPath(cleanPath)
+                val scopeDetected = format?.let { detectImportScopeFromPath(cleanPath, it) }
+                format to scopeDetected
+            }
+            val format = detection.first
+            val scopeDetected = detection.second
+            if (format == null || scopeDetected == null) {
+                lastActionMessage = "Import failed: unsupported or unreadable file."
+                isWorking = false
+                return@launch
+            }
+            val modelId = detectModelIdFromPath(cleanPath)
+            if (modelId == null) {
+                dataImportModelDialog = ImportModelDialogRequest(
+                    path = cleanPath,
+                    format = format,
+                    scope = scopeDetected,
+                )
+                isWorking = false
+                return@launch
+            }
+            isWorking = false
+            importData(modelId, format, scopeDetected, cleanPath)
+        }
+    }
+
+    private fun detectModelIdFromPath(path: String): UInt? {
+        val fileName = path.substringAfterLast('/').substringAfterLast('\\')
+        val baseName = fileName.substringBefore('.')
+        if (baseName.isBlank()) return null
+        val target = baseName.lowercase()
+        return models.firstOrNull { it.name.lowercase() == target }?.id
     }
 
     private fun buildAllModelsByName(connection: StoreConnection): Map<String, IsRootDataModel> {
@@ -1004,6 +1102,16 @@ data class DataExportFormatDialogRequest(
 
 data class ExportDataDialogRequest(
     val defaultModelId: UInt?,
+)
+
+data class ImportDataDialogRequest(
+    val defaultModelId: UInt?,
+)
+
+data class ImportModelDialogRequest(
+    val path: String,
+    val format: DataExportFormat,
+    val scope: DataImportScope,
 )
 
 private data class ScanCursor(

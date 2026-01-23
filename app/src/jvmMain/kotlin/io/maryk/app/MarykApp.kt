@@ -123,8 +123,7 @@ fun main() = application {
                     }
                     Menu("Data") {
                         Item("Reload Results", onClick = { browserState.scanFromStart() }, shortcut = shortcutReload)
-                    }
-                    Menu("Export") {
+                        Item("Import data…", onClick = { browserState.requestImportDataDialog() })
                         Item("Export all models…", onClick = { browserState.requestExportAllDialog() })
                         Item("Export data…", onClick = { browserState.requestExportDataDialog() })
                     }

@@ -24,6 +24,12 @@ enum class DataExportFormat(
     PROTO("Proto", "proto"),
 }
 
+internal fun DataExportFormat.extensionsForImport(): List<String> = when (this) {
+    DataExportFormat.JSON -> listOf("json")
+    DataExportFormat.YAML -> listOf("yaml", "yml")
+    DataExportFormat.PROTO -> listOf("proto")
+}
+
 internal suspend fun exportRowDataToFolder(
     dataStore: IsDataStore,
     model: IsRootDataModel,

@@ -30,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -203,6 +204,22 @@ fun Browser(
             state = state,
             request = request,
             onDismiss = { state.clearDataExportDialog() },
+        )
+    }
+
+    state.dataImportDialog?.let { request ->
+        ImportDataDialog(
+            state = state,
+            _request = request,
+            onDismiss = { state.clearDataImportDialog() },
+        )
+    }
+
+    state.dataImportModelDialog?.let { request ->
+        ImportModelDialog(
+            state = state,
+            request = request,
+            onDismiss = { state.clearDataImportModelDialog() },
         )
     }
 
@@ -445,6 +462,131 @@ private fun ExportDataDialog(
                 },
             ) {
                 Text("Export")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@Composable
+private fun ImportDataDialog(
+    state: BrowserState,
+    _request: ImportDataDialogRequest,
+    onDismiss: () -> Unit,
+) {
+    var filePath by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Import data", style = MaterialTheme.typography.titleSmall) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("File", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = filePath,
+                        onValueChange = { filePath = it },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Select a file") },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    val picked = pickFile("Select import file") ?: return@IconButton
+                                    filePath = picked
+                                },
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                Icon(
+                                    Icons.Filled.FileOpen,
+                                    contentDescription = "Browse file",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        },
+                    )
+                }
+                Text(
+                    "Format, scope, and model are auto-detected from the file.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val path = filePath.trim().ifEmpty {
+                        pickFile("Select import file") ?: return@TextButton
+                    }
+                    onDismiss()
+                    state.startImportFromPath(path)
+                },
+            ) {
+                Text("Import")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
+        },
+    )
+}
+
+@Composable
+private fun ImportModelDialog(
+    state: BrowserState,
+    request: ImportModelDialogRequest,
+    onDismiss: () -> Unit,
+) {
+    val models = state.models
+    var selectedModelId by remember(request.path, models) { mutableStateOf<UInt?>(null) }
+    var modelMenuExpanded by remember { mutableStateOf(false) }
+    val selectedModelName = models.firstOrNull { it.id == selectedModelId }?.name ?: "Select model"
+    val fileName = request.path.substringAfterLast('/').substringAfterLast('\\')
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Select model", style = MaterialTheme.typography.titleSmall) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("File: $fileName", style = MaterialTheme.typography.bodySmall)
+                Box {
+                    OutlinedButton(
+                        onClick = { modelMenuExpanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(selectedModelName, style = MaterialTheme.typography.bodySmall)
+                    }
+                    DropdownMenu(
+                        expanded = modelMenuExpanded,
+                        onDismissRequest = { modelMenuExpanded = false },
+                    ) {
+                        models.forEach { model ->
+                            DropdownMenuItem(
+                                text = { Text(model.name, style = MaterialTheme.typography.bodySmall) },
+                                onClick = {
+                                    selectedModelId = model.id
+                                    modelMenuExpanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val modelId = selectedModelId ?: return@TextButton
+                    onDismiss()
+                    state.importData(modelId, request.format, request.scope, request.path)
+                },
+                enabled = selectedModelId != null,
+            ) {
+                Text("Import")
             }
         },
         dismissButton = {

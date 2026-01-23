@@ -1,11 +1,14 @@
 package maryk.core.properties.references
 
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
+import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
@@ -26,7 +29,8 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     CanContainMapItemReference<V, IsSubDefinition<V, CX>, Map<K, V>>,
     CanContainListItemReference<V, IsSubDefinition<V, CX>, Map<K, V>>,
     CanContainSetItemReference<V, IsSubDefinition<V, CX>, Map<K, V>>,
-    IsPropertyReferenceWithParent<V, IsSubDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
+    IsPropertyReferenceWithParent<V, IsSubDefinition<V, CX>, CanContainMapItemReference<*, *, *>, Map<K, V>>,
+    HasEmbeddedPropertyReference<V> {
     override val completeName by lazy {
         this.parentReference?.let {
             "${it.completeName}.@$key"
@@ -85,4 +89,30 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     override fun resolve(values: Map<K, V>): V? {
         return values[key]
     }
+
+    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference =
+        when (this.propertyDefinition) {
+            is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReferenceByName(name, this)
+            is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReferenceByName(name, this)
+            else -> throw DefNotFoundException("Map value can not contain embedded name references ($name)")
+        }
+
+    override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference =
+        when (this.propertyDefinition) {
+            is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReference(reader, this)
+            is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReference(reader, this)
+            else -> throw DefNotFoundException("Map value can not contain embedded index references ($key)")
+        }
+
+    override fun getEmbeddedStorageRef(
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        referenceType: ReferenceType,
+        isDoneReading: () -> Boolean
+    ): AnyPropertyReference =
+        when (this.propertyDefinition) {
+            is IsEmbeddedDefinition<*> -> this.propertyDefinition.resolveReferenceFromStorage(reader, this, context, isDoneReading)
+            is IsMultiTypeDefinition<*, *, *> -> this.propertyDefinition.resolveReferenceFromStorage(reader, this)
+            else -> throw DefNotFoundException("Map value can not contain embedded index references ($key)")
+        }
 }

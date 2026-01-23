@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.Icons
@@ -93,6 +94,9 @@ fun AppScaffold(
             state.lastActionMessage?.let { message ->
                 val isError = message.contains("failed", ignoreCase = true) || message.contains("error", ignoreCase = true)
                 if (isError) {
+                    LaunchedEffect(message) {
+                        System.err.println(message)
+                    }
                     ErrorBanner(
                         message = message,
                         onDismiss = { state.clearLastActionMessage() },
@@ -113,6 +117,7 @@ fun AppScaffold(
                 }
                 ExportToast(
                     message = message,
+                    onDismiss = { state.clearExportToast() },
                     modifier = Modifier.align(Alignment.TopCenter).padding(top = 12.dp),
                 )
             }
@@ -213,8 +218,9 @@ private fun ErrorBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Text(message, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer)
-            Spacer(modifier = Modifier.weight(1f))
+            SelectionContainer(modifier = Modifier.weight(1f)) {
+                Text(message, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer)
+            }
             IconButton(onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Default.Close,
@@ -261,6 +267,7 @@ private fun SuccessToast(
 @Composable
 private fun ExportToast(
     message: String,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -271,11 +278,23 @@ private fun ExportToast(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primaryContainer),
         modifier = modifier,
     ) {
-        Text(
-            message,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onPrimary,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Text(
+                message,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimary,
+            )
+            IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Dismiss",
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                )
+            }
+        }
     }
 }

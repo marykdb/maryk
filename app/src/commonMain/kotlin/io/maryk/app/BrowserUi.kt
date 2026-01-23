@@ -292,6 +292,7 @@ private fun DataExportFormatDialog(
 ) {
     val modelName = state.models.firstOrNull { it.id == request.modelId }?.name
     var selected by remember(request.modelId, request.scope) { mutableStateOf(DataExportFormat.JSON) }
+    var includeVersionHistory by remember(request.modelId, request.scope) { mutableStateOf(false) }
     val title = when (request.scope) {
         DataExportScope.ROW -> "Export ${modelName ?: "row"}"
         DataExportScope.MODEL -> "Export ${modelName ?: "model"} data"
@@ -312,6 +313,14 @@ private fun DataExportFormatDialog(
                         Text(format.label, style = MaterialTheme.typography.bodySmall)
                     }
                 }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth().clickable { includeVersionHistory = !includeVersionHistory },
+                ) {
+                    Checkbox(checked = includeVersionHistory, onCheckedChange = { includeVersionHistory = it })
+                    Text("Include version history", style = MaterialTheme.typography.bodySmall)
+                }
             }
         },
         confirmButton = {
@@ -322,10 +331,10 @@ private fun DataExportFormatDialog(
                         DataExportScope.ROW -> {
                             val key = request.rowKey ?: return@TextButton
                             val keyText = request.rowKeyText ?: return@TextButton
-                            state.exportRowDataByKey(request.modelId, key, keyText, selected)
+                            state.exportRowDataByKey(request.modelId, key, keyText, selected, includeVersionHistory)
                         }
                         DataExportScope.MODEL -> {
-                            state.exportModelData(request.modelId, selected)
+                            state.exportModelData(request.modelId, selected, includeVersionHistory = includeVersionHistory)
                         }
                     }
                 },
@@ -353,6 +362,7 @@ private fun ExportDataDialog(
         mutableStateOf(request.defaultModelId ?: models.firstOrNull()?.id)
     }
     var format by remember { mutableStateOf(DataExportFormat.JSON) }
+    var includeVersionHistory by remember { mutableStateOf(false) }
     var folderPath by remember { mutableStateOf("") }
     var modelMenuExpanded by remember { mutableStateOf(false) }
     val selectedModelName = models.firstOrNull { it.id == selectedModelId }?.name ?: "Select model"
@@ -417,6 +427,14 @@ private fun ExportDataDialog(
                             Text(option.label, style = MaterialTheme.typography.bodySmall)
                         }
                     }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { includeVersionHistory = !includeVersionHistory },
+                    ) {
+                        Checkbox(checked = includeVersionHistory, onCheckedChange = { includeVersionHistory = it })
+                        Text("Include version history", style = MaterialTheme.typography.bodySmall)
+                    }
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("Folder", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -454,10 +472,10 @@ private fun ExportDataDialog(
                     }
                     onDismiss()
                     if (exportAll) {
-                        state.exportAllData(format, folder)
+                        state.exportAllData(format, folder, includeVersionHistory)
                     } else {
                         val modelId = selectedModelId ?: return@TextButton
-                        state.exportModelData(modelId, format, folder)
+                        state.exportModelData(modelId, format, folder, includeVersionHistory)
                     }
                 },
             ) {

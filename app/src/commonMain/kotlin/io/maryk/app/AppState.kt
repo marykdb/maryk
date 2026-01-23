@@ -10,11 +10,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.query.DefinitionsContext
+import maryk.core.query.RequestContext
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.get
@@ -773,6 +777,7 @@ class BrowserState(
         key: Key<IsRootDataModel>,
         keyText: String,
         format: DataExportFormat,
+        includeVersionHistory: Boolean = false,
     ) {
         val connection = activeConnection ?: return
         val model = connection.dataStore.dataModelsById[modelId] ?: return
@@ -789,6 +794,7 @@ class BrowserState(
                         keyText = keyText,
                         format = format,
                         folder = folder,
+                        includeVersionHistory = includeVersionHistory,
                     )
                 }
             }
@@ -805,6 +811,7 @@ class BrowserState(
         modelId: UInt,
         format: DataExportFormat,
         folder: String? = null,
+        includeVersionHistory: Boolean = false,
     ) {
         val connection = activeConnection ?: return
         val model = connection.dataStore.dataModelsById[modelId] ?: return
@@ -819,6 +826,7 @@ class BrowserState(
                         model = model,
                         format = format,
                         folder = exportFolder,
+                        includeVersionHistory = includeVersionHistory,
                     )
                 }
             }
@@ -834,6 +842,7 @@ class BrowserState(
     fun exportAllData(
         format: DataExportFormat,
         folder: String? = null,
+        includeVersionHistory: Boolean = false,
     ) {
         val connection = activeConnection ?: return
         val exportFolder = folder ?: pickDirectory("Export all data") ?: return
@@ -848,6 +857,7 @@ class BrowserState(
                             model = model,
                             format = format,
                             folder = exportFolder,
+                            includeVersionHistory = includeVersionHistory,
                         )
                     }
                 }
@@ -866,6 +876,7 @@ class BrowserState(
         format: DataExportFormat,
         importScope: DataImportScope,
         path: String? = null,
+        allowRetryOnModelMismatch: Boolean = false,
     ) {
         val connection = activeConnection ?: return
         val model = connection.dataStore.dataModelsById[modelId] ?: return
@@ -877,13 +888,28 @@ class BrowserState(
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatching {
-                    importDataFromFile(
-                        dataStore = connection.dataStore,
-                        model = model,
-                        format = format,
-                        scope = importScope,
-                        path = filePath,
+                    val context = RequestContext(
+                        DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
+                        dataModel = model,
                     )
+                    val versioned = detectVersionedImport(filePath, format, context)
+                    if (versioned) {
+                        importVersionedDataFromFile(
+                            dataStore = connection.dataStore,
+                            model = model,
+                            format = format,
+                            scope = importScope,
+                            path = filePath,
+                        )
+                    } else {
+                        importDataFromFile(
+                            dataStore = connection.dataStore,
+                            model = model,
+                            format = format,
+                            scope = importScope,
+                            path = filePath,
+                        )
+                    }
                 }
             }
             if (result.isSuccess) {
@@ -894,7 +920,18 @@ class BrowserState(
                 }
                 scanFromStart()
             } else {
-                lastActionMessage = "Import failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+                val error = result.exceptionOrNull()
+                if (allowRetryOnModelMismatch && error.hasDefNotFound()) {
+                    dataImportModelDialog = ImportModelDialogRequest(
+                        path = filePath,
+                        format = format,
+                        scope = importScope,
+                    )
+                    lastActionMessage = "Import failed for detected model. Select correct model."
+                    isWorking = false
+                    return@launch
+                }
+                lastActionMessage = "Import failed: ${error?.message ?: "Unknown error"}"
             }
             isWorking = false
         }
@@ -929,16 +966,34 @@ class BrowserState(
                 return@launch
             }
             isWorking = false
-            importData(modelId, format, scopeDetected, cleanPath)
+            importData(modelId, format, scopeDetected, cleanPath, allowRetryOnModelMismatch = true)
         }
+    }
+
+    private fun Throwable?.hasDefNotFound(): Boolean {
+        return generateSequence(this) { it.cause }.any { it is DefNotFoundException }
     }
 
     private fun detectModelIdFromPath(path: String): UInt? {
         val fileName = path.substringAfterLast('/').substringAfterLast('\\')
-        val baseName = fileName.substringBefore('.')
+        val baseName = fileName.substringBeforeLast('.')
         if (baseName.isBlank()) return null
-        val target = baseName.lowercase()
-        return models.firstOrNull { it.name.lowercase() == target }?.id
+        val candidates = buildList {
+            add(baseName)
+            var current = baseName
+            listOf("versions", "data").forEach { suffix ->
+                if (current.endsWith(".$suffix", ignoreCase = true)) {
+                    current = current.removeSuffix(".$suffix")
+                    if (current.isNotBlank()) add(current)
+                }
+            }
+            val trimmed = baseName.substringBefore('.')
+            if (trimmed.isNotBlank()) add(trimmed)
+        }.distinct().sortedByDescending { it.length }
+        val modelByName = models.associateBy { it.name.lowercase() }
+        return candidates.firstNotNullOfOrNull { candidate ->
+            modelByName[candidate.lowercase()]?.id
+        }
     }
 
     private fun buildAllModelsByName(connection: StoreConnection): Map<String, IsRootDataModel> {

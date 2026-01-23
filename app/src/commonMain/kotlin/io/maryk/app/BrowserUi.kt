@@ -13,11 +13,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
@@ -25,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -184,6 +190,22 @@ fun Browser(
         )
     }
 
+    state.dataExportFormatDialog?.let { request ->
+        DataExportFormatDialog(
+            state = state,
+            request = request,
+            onDismiss = { state.clearDataExportFormatDialog() },
+        )
+    }
+
+    state.dataExportDialog?.let { request ->
+        ExportDataDialog(
+            state = state,
+            request = request,
+            onDismiss = { state.clearDataExportDialog() },
+        )
+    }
+
     if (state.showDeleteDialog) {
         DeleteDialog(state)
     }
@@ -241,6 +263,192 @@ private fun ExportFormatDialog(
             TextButton(onClick = onDismiss) {
                 Text("Cancel")
             }
+        },
+    )
+}
+
+@Composable
+private fun DataExportFormatDialog(
+    state: BrowserState,
+    request: DataExportFormatDialogRequest,
+    onDismiss: () -> Unit,
+) {
+    val modelName = state.models.firstOrNull { it.id == request.modelId }?.name
+    var selected by remember(request.modelId, request.scope) { mutableStateOf(DataExportFormat.JSON) }
+    val title = when (request.scope) {
+        DataExportScope.ROW -> "Export ${modelName ?: "row"}"
+        DataExportScope.MODEL -> "Export ${modelName ?: "model"} data"
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(title, style = MaterialTheme.typography.titleSmall) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("Format", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                DataExportFormat.entries.forEach { format ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { selected = format },
+                    ) {
+                        RadioButton(selected = selected == format, onClick = { selected = format })
+                        Text(format.label, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onDismiss()
+                    when (request.scope) {
+                        DataExportScope.ROW -> {
+                            val key = request.rowKey ?: return@TextButton
+                            val keyText = request.rowKeyText ?: return@TextButton
+                            state.exportRowDataByKey(request.modelId, key, keyText, selected)
+                        }
+                        DataExportScope.MODEL -> {
+                            state.exportModelData(request.modelId, selected)
+                        }
+                    }
+                },
+            ) {
+                Text("Export")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        },
+    )
+}
+
+@Composable
+private fun ExportDataDialog(
+    state: BrowserState,
+    request: ExportDataDialogRequest,
+    onDismiss: () -> Unit,
+) {
+    val models = state.models
+    var exportAll by remember(request.defaultModelId) { mutableStateOf(request.defaultModelId == null) }
+    var selectedModelId by remember(request.defaultModelId, models) {
+        mutableStateOf(request.defaultModelId ?: models.firstOrNull()?.id)
+    }
+    var format by remember { mutableStateOf(DataExportFormat.JSON) }
+    var folderPath by remember { mutableStateOf("") }
+    var modelMenuExpanded by remember { mutableStateOf(false) }
+    val selectedModelName = models.firstOrNull { it.id == selectedModelId }?.name ?: "Select model"
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Export data", style = MaterialTheme.typography.titleSmall) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Scope", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { exportAll = true },
+                    ) {
+                        RadioButton(selected = exportAll, onClick = { exportAll = true })
+                        Text("All data", style = MaterialTheme.typography.bodySmall)
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth().clickable { exportAll = false },
+                    ) {
+                        RadioButton(selected = !exportAll, onClick = { exportAll = false })
+                        Text("Specific model", style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (!exportAll) {
+                        Box {
+                            OutlinedButton(
+                                onClick = { modelMenuExpanded = true },
+                                modifier = Modifier.fillMaxWidth(),
+                            ) {
+                                Text(selectedModelName, style = MaterialTheme.typography.bodySmall)
+                            }
+                            DropdownMenu(
+                                expanded = modelMenuExpanded,
+                                onDismissRequest = { modelMenuExpanded = false },
+                            ) {
+                                models.forEach { model ->
+                                    DropdownMenuItem(
+                                        text = { Text(model.name, style = MaterialTheme.typography.bodySmall) },
+                                        onClick = {
+                                            selectedModelId = model.id
+                                            modelMenuExpanded = false
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Format", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    DataExportFormat.entries.forEach { option ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth().clickable { format = option },
+                        ) {
+                            RadioButton(selected = format == option, onClick = { format = option })
+                            Text(option.label, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("Folder", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedTextField(
+                        value = folderPath,
+                        onValueChange = { folderPath = it },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("Select a folder") },
+                        trailingIcon = {
+                            IconButton(
+                                onClick = {
+                                    val picked = pickDirectory("Select export folder") ?: return@IconButton
+                                    folderPath = picked
+                                },
+                                modifier = Modifier.size(28.dp),
+                            ) {
+                                Icon(
+                                    Icons.Filled.FolderOpen,
+                                    contentDescription = "Browse folder",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                        },
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val folder = folderPath.trim().ifEmpty {
+                        pickDirectory("Select export folder") ?: return@TextButton
+                    }
+                    onDismiss()
+                    if (exportAll) {
+                        state.exportAllData(format, folder)
+                    } else {
+                        val modelId = selectedModelId ?: return@TextButton
+                        state.exportModelData(modelId, format, folder)
+                    }
+                },
+            ) {
+                Text("Export")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         },
     )
 }

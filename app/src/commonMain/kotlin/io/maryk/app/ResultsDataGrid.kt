@@ -469,6 +469,9 @@ fun ResultsDataGrid(
                                             clipboard.setText(AnnotatedString(yaml))
                                         },
                                         onCopyKey = { clipboard.setText(AnnotatedString(row.keyText)) },
+                                        onExportRow = {
+                                            state.requestExportRowDialog(row)
+                                        },
                                         onDelete = {
                                             deleteRow = row
                                             hardDelete = false
@@ -766,12 +769,14 @@ private fun resultRowContextItems(
     onCopyRowJson: () -> Unit,
     onCopyRowYaml: () -> Unit,
     onCopyKey: () -> Unit,
+    onExportRow: () -> Unit,
     onDelete: () -> Unit,
 ): List<ContextMenuItem> = listOf(
     ContextMenuItem("Edit", onEdit),
     ContextMenuItem("Copy key", onCopyKey),
     ContextMenuItem("Copy data as JSON", onCopyRowJson),
     ContextMenuItem("Copy data as YAML", onCopyRowYaml),
+    ContextMenuItem("Export row…", onExportRow),
     ContextMenuItem("Delete", onDelete),
 )
 

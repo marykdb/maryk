@@ -83,6 +83,12 @@ class BrowserState(
     var exportDialog by mutableStateOf<ExportDialogRequest?>(null)
         private set
 
+    var dataExportDialog by mutableStateOf<ExportDataDialogRequest?>(null)
+        private set
+
+    var dataExportFormatDialog by mutableStateOf<DataExportFormatDialogRequest?>(null)
+        private set
+
     var exportToastMessage by mutableStateOf<String?>(null)
         private set
 
@@ -660,8 +666,39 @@ class BrowserState(
         exportDialog = ExportDialogRequest(modelId = modelId)
     }
 
+    fun requestExportDataDialog() {
+        dataExportDialog = ExportDataDialogRequest(defaultModelId = selectedModelId)
+    }
+
+    fun requestExportRowDialog(row: ScanRow) {
+        val modelId = selectedModelId ?: return
+        dataExportFormatDialog = DataExportFormatDialogRequest(
+            scope = DataExportScope.ROW,
+            modelId = modelId,
+            rowKey = row.key,
+            rowKeyText = row.keyText,
+        )
+    }
+
+    fun requestExportModelDataDialog(modelId: UInt) {
+        dataExportFormatDialog = DataExportFormatDialogRequest(
+            scope = DataExportScope.MODEL,
+            modelId = modelId,
+            rowKey = null,
+            rowKeyText = null,
+        )
+    }
+
     fun clearExportDialog() {
         exportDialog = null
+    }
+
+    fun clearDataExportDialog() {
+        dataExportDialog = null
+    }
+
+    fun clearDataExportFormatDialog() {
+        dataExportFormatDialog = null
     }
 
     fun clearExportToast() {
@@ -706,6 +743,99 @@ class BrowserState(
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${allModels.size} models as ${format.label}."
+            } else {
+                lastActionMessage = "Export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+            }
+            isWorking = false
+        }
+    }
+
+    fun exportRowDataByKey(
+        modelId: UInt,
+        key: Key<IsRootDataModel>,
+        keyText: String,
+        format: DataExportFormat,
+    ) {
+        val connection = activeConnection ?: return
+        val model = connection.dataStore.dataModelsById[modelId] ?: return
+        val folder = pickDirectory("Export ${model.Meta.name} row") ?: return
+        isWorking = true
+        exportToastMessage = null
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    exportRowDataToFolder(
+                        dataStore = connection.dataStore,
+                        model = model,
+                        key = key,
+                        keyText = keyText,
+                        format = format,
+                        folder = folder,
+                    )
+                }
+            }
+            if (result.isSuccess) {
+                exportToastMessage = "Exported ${model.Meta.name} row as ${format.label}."
+            } else {
+                lastActionMessage = "Export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+            }
+            isWorking = false
+        }
+    }
+
+    fun exportModelData(
+        modelId: UInt,
+        format: DataExportFormat,
+        folder: String? = null,
+    ) {
+        val connection = activeConnection ?: return
+        val model = connection.dataStore.dataModelsById[modelId] ?: return
+        val exportFolder = folder ?: pickDirectory("Export ${model.Meta.name} data") ?: return
+        isWorking = true
+        exportToastMessage = null
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    exportModelDataToFolder(
+                        dataStore = connection.dataStore,
+                        model = model,
+                        format = format,
+                        folder = exportFolder,
+                    )
+                }
+            }
+            if (result.isSuccess) {
+                exportToastMessage = "Exported ${model.Meta.name} data as ${format.label}."
+            } else {
+                lastActionMessage = "Export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+            }
+            isWorking = false
+        }
+    }
+
+    fun exportAllData(
+        format: DataExportFormat,
+        folder: String? = null,
+    ) {
+        val connection = activeConnection ?: return
+        val exportFolder = folder ?: pickDirectory("Export all data") ?: return
+        isWorking = true
+        exportToastMessage = null
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    connection.dataStore.dataModelsById.values.forEach { model ->
+                        exportModelDataToFolder(
+                            dataStore = connection.dataStore,
+                            model = model,
+                            format = format,
+                            folder = exportFolder,
+                        )
+                    }
+                }
+            }
+            if (result.isSuccess) {
+                exportToastMessage = "Exported all data as ${format.label}."
             } else {
                 lastActionMessage = "Export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
             }
@@ -858,6 +988,22 @@ data class ReferenceBackTarget(
 
 data class ExportDialogRequest(
     val modelId: UInt?,
+)
+
+enum class DataExportScope {
+    ROW,
+    MODEL,
+}
+
+data class DataExportFormatDialogRequest(
+    val scope: DataExportScope,
+    val modelId: UInt,
+    val rowKey: Key<IsRootDataModel>?,
+    val rowKeyText: String?,
+)
+
+data class ExportDataDialogRequest(
+    val defaultModelId: UInt?,
 )
 
 private data class ScanCursor(

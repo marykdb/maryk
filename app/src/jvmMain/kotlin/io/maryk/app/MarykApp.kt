@@ -126,6 +126,7 @@ fun main() = application {
                     }
                     Menu("Export") {
                         Item("Export all models…", onClick = { browserState.requestExportAllDialog() })
+                        Item("Export data…", onClick = { browserState.requestExportDataDialog() })
                     }
                     Menu("Stores") {
                         Item("New Store", onClick = { openStoreEditor() }, shortcut = shortcutNew)

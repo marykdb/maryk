@@ -84,6 +84,7 @@ private fun CatalogRow(
             items = {
                 listOf(
                     ContextMenuItem("Export model…") { state.requestExportModelDialog(model.id) },
+                    ContextMenuItem("Export model data…") { state.requestExportModelDataDialog(model.id) },
                 )
             },
         ) {

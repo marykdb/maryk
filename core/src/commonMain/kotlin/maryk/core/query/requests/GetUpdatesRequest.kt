@@ -15,7 +15,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
-import maryk.core.query.requests.RequestType.GetChanges
+import maryk.core.query.requests.RequestType.GetUpdates
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.values.ObjectValues
 
@@ -60,7 +60,7 @@ data class GetUpdatesRequest<DM : IsRootDataModel> internal constructor(
     override val select: RootPropRefGraph<DM>? = null,
     override val filterSoftDeleted: Boolean = true
 ) : IsGetRequest<DM, UpdatesResponse<DM>>, IsUpdatesRequest<DM, UpdatesResponse<DM>>, IsTransportableRequest<UpdatesResponse<DM>> {
-    override val requestType = GetChanges
+    override val requestType = GetUpdates
     override val responseModel = UpdatesResponse
 
     // Aggregations are not allowed on a get changes request

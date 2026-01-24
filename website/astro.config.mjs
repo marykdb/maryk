@@ -127,6 +127,13 @@ export default defineConfig({
                     collapsed: false,
                     items: [
                         {
+                            label: 'App',
+                            collapsed: true,
+                            items: [
+                                {label: 'Overview', slug: 'app'},
+                            ],
+                        },
+                        {
                             label: 'CLI',
                             collapsed: true,
                             items: [

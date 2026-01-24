@@ -1,16 +1,16 @@
 # Maryk App (Desktop)
 
-Maryk App is a Kotlin Compose Multiplatform desktop tool for browsing and editing Maryk data stores.
-It connects to RocksDB or FoundationDB stores and provides a visual browser for models, records,
-and version metadata.
+Maryk App is a Kotlin Compose Multiplatform desktop UI for browsing and editing Maryk data stores.
+It connects to RocksDB or FoundationDB and provides model catalogs, record scans, and editors.
 
-## Status
+## Key features
 
-The initial UI focuses on the core CLI workflows in a desktop-first layout:
 - Manage and connect to saved stores (RocksDB / FoundationDB).
-- Browse models and scan records with filters and field selections.
-- Inspect record metadata and edit records via YAML.
-- Delete/restore records and export YAML.
+- Browse models, inspect schemas, and pin fields.
+- Scan records with sorting and filters.
+- Inspect record data, raw YAML, and history.
+- Add/edit records with validation or raw YAML.
+- Import/export model schemas and data.
 
 ## Running
 
@@ -21,9 +21,9 @@ From the project root:
 ```
 
 Notes:
-- FoundationDB requires the native client library (`libfdb_c`). See `store/foundationdb/README.md`.
-- Saved store configurations live in your local user config directory under `~/.maryk/app/stores.conf`.
+- FoundationDB requires the native client library (`libfdb_c`). See `/store/foundationdb/`.
+- Saved store configurations live at `~/.maryk/app/stores.conf`.
 
 ## Docs
 
-See `app/docs/README.md` for UI walkthroughs and tips.
+See `app/docs/README.md` for UI walkthroughs and workflows.

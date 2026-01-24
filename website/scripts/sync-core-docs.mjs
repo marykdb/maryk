@@ -64,6 +64,8 @@ const map = [
 
   // CLI
   ['src/content/docs/cli/commands.mdx', '../cli/docs/commands.md'],
+  // App
+  ['src/content/docs/app.mdx', '../app/docs/README.md'],
 ];
 
   function rewriteLinks(md) {

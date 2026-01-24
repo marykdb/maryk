@@ -26,6 +26,8 @@ The [FoundationDB](/store/foundationdb/README.md) persistence layer is available
 
 - **CLI tooling**: Browse and edit records in a terminal via the [Maryk CLI](cli/README.md).
 
+- **Desktop App**: Browse models and edit records in a desktop UI with the [Maryk App](app/README.md).
+
 ## Getting Started
 
 1. **Add Maryk Core Dependency**:  

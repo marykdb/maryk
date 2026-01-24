@@ -78,6 +78,14 @@ Then advance to [Stores](/stores/) for RocksDB or FoundationDB and migration tip
 
 Use the [CLI](/cli/) to explore models and records, run scans, and edit values without writing code.
 
+## App
+
+Use the [Maryk App](/app/) for a desktop UI to browse models and edit records.
+
+```bash
+./gradlew :app:run
+```
+
 ## Next steps
 
 - Learn how models and properties work in [Data design](/data-modeling/data-design/).

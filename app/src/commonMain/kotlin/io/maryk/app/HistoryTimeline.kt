@@ -142,12 +142,11 @@ private fun HistoryBatch(
                         }
                     }
                 }
-                TextButton(
-                    onClick = { onDiff(item.version) },
+                ModalSecondaryButton(
+                    label = "Diff",
                     enabled = previousVersion != null,
-                ) {
-                    Text("Diff", style = MaterialTheme.typography.labelSmall)
-                }
+                    onClick = { onDiff(item.version) },
+                )
             }
         }
     }
@@ -206,9 +205,7 @@ private fun DiffDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
-            }
+            ModalSecondaryButton(label = "Close", onClick = onDismiss)
         },
     )
 }

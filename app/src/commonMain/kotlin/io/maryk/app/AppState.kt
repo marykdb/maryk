@@ -115,6 +115,7 @@ class BrowserState(
 
     private val modelRowCounts = mutableStateMapOf<UInt, ModelRowCount>()
     private val orderFieldsByModel = mutableStateMapOf<UInt, String>()
+    private val filterTextByModel = mutableStateMapOf<UInt, String>()
 
     fun connect(definition: StoreDefinition) {
         isWorking = true
@@ -163,6 +164,7 @@ class BrowserState(
         scanStatus = null
         modelRowCounts.clear()
         orderFieldsByModel.clear()
+        filterTextByModel.clear()
         historyChanges = emptyList()
         lastActionMessage = "Disconnected."
     }
@@ -176,13 +178,22 @@ class BrowserState(
         recordDetails = null
         selectedModelField = null
         historyChanges = emptyList()
-        scanConfig = scanConfig.copy(orderFields = orderFieldsByModel[modelId].orEmpty())
+        scanConfig = scanConfig.copy(
+            orderFields = orderFieldsByModel[modelId].orEmpty(),
+            filterText = filterTextByModel[modelId].orEmpty(),
+        )
         scanFromStart()
     }
 
     fun updateOrderFields(orderFields: String) {
         selectedModelId?.let { orderFieldsByModel[it] = orderFields }
         scanConfig = scanConfig.copy(orderFields = orderFields)
+        scanFromStart()
+    }
+
+    fun updateFilterText(filterText: String) {
+        selectedModelId?.let { filterTextByModel[it] = filterText }
+        scanConfig = scanConfig.copy(filterText = filterText)
         scanFromStart()
     }
 

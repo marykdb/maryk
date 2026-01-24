@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -23,7 +24,6 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Text
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.MaterialTheme
@@ -243,7 +243,7 @@ private fun ExportFormatDialog(
         title = {
             Text(
                 if (modelName == null) "Export all models" else "Export $modelName",
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.titleMedium,
             )
         },
         text = {
@@ -262,7 +262,8 @@ private fun ExportFormatDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            ModalPrimaryButton(
+                label = "Export",
                 onClick = {
                     onDismiss()
                     val modelId = request.modelId
@@ -272,14 +273,10 @@ private fun ExportFormatDialog(
                         state.exportModelById(modelId, selected)
                     }
                 },
-            ) {
-                Text("Export")
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
+            ModalSecondaryButton(label = "Cancel", onClick = onDismiss)
         },
     )
 }
@@ -299,7 +296,7 @@ private fun DataExportFormatDialog(
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(title, style = MaterialTheme.typography.titleSmall) },
+        title = { Text(title, style = MaterialTheme.typography.titleMedium) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("Format", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -324,13 +321,14 @@ private fun DataExportFormatDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            ModalPrimaryButton(
+                label = "Export",
                 onClick = {
                     onDismiss()
                     when (request.scope) {
                         DataExportScope.ROW -> {
-                            val key = request.rowKey ?: return@TextButton
-                            val keyText = request.rowKeyText ?: return@TextButton
+                            val key = request.rowKey ?: return@ModalPrimaryButton
+                            val keyText = request.rowKeyText ?: return@ModalPrimaryButton
                             state.exportRowDataByKey(request.modelId, key, keyText, selected, includeVersionHistory)
                         }
                         DataExportScope.MODEL -> {
@@ -338,14 +336,10 @@ private fun DataExportFormatDialog(
                         }
                     }
                 },
-            ) {
-                Text("Export")
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Cancel")
-            }
+            ModalSecondaryButton(label = "Cancel", onClick = onDismiss)
         },
     )
 }
@@ -369,7 +363,7 @@ private fun ExportDataDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Export data", style = MaterialTheme.typography.titleSmall) },
+        title = { Text("Export data", style = MaterialTheme.typography.titleMedium) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -465,25 +459,24 @@ private fun ExportDataDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            ModalPrimaryButton(
+                label = "Export",
                 onClick = {
                     val folder = folderPath.trim().ifEmpty {
-                        pickDirectory("Select export folder") ?: return@TextButton
+                        pickDirectory("Select export folder") ?: return@ModalPrimaryButton
                     }
                     onDismiss()
                     if (exportAll) {
                         state.exportAllData(format, folder, includeVersionHistory)
                     } else {
-                        val modelId = selectedModelId ?: return@TextButton
+                        val modelId = selectedModelId ?: return@ModalPrimaryButton
                         state.exportModelData(modelId, format, folder, includeVersionHistory)
                     }
                 },
-            ) {
-                Text("Export")
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            ModalSecondaryButton(label = "Cancel", onClick = onDismiss)
         },
     )
 }
@@ -498,7 +491,7 @@ private fun ImportDataDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Import data", style = MaterialTheme.typography.titleSmall) },
+        title = { Text("Import data", style = MaterialTheme.typography.titleMedium) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -535,20 +528,19 @@ private fun ImportDataDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            ModalPrimaryButton(
+                label = "Import",
                 onClick = {
                     val path = filePath.trim().ifEmpty {
-                        pickFile("Select import file") ?: return@TextButton
+                        pickFile("Select import file") ?: return@ModalPrimaryButton
                     }
                     onDismiss()
                     state.startImportFromPath(path)
                 },
-            ) {
-                Text("Import")
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            ModalSecondaryButton(label = "Cancel", onClick = onDismiss)
         },
     )
 }
@@ -567,7 +559,7 @@ private fun ImportModelDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select model", style = MaterialTheme.typography.titleSmall) },
+        title = { Text("Select model", style = MaterialTheme.typography.titleMedium) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("File: $fileName", style = MaterialTheme.typography.bodySmall)
@@ -596,19 +588,18 @@ private fun ImportModelDialog(
             }
         },
         confirmButton = {
-            TextButton(
+            ModalPrimaryButton(
+                label = "Import",
+                enabled = selectedModelId != null,
                 onClick = {
-                    val modelId = selectedModelId ?: return@TextButton
+                    val modelId = selectedModelId ?: return@ModalPrimaryButton
                     onDismiss()
                     state.importData(modelId, request.format, request.scope, request.path)
                 },
-                enabled = selectedModelId != null,
-            ) {
-                Text("Import")
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            ModalSecondaryButton(label = "Cancel", onClick = onDismiss)
         },
     )
 }
@@ -678,7 +669,7 @@ private fun SurfaceCard(title: String, body: String) {
 private fun DeleteDialog(state: BrowserState) {
     AlertDialog(
         onDismissRequest = { state.closeDeleteDialog() },
-        title = { Text("Delete record") },
+        title = { Text("Delete record", style = MaterialTheme.typography.titleMedium) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("This action is destructive. Continue?", style = MaterialTheme.typography.bodySmall)
@@ -692,10 +683,17 @@ private fun DeleteDialog(state: BrowserState) {
             }
         },
         confirmButton = {
-            TextButton(onClick = { state.deleteRecord(state.pendingHardDelete) }) { Text("Delete") }
+            ModalPrimaryButton(
+                label = "Delete",
+                onClick = { state.deleteRecord(state.pendingHardDelete) },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error,
+                    contentColor = MaterialTheme.colorScheme.onError,
+                ),
+            )
         },
         dismissButton = {
-            TextButton(onClick = { state.closeDeleteDialog() }) { Text("Cancel") }
+            ModalSecondaryButton(label = "Cancel", onClick = { state.closeDeleteDialog() })
         },
     )
 }

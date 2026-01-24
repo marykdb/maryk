@@ -37,7 +37,6 @@ import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
@@ -524,9 +523,7 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
             title = { Text("Save failed") },
             text = { Text(errorMessage, style = MaterialTheme.typography.bodySmall) },
             confirmButton = {
-                TextButton(onClick = { showError = false }) {
-                    Text("Ok")
-                }
+                ModalPrimaryButton(label = "Ok", onClick = { showError = false })
             },
         )
     }

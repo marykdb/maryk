@@ -235,7 +235,7 @@ private fun StoreEditorDialog(storesState: StoresState) {
     ModalSurface(onDismiss = { storesState.closeStoreEditor() }) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(if (editing == null) "Add store" else "Edit store", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                Text(if (editing == null) "Add store" else "Edit store", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 SmallIconButton(
                     icon = Icons.Default.Close,
                     contentDescription = "Close",
@@ -282,25 +282,28 @@ private fun StoreEditorDialog(storesState: StoresState) {
                 Text(message, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                SmallOutlinedButton(
+                ModalSecondaryButton(
                     label = "Cancel",
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     onClick = { storesState.closeStoreEditor() },
                 )
-                SmallButton(
+                ModalPrimaryButton(
                     label = "Save",
                     icon = Icons.Default.Edit,
-                    colors = ButtonDefaults.buttonColors(contentColor = MaterialTheme.colorScheme.onTertiary, containerColor = MaterialTheme.colorScheme.tertiary),
+                    colors = ButtonDefaults.buttonColors(
+                        contentColor = MaterialTheme.colorScheme.onTertiary,
+                        containerColor = MaterialTheme.colorScheme.tertiary,
+                    ),
                     onClick = {
                         val trimmedName = name.trim()
                         val trimmedDirectory = directory.trim()
                         if (trimmedName.isBlank()) {
                             error = "Name is required."
-                            return@SmallButton
+                            return@ModalPrimaryButton
                         }
                         if (trimmedDirectory.isBlank()) {
                             error = "Directory is required."
-                            return@SmallButton
+                            return@ModalPrimaryButton
                         }
                         val newStore = StoreDefinition(
                             id = editing?.id ?: generateStoreId(),
@@ -373,28 +376,6 @@ private fun StoreTypeTab(
 }
 
 @Composable
-private fun SmallButton(
-    label: String,
-    icon: ImageVector? = null,
-    enabled: Boolean = true,
-    colors: ButtonColors? = null,
-    onClick: () -> Unit,
-) {
-    Button(
-        onClick = onClick,
-        enabled = enabled,
-        colors = colors ?: ButtonDefaults.buttonColors(),
-        contentPadding = denseButtonPadding,
-    ) {
-        if (icon != null) {
-            Icon(icon, contentDescription = null, modifier = Modifier.size(denseIconSize))
-            Spacer(modifier = Modifier.width(4.dp))
-        }
-        Text(label, style = MaterialTheme.typography.labelMedium)
-    }
-}
-
-@Composable
 private fun SmallOutlinedButton(
     label: String,
     icon: ImageVector? = null,
@@ -405,6 +386,7 @@ private fun SmallOutlinedButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
+        shape = RoundedCornerShape(4.dp),
         contentPadding = denseButtonPadding,
         border = BorderStroke(1.dp, tint),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = tint),

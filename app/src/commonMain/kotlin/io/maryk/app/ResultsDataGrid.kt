@@ -40,8 +40,8 @@ import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -123,6 +123,7 @@ fun ResultsDataGrid(
     var hardDelete by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
     var editRow by remember { mutableStateOf<ScanRow?>(null) }
+    var showFilterDialog by remember { mutableStateOf(false) }
     val dataModel = state.currentDataModel()
     val indexColumns = remember(dataModel) { buildIndexColumns(dataModel) }
     val pinnedPaths = uiState.pinnedPaths(state.selectedModelId)
@@ -316,10 +317,36 @@ fun ResultsDataGrid(
                         )
                     }
                     Spacer(modifier = Modifier.width(6.dp))
+                    val hasFilter = state.scanConfig.filterText.isNotBlank()
+                    OutlinedButton(
+                        onClick = { showFilterDialog = true },
+                        enabled = dataModel != null,
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(4.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        ),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                        modifier = Modifier.height(28.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Default.FilterAlt, contentDescription = "Filter records", modifier = Modifier.size(12.dp))
+                            Text(
+                                if (hasFilter) "Filter" else "Filter",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.offset(y = (-1).dp),
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
                     OutlinedButton(
                         onClick = { showAddDialog = true },
                         enabled = dataModel != null,
                         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(4.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
                         modifier = Modifier.height(28.dp),
@@ -427,27 +454,37 @@ fun ResultsDataGrid(
                             },
                     ) {
                         stickyHeader {
-                            GridHeaderRow(
-                                keyWidth = clampedKeyWidth,
-                                indexColumns = indexColumns,
-                                indexWidths = indexColumnWidths,
-                                pinnedColumns = pinnedColumns,
-                                valuesWidth = valuesColumnWidth,
-                                horizontalScroll = horizontalScroll,
-                                onResizeKey = { delta ->
-                                    keyColumnWidth = (keyColumnWidth + delta).coerceIn(140.dp, maxKeyWidth)
-                                },
-                                onResizeIndex = { index, delta ->
-                                    val current = indexColumnWidths.getOrNull(index) ?: indexColumnWidth
-                                    val next = (current + delta).coerceIn(120.dp, 260.dp)
-                                    if (index < indexColumnWidths.size) {
-                                        indexColumnWidths[index] = next
-                                    }
-                                },
-                                onUnpin = { path ->
-                                    uiState.togglePinned(state.selectedModelId, path)
-                                },
-                            )
+                            Column {
+                                if (state.scanConfig.filterText.isNotBlank()) {
+                                    FilterStatusBar(
+                                        dataModel = state.currentDataModel(),
+                                        filterText = state.scanConfig.filterText,
+                                        onEdit = { showFilterDialog = true },
+                                        onClear = { state.updateFilterText("") },
+                                    )
+                                }
+                                GridHeaderRow(
+                                    keyWidth = clampedKeyWidth,
+                                    indexColumns = indexColumns,
+                                    indexWidths = indexColumnWidths,
+                                    pinnedColumns = pinnedColumns,
+                                    valuesWidth = valuesColumnWidth,
+                                    horizontalScroll = horizontalScroll,
+                                    onResizeKey = { delta ->
+                                        keyColumnWidth = (keyColumnWidth + delta).coerceIn(140.dp, maxKeyWidth)
+                                    },
+                                    onResizeIndex = { index, delta ->
+                                        val current = indexColumnWidths.getOrNull(index) ?: indexColumnWidth
+                                        val next = (current + delta).coerceIn(120.dp, 260.dp)
+                                        if (index < indexColumnWidths.size) {
+                                            indexColumnWidths[index] = next
+                                        }
+                                    },
+                                    onUnpin = { path ->
+                                        uiState.togglePinned(state.selectedModelId, path)
+                                    },
+                                )
+                            }
                         }
                         itemsIndexed(rows, key = { _, row -> row.key }) { index, row ->
                             val selected = uiState.selectedRowKeys[row.key] == true
@@ -502,7 +539,7 @@ fun ResultsDataGrid(
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis,
                                     )
-                                    Spacer(modifier = Modifier.width(columnSpacing))
+                                    ColumnSeparator()
                                     pinnedColumns.forEach { column ->
                                         val value = formatValueForPinned(row.values, column)
                                         Text(
@@ -512,7 +549,7 @@ fun ResultsDataGrid(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
-                                        Spacer(modifier = Modifier.width(columnSpacing))
+                                        ColumnSeparator()
                                     }
                                     indexColumns.forEachIndexed { colIndex, column ->
                                         val value = formatValueForColumn(row.values, column)
@@ -524,7 +561,7 @@ fun ResultsDataGrid(
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
-                                        Spacer(modifier = Modifier.width(columnSpacing))
+                                        ColumnSeparator()
                                     }
                                     Text(
                                         row.summary,
@@ -556,7 +593,7 @@ fun ResultsDataGrid(
         }
         ModalSurface(onDismiss = { deleteRow = null }) {
             Column(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.85f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Delete record", style = MaterialTheme.typography.titleSmall)
+                Text("Delete record", style = MaterialTheme.typography.titleMedium)
                 Text(deleteRow!!.keyText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 val scrollState = rememberScrollState()
                 Surface(
@@ -591,15 +628,12 @@ fun ResultsDataGrid(
                     )
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedButton(
+                    ModalSecondaryButton(
+                        label = "Cancel",
                         onClick = { deleteRow = null },
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-                    ) {
-                        Text("Cancel", style = MaterialTheme.typography.labelMedium)
-                    }
-                    Button(
+                    )
+                    ModalPrimaryButton(
+                        label = "Delete",
                         onClick = {
                             state.deleteRow(deleteRow!!, hardDelete)
                             deleteRow = null
@@ -608,10 +642,7 @@ fun ResultsDataGrid(
                             containerColor = MaterialTheme.colorScheme.error,
                             contentColor = MaterialTheme.colorScheme.onError,
                         ),
-                        contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                    ) {
-                        Text("Delete", style = MaterialTheme.typography.labelMedium)
-                    }
+                    )
                 }
             }
         }
@@ -642,6 +673,19 @@ fun ResultsDataGrid(
         )
     } else if (editRowValue != null && dataModel == null) {
         editRow = null
+    }
+    if (showFilterDialog && dataModel != null) {
+        FilterDialog(
+            dataModel = dataModel,
+            initialFilterText = state.scanConfig.filterText,
+            onApply = { yaml ->
+                state.updateFilterText(yaml)
+                showFilterDialog = false
+            },
+            onDismiss = { showFilterDialog = false },
+        )
+    } else if (showFilterDialog && dataModel == null) {
+        showFilterDialog = false
     }
 }
 
@@ -683,7 +727,7 @@ private fun GridHeaderRow(
                     width = pinnedColumnWidth,
                     onUnpin = { onUnpin(column.path) },
                 )
-                Spacer(modifier = Modifier.width(columnSpacing))
+                ColumnSeparator()
             }
             indexColumns.forEachIndexed { index, column ->
                 val width = indexWidths.getOrNull(index) ?: indexColumnWidth
@@ -736,6 +780,24 @@ private fun PinnedHeaderCell(
         IconButton(onClick = onUnpin, modifier = Modifier.size(18.dp)) {
             Icon(Icons.Filled.PushPin, contentDescription = "Unpin", modifier = Modifier.size(12.dp))
         }
+    }
+}
+
+@Composable
+private fun ColumnSeparator() {
+    val outline = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
+    Box(
+        modifier = Modifier
+            .width(columnSpacing)
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            modifier = Modifier
+                .width(1.dp)
+                .fillMaxHeight()
+                .background(outline),
+        )
     }
 }
 

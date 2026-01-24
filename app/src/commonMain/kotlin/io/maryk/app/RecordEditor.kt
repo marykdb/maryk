@@ -38,7 +38,6 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
@@ -51,7 +50,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.material3.rememberDatePickerState
@@ -271,20 +269,17 @@ internal fun RecordEditorDialog(
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(
+                ModalSecondaryButton(
+                    label = "Cancel",
                     onClick = onDismiss,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 6.dp),
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
-                ) {
-                    Text("Cancel", style = MaterialTheme.typography.labelMedium)
-                }
-                Button(
+                )
+                ModalPrimaryButton(
+                    label = "Save",
+                    icon = Icons.Default.Edit,
                     onClick = {
                         if (!editorState.validateAll()) {
                             saveError = "Fix validation errors before saving."
-                            return@Button
+                            return@ModalPrimaryButton
                         }
                         if (mode == RecordEditorMode.ADD) {
                             val key = keyText.trim().takeIf { it.isNotBlank() }?.let {
@@ -292,36 +287,30 @@ internal fun RecordEditorDialog(
                             }
                             if (keyText.isNotBlank() && key == null) {
                                 keyError = "Invalid key format."
-                                return@Button
+                                return@ModalPrimaryButton
                             }
                             awaitingSave = true
                             state.addRecord(editorState.serializableValues(), key)
                         } else {
                             if (!editorState.hasChanges) {
                                 saveError = "No changes to save."
-                                return@Button
+                                return@ModalPrimaryButton
                             }
                             val changes = editorState.buildChanges()
                             if (changes.isEmpty()) {
                                 saveError = "No changes to save."
-                                return@Button
+                                return@ModalPrimaryButton
                             }
                             awaitingSave = true
                             state.applyRecordChanges(changes)
                         }
                     },
                     enabled = canEdit && hasChanges && !hasErrors,
-                    contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                    shape = RoundedCornerShape(6.dp),
                     colors = ButtonDefaults.buttonColors(
                         contentColor = MaterialTheme.colorScheme.onTertiary,
                         containerColor = MaterialTheme.colorScheme.tertiary,
                     ),
-                ) {
-                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Save", style = MaterialTheme.typography.labelMedium)
-                }
+                )
             }
         }
     }
@@ -976,14 +965,10 @@ private fun DateEditor(
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
-                TextButton(onClick = { showPicker = false }) {
-                    Text("Done")
-                }
+                ModalPrimaryButton(label = "Done", onClick = { showPicker = false })
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) {
-                    Text("Cancel")
-                }
+                ModalSecondaryButton(label = "Cancel", onClick = { showPicker = false })
             },
         ) {
             DatePicker(state = datePickerState, showModeToggle = false)
@@ -1073,14 +1058,10 @@ private fun DateTimeEditor(
         DatePickerDialog(
             onDismissRequest = { showPicker = false },
             confirmButton = {
-                TextButton(onClick = { showPicker = false }) {
-                    Text("Done")
-                }
+                ModalPrimaryButton(label = "Done", onClick = { showPicker = false })
             },
             dismissButton = {
-                TextButton(onClick = { showPicker = false }) {
-                    Text("Cancel")
-                }
+                ModalSecondaryButton(label = "Cancel", onClick = { showPicker = false })
             },
         ) {
             Column(
@@ -1271,7 +1252,7 @@ private fun ReferenceInfoDialog(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Reference data", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    Text("Reference data", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                     IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
                         Icon(Icons.Default.Close, contentDescription = "Close", modifier = Modifier.size(14.dp))
                     }
@@ -1355,7 +1336,7 @@ private fun ReferencePickerDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = RoundedCornerShape(8.dp), color = MaterialTheme.colorScheme.surface) {
             Column(modifier = Modifier.padding(12.dp).widthIn(min = 420.dp, max = 700.dp)) {
-                Text("Pick reference", style = MaterialTheme.typography.titleSmall)
+                Text("Pick reference", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1458,7 +1439,7 @@ private fun ReferencePickerDialog(
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                    TextButton(onClick = onDismiss) { Text("Close") }
+                    ModalSecondaryButton(label = "Close", onClick = onDismiss)
                 }
             }
         }

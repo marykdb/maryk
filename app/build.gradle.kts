@@ -1,5 +1,6 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
+import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
@@ -52,5 +53,14 @@ kotlin {
 compose.desktop {
     application {
         mainClass = "io.maryk.app.MarykAppKt"
+        nativeDistributions {
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            packageName = "Maryk"
+            packageVersion = "1.0.0"
+        }
+        buildTypes.release.proguard {
+            // for now since it crashes.
+            isEnabled.set(false)
+        }
     }
 }

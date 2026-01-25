@@ -26,6 +26,18 @@ connect rocksdb --dir /path/to/rocksdb
 connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]
 ```
 
+## Serve
+
+Expose a local store over HTTP:
+
+```text
+serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
+serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --tenant myTenant --port 8210
+```
+
+You can also pass `--config` with key/value config (see CLI commands doc for details).
+Warning: no auth or TLS; bind to localhost or use SSH tunneling.
+
 ## Browse
 
 - `list` shows data models.
@@ -63,4 +75,3 @@ Inline values are parsed as Maryk YAML scalars; quote strings with spaces or YAM
 - `--max-chars <n>`
 
 For large datasets, prefer `--order` on an indexed property or add filters to keep scans efficient.
-

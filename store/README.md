@@ -10,6 +10,7 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 - Need the fastest feedback loop or CI determinism? Use Memory.
 - Want durable, embedded storage across desktop/mobile/server without running a service? Use RocksDB.
 - Need ACID transactions and scale‑out (JVM or native with `libfdb_c` present)? Use FoundationDB.
+- Need remote access to a local store over HTTP or SSH? Use Remote Store.
 
 All engines share the same API surface, so you can start with Memory or RocksDB locally and move to FoundationDB on the server without changing your models or queries.
 
@@ -17,7 +18,7 @@ Below is a practical overview of each engine, why it was chosen, and when to use
 
 ## Inspecting data
 
-Use the Maryk CLI to connect to a store, scan records, and edit values interactively while you evaluate or debug storage behavior.
+Use the Maryk CLI or the Maryk App to connect to a store, scan records, and edit values interactively while you evaluate or debug storage behavior.
 
 ### Memory
 
@@ -42,6 +43,14 @@ Use the Maryk CLI to connect to a store, scan records, and edit values interacti
 - Why it’s a great fit: Maryk maps models to FDB directories and encodes versions so “latest” and “as‑of” reads are both efficient. Historic index scanning is supported when `keepAllVersions` is enabled, aligning with Maryk’s version‑aware queries. Strong consistency makes complex multi‑key updates safe.
 - Typical use cases: Server‑side deployments needing strong consistency, online growth, and cluster operations; applications that benefit from time‑travel queries and transactional semantics.
 - Learn more: `store/foundationdb/README.md` and `store/foundationdb/docs/*`.
+
+### Remote Store (HTTP/SSH)
+
+- Type: HTTP gateway that exposes any local store (RocksDB/FoundationDB) via Ktor.
+- Strengths: Remote access for tooling and apps without changing Maryk requests; optional SSH tunneling.
+- Why it’s a great fit: Keeps Maryk’s request/response protocol intact while letting clients connect over a network boundary.
+- Typical use cases: Remote CLI/app connections, shared dev stores, server‑side stores accessed by local tooling.
+- Learn more: `store/remote/README.md`.
 
 ## Shared Code
 

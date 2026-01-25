@@ -10,6 +10,7 @@ kotlinxCoroutines = "1.10.2"
 kotlinxDataframe = "0.15.0"
 kotlinxDatetime = "0.7.1-0.6.x-compat"
 kotter = "1.2.1"
+ktor = "3.4.0"
 marykFoundationdb = "7.3.73-SNAPSHOT"
 marykRocksdb = "10.4.6"
 protobuf = "4.33.2"
@@ -27,6 +28,12 @@ kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-t
 kotlinx-dataframe = { module = "org.jetbrains.kotlinx:dataframe", version.ref = "kotlinxDataframe" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "kotlinxDatetime" }
 kotter = { module = "com.varabyte.kotter:kotter", version.ref = "kotter" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-curl = { module = "io.ktor:ktor-client-curl", version.ref = "ktor" }
+ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
+ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
+ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }
 maryk-foundationdb-multiplatform = { module = "io.maryk.foundationdb:foundationdb-multiplatform", version.ref = "marykFoundationdb" }
 maryk-rocksdb-multiplatform = { module = "io.maryk.rocksdb:rocksdb-multiplatform", version.ref = "marykRocksdb" }
 protobuf-kotlin = { module = "com.google.protobuf:protobuf-kotlin", version.ref = "protobuf" }

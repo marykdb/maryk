@@ -1,16 +1,17 @@
 # Maryk App (Desktop)
 
 Maryk App is a Kotlin Compose Multiplatform desktop UI for browsing and editing Maryk data stores.
-It connects to RocksDB or FoundationDB and provides model catalogs, record scans, and editors.
+It connects to RocksDB, FoundationDB, or Remote stores and provides model catalogs, record scans, and editors.
 
 ## Key features
 
-- Manage and connect to saved stores (RocksDB / FoundationDB).
+- Manage and connect to saved stores (RocksDB / FoundationDB / Remote).
 - Browse models, inspect schemas, and pin fields.
 - Scan records with sorting and filters.
 - Inspect record data, raw YAML, and history.
 - Add/edit records with validation or raw YAML.
 - Import/export model schemas and data.
+- Remote store support over HTTP/SSH (served by the CLI `serve` command).
 
 ## Running
 

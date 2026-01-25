@@ -120,6 +120,13 @@ export default defineConfig({
                                 {label: 'Storage Layout', slug: 'stores/foundationdb/storage'},
                             ],
                         },
+                        {
+                            label: 'Remote Store',
+                            collapsed: true,
+                            items: [
+                                {label: 'Overview', slug: 'stores/remote'},
+                            ],
+                        },
                     ],
                 },
                 {

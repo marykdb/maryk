@@ -70,9 +70,11 @@ kotlin {
                 implementation(projects.generator)
                 implementation(projects.store.rocksdb)
                 implementation(projects.store.foundationdb)
+                implementation(projects.store.remote)
                 implementation(libs.kotlinx.coroutines.core)
             }
         }
+        val jvmMain by getting
         val commonTest by getting {
             dependencies {
                 implementation(kotlin("test"))

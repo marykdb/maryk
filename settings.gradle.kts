@@ -38,6 +38,7 @@ include(
     ":store:test",
     ":store:shared",
     ":store:memory",
+    ":store:remote",
     ":store:rocksdb",
     ":store:foundationdb",
     ":cli",

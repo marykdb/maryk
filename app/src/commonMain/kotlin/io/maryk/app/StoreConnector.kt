@@ -5,6 +5,9 @@ import kotlinx.coroutines.withTimeout
 import maryk.core.models.RootDataModel
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.model.readStoredModelDefinitionsFromDirectory
+import maryk.datastore.remote.RemoteDataStore
+import maryk.datastore.remote.RemoteSshConfig
+import maryk.datastore.remote.RemoteStoreConfig
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.model.readStoredModelDefinitionsFromPath
 import maryk.foundationdb.FDB
@@ -38,6 +41,7 @@ class StoreConnector {
     fun connect(definition: StoreDefinition): ConnectResult = when (definition.type) {
         StoreKind.ROCKS_DB -> connectRocksDb(definition)
         StoreKind.FOUNDATION_DB -> connectFoundationDb(definition)
+        StoreKind.REMOTE -> connectRemote(definition)
     }
 
     private fun connectRocksDb(definition: StoreDefinition): ConnectResult {
@@ -133,6 +137,37 @@ class StoreConnector {
                 t.message ?: t::class.simpleName ?: "Unknown error"
             }
             ConnectResult.Error(reason)
+        }
+    }
+
+    private fun connectRemote(definition: StoreDefinition): ConnectResult {
+        val url = definition.directory.trim()
+        if (url.isBlank()) {
+            return ConnectResult.Error("Remote URL is required.")
+        }
+
+        val sshConfig = definition.sshHost?.takeIf { it.isNotBlank() }?.let { host ->
+            RemoteSshConfig(
+                host = host,
+                user = definition.sshUser?.takeIf { it.isNotBlank() },
+                port = definition.sshPort ?: 22,
+                localPort = definition.sshLocalPort,
+                identityFile = definition.sshIdentityFile?.takeIf { it.isNotBlank() },
+            )
+        }
+
+        return try {
+            val dataStore = runBlocking {
+                RemoteDataStore.connect(RemoteStoreConfig(baseUrl = url, ssh = sshConfig))
+            }
+            ConnectResult.Success(
+                StoreConnection(
+                    definition = definition,
+                    dataStore = dataStore,
+                )
+            )
+        } catch (e: Exception) {
+            ConnectResult.Error(e.message ?: e::class.simpleName ?: "Unknown error")
         }
     }
 }

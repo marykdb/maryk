@@ -26,10 +26,30 @@ Runs locally, reads model definitions from the store, and talks directly to Rock
 
 - RocksDB: directory path to the database.
 - FoundationDB: directory path (slash separated), optional cluster file, optional tenant.
+- Remote: HTTP URL to a served store, optional SSH tunnel.
 - Saved in `~/.maryk/app/stores.conf`.
 - Notes:
   - RocksDB cannot be opened by two processes at once.
   - FoundationDB requires `libfdb_c` (see `store/foundationdb`).
+
+## Remote stores (HTTP/SSH)
+
+Maryk App can connect to a Remote store served over HTTP, with optional SSH tunneling.
+
+Flow:
+1) Start a server on the remote host (`maryk --exec "serve ..."`) to expose the store over HTTP.
+2) In the app, add a store with type `Remote`.
+3) Set `Remote URL` (example: `http://remote-host:8210`).
+4) Optional SSH: enable `Use SSH tunnel` and set:
+   - `SSH host` (the remote machine).
+   - `SSH user` (optional).
+   - `SSH port` (optional, default 22).
+   - `Local port` (optional; auto-select if empty).
+   - `Identity file` (optional).
+
+Notes:
+- Only plain HTTP is supported; use SSH for encryption.
+- If the server binds to `127.0.0.1` on the remote host, set the URL to `http://127.0.0.1:8210` and enable SSH with the remote host as the tunnel target.
 
 ## Catalog (models)
 

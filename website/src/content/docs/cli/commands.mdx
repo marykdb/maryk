@@ -6,6 +6,7 @@ title: "CLI commands"
 
 - `help [command]` — show available commands or details for one command.
 - `connect` — connect to a store.
+- `serve` — serve a store over HTTP.
 - `disconnect` — close the current store connection.
 - `list` — list available data models.
 - `model [--with-deps] [--key-index-format] [&lt;name|id&gt;]` — render the schema for a model.
@@ -47,6 +48,35 @@ Notes:
 connect rocksdb --dir /path/to/rocksdb
 connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]
 ```
+
+## Serve
+
+Serve a local store over HTTP (Ktor):
+
+```text
+serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
+serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --tenant myTenant --port 8210
+```
+
+Config file:
+
+```text
+store: rocksdb
+dir: ./data
+host: 127.0.0.1
+port: 8210
+```
+
+```text
+serve --config ./serve.conf
+```
+
+Notes:
+- Uses ProtoBuf `Requests`/responses over HTTP.
+- Each response message is length-prefixed (4 bytes, big-endian).
+- `serve` blocks the CLI session until the server is stopped.
+- `serve` is available in JVM and native desktop binaries.
+- Warning: no auth or TLS; bind to localhost or use SSH tunneling.
 
 ## Model
 

@@ -6,6 +6,7 @@ import maryk.file.File
 enum class StoreKind(val label: String) {
     ROCKS_DB("RocksDB"),
     FOUNDATION_DB("FoundationDB"),
+    REMOTE("Remote"),
 }
 
 data class StoreDefinition(
@@ -15,6 +16,11 @@ data class StoreDefinition(
     val directory: String,
     val clusterFile: String? = null,
     val tenant: String? = null,
+    val sshHost: String? = null,
+    val sshUser: String? = null,
+    val sshPort: Int? = null,
+    val sshLocalPort: Int? = null,
+    val sshIdentityFile: String? = null,
 ) {
     fun displayLocation(): String = when (type) {
         StoreKind.ROCKS_DB -> directory
@@ -22,6 +28,16 @@ data class StoreDefinition(
             append(directory)
             clusterFile?.takeIf { it.isNotBlank() }?.let { append(" (cluster: ").append(it).append(')') }
             tenant?.takeIf { it.isNotBlank() }?.let { append(" (tenant: ").append(it).append(')') }
+        }
+        StoreKind.REMOTE -> buildString {
+            append(directory)
+            sshHost?.takeIf { it.isNotBlank() }?.let { host ->
+                append(" (ssh: ")
+                sshUser?.takeIf { it.isNotBlank() }?.let { user -> append(user).append('@') }
+                append(host)
+                sshPort?.takeIf { it != 22 }?.let { port -> append(':').append(port) }
+                append(')')
+            }
         }
     }
 }
@@ -44,7 +60,7 @@ class StoreRepository(
         ensureParentDirectory(path)
         val body = buildString {
             append("# Maryk app store connections\n")
-            append("# id\tname\ttype\tpath\tcluster\ttenant\n")
+            append("# id\tname\ttype\tpath_or_url\tcluster\ttenant\tssh_host\tssh_user\tssh_port\tssh_local_port\tssh_identity_file\n")
             stores.forEach { store ->
                 append(encode(store.id))
                 append('\t')
@@ -57,6 +73,16 @@ class StoreRepository(
                 append(encode(store.clusterFile.orEmpty()))
                 append('\t')
                 append(encode(store.tenant.orEmpty()))
+                append('\t')
+                append(encode(store.sshHost.orEmpty()))
+                append('\t')
+                append(encode(store.sshUser.orEmpty()))
+                append('\t')
+                append(encode(store.sshPort?.toString().orEmpty()))
+                append('\t')
+                append(encode(store.sshLocalPort?.toString().orEmpty()))
+                append('\t')
+                append(encode(store.sshIdentityFile.orEmpty()))
                 append('\n')
             }
         }
@@ -75,6 +101,11 @@ class StoreRepository(
         if (name.isBlank() || directory.isBlank()) return null
         val clusterFile = parts.getOrNull(4)?.let { decode(it) }?.ifBlank { null }
         val tenant = parts.getOrNull(5)?.let { decode(it) }?.ifBlank { null }
+        val sshHost = parts.getOrNull(6)?.let { decode(it) }?.ifBlank { null }
+        val sshUser = parts.getOrNull(7)?.let { decode(it) }?.ifBlank { null }
+        val sshPort = parts.getOrNull(8)?.let { decode(it) }?.ifBlank { null }?.toIntOrNull()
+        val sshLocalPort = parts.getOrNull(9)?.let { decode(it) }?.ifBlank { null }?.toIntOrNull()
+        val sshIdentityFile = parts.getOrNull(10)?.let { decode(it) }?.ifBlank { null }
         return StoreDefinition(
             id = id,
             name = name,
@@ -82,6 +113,11 @@ class StoreRepository(
             directory = directory,
             clusterFile = clusterFile,
             tenant = tenant,
+            sshHost = sshHost,
+            sshUser = sshUser,
+            sshPort = sshPort,
+            sshLocalPort = sshLocalPort,
+            sshIdentityFile = sshIdentityFile,
         )
     }
 

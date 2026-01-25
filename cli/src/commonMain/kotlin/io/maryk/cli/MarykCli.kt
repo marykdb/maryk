@@ -22,6 +22,7 @@ import io.maryk.cli.commands.AddCommand
 import io.maryk.cli.commands.ChangesCommand
 import io.maryk.cli.commands.UndeleteCommand
 import io.maryk.cli.commands.registerAll
+import io.maryk.cli.commands.platformCommands
 
 fun main(args: Array<String>) {
     runCatching {
@@ -445,6 +446,7 @@ private fun defaultRegistry(
                 ListCommand(),
                 ModelCommand(),
             )
+            platformCommands().forEach { register(it) }
         }
 }
 

@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,14 +26,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Storage
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -223,6 +225,19 @@ private fun StoreEditorDialog(storesState: StoresState) {
     var directory by remember(editing) { mutableStateOf(editing?.directory.orEmpty()) }
     var clusterFile by remember(editing) { mutableStateOf(editing?.clusterFile.orEmpty()) }
     var tenant by remember(editing) { mutableStateOf(editing?.tenant.orEmpty()) }
+    var sshHost by remember(editing) { mutableStateOf(editing?.sshHost.orEmpty()) }
+    var sshUser by remember(editing) { mutableStateOf(editing?.sshUser.orEmpty()) }
+    var sshPort by remember(editing) { mutableStateOf(editing?.sshPort?.toString().orEmpty()) }
+    var sshLocalPort by remember(editing) { mutableStateOf(editing?.sshLocalPort?.toString().orEmpty()) }
+    var sshIdentityFile by remember(editing) { mutableStateOf(editing?.sshIdentityFile.orEmpty()) }
+    val initialUseSsh = editing?.let {
+        it.sshHost?.isNotBlank() == true ||
+            it.sshUser?.isNotBlank() == true ||
+            it.sshPort != null ||
+            it.sshLocalPort != null ||
+            it.sshIdentityFile?.isNotBlank() == true
+    } == true
+    var useSsh by remember(editing) { mutableStateOf(initialUseSsh) }
     var error by remember(editing) { mutableStateOf<String?>(null) }
     val nameFocusRequester = remember { FocusRequester() }
 
@@ -233,7 +248,15 @@ private fun StoreEditorDialog(storesState: StoresState) {
     }
 
     ModalSurface(onDismiss = { storesState.closeStoreEditor() }) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        val scrollState = rememberScrollState()
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 520.dp)
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(if (editing == null) "Add store" else "Edit store", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
                 SmallIconButton(
@@ -257,10 +280,15 @@ private fun StoreEditorDialog(storesState: StoresState) {
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+                val locationLabel = when (type) {
+                    StoreKind.ROCKS_DB -> "RocksDB directory"
+                    StoreKind.FOUNDATION_DB -> "FDB directory path (slash-separated)"
+                    StoreKind.REMOTE -> "Remote URL (http://...)"
+                }
                 SmallOutlinedTextField(
                     value = directory,
                     onValueChange = { directory = it },
-                    label = if (type == StoreKind.ROCKS_DB) "RocksDB directory" else "FDB directory path (slash-separated)",
+                    label = locationLabel,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (type == StoreKind.FOUNDATION_DB) {
@@ -276,6 +304,58 @@ private fun StoreEditorDialog(storesState: StoresState) {
                         label = "Tenant (optional)",
                         modifier = Modifier.fillMaxWidth(),
                     )
+                }
+                if (type == StoreKind.REMOTE) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Checkbox(
+                            checked = useSsh,
+                            onCheckedChange = { enabled ->
+                                useSsh = enabled
+                                if (enabled) {
+                                    val parsed = parseHttpUrl(directory)
+                                    if (sshHost.isBlank()) {
+                                        parsed.host?.let { sshHost = it }
+                                    }
+                                    if (sshPort.isBlank()) {
+                                        sshPort = "22"
+                                    }
+                                }
+                            },
+                        )
+                        Text("Use SSH tunnel", style = MaterialTheme.typography.bodySmall)
+                    }
+                    if (useSsh) {
+                        SmallOutlinedTextField(
+                            value = sshHost,
+                            onValueChange = { sshHost = it },
+                            label = "SSH host",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        SmallOutlinedTextField(
+                            value = sshUser,
+                            onValueChange = { sshUser = it },
+                            label = "SSH user (optional)",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        SmallOutlinedTextField(
+                            value = sshPort,
+                            onValueChange = { sshPort = it },
+                            label = "SSH port (default 22)",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        SmallOutlinedTextField(
+                            value = sshLocalPort,
+                            onValueChange = { sshLocalPort = it },
+                            label = "Local port (optional)",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        SmallOutlinedTextField(
+                            value = sshIdentityFile,
+                            onValueChange = { sshIdentityFile = it },
+                            label = "Identity file (optional)",
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
             }
             error?.let { message ->
@@ -297,21 +377,59 @@ private fun StoreEditorDialog(storesState: StoresState) {
                     onClick = {
                         val trimmedName = name.trim()
                         val trimmedDirectory = directory.trim()
+                        val trimmedSshHost = sshHost.trim()
+                        val trimmedSshUser = sshUser.trim()
+                        val trimmedSshPort = sshPort.trim()
+                        val trimmedSshLocalPort = sshLocalPort.trim()
+                        val trimmedSshIdentityFile = sshIdentityFile.trim()
                         if (trimmedName.isBlank()) {
                             error = "Name is required."
                             return@ModalPrimaryButton
                         }
                         if (trimmedDirectory.isBlank()) {
-                            error = "Directory is required."
+                            error = if (type == StoreKind.REMOTE) "Remote URL is required." else "Directory is required."
                             return@ModalPrimaryButton
                         }
+                        val resolvedSshPort = if (trimmedSshPort.isBlank()) null else trimmedSshPort.toIntOrNull()
+                        if (type == StoreKind.REMOTE && useSsh && trimmedSshHost.isBlank()) {
+                            error = "SSH host is required."
+                            return@ModalPrimaryButton
+                        }
+                        if (type == StoreKind.REMOTE && useSsh && trimmedSshPort.isNotBlank() && resolvedSshPort == null) {
+                            error = "SSH port must be a number."
+                            return@ModalPrimaryButton
+                        }
+                        if (resolvedSshPort != null && resolvedSshPort !in 1..65535) {
+                            error = "SSH port must be between 1 and 65535."
+                            return@ModalPrimaryButton
+                        }
+                        val resolvedSshLocalPort = if (trimmedSshLocalPort.isBlank()) null else trimmedSshLocalPort.toIntOrNull()
+                        if (type == StoreKind.REMOTE && useSsh && trimmedSshLocalPort.isNotBlank() && resolvedSshLocalPort == null) {
+                            error = "Local port must be a number."
+                            return@ModalPrimaryButton
+                        }
+                        if (resolvedSshLocalPort != null && resolvedSshLocalPort !in 1..65535) {
+                            error = "Local port must be between 1 and 65535."
+                            return@ModalPrimaryButton
+                        }
+                        val cluster = if (type == StoreKind.FOUNDATION_DB) clusterFile.trim().ifBlank { null } else null
+                        val tenantValue = if (type == StoreKind.FOUNDATION_DB) tenant.trim().ifBlank { null } else null
+                        val sshEnabled = type == StoreKind.REMOTE && useSsh
+                        val sshHostValue = if (sshEnabled) trimmedSshHost.ifBlank { null } else null
+                        val sshUserValue = if (sshEnabled) trimmedSshUser.ifBlank { null } else null
+                        val sshIdentityValue = if (sshEnabled) trimmedSshIdentityFile.ifBlank { null } else null
                         val newStore = StoreDefinition(
                             id = editing?.id ?: generateStoreId(),
                             name = trimmedName,
                             type = type,
                             directory = trimmedDirectory,
-                            clusterFile = clusterFile.trim().ifBlank { null },
-                            tenant = tenant.trim().ifBlank { null },
+                            clusterFile = cluster,
+                            tenant = tenantValue,
+                            sshHost = sshHostValue,
+                            sshUser = sshUserValue,
+                            sshPort = if (sshEnabled) resolvedSshPort else null,
+                            sshLocalPort = if (sshEnabled) resolvedSshLocalPort else null,
+                            sshIdentityFile = sshIdentityValue,
                         )
                         storesState.upsertStore(newStore)
                         storesState.closeStoreEditor()
@@ -349,6 +467,12 @@ private fun StoreTypeTabs(
             onClick = { onSelected(StoreKind.FOUNDATION_DB) },
             modifier = Modifier.weight(1f),
         )
+        StoreTypeTab(
+            label = "Remote",
+            selected = selected == StoreKind.REMOTE,
+            onClick = { onSelected(StoreKind.REMOTE) },
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -373,6 +497,32 @@ private fun StoreTypeTab(
     ) {
         Text(label, style = MaterialTheme.typography.labelMedium, color = textColor)
     }
+}
+
+private data class ParsedUrl(
+    val host: String?,
+    val port: Int?,
+)
+
+private fun parseHttpUrl(value: String): ParsedUrl {
+    val trimmed = value.trim()
+    if (trimmed.isEmpty()) return ParsedUrl(null, null)
+    val withoutScheme = trimmed.substringAfter("://", trimmed)
+    val authority = withoutScheme.substringBefore("/")
+    if (authority.isBlank()) return ParsedUrl(null, null)
+    val hostPort = authority.substringAfterLast("@")
+    if (hostPort.startsWith("[")) {
+        val end = hostPort.indexOf(']')
+        if (end == -1) return ParsedUrl(hostPort, null)
+        val host = hostPort.substring(1, end)
+        val portPart = hostPort.substring(end + 1).removePrefix(":")
+        val port = portPart.toIntOrNull()
+        return ParsedUrl(host, port)
+    }
+    val parts = hostPort.split(":", limit = 2)
+    val host = parts.firstOrNull()?.ifBlank { null }
+    val port = parts.getOrNull(1)?.toIntOrNull()
+    return ParsedUrl(host, port)
 }
 
 @Composable

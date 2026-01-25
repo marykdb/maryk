@@ -33,6 +33,28 @@ Once running interactively, type `help` to see the available commands, or `help 
 - RocksDB: `connect rocksdb --dir /path/to/rocksdb`
 - FoundationDB: `connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]`
 
+### Serving a store over HTTP
+
+Expose a local store via a lightweight Ktor server:
+
+```text
+serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
+serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --tenant myTenant --port 8210
+serve --config ./serve.conf
+```
+
+Config file format (key/value or YAML-style):
+
+```text
+store: rocksdb
+dir: ./data
+host: 127.0.0.1
+port: 8210
+```
+
+Note: `serve` works in JVM and native desktop binaries.
+Warning: no auth or TLS; bind to localhost or use SSH tunneling.
+
 ## Development Notes
 
 - Commands are registered through `CommandRegistry` and return structured output so the UI can render consistently.
@@ -42,6 +64,7 @@ Once running interactively, type `help` to see the available commands, or `help 
 ## Commands
 
 - `connect`: Connect to a store (`rocksdb` or `foundationdb`).
+- `serve`: Start an HTTP server that exposes a store (`rocksdb` or `foundationdb`).
 - `disconnect`: Close the current store connection.
 - `list`: Show available data models.
 - `model [--with-deps] [--key-index-format] [<name|id>]`: Inspect a model's schema.

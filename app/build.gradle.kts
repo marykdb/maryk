@@ -26,6 +26,7 @@ kotlin {
                 implementation(projects.generator)
                 implementation(projects.store.rocksdb)
                 implementation(projects.store.foundationdb)
+                implementation(projects.store.remote)
                 implementation(libs.kotlinx.coroutines.core)
                 implementation(libs.compose.material.icons.core)
                 implementation(libs.compose.material.icons.extended)

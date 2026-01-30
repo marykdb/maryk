@@ -66,7 +66,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEvent
 import androidx.compose.ui.input.key.KeyEventType
@@ -94,6 +97,7 @@ import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.ReferenceToMax
 import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.types.Key as MarykKey
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -106,7 +110,7 @@ private val valuesColumnWidth = 260.dp
 private val pinnedColumnWidth = 200.dp
 private val columnSpacing = 6.dp
 
-@OptIn(ExperimentalFoundationApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
 @Composable
 fun ResultsDataGrid(
     state: BrowserState,
@@ -124,6 +128,7 @@ fun ResultsDataGrid(
     var showAddDialog by remember { mutableStateOf(false) }
     var editRow by remember { mutableStateOf<ScanRow?>(null) }
     var showFilterDialog by remember { mutableStateOf(false) }
+    var hoveredRowKey by remember { mutableStateOf<MarykKey<IsRootDataModel>?>(null) }
     val dataModel = state.currentDataModel()
     val indexColumns = remember(dataModel) { buildIndexColumns(dataModel) }
     val pinnedPaths = uiState.pinnedPaths(state.selectedModelId)
@@ -489,6 +494,7 @@ fun ResultsDataGrid(
                         }
                         itemsIndexed(rows, key = { _, row -> row.key }) { index, row ->
                             val selected = uiState.selectedRowKeys[row.key] == true
+                            val hovered = hoveredRowKey == row.key
                             ContextMenuArea(
                                 items = {
                                     resultRowContextItems(
@@ -522,7 +528,21 @@ fun ResultsDataGrid(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .heightIn(min = densityHeight)
-                                        .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent)
+                                        .background(
+                                            when {
+                                                selected -> MaterialTheme.colorScheme.primaryContainer
+                                                hovered -> MaterialTheme.colorScheme.primaryContainer
+                                                else -> Color.Transparent
+                                            },
+                                        )
+                                        .onPointerEvent(PointerEventType.Enter) {
+                                            hoveredRowKey = row.key
+                                        }
+                                        .onPointerEvent(PointerEventType.Exit) {
+                                            if (hoveredRowKey == row.key) {
+                                                hoveredRowKey = null
+                                            }
+                                        }
                                         .clickable {
                                             updateSelection(rows, index, uiState, null, anchorIndex) { anchorIndex = it }
                                             state.openRecord(row)

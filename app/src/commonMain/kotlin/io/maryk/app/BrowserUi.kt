@@ -145,6 +145,7 @@ fun Browser(
                         if (uiState.showCatalog) {
                             CatalogDrawer(state, modifier = Modifier.width(leftPanelWidth))
                             ResizableDivider(
+                                end = true,
                                 onDrag = { delta ->
                                     val next = (leftPanelWidth + delta).coerceIn(220.dp, maxLeft)
                                     leftPanelWidth = next
@@ -607,13 +608,15 @@ private fun ImportModelDialog(
 @Composable
 private fun ResizableDivider(
     onDrag: (Dp) -> Unit,
+    end: Boolean = false
 ) {
     val density = LocalDensity.current
     Box(
         modifier = Modifier
-            .width(6.dp)
+            .width(4.dp)
             .fillMaxSize()
             .horizontalResizeCursor()
+            .background(MaterialTheme.colorScheme.surface)
             .pointerInput(Unit) {
                 detectDragGestures { _, dragAmount ->
                     val delta = with(density) { dragAmount.x.toDp() }
@@ -623,10 +626,10 @@ private fun ResizableDivider(
     ) {
         Box(
             modifier = Modifier
-                .align(Alignment.Center)
+                .align(if (!end) Alignment.CenterEnd else Alignment.CenterStart)
                 .width(1.dp)
                 .fillMaxHeight()
-                .background(MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
+                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)),
         )
     }
 }

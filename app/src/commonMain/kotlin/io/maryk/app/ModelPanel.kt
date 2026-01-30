@@ -92,7 +92,7 @@ private fun ModelKeyIndexSection(
     Surface(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(10.dp),
@@ -217,10 +217,12 @@ private fun ChipGroupBox(
     tone: Color,
     content: @Composable () -> Unit,
 ) {
+    val colors = MaterialTheme.colorScheme
+    val isTertiary = tone == colors.tertiary
     Surface(
-        color = tone.copy(alpha = 0.08f),
+        color = tone.copy(alpha = if (isTertiary) 0.14f else 0.08f),
         shape = MaterialTheme.shapes.small,
-        border = BorderStroke(1.dp, tone.copy(alpha = 0.3f)),
+        border = BorderStroke(1.dp, tone.copy(alpha = if (isTertiary) 0.4f else 0.3f)),
     ) {
         WrapRow(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
@@ -238,8 +240,10 @@ private fun Chip(
     monospace: Boolean = false,
     onClick: (() -> Unit)? = null,
 ) {
+    val colors = MaterialTheme.colorScheme
+    val isTertiary = tone == colors.tertiary
     Surface(
-        color = tone.copy(alpha = 0.14f),
+        color = tone.copy(alpha = if (isTertiary) 0.2f else 0.14f),
         shape = MaterialTheme.shapes.small,
         modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
     ) {

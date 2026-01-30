@@ -150,7 +150,7 @@ private fun StoreRow(
     onEdit: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val connectedColor = Color(0xFF3FB950)
+    val connectedColor = Color(0xFF2DBE6C)
     Surface(
         tonalElevation = 1.dp,
         shape = RoundedCornerShape(10.dp),
@@ -485,8 +485,8 @@ private fun StoreTypeTab(
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(8.dp)
-    val background = if (selected) colors.tertiary else Color.Transparent
-    val textColor = if (selected) colors.onTertiary else colors.onSurface
+    val background = if (selected) colors.secondary else Color.Transparent
+    val textColor = if (selected) colors.onSecondary else colors.onSurface
     Box(
         modifier = modifier
             .height(26.dp)
@@ -641,20 +641,22 @@ fun MarykTheme(
     content: @Composable () -> Unit,
 ) {
     val darkScheme = darkColorScheme(
-        primary = Color(0xFF8E7CF6),
-        secondary = Color(0xFF8E7CF6),
-        tertiary = Color(0xFF8E7CF6),
-        surface = Color(0xFF0F1416),
-        surfaceVariant = Color(0xFF1B2328),
-        background = Color(0xFF0D1114),
-        error = Color(0xFFFF6B6B),
+        primary = Color(0xFFA7C2FF),
+        secondary = Color(0xFF5A7BFF),
+        tertiary = Color(0xFF8A7DFF),
+        surface = Color(0xFF171F23),
+        surfaceVariant = Color(0xFF232C31),
+        background = Color(0xFF12181B),
+        error = Color(0xFFFF7A7A),
     )
     val lightScheme = lightColorScheme(
-        primary = Color(0xFF6B5CE6),
-        secondary = Color(0xFF6B5CE6),
-        tertiary = Color(0xFF6B5CE6),
-        surfaceVariant = Color(0xFFEAEFF1),
-        surface = Color(0xFFF6F8F9),
+        primary = Color(0xFF2E62FF),
+        secondary = Color(0xFF4660F5),
+        tertiary = Color(0xFF6C5CFF),
+        surfaceVariant = Color(0xFFE7EDF2),
+        surface = Color(0xFFFFFFFF),
+        background = Color(0xFFF7FAFC),
+        error = Color(0xFFD64545),
     )
     val colorScheme = if (useDark) darkScheme else lightScheme
 

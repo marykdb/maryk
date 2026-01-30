@@ -105,7 +105,7 @@ fun InspectorDrawer(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Column(
             modifier = Modifier.fillMaxHeight(),
@@ -492,8 +492,8 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
                             isEditing = false
                         },
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
                     ) {
                         Text("Cancel", style = MaterialTheme.typography.labelMedium)
                     }
@@ -504,8 +504,8 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
                         },
                         contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
                         colors = ButtonDefaults.buttonColors(
-                            contentColor = MaterialTheme.colorScheme.onTertiary,
-                            containerColor = MaterialTheme.colorScheme.tertiary,
+                            contentColor = MaterialTheme.colorScheme.onSecondary,
+                            containerColor = MaterialTheme.colorScheme.secondary,
                         ),
                     ) {
                         Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))

@@ -69,6 +69,7 @@ fun AppScaffold(
                         Icon(
                             icon,
                             contentDescription = "Toggle catalog",
+                            tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f),
                             modifier = Modifier.scale(scaleX = -1f, scaleY = 1f),
                         )
                     }
@@ -83,6 +84,7 @@ fun AppScaffold(
                         Icon(
                             icon,
                             contentDescription = "Toggle inspector",
+                            tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f),
                         )
                     }
                 }
@@ -150,12 +152,13 @@ private fun StoreChrome(
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                color = MaterialTheme.colorScheme.secondary,
                 shape = RoundedCornerShape(6.dp),
             ) {
                 Text(
                     envLabel,
                     style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSecondary,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }

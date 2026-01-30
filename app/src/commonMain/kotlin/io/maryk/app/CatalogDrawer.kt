@@ -39,7 +39,7 @@ fun CatalogDrawer(
     val filtered = models.filter { model -> fuzzyMatch(model.name, search) }
 
     Column(
-        modifier = modifier.fillMaxHeight().background(MaterialTheme.colorScheme.surfaceVariant),
+        modifier = modifier.fillMaxHeight().background(MaterialTheme.colorScheme.background),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text("Catalog", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(start = 16.dp, top = 10.dp))

@@ -4,7 +4,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.TooltipPlacement
 import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,12 +16,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -36,10 +33,6 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.PushPin
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -332,10 +325,6 @@ internal fun InspectorData(
 @Composable
 private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
     var search by remember { mutableStateOf("") }
-    var isEditing by remember { mutableStateOf(false) }
-    var awaitingSaveResult by remember { mutableStateOf(false) }
-    var showError by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
     val clipboard = LocalClipboardManager.current
@@ -357,17 +346,6 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
             filteredLines.map { line ->
                 buildHighlightedLine(line, query, highlightColor)
             }
-        }
-    }
-    val lastMessage = state.lastActionMessage
-    if (awaitingSaveResult && lastMessage != null) {
-        if (lastMessage.contains("failed", ignoreCase = true)) {
-            showError = true
-            errorMessage = lastMessage
-            awaitingSaveResult = false
-        } else if (lastMessage.startsWith("Updated", ignoreCase = true)) {
-            awaitingSaveResult = false
-            isEditing = false
         }
     }
     Column(
@@ -402,9 +380,6 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
                     tint = if (showSearch) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(14.dp),
                 )
-            }
-            IconButton(onClick = { isEditing = true }, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.Edit, contentDescription = "Edit raw data", modifier = Modifier.size(14.dp))
             }
         }
         if (showSearch) {
@@ -445,86 +420,6 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
         }
     }
 
-    if (isEditing) {
-        ModalSurface(onDismiss = { isEditing = false }) {
-            Column(modifier = Modifier.fillMaxWidth().fillMaxHeight(0.9f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Edit raw data", style = MaterialTheme.typography.titleMedium)
-                        Text(details.keyText, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    IconButton(onClick = { isEditing = false }) {
-                        Icon(Icons.Default.Close, contentDescription = "Close editor")
-                    }
-                }
-                val scrollState = rememberScrollState()
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = Color.White,
-                    modifier = Modifier.fillMaxWidth().weight(1f),
-                ) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(scrollState)
-                                .padding(horizontal = 12.dp, vertical = 10.dp),
-                        ) {
-                            BasicTextField(
-                                value = details.editedYaml,
-                                onValueChange = { state.updateRecordEditor(it) },
-                                textStyle = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.Monospace, color = Color.Black),
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                        VerticalScrollbar(
-                            adapter = rememberScrollbarAdapter(scrollState),
-                            modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
-                        )
-                    }
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    OutlinedButton(
-                        onClick = {
-                            state.resetRecordEditor()
-                            isEditing = false
-                        },
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
-                    ) {
-                        Text("Cancel", style = MaterialTheme.typography.labelMedium)
-                    }
-                    Button(
-                        onClick = {
-                            awaitingSaveResult = true
-                            state.applyRecordChanges()
-                        },
-                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            contentColor = MaterialTheme.colorScheme.onSecondary,
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                        ),
-                    ) {
-                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Save", style = MaterialTheme.typography.labelMedium)
-                    }
-                }
-            }
-        }
-    }
-
-    if (showError) {
-        AlertDialog(
-            onDismissRequest = { showError = false },
-            title = { Text("Save failed") },
-            text = { Text(errorMessage, style = MaterialTheme.typography.bodySmall) },
-            confirmButton = {
-                ModalPrimaryButton(label = "Ok", onClick = { showError = false })
-            },
-        )
-    }
 }
 
 private fun buildHighlightedLine(

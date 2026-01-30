@@ -437,6 +437,7 @@ class BrowserState(
                 firstVersion = result.firstVersion,
                 lastVersion = result.lastVersion,
                 isDeleted = result.isDeleted,
+                values = result.values,
                 yaml = yaml,
                 editedYaml = yaml,
             )
@@ -632,6 +633,7 @@ class BrowserState(
                     firstVersion = refreshed.firstVersion,
                     lastVersion = refreshed.lastVersion,
                     isDeleted = refreshed.isDeleted,
+                    values = refreshed.values,
                     yaml = yaml,
                     editedYaml = yaml,
                     dirty = false,
@@ -1256,6 +1258,7 @@ data class RecordDetails(
     val firstVersion: ULong,
     val lastVersion: ULong,
     val isDeleted: Boolean,
+    val values: Values<IsRootDataModel>,
     val yaml: String,
     val editedYaml: String,
     val dirty: Boolean = false,

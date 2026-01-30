@@ -251,11 +251,9 @@ internal fun InspectorData(
     var showSearch by remember { mutableStateOf(false) }
     var showEditor by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
-    val values = remember(details.yaml, details.model) {
-        runCatching { parseValuesFromYaml(details.model, details.yaml) }.getOrNull()
-    }
+    val values = details.values
     val nodes = remember(values) {
-        values?.let { buildFieldNodes(it) }.orEmpty()
+        buildFieldNodes(values)
     }
     val filtered = remember(nodes, fieldSearch) {
         if (fieldSearch.isBlank()) {
@@ -274,7 +272,7 @@ internal fun InspectorData(
                 IconButton(
                     onClick = { showEditor = true },
                     modifier = Modifier.size(28.dp),
-                    enabled = values != null,
+                    enabled = true,
                 ) {
                     Icon(
                         Icons.Default.Edit,
@@ -319,7 +317,7 @@ internal fun InspectorData(
             }
         }
     }
-    if (showEditor && values != null) {
+    if (showEditor) {
         RecordEditorDialog(
             state = state,
             mode = RecordEditorMode.EDIT,

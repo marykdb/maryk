@@ -1153,6 +1153,7 @@ private fun ReferenceEditor(
                 firstVersion = result.firstVersion,
                 lastVersion = result.lastVersion,
                 isDeleted = result.isDeleted,
+                values = result.values,
                 yaml = yaml,
                 editedYaml = yaml,
             )

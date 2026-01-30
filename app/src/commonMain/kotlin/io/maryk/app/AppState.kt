@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import maryk.core.aggregations.AggregationsResponse
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -66,6 +67,18 @@ class BrowserState(
     var isScanning by mutableStateOf(false)
         private set
 
+    var aggregationConfig by mutableStateOf(AggregationConfig())
+        private set
+
+    var aggregationResult by mutableStateOf<AggregationsResponse?>(null)
+        private set
+
+    var aggregationStatus by mutableStateOf<String?>(null)
+        private set
+
+    var isAggregating by mutableStateOf(false)
+        private set
+
     var recordDetails by mutableStateOf<RecordDetails?>(null)
         private set
 
@@ -116,6 +129,7 @@ class BrowserState(
     private val modelRowCounts = mutableStateMapOf<UInt, ModelRowCount>()
     private val orderFieldsByModel = mutableStateMapOf<UInt, String>()
     private val filterTextByModel = mutableStateMapOf<UInt, String>()
+    private val aggregationConfigByModel = mutableStateMapOf<UInt, AggregationConfig>()
 
     fun connect(definition: StoreDefinition) {
         isWorking = true
@@ -133,6 +147,11 @@ class BrowserState(
                     activeConnection = result.connection
                     models = collectModels(result.connection.dataStore)
                     refreshModelCounts(result.connection.dataStore)
+                    aggregationConfigByModel.clear()
+                    aggregationConfig = AggregationConfig()
+                    aggregationResult = null
+                    aggregationStatus = null
+                    isAggregating = false
                     selectedModelId = models.firstOrNull()?.id
                     resetScan()
                     scanStatus = if (models.isEmpty()) {
@@ -165,6 +184,11 @@ class BrowserState(
         modelRowCounts.clear()
         orderFieldsByModel.clear()
         filterTextByModel.clear()
+        aggregationConfigByModel.clear()
+        aggregationConfig = AggregationConfig()
+        aggregationResult = null
+        aggregationStatus = null
+        isAggregating = false
         historyChanges = emptyList()
         lastActionMessage = "Disconnected."
     }
@@ -182,6 +206,9 @@ class BrowserState(
             orderFields = orderFieldsByModel[modelId].orEmpty(),
             filterText = filterTextByModel[modelId].orEmpty(),
         )
+        aggregationConfig = aggregationConfigByModel[modelId] ?: AggregationConfig()
+        aggregationResult = null
+        aggregationStatus = null
         scanFromStart()
     }
 
@@ -195,6 +222,104 @@ class BrowserState(
         selectedModelId?.let { filterTextByModel[it] = filterText }
         scanConfig = scanConfig.copy(filterText = filterText)
         scanFromStart()
+    }
+
+    fun updateAggregationFilterText(filterText: String) {
+        updateAggregationConfig(aggregationConfig.copy(filterText = filterText))
+    }
+
+    fun updateAggregationLimit(limit: Int) {
+        updateAggregationConfig(aggregationConfig.copy(limit = limit))
+    }
+
+    fun addAggregationDefinition(definition: AggregationDefinition) {
+        updateAggregationConfig(
+            aggregationConfig.copy(definitions = aggregationConfig.definitions + definition)
+        )
+        aggregationStatus = null
+    }
+
+    fun updateAggregationDefinition(definition: AggregationDefinition) {
+        val updated = aggregationConfig.definitions.map { current ->
+            if (current.id == definition.id) definition else current
+        }
+        updateAggregationConfig(aggregationConfig.copy(definitions = updated))
+        aggregationStatus = null
+    }
+
+    fun removeAggregationDefinition(id: String) {
+        updateAggregationConfig(
+            aggregationConfig.copy(definitions = aggregationConfig.definitions.filterNot { it.id == id })
+        )
+    }
+
+    fun clearAggregationResults() {
+        aggregationResult = null
+        aggregationStatus = null
+    }
+
+    fun runAggregations() {
+        val connection = activeConnection ?: return
+        val dataModel = resolveSelectedModel(connection.dataStore) ?: return
+        val config = aggregationConfig
+        if (config.definitions.isEmpty()) {
+            aggregationStatus = "Add an aggregation first."
+            return
+        }
+
+        val requestContext = ScanQueryParser.createRequestContext(dataModel)
+        val where = config.filterText.takeIf { it.isNotBlank() }?.let { raw ->
+            try {
+                ScanQueryParser.parseFilter(dataModel, raw)
+            } catch (e: Throwable) {
+                aggregationStatus = "Filter error: ${e.message ?: e::class.simpleName}"
+                return
+            }
+        }
+
+        val aggregations = try {
+            buildAggregations(dataModel, requestContext, config.definitions)
+        } catch (e: Throwable) {
+            aggregationStatus = "Aggregation error: ${e.message ?: e::class.simpleName}"
+            return
+        }
+
+        val limit = config.limit.coerceIn(1, 10_000)
+        isWorking = true
+        isAggregating = true
+        aggregationStatus = "Running aggregation..."
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    dataModel.scan(
+                        where = where,
+                        limit = limit.toUInt(),
+                        filterSoftDeleted = !scanConfig.includeDeleted,
+                        aggregations = aggregations,
+                        allowTableScan = true,
+                    ).let { connection.dataStore.execute(it) }
+                }
+            }
+            if (result.isSuccess) {
+                val response = result.getOrNull()
+                aggregationResult = response?.aggregations
+                aggregationStatus = if (response?.aggregations == null) {
+                    "Aggregation returned no results."
+                } else {
+                    null
+                }
+            } else {
+                aggregationResult = null
+                aggregationStatus = "Aggregation failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+            }
+            isWorking = false
+            isAggregating = false
+        }
+    }
+
+    private fun updateAggregationConfig(config: AggregationConfig) {
+        aggregationConfig = config
+        selectedModelId?.let { aggregationConfigByModel[it] = config }
     }
 
     fun selectModelField(field: ModelFieldRef?) {

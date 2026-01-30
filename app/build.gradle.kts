@@ -31,6 +31,7 @@ kotlin {
                 implementation(libs.compose.material.icons.core)
                 implementation(libs.compose.material.icons.extended)
                 implementation(libs.kotlinx.datetime)
+                implementation(libs.vico.multiplatform.m3)
                 implementation(compose.runtime)
                 implementation(compose.foundation)
                 implementation(compose.material3)

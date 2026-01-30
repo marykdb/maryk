@@ -22,9 +22,10 @@ enum class GridDensity {
     COMFY,
 }
 
-enum class ResultsTab {
-    DATA,
-    MODEL,
+enum class ResultsTab(val label: String) {
+    DATA("Data"),
+    AGGREGATE("Aggregate"),
+    MODEL("Model"),
 }
 
 @Stable

@@ -233,7 +233,7 @@ fun ResultsDataGrid(
                 }
             }
             Column(modifier = Modifier.fillMaxWidth()) {
-                val tabs = listOf(ResultsTab.DATA, ResultsTab.MODEL)
+                val tabs = listOf(ResultsTab.DATA, ResultsTab.MODEL, ResultsTab.AGGREGATE)
                 TabRow(
                     selectedTabIndex = tabs.indexOf(uiState.resultsTab).coerceAtLeast(0),
                     modifier = Modifier.height(28.dp)
@@ -246,8 +246,8 @@ fun ResultsDataGrid(
                             unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             text = {
                                 Text(
-                                    tab.name.lowercase().replaceFirstChar { it.uppercase() },
-                                    style = MaterialTheme.typography.labelMedium
+                                    tab.label,
+                                    style = MaterialTheme.typography.labelMedium,
                                 )
                             }
                         )
@@ -364,7 +364,8 @@ fun ResultsDataGrid(
             }
 
             Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                if (uiState.resultsTab == ResultsTab.DATA) {
+                when (uiState.resultsTab) {
+                    ResultsTab.DATA -> {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier
@@ -578,8 +579,13 @@ fun ResultsDataGrid(
                         adapter = rememberScrollbarAdapter(listState),
                         modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
                     )
-                } else {
-                    ModelTabPanel(state, uiState, modifier = Modifier.fillMaxHeight().fillMaxWidth())
+                    }
+                    ResultsTab.AGGREGATE -> {
+                        AggregateTabPanel(state, modifier = Modifier.fillMaxHeight().fillMaxWidth())
+                    }
+                    ResultsTab.MODEL -> {
+                        ModelTabPanel(state, uiState, modifier = Modifier.fillMaxHeight().fillMaxWidth())
+                    }
                 }
             }
         }

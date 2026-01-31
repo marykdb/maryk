@@ -22,6 +22,8 @@ import androidx.compose.material.icons.automirrored.filled.CompareArrows
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -61,12 +63,16 @@ fun HistoryTimeline(
     versions: List<VersionedChanges>,
 ) {
     val clipboard = LocalClipboardManager.current
-    val sorted = versions.sortedByDescending { it.version }
+    var sortDescending by remember { mutableStateOf(true) }
+    val chronological = versions.sortedBy { it.version }
+    val sorted = if (sortDescending) chronological.asReversed() else chronological
     val latestBatchSize = 4
     val initialBatchSize = 3
-    val showSplit = sorted.size > latestBatchSize + initialBatchSize
-    val latestBatch = if (showSplit) sorted.take(latestBatchSize) else sorted
-    val initialBatch = if (showSplit) sorted.takeLast(initialBatchSize) else emptyList()
+    val showSplit = chronological.size > latestBatchSize + initialBatchSize
+    val latestBatch = if (showSplit) chronological.takeLast(latestBatchSize) else chronological
+    val initialBatch = if (showSplit) chronological.take(initialBatchSize) else emptyList()
+    val latestBatchDisplay = if (sortDescending) latestBatch.asReversed() else latestBatch
+    val initialBatchDisplay = if (sortDescending) initialBatch.asReversed() else initialBatch
     val previousByVersion = buildMap {
         sorted.forEachIndexed { index, entry ->
             put(entry.version, sorted.getOrNull(index + 1)?.version)
@@ -78,38 +84,63 @@ fun HistoryTimeline(
         modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("History", style = MaterialTheme.typography.labelMedium)
-        if (latestBatch.isEmpty()) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text("History", style = MaterialTheme.typography.labelMedium)
+            Spacer(modifier = Modifier.weight(1f))
+            IconButton(onClick = { sortDescending = !sortDescending }, modifier = Modifier.size(26.dp)) {
+                Icon(
+                    imageVector = if (sortDescending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                    contentDescription = if (sortDescending) "Newest first" else "Oldest first",
+                    modifier = Modifier.size(14.dp),
+                )
+            }
+        }
+        if (sorted.isEmpty()) {
             Text("No history entries yet.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         } else {
-            HistoryBatch(
-                title = if (showSplit) "Latest" else null,
-                items = latestBatch,
-                previousByVersion = previousByVersion,
-                onCopy = { clipboard.setText(AnnotatedString(it)) },
-                onDiff = { rightVersion ->
-                    val all = sorted.map { it.version }.sorted()
-                    val rightIndex = all.indexOf(rightVersion)
-                    if (rightIndex < 0) return@HistoryBatch
-                    val leftIndex = rightIndex - 1
-                    diffState = DiffState(all, leftIndex, rightIndex, versions)
-                },
-            )
-            if (showSplit) {
-                Text("Initial", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            val onDiffAction: (ULong) -> Unit = onDiffAction@{ rightVersion ->
+                val all = chronological.map { it.version }
+                val rightIndex = all.indexOf(rightVersion)
+                if (rightIndex < 0) return@onDiffAction
+                val leftIndex = rightIndex - 1
+                diffState = DiffState(all, leftIndex, rightIndex, versions)
+            }
+            if (showSplit && !sortDescending) {
                 HistoryBatch(
                     title = null,
-                    items = initialBatch,
+                    items = initialBatchDisplay,
                     previousByVersion = previousByVersion,
                     onCopy = { clipboard.setText(AnnotatedString(it)) },
-                    onDiff = { rightVersion ->
-                        val all = sorted.map { it.version }.sorted()
-                        val rightIndex = all.indexOf(rightVersion)
-                        if (rightIndex < 0) return@HistoryBatch
-                        val leftIndex = rightIndex - 1
-                        diffState = DiffState(all, leftIndex, rightIndex, versions)
-                    },
+                    onDiff = onDiffAction,
                 )
+                HistoryBatch(
+                    title = null,
+                    items = latestBatchDisplay,
+                    previousByVersion = previousByVersion,
+                    onCopy = { clipboard.setText(AnnotatedString(it)) },
+                    onDiff = onDiffAction,
+                )
+            } else {
+                HistoryBatch(
+                    title = null,
+                    items = latestBatchDisplay,
+                    previousByVersion = previousByVersion,
+                    onCopy = { clipboard.setText(AnnotatedString(it)) },
+                    onDiff = onDiffAction,
+                )
+                if (showSplit) {
+                    HistoryBatch(
+                        title = null,
+                        items = initialBatchDisplay,
+                        previousByVersion = previousByVersion,
+                        onCopy = { clipboard.setText(AnnotatedString(it)) },
+                        onDiff = onDiffAction,
+                    )
+                }
             }
         }
     }
@@ -215,7 +246,13 @@ private fun DiffDialog(
             state.allChanges.firstOrNull { it.version == version }?.changes.orEmpty()
         }
     }
-    val entries = remember(mergedChanges) { buildChangeEntries(mergedChanges) }
+    val entries = remember(mergedChanges) {
+        val allEntries = buildChangeEntries(mergedChanges)
+        allEntries
+            .asReversed()
+            .distinctBy { it.path }
+            .asReversed()
+    }
     val scrollState = rememberScrollState()
 
     ModalSurface(onDismiss = onDismiss) {

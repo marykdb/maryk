@@ -10,7 +10,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.number
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 import maryk.core.aggregations.AggregationsResponse
+import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -78,6 +84,21 @@ class BrowserState(
 
     var isAggregating by mutableStateOf(false)
         private set
+
+    var timeTravelEnabled by mutableStateOf(false)
+        private set
+
+    var timeTravelDate by mutableStateOf("")
+        private set
+
+    var timeTravelTime by mutableStateOf("")
+        private set
+
+    private var timeTravelVersion by mutableStateOf<ULong?>(null)
+
+    fun currentTimeTravelVersion(): ULong? {
+        return if (timeTravelEnabled) timeTravelVersion else null
+    }
 
     var recordDetails by mutableStateOf<RecordDetails?>(null)
         private set
@@ -221,6 +242,12 @@ class BrowserState(
     fun updateFilterText(filterText: String) {
         selectedModelId?.let { filterTextByModel[it] = filterText }
         scanConfig = scanConfig.copy(filterText = filterText)
+        scanFromStart()
+    }
+
+    fun updateIncludeDeleted(includeDeleted: Boolean) {
+        if (scanConfig.includeDeleted == includeDeleted) return
+        scanConfig = scanConfig.copy(includeDeleted = includeDeleted)
         scanFromStart()
     }
 
@@ -378,6 +405,94 @@ class BrowserState(
         referenceBackTarget = null
     }
 
+    fun toggleTimeTravel() {
+        updateTimeTravelEnabled(!timeTravelEnabled)
+    }
+
+    fun updateTimeTravelEnabled(enabled: Boolean) {
+        if (timeTravelEnabled == enabled) return
+        timeTravelEnabled = enabled
+        if (enabled && timeTravelDate.isBlank() && timeTravelTime.isBlank()) {
+            val now = HLC().toPhysicalUnixTime().toLong()
+            val dateTime = Instant.fromEpochMilliseconds(now).toLocalDateTime(TimeZone.currentSystemDefault())
+            timeTravelDate = "%04d-%02d-%02d".format(dateTime.year, dateTime.month.number, dateTime.day)
+            timeTravelTime = "%02d:%02d".format(dateTime.hour, dateTime.minute)
+        }
+        updateTimeTravelVersion()
+    }
+
+    fun updateTimeTravelDate(value: String) {
+        if (timeTravelDate == value) return
+        timeTravelDate = value
+        updateTimeTravelVersion()
+    }
+
+    fun updateTimeTravelTime(value: String) {
+        if (timeTravelTime == value) return
+        timeTravelTime = value
+        updateTimeTravelVersion()
+    }
+
+    private fun updateTimeTravelVersion() {
+        timeTravelVersion = if (timeTravelEnabled) parseTimeTravelVersion(timeTravelDate, timeTravelTime) else null
+        scanConfig = scanConfig.copy(
+            toVersion = if (timeTravelEnabled) timeTravelVersion?.toString().orEmpty() else ""
+        )
+        scanFromStart()
+        refreshRecord()
+    }
+
+    private fun parseTimeTravelVersion(dateText: String, timeText: String): ULong? {
+        val dateParts = dateText.trim().split("-")
+        val normalizedTime = normalizeTimeTravelTime(timeText)
+        val timeParts = normalizedTime.trim().split(":")
+        if (dateParts.size != 3 || timeParts.size < 2) return null
+        val year = dateParts[0].toIntOrNull() ?: return null
+        val month = dateParts[1].toIntOrNull() ?: return null
+        val day = dateParts[2].toIntOrNull() ?: return null
+        val hour = timeParts[0].toIntOrNull() ?: return null
+        val minute = timeParts[1].toIntOrNull() ?: return null
+        val second = timeParts.getOrNull(2)?.toIntOrNull() ?: 59
+        if (month !in 1..12 || day !in 1..31 || hour !in 0..23 || minute !in 0..59 || second !in 0..59) return null
+        return runCatching {
+            val dateTime = kotlinx.datetime.LocalDateTime(year, month, day, hour, minute, second, 999_999_999)
+            val instant = dateTime.toInstant(TimeZone.currentSystemDefault())
+            HLC(instant.toEpochMilliseconds().toULong(), 0xFFFFFu).timestamp
+        }.getOrNull()
+    }
+
+    private fun normalizeTimeTravelTime(value: String): String {
+        val trimmed = value.trim()
+        if (trimmed.isBlank()) return ""
+        if (!trimmed.all { it.isDigit() || it == ':' }) return trimmed
+
+        val parts = if (trimmed.contains(":")) trimmed.split(":") else emptyList()
+        if (parts.isNotEmpty()) {
+            if (parts.size > 3) return trimmed
+            val hourRaw = parts[0]
+            val minuteRaw = parts.getOrNull(1).orEmpty()
+            val secondRaw = parts.getOrNull(2).orEmpty()
+            if (hourRaw.length > 2 || minuteRaw.length > 2 || secondRaw.length > 2) return trimmed
+            val hour = hourRaw.padStart(2, '0').ifEmpty { "00" }
+            val minute = minuteRaw.padStart(2, '0').ifEmpty { "00" }
+            val second = secondRaw.padStart(2, '0').ifEmpty { "00" }
+            return if (parts.size >= 3) "$hour:$minute:$second" else "$hour:$minute"
+        }
+
+        val digits = trimmed
+        if (digits.length > 6) return trimmed
+        val (hourRaw, minuteRaw, secondRaw) = when (digits.length) {
+            1, 2 -> Triple(digits, "", "")
+            3, 4 -> Triple(digits.dropLast(2), digits.takeLast(2), "")
+            5, 6 -> Triple(digits.dropLast(4), digits.dropLast(2).takeLast(2), digits.takeLast(2))
+            else -> Triple(digits, "", "")
+        }
+        val hour = hourRaw.padStart(2, '0').ifEmpty { "00" }
+        val minute = minuteRaw.padStart(2, '0').ifEmpty { "00" }
+        val second = secondRaw.padStart(2, '0').ifEmpty { "00" }
+        return if (secondRaw.isNotEmpty()) "$hour:$minute:$second" else "$hour:$minute"
+    }
+
     fun closeDeleteDialog() {
         pendingHardDelete = false
         showDeleteDialog = false
@@ -409,6 +524,7 @@ class BrowserState(
     fun openRecord(row: ScanRow) {
         val connection = activeConnection ?: return
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return
+        val toVersion = if (timeTravelEnabled) timeTravelVersion else null
         isWorking = true
         scope.launch {
             val result = withContext(Dispatchers.IO) {
@@ -416,6 +532,7 @@ class BrowserState(
                     val response = connection.dataStore.execute(
                         dataModel.get(
                             row.key,
+                            toVersion = toVersion,
                             filterSoftDeleted = false,
                         )
                     )
@@ -462,6 +579,10 @@ class BrowserState(
     }
 
     fun applyRecordChanges(useVersionGuard: Boolean = true) {
+        if (timeTravelEnabled) {
+            lastActionMessage = "Time travel mode active."
+            return
+        }
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
         isWorking = true
@@ -493,6 +614,10 @@ class BrowserState(
     }
 
     fun applyRecordChanges(changes: List<IsChange>, useVersionGuard: Boolean = true) {
+        if (timeTravelEnabled) {
+            lastActionMessage = "Time travel mode active."
+            return
+        }
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
         isWorking = true
@@ -522,6 +647,10 @@ class BrowserState(
     }
 
     fun addRecord(values: Values<IsRootDataModel>, key: Key<IsRootDataModel>?) {
+        if (timeTravelEnabled) {
+            lastActionMessage = "Time travel mode active."
+            return
+        }
         val connection = activeConnection ?: return
         val dataModel = currentDataModel() ?: return
         isWorking = true
@@ -548,6 +677,10 @@ class BrowserState(
     }
 
     fun deleteRecord(hardDelete: Boolean) {
+        if (timeTravelEnabled) {
+            lastActionMessage = "Time travel mode active."
+            return
+        }
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
         isWorking = true
@@ -583,6 +716,10 @@ class BrowserState(
     }
 
     fun deleteRow(row: ScanRow, hardDelete: Boolean = false) {
+        if (timeTravelEnabled) {
+            lastActionMessage = "Time travel mode active."
+            return
+        }
         val connection = activeConnection ?: return
         val dataModel = currentDataModel() ?: return
         isWorking = true
@@ -616,11 +753,12 @@ class BrowserState(
     private fun refreshRecord() {
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
+        val toVersion = if (timeTravelEnabled) timeTravelVersion else null
         scope.launch {
             val refreshed = withContext(Dispatchers.IO) {
                 try {
                     val response = connection.dataStore.execute(
-                        details.model.get(details.key, filterSoftDeleted = false)
+                        details.model.get(details.key, toVersion = toVersion, filterSoftDeleted = false)
                     )
                     response.values.firstOrNull()
                 } catch (_: Throwable) {
@@ -648,18 +786,47 @@ class BrowserState(
         val details = recordDetails ?: return
         scope.launch {
             val changes = withContext(Dispatchers.IO) {
-                try {
-                    val key = details.key
-                    val response = connection.dataStore.execute(
-                        details.model.getChanges(key, filterSoftDeleted = false)
-                    )
-                    response.changes.firstOrNull()?.changes.orEmpty()
-                } catch (_: Throwable) {
-                    emptyList()
-                }
+                loadAllChanges(connection.dataStore, details.model, details.key)
             }
             historyChanges = changes
         }
+    }
+
+    private suspend fun loadAllChanges(
+        dataStore: IsDataStore,
+        model: IsRootDataModel,
+        key: Key<IsRootDataModel>,
+    ): List<VersionedChanges> {
+        val result = mutableListOf<VersionedChanges>()
+        var fromVersion = 0uL
+        val maxVersions = 1000u
+        while (true) {
+            val response = runCatching {
+                dataStore.execute(
+                    model.getChanges(
+                        key,
+                        fromVersion = fromVersion,
+                        maxVersions = maxVersions,
+                        filterSoftDeleted = false,
+                    )
+                )
+            }.getOrElse {
+                dataStore.execute(
+                    model.getChanges(
+                        key,
+                        fromVersion = fromVersion,
+                        maxVersions = 1u,
+                        filterSoftDeleted = false,
+                    )
+                )
+            }
+            val entry = response.changes.firstOrNull() ?: break
+            if (entry.changes.isEmpty()) break
+            result += entry.changes
+            if (entry.changes.size < maxVersions.toInt()) break
+            fromVersion = entry.changes.last().version + 1uL
+        }
+        return result
     }
 
     private fun loadNextPage(reset: Boolean) {
@@ -770,17 +937,18 @@ class BrowserState(
                     ),
                 )
             }
+            val filteredRows = if (scanConfig.includeDeleted) rows else rows.filterNot { it.isDeleted }
 
             val endReached = response.values.size < limit
             val nextKey = response.values.lastOrNull()?.key
             ScanPageResult.Success(
-                rows = rows,
+                rows = filteredRows,
                 cursor = ScanCursor(
                     nextStartKey = nextKey,
                     includeStart = false,
                     endReached = endReached,
                 ),
-                message = if (rows.isEmpty()) "No results." else "Loaded ${rows.size} rows.",
+                message = if (filteredRows.isEmpty()) "No results." else "Loaded ${filteredRows.size} rows.",
             )
         } catch (e: Throwable) {
             ScanPageResult.Error("Scan failed: ${e.message ?: e::class.simpleName}")

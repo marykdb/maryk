@@ -131,7 +131,7 @@ fun InspectorDrawer(
                     if (inModelMode) {
                         ModelDetailsPanel(state, uiState, modifier = Modifier.fillMaxHeight())
                     } else if (details != null) {
-                        InspectorData(state, uiState, details)
+                        InspectorData(state, uiState, details, showEdit = !state.timeTravelEnabled)
                     }
                 }
                 InspectorTab.RAW -> {
@@ -508,11 +508,12 @@ private fun ReferenceValue(
     LaunchedEffect(reference.keyText, reference.modelName, state.activeConnection) {
         val connection = state.activeConnection ?: return@LaunchedEffect
         val (_, dataModel) = state.resolveModelByName(reference.modelName) ?: return@LaunchedEffect
+        val toVersion = state.currentTimeTravelVersion()
         loading = true
         val yaml = withContext(Dispatchers.IO) {
             runCatching {
                 val response = connection.dataStore.execute(
-                    dataModel.get(reference.key, filterSoftDeleted = false)
+                    dataModel.get(reference.key, toVersion = toVersion, filterSoftDeleted = false)
                 )
                 response.values.firstOrNull()?.let { serializeRecordToYaml(dataModel, it) }
             }.getOrNull()

@@ -25,6 +25,7 @@ internal fun isSoftDeleted(
         toVersion,
         softDeleteQualifier
     ) { b, o, l ->
+        if (l <= 0) return@getValue false
         b[l + o - 1] == TRUE
     } == true
 }

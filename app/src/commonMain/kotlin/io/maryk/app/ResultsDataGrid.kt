@@ -49,6 +49,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -110,7 +111,7 @@ private val valuesColumnWidth = 260.dp
 private val pinnedColumnWidth = 200.dp
 private val columnSpacing = 6.dp
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ResultsDataGrid(
     state: BrowserState,
@@ -273,6 +274,41 @@ fun ResultsDataGrid(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.weight(1f))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Checkbox(
+                            checked = state.scanConfig.includeDeleted,
+                            onCheckedChange = { state.updateIncludeDeleted(it) },
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Show deleted", style = MaterialTheme.typography.labelSmall)
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    val hasFilter = state.scanConfig.filterText.isNotBlank()
+                    OutlinedButton(
+                        onClick = { showFilterDialog = true },
+                        enabled = dataModel != null,
+                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                        shape = RoundedCornerShape(4.dp),
+                        border = BorderStroke(
+                            1.dp,
+                            if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
+                        ),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                        modifier = Modifier.height(28.dp),
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Icon(Icons.Default.FilterAlt, contentDescription = "Filter records", modifier = Modifier.size(12.dp))
+                            Text(
+                                if (hasFilter) "Filter" else "Filter",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.offset(y = (-1).dp),
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text("Sort by", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Spacer(modifier = Modifier.width(6.dp))
                     Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
@@ -322,34 +358,9 @@ fun ResultsDataGrid(
                         )
                     }
                     Spacer(modifier = Modifier.width(6.dp))
-                    val hasFilter = state.scanConfig.filterText.isNotBlank()
-                    OutlinedButton(
-                        onClick = { showFilterDialog = true },
-                        enabled = dataModel != null,
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
-                        shape = RoundedCornerShape(4.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        ),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                        modifier = Modifier.height(28.dp),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.FilterAlt, contentDescription = "Filter records", modifier = Modifier.size(12.dp))
-                            Text(
-                                if (hasFilter) "Filter" else "Filter",
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.offset(y = (-1).dp),
-                            )
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
                     OutlinedButton(
                         onClick = { showAddDialog = true },
-                        enabled = dataModel != null,
+                        enabled = dataModel != null && !state.timeTravelEnabled,
                         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                         shape = RoundedCornerShape(4.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
@@ -498,6 +509,7 @@ fun ResultsDataGrid(
                             ContextMenuArea(
                                 items = {
                                     resultRowContextItems(
+                                        allowEdits = !state.timeTravelEnabled,
                                         onEdit = {
                                             if (state.currentDataModel() != null) {
                                                 editRow = row
@@ -532,6 +544,7 @@ fun ResultsDataGrid(
                                             when {
                                                 selected -> MaterialTheme.colorScheme.primaryContainer
                                                 hovered -> MaterialTheme.colorScheme.primaryContainer
+                                                row.isDeleted -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f)
                                                 else -> Color.Transparent
                                             },
                                         )
@@ -855,20 +868,27 @@ private fun ColumnResizeHandle(
 }
 
 private fun resultRowContextItems(
+    allowEdits: Boolean,
     onEdit: () -> Unit,
     onCopyRowJson: () -> Unit,
     onCopyRowYaml: () -> Unit,
     onCopyKey: () -> Unit,
     onExportRow: () -> Unit,
     onDelete: () -> Unit,
-): List<ContextMenuItem> = listOf(
-    ContextMenuItem("Edit", onEdit),
-    ContextMenuItem("Copy key", onCopyKey),
-    ContextMenuItem("Copy data as JSON", onCopyRowJson),
-    ContextMenuItem("Copy data as YAML", onCopyRowYaml),
-    ContextMenuItem("Export row…", onExportRow),
-    ContextMenuItem("Delete", onDelete),
-)
+): List<ContextMenuItem> {
+    val items = mutableListOf<ContextMenuItem>()
+    if (allowEdits) {
+        items += ContextMenuItem("Edit", onEdit)
+    }
+    items += ContextMenuItem("Copy key", onCopyKey)
+    items += ContextMenuItem("Copy data as JSON", onCopyRowJson)
+    items += ContextMenuItem("Copy data as YAML", onCopyRowYaml)
+    items += ContextMenuItem("Export row…", onExportRow)
+    if (allowEdits) {
+        items += ContextMenuItem("Delete", onDelete)
+    }
+    return items
+}
 
 private fun updateSelection(
     rows: List<ScanRow>,

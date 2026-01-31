@@ -1132,10 +1132,12 @@ private fun ReferenceEditor(
         }
         infoLoading = true
         infoError = null
+        val toVersion = state.currentTimeTravelVersion()
         val result = runCatching {
             connection.dataStore.execute(
                 dataModel.get(
                     key,
+                    toVersion = toVersion,
                     filterSoftDeleted = false,
                 )
             ).values.firstOrNull()

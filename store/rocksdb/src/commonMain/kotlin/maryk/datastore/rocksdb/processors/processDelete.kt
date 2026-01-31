@@ -158,7 +158,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                         transaction.put(
                             columnFamilies.historic.table,
                             historicReference,
-                            EMPTY_ARRAY
+                            byteArrayOf(TRUE)
                         )
                     }
 

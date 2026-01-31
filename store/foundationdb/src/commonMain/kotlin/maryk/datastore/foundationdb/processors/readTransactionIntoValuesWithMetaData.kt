@@ -155,42 +155,46 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
             getQualifier = getQualifier,
             select = select,
             processValue = { storageType, reference ->
-                cachedRead(reference, currentVersion) {
-                    val key = iterator.current.key
-                    val value = iterator.current.value
-                    when (storageType) {
-                        ObjectDelete -> {
-                            if (key[prefixWithKeyRange.size] == SOFT_DELETE_INDICATOR) {
-                                val value = value
-                                isDeleted = value[0] == TRUE
-                                isDeleted
-                            } else null
-                        }
-                        Value -> {
-                            index = 0
-                            val reader = { value[index++] }
+                if (storageType == ObjectDelete) {
+                    val cached = cachedRead(reference, currentVersion) {
+                        val value = iterator.current.value
+                        if (value.isNotEmpty()) value[0] == TRUE else true
+                    }
+                    if (cached is Boolean) {
+                        isDeleted = cached
+                    }
+                    cached
+                } else {
+                    cachedRead(reference, currentVersion) {
+                        val value = iterator.current.value
+                        when (storageType) {
+                            Value -> {
+                                index = 0
+                                val reader = { value[index++] }
 
-                            val definition =
-                                (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                                    ?: reference.propertyDefinition
-                            readValue(definition, reader) {
-                                value.size - index
+                                val definition =
+                                    (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                        ?: reference.propertyDefinition
+                                readValue(definition, reader) {
+                                    value.size - index
+                                }
                             }
+                            ListSize -> {
+                                index = 0
+                                initIntByVar { value[index++] }
+                            }
+                            SetSize -> {
+                                index = 0
+                                initIntByVar { value[index++] }
+                            }
+                            MapSize -> {
+                                index = 0
+                                initIntByVar { value[index++] }
+                            }
+                            Embed -> {}
+                            TypeValue -> throw StorageException("Not used in direct encoding")
+                            ObjectDelete -> null
                         }
-                        ListSize -> {
-                            index = 0
-                            initIntByVar { value[index++] }
-                        }
-                        SetSize -> {
-                            index = 0
-                            initIntByVar { value[index++] }
-                        }
-                        MapSize -> {
-                            index = 0
-                            initIntByVar { value[index++] }
-                        }
-                        Embed -> {}
-                        TypeValue -> throw StorageException("Not used in direct encoding")
                     }
                 }
             }

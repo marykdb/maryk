@@ -214,7 +214,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                             transaction.put(
                                 columnFamilies.historic.table,
                                 historicReference,
-                                EMPTY_ARRAY
+                                byteArrayOf(if (change.isDeleted) TRUE else FALSE)
                             )
                         }
 

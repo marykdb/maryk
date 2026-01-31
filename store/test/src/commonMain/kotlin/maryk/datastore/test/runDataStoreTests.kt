@@ -34,6 +34,7 @@ private val allTestClasses = arrayOf(
     "DataStoreScanUpdatesWithLogTest" to ::DataStoreScanUpdatesWithLogTest,
     "DataStoreScanWithFilterTest" to ::DataStoreScanWithFilterTest,
     "DataStoreScanWithMutableValueIndexTest" to ::DataStoreScanWithMutableValueIndexTest,
+    "DataStoreSoftDeleteTimeTravelTest" to ::DataStoreSoftDeleteTimeTravelTest,
     "UniqueTest" to ::UniqueTest,
 )
 

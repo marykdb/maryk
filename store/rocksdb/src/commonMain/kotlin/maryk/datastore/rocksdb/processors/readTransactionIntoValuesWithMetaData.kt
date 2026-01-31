@@ -147,44 +147,51 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
             getQualifier = getQualifier,
             select = select,
             processValue = { storageType, reference ->
-                cachedRead(reference, currentVersion) {
-                    when (storageType) {
-                        ObjectDelete -> {
-                            if (iterator.key().last() == 0.toByte()) {
-                                val value = iterator.value()
-                                isDeleted = value[0] == TRUE
-                                isDeleted
-                            } else null
-                        }
-                        Value -> {
-                            val valueBytes = iterator.value()
-                            index = 0
-                            val reader = { valueBytes[index++] }
+                if (storageType == ObjectDelete) {
+                    val cached = cachedRead(reference, currentVersion) {
+                        if (iterator.key()[key.size] == 0.toByte()) {
+                            val value = iterator.value()
+                            if (value.isNotEmpty()) value[0] == TRUE else true
+                        } else null
+                    }
+                    if (cached is Boolean) {
+                        isDeleted = cached
+                    }
+                    cached
+                } else {
+                    cachedRead(reference, currentVersion) {
+                        when (storageType) {
+                            Value -> {
+                                val valueBytes = iterator.value()
+                                index = 0
+                                val reader = { valueBytes[index++] }
 
-                            val definition =
-                                (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                                    ?: reference.propertyDefinition
-                            readValue(definition, reader) {
-                                valueBytes.size - index
+                                val definition =
+                                    (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                        ?: reference.propertyDefinition
+                                readValue(definition, reader) {
+                                    valueBytes.size - index
+                                }
                             }
+                            ListSize -> {
+                                val valueBytes = iterator.value()
+                                index = 0
+                                initIntByVar { valueBytes[index++] }
+                            }
+                            SetSize -> {
+                                val valueBytes = iterator.value()
+                                index = 0
+                                initIntByVar { valueBytes[index++] }
+                            }
+                            MapSize -> {
+                                val valueBytes = iterator.value()
+                                index = 0
+                                initIntByVar { valueBytes[index++] }
+                            }
+                            Embed -> {}
+                            TypeValue -> throw StorageException("Not used in direct encoding")
+                            ObjectDelete -> null
                         }
-                        ListSize -> {
-                            val valueBytes = iterator.value()
-                            index = 0
-                            initIntByVar { valueBytes[index++] }
-                        }
-                        SetSize -> {
-                            val valueBytes = iterator.value()
-                            index = 0
-                            initIntByVar { valueBytes[index++] }
-                        }
-                        MapSize -> {
-                            val valueBytes = iterator.value()
-                            index = 0
-                            initIntByVar { valueBytes[index++] }
-                        }
-                        Embed -> {}
-                        TypeValue -> throw StorageException("Not used in direct encoding")
                     }
                 }
             }

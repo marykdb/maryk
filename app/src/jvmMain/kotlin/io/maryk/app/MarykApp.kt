@@ -17,6 +17,11 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.MenuBar
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberWindowState
+import io.maryk.app.config.StoreConnector
+import io.maryk.app.config.StoreDefinition
+import io.maryk.app.config.StoreRepository
+import io.maryk.app.state.BrowserState
+import io.maryk.app.state.StoresState
 import java.awt.Toolkit
 import kotlin.uuid.Uuid
 

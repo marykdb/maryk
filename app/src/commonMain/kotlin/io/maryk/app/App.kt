@@ -64,6 +64,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.maryk.app.config.StoreDefinition
+import io.maryk.app.config.StoreKind
+import io.maryk.app.state.BrowserState
+import io.maryk.app.state.StoresState
+import io.maryk.app.ui.ModalPrimaryButton
+import io.maryk.app.ui.ModalSecondaryButton
+import io.maryk.app.ui.ModalSurface
+import io.maryk.app.ui.browser.Browser
+import io.maryk.app.ui.handPointer
 import kotlin.random.Random
 
 private val panePadding = 10.dp

@@ -6,6 +6,7 @@ import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
@@ -48,7 +49,20 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
                 sortingKey = sortingKey,
                 cachedRead = cacheReader
             )
-            change?.let { objectChanges += it }
+            change?.let { changes ->
+                val updated = if (scanRequest.toVersion == null && scanRequest.maxVersions > 1u && tableDirs is HistoricTableDirectories) {
+                    addSoftDeleteChangeIfMissing(
+                        tr = tr,
+                        tableDirs = tableDirs,
+                        key = key,
+                        fromVersion = scanRequest.fromVersion,
+                        objectChange = changes
+                    )
+                } else {
+                    changes
+                }
+                objectChanges += updated
+            }
         }
 
 

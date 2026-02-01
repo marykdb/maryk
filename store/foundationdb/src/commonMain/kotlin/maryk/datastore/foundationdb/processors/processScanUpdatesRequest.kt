@@ -23,6 +23,7 @@ import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
@@ -119,7 +120,19 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 maxVersions = scanRequest.maxVersions,
                 sortingKey = sortingKey,
                 cachedRead = cacheReader
-            )
+            )?.let { changes ->
+                if (scanRequest.toVersion == null && scanRequest.maxVersions > 1u && tableDirs is HistoricTableDirectories) {
+                    addSoftDeleteChangeIfMissing(
+                        tr = tr,
+                        tableDirs = tableDirs,
+                        key = key,
+                        fromVersion = scanRequest.fromVersion,
+                        objectChange = changes
+                    )
+                } else {
+                    changes
+                }
+            }
 
             objectChange?.let { oc ->
                 for (versionedChange in oc.changes) {

@@ -98,7 +98,20 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                         getRequest.maxVersions,
                         null,
                         cacheReader
-                    )?.also { objectChange ->
+                    )?.let { changes ->
+                        if (getRequest.toVersion == null && getRequest.maxVersions > 1u && columnFamilies is HistoricTableColumnFamilies) {
+                            addSoftDeleteChangeIfMissing(
+                                dbAccessor = dbAccessor,
+                                columnFamilies = columnFamilies,
+                                readOptions = defaultReadOptions,
+                                key = key,
+                                fromVersion = getRequest.fromVersion,
+                                objectChange = changes
+                            )
+                        } else {
+                            changes
+                        }
+                    }?.also { objectChange ->
                         updates += objectChange.changes.map { versionedChange ->
                             val changes = versionedChange.changes
 

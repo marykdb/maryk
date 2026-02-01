@@ -1,44 +1,40 @@
-package maryk.datastore.rocksdb
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
+package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.test.runTest
 import maryk.core.clock.HLC
 import maryk.core.models.key
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
-import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.getUpdates
-import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.requests.scanUpdates
-import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.ChangeUpdate
-import maryk.core.extensions.bytes.invert
-import maryk.datastore.rocksdb.processors.SOFT_DELETE_INDICATOR
+import maryk.datastore.foundationdb.processors.SOFT_DELETE_INDICATOR
+import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
+import maryk.datastore.foundationdb.processors.helpers.packVersionedKey
 import maryk.datastore.test.dataModelsForTests
-import maryk.createTestDBFolder
-import maryk.deleteFolder
-import maryk.lib.bytes.combineToByteArray
 import maryk.test.models.Log
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.uuid.Uuid
 
 class SoftDeleteLegacyTimeTravelTest {
     @Test
-    fun softDeleteFallbackUsesCurrentTableVersion() = runTest {
-        val folder = createTestDBFolder("soft-delete-legacy-time-travel")
-
-        val dataStore = RocksDBDataStore.open(
-            relativePath = folder,
-            keepAllVersions = true,
+    fun softDeleteFallbackAppearsInChangesAndUpdates() = runTest {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "legacy-soft-delete", Uuid.random().toString()),
             dataModelsById = dataModelsForTests,
+            keepAllVersions = true,
         )
 
-        val values = Log("legacy-log")
+        val values = Log("legacy-log-fdb")
         val key = Log.key(values)
 
         val addResponse = dataStore.execute(
@@ -51,52 +47,13 @@ class SoftDeleteLegacyTimeTravelTest {
         )
         val deleteStatus = assertIs<DeleteSuccess<*>>(deleteResponse.statuses.first())
 
-        val columnFamilies = dataStore.getColumnFamilies(Log) as HistoricTableColumnFamilies
+        val tableDirs = dataStore.getTableDirs(Log) as HistoricTableDirectories
         val versionBytes = HLC.toStorageBytes(HLC(deleteStatus.version))
-        val historicReference = combineToByteArray(key.bytes, SOFT_DELETE_INDICATOR, versionBytes).apply {
-            invert(size - versionBytes.size)
+        val encodedQualifier = encodeZeroFreeUsing01(byteArrayOf(SOFT_DELETE_INDICATOR))
+        val historicKey = packVersionedKey(tableDirs.historicTablePrefix, key.bytes, encodedQualifier, version = versionBytes)
+        dataStore.runTransaction { tr ->
+            tr.clear(historicKey)
         }
-        dataStore.db.delete(columnFamilies.historic.table, historicReference)
-
-        val getAtDelete = dataStore.execute(
-            Log.get(
-                key,
-                toVersion = deleteStatus.version,
-                filterSoftDeleted = false,
-            )
-        )
-        assertEquals(1, getAtDelete.values.size)
-        assertTrue(getAtDelete.values.first().isDeleted)
-
-        val getBeforeDelete = dataStore.execute(
-            Log.get(
-                key,
-                toVersion = deleteStatus.version - 1uL,
-                filterSoftDeleted = false,
-            )
-        )
-        assertEquals(1, getBeforeDelete.values.size)
-        assertTrue(!getBeforeDelete.values.first().isDeleted)
-
-        val scanAtDelete = dataStore.execute(
-            Log.scan(
-                toVersion = deleteStatus.version,
-                filterSoftDeleted = false,
-                allowTableScan = true,
-            )
-        )
-        assertTrue(scanAtDelete.values.any { it.key == key })
-        assertTrue(scanAtDelete.values.first { it.key == key }.isDeleted)
-
-        val scanBeforeDelete = dataStore.execute(
-            Log.scan(
-                toVersion = deleteStatus.version - 1uL,
-                filterSoftDeleted = false,
-                allowTableScan = true,
-            )
-        )
-        assertTrue(scanBeforeDelete.values.any { it.key == key })
-        assertTrue(!scanBeforeDelete.values.first { it.key == key }.isDeleted)
 
         val changesResponse = dataStore.execute(
             Log.getChanges(
@@ -136,7 +93,6 @@ class SoftDeleteLegacyTimeTravelTest {
         assertTrue(hasSoftDeleteUpdate(scanUpdatesResponse.updates))
 
         dataStore.close()
-        deleteFolder(folder)
     }
 }
 

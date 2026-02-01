@@ -15,6 +15,7 @@ import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.packKey
@@ -85,7 +86,19 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             maxVersions = getRequest.maxVersions,
                             sortingKey = null,
                             cachedRead = cacheReader
-                        )
+                        )?.let { changes ->
+                            if (getRequest.toVersion == null && getRequest.maxVersions > 1u && tableDirs is HistoricTableDirectories) {
+                                addSoftDeleteChangeIfMissing(
+                                    tr = tr,
+                                    tableDirs = tableDirs,
+                                    key = key,
+                                    fromVersion = getRequest.fromVersion,
+                                    objectChange = changes
+                                )
+                            } else {
+                                changes
+                            }
+                        }
 
                         Pair(last, objChanges)
                     }

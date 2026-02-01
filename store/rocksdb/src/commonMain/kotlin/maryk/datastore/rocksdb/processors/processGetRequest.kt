@@ -75,7 +75,22 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
                         getRequest.select,
                         getRequest.toVersion,
                         cacheReader
-                    )?.also {
+                    )?.let { values ->
+                        if (getRequest.toVersion == null) {
+                            values
+                        } else {
+                            val deleted = isSoftDeleted(
+                                dbAccessor,
+                                columnFamilies,
+                                defaultReadOptions,
+                                getRequest.toVersion,
+                                key.bytes,
+                                0,
+                                key.size
+                            )
+                            if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
+                        }
+                    }?.also {
                         // Only add if not null
                         valuesWithMeta.add(it)
                     }

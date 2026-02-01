@@ -170,16 +170,25 @@ private fun ModelDetailsHeader(
 
 @Composable
 private fun InspectorHeader(details: RecordDetails) {
+    val clipboard = LocalClipboardManager.current
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(
-                details.keyText,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            SmallCopyButton()
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                SelectionContainer(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        details.keyText,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            SmallCopyButton(onClick = { clipboard.setText(AnnotatedString(details.keyText)) })
         }
         Spacer(modifier = Modifier.height(6.dp))
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -530,17 +539,19 @@ private fun ReferenceValue(
         text = tooltipText,
         monospace = true,
     ) { hoverModifier ->
-        Text(
-            reference.keyText,
-            style = MaterialTheme.typography.bodySmall.copy(
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.tertiary,
-                textDecoration = TextDecoration.Underline,
-            ),
-            modifier = hoverModifier.clickable {
-                state.openReference(reference.modelName, reference.key)
-            },
-        )
+        SelectionContainer {
+            Text(
+                reference.keyText,
+                style = MaterialTheme.typography.bodySmall.copy(
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.tertiary,
+                    textDecoration = TextDecoration.Underline,
+                ),
+                modifier = hoverModifier.clickable {
+                    state.openReference(reference.modelName, reference.key)
+                },
+            )
+        }
     }
 }
 

@@ -841,6 +841,8 @@ private fun EditorValueField(
     }
 }
 
+private const val longStringMaxSizeThreshold = 500
+
 @Composable
 private fun SimpleTextEditor(
     label: String,
@@ -856,6 +858,11 @@ private fun SimpleTextEditor(
     onValueChange: (Any?) -> Unit,
     onError: (String?) -> Unit,
 ) {
+    val isLongText = (definition as? StringDefinition)?.let { stringDefinition ->
+        val isKeyLabel = label.startsWith("Key", ignoreCase = true)
+        val maxSize = stringDefinition.maxSize?.toInt()
+        !isKeyLabel && maxSize != null && maxSize >= longStringMaxSizeThreshold
+    } ?: false
     val displayValue = value?.let { formatValue(definition, it) }.orEmpty()
     var text by remember(path, displayValue) { mutableStateOf(displayValue) }
 
@@ -883,6 +890,7 @@ private fun SimpleTextEditor(
         placeholder = placeholder,
         error = error,
         autoFocus = autoFocus,
+        isMultiline = isLongText,
         allowUnset = !required && enabled,
         onUnset = {
             text = ""
@@ -2593,6 +2601,7 @@ private fun EditorTextRow(
     onUnset: (() -> Unit)? = null,
     trailingContent: (@Composable () -> Unit)? = null,
     autoFocus: Boolean = false,
+    isMultiline: Boolean = false,
 ) {
     val focusRequester = remember { FocusRequester() }
     if (autoFocus) {
@@ -2610,6 +2619,7 @@ private fun EditorTextRow(
                 isError = error != null,
                 focusRequester = if (autoFocus) focusRequester else null,
                 trailingContent = trailingContent,
+                isMultiline = isMultiline,
             )
             if (allowUnset && onUnset != null) {
                 IconButton(onClick = onUnset, modifier = Modifier.size(22.dp).handPointer()) {
@@ -2632,13 +2642,13 @@ private fun EditorRowShell(
         modifier = Modifier.fillMaxWidth().padding(start = (indent * 12).dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             val labelText = if (required) "$label *" else label
             Text(
                 labelText,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.width(140.dp),
+                modifier = Modifier.width(140.dp).padding(top = 6.dp),
             )
             content()
         }
@@ -2662,6 +2672,7 @@ private fun EditorTextField(
     isError: Boolean,
     focusRequester: FocusRequester? = null,
     trailingContent: (@Composable () -> Unit)? = null,
+    isMultiline: Boolean = false,
 ) {
     val borderColor = if (isError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
     val background = if (enabled) {
@@ -2673,11 +2684,13 @@ private fun EditorTextField(
         shape = RoundedCornerShape(6.dp),
         color = background,
         border = BorderStroke(1.dp, borderColor),
-        modifier = Modifier.height(30.dp).widthIn(min = 180.dp),
+        modifier = Modifier
+            .height(if (isMultiline) 72.dp else 30.dp)
+            .widthIn(min = 180.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = if (isMultiline) Alignment.Top else Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Box(
@@ -2688,7 +2701,8 @@ private fun EditorTextField(
                     value = value,
                     onValueChange = onValueChange,
                     enabled = enabled,
-                    singleLine = true,
+                    singleLine = !isMultiline,
+                    maxLines = if (isMultiline) 4 else 1,
                     textStyle = TextStyle(color = MaterialTheme.colorScheme.onSurface, fontFamily = FontFamily.SansSerif),
                     cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                     modifier = Modifier.fillMaxWidth().let { base ->

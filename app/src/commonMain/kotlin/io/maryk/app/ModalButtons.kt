@@ -34,7 +34,7 @@ fun ModalPrimaryButton(
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier,
+        modifier = modifier.handPointer(enabled),
         shape = modalButtonShape,
         colors = colors ?: ButtonDefaults.buttonColors(),
         contentPadding = modalButtonPadding,
@@ -58,7 +58,7 @@ fun ModalSecondaryButton(
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier,
+        modifier = modifier.handPointer(enabled),
         shape = modalButtonShape,
         contentPadding = modalButtonPadding,
         border = BorderStroke(1.dp, tint),

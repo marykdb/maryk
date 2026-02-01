@@ -91,7 +91,7 @@ private fun CatalogRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { state.selectModel(model.id) }
+                    .handPointer().clickable { state.selectModel(model.id) }
                     .padding(horizontal = 6.dp, vertical = 2.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),

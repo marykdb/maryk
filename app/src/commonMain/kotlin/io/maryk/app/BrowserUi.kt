@@ -254,9 +254,9 @@ private fun ExportFormatDialog(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().clickable { selected = format },
+                        modifier = Modifier.fillMaxWidth().handPointer().clickable { selected = format },
                     ) {
-                        RadioButton(selected = selected == format, onClick = { selected = format })
+                        RadioButton(modifier = Modifier.handPointer(), selected = selected == format, onClick = { selected = format })
                         Text(format.label, style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -305,18 +305,18 @@ private fun DataExportFormatDialog(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().clickable { selected = format },
+                        modifier = Modifier.fillMaxWidth().handPointer().clickable { selected = format },
                     ) {
-                        RadioButton(selected = selected == format, onClick = { selected = format })
+                        RadioButton(modifier = Modifier.handPointer(), selected = selected == format, onClick = { selected = format })
                         Text(format.label, style = MaterialTheme.typography.bodySmall)
                     }
                 }
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth().clickable { includeVersionHistory = !includeVersionHistory },
+                    modifier = Modifier.fillMaxWidth().handPointer().clickable { includeVersionHistory = !includeVersionHistory },
                 ) {
-                    Checkbox(checked = includeVersionHistory, onCheckedChange = { includeVersionHistory = it })
+                    Checkbox(modifier = Modifier.handPointer(), checked = includeVersionHistory, onCheckedChange = null)
                     Text("Include version history", style = MaterialTheme.typography.bodySmall)
                 }
             }
@@ -372,24 +372,24 @@ private fun ExportDataDialog(
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().clickable { exportAll = true },
+                        modifier = Modifier.fillMaxWidth().handPointer().clickable { exportAll = true },
                     ) {
-                        RadioButton(selected = exportAll, onClick = { exportAll = true })
+                        RadioButton(modifier = Modifier.handPointer(), selected = exportAll, onClick = { exportAll = true })
                         Text("All data", style = MaterialTheme.typography.bodySmall)
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().clickable { exportAll = false },
+                        modifier = Modifier.fillMaxWidth().handPointer().clickable { exportAll = false },
                     ) {
-                        RadioButton(selected = !exportAll, onClick = { exportAll = false })
+                        RadioButton(modifier = Modifier.handPointer(), selected = !exportAll, onClick = { exportAll = false })
                         Text("Specific model", style = MaterialTheme.typography.bodySmall)
                     }
                     if (!exportAll) {
                         Box {
                             OutlinedButton(
                                 onClick = { modelMenuExpanded = true },
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().handPointer(),
                             ) {
                                 Text(selectedModelName, style = MaterialTheme.typography.bodySmall)
                             }
@@ -416,18 +416,18 @@ private fun ExportDataDialog(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth().clickable { format = option },
+                            modifier = Modifier.fillMaxWidth().handPointer().clickable { format = option },
                         ) {
-                            RadioButton(selected = format == option, onClick = { format = option })
+                            RadioButton(modifier = Modifier.handPointer(), selected = format == option, onClick = { format = option })
                             Text(option.label, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth().clickable { includeVersionHistory = !includeVersionHistory },
+                        modifier = Modifier.fillMaxWidth().handPointer().clickable { includeVersionHistory = !includeVersionHistory },
                     ) {
-                        Checkbox(checked = includeVersionHistory, onCheckedChange = { includeVersionHistory = it })
+                        Checkbox(modifier = Modifier.handPointer(), checked = includeVersionHistory, onCheckedChange = null)
                         Text("Include version history", style = MaterialTheme.typography.bodySmall)
                     }
                 }
@@ -440,12 +440,12 @@ private fun ExportDataDialog(
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Select a folder") },
                         trailingIcon = {
-                            IconButton(
+                            IconButton( 
                                 onClick = {
                                     val picked = pickDirectory("Select export folder") ?: return@IconButton
                                     folderPath = picked
                                 },
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(28.dp).handPointer(),
                             ) {
                                 Icon(
                                     Icons.Filled.FolderOpen,
@@ -504,12 +504,12 @@ private fun ImportDataDialog(
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("Select a file") },
                         trailingIcon = {
-                            IconButton(
+                            IconButton( 
                                 onClick = {
                                     val picked = pickFile("Select import file") ?: return@IconButton
                                     filePath = picked
                                 },
-                                modifier = Modifier.size(28.dp),
+                                modifier = Modifier.size(28.dp).handPointer(),
                             ) {
                                 Icon(
                                     Icons.Filled.FileOpen,
@@ -567,7 +567,7 @@ private fun ImportModelDialog(
                 Box {
                     OutlinedButton(
                         onClick = { modelMenuExpanded = true },
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier.fillMaxWidth().handPointer(),
                     ) {
                         Text(selectedModelName, style = MaterialTheme.typography.bodySmall)
                     }
@@ -639,7 +639,7 @@ private fun ExplainPanel(onClose: () -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("Explain / Plan", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
-            IconButton(onClick = onClose) {
+            IconButton(modifier = Modifier.handPointer(), onClick = onClose) {
                 Icon(Icons.Default.Close, contentDescription = "Close explain panel")
             }
         }
@@ -676,10 +676,16 @@ private fun DeleteDialog(state: BrowserState) {
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text("This action is destructive. Continue?", style = MaterialTheme.typography.bodySmall)
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .handPointer()
+                        .clickable { state.markPendingHardDelete(!state.pendingHardDelete) },
+                ) {
                     Checkbox(
+                        modifier = Modifier.handPointer(),
                         checked = state.pendingHardDelete,
-                        onCheckedChange = { checked -> state.markPendingHardDelete(checked) },
+                        onCheckedChange = null,
                     )
                     Text("Hard delete", style = MaterialTheme.typography.bodySmall)
                 }

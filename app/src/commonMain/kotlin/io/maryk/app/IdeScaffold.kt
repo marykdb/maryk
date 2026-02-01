@@ -84,7 +84,7 @@ fun AppScaffold(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    IconButton(onClick = onToggleCatalog, modifier = Modifier.size(32.dp)) {
+                    IconButton(onClick = onToggleCatalog, modifier = Modifier.size(32.dp).handPointer()) {
                         val icon = if (uiState.showCatalog) {
                             Icons.AutoMirrored.Filled.ViewSidebar
                         } else {
@@ -99,14 +99,14 @@ fun AppScaffold(
                     }
                     StoreChrome(state = state)
                     Spacer(modifier = Modifier.weight(1f))
-                    IconButton(onClick = { state.toggleTimeTravel() }, modifier = Modifier.size(32.dp)) {
+                    IconButton(onClick = { state.toggleTimeTravel() }, modifier = Modifier.size(32.dp).handPointer()) {
                         Icon(
                             Icons.Default.History,
                             contentDescription = "Toggle time travel",
                             tint = if (state.timeTravelEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
-                    IconButton(onClick = onToggleInspector, modifier = Modifier.size(32.dp)) {
+                    IconButton(onClick = onToggleInspector, modifier = Modifier.size(32.dp).handPointer()) {
                         val icon = if (uiState.showInspector) {
                             Icons.AutoMirrored.Filled.ViewSidebar
                         } else {
@@ -211,9 +211,9 @@ private fun StoreChrome(
                 fontFamily = FontFamily.SansSerif,
                 modifier = Modifier.weight(1f),
             )
-            IconButton(
+            IconButton( 
                 onClick = { clipboard.setText(AnnotatedString(location)) },
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(20.dp).handPointer(),
             ) {
                 Icon(
                     Icons.Default.ContentCopy,
@@ -265,7 +265,7 @@ private fun TimeTravelBar(
                 modifier = Modifier.width(90.dp),
             )
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = onClose, modifier = Modifier.size(28.dp)) {
+            IconButton(onClick = onClose, modifier = Modifier.size(28.dp).handPointer()) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Close time travel",
@@ -350,7 +350,7 @@ private fun TimeTravelDateField(
         onValueChange = onValueChange,
         placeholder = "YYYY-MM-DD",
         trailingContent = {
-            IconButton(onClick = { showPicker = true }, modifier = Modifier.size(22.dp)) {
+            IconButton(onClick = { showPicker = true }, modifier = Modifier.size(22.dp).handPointer()) {
                 Icon(
                     imageVector = Icons.Default.DateRange,
                     contentDescription = "Pick date",
@@ -418,7 +418,7 @@ private fun TimeTravelTimeField(
         onValueChange = onValueChange,
         placeholder = "HH:MM",
         trailingContent = {
-            IconButton(onClick = { showPicker = true }, modifier = Modifier.size(22.dp)) {
+            IconButton(onClick = { showPicker = true }, modifier = Modifier.size(22.dp).handPointer()) {
                 Icon(
                     imageVector = Icons.Default.Schedule,
                     contentDescription = "Pick time",
@@ -528,7 +528,7 @@ private fun ErrorBanner(
             SelectionContainer(modifier = Modifier.weight(1f)) {
                 Text(message, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer)
             }
-            IconButton(onClick = onDismiss) {
+            IconButton(modifier = Modifier.handPointer(), onClick = onDismiss) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss error",
@@ -560,7 +560,7 @@ private fun SuccessToast(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(message, style = MaterialTheme.typography.labelSmall, color = Color.White)
-            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+            IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp).handPointer()) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",
@@ -595,7 +595,7 @@ private fun ExportToast(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onPrimary,
             )
-            IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp)) {
+            IconButton(onClick = onDismiss, modifier = Modifier.size(20.dp).handPointer()) {
                 Icon(
                     imageVector = Icons.Default.Close,
                     contentDescription = "Dismiss",

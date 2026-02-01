@@ -218,7 +218,7 @@ fun ResultsDataGrid(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { state.backToReferenceTarget() }
+                            .handPointer().clickable { state.backToReferenceTarget() }
                             .padding(horizontal = 8.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -229,9 +229,9 @@ fun ResultsDataGrid(
                             style = MaterialTheme.typography.labelMedium,
                             modifier = Modifier.weight(1f),
                         )
-                        IconButton(
+                        IconButton( 
                             onClick = { state.clearReferenceBackTarget() },
-                            modifier = Modifier.size(24.dp),
+                            modifier = Modifier.size(24.dp).handPointer(),
                         ) {
                             Icon(Icons.Filled.Close, contentDescription = "Close back bar", modifier = Modifier.size(14.dp))
                         }
@@ -274,11 +274,16 @@ fun ResultsDataGrid(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     Spacer(modifier = Modifier.weight(1f))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .handPointer()
+                            .clickable { state.updateIncludeDeleted(!state.scanConfig.includeDeleted) },
+                    ) {
                         Checkbox(
                             checked = state.scanConfig.includeDeleted,
-                            onCheckedChange = { state.updateIncludeDeleted(it) },
-                            modifier = Modifier.size(12.dp),
+                            onCheckedChange = null,
+                            modifier = Modifier.size(12.dp).handPointer(),
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Show deleted", style = MaterialTheme.typography.labelSmall)
@@ -297,7 +302,7 @@ fun ResultsDataGrid(
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                         ),
-                        modifier = Modifier.height(28.dp),
+                        modifier = Modifier.height(28.dp).handPointer(),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(Icons.Default.FilterAlt, contentDescription = "Filter records", modifier = Modifier.size(12.dp))
@@ -318,7 +323,7 @@ fun ResultsDataGrid(
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
                             shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier.height(24.dp),
+                            modifier = Modifier.height(24.dp).handPointer(),
                         ) {
                             Text(selectedSort?.label ?: "Key", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                             Spacer(modifier = Modifier.width(4.dp))
@@ -342,14 +347,14 @@ fun ResultsDataGrid(
                         }
                     }
                     Spacer(modifier = Modifier.width(6.dp))
-                    IconButton(
+                    IconButton( 
                         onClick = {
                             val next = !sortDescending
                             sortDescending = next
                             selectedSort?.let { applySortSelection(state, it, next) }
                         },
                         enabled = selectedSort != null,
-                        modifier = Modifier.size(28.dp),
+                        modifier = Modifier.size(28.dp).handPointer(),
                     ) {
                         Icon(
                             if (sortDescending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
@@ -365,7 +370,7 @@ fun ResultsDataGrid(
                         shape = RoundedCornerShape(4.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
-                        modifier = Modifier.height(28.dp),
+                        modifier = Modifier.height(28.dp).handPointer(),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Icon(Icons.Default.Add, contentDescription = "Add record", modifier = Modifier.size(12.dp))
@@ -556,7 +561,7 @@ fun ResultsDataGrid(
                                                 hoveredRowKey = null
                                             }
                                         }
-                                        .clickable {
+                                        .handPointer().clickable {
                                             updateSelection(rows, index, uiState, null, anchorIndex) { anchorIndex = it }
                                             state.openRecord(row)
                                         }
@@ -655,8 +660,14 @@ fun ResultsDataGrid(
                         )
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Checkbox(checked = hardDelete, onCheckedChange = { hardDelete = it })
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier
+                        .handPointer()
+                        .clickable { hardDelete = !hardDelete },
+                ) {
+                    Checkbox(modifier = Modifier.handPointer(), checked = hardDelete, onCheckedChange = null)
                     Text("Hard delete", style = MaterialTheme.typography.bodySmall)
                 }
                 if (hardDelete) {
@@ -816,7 +827,7 @@ private fun PinnedHeaderCell(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        IconButton(onClick = onUnpin, modifier = Modifier.size(18.dp)) {
+        IconButton(onClick = onUnpin, modifier = Modifier.size(18.dp).handPointer()) {
             Icon(Icons.Filled.PushPin, contentDescription = "Unpin", modifier = Modifier.size(12.dp))
         }
     }

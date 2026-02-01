@@ -240,10 +240,10 @@ internal fun FilterStatusBar(
                     }
                 }
             }
-            IconButton(onClick = onEdit, modifier = Modifier.size(26.dp)) {
+            IconButton(onClick = onEdit, modifier = Modifier.size(26.dp).handPointer()) {
                 Icon(Icons.Default.Edit, contentDescription = "Edit filter", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
             }
-            IconButton(onClick = onClear, modifier = Modifier.size(26.dp)) {
+            IconButton(onClick = onClear, modifier = Modifier.size(26.dp).handPointer()) {
                 Icon(Icons.Default.Close, contentDescription = "Clear filter", modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.onSurface)
             }
         }
@@ -328,7 +328,7 @@ internal fun FilterDialog(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("Filter data", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp).handPointer()) {
                     Icon(Icons.Default.Close, contentDescription = "Close filter")
                 }
             }
@@ -453,14 +453,17 @@ private fun FilterGroupEditor(
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(2.dp),
-                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 0.dp),
+                            modifier = Modifier
+                                .padding(horizontal = 4.dp, vertical = 0.dp)
+                                .handPointer()
+                                .clickable { group.negated = !group.negated },
                         ) {
-                            Checkbox(checked = group.negated, onCheckedChange = { group.negated = it })
+                            Checkbox(modifier = Modifier.handPointer(), checked = group.negated, onCheckedChange = null)
                             Text("Not", style = MaterialTheme.typography.labelSmall)
                         }
                     }
                     if (onRemoveGroup != null) {
-                        IconButton(onClick = { onRemoveGroup(group) }, modifier = Modifier.size(28.dp)) {
+                        IconButton(onClick = { onRemoveGroup(group) }, modifier = Modifier.size(28.dp).handPointer()) {
                             Icon(Icons.Default.Delete, contentDescription = "Remove group", modifier = Modifier.size(16.dp))
                         }
                     }
@@ -494,7 +497,7 @@ private fun FilterGroupEditor(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                 Spacer(modifier = Modifier.weight(1f))
-                SquaredIconButton(
+                SquaredIconButton( 
                     icon = Icons.Default.Add,
                     contentDescription = "Add condition",
                     onClick = { onAddCondition(group) },
@@ -502,7 +505,7 @@ private fun FilterGroupEditor(
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     background = MaterialTheme.colorScheme.surface,
                 )
-                SquaredIconButton(
+                SquaredIconButton(modifier = Modifier.handPointer(), 
                     icon = Icons.Default.LibraryAdd,
                     contentDescription = "Add group",
                     onClick = { onAddGroup(group) },
@@ -527,7 +530,7 @@ private fun GroupTypeToggle(group: FilterGroupState) {
                 color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .background(background, RoundedCornerShape(6.dp))
-                    .clickable { group.type = type }
+                    .handPointer().clickable { group.type = type }
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             )
         }
@@ -610,7 +613,7 @@ private fun FilterConditionRow(
                         contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                         shape = RoundedCornerShape(4.dp),
                         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
-                        modifier = Modifier.heightIn(min = compactFieldHeight),
+                        modifier = Modifier.heightIn(min = compactFieldHeight).handPointer(),
                     ) {
                         Text(condition.operator.label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
                         Spacer(modifier = Modifier.width(4.dp))
@@ -751,12 +754,15 @@ private fun FilterConditionRow(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(2.dp),
-                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 0.dp),
+                    modifier = Modifier
+                        .padding(horizontal = 4.dp, vertical = 0.dp)
+                        .handPointer()
+                        .clickable { condition.negated = !condition.negated },
                 ) {
-                    Checkbox(checked = condition.negated, onCheckedChange = { condition.negated = it })
+                    Checkbox(modifier = Modifier.handPointer(), checked = condition.negated, onCheckedChange = null)
                     Text("Not", style = MaterialTheme.typography.labelSmall)
                 }
-                IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
+                IconButton(onClick = onRemove, modifier = Modifier.size(28.dp).handPointer()) {
                     Icon(Icons.Default.Delete, contentDescription = "Remove condition", modifier = Modifier.size(16.dp))
                 }
             }
@@ -846,7 +852,7 @@ private fun CompactSelectField(
             contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
             shape = RoundedCornerShape(4.dp),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)),
-            modifier = Modifier.heightIn(min = compactFieldHeight),
+            modifier = Modifier.heightIn(min = compactFieldHeight).handPointer(),
         ) {
             Text(
                 value.ifBlank { placeholder },
@@ -914,7 +920,7 @@ private fun CompactDatePickerField(
         )
         IconButton(
             onClick = { showPicker = true },
-            modifier = Modifier.size(26.dp),
+            modifier = Modifier.size(26.dp).handPointer(),
         ) {
             Icon(Icons.Default.DateRange, contentDescription = "Pick date", modifier = Modifier.size(16.dp))
         }
@@ -1249,13 +1255,14 @@ private fun SquaredIconButton(
     size: Dp,
     tint: Color,
     background: Color,
+    modifier: Modifier = Modifier,
 ) {
     Surface(
         color = background,
         shape = RoundedCornerShape(4.dp),
-        modifier = Modifier.size(size),
+        modifier = modifier.size(size),
     ) {
-        IconButton(onClick = onClick, modifier = Modifier.fillMaxSize()) {
+        IconButton(onClick = onClick, modifier = Modifier.fillMaxSize().handPointer()) {
             Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(16.dp), tint = tint)
         }
     }

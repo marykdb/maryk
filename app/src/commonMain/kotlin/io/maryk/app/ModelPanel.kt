@@ -245,7 +245,7 @@ private fun Chip(
     Surface(
         color = tone.copy(alpha = if (isTertiary) 0.2f else 0.14f),
         shape = MaterialTheme.shapes.small,
-        modifier = if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier,
+        modifier = if (onClick != null) Modifier.handPointer().clickable(onClick = onClick) else Modifier,
     ) {
         Text(
             label,
@@ -383,7 +383,7 @@ fun ModelDetailsPanel(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { state.selectModelField(selected.copy(typeIndex = typeCase.index)) }
+                        .handPointer().clickable { state.selectModelField(selected.copy(typeIndex = typeCase.index)) }
                         .padding(vertical = 2.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -417,11 +417,11 @@ fun ModelRawPanel(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Raw", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
-            IconButton(
+            IconButton( 
                 onClick = {
                     selected?.let { clipboard.setText(AnnotatedString(buildModelRaw(it))) }
                 },
-                modifier = Modifier.size(20.dp).alpha(0.65f),
+                modifier = Modifier.size(20.dp).alpha(0.65f).handPointer(),
             ) {
                 Icon(
                     Icons.Default.ContentCopy,
@@ -490,7 +490,7 @@ private fun ModelNodeView(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = (indent * 12).dp)
-                .clickable {
+                .handPointer().clickable {
                     node.wrapper?.let { onSelect(ModelFieldRef(node.path, it, definition = it.definition)) }
                     node.subDefinition?.let { onSelect(ModelFieldRef(node.path, wrapper = null, definition = it)) }
                     expanded = !expanded
@@ -507,9 +507,9 @@ private fun ModelNodeView(
                 val pinnable = definition?.let(::isPinnableDefinition) == true && modelId != null
                 if (pinnable) {
                     val pinned = uiState.isPinned(modelId, node.path)
-                    IconButton(
+                    IconButton( 
                         onClick = { uiState.togglePinned(modelId, node.path) },
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(20.dp).handPointer(),
                     ) {
                         Icon(
                             if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,
@@ -553,7 +553,7 @@ private fun ModelLeafRow(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable {
+                .handPointer().clickable {
                     node.wrapper?.let { onSelect(ModelFieldRef(node.path, it, definition = it.definition)) }
                     node.subDefinition?.let { onSelect(ModelFieldRef(node.path, wrapper = null, definition = it)) }
                 }
@@ -572,9 +572,9 @@ private fun ModelLeafRow(
             val pinnable = definition?.let(::isPinnableDefinition) == true && modelId != null
             if (pinnable) {
                 val pinned = uiState.isPinned(modelId, node.path)
-                IconButton(
+                IconButton( 
                     onClick = { uiState.togglePinned(modelId, node.path) },
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier.size(20.dp).handPointer(),
                 ) {
                     Icon(
                         if (pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin,

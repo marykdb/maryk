@@ -167,7 +167,7 @@ private fun StoreRow(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .combinedClickable(
+                    .handPointer().combinedClickable(
                         onClick = {},
                         onDoubleClick = { if (!isOpen) onOpen() },
                     )
@@ -259,7 +259,7 @@ private fun StoreEditorDialog(storesState: StoresState) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(if (editing == null) "Add store" else "Edit store", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                SmallIconButton(
+                SmallIconButton(modifier = Modifier.handPointer(), 
                     icon = Icons.Default.Close,
                     contentDescription = "Close",
                     onClick = { storesState.closeStoreEditor() },
@@ -306,10 +306,13 @@ private fun StoreEditorDialog(storesState: StoresState) {
                     )
                 }
                 if (type == StoreKind.REMOTE) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Checkbox(
-                            checked = useSsh,
-                            onCheckedChange = { enabled ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier
+                            .handPointer()
+                            .clickable {
+                                val enabled = !useSsh
                                 useSsh = enabled
                                 if (enabled) {
                                     val parsed = parseHttpUrl(directory)
@@ -321,6 +324,11 @@ private fun StoreEditorDialog(storesState: StoresState) {
                                     }
                                 }
                             },
+                    ) {
+                        Checkbox(
+                            modifier = Modifier.handPointer(),
+                            checked = useSsh,
+                            onCheckedChange = null,
                         )
                         Text("Use SSH tunnel", style = MaterialTheme.typography.bodySmall)
                     }
@@ -491,7 +499,7 @@ private fun StoreTypeTab(
         modifier = modifier
             .height(26.dp)
             .background(background, shape)
-            .clickable(onClick = onClick)
+            .handPointer().clickable(onClick = onClick)
             .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -532,10 +540,12 @@ private fun SmallOutlinedButton(
     enabled: Boolean = true,
     tint: Color = MaterialTheme.colorScheme.primary,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
+        modifier = modifier.handPointer(enabled),
         shape = RoundedCornerShape(4.dp),
         contentPadding = denseButtonPadding,
         border = BorderStroke(1.dp, tint),
@@ -556,11 +566,12 @@ private fun SmallIconButton(
     onClick: () -> Unit,
     enabled: Boolean = true,
     tint: Color = MaterialTheme.colorScheme.onSurface,
+    modifier: Modifier = Modifier,
 ) {
     IconButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = Modifier.size(denseIconButtonSize),
+        modifier = modifier.size(denseIconButtonSize).handPointer(enabled),
     ) {
         Icon(icon, contentDescription = contentDescription, tint = tint, modifier = Modifier.size(denseIconSize))
     }

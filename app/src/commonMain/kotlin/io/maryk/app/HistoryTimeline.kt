@@ -91,7 +91,7 @@ fun HistoryTimeline(
         ) {
             Text("History", style = MaterialTheme.typography.labelMedium)
             Spacer(modifier = Modifier.weight(1f))
-            IconButton(onClick = { sortDescending = !sortDescending }, modifier = Modifier.size(26.dp)) {
+            IconButton(onClick = { sortDescending = !sortDescending }, modifier = Modifier.size(26.dp).handPointer()) {
                 Icon(
                     imageVector = if (sortDescending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
                     contentDescription = if (sortDescending) "Newest first" else "Oldest first",
@@ -189,9 +189,9 @@ private fun HistoryBatch(
                         )
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Text("v${item.version}", style = MaterialTheme.typography.labelSmall, fontFamily = FontFamily.Monospace)
-                            IconButton(
+                            IconButton( 
                                 onClick = { onCopy(item.version.toString()) },
-                                modifier = Modifier.size(18.dp),
+                                modifier = Modifier.size(18.dp).handPointer(),
                             ) {
                                 Icon(
                                     Icons.Default.ContentCopy,
@@ -202,9 +202,9 @@ private fun HistoryBatch(
                             }
                         }
                     }
-                    IconButton(
+                    IconButton( 
                         onClick = { onDiff(item.version) },
-                        modifier = Modifier.size(26.dp),
+                        modifier = Modifier.size(26.dp).handPointer(),
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.CompareArrows,
@@ -270,7 +270,7 @@ private fun DiffDialog(
                     Text("Diff", style = MaterialTheme.typography.titleMedium)
                     Text("Changes for selected version", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-                IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp).handPointer()) {
                     Icon(Icons.Default.Close, contentDescription = "Close diff", modifier = Modifier.size(16.dp))
                 }
             }
@@ -362,7 +362,7 @@ private fun VersionPicker(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(32.dp)
-                .clickable(enabled = versions.isNotEmpty()) { expanded = true },
+                .handPointer().clickable(enabled = versions.isNotEmpty()) { expanded = true },
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp),

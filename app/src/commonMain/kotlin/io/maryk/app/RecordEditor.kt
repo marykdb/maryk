@@ -204,7 +204,7 @@ internal fun RecordEditorDialog(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp).handPointer()) {
                     Icon(Icons.Default.Close, contentDescription = "Close editor", modifier = Modifier.size(16.dp))
                 }
             }
@@ -941,7 +941,7 @@ private fun DateEditor(
             IconButton(
                 onClick = { showPicker = true },
                 enabled = enabled,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(24.dp).handPointer(),
             ) {
                 Icon(Icons.Default.DateRange, contentDescription = "Pick date", modifier = Modifier.size(16.dp))
             }
@@ -1047,7 +1047,7 @@ private fun DateTimeEditor(
             IconButton(
                 onClick = { showPicker = true },
                 enabled = enabled,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(24.dp).handPointer(),
             ) {
                 Icon(Icons.Default.DateRange, contentDescription = "Pick date/time", modifier = Modifier.size(16.dp))
             }
@@ -1195,14 +1195,14 @@ private fun ReferenceEditor(
             IconButton(
                 onClick = { showPicker = true },
                 enabled = enabled,
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(24.dp).handPointer(),
             ) {
                 Icon(Icons.Default.Search, contentDescription = "Pick reference", modifier = Modifier.size(14.dp))
             }
-            IconButton(
+            IconButton( 
                 onClick = { showInfoDialog = true },
                 enabled = text.isNotBlank(),
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(24.dp).handPointer(),
             ) {
                 Icon(Icons.Default.Info, contentDescription = "Reference info", modifier = Modifier.size(14.dp))
             }
@@ -1256,7 +1256,7 @@ private fun ReferenceInfoDialog(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("Reference data", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp).handPointer()) {
                         Icon(Icons.Default.Close, contentDescription = "Close", modifier = Modifier.size(14.dp))
                     }
                 }
@@ -1351,7 +1351,7 @@ private fun ReferencePickerDialog(
                             shape = RoundedCornerShape(6.dp),
                             color = Color.White,
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                            modifier = Modifier.height(30.dp).widthIn(min = 140.dp).clickable { sortExpanded = true },
+                            modifier = Modifier.height(30.dp).widthIn(min = 140.dp).handPointer().clickable { sortExpanded = true },
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
@@ -1379,7 +1379,7 @@ private fun ReferencePickerDialog(
                     }
                     IconButton(
                         onClick = { sortDescending = !sortDescending },
-                        modifier = Modifier.size(28.dp),
+                        modifier = Modifier.size(28.dp).handPointer(),
                         enabled = selectedSort != null,
                     ) {
                         Icon(
@@ -1422,7 +1422,7 @@ private fun ReferencePickerDialog(
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .clickable { onPick(row.keyText) }
+                                    .handPointer().clickable { onPick(row.keyText) }
                                     .padding(vertical = 6.dp),
                                 verticalArrangement = Arrangement.spacedBy(2.dp),
                             ) {
@@ -1522,7 +1522,7 @@ private fun EnumEditor(
                     shape = RoundedCornerShape(6.dp),
                     color = if (enabled) Color.White else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                    modifier = Modifier.height(30.dp).widthIn(min = 120.dp).clickable(enabled = enabled) { expanded = true },
+                    modifier = Modifier.height(30.dp).widthIn(min = 120.dp).handPointer().clickable(enabled = enabled) { expanded = true },
                 ) {
                     Row(
                         modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
@@ -1550,7 +1550,7 @@ private fun EnumEditor(
                 }
             }
             if (!required && enabled) {
-                IconButton(onClick = { onValueChange(null) }, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = { onValueChange(null) }, modifier = Modifier.size(24.dp).handPointer()) {
                     Icon(Icons.Default.Delete, contentDescription = "Remove", modifier = Modifier.size(14.dp))
                 }
             }
@@ -1581,7 +1581,7 @@ private fun BooleanEditor(
                 shape = RoundedCornerShape(6.dp),
                 color = if (enabled) Color.White else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-                modifier = Modifier.height(30.dp).widthIn(min = 120.dp).clickable(enabled = enabled) { expanded = true },
+                modifier = Modifier.height(30.dp).widthIn(min = 120.dp).handPointer().clickable(enabled = enabled) { expanded = true },
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
@@ -1865,7 +1865,7 @@ private fun EditorMultiTypeField(
             shape = RoundedCornerShape(6.dp),
             color = Color.White,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)),
-            modifier = Modifier.height(30.dp).widthIn(min = 120.dp).clickable(enabled = canChangeType) { typeExpanded = true },
+            modifier = Modifier.height(30.dp).widthIn(min = 120.dp).handPointer().clickable(enabled = canChangeType) { typeExpanded = true },
         ) {
             Row(
                 modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
@@ -2198,14 +2198,14 @@ private fun EditorListField(
                     modifier = Modifier.fillMaxWidth().padding(start = (indent * 12 + 148).dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    IconButton(
+                    IconButton( 
                         onClick = {
                             val next = listValue.toMutableList()
                             next.removeAt(index)
                             onValueChange(next)
                             onError(validateValue(definition, next, required))
                         },
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(22.dp).handPointer(),
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = "Remove item", modifier = Modifier.size(14.dp))
                     }
@@ -2289,14 +2289,14 @@ private fun EditorSetField(
                     modifier = Modifier.fillMaxWidth().padding(start = (indent * 12 + 148).dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    IconButton(
+                    IconButton( 
                         onClick = {
                             val next = setValue.toMutableSet()
                             next.remove(item)
                             onValueChange(next)
                             onError(validateValue(definition, next, required))
                         },
-                        modifier = Modifier.size(22.dp),
+                        modifier = Modifier.size(22.dp).handPointer(),
                     ) {
                         Icon(Icons.Default.Delete, contentDescription = "Remove item", modifier = Modifier.size(14.dp))
                     }
@@ -2397,9 +2397,9 @@ private fun EditorMapField(
                 )
                 if (enabled && onRemovePending != null) {
                     Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                        IconButton(
+                        IconButton( 
                             onClick = { onRemovePending(index) },
-                                modifier = Modifier.size(22.dp),
+                                modifier = Modifier.size(22.dp).handPointer(),
                             ) {
                                 Icon(Icons.Default.Delete, contentDescription = "Remove new entry", modifier = Modifier.size(14.dp))
                             }
@@ -2479,14 +2479,14 @@ private fun EditorMapField(
                 )
                 if (enabled) {
                     Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-                        IconButton(
+                        IconButton( 
                             onClick = {
                                 val next = mapValue.toMutableMap()
                                 next.remove(entry.key)
                                 onValueChange(next)
                                 onError(validateValue(definition, next, required))
                             },
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(22.dp).handPointer(),
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = "Remove entry", modifier = Modifier.size(14.dp))
                         }
@@ -2523,7 +2523,7 @@ private fun EditorCollapsibleHeader(
             .fillMaxWidth()
             .padding(start = (indent * 12).dp, top = 2.dp)
             .offset(x = (-6).dp)
-            .clickable { onToggle() },
+            .handPointer().clickable { onToggle() },
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
@@ -2540,7 +2540,7 @@ private fun EditorCollapsibleHeader(
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
-                    modifier = Modifier.height(22.dp),
+                    modifier = Modifier.height(22.dp).handPointer(),
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Icon(Icons.Default.Add, contentDescription = "Add", modifier = Modifier.size(12.dp))
@@ -2553,7 +2553,7 @@ private fun EditorCollapsibleHeader(
                 }
             }
             if (allowUnset && onUnset != null) {
-                IconButton(onClick = onUnset, modifier = Modifier.size(22.dp)) {
+                IconButton(onClick = onUnset, modifier = Modifier.size(22.dp).handPointer()) {
                     Icon(Icons.Default.Delete, contentDescription = "Unset", modifier = Modifier.size(14.dp))
                 }
             }
@@ -2599,7 +2599,7 @@ private fun EditorTextRow(
                 trailingContent = trailingContent,
             )
             if (allowUnset && onUnset != null) {
-                IconButton(onClick = onUnset, modifier = Modifier.size(22.dp)) {
+                IconButton(onClick = onUnset, modifier = Modifier.size(22.dp).handPointer()) {
                     Icon(Icons.Default.Close, contentDescription = "Unset", modifier = Modifier.size(14.dp))
                 }
             }

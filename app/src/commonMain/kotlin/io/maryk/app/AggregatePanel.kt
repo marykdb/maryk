@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -172,7 +171,7 @@ fun AggregateTabPanel(
                     contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                     shape = squaredButtonShape,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                    modifier = Modifier.height(28.dp),
+                    modifier = Modifier.height(28.dp).handPointer(),
                 ) {
                     Icon(Icons.Filled.Add, contentDescription = "Add aggregation", modifier = Modifier.size(12.dp))
                     Spacer(modifier = Modifier.width(4.dp))
@@ -369,7 +368,7 @@ private fun AggregateTopBar(
             colors = ButtonDefaults.outlinedButtonColors(
                 contentColor = if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
             ),
-            modifier = Modifier.height(28.dp),
+            modifier = Modifier.height(28.dp).handPointer(),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                 Icon(Icons.Filled.FilterAlt, contentDescription = "Filter", modifier = Modifier.size(12.dp))
@@ -446,7 +445,7 @@ private fun AggregateBuilderDialog(
                     style = MaterialTheme.typography.titleMedium,
                 )
                 Spacer(modifier = Modifier.weight(1f))
-                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp)) {
+                IconButton(onClick = onDismiss, modifier = Modifier.size(24.dp).handPointer()) {
                     Icon(Icons.Filled.Close, contentDescription = "Close aggregation builder")
                 }
             }
@@ -582,7 +581,7 @@ private fun CompactDropdown(
                     .fillMaxWidth()
                     .height(inputMinHeight)
                     .border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f), MaterialTheme.shapes.small)
-                    .clickable(enabled = options.isNotEmpty()) { expanded = true },
+                    .handPointer().clickable(enabled = options.isNotEmpty()) { expanded = true },
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth().height(inputMinHeight).padding(horizontal = 6.dp),
@@ -688,7 +687,7 @@ private fun PathPicker(
             trailing = {
                 IconButton(
                     onClick = { expanded = true },
-                    modifier = Modifier.size(22.dp),
+                    modifier = Modifier.size(22.dp).handPointer(),
                 ) {
                     Icon(Icons.Filled.ArrowDropDown, contentDescription = "Open options", modifier = Modifier.size(16.dp))
                 }
@@ -733,10 +732,10 @@ private fun AggregationDefinitionRow(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            IconButton(onClick = onEdit, modifier = Modifier.size(28.dp)) {
+            IconButton(onClick = onEdit, modifier = Modifier.size(28.dp).handPointer()) {
                 Icon(Icons.Filled.Edit, contentDescription = "Edit aggregation", modifier = Modifier.size(16.dp))
             }
-            IconButton(onClick = onRemove, modifier = Modifier.size(28.dp)) {
+            IconButton(onClick = onRemove, modifier = Modifier.size(28.dp).handPointer()) {
                 Icon(Icons.Filled.Close, contentDescription = "Remove aggregation", modifier = Modifier.size(16.dp))
             }
         }

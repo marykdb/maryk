@@ -207,7 +207,7 @@ private fun SmallCopyButton(
 ) {
     IconButton(
         onClick = onClick,
-        modifier = Modifier.size(18.dp),
+        modifier = Modifier.size(18.dp).handPointer(),
     ) {
         Icon(
             Icons.Default.ContentCopy,
@@ -271,7 +271,7 @@ internal fun InspectorData(
             if (showEdit) {
                 IconButton(
                     onClick = { showEditor = true },
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(28.dp).handPointer(),
                     enabled = true,
                 ) {
                     Icon(
@@ -288,7 +288,7 @@ internal fun InspectorData(
                         fieldSearch = ""
                     }
                 },
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(28.dp).handPointer(),
             ) {
                 Icon(
                     Icons.Default.Search,
@@ -361,9 +361,9 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Raw", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
-            IconButton(
+            IconButton( 
                 onClick = { clipboard.setText(AnnotatedString(details.yaml)) },
-                modifier = Modifier.size(20.dp).alpha(0.65f),
+                modifier = Modifier.size(20.dp).alpha(0.65f).handPointer(),
             ) {
                 Icon(
                     Icons.Default.ContentCopy,
@@ -379,7 +379,7 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
                         search = ""
                     }
                 },
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(28.dp).handPointer(),
             ) {
                 Icon(
                     Icons.Default.Search,
@@ -547,7 +547,7 @@ private fun ReferenceValue(
                     color = MaterialTheme.colorScheme.tertiary,
                     textDecoration = TextDecoration.Underline,
                 ),
-                modifier = hoverModifier.clickable {
+                modifier = hoverModifier.handPointer().clickable {
                     state.openReference(reference.modelName, reference.key)
                 },
             )
@@ -830,7 +830,7 @@ private fun FieldNodeView(state: BrowserState, uiState: BrowserUiState, node: Fi
                 .fillMaxWidth()
                 .padding(start = (indent * 12).dp, top = 2.dp, bottom = 0.dp)
                 .offset(x = (-6).dp)
-                .clickable { expanded = !expanded },
+                .handPointer().clickable { expanded = !expanded },
         ) {
             Row(
                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp),

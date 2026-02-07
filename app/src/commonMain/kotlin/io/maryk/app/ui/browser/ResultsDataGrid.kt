@@ -98,6 +98,8 @@ import io.maryk.app.state.BrowserUiState
 import io.maryk.app.state.GridDensity
 import io.maryk.app.state.ResultsTab
 import io.maryk.app.state.ScanRow
+import io.maryk.app.ui.browser.editor.RecordEditorDialog
+import io.maryk.app.ui.browser.editor.RecordEditorMode
 import io.maryk.app.ui.ModalPrimaryButton
 import io.maryk.app.ui.ModalSecondaryButton
 import io.maryk.app.ui.ModalSurface

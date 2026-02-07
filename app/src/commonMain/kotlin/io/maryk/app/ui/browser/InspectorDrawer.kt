@@ -67,6 +67,8 @@ import io.maryk.app.state.BrowserState
 import io.maryk.app.state.BrowserUiState
 import io.maryk.app.state.RecordDetails
 import io.maryk.app.state.ResultsTab
+import io.maryk.app.ui.browser.editor.RecordEditorDialog
+import io.maryk.app.ui.browser.editor.RecordEditorMode
 import io.maryk.app.ui.catalog.ModelDetailsPanel
 import io.maryk.app.ui.catalog.ModelRawPanel
 import io.maryk.app.ui.handPointer

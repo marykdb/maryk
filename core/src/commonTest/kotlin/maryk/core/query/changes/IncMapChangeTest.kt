@@ -135,4 +135,22 @@ class IncMapChangeTest {
             13u to "thirteen"
         ), original { embeddedValues } / { marykModel } / { incMap })
     }
+
+    @Test
+    fun changeValuesOnEmptyIncMapStartsAtOne() {
+        val original = TestMarykModel.create {
+            incMap with emptyMap()
+        }
+
+        val changed = original.change(
+            IncMapChange(
+                TestMarykModel { incMap::ref }.change(
+                    addValues = listOf("first")
+                )
+            )
+        )
+
+        assertEquals(mapOf(1u to "first"), changed { incMap })
+        assertEquals(emptyMap(), original { incMap })
+    }
 }

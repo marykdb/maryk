@@ -133,7 +133,7 @@ private fun <K : Comparable<K>, V : Any> appendValues(
     val descriptor: NumberDescriptor<K> = reference.propertyDefinition.definition.keyNumberDescriptor
     val one = descriptor.ofInt(1)
     val typedMap = map as MutableMap<K, V>
-    var latestKeyedItem = typedMap.maxByOrNull { it.key }!!.key
+    var latestKeyedItem = typedMap.maxByOrNull { it.key }?.key ?: descriptor.zero
     for (value in addValues) {
         latestKeyedItem = descriptor.sum(latestKeyedItem, one)
         typedMap[latestKeyedItem] = value as V

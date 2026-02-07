@@ -73,7 +73,7 @@ private fun createScanRangeFromParts(
                 toRemove += keyPart
             }
             is IndexPartialToBeBigger -> {
-                if (startInclusive) {
+                if (startShouldContinue) {
                     keyPart.toBeSmaller.forEach { addByte(start, it) }
                     startInclusive = keyPart.inclusive
                     toRemove += keyPart

@@ -734,7 +734,27 @@ private fun readVarInt(bytes: ByteArray, startIndex: Int): VarIntRead? {
 private fun String.firstNonWhitespaceChar(): Char? = firstOrNull { !it.isWhitespace() }
 
 private fun detectProtoScope(bytes: ByteArray): DataImportScope {
-    val read = readVarInt(bytes, 0) ?: return DataImportScope.SINGLE
-    val total = read.bytesRead + read.value
-    return if (total <= bytes.size) DataImportScope.MULTIPLE else DataImportScope.SINGLE
+    val frameCount = countLengthPrefixedFrames(bytes) ?: return DataImportScope.SINGLE
+    // A single valid frame is ambiguous with regular protobuf payload bytes.
+    // Prefer SINGLE unless at least two framed records are present.
+    return if (frameCount > 1) DataImportScope.MULTIPLE else DataImportScope.SINGLE
+}
+
+private fun countLengthPrefixedFrames(bytes: ByteArray): Int? {
+    if (bytes.isEmpty()) return null
+
+    var index = 0
+    var frameCount = 0
+    while (index < bytes.size) {
+        val read = readVarInt(bytes, index) ?: return null
+        if (read.value <= 0) return null
+
+        val frameStart = index + read.bytesRead
+        val frameEnd = frameStart + read.value
+        if (frameEnd > bytes.size) return null
+
+        frameCount += 1
+        index = frameEnd
+    }
+    return if (index == bytes.size) frameCount else null
 }

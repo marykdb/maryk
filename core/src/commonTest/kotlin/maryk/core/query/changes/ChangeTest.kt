@@ -244,6 +244,13 @@ class ChangeTest {
         assertEquals(listOf(3, 4, 5), original { list })
 
         changed = original.change(
+            Change(TestMarykModel { set.refAt(LocalDate(2020, 2, 20)) } with null)
+        )
+
+        assertEquals(setOf(LocalDate(2019, 12, 11)), changed { set })
+        assertEquals(setOf(LocalDate(2020, 2, 20), LocalDate(2019, 12, 11)), original { set })
+
+        changed = original.change(
             Change(TestMarykModel { map.refAt(LocalTime(12, 0)) } with null)
         )
 

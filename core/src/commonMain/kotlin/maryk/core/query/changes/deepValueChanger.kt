@@ -8,6 +8,7 @@ import maryk.core.properties.references.ListAnyItemReference
 import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapValueReference
+import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.MutableTypedValue
 import maryk.core.properties.types.TypedValue
@@ -65,7 +66,7 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
                 @Suppress("UNCHECKED_CAST")
                 val changedValue = valueChanger(
                     (originalValue as Map<Any, Any>).getOrElse(reference.key) { null },
-                    newMapValue
+                    newMapValue[reference.key]
                 )
                 when(changedValue) {
                     Unit -> newMapValue.remove(reference.key)
@@ -94,6 +95,30 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
                 }
                 itemsToRemove?.forEach {
                     newMapValue.remove(it)
+                }
+            }
+            else -> throw RequestException("Unsupported reference type: $reference")
+        }
+        is MutableSet<*> -> when (reference) {
+            is SetItemReference<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                val newSetValue = newValue as MutableSet<Any>
+
+                @Suppress("UNCHECKED_CAST")
+                val currentValue = (originalValue as? Set<Any>)?.let {
+                    if (it.contains(reference.value)) reference.value else null
+                }
+                val newCurrentValue = if (newSetValue.contains(reference.value)) reference.value else null
+
+                @Suppress("UNCHECKED_CAST")
+                val changedValue = valueChanger(
+                    currentValue,
+                    newCurrentValue
+                )
+                when (changedValue) {
+                    Unit -> newSetValue.remove(reference.value)
+                    null -> {} // Do nothing
+                    else -> newSetValue.add(changedValue)
                 }
             }
             else -> throw RequestException("Unsupported reference type: $reference")

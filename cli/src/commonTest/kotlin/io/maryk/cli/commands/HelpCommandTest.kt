@@ -4,6 +4,7 @@ import io.maryk.cli.BasicCliEnvironment
 import io.maryk.cli.CliState
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class HelpCommandTest {
@@ -50,5 +51,27 @@ class HelpCommandTest {
             ),
             result.lines,
         )
+    }
+
+    @Test
+    fun returnsDetailedHelpForServe() {
+        val registry = CommandRegistry(CliState(), BasicCliEnvironment)
+            .register(HelpCommand())
+            .register(
+                object : Command {
+                    override val name: String = "serve"
+                    override val description: String = "Serve store."
+
+                    override fun execute(context: CommandContext, arguments: List<String>): CommandResult {
+                        return CommandResult(lines = emptyList())
+                    }
+                },
+            )
+
+        val result = registry.execute("help", listOf("serve"))
+
+        assertFalse(result.isError)
+        assertEquals("serve <store> [options]", result.lines.first())
+        assertTrue(result.lines.any { it.contains("serve --config <file>") })
     }
 }

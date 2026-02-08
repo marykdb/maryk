@@ -110,10 +110,11 @@ Run a single command without the interactive UI:
 maryk --connect rocksdb --dir ./data --exec "list"
 maryk --connect rocksdb --dir ./data --exec "model Client"
 maryk --connect rocksdb --dir ./data --exec "add Client ./client.yaml"
+maryk --exec "serve rocksdb --dir ./data --port 8210"
 ```
 
 Notes:
-- `--connect` is required for one-shot mode.
+- `--connect` is optional for commands that do not require an existing connection (for example `serve` or `help`).
 - `--exec` is parsed the same way as CLI input (quoted arguments are supported).
 - Commands that open interactive viewers (`get` without a subcommand or `connect` without args) are rejected in one-shot mode.
 - `scan` in one-shot mode returns a single page (respecting `--limit`) as plain output.

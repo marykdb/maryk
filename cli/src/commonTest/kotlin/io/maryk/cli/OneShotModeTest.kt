@@ -19,10 +19,12 @@ class OneShotModeTest {
     }
 
     @Test
-    fun parseRequiresConnectWhenExecIsPresent() {
+    fun parseAllowsExecWithoutConnect() {
         val result = parseOneShotArgs(arrayOf("--exec", "list"))
-        val error = requireNotNull(result as? OneShotParseResult.Error)
-        assertEquals("`--connect` is required for one-shot mode.", error.message)
+        val options = requireNotNull(result as? OneShotParseResult.Success).options
+        assertEquals(null, options.store)
+        assertEquals(emptyList(), options.connectArgs)
+        assertEquals("list", options.commandLine)
     }
 
     @Test
@@ -84,6 +86,28 @@ class OneShotModeTest {
         assertEquals(1, exitCode)
         assertFalse(state.hasActiveInteraction())
         assertTrue(connection.closed)
+    }
+
+    @Test
+    fun runOneShotExecutesCommandWithoutConnect() {
+        val state = CliState()
+        val environment = FakeEnvironment()
+        val registry = CommandRegistry(state, environment)
+        val serveCommand = CapturingCommand("serve")
+        registry.register(serveCommand)
+
+        val exitCode = runOneShot(
+            registry,
+            OneShotOptions(
+                store = null,
+                connectArgs = emptyList(),
+                commandLine = "serve rocksdb --dir /data",
+            ),
+        )
+
+        assertEquals(0, exitCode)
+        assertTrue(serveCommand.called)
+        assertNull(state.currentConnection)
     }
 
     private class FakeEnvironment : CliEnvironment {

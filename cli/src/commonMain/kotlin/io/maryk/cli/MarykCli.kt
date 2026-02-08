@@ -452,7 +452,7 @@ private fun defaultRegistry(
 
 private fun printNonInteractiveHelp(registry: CommandRegistry) {
     println("Maryk CLI")
-    println("One-shot usage: maryk --connect <store> [--dir <path>] [--cluster <file>] [--tenant <name>] --exec \"<command>\"")
+    println("One-shot usage: maryk [--connect <store> [--dir <path>] [--cluster <file>] [--tenant <name>]] --exec \"<command>\"")
     println("Type `help` to see available commands. Use Ctrl+C to exit.")
     val help = registry.execute("help", emptyList())
     help.lines.forEach { println(it) }
@@ -460,11 +460,11 @@ private fun printNonInteractiveHelp(registry: CommandRegistry) {
 
 internal fun printOneShotUsage() {
     println("One-shot usage:")
-    println("  maryk --connect <store> [--dir <path>] [--cluster <file>] [--tenant <name>] --exec \"<command>\"")
+    println("  maryk [--connect <store> [--dir <path>] [--cluster <file>] [--tenant <name>]] --exec \"<command>\"")
 }
 
 internal data class OneShotOptions(
-    val store: String,
+    val store: String?,
     val connectArgs: List<String>,
     val commandLine: String,
 )
@@ -518,9 +518,6 @@ internal fun parseOneShotArgs(args: Array<String>): OneShotParseResult? {
         index += 1
     }
 
-    if (store == null) {
-        return OneShotParseResult.Error("`--connect` is required for one-shot mode.")
-    }
     if (exec == null) {
         return OneShotParseResult.Error("`--exec` is required for one-shot mode.")
     }
@@ -542,20 +539,6 @@ internal fun runOneShot(
     val previousOneShot = state.isOneShotMode
     state.isOneShotMode = true
     return try {
-        val connectionResult = registry.execute(
-            "connect",
-            listOf(options.store) + options.connectArgs,
-        )
-        if (connectionResult.isError) {
-            connectionResult.lines.forEach(::println)
-            return 1
-        }
-        if (state.hasActiveInteraction()) {
-            state.clearInteraction()
-            println("Connect requires interactive mode. Run without --exec to use it.")
-            return 1
-        }
-
         val parsed = CommandLineParser.parse(options.commandLine)
         val tokens = when (parsed) {
             is CommandLineParser.ParseResult.Error -> {
@@ -568,6 +551,22 @@ internal fun runOneShot(
         if (tokens.isEmpty()) {
             println("No command provided for --exec.")
             return 1
+        }
+
+        if (options.store != null) {
+            val connectionResult = registry.execute(
+                "connect",
+                listOf(options.store) + options.connectArgs,
+            )
+            if (connectionResult.isError) {
+                connectionResult.lines.forEach(::println)
+                return 1
+            }
+            if (state.hasActiveInteraction()) {
+                state.clearInteraction()
+                println("Connect requires interactive mode. Run without --exec to use it.")
+                return 1
+            }
         }
 
         val commandName = tokens.first()

@@ -60,6 +60,17 @@ class HelpCommand : Command {
                 "Notes:",
                 "  - Run `connect` without arguments to use the interactive setup.",
             )
+            "serve" -> listOf(
+                "serve <store> [options]",
+                "Serve a local store over HTTP.",
+                "Usage:",
+                "  serve rocksdb --dir <directory> [--host <host>] [--port <port>]",
+                "  serve foundationdb --dir <directory> [--cluster <cluster file>] [--tenant <tenant>] [--host <host>] [--port <port>]",
+                "  serve --config <file>",
+                "Notes:",
+                "  - Config files support key/value (`key=value`) and YAML-style (`key: value`) entries.",
+                "  - Warning: no auth or TLS; bind to localhost or use SSH tunneling.",
+            )
             "disconnect" -> listOf(
                 "disconnect",
                 "Close the current store connection.",

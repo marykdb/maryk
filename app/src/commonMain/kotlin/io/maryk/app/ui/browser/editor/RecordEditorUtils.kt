@@ -1,101 +1,13 @@
 package io.maryk.app.ui.browser.editor
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.VerticalScrollbar
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.rememberScrollbarAdapter
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import io.maryk.app.data.KEY_ORDER_TOKEN
-import io.maryk.app.data.ScanQueryParser
-import io.maryk.app.data.buildRequestContext
-import io.maryk.app.data.buildSummary
-import io.maryk.app.data.serializeRecordToYaml
-import io.maryk.app.state.BrowserState
-import io.maryk.app.state.BrowserUiState
-import io.maryk.app.state.RecordDetails
-import io.maryk.app.state.ScanRow
-import io.maryk.app.ui.ModalPrimaryButton
-import io.maryk.app.ui.ModalSecondaryButton
-import io.maryk.app.ui.ModalSurface
-import io.maryk.app.ui.handPointer
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.atTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import maryk.core.models.IsObjectDataModel
-import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.IsValueDataModel
 import maryk.core.models.IsValuesDataModel
@@ -104,7 +16,6 @@ import maryk.core.models.TypedValuesDataModel
 import maryk.core.models.ValuesCollectorContext
 import maryk.core.models.asValues
 import maryk.core.models.emptyValues
-import maryk.core.models.key
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
@@ -112,10 +23,8 @@ import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
-import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.GeoPointDefinition
-import maryk.core.properties.definitions.IncrementingMapDefinition
-import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
@@ -131,40 +40,28 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
-import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.Multiple
-import maryk.core.properties.definitions.index.ReferenceToMax
-import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.UUIDKey
-import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
-import maryk.core.properties.enum.IndexedEnumComparable
-import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.AnyPropertyReference
-import maryk.core.properties.references.IncMapReference
-import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
-import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.GeoPoint
+import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.properties.types.invoke
-import maryk.core.query.changes.Change
-import maryk.core.query.changes.IncMapChange
-import maryk.core.query.changes.IsChange
-import maryk.core.query.changes.change
+import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.Float64
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.pairs.IsReferenceValueOrNullPair
-import maryk.core.query.requests.get
-import maryk.core.query.requests.scan
 import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
-import kotlin.time.Instant
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Instant
+
 internal sealed class ParseResult {
     data class Value(val value: Any) : ParseResult()
     data class Error(val message: String) : ParseResult()
@@ -463,38 +360,20 @@ internal fun defaultValueForDefinition(definition: IsSubDefinition<*, *>?): Any?
 internal fun defaultMapKey(definition: IsSimpleValueDefinition<Any, *>, existingKeys: Collection<Any>): Any? {
     return when (definition) {
         is StringDefinition -> {
+            val maxSize = definition.maxSize?.toInt()
             var index = 0
-            while (true) {
-                val candidate = if (index == 0) "new" else "new$index"
-                if (!existingKeys.contains(candidate)) return candidate
+            while (index < MAX_STRING_CANDIDATE_ATTEMPTS) {
+                val candidate = nextStringCandidate(definition, index)
+                if (maxSize != null && candidate.length > maxSize) {
+                    index++
+                    continue
+                }
+                if (isValidDefinitionValue(definition, candidate) && !existingKeys.contains(candidate)) return candidate
                 index++
             }
+            null
         }
-        is NumberDefinition<*> -> {
-            val maxExisting = existingKeys.mapNotNull { key ->
-                when (key) {
-                    is Byte -> key.toLong()
-                    is Short -> key.toLong()
-                    is Int -> key.toLong()
-                    is Long -> key
-                    is Float -> key.toLong()
-                    is Double -> key.toLong()
-                    is UByte -> key.toLong()
-                    is UShort -> key.toLong()
-                    is UInt -> key.toLong()
-                    is ULong -> key.toLong()
-                    is Number -> key.toLong()
-                    else -> null
-                }
-            }.maxOrNull()
-            var number = (maxExisting ?: -1L) + 1L
-            while (true) {
-                val candidate = runCatching { definition.fromString(number.toString()) }.getOrNull() ?: return null
-                if (!existingKeys.contains(candidate)) return candidate
-                if (number == Long.MAX_VALUE) return null
-                number++
-            }
-        }
+        is NumberDefinition<*> -> nextUniqueNumberCandidate(definition, existingKeys)
         is EnumDefinition<*> -> {
             val cases = definition.enum.cases()
             cases.firstOrNull { !existingKeys.contains(it) }
@@ -511,17 +390,30 @@ internal fun defaultMapKey(definition: IsSimpleValueDefinition<Any, *>, existing
         is DateTimeDefinition -> {
             nextDateTimeCandidate(definition, existingKeys)
         }
+        is FixedBytesDefinition -> nextUniqueFixedBytesCandidate(definition, existingKeys)
+        is FlexBytesDefinition -> nextUniqueFlexBytesCandidate(definition, existingKeys)
+        is IsReferenceDefinition<*, *> -> nextUniqueReferenceCandidate(definition, existingKeys)
         else -> {
             val candidate = defaultValueForDefinition(definition)
-            if (candidate != null && !existingKeys.contains(candidate)) candidate else null
+            if (candidate != null && isValidDefinitionValue(definition, candidate) && !existingKeys.contains(candidate)) {
+                candidate
+            } else {
+                null
+            }
         }
     }
 }
 
 @Suppress("UNCHECKED_CAST")
 internal fun defaultSetItem(definition: IsSubDefinition<*, *>, existingValues: Set<Any>): Any? {
-    val defaultValue = defaultValueForDefinition(definition) ?: return null
-    if (!existingValues.contains(defaultValue)) return defaultValue
+    val defaultValue = defaultValueForDefinition(definition)
+    if (defaultValue != null && !existingValues.contains(defaultValue)) {
+        val isValid = runCatching {
+            @Suppress("UNCHECKED_CAST")
+            (definition as? IsPropertyDefinition<Any>)?.validateWithRef(null, defaultValue) { null }
+        }.isSuccess
+        if (isValid) return defaultValue
+    }
 
     return when (definition) {
         is BooleanDefinition -> {
@@ -531,38 +423,20 @@ internal fun defaultSetItem(definition: IsSubDefinition<*, *>, existingValues: S
             definition.enum.cases().firstOrNull { !existingValues.contains(it) }
         }
         is StringDefinition -> {
+            val maxSize = definition.maxSize?.toInt()
             var index = 0
-            while (true) {
-                val candidate = if (index == 0) "new" else "new$index"
-                if (!existingValues.contains(candidate)) return candidate
+            while (index < MAX_STRING_CANDIDATE_ATTEMPTS) {
+                val candidate = nextStringCandidate(definition, index)
+                if (maxSize != null && candidate.length > maxSize) {
+                    index++
+                    continue
+                }
+                if (isValidDefinitionValue(definition, candidate) && !existingValues.contains(candidate)) return candidate
                 index++
             }
+            null
         }
-        is NumberDefinition<*> -> {
-            val maxExisting = existingValues.mapNotNull { key ->
-                when (key) {
-                    is Byte -> key.toLong()
-                    is Short -> key.toLong()
-                    is Int -> key.toLong()
-                    is Long -> key
-                    is Float -> key.toLong()
-                    is Double -> key.toLong()
-                    is UByte -> key.toLong()
-                    is UShort -> key.toLong()
-                    is UInt -> key.toLong()
-                    is ULong -> key.toLong()
-                    is Number -> key.toLong()
-                    else -> null
-                }
-            }.maxOrNull()
-            var number = (maxExisting ?: -1L) + 1L
-            while (true) {
-                val candidate = runCatching { definition.fromString(number.toString()) }.getOrNull() ?: return null
-                if (!existingValues.contains(candidate)) return candidate
-                if (number == Long.MAX_VALUE) return null
-                number++
-            }
-        }
+        is NumberDefinition<*> -> nextUniqueNumberCandidate(definition, existingValues)
         is DateDefinition -> {
             nextDateCandidate(definition, existingValues)
         }
@@ -571,6 +445,20 @@ internal fun defaultSetItem(definition: IsSubDefinition<*, *>, existingValues: S
         }
         is DateTimeDefinition -> {
             nextDateTimeCandidate(definition, existingValues)
+        }
+        is FixedBytesDefinition -> nextUniqueFixedBytesCandidate(definition, existingValues)
+        is FlexBytesDefinition -> nextUniqueFlexBytesCandidate(definition, existingValues)
+        is IsReferenceDefinition<*, *> -> nextUniqueReferenceCandidate(definition, existingValues)
+        is IsMultiTypeDefinition<*, *, *> -> {
+            @Suppress("UNCHECKED_CAST")
+            val multiDefinition = definition as IsMultiTypeDefinition<TypeEnum<Any>, Any, *>
+            multiDefinition.typeEnum.cases().firstNotNullOfOrNull { typeCase ->
+                val subDefinition = multiDefinition.definition(typeCase) ?: return@firstNotNullOfOrNull null
+                val inner = defaultSetItem(subDefinition, emptySet()) ?: defaultValueForDefinition(subDefinition)
+                if (inner == null) return@firstNotNullOfOrNull null
+                val typed = createTypedValue(typeCase, inner)
+                if (isValidDefinitionValue(definition, typed) && !existingValues.contains(typed)) typed else null
+            }
         }
         else -> null
     }
@@ -678,4 +566,331 @@ private fun defaultMaxDateTime(precision: TimePrecision): LocalDateTime = when (
     TimePrecision.SECONDS -> DateTimeDefinition.MAX_IN_SECONDS
     TimePrecision.MILLIS -> DateTimeDefinition.MAX_IN_MILLIS
     TimePrecision.NANOS -> DateTimeDefinition.MAX_IN_NANOS
+}
+
+private fun numberToLong(value: Any?): Long? = when (value) {
+    is Byte -> value.toLong()
+    is Short -> value.toLong()
+    is Int -> value.toLong()
+    is Long -> value
+    is Float -> value.toLong()
+    is Double -> value.toLong()
+    is UByte -> value.toLong()
+    is UShort -> value.toLong()
+    is UInt -> value.toLong()
+    is ULong -> if (value > Long.MAX_VALUE.toULong()) Long.MAX_VALUE else value.toLong()
+    is Number -> value.toLong()
+    else -> null
+}
+
+private const val MAX_STRING_CANDIDATE_ATTEMPTS = 10_000
+private const val MAX_NUMBER_CANDIDATE_ATTEMPTS = 10_000
+private const val MAX_BINARY_CANDIDATE_ATTEMPTS = 10_000
+
+private fun nextStringCandidate(definition: StringDefinition, index: Int): String {
+    val minSize = definition.minSize?.toInt() ?: 0
+    val base = stringTokenByIndex(index, minSize)
+    return if (base.length < minSize) {
+        base + "x".repeat(minSize - base.length)
+    } else {
+        base
+    }
+}
+
+private fun stringTokenByIndex(index: Int, minSize: Int): String {
+    val adjustedIndex = if (minSize > 0) index + 1 else index
+    return when (adjustedIndex) {
+        0 -> ""
+        1 -> "new"
+        2 -> "new1"
+        3 -> "newa"
+        else -> {
+            val offset = adjustedIndex - 4
+            val tokenNumber = offset / 3 + 1
+            when (offset % 3) {
+                0 -> indexToAlphaToken(tokenNumber)
+                1 -> tokenNumber.toString()
+                else -> "new${indexToAlphaToken(tokenNumber)}"
+            }
+        }
+    }
+}
+
+private fun indexToAlphaToken(index: Int): String {
+    var value = index
+    val chars = StringBuilder()
+    while (value > 0) {
+        val remainder = (value - 1) % 26
+        chars.append(('a'.code + remainder).toChar())
+        value = (value - 1) / 26
+    }
+    return chars.reverse().toString()
+}
+
+private fun isValidDefinitionValue(definition: IsSubDefinition<*, *>, value: Any): Boolean {
+    return runCatching {
+        @Suppress("UNCHECKED_CAST")
+        (definition as? IsPropertyDefinition<Any>)?.validateWithRef(null, value) { null }
+    }.isSuccess
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun nextUniqueNumberCandidate(
+    definition: NumberDefinition<*>,
+    existingValues: Collection<Any>,
+): Any? {
+    val propertyDefinition = definition as IsPropertyDefinition<Any>
+
+    val preferredCandidates = listOfNotNull(
+        definition.minValue,
+        runCatching { definition.fromString("0") }.getOrNull(),
+        definition.maxValue,
+    )
+    for (candidate in preferredCandidates) {
+        if (existingValues.contains(candidate)) continue
+        val valid = runCatching {
+            propertyDefinition.validateWithRef(null, candidate) { null }
+        }.isSuccess
+        if (valid) return candidate
+    }
+
+    if (definition.type == UInt64) {
+        return nextUniqueUInt64Candidate(definition, existingValues, propertyDefinition)
+    }
+
+    val minBound = numberToLong(definition.minValue)
+    val maxBound = numberToLong(definition.maxValue)
+    val isFloatingNumber = definition.type == Float32 || definition.type == Float64
+    val maxExisting = if (isFloatingNumber) null else existingValues.mapNotNull(::numberToLong).maxOrNull()
+    val initial = when {
+        maxExisting != null && minBound != null -> maxOf(maxExisting + 1L, minBound)
+        maxExisting != null -> maxExisting + 1L
+        minBound != null -> minBound
+        else -> 0L
+    }
+    var number = initial
+    var attempts = 0
+    while (true) {
+        if (isFloatingNumber && attempts >= MAX_NUMBER_CANDIDATE_ATTEMPTS) {
+            return nextUniqueFractionalCandidate(definition, existingValues, propertyDefinition)
+        }
+        if (maxBound != null && number > maxBound) {
+            return if (isFloatingNumber) {
+                nextUniqueFractionalCandidate(definition, existingValues, propertyDefinition)
+            } else {
+                null
+            }
+        }
+        val candidate = runCatching { definition.fromString(number.toString()) }.getOrNull() ?: return if (isFloatingNumber) {
+            nextUniqueFractionalCandidate(definition, existingValues, propertyDefinition)
+        } else {
+            null
+        }
+        val valid = runCatching {
+            propertyDefinition.validateWithRef(null, candidate) { null }
+        }.isSuccess
+        if (valid && !existingValues.contains(candidate)) return candidate
+        if (number == Long.MAX_VALUE) return null
+        number++
+        attempts++
+    }
+}
+
+private fun nextUniqueUInt64Candidate(
+    definition: NumberDefinition<*>,
+    existingValues: Collection<Any>,
+    propertyDefinition: IsPropertyDefinition<Any>,
+): Any? {
+    val minBound = definition.minValue as? ULong
+    val maxBound = definition.maxValue as? ULong
+    if (minBound != null && maxBound != null && maxBound < minBound) return null
+
+    var candidate = minBound ?: 0u
+
+    while (true) {
+        if (maxBound != null && candidate > maxBound) return null
+        val parsed = runCatching { definition.fromString(candidate.toString()) }.getOrNull()
+        if (parsed != null && !existingValues.contains(parsed)) {
+            val valid = runCatching {
+                propertyDefinition.validateWithRef(null, parsed) { null }
+            }.isSuccess
+            if (valid) return parsed
+        }
+        candidate = nextULong(candidate) ?: return null
+    }
+}
+
+private fun nextULong(value: ULong): ULong? = if (value == ULong.MAX_VALUE) null else value + 1u
+
+@Suppress("UNCHECKED_CAST")
+private fun nextUniqueFixedBytesCandidate(
+    definition: FixedBytesDefinition,
+    existingValues: Collection<Any>,
+): Any? {
+    val propertyDefinition = definition as IsPropertyDefinition<Any>
+    val baseBytes = definition.minValue?.bytes ?: ByteArray(definition.byteSize)
+    return nextUniqueBinaryCandidate(
+        baseBytes = baseBytes,
+        existingValues = existingValues,
+        toValue = { definition.fromNativeType(it) },
+        propertyDefinition = propertyDefinition,
+    )
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun nextUniqueFlexBytesCandidate(
+    definition: FlexBytesDefinition,
+    existingValues: Collection<Any>,
+): Any? {
+    val propertyDefinition = definition as IsPropertyDefinition<Any>
+    val emptyCandidate = definition.fromString("")
+    val emptyValid = runCatching {
+        propertyDefinition.validateWithRef(null, emptyCandidate) { null }
+    }.isSuccess
+    if (emptyValid && !existingValues.contains(emptyCandidate)) return emptyCandidate
+
+    val minValue = definition.minValue
+    val minSize = definition.minSize?.toInt() ?: 0
+    val maxSize = definition.maxSize?.toInt()
+    val baseSize = minValue?.size ?: when {
+        minSize > 0 -> minSize
+        maxSize == 0 -> 0
+        else -> 1
+    }
+    if (maxSize != null && baseSize > maxSize) return null
+    val baseBytes = minValue?.bytes ?: ByteArray(baseSize)
+    return nextUniqueBinaryCandidate(
+        baseBytes = baseBytes,
+        existingValues = existingValues,
+        toValue = { definition.fromNativeType(it) },
+        propertyDefinition = propertyDefinition,
+    )
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun nextUniqueReferenceCandidate(
+    definition: IsReferenceDefinition<*, *>,
+    existingValues: Collection<Any>,
+): Any? {
+    val propertyDefinition = definition as IsPropertyDefinition<Any>
+    val baseBytes = ByteArray(definition.byteSize)
+    return nextUniqueBinaryCandidate(
+        baseBytes = baseBytes,
+        existingValues = existingValues,
+        toValue = { definition.fromNativeType(it) },
+        propertyDefinition = propertyDefinition,
+    )
+}
+
+private fun nextUniqueBinaryCandidate(
+    baseBytes: ByteArray,
+    existingValues: Collection<Any>,
+    toValue: (ByteArray) -> Any?,
+    propertyDefinition: IsPropertyDefinition<Any>,
+): Any? {
+    for (offset in 0 until MAX_BINARY_CANDIDATE_ATTEMPTS) {
+        val candidateBytes = addOffsetToBytes(baseBytes, offset) ?: break
+        val candidate = toValue(candidateBytes) ?: continue
+        if (existingValues.contains(candidate)) continue
+        val valid = runCatching {
+            propertyDefinition.validateWithRef(null, candidate) { null }
+        }.isSuccess
+        if (valid) return candidate
+    }
+    return null
+}
+
+private fun addOffsetToBytes(base: ByteArray, offset: Int): ByteArray? {
+    if (offset < 0) return null
+    val result = base.copyOf()
+    var carry = offset
+    var index = result.lastIndex
+    while (carry > 0 && index >= 0) {
+        val sum = (result[index].toInt() and 0xff) + (carry and 0xff)
+        result[index] = (sum and 0xff).toByte()
+        carry = (carry ushr 8) + (sum ushr 8)
+        index--
+    }
+    return if (carry == 0) result else null
+}
+
+private fun nextUniqueFractionalCandidate(
+    definition: NumberDefinition<*>,
+    existingValues: Collection<Any>,
+    propertyDefinition: IsPropertyDefinition<Any>,
+): Any? {
+    val min = numberToDouble(definition.minValue)
+    val max = numberToDouble(definition.maxValue)
+    if (min != null && max != null && max < min) return null
+
+    fun tryCandidate(value: Double): Any? {
+        if (!value.isFinite()) return null
+        val candidate = runCatching { definition.fromString(value.toString()) }.getOrNull() ?: return null
+        if (existingValues.contains(candidate)) return null
+        val valid = runCatching { propertyDefinition.validateWithRef(null, candidate) { null } }.isSuccess
+        return if (valid) candidate else null
+    }
+
+    val lowerBound = min
+    val upperBound = max
+    if (lowerBound != null && upperBound != null) {
+        val minValue: Double = lowerBound
+        val maxValue: Double = upperBound
+        if (maxValue == minValue) return null
+        val inRangeExisting = existingValues.mapNotNull(::numberToDouble)
+            .filter { it > minValue && it < maxValue }
+            .sorted()
+        var lower = minValue
+        for (upper in inRangeExisting + maxValue) {
+            if (upper <= lower) continue
+            val gap = upper - lower
+            val mid = lower + gap / 2.0
+            tryCandidate(mid)?.let { return it }
+            tryCandidate(lower + gap / 4.0)?.let { return it }
+            tryCandidate(upper - gap / 4.0)?.let { return it }
+            lower = upper
+        }
+        return null
+    }
+
+    if (min != null) {
+        var candidate = min + 0.5
+        repeat(MAX_NUMBER_CANDIDATE_ATTEMPTS) {
+            tryCandidate(candidate)?.let { return it }
+            candidate += 0.5
+        }
+        return null
+    }
+
+    if (max != null) {
+        var candidate = max - 0.5
+        repeat(MAX_NUMBER_CANDIDATE_ATTEMPTS) {
+            tryCandidate(candidate)?.let { return it }
+            candidate -= 0.5
+        }
+        return null
+    }
+
+    var offset = 0.5
+    repeat(MAX_NUMBER_CANDIDATE_ATTEMPTS) {
+        tryCandidate(offset)?.let { return it }
+        tryCandidate(-offset)?.let { return it }
+        offset += 0.5
+    }
+    return null
+}
+
+private fun numberToDouble(value: Any?): Double? = when (value) {
+    is Byte -> value.toDouble()
+    is Short -> value.toDouble()
+    is Int -> value.toDouble()
+    is Long -> value.toDouble()
+    is Float -> value.toDouble()
+    is Double -> value
+    is UByte -> value.toDouble()
+    is UShort -> value.toDouble()
+    is UInt -> value.toDouble()
+    is ULong -> value.toDouble()
+    is Number -> value.toDouble()
+    else -> null
 }

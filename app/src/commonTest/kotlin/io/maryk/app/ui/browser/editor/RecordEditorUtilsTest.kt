@@ -12,7 +12,10 @@ import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.FlexBytesDefinition
 import maryk.core.properties.definitions.GeoPointDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsUsableInMultiType
 import maryk.core.properties.definitions.IsSimpleValueDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.ReferenceDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
@@ -21,9 +24,15 @@ import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
+import maryk.core.properties.enum.MultiTypeEnum
+import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.types.TimePrecision
+import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.UInt64
+import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.IncMapChange
 import maryk.core.query.pairs.with
 import maryk.core.properties.types.GeoPoint
@@ -37,6 +46,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class RecordEditorUtilsTest {
     @Test
@@ -148,6 +158,197 @@ class RecordEditorUtilsTest {
     }
 
     @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeyRespectsNumberDefinitionMinAndMaxBounds() {
+        val definition = NumberDefinition(
+            type = UInt32,
+            minValue = 5u,
+            maxValue = 6u,
+        ) as IsSimpleValueDefinition<Any, *>
+
+        assertEquals(5u, defaultMapKey(definition, emptySet()))
+        assertEquals(6u, defaultMapKey(definition, setOf(5u)))
+        assertNull(defaultMapKey(definition, setOf(5u, 6u)))
+    }
+
+    @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeyRespectsFractionalNumberDefinitionBounds() {
+        val definition = NumberDefinition(
+            type = Float64,
+            minValue = 0.5,
+            maxValue = 0.6,
+        ) as IsSimpleValueDefinition<Any, *>
+
+        assertEquals(0.5, defaultMapKey(definition, emptySet()))
+        assertEquals(0.6, defaultMapKey(definition, setOf(0.5)))
+        val fallback = defaultMapKey(definition, setOf(0.5, 0.6))
+        assertNotNull(fallback)
+        val fallbackValue = fallback as Double
+        assertTrue(fallbackValue > 0.5 && fallbackValue < 0.6)
+    }
+
+    @Test
+    fun defaultSetItemRespectsNumberDefinitionMinAndMaxBounds() {
+        val definition = NumberDefinition(
+            type = UInt32,
+            minValue = 5u,
+            maxValue = 6u,
+        )
+
+        assertEquals(5u, defaultSetItem(definition, emptySet()))
+        assertEquals(6u, defaultSetItem(definition, setOf(5u)))
+        assertNull(defaultSetItem(definition, setOf(5u, 6u)))
+    }
+
+    @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeyFindsUInt64CandidateAboveLongMax() {
+        val min = Long.MAX_VALUE.toULong() + 5u
+        val max = Long.MAX_VALUE.toULong() + 7u
+        val definition = NumberDefinition(
+            type = UInt64,
+            minValue = min,
+            maxValue = max,
+        ) as IsSimpleValueDefinition<Any, *>
+
+        assertEquals(min + 1u, defaultMapKey(definition, setOf(min, max)))
+    }
+
+    @Test
+    fun defaultSetItemFindsUInt64CandidateAboveLongMax() {
+        val min = Long.MAX_VALUE.toULong() + 5u
+        val max = Long.MAX_VALUE.toULong() + 7u
+        val definition = NumberDefinition(
+            type = UInt64,
+            minValue = min,
+            maxValue = max,
+        )
+
+        assertEquals(min + 1u, defaultSetItem(definition, setOf(min, max)))
+    }
+
+    @Test
+    fun defaultSetItemRespectsFractionalNumberDefinitionBounds() {
+        val definition = NumberDefinition(
+            type = Float64,
+            minValue = 0.5,
+            maxValue = 0.6,
+        )
+
+        assertEquals(0.5, defaultSetItem(definition, emptySet()))
+        assertEquals(0.6, defaultSetItem(definition, setOf(0.5)))
+        val fallback = defaultSetItem(definition, setOf(0.5, 0.6))
+        assertNotNull(fallback)
+        val fallbackValue = fallback as Double
+        assertTrue(fallbackValue > 0.5 && fallbackValue < 0.6)
+    }
+
+    @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeyFindsIntegerCandidateInsideFractionalRange() {
+        val definition = NumberDefinition(
+            type = Float64,
+            minValue = 0.1,
+            maxValue = 2.9,
+        ) as IsSimpleValueDefinition<Any, *>
+
+        assertEquals(1.0, defaultMapKey(definition, setOf(0.1, 2.9)))
+    }
+
+    @Test
+    fun defaultSetItemFindsIntegerCandidateInsideFractionalRange() {
+        val definition = NumberDefinition(
+            type = Float64,
+            minValue = 0.1,
+            maxValue = 2.9,
+        )
+
+        assertEquals(1.0, defaultSetItem(definition, setOf(0.1, 2.9)))
+    }
+
+    @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeyFindsFractionalCandidateWhenIntegerSlotsExhausted() {
+        val definition = NumberDefinition(
+            type = Float64,
+            minValue = 0.1,
+            maxValue = 0.9,
+        ) as IsSimpleValueDefinition<Any, *>
+
+        val result = defaultMapKey(definition, setOf(0.1, 0.9))
+        assertNotNull(result)
+        val value = result as Double
+        assertTrue(value > 0.1 && value < 0.9)
+    }
+
+    @Test
+    fun defaultSetItemFindsFractionalCandidateWhenIntegerSlotsExhausted() {
+        val definition = NumberDefinition(
+            type = Float64,
+            minValue = 0.1,
+            maxValue = 0.9,
+        )
+
+        val result = defaultSetItem(definition, setOf(0.1, 0.9))
+        assertNotNull(result)
+        val value = result as Double
+        assertTrue(value > 0.1 && value < 0.9)
+    }
+
+    @Test
+    fun defaultSetItemSkipsInvalidDefaultForBoundedString() {
+        val definition = StringDefinition(minSize = 2u)
+        assertEquals("new", defaultSetItem(definition, emptySet()))
+    }
+
+    @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeyRespectsStringDefinitionConstraints() {
+        val minSizeDefinition = StringDefinition(minSize = 6u) as IsSimpleValueDefinition<Any, *>
+        val regexDefinition = StringDefinition(regEx = "newx+") as IsSimpleValueDefinition<Any, *>
+        val numberRegexDefinition = StringDefinition(regEx = "new\\d+") as IsSimpleValueDefinition<Any, *>
+        val shortDefinition = StringDefinition(maxSize = 2u) as IsSimpleValueDefinition<Any, *>
+
+        assertEquals("newxxx", defaultMapKey(minSizeDefinition, emptySet()))
+        assertEquals("newx", defaultMapKey(regexDefinition, emptySet()))
+        assertEquals("new1", defaultMapKey(numberRegexDefinition, emptySet()))
+        assertEquals("", defaultMapKey(shortDefinition, emptySet()))
+        assertEquals("a", defaultMapKey(shortDefinition, setOf("")))
+    }
+
+    @Test
+    fun defaultSetItemRespectsStringDefinitionConstraints() {
+        val minSizeDefinition = StringDefinition(minSize = 6u)
+        val regexDefinition = StringDefinition(regEx = "newx+")
+        val numberRegexDefinition = StringDefinition(regEx = "new\\d+")
+        val shortDefinition = StringDefinition(maxSize = 2u)
+
+        assertEquals("newxxx", defaultSetItem(minSizeDefinition, emptySet()))
+        assertEquals("newx", defaultSetItem(regexDefinition, emptySet()))
+        assertEquals("new1", defaultSetItem(numberRegexDefinition, emptySet()))
+        assertEquals("", defaultSetItem(shortDefinition, emptySet()))
+        assertEquals("a", defaultSetItem(shortDefinition, setOf("")))
+    }
+
+    @Test
+    fun defaultSetItemSupportsMultiTypeWithConstrainedInnerValues() {
+        val definition = MultiTypeDefinition(typeEnum = EditorMultiType)
+
+        val first = defaultSetItem(definition, emptySet())
+        @Suppress("UNCHECKED_CAST")
+        val firstTyped = first as TypedValue<EditorMultiType<Any>, Any>
+        assertTrue(firstTyped.type === EditorMultiType.ShortText)
+        assertEquals("new", firstTyped.value)
+
+        val second = defaultSetItem(definition, setOf(firstTyped))
+        @Suppress("UNCHECKED_CAST")
+        val secondTyped = second as TypedValue<EditorMultiType<Any>, Any>
+        assertTrue(secondTyped.type === EditorMultiType.Decimal)
+        assertEquals(0.5, secondTyped.value)
+    }
+
+    @Test
     fun stripPropertyPrefixRemovesOnlyKnownPrefix() {
         assertEquals("Required.", stripPropertyPrefix("Property «field» Required."))
         assertEquals("Already clean", stripPropertyPrefix("Already clean"))
@@ -173,6 +374,28 @@ class RecordEditorUtilsTest {
     }
 
     @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeyFindsAlternativeReferenceAndBytesCandidates() {
+        val referenceDefinition = ReferenceDefinition(dataModel = { PathModel }) as IsSimpleValueDefinition<Any, *>
+        val fixedBytesDefinition = FixedBytesDefinition(byteSize = 2) as IsSimpleValueDefinition<Any, *>
+        val flexBytesDefinition = FlexBytesDefinition(minSize = 1u) as IsSimpleValueDefinition<Any, *>
+
+        val referenceFirst = defaultMapKey(referenceDefinition, emptySet())
+        val referenceSecond = defaultMapKey(referenceDefinition, setOf(referenceFirst!!))
+        val fixedFirst = defaultMapKey(fixedBytesDefinition, emptySet())
+        val fixedSecond = defaultMapKey(fixedBytesDefinition, setOf(fixedFirst!!))
+        val flexFirst = defaultMapKey(flexBytesDefinition, emptySet())
+        val flexSecond = defaultMapKey(flexBytesDefinition, setOf(flexFirst!!))
+
+        assertNotNull(referenceSecond)
+        assertNotNull(fixedSecond)
+        assertNotNull(flexSecond)
+        assertFalse(referenceFirst == referenceSecond)
+        assertFalse(fixedFirst == fixedSecond)
+        assertFalse(flexFirst == flexSecond)
+    }
+
+    @Test
     fun defaultValueForDefinitionSupportsReferenceFixedFlexAndGeoPoint() {
         val referenceDefinition = ReferenceDefinition(dataModel = { PathModel })
         val fixedBytesDefinition = FixedBytesDefinition(byteSize = 2)
@@ -183,6 +406,46 @@ class RecordEditorUtilsTest {
         assertNotNull(defaultValueForDefinition(fixedBytesDefinition))
         assertNotNull(defaultValueForDefinition(flexBytesDefinition))
         assertEquals(GeoPoint(0, 0), defaultValueForDefinition(geoPointDefinition))
+    }
+
+    @Test
+    fun defaultSetItemFindsAlternativeReferenceAndBytesCandidates() {
+        val referenceDefinition = ReferenceDefinition(dataModel = { PathModel })
+        val fixedBytesDefinition = FixedBytesDefinition(byteSize = 2)
+        val flexBytesDefinition = FlexBytesDefinition(minSize = 1u)
+
+        val referenceFirst = defaultSetItem(referenceDefinition, emptySet())
+        val referenceSecond = defaultSetItem(referenceDefinition, setOf(referenceFirst!!))
+        val fixedFirst = defaultSetItem(fixedBytesDefinition, emptySet())
+        val fixedSecond = defaultSetItem(fixedBytesDefinition, setOf(fixedFirst!!))
+        val flexFirst = defaultSetItem(flexBytesDefinition, emptySet())
+        val flexSecond = defaultSetItem(flexBytesDefinition, setOf(flexFirst!!))
+
+        assertNotNull(referenceSecond)
+        assertNotNull(fixedSecond)
+        assertNotNull(flexSecond)
+        assertFalse(referenceFirst == referenceSecond)
+        assertFalse(fixedFirst == fixedSecond)
+        assertFalse(flexFirst == flexSecond)
+    }
+
+    @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeySupportsOnlyEmptyFlexBytesWhenMaxSizeZero() {
+        val definition = FlexBytesDefinition(maxSize = 0u) as IsSimpleValueDefinition<Any, *>
+        val empty = Bytes(ByteArray(0))
+
+        assertEquals(empty, defaultMapKey(definition, emptySet()))
+        assertNull(defaultMapKey(definition, setOf(empty)))
+    }
+
+    @Test
+    fun defaultSetItemSupportsOnlyEmptyFlexBytesWhenMaxSizeZero() {
+        val definition = FlexBytesDefinition(maxSize = 0u)
+        val empty = Bytes(ByteArray(0))
+
+        assertEquals(empty, defaultSetItem(definition, emptySet()))
+        assertNull(defaultSetItem(definition, setOf(empty)))
     }
 
     @Test
@@ -310,6 +573,28 @@ private sealed class KeyOption(index: UInt) : IndexedEnumImpl<KeyOption>(index) 
     companion object : IndexedEnumDefinition<KeyOption>(
         enumClass = KeyOption::class,
         values = { listOf(A, B) },
+        unknownCreator = ::Unknown,
+    )
+}
+
+private sealed class EditorMultiType<T : Any>(
+    index: UInt,
+    override val definition: IsUsableInMultiType<T, *>?,
+) : IndexedEnumImpl<EditorMultiType<Any>>(index), MultiTypeEnum<T> {
+    object ShortText : EditorMultiType<String>(
+        1u,
+        StringDefinition(minSize = 2u, maxSize = 3u),
+    )
+    object Decimal : EditorMultiType<Double>(
+        2u,
+        NumberDefinition(type = Float64, minValue = 0.5, maxValue = 0.6),
+    )
+
+    class Unknown(index: UInt, override val name: String) : EditorMultiType<Any>(index, null)
+
+    companion object : MultiTypeEnumDefinition<EditorMultiType<out Any>>(
+        enumClass = EditorMultiType::class,
+        values = { listOf(ShortText, Decimal) },
         unknownCreator = ::Unknown,
     )
 }

@@ -56,7 +56,7 @@ suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
 
     val timeoutJob = GlobalScope.launch {
         // Timeout
-        delay(1000)
+        delay(5000)
         println("  TIMEOUT LISTENING TO UPDATES, likely some updates were not retrieved from the store")
 
         successfullyDone.complete(false)

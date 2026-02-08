@@ -8,13 +8,16 @@ import kotlinx.cinterop.ptr
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.windows.CloseHandle
+import platform.windows.CreateDirectoryW
 import platform.windows.CreateFileW
 import platform.windows.DWORDVar
 import platform.windows.DeleteFileW
+import platform.windows.ERROR_ALREADY_EXISTS
 import platform.windows.FILE_ATTRIBUTE_NORMAL
 import platform.windows.FILE_END
 import platform.windows.GENERIC_READ
 import platform.windows.GENERIC_WRITE
+import platform.windows.GetLastError
 import platform.windows.GetFileSizeEx
 import platform.windows.HANDLE
 import platform.windows.INVALID_HANDLE_VALUE
@@ -24,6 +27,46 @@ import platform.windows.OPEN_EXISTING
 import platform.windows.ReadFile
 import platform.windows.SetFilePointer
 import platform.windows.WriteFile
+
+private fun createParentDirectories(path: String): Boolean {
+    val separatorIndex = path.lastIndexOfAny(charArrayOf('\\', '/'))
+    if (separatorIndex <= 0) return true
+
+    val parent = path.substring(0, separatorIndex).replace('/', '\\')
+    if (parent.isEmpty()) return true
+
+    val rootPrefix = when {
+        parent.startsWith("\\\\") -> "\\\\"
+        parent.length >= 2 && parent[1] == ':' -> parent.substring(0, 2)
+        parent.startsWith("\\") -> "\\"
+        else -> ""
+    }
+
+    val remainder = when {
+        rootPrefix == "\\\\" -> parent.removePrefix("\\\\")
+        rootPrefix.length == 2 && rootPrefix[1] == ':' -> parent.removePrefix(rootPrefix).removePrefix("\\")
+        rootPrefix == "\\" -> parent.removePrefix("\\")
+        else -> parent
+    }
+
+    var current = rootPrefix
+    for (segment in remainder.split('\\').filter { it.isNotEmpty() }) {
+        current = when {
+            current.isEmpty() -> segment
+            current == "\\\\" -> "\\\\$segment"
+            current.endsWith("\\") -> "$current$segment"
+            current.length == 2 && current[1] == ':' -> "$current\\$segment"
+            else -> "$current\\$segment"
+        }
+
+        val created = CreateDirectoryW(current, null)
+        if (created == 0 && GetLastError() != ERROR_ALREADY_EXISTS.toUInt()) {
+            return false
+        }
+    }
+
+    return true
+}
 
 actual object File {
     @OptIn(ExperimentalForeignApi::class)
@@ -95,6 +138,7 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun writeText(path: String, contents: String) {
+        if (!createParentDirectories(path)) return
         val handle: HANDLE? = CreateFileW(
             path,
             GENERIC_WRITE.toUInt(),
@@ -120,6 +164,7 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun writeBytes(path: String, contents: ByteArray) {
+        if (!createParentDirectories(path)) return
         val handle: HANDLE? = CreateFileW(
             path,
             GENERIC_WRITE.toUInt(),
@@ -144,6 +189,7 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun appendText(path: String, contents: String) {
+        if (!createParentDirectories(path)) return
         val handle: HANDLE? = CreateFileW(
             path,
             GENERIC_WRITE.toUInt(),

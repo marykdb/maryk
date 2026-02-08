@@ -37,6 +37,8 @@ RocksDBDataStore.open(
 
 The `.use { ... }` scope closes the store automatically. If you don’t use `use`, call `close()` when finished to free native resources.
 
+Need remote access to this local RocksDB store? Expose it with the [Remote Store](../remote/README.md) via CLI `serve`.
+
 ## Migrations and Version Updates
 
 On open, the store compares the stored model with your provided definitions and decides whether it is up‑to‑date, requires safe additions (including new indexes), or needs a migration. For incompatible changes you provide a `migrationHandler` that performs fixes and returns `true` to continue. After a successful update you can run custom logic via `versionUpdateHandler` (for example, seed data that depends on the new schema).

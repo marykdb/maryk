@@ -11,7 +11,7 @@ Maryk is a Kotlin Multiplatform toolkit for data. You describe your data once �
 - Built‑in validation and rich property types (primitives, collections, embedded, multi‑type, value objects).
 - Version‑aware storage and queries: ask for “what changed” or “as of time T”.
 - Portable serialization: fast YAML/JSON streaming and compact ProtoBuf transport.
-- Pluggable stores with the same API (In‑Memory, RocksDB, FoundationDB).
+- Pluggable stores with the same API (In‑Memory, RocksDB, FoundationDB, Remote).
 - Desktop tooling: the [App](/app/) and [CLI](/cli/) for browsing and editing stores.
 
 ### A tiny taste

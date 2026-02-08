@@ -43,6 +43,7 @@ suspend fun main() {
 Notes:
 - The cluster file can be omitted when the default `~/.fdb` setup is used. Tests use `store/foundationdb/fdb.cluster` via `FDB_CLUSTER_FILE`.
 - Always close the store (or wrap in your runtime's lifecycle) to release FDB resources.
+- Need remote access to this FoundationDB store? Expose it with the [Remote Store](../remote/README.md) via CLI `serve`.
 
 ## Migrations and Update Handling
 

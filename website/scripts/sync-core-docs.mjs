@@ -69,78 +69,83 @@ const map = [
   ['src/content/docs/app.mdx', '../app/docs/README.md'],
 ];
 
-  function rewriteLinks(md) {
+  function rewriteLinks(md, prefix) {
     let out = md;
+    const withPrefix = (path) => `(${prefix}${path})`;
+    const propertiesPrefix = `(${prefix}data-modeling/properties/`;
     const pairs = [
-    ['(datamodel.md)', '(/data-modeling/datamodels/)'],
-    ['(properties/README.md)', '(/data-modeling/properties/)'],
-    ['(key.md)', '(/data-modeling/keys/)'],
-    ['(versioning.md)', '(/data-modeling/versioning/)'],
-    ['(query.md)', '(/querying/)'],
-    ['(reference-graphs.md)', '(/querying/reference-graphs/)'],
-    ['(filters.md)', '(/querying/filters/)'],
-    ['(aggregations.md)', '(/querying/aggregations/)'],
-    ['(collectAndInject.md)', '(/querying/collect-inject/)'],
-    ['(serialization.md)', '(/serialization/)'],
-    ['(protobuf.md)', '(/serialization/protobuf/)'],
-    ['(yaml.md)', '(/serialization/yaml/)'],
-    ['(json.md)', '(/serialization/json/)'],
-    ['(serialization/README.md)', '(/serialization/)'],
-    ['(serialization/yaml.md)', '(/serialization/yaml/)'],
-    ['(serialization/json.md)', '(/serialization/json/)'],
-    ['(serialization/yaml.md)', '(/serialization/yaml/)'],
-    ['(serialization/json.md)', '(/serialization/json/)'],
-    ['(properties/types/multiType.md)', '(/data-modeling/properties/types/multi-type/)'],
-    ['(types/multiType.md)', '(/data-modeling/properties/types/multi-type/)'],
-    ['(types/fixedBytes.md)', '(/data-modeling/properties/types/fixedbytes/)'],
-    ['(types/flexBytes.md)', '(/data-modeling/properties/types/flexbytes/)'],
-    ['(types/incrementingMap.md)', '(/data-modeling/properties/types/incrementing-map/)'],
-    ['(types/valueObject.md)', '(/data-modeling/properties/types/value-object/)'],
+    ['(datamodel.md)', withPrefix('data-modeling/datamodels/')],
+    ['(properties/README.md)', withPrefix('data-modeling/properties/')],
+    ['(key.md)', withPrefix('data-modeling/keys/')],
+    ['(versioning.md)', withPrefix('data-modeling/versioning/')],
+    ['(query.md)', withPrefix('querying/')],
+    ['(reference-graphs.md)', withPrefix('querying/reference-graphs/')],
+    ['(filters.md)', withPrefix('querying/filters/')],
+    ['(aggregations.md)', withPrefix('querying/aggregations/')],
+    ['(collectAndInject.md)', withPrefix('querying/collect-inject/')],
+    ['(serialization.md)', withPrefix('serialization/')],
+    ['(protobuf.md)', withPrefix('serialization/protobuf/')],
+    ['(yaml.md)', withPrefix('serialization/yaml/')],
+    ['(json.md)', withPrefix('serialization/json/')],
+    ['(serialization/README.md)', withPrefix('serialization/')],
+    ['(serialization/yaml.md)', withPrefix('serialization/yaml/')],
+    ['(serialization/json.md)', withPrefix('serialization/json/')],
+    ['(serialization/yaml.md)', withPrefix('serialization/yaml/')],
+    ['(serialization/json.md)', withPrefix('serialization/json/')],
+    ['(properties/types/multiType.md)', withPrefix('data-modeling/properties/types/multi-type/')],
+    ['(types/multiType.md)', withPrefix('data-modeling/properties/types/multi-type/')],
+    ['(types/fixedBytes.md)', withPrefix('data-modeling/properties/types/fixedbytes/')],
+    ['(types/flexBytes.md)', withPrefix('data-modeling/properties/types/flexbytes/')],
+    ['(types/incrementingMap.md)', withPrefix('data-modeling/properties/types/incrementing-map/')],
+    ['(types/valueObject.md)', withPrefix('data-modeling/properties/types/value-object/')],
     ['(../../yaml/README.md)', '(https://github.com/marykdb/maryk/blob/main/yaml/README.md)'],
     ['(../../json/README.md)', '(https://github.com/marykdb/maryk/blob/main/json/README.md)'],
     ['(../yaml/README.md)', '(https://github.com/marykdb/maryk/blob/main/yaml/README.md)'],
     ['(../json/README.md)', '(https://github.com/marykdb/maryk/blob/main/json/README.md)'],
-    ['(../README.md)', '(/data-modeling/properties/)'],
-    ['(../datamodel.md)', '(/data-modeling/datamodels/)'],
-    ['(../../datamodel.md)', '(/data-modeling/datamodels/)'],
-    ['(operations.md)', '(/data-modeling/properties/operations/)'],
-    ['(references.md)', '(/data-modeling/properties/references/)'],
+    ['(../README.md)', withPrefix('data-modeling/properties/')],
+    ['(../datamodel.md)', withPrefix('data-modeling/datamodels/')],
+    ['(../../datamodel.md)', withPrefix('data-modeling/datamodels/')],
+    ['(operations.md)', withPrefix('data-modeling/properties/operations/')],
+    ['(references.md)', withPrefix('data-modeling/properties/references/')],
     // Stores links
-    ['(./docs/storage.md)', '(/stores/foundationdb/storage/)'],
-    ['(./docs/architecture.md)', '(/stores/foundationdb/architecture/)'],
-    ['(./docs/local-testing.md)', '(/stores/foundationdb/local-testing/)'],
-    ['(documentation/storage.md)', '(/stores/rocksdb/storage/)'],
-    ['(documentation/architecture.md)', '(/stores/rocksdb/architecture/)'],
+    ['(./docs/storage.md)', withPrefix('stores/foundationdb/storage/')],
+    ['(./docs/architecture.md)', withPrefix('stores/foundationdb/architecture/')],
+    ['(./docs/local-testing.md)', withPrefix('stores/foundationdb/local-testing/')],
+    ['(documentation/storage.md)', withPrefix('stores/rocksdb/storage/')],
+    ['(documentation/architecture.md)', withPrefix('stores/rocksdb/architecture/')],
     // Map code links to GitHub full URLs (main branch)
     ['(../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(../../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(../../core/src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(core/src/', '(https://github.com/marykdb/maryk/blob/main/main/src/'],
     // Add relative link variants
-    ['(../datamodel.md)', '(/data-modeling/datamodels/)'],
-    ['(../../datamodel.md)', '(/data-modeling/datamodels/)'],
-    ['(../properties/README.md)', '(/data-modeling/properties/)'],
-    ['(../../properties/README.md)', '(/data-modeling/properties/)'],
-    ['(../key.md)', '(/data-modeling/keys/)'],
-    ['(../../key.md)', '(/data-modeling/keys/)'],
-    ['(../versioning.md)', '(/data-modeling/versioning/)'],
-    ['(../../versioning.md)', '(/data-modeling/versioning/)'],
-    ['(../query.md)', '(/querying/)'],
-    ['(../../query.md)', '(/querying/)'],
-    ['(../reference-graphs.md)', '(/querying/reference-graphs/)'],
-    ['(../../reference-graphs.md)', '(/querying/reference-graphs/)'],
-    ['(../filters.md)', '(/querying/filters/)'],
-    ['(../../filters.md)', '(/querying/filters/)'],
-    ['(../aggregations.md)', '(/querying/aggregations/)'],
-    ['(../../aggregations.md)', '(/querying/aggregations/)'],
-    ['(../collectAndInject.md)', '(/querying/collect-inject/)'],
-    ['(../../collectAndInject.md)', '(/querying/collect-inject/)'],
+    ['(../datamodel.md)', withPrefix('data-modeling/datamodels/')],
+    ['(../../datamodel.md)', withPrefix('data-modeling/datamodels/')],
+    ['(../properties/README.md)', withPrefix('data-modeling/properties/')],
+    ['(../../properties/README.md)', withPrefix('data-modeling/properties/')],
+    ['(../key.md)', withPrefix('data-modeling/keys/')],
+    ['(../../key.md)', withPrefix('data-modeling/keys/')],
+    ['(../versioning.md)', withPrefix('data-modeling/versioning/')],
+    ['(../../versioning.md)', withPrefix('data-modeling/versioning/')],
+    ['(../query.md)', withPrefix('querying/')],
+    ['(../../query.md)', withPrefix('querying/')],
+    ['(../reference-graphs.md)', withPrefix('querying/reference-graphs/')],
+    ['(../../reference-graphs.md)', withPrefix('querying/reference-graphs/')],
+    ['(../filters.md)', withPrefix('querying/filters/')],
+    ['(../../filters.md)', withPrefix('querying/filters/')],
+    ['(../aggregations.md)', withPrefix('querying/aggregations/')],
+    ['(../../aggregations.md)', withPrefix('querying/aggregations/')],
+    ['(../collectAndInject.md)', withPrefix('querying/collect-inject/')],
+    ['(../../collectAndInject.md)', withPrefix('querying/collect-inject/')],
     ];
   for (const [from, to] of pairs) out = out.replaceAll(from, to);
-  out = out.replaceAll('(properties/', '(/data-modeling/properties/');
-  out = out.replaceAll('(../properties/', '(/data-modeling/properties/');
-  out = out.replaceAll('(../../properties/', '(/data-modeling/properties/');
-  out = out.replace(/\.md/g, '/');
+  out = out.replaceAll('(properties/', propertiesPrefix);
+  out = out.replaceAll('(../properties/', propertiesPrefix);
+  out = out.replaceAll('(../../properties/', propertiesPrefix);
+  out = out.replace(/\((?!https?:\/\/)([^)#]+)\.md(#.*?)?\)/g, (_m, path, anchor) => {
+    const safeAnchor = anchor ?? '';
+    return `(${path}/${safeAnchor})`;
+  });
   return out;
 }
 
@@ -162,7 +167,11 @@ for (const [targetRel, srcRel] of map) {
 
     // Drop the leading H1 to avoid duplicate titles in Starlight.
     srcMd = srcMd.replace(/^#\s+.*\n?/, '');
-    let md = rewriteLinks(srcMd);
+    const docsRelative = targetRel.replace(/^src\/content\/docs\//, '');
+    const docsDir = dirname(docsRelative);
+    const depth = docsDir === '.' ? 0 : docsDir.split('/').length;
+    const prefix = '../'.repeat(Math.max(1, depth));
+    let md = rewriteLinks(srcMd, prefix);
     // Escape raw angle brackets outside code fences to keep MDX happy.
     const lines = md.split(/\r?\n/);
     let inCode = false;

@@ -14,6 +14,12 @@ internal class UInt8Test {
     }
 
     @Test
+    fun testRandomCanGenerateMaxValue() {
+        val values = List(8192) { UInt8.createRandom() }
+        expect(UByte.MAX_VALUE) { values.maxOrNull() }
+    }
+
+    @Test
     fun testStringConversion() {
         expect("0") { UInt8.MIN_VALUE.toString() }
         expect("255") { UInt8.MAX_VALUE.toString() }

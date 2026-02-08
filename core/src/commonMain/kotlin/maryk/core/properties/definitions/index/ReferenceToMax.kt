@@ -70,9 +70,7 @@ data class ReferenceToMax<T : Any>(
             TimePrecision.MILLIS -> TimeDefinition.MAX_IN_MILLIS
             TimePrecision.NANOS -> TimeDefinition.MAX_IN_NANOS
         }) as T
-        is FixedBytesDefinition -> (def.maxValue ?: def.byteSize.let { bytes ->
-            ByteArray(bytes) { Byte.MAX_VALUE } as T
-        }) as T
+        is FixedBytesDefinition -> (def.maxValue ?: Bytes(ByteArray(def.byteSize) { 0xFF.toByte() })) as T
         else -> throw RequiredException(reference)
     }
 

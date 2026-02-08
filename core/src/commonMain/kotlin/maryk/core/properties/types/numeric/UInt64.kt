@@ -29,9 +29,9 @@ object UInt64 : UnsignedNumberDescriptor<ULong>(
 
     override fun ofString(value: String) = value.toULong()
     override fun ofDouble(double: Double) = double.toLong().toULong()
-    override fun toDouble(value: ULong) = value.toLong().toDouble()
+    override fun toDouble(value: ULong) = value.toDouble()
     override fun ofInt(int: Int) = int.toULong()
     override fun ofLong(long: Long) = long.toULong()
     override fun createRandom() = Random.nextULong()
-    override fun isOfType(value: Any) = value is UInt64
+    override fun isOfType(value: Any) = value is ULong
 }

@@ -12,6 +12,7 @@ import maryk.core.protobuf.WireType.END_GROUP
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WireType.START_GROUP
 import maryk.core.protobuf.WireType.VAR_INT
+import maryk.lib.exceptions.ParseException
 import kotlin.experimental.and
 
 internal object ProtoBuf {
@@ -36,11 +37,13 @@ internal object ProtoBuf {
                     currentByte = reader()
                 } while (currentByte and SIGN_BYTE != ZERO_BYTE)
             }
-            BIT_64 -> for (it in 0 until 8) {
-                reader()
-            }
-            LENGTH_DELIMITED -> for (it in 0 until initIntByVar(reader)) {
-                reader()
+            BIT_64 -> repeat(8) { reader() }
+            LENGTH_DELIMITED -> {
+                val length = initIntByVar(reader)
+                if (length < 0) {
+                    throw ParseException("Negative length for length-delimited field")
+                }
+                repeat(length) { reader() }
             }
             START_GROUP -> {
                 while (true) {
@@ -52,9 +55,7 @@ internal object ProtoBuf {
                 }
             }
             END_GROUP -> return
-            BIT_32 -> for (it in 0 until 4) {
-                reader()
-            }
+            BIT_32 -> repeat(4) { reader() }
         }
     }
 
@@ -62,10 +63,16 @@ internal object ProtoBuf {
      * Get length of next value by [wireType] and reading from [reader]
      * It is -1 for varInt or start/end group
      */
-    internal fun getLength(wireType: WireType, reader: () -> Byte) = when (wireType) {
+internal fun getLength(wireType: WireType, reader: () -> Byte) = when (wireType) {
         VAR_INT -> -1
         BIT_64 -> 8
-        LENGTH_DELIMITED -> initIntByVar(reader)
+        LENGTH_DELIMITED -> {
+            val length = initIntByVar(reader)
+            if (length < 0) {
+                throw ParseException("Negative length for length-delimited field")
+            }
+            length
+        }
         START_GROUP -> -1
         END_GROUP -> -1
         BIT_32 -> 4

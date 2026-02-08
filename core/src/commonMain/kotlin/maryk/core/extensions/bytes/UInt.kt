@@ -22,12 +22,10 @@ fun initUInt(reader: () -> Byte, length: Int = 4): UInt {
     val firstByte = reader()
     // Skip bytes if below certain length
     if (length < 4) {
-        for (it in 0 until 8 - length) {
-            int = int shl 8
-        }
+        int = int shl (8 * (4 - length))
     }
     int = int xor ((firstByte).toUInt() and 0xFFu)
-    for (it in 1 until length) {
+    repeat(length - 1) {
         int = int shl 8
         int = int xor (reader().toUInt() and 0xFFu)
     }
@@ -53,7 +51,10 @@ internal fun initUIntByVar(reader: () -> Byte): UInt {
     var shift = 0
     var result = 0u
     while (shift < 32) {
-        val b = reader().toUInt()
+        val b = reader().toUInt() and 0xFFu
+        if (shift == 28 && (b and 0xF0u) != 0u) {
+            throw ParseException("Malformed varUInt")
+        }
         result = result or ((b and 0x7Fu) shl shift)
         if (b and 0x80u == 0u) {
             return result
@@ -123,7 +124,7 @@ fun <T> initUIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (UInt, Byt
     }
 
     var shift = 4
-    while (shift < 35) {
+    while (shift < 32) {
         byte = reader()
         result = result or ((byte and 0b0111_1111).toUInt() shl shift)
         if (byte and SIGN_BYTE == ZERO_BYTE) {

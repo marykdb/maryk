@@ -7,6 +7,8 @@ import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.date
+import maryk.core.properties.definitions.fixedBytes
+import maryk.core.properties.types.Bytes
 import maryk.core.query.DefinitionsConversionContext
 import maryk.lib.extensions.toHex
 import kotlin.test.Test
@@ -20,6 +22,15 @@ internal class ReferenceToMaxTest {
     ) {
         val startDate by date(1u)
         val endDate by date(2u, required = false)
+    }
+
+    object PeriodBytesModel : RootDataModel<PeriodBytesModel>(
+        indexes = { listOf(
+            Multiple(PeriodBytesModel.startDate.ref(), ReferenceToMax(PeriodBytesModel.endBytes.ref()))
+        )}
+    ) {
+        val startDate by date(1u)
+        val endBytes by fixedBytes(2u, byteSize = 2, required = false)
     }
 
     private val context = DefinitionsConversionContext(
@@ -39,6 +50,26 @@ internal class ReferenceToMaxTest {
         val indexable = Multiple(
             PeriodModel.startDate.ref(),
             ReferenceToMax(PeriodModel.endDate.ref())
+        )
+        val without = indexable.toStorageByteArrayForIndex(valuesWithoutEnd)
+        val withEnd = indexable.toStorageByteArrayForIndex(valuesWithEnd)
+        expect(withEnd!!.toHex()) { without!!.toHex() }
+    }
+
+    @Test
+    fun writesMaxWhenFixedBytesMissing() {
+        val start = LocalDate(2020, 5, 1)
+        val maxBytes = Bytes(byteArrayOf(-1, -1))
+        val valuesWithoutEnd = PeriodBytesModel.create {
+            startDate with start
+        }
+        val valuesWithEnd = PeriodBytesModel.create {
+            startDate with start
+            endBytes with maxBytes
+        }
+        val indexable = Multiple(
+            PeriodBytesModel.startDate.ref(),
+            ReferenceToMax(PeriodBytesModel.endBytes.ref())
         )
         val without = indexable.toStorageByteArrayForIndex(valuesWithoutEnd)
         val withEnd = indexable.toStorageByteArrayForIndex(valuesWithEnd)

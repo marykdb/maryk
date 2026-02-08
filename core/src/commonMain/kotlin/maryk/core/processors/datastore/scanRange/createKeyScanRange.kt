@@ -95,6 +95,18 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
                 }
             }
             is IndexPartialToBeOneOf -> {
+                if (keyPart.toBeOneOf.isEmpty()) {
+                    return KeyScanRanges(
+                        ranges = emptyList(),
+                        partialMatches = keyParts,
+                        equalPairs = equalPairs,
+                        uniques = uniqueFilters,
+                        startKey = startKey,
+                        includeStart = includeStart,
+                        keySize = this.Meta.keyByteSize,
+                        equalBytes = 0u,
+                    )
+                }
                 val startSizeBefore = start.size
                 val endSizeBefore = end.size
 

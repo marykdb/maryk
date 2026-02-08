@@ -7,7 +7,6 @@ import maryk.core.extensions.bytes.writeBytes
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.types.numeric.NumberType.UInt8Type
 import kotlin.random.Random
-import kotlin.random.nextUInt
 
 /** Base class for 8 bit/1 byte unsigned integers */
 object UInt8 : UnsignedNumberDescriptor<UByte>(
@@ -34,6 +33,6 @@ object UInt8 : UnsignedNumberDescriptor<UByte>(
     override fun toDouble(value: UByte) = value.toLong().toDouble()
     override fun ofInt(int: Int) = int.toUByte()
     override fun ofLong(long: Long) = long.toUByte()
-    override fun createRandom() = Random.nextUInt(UByte.MAX_VALUE.toUInt()).toUByte()
+    override fun createRandom() = Random.nextInt(UByte.MAX_VALUE.toInt() + 1).toUByte()
     override fun isOfType(value: Any) = value is UByte
 }

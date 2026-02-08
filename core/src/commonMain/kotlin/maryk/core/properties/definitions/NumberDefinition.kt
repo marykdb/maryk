@@ -220,10 +220,25 @@ fun <T : Comparable<T>> fromNativeType(type: NumberDescriptor<T>, value: Any) =
                 throw ParseException("$value not of expected type")
             }
         }
-        value is Int -> type.ofInt(value)
-        value is Long -> type.ofLong(value)
+        value is Int -> type.ofInt(value).also {
+            ensureIntegralConversionFits(type, value.toString(), it)
+        }
+        value is Long -> type.ofLong(value).also {
+            ensureIntegralConversionFits(type, value.toString(), it)
+        }
         else -> null
     }
+
+private fun <T : Comparable<T>> ensureIntegralConversionFits(
+    type: NumberDescriptor<T>,
+    originalValue: String,
+    convertedValue: T
+) {
+    if (type == Float32 || type == Float64) return
+    if (convertedValue.toString() != originalValue) {
+        throw ParseException("$originalValue not of expected type")
+    }
+}
 
 fun <T : Comparable<T>> IsValuesDataModel.number(
     index: UInt,

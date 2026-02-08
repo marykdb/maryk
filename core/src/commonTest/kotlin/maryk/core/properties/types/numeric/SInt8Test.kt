@@ -22,6 +22,13 @@ internal class SInt8Test {
     }
 
     @Test
+    fun testRandomContainsNegativeAndPositiveValues() {
+        val values = List(256) { SInt8.createRandom() }
+        assertTrue { values.any { it < 0 } }
+        assertTrue { values.any { it > 0 } }
+    }
+
+    @Test
     fun testStringConversion() {
         expect("-128") { Byte.MIN_VALUE.toString() }
         expect("127") { Byte.MAX_VALUE.toString() }

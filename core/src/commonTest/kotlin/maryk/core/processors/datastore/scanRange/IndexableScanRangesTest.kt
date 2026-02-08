@@ -24,6 +24,7 @@ import maryk.test.models.CompleteMarykModel.time
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -292,6 +293,17 @@ class IndexableScanRangesTest {
         assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue) }
         assertTrue { scanRange.ranges.last().keyOutOfRange(laterIndexValue) }
         assertFalse { scanRange.matchesPartials(laterIndexValue) }
+    }
+
+    @Test
+    fun convertEmptyValueInFilterToScanRange() {
+        val filter = ValueIn(
+            CompleteMarykModel { number::ref } with emptySet()
+        )
+
+        val scanRange = indexable.createScanRange(filter, keyScanRange)
+
+        assertEquals(0, scanRange.ranges.size)
     }
 
     @Test

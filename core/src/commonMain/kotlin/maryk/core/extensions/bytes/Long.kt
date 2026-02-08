@@ -32,7 +32,7 @@ internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
         long = long shl ((8 - length) * 8)
     }
     long = long xor ((firstByte xor SIGN_BYTE).toLong() and 0xFF)
-    for (it in 1 until length) {
+    repeat(length - 1) {
         long = long shl 8
         long = long xor (reader().toLong() and 0xFF)
     }
@@ -67,7 +67,10 @@ internal fun initLongByVar(reader: () -> Byte): Long {
     var shift = 0
     var result = 0L
     while (shift < 64) {
-        val b = reader().toLong()
+        val b = reader().toLong() and 0xFF
+        if (shift == 63 && (b and 0xFE) != 0L) {
+            throw ParseException("Malformed varInt")
+        }
         result = result or ((b and 0x7FL) shl shift)
         if (b and 0x80L == 0L) {
             return result

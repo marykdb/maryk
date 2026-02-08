@@ -21,6 +21,13 @@ internal class SInt16Test {
     }
 
     @Test
+    fun testRandomContainsNegativeAndPositiveValues() {
+        val values = List(512) { SInt16.createRandom() }
+        assertTrue { values.any { it < 0 } }
+        assertTrue { values.any { it > 0 } }
+    }
+
+    @Test
     fun testStringConversion() {
         expect("-32768") { Short.MIN_VALUE.toString() }
         expect("32767") { Short.MAX_VALUE.toString() }

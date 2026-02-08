@@ -102,4 +102,22 @@ internal class UIntKtTest {
             initUIntByVar { bytes[index++] }
         }
     }
+
+    @Test
+    fun testWrongVarUIntOverflowPayload() {
+        val bytes = byteArrayOf(-1, -1, -1, -1, 16)
+        var index = 0
+        assertFailsWith<ParseException> {
+            initUIntByVar { bytes[index++] }
+        }
+    }
+
+    @Test
+    fun testWrongVarUIntWithExtraInfoTooLong() {
+        val bytes = byteArrayOf(-128, -128, -128, -128, -128, 1)
+        var index = 0
+        assertFailsWith<ParseException> {
+            initUIntByVarWithExtraInfo({ bytes[index++] }) { _, _ -> }
+        }
+    }
 }

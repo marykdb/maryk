@@ -29,7 +29,7 @@ internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
         int = int shl ((4 - length) * 8)
     }
     int = int xor ((firstByte xor SIGN_BYTE).toInt() and 0xFF)
-    for (it in 1 until length) {
+    repeat(length - 1) {
         int = int shl 8
         int = int xor (reader().toInt() and 0xFF)
     }
@@ -73,7 +73,10 @@ fun initIntByVar(reader: () -> Byte): Int {
     var shift = 0
     var result = 0
     while (shift < 32) {
-        val b = reader().toInt()
+        val b = reader().toInt() and 0xFF
+        if (shift == 28 && (b and 0xF0) != 0) {
+            throw ParseException("Malformed varInt")
+        }
         result = result or ((b and 0x7F) shl shift)
         if (b and 0x80 == 0) {
             return result
@@ -148,7 +151,7 @@ internal fun <T> initIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (I
     }
 
     var shift = 4
-    while (shift < 35) {
+    while (shift < 32) {
         byte = reader()
         result = result or ((byte and 0b0111_1111).toInt() shl shift)
         if (byte and SIGN_BYTE == ZERO_BYTE) {

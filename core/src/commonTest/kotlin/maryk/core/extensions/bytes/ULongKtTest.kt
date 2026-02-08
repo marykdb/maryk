@@ -1,5 +1,6 @@
 package maryk.core.extensions.bytes
 
+import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
@@ -79,5 +80,14 @@ internal class ULongKtTest {
 
         expect(hexValue) { bc.bytes!!.toHex() }
         bc.reset()
+    }
+
+    @Test
+    fun testWrongVarULongOverflowPayload() {
+        val bytes = byteArrayOf(-128, -128, -128, -128, -128, -128, -128, -128, -128, 2)
+        var index = 0
+        assertFailsWith<ParseException> {
+            initULongByVar { bytes[index++] }
+        }
     }
 }

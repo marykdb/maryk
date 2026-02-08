@@ -10,6 +10,10 @@ internal fun createRanges(
     endInclusive: Boolean,
     startKey: ByteArray? = null
 ): List<ScanRange> {
+    if (start.isEmpty() || end.isEmpty()) {
+        return emptyList()
+    }
+
     val maxSize = maxOf(start.size, end.size)
     val ranges = ArrayList<ScanRange>(maxSize)
     val multiplier = if (start.size >= end.size) start.size / end.size else end.size / start.size

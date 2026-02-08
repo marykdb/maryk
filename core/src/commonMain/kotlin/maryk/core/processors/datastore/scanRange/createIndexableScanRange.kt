@@ -87,6 +87,13 @@ private fun createScanRangeFromParts(
                 }
             }
             is IndexPartialToBeOneOf -> {
+                if (keyPart.toBeOneOf.isEmpty()) {
+                    return IndexableScanRanges(
+                        ranges = emptyList(),
+                        partialMatches = listOfParts,
+                        keyScanRange = keyScanRange
+                    )
+                }
                 val startSizeBefore = start.size
                 val endSizeBefore = end.size
                 multiplyList(start, end, keyPart.toBeOneOf.size)

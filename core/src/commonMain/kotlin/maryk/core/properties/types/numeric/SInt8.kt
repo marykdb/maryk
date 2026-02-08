@@ -33,6 +33,6 @@ object SInt8 : NumberDescriptor<Byte>(
     override fun toDouble(value: Byte) = value.toDouble()
     override fun ofInt(int: Int) = int.toByte()
     override fun ofLong(long: Long) = long.toByte()
-    override fun createRandom() = Random.nextInt(127).toByte()
+    override fun createRandom() = Random.nextInt(Byte.MIN_VALUE.toInt(), Byte.MAX_VALUE.toInt() + 1).toByte()
     override fun isOfType(value: Any) = value is Byte
 }

@@ -324,6 +324,17 @@ class KeyScanRangesTest {
     }
 
     @Test
+    fun convertEmptyValueInFilterToScanRange() {
+        val filter = ValueIn(
+            Log { timestamp::ref } with emptySet<LocalDateTime>()
+        )
+
+        val scanRange = Log.createScanRange(filter, null)
+
+        assertEquals(0, scanRange.ranges.size)
+    }
+
+    @Test
     fun convertAndFilterToScanRange() {
         val filter = And(
             Equals(

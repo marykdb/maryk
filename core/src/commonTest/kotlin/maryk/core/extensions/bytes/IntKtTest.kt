@@ -143,4 +143,22 @@ internal class IntKtTest {
             initIntByVar { bytes[index++] }
         }
     }
+
+    @Test
+    fun testWrongVarIntOverflowPayload() {
+        val bytes = byteArrayOf(-1, -1, -1, -1, 16)
+        var index = 0
+        assertFailsWith<ParseException> {
+            initIntByVar { bytes[index++] }
+        }
+    }
+
+    @Test
+    fun testWrongVarIntWithExtraInfoTooLong() {
+        val bytes = byteArrayOf(-128, -128, -128, -128, -128, 1)
+        var index = 0
+        assertFailsWith<ParseException> {
+            initIntByVarWithExtraInfo({ bytes[index++] }) { _, _ -> }
+        }
+    }
 }

@@ -33,6 +33,6 @@ object SInt16 : NumberDescriptor<Short>(
     override fun toDouble(value: Short) = value.toDouble()
     override fun ofInt(int: Int) = int.toShort()
     override fun ofLong(long: Long) = long.toShort()
-    override fun createRandom() = Random.nextInt(32767).toShort()
+    override fun createRandom() = Random.nextInt(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt() + 1).toShort()
     override fun isOfType(value: Any) = value is Short
 }

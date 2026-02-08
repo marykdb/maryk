@@ -220,6 +220,18 @@ internal class NumberDefinitionTest {
         expect(38762873u) { def.fromNativeType(38762873) }
 
         assertFailsWith<ParseException> {
+            def.fromNativeType(-1)
+        }
+
+        assertFailsWith<ParseException> {
+            def.fromNativeType(-1L)
+        }
+
+        assertFailsWith<ParseException> {
+            def.fromNativeType(UInt.MAX_VALUE.toLong() + 1L)
+        }
+
+        assertFailsWith<ParseException> {
             def.fromNativeType(Long.MAX_VALUE.toDouble())
         }
 

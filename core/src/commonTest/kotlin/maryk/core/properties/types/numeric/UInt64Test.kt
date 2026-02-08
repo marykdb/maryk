@@ -3,6 +3,8 @@ package maryk.core.properties.types.numeric
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 internal class UInt64Test {
@@ -67,5 +69,18 @@ internal class UInt64Test {
             expect(value) { UInt64.readTransportBytes(bc::read) }
             bc.reset()
         }
+    }
+
+    @Test
+    fun testIsOfType() {
+        assertTrue { UInt64.isOfType(42uL) }
+        assertFalse { UInt64.isOfType(42L) }
+    }
+
+    @Test
+    fun testToDoubleStaysPositiveForLargeUnsignedValues() {
+        val maxAsDouble = UInt64.toDouble(ULong.MAX_VALUE)
+        assertTrue { maxAsDouble > 0.0 }
+        assertTrue { maxAsDouble > Long.MAX_VALUE.toDouble() }
     }
 }

@@ -21,7 +21,7 @@ fun initULong(reader: () -> Byte, length: Int = 8): ULong {
     if (length < 8) {
         long = long shl 8 * (8 - length)
     }
-    for (it in 0 until length) {
+    repeat(length) {
         long = long shl 8
         long = long xor (reader().toULong() and 0xFFu)
     }
@@ -53,7 +53,10 @@ internal fun initULongByVar(reader: () -> Byte): ULong {
     var shift = 0
     var result = 0uL
     while (shift < 64) {
-        val b = reader().toULong()
+        val b = reader().toULong() and 0xFFuL
+        if (shift == 63 && (b and 0xFEuL) != 0uL) {
+            throw ParseException("Malformed varULong")
+        }
         result = result or ((b and 0x7FuL) shl shift)
         if (b and 0x80uL == 0uL) {
             return result

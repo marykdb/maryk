@@ -144,4 +144,13 @@ internal class LongKtTest {
             initLongByVar { bytes[index++] }
         }
     }
+
+    @Test
+    fun testWrongVarIntOverflowPayload() {
+        val bytes = byteArrayOf(-128, -128, -128, -128, -128, -128, -128, -128, -128, 2)
+        var index = 0
+        assertFailsWith<ParseException> {
+            initLongByVar { bytes[index++] }
+        }
+    }
 }

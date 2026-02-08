@@ -8,10 +8,12 @@ import maryk.core.protobuf.WireType.END_GROUP
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WireType.START_GROUP
 import maryk.core.protobuf.WireType.VAR_INT
+import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class ProtoBufTest {
@@ -76,9 +78,7 @@ class ProtoBufTest {
 
         ProtoBuf.writeKey(55u, LENGTH_DELIMITED, bc::write)
         22.writeVarBytes(bc::write)
-        for (it in 0 until 22) {
-            bc.write(-1)
-        }
+        repeat(22) { bc.write(-1) }
 
         ProtoBuf.writeKey(66u, START_GROUP, bc::write)
 
@@ -87,9 +87,7 @@ class ProtoBufTest {
 
         ProtoBuf.writeKey(2u, LENGTH_DELIMITED, bc::write)
         5.writeVarBytes(bc::write)
-        for (it in 0 until 5) {
-            bc.write(-1)
-        }
+        repeat(5) { bc.write(-1) }
 
         ProtoBuf.writeKey(66u, END_GROUP, bc::write)
 
@@ -108,5 +106,23 @@ class ProtoBufTest {
         testSkip(bc, LENGTH_DELIMITED, 38)
         testSkip(bc, START_GROUP, 51)
         testSkip(bc, BIT_32, 57)
+    }
+
+    @Test
+    fun skipLengthDelimitedWithNegativeLengthShouldFail() {
+        val bytes = initByteArrayByHex("ffffffff0f")
+        var index = 0
+        assertFailsWith<ParseException> {
+            ProtoBuf.skipField(LENGTH_DELIMITED) { bytes[index++] }
+        }
+    }
+
+    @Test
+    fun getLengthDelimitedNegativeLengthShouldFail() {
+        val bytes = initByteArrayByHex("ffffffff0f")
+        var index = 0
+        assertFailsWith<ParseException> {
+            ProtoBuf.getLength(LENGTH_DELIMITED) { bytes[index++] }
+        }
     }
 }

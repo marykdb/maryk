@@ -29,9 +29,7 @@ internal class JsonReaderTest {
                 "value": "subInMulti!"
             }]
         }"""
-        var index = 0
-
-        JsonReader { input[index++] }.apply {
+        createJsonReader(input).apply {
             assertStartObject()
             assertFieldName("string")
             assertValue("hey", ValueType.String)
@@ -90,9 +88,7 @@ internal class JsonReaderTest {
             }
         }
         """
-        var index = 0
-
-        JsonReader { input[index++] }.apply {
+        createJsonReader(input).apply {
             assertStartObject()
 
             assertFieldName("1")
@@ -131,9 +127,7 @@ internal class JsonReaderTest {
             53.442e-234,
             53.442e+234
         ]"""
-        var index = 0
-
-        JsonReader { input[index++] }.apply {
+        createJsonReader(input).apply {
             assertStartArray()
             assertValue(4L, ValueType.Int)
             assertValue(4.723, ValueType.Float)
@@ -151,12 +145,11 @@ internal class JsonReaderTest {
 
     @Test
     fun testInvalidJsonFailMessage() {
-        var index = 0
         val input = """{
         |"test" "
         |}""".trimMargin()
 
-        val reader = JsonReader { input[index++] }
+        val reader = createJsonReader(input)
         val e = assertFailsWith<InvalidJsonContent>(
             message = """[l: 2, c: 8] Invalid character '"' after FieldName(test)"""
         ) {
@@ -175,9 +168,7 @@ internal class JsonReaderTest {
     @Test
     fun testInvalidJsonFail() {
         fun checkFaultyJSON(input: String) {
-            var index = 0
-
-            val reader = JsonReader { input[index++] }
+            val reader = createJsonReader(input)
             assertFailsWith<InvalidJsonContent> {
                 do {
                     reader.nextToken()

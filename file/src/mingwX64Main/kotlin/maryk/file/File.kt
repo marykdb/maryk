@@ -8,6 +8,7 @@ import kotlinx.cinterop.ptr
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.windows.CloseHandle
+import platform.windows.CREATE_ALWAYS
 import platform.windows.CreateDirectoryW
 import platform.windows.CreateFileW
 import platform.windows.DWORDVar
@@ -144,7 +145,7 @@ actual object File {
             GENERIC_WRITE.toUInt(),
             0u,
             null,
-            OPEN_ALWAYS.toUInt(),
+            CREATE_ALWAYS.toUInt(),
             FILE_ATTRIBUTE_NORMAL.toUInt(),
             null
         )
@@ -170,7 +171,7 @@ actual object File {
             GENERIC_WRITE.toUInt(),
             0u,
             null,
-            OPEN_ALWAYS.toUInt(),
+            CREATE_ALWAYS.toUInt(),
             FILE_ATTRIBUTE_NORMAL.toUInt(),
             null
         )

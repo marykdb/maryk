@@ -106,10 +106,10 @@
     stream-replace-string "^2.0.0"
     zod "^3.24.4"
 
-"@astrojs/starlight@0.37.4":
-  version "0.37.4"
-  resolved "https://registry.yarnpkg.com/@astrojs/starlight/-/starlight-0.37.4.tgz#db34459c48e288e85e80565660757a3d9020f93c"
-  integrity sha512-ygPGDgRd9nCcNgaYMNN7UeAMAkDOR1ibv3ps3xEz+cuvKG3CRLd19UwdB+Gyz1tbkyfjPWPkFKNhLwNybro8Tw==
+"@astrojs/starlight@0.37.6":
+  version "0.37.6"
+  resolved "https://registry.yarnpkg.com/@astrojs/starlight/-/starlight-0.37.6.tgz#d98241dfde2b4a90da42721406b20ed7ae503e9b"
+  integrity sha512-wQrKwH431q+8FsLBnNQeG+R36TMtEGxTQ2AuiVpcx9APcazvL3n7wVW8mMmYyxX0POjTnxlcWPkdMGR3Yj1L+w==
   dependencies:
     "@astrojs/markdown-remark" "^6.3.1"
     "@astrojs/mdx" "^4.2.3"
@@ -1002,10 +1002,10 @@ astro-expressive-code@^0.41.1:
   dependencies:
     rehype-expressive-code "^0.41.3"
 
-astro@5.16.15:
-  version "5.16.15"
-  resolved "https://registry.yarnpkg.com/astro/-/astro-5.16.15.tgz#ad224ce12e1eb402fc5495ab4ad4261291004007"
-  integrity sha512-+X1Z0NTi2pa5a0Te6h77Dgc44fYj63j1yx6+39Nvg05lExajxSq7b1Uj/gtY45zoum8fD0+h0nak+DnHighs3A==
+astro@5.17.1:
+  version "5.17.1"
+  resolved "https://registry.yarnpkg.com/astro/-/astro-5.17.1.tgz#c645a6344538407d19c69ac365e7f9e8360e54ea"
+  integrity sha512-oD3tlxTaVWGq/Wfbqk6gxzVRz98xa/rYlpe+gU2jXJMSD01k6sEDL01ZlT8mVSYB/rMgnvIOfiQQ3BbLdN237A==
   dependencies:
     "@astrojs/compiler" "^2.13.0"
     "@astrojs/internal-helpers" "0.7.5"

@@ -57,7 +57,7 @@ val json = Person.writeJson(john)
 val fromJson = Person.readJson(json)
 ```
 
-Also see YAML/ProtoBuf in [Serialization](/serialization/).
+Also see YAML/ProtoBuf in [Serialization](../serialization/).
 
 ## Pick a datastore
 
@@ -72,15 +72,15 @@ InMemoryDataStore.open(
 }
 ```
 
-Then advance to [Stores](/stores/) for RocksDB or FoundationDB and migration tips.
+Then advance to [Stores](../stores/) for RocksDB or FoundationDB and migration tips.
 
 ## CLI
 
-Use the [CLI](/cli/) to explore models and records, run scans, and edit values without writing code.
+Use the [CLI](../cli/) to explore models and records, run scans, and edit values without writing code.
 
 ## App
 
-Use the [Maryk App](/app/) for a desktop UI to browse models and edit records.
+Use the [Maryk App](../app/) for a desktop UI to browse models and edit records.
 
 ```bash
 ./gradlew :app:run
@@ -88,7 +88,7 @@ Use the [Maryk App](/app/) for a desktop UI to browse models and edit records.
 
 ## Next steps
 
-- Learn how models and properties work in [Data design](/data-modeling/data-design/).
-- Explore queries, filters, and aggregations in [Querying](/querying/).
-- Check out how to persist data in [Stores](/stores/).
-- Browse and edit data interactively with the [CLI](/cli/).
+- Learn how models and properties work in [Data design](../data-modeling/data-design/).
+- Explore queries, filters, and aggregations in [Querying](../querying/).
+- Check out how to persist data in [Stores](../stores/).
+- Browse and edit data interactively with the [CLI](../cli/).

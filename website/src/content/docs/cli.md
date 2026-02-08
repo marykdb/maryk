@@ -53,7 +53,7 @@ list
 scan Client --show info.name.firstNames,info.name.familyName --order -info.name.familyName
 ```
 
-Command reference: [CLI commands](/cli/commands/).
+Command reference: [CLI commands](./commands/).
 
 ## Edit
 

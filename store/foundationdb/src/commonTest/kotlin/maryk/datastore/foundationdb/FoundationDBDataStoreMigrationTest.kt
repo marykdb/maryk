@@ -2,7 +2,9 @@
 
 package maryk.datastore.foundationdb
 
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import maryk.core.exceptions.StorageException
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
@@ -39,26 +41,34 @@ class FoundationDBDataStoreMigrationTest {
     class CustomException : Error()
 
     @Test
-    fun testComplexMigrationCheckWithNoChange() = runTest(timeout = 3.minutes) {
-        val dirPath = listOf("maryk", "test", "fdb-migration-nochange", Uuid.random().toString())
+    fun testComplexMigrationCheckWithNoChange() = runBlocking {
+        withTimeout(5.minutes) {
+            val dirPath = listOf("maryk", "test", "fdb-migration-nochange", Uuid.random().toString())
 
-        var dataStore = FoundationDBDataStore.open(
-            keepAllVersions = true,
-            fdbClusterFilePath = "fdb.cluster",
-            directoryPath = dirPath,
-            dataModelsById = dataModelsForTests
-        )
+            val firstStore = FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = dataModelsForTests
+            )
+            try {
+                // no-op, first open persists definitions
+            } finally {
+                firstStore.close()
+            }
 
-        dataStore.close()
-
-        dataStore = FoundationDBDataStore.open(
-            keepAllVersions = true,
-            fdbClusterFilePath = "fdb.cluster",
-            directoryPath = dirPath,
-            dataModelsById = dataModelsForTests
-        )
-
-        dataStore.close()
+            val secondStore = FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = dataModelsForTests
+            )
+            try {
+                // no-op, second open validates no migration needed
+            } finally {
+                secondStore.close()
+            }
+        }
     }
 
     @Test

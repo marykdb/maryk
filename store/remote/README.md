@@ -66,6 +66,7 @@ val remote = RemoteDataStore.connect(
 
 Note: `RemoteDataStore.connect` is `suspend`; call it from a coroutine.
 Note: Only plain HTTP is supported; use SSH tunneling for encryption.
+Note: `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
 
 Use it like any other store:
 
@@ -102,6 +103,10 @@ Notes:
 ## HTTP protocol overview
 
 All payloads are Maryk ProtoBuf bytes.
+Request requirements:
+- `Content-Type: application/x-maryk-protobuf` on all `POST` endpoints.
+- Empty request bodies are rejected.
+- Request body max size is 16 MiB.
 
 - `GET /v1/info` → `RemoteStoreInfo` (definitions + model id map + capabilities)
 - `POST /v1/execute` → `Requests` in, length-prefixed response(s) out
@@ -110,6 +115,7 @@ All payloads are Maryk ProtoBuf bytes.
 
 Streaming format:
 - Each message is `length (4 bytes, big-endian)` + `ProtoBuf payload`.
+- Client rejects zero/negative lengths, truncated frames, trailing bytes, and frames larger than 16 MiB.
 
 ## When to use
 

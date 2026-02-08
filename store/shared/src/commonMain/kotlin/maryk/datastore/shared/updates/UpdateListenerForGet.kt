@@ -26,9 +26,9 @@ class UpdateListenerForGet<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     }
 
     override fun addValues(key: Key<DM>, values: Values<DM>) =
-        matchingKeys.value.binarySearch { it compareTo key }.let {
+        matchingKeys.value.indexOfFirst { it compareTo key == 0 }.let { index ->
             // Only insert keys which were found in the matching keys
-            if (it < 0) null else it
+            if (index < 0) null else index
         }
 
     override suspend fun changeOrder(change: Change<DM>, changedHandler: suspend (Int?, Boolean) -> Unit) {

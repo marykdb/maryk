@@ -1,8 +1,10 @@
 package maryk.datastore.remote
 
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationCall
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
@@ -62,92 +64,144 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
 
     routing {
         get(RemoteStoreProtocol.infoPath) {
-            val bytes = RemoteStoreCodec.encode(
-                RemoteStoreInfo.Serializer,
-                info,
-                DefinitionsConversionContext(),
-            )
-            call.respondBytes(bytes, ContentType.parse(RemoteStoreProtocol.contentType))
+            call.respondValidationErrors {
+                val bytes = RemoteStoreCodec.encode(
+                    RemoteStoreInfo.Serializer,
+                    info,
+                    DefinitionsConversionContext(),
+                )
+                call.respondBytes(bytes, ContentType.parse(RemoteStoreProtocol.contentType))
+            }
         }
 
         post(RemoteStoreProtocol.executePath) {
-            val requestBytes = call.receiveChannel().readRemaining().readByteArray()
-            val requestContext = createRequestContext(dataStore)
-            val requests = RemoteStoreCodec.decode(Requests.Serializer, requestBytes, requestContext)
-
-            @Suppress("UNCHECKED_CAST")
-            val rawRequests = requests.requests as List<Any>
-            val responseChunks = ArrayList<ByteArray>(rawRequests.size * 2)
-            var totalSize = 0
-            for (rawRequest in rawRequests) {
-                val request = resolveRequest(rawRequest)
-                @Suppress("UNCHECKED_CAST")
-                val storeRequest = request as IsStoreRequest<IsRootDataModel, IsResponse>
-                val response = dataStore.execute(storeRequest)
-                val dataModel = storeRequest.dataModel
-                val responseContext = RequestContext(requestContext.definitionsContext, dataModel = dataModel)
-                @Suppress("UNCHECKED_CAST")
-                val responseBytes = RemoteStoreCodec.encode(
-                    request.responseModel.Serializer as IsObjectDataModelSerializer<Any, *, RequestContext, RequestContext>,
-                    response as Any,
-                    responseContext,
+            call.respondValidationErrors {
+                requireRequestContentType(call, RemoteStoreProtocol.contentType)
+                val requestBytes = readRequestBytes(call, "execute")
+                val requestContext = createRequestContext(dataStore)
+                val requests = decodeRequest(
+                    operation = "execute",
+                    decode = { RemoteStoreCodec.decode(Requests.Serializer, requestBytes, requestContext) },
                 )
-                val lengthPrefix = RemoteStoreCodec.lengthPrefix(responseBytes.size)
-                responseChunks.add(lengthPrefix)
-                responseChunks.add(responseBytes)
-                totalSize += lengthPrefix.size + responseBytes.size
+
+                @Suppress("UNCHECKED_CAST")
+                val rawRequests = requests.requests as List<Any>
+                if (rawRequests.isEmpty()) {
+                    throw RequestValidationException(HttpStatusCode.BadRequest, "Remote execute request list cannot be empty")
+                }
+                val responseChunks = ArrayList<ByteArray>(rawRequests.size * 2)
+                var totalSize = 0
+                for (rawRequest in rawRequests) {
+                    val request = resolveRequest(rawRequest, operation = "execute")
+                    @Suppress("UNCHECKED_CAST")
+                    val storeRequest = request as? IsStoreRequest<IsRootDataModel, IsResponse>
+                        ?: throw RequestValidationException(
+                            HttpStatusCode.BadRequest,
+                            "Remote execute only accepts store requests"
+                        )
+                    val response = dataStore.execute(storeRequest)
+                    val dataModel = storeRequest.dataModel
+                    val responseContext = RequestContext(requestContext.definitionsContext, dataModel = dataModel)
+                    @Suppress("UNCHECKED_CAST")
+                    val responseBytes = RemoteStoreCodec.encode(
+                        request.responseModel.Serializer as IsObjectDataModelSerializer<Any, *, RequestContext, RequestContext>,
+                        response as Any,
+                        responseContext,
+                    )
+                    if (responseBytes.isEmpty()) {
+                        throw IllegalStateException("Remote execute response cannot be empty")
+                    }
+                    if (responseBytes.size > MAX_FRAME_SIZE_BYTES) {
+                        throw IllegalStateException(
+                            "Remote execute response frame exceeds max size: ${responseBytes.size} > $MAX_FRAME_SIZE_BYTES"
+                        )
+                    }
+                    val lengthPrefix = RemoteStoreCodec.lengthPrefix(responseBytes.size)
+                    responseChunks.add(lengthPrefix)
+                    responseChunks.add(responseBytes)
+                    totalSize += lengthPrefix.size + responseBytes.size
+                }
+                val responseBytes = ByteArray(totalSize)
+                var offset = 0
+                for (chunk in responseChunks) {
+                    chunk.copyInto(responseBytes, offset)
+                    offset += chunk.size
+                }
+                call.respondBytes(responseBytes, ContentType.parse(RemoteStoreProtocol.contentType))
             }
-            val responseBytes = ByteArray(totalSize)
-            var offset = 0
-            for (chunk in responseChunks) {
-                chunk.copyInto(responseBytes, offset)
-                offset += chunk.size
-            }
-            call.respondBytes(responseBytes, ContentType.parse(RemoteStoreProtocol.contentType))
         }
 
         post(RemoteStoreProtocol.flowPath) {
-            val requestBytes = call.receiveChannel().readRemaining().readByteArray()
-            val requestContext = createRequestContext(dataStore)
-            val requests = RemoteStoreCodec.decode(Requests.Serializer, requestBytes, requestContext)
-            @Suppress("UNCHECKED_CAST")
-            val rawRequests = requests.requests as List<Any>
-            val fetchRequest = rawRequests.singleOrNull()?.let { resolveRequest(it) } as? IsFetchRequest<*, *>
-                ?: return@post call.respondText("Expected a single fetch request", status = HttpStatusCode.BadRequest)
+            call.respondValidationErrors {
+                requireRequestContentType(call, RemoteStoreProtocol.contentType)
+                val requestBytes = readRequestBytes(call, "flow")
+                val requestContext = createRequestContext(dataStore)
+                val requests = decodeRequest(
+                    operation = "flow",
+                    decode = { RemoteStoreCodec.decode(Requests.Serializer, requestBytes, requestContext) },
+                )
+                @Suppress("UNCHECKED_CAST")
+                val rawRequests = requests.requests as List<Any>
+                val fetchRequest = rawRequests.singleOrNull()?.let { resolveRequest(it, operation = "flow") } as? IsFetchRequest<*, *>
+                    ?: throw RequestValidationException(HttpStatusCode.BadRequest, "Remote flow expects a single fetch request")
 
-            @Suppress("UNCHECKED_CAST")
-            val typedFetch = fetchRequest as IsFetchRequest<IsRootDataModel, IsDataResponse<IsRootDataModel>>
-            val updates = dataStore.executeFlow(typedFetch)
+                @Suppress("UNCHECKED_CAST")
+                val typedFetch = fetchRequest as IsFetchRequest<IsRootDataModel, IsDataResponse<IsRootDataModel>>
+                val updates = dataStore.executeFlow(typedFetch)
 
-            call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
-                updates.collect { update ->
-                    val response = UpdatesResponse(fetchRequest.dataModel, listOf(update))
-                    val responseContext = RequestContext(requestContext.definitionsContext, dataModel = fetchRequest.dataModel)
-                    val responseBytes = RemoteStoreCodec.encode(UpdatesResponse.Serializer, response, responseContext)
-                    writeFully(RemoteStoreCodec.lengthPrefix(responseBytes.size))
-                    writeFully(responseBytes)
-                    flush()
+                call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                    updates.collect { update ->
+                        val response = UpdatesResponse(fetchRequest.dataModel, listOf(update))
+                        val responseContext = RequestContext(requestContext.definitionsContext, dataModel = fetchRequest.dataModel)
+                        val responseBytes = RemoteStoreCodec.encode(UpdatesResponse.Serializer, response, responseContext)
+                        if (responseBytes.size > MAX_FRAME_SIZE_BYTES) {
+                            throw IllegalStateException(
+                                "Remote flow response frame exceeds max size: ${responseBytes.size} > $MAX_FRAME_SIZE_BYTES"
+                            )
+                        }
+                        writeFully(RemoteStoreCodec.lengthPrefix(responseBytes.size))
+                        writeFully(responseBytes)
+                        flush()
+                    }
                 }
             }
         }
 
         post(RemoteStoreProtocol.processUpdatePath) {
-            val requestBytes = call.receiveChannel().readRemaining().readByteArray()
-            val requestContext = createRequestContext(dataStore)
-            val updateRequest = RemoteStoreCodec.decode(UpdateResponse.Serializer, requestBytes, requestContext)
-            val response = dataStore.processUpdate(updateRequest)
-            val responseContext = RequestContext(requestContext.definitionsContext, dataModel = updateRequest.dataModel)
-            val remoteResponse = RemoteProcessResponse(response.version, response.result)
-            val responseBytes = RemoteStoreCodec.encode(RemoteProcessResponse.Serializer, remoteResponse, responseContext)
-            call.respondBytes(responseBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+            call.respondValidationErrors {
+                requireRequestContentType(call, RemoteStoreProtocol.contentType)
+                val requestBytes = readRequestBytes(call, "process-update")
+                val requestContext = createRequestContext(dataStore)
+                val updateRequest = decodeRequest(
+                    operation = "process-update",
+                    decode = { RemoteStoreCodec.decode(UpdateResponse.Serializer, requestBytes, requestContext) },
+                )
+                val response = dataStore.processUpdate(updateRequest)
+                val responseContext = RequestContext(requestContext.definitionsContext, dataModel = updateRequest.dataModel)
+                val remoteResponse = RemoteProcessResponse(response.version, response.result)
+                val responseBytes = RemoteStoreCodec.encode(RemoteProcessResponse.Serializer, remoteResponse, responseContext)
+                if (responseBytes.isEmpty()) {
+                    throw IllegalStateException("Remote process-update response cannot be empty")
+                }
+                call.respondBytes(responseBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+            }
         }
     }
 }
 
-private fun resolveRequest(rawRequest: Any): IsTransportableRequest<*> = when (rawRequest) {
+private fun resolveRequest(rawRequest: Any, operation: String): IsTransportableRequest<*> = when (rawRequest) {
     is IsTransportableRequest<*> -> rawRequest
-    is ObjectValues<*, *> -> rawRequest.toDataObject() as IsTransportableRequest<*>
-    else -> throw IllegalStateException("Unsupported request payload ${rawRequest::class.simpleName}")
+    is ObjectValues<*, *> -> runCatching { rawRequest.toDataObject() as IsTransportableRequest<*> }
+        .getOrElse {
+            throw RequestValidationException(
+                HttpStatusCode.BadRequest,
+                "Remote $operation request contains invalid transportable payload"
+            )
+        }
+    else -> throw RequestValidationException(
+        HttpStatusCode.BadRequest,
+        "Remote $operation request contains unsupported payload type `${rawRequest::class.simpleName}`"
+    )
 }
 
 private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
@@ -168,4 +222,82 @@ private fun createRequestContext(dataStore: IsDataStore): RequestContext {
     val dataModels = dataStore.dataModelsById.values.associateBy { it.Meta.name }
     val context = DefinitionsContext(dataModels = dataModels.mapValues { DataModelReference(it.value) }.toMutableMap())
     return RequestContext(context)
+}
+
+private suspend fun readRequestBytes(call: ApplicationCall, operation: String): ByteArray {
+    val rawContentLength = call.request.headers[HttpHeaders.ContentLength]
+    val contentLength = rawContentLength?.toLongOrNull()
+    if (rawContentLength != null && contentLength == null) {
+        throw RequestValidationException(
+            HttpStatusCode.BadRequest,
+            "Remote $operation request has invalid Content-Length header"
+        )
+    }
+    if (contentLength != null) {
+        if (contentLength < 0L) {
+            throw RequestValidationException(
+                HttpStatusCode.BadRequest,
+                "Remote $operation request has invalid Content-Length header"
+            )
+        }
+        if (contentLength == 0L) {
+            throw RequestValidationException(HttpStatusCode.BadRequest, "Remote $operation request payload cannot be empty")
+        }
+        if (contentLength > MAX_REQUEST_BODY_BYTES.toLong()) {
+            throw RequestValidationException(
+                HttpStatusCode.PayloadTooLarge,
+                "Remote $operation request payload exceeds max size: $contentLength > $MAX_REQUEST_BODY_BYTES"
+            )
+        }
+    }
+    val bytes = call.receiveChannel()
+        .readRemaining(MAX_REQUEST_BODY_BYTES.toLong() + 1L)
+        .readByteArray()
+    if (bytes.isEmpty()) {
+        throw RequestValidationException(HttpStatusCode.BadRequest, "Remote $operation request payload cannot be empty")
+    }
+    if (bytes.size > MAX_REQUEST_BODY_BYTES) {
+        throw RequestValidationException(
+            HttpStatusCode.PayloadTooLarge,
+            "Remote $operation request payload exceeds max size: ${bytes.size} > $MAX_REQUEST_BODY_BYTES"
+        )
+    }
+    return bytes
+}
+
+private fun requireRequestContentType(call: ApplicationCall, expected: String) {
+    val contentType = call.request.headers[HttpHeaders.ContentType]
+        ?.substringBefore(';')
+        ?.trim()
+        ?.lowercase()
+    if (contentType != expected.lowercase()) {
+        throw RequestValidationException(
+            HttpStatusCode.UnsupportedMediaType,
+            "Content-Type must be `$expected`"
+        )
+    }
+}
+
+private inline fun <T> decodeRequest(operation: String, decode: () -> T): T {
+    return runCatching(decode).getOrElse {
+        throw RequestValidationException(HttpStatusCode.BadRequest, "Remote $operation payload is invalid")
+    }
+}
+
+private class RequestValidationException(
+    val status: HttpStatusCode,
+    override val message: String,
+) : IllegalArgumentException(message)
+
+private const val MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024
+private const val MAX_FRAME_SIZE_BYTES = 16 * 1024 * 1024
+
+private suspend inline fun ApplicationCall.respondValidationErrors(
+    crossinline block: suspend () -> Unit,
+) {
+    try {
+        block()
+    } catch (error: RequestValidationException) {
+        respondText(error.message, status = error.status)
+    }
 }

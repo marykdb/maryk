@@ -9,18 +9,20 @@ class InMemoryDataStoreTest {
     @Test
     fun testDataStore() = runTest {
         val dataStore = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
-
-        runDataStoreTests(dataStore)
-
-        dataStore.close()
+        try {
+            runDataStoreTests(dataStore)
+        } finally {
+            dataStore.close()
+        }
     }
 
     @Test
     fun testDataStoreWithKeepAllVersions() = runTest {
         val dataStore = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = dataModelsForTests)
-
-        runDataStoreTests(dataStore)
-
-        dataStore.close()
+        try {
+            runDataStoreTests(dataStore)
+        } finally {
+            dataStore.close()
+        }
     }
 }

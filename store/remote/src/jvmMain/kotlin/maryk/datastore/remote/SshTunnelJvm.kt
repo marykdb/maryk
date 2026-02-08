@@ -14,6 +14,14 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
             .redirectErrorStream(true)
             .start()
 
+        if (process.waitFor(200, TimeUnit.MILLISECONDS)) {
+            val output = runCatching { process.inputStream.bufferedReader().readText().trim() }
+                .getOrNull()
+                ?.takeIf { it.isNotEmpty() }
+            val suffix = output?.let { ": $it" } ?: ""
+            throw IllegalStateException("SSH tunnel process exited immediately with code ${process.exitValue()}$suffix")
+        }
+
         drainOutput(process.inputStream)
 
         return ProcessSshTunnel(process, localPort)
@@ -66,7 +74,11 @@ private class ProcessSshTunnel(
 ) : SshTunnel {
     override fun close() {
         process.destroy()
-        process.waitFor(3, TimeUnit.SECONDS)
+        try {
+            process.waitFor(3, TimeUnit.SECONDS)
+        } catch (_: InterruptedException) {
+            Thread.currentThread().interrupt()
+        }
         if (process.isAlive) {
             process.destroyForcibly()
         }

@@ -25,10 +25,14 @@ internal object RemoteStoreCodec {
     ): DO {
         var index = 0
         val values = serializer.readProtoBuf(bytes.size, { bytes[index++] }, context)
+        if (index != bytes.size) {
+            throw IllegalStateException("Proto payload has trailing bytes: consumed=$index total=${bytes.size}")
+        }
         return values.toDataObject()
     }
 
     fun lengthPrefix(length: Int): ByteArray {
+        require(length >= 0) { "Length prefix cannot encode negative lengths." }
         val bytes = ByteArray(4)
         bytes[0] = ((length ushr 24) and 0xFF).toByte()
         bytes[1] = ((length ushr 16) and 0xFF).toByte()
@@ -38,7 +42,8 @@ internal object RemoteStoreCodec {
     }
 
     fun readLengthPrefix(bytes: ByteArray, offset: Int): LengthResult? {
-        if (offset + 4 > bytes.size) return null
+        if (offset < 0) return null
+        if (offset > bytes.size - 4) return null
         val length = ((bytes[offset].toInt() and 0xFF) shl 24) or
             ((bytes[offset + 1].toInt() and 0xFF) shl 16) or
             ((bytes[offset + 2].toInt() and 0xFF) shl 8) or

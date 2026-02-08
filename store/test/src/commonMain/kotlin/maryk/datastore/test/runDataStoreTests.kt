@@ -52,6 +52,7 @@ val dataModelsForTests = mapOf(
 
 suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
     val exceptionList = mutableMapOf<String, Throwable>()
+    var executedTests = 0
 
     for ((testClassName, testClassConstructor) in allTestClasses) {
         val testClass = testClassConstructor(dataStore)
@@ -68,6 +69,7 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
             }
 
             println("- $testName")
+            executedTests += 1
 
             var phase = "init"
             try {
@@ -90,15 +92,19 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
             }
         }
     }
+    if (runOnlyTest != null && executedTests == 0) {
+        throw IllegalArgumentException("No datastore test found with name `$runOnlyTest`.")
+    }
     if (exceptionList.isNotEmpty()) {
-        var messages = "DataStore Tests failed: (${exceptionList.size})[\n"
+        val messages = StringBuilder("DataStore Tests failed: (${exceptionList.size})[\n")
         var firstThrowable: Throwable? = null
         for ((name, exception) in exceptionList) {
             if (firstThrowable == null) {
                 firstThrowable = exception
             }
-            messages += "\t$name: $exception\n"
+            messages.append("\t$name: $exception\n")
         }
-        throw RuntimeException("$messages]", firstThrowable)
+        messages.append(']')
+        throw RuntimeException(messages.toString(), firstThrowable)
     }
 }

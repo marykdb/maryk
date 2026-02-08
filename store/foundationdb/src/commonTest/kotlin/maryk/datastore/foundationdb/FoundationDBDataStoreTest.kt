@@ -23,10 +23,11 @@ class FoundationDBDataStoreTest {
                 setTransactionMaxRetryDelay(5000)
             }
         )
-
-        runDataStoreTests(dataStore)
-
-        dataStore.close()
+        try {
+            runDataStoreTests(dataStore)
+        } finally {
+            dataStore.close()
+        }
     }
 
     @Test
@@ -36,9 +37,10 @@ class FoundationDBDataStoreTest {
             dataModelsById = dataModelsForTests,
             keepAllVersions = true,
         )
-
-        runDataStoreTests(dataStore)
-
-        dataStore.close()
+        try {
+            runDataStoreTests(dataStore)
+        } finally {
+            dataStore.close()
+        }
     }
 }

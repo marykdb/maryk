@@ -8,6 +8,11 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 fun assertRecent(time: ULong, maxDifference: ULong) {
-    val timeSinceInsert = Clock.System.now().toEpochMilliseconds().toULong() - HLC(time).toPhysicalUnixTime()
-    assertTrue("Time to be recent: $timeSinceInsert within $maxDifference") { timeSinceInsert in (0uL..maxDifference) }
+    val now = Clock.System.now().toEpochMilliseconds()
+    val observed = HLC(time).toPhysicalUnixTime().toLong()
+    val delta = now - observed
+    val absoluteDelta = if (delta >= 0) delta.toULong() else (-delta).toULong()
+    assertTrue("Time to be recent: delta=${delta}ms within ±$maxDifference") {
+        absoluteDelta <= maxDifference
+    }
 }

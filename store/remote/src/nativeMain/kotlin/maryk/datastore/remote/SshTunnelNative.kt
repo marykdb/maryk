@@ -129,21 +129,23 @@ private class PosixSshTunnel(
     override fun close() {
         if (pid <= 0) return
         kill(pid, SIGTERM)
-        waitForExit(pid, 20, 50_000u)
-        kill(pid, SIGKILL)
-        waitForExit(pid, 5, 50_000u)
+        if (!waitForExit(pid, 20, 50_000u)) {
+            kill(pid, SIGKILL)
+            waitForExit(pid, 5, 50_000u)
+        }
     }
 }
 
-private fun waitForExit(pid: Int, attempts: Int, sleepMicros: UInt) {
+private fun waitForExit(pid: Int, attempts: Int, sleepMicros: UInt): Boolean {
     memScoped {
         val status = alloc<IntVar>()
         repeat(attempts) {
             val result = waitpid(pid, status.ptr, WNOHANG)
-            if (result == pid) return
+            if (result == pid || result < 0) return true
             usleep(sleepMicros)
         }
     }
+    return false
 }
 
 private fun errnoMessage(): String = strerror(errno)?.toKString() ?: "errno $errno"

@@ -47,9 +47,12 @@ class FoundationDBDataStoreMigrationTest {
 
             val firstStore = FoundationDBDataStore.open(
                 keepAllVersions = true,
-                fdbClusterFilePath = "fdb.cluster",
                 directoryPath = dirPath,
-                dataModelsById = dataModelsForTests
+                dataModelsById = dataModelsForTests,
+                databaseOptionsSetter = {
+                    setTransactionRetryLimit(3)
+                    setTransactionMaxRetryDelay(5000)
+                }
             )
             try {
                 // no-op, first open persists definitions
@@ -59,9 +62,12 @@ class FoundationDBDataStoreMigrationTest {
 
             val secondStore = FoundationDBDataStore.open(
                 keepAllVersions = true,
-                fdbClusterFilePath = "fdb.cluster",
                 directoryPath = dirPath,
-                dataModelsById = dataModelsForTests
+                dataModelsById = dataModelsForTests,
+                databaseOptionsSetter = {
+                    setTransactionRetryLimit(3)
+                    setTransactionMaxRetryDelay(5000)
+                }
             )
             try {
                 // no-op, second open validates no migration needed

@@ -35,6 +35,7 @@ class YamlWriter(
     private val base16RegEx = Regex("^[-+]?0x([0-9a-fA-F_]+)$")
     private val base60RegEx = Regex("^[-+]?([1-9][0-9_]*)(:([0-5]?[0-9]))+$")
     private val floatRegEx = Regex("^[-+]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)([eE][-+]?[0-9]+)?$")
+    private val indicatorStartChars = setOf('*', '&', '!', '|', '>', '%', '@', '`', '\'', '"')
     private val timestampRegex = Regex(
         "^([0-9][0-9][0-9][0-9])" + // year
             "-([0-9][0-9]?)" + // month
@@ -395,6 +396,9 @@ class YamlWriter(
 
     private fun shouldQuote(value: String): Boolean {
         if (value.isEmpty() || value != value.trim()) return true
+        if (value == "---" || value == "...") return true
+        if (value.first() in indicatorStartChars) return true
+        if (value.startsWith("- ") || value.startsWith("? ") || value.startsWith(": ")) return true
         if (value.matches(toSanitizeRegex)) return true
         if (value in nullValues || value in trueValues || value in falseValues || value in nanValues) return true
         if (infinityRegEx.matches(value)) return true

@@ -198,13 +198,27 @@ internal class JsonReaderTest {
         checkFaultyJSON("""{"test":5, wrong:1}""")
         checkFaultyJSON("""{"test":5{""")
         checkFaultyJSON("""{"test"[""")
+        checkFaultyJSON("""{"test":5} extra""")
 
         // Invalid array
         checkFaultyJSON("[22332,]")
+        checkFaultyJSON("""["test"] extra""")
+        checkFaultyJSON(""""test" extra""")
+
+        // Invalid strings
+        checkFaultyJSON(
+            """
+            ["line
+            break"]
+            """.trimIndent()
+        )
+        checkFaultyJSON("[\"tab\tchar\"]")
 
         // Invalid Numbers
         checkFaultyJSON("[007]")
         checkFaultyJSON("[-007.652]")
+        checkFaultyJSON("[-.5]")
+        checkFaultyJSON("[-]")
         checkFaultyJSON("[5.5E]")
         checkFaultyJSON("[5-3]")
         checkFaultyJSON("[34234.]")
@@ -224,7 +238,6 @@ internal class JsonReaderTest {
 
             assertTrue { currentToken is Suspended }
 
-            @Suppress("AssignedValueIsNeverRead")
             input += "]"
 
             assertEndArray()
@@ -270,7 +283,21 @@ internal class JsonReaderTest {
 
     @Test
     fun readDoubleQuoteWithUtfChars() {
-        createJsonReader("""["\uD83D\uDE0D\uwrong\u0w\u00w\u000w"]""").apply {
+        val invalidUtfEscapes = buildString {
+            append("\\")
+            append("uD83D")
+            append("\\")
+            append("uDE0D")
+            append("\\")
+            append("uwrong")
+            append("\\")
+            append("u0w")
+            append("\\")
+            append("u00w")
+            append("\\")
+            append("u000w")
+        }
+        createJsonReader("""["$invalidUtfEscapes"]""").apply {
             assertStartArray()
             assertValue("😍\\uwrong\\u0w\\u00w\\u000w")
             assertEndArray()

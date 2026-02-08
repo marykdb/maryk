@@ -83,7 +83,7 @@ class JsonReader(
                 }
                 is Value<*> -> {
                     when {
-                        typeStack.isEmpty() -> currentToken = EndDocument
+                        typeStack.isEmpty() -> finishDocumentRead()
                         typeStack.last() == OBJECT -> readObject()
                         else -> readArray()
                     }
@@ -173,11 +173,21 @@ class JsonReader(
 
     private fun continueComplexRead() {
         when {
-            typeStack.isEmpty() -> currentToken = EndDocument
+            typeStack.isEmpty() -> finishDocumentRead()
             else -> when (typeStack.last()) {
                 OBJECT -> readObject()
                 ARRAY -> readArray()
             }
+        }
+    }
+
+    private fun finishDocumentRead() {
+        try {
+            read()
+            skipWhiteSpace()
+            throwJsonException()
+        } catch (_: ExceptionWhileReadingJson) {
+            currentToken = EndDocument
         }
     }
 
@@ -233,6 +243,11 @@ class JsonReader(
             addAndAdvance()
         } while (lastChar.isDigit())
 
+        // Number should contain at least one digit
+        if (startedWithMinus && storedValue == "-") {
+            throwJsonException()
+        }
+
         // Check if value starts with illegal 0
         storedValue?.let {
             if (startedWithMinus && it.length > 2 && it[1] == '0') {
@@ -269,10 +284,14 @@ class JsonReader(
             false
         }
 
-        currentToken = if (isExponent || isFraction) {
-            currentTokenCreator(storedValue!!.toDouble())
-        } else {
-            currentTokenCreator(storedValue!!.toLong())
+        currentToken = try {
+            if (isExponent || isFraction) {
+                currentTokenCreator(storedValue!!.toDouble())
+            } else {
+                currentTokenCreator(storedValue!!.toLong())
+            }
+        } catch (_: NumberFormatException) {
+            throwJsonException()
         }
 
         skipWhiteSpace()
@@ -336,11 +355,11 @@ class JsonReader(
             }
 
             open fun toCharString(): String {
-                return chars.joinToString(separator = "").toInt(16).toChar().toString()
+                return chars.concatToString().toInt(16).toChar().toString()
             }
 
             fun toOriginalChars(): String {
-                return chars.sliceArray(0 until index).joinToString(separator = "")
+                return chars.concatToString(0, index)
             }
         }
     }
@@ -349,6 +368,13 @@ class JsonReader(
         read()
         var skipChar: SkipCharType = SkipCharType.None
         loop@ while (lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
+            if (lastChar.isLineBreak()) {
+                throwJsonException()
+            }
+            if (skipChar == SkipCharType.None && lastChar < ' ') {
+                throwJsonException()
+            }
+
             fun addCharAndResetSkipChar(value: String): SkipCharType {
                 storedValue += value
                 return SkipCharType.None
@@ -417,7 +443,7 @@ class JsonReader(
         }
     }
 
-    private fun throwJsonException() {
+    private fun throwJsonException(): Nothing {
         throw InvalidJsonContent("Invalid character '$lastChar' after $currentToken")
     }
 }

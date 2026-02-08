@@ -197,6 +197,34 @@ internal class YamlWriterTest {
     }
 
     @Test
+    fun quoteAliasLikeStringValues() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject()
+                writeFieldName("ref")
+                writeString("*alias")
+                writeEndObject()
+            }
+        }
+
+        assertEquals(
+            """
+            ref: '*alias'
+
+            """.trimIndent(),
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("ref")
+            assertValue("*alias")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun writeYamlInDoubleArray() {
         val output = buildString {
             YamlWriter {

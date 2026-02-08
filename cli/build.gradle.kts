@@ -3,12 +3,15 @@
 import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
+import org.jetbrains.kotlin.konan.target.Family
+import java.io.ByteArrayOutputStream
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
 }
 
 private val foundationDbLibDir = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
+private val foundationDbLibDirFile = rootProject.projectDir.resolve("store/foundationdb/bin/lib")
 private val os = OperatingSystem.current()
 private val scriptsDir = rootProject.projectDir.resolve("store/foundationdb/scripts")
 
@@ -39,6 +42,44 @@ kotlin {
         macosX64(),
     ).forEach { nativeTarget ->
         nativeTarget.apply {
+            val family = nativeTarget.konanTarget.family
+            val libExt = when (family) {
+                Family.OSX -> "dylib"
+                Family.LINUX -> "so"
+                else -> null
+            }
+            val libFile = libExt?.let { foundationDbLibDirFile.resolve("libfdb_c.$it") }
+
+            fun isMacLibArchitectureCompatible(file: File): Boolean {
+                if (!os.isMacOsX || !nativeTarget.name.startsWith("macos", ignoreCase = true)) return true
+
+                val expectedArch = when {
+                    nativeTarget.name.contains("x64", ignoreCase = true) -> "x86_64"
+                    nativeTarget.name.contains("arm64", ignoreCase = true) -> "arm64"
+                    else -> return true
+                }
+
+                return try {
+                    val output = ByteArrayOutputStream()
+                    val result = project.providers.exec {
+                        commandLine("lipo", "-archs", file.absolutePath)
+                        standardOutput = output
+                        errorOutput = output
+                        setIgnoreExitValue(true)
+                    }.result.get()
+                    result.exitValue == 0 && output.toString().trim().split(Regex("\\s+")).contains(expectedArch)
+                } catch (_: Exception) {
+                    false
+                }
+            }
+
+            fun isFoundationDbLibraryAvailable(): Boolean {
+                val availableFile = libFile?.exists() == true
+                if (!availableFile) return false
+                if (family != Family.OSX || libFile == null) return true
+                return isMacLibArchitectureCompatible(libFile)
+            }
+
             binaries {
                 executable {
                     entryPoint = "io.maryk.cli.main"
@@ -47,6 +88,13 @@ kotlin {
                     linkTaskProvider.configure {
                         dependsOn(installFoundationDB)
                         linkerOpts(libOpts)
+                        onlyIf {
+                            val available = isFoundationDbLibraryAvailable()
+                            if (!available && libFile != null) {
+                                logger.lifecycle("Skipping ${name}: missing or incompatible ${libFile.absolutePath} for target ${nativeTarget.name}.")
+                            }
+                            available
+                        }
                     }
                 }
                 withType<TestExecutable>().configureEach {
@@ -55,6 +103,13 @@ kotlin {
                     linkTaskProvider.configure {
                         dependsOn(installFoundationDB)
                         linkerOpts(libOpts)
+                        onlyIf {
+                            val available = isFoundationDbLibraryAvailable()
+                            if (!available && libFile != null) {
+                                logger.lifecycle("Skipping ${name}: missing or incompatible ${libFile.absolutePath} for target ${nativeTarget.name}.")
+                            }
+                            available
+                        }
                     }
                 }
             }

@@ -4,122 +4,147 @@ title: "Maryk App Desktop Guide"
 
 ## Overview
 
-Maryk App is a Compose Multiplatform desktop UI for browsing and editing Maryk stores.
-Runs locally, reads model definitions from the store, and talks directly to RocksDB or FoundationDB.
+Maryk App is the desktop UI for Maryk stores.
+Use it to inspect models, scan records, edit values, and export/import data.
 
-### What it provides
+## Prerequisites
 
-- Store connection manager with saved entries and multiple browser windows.
-- Model catalog with counts and schema export.
-- Data browser with scan, sort, filters, and pinned columns.
-- Record inspector with YAML, history, and diffs.
-- Form-based editor with validation.
-- Import and export for models and data.
+- JDK 17+.
+- Local store or remote HTTP endpoint.
+- FoundationDB users: install `libfdb_c` (see `/store/foundationdb/`).
 
-## UI layout
+## Run locally
 
-- Stores window: list of saved stores, add/edit/remove, double click to open.
-- Browser window: top bar with store info, left catalog, center results, right inspector.
-- Panels resizable. Catalog and inspector toggles in the top bar and shortcuts.
+From repo root:
 
-## Stores
+```bash
+./gradlew :app:run
+```
 
-- RocksDB: directory path to the database.
-- FoundationDB: directory path (slash separated), optional cluster file, optional tenant.
-- Remote: HTTP URL to a served store, optional SSH tunnel.
-- Saved in `~/.maryk/app/stores.conf`.
-- Notes:
-  - RocksDB cannot be opened by two processes at once.
-  - FoundationDB requires `libfdb_c` (see `store/foundationdb`).
+## First-time workflow
 
-## Remote stores (HTTP/SSH)
+1. Open Stores window.
+2. Add a store config (RocksDB / FoundationDB / Remote).
+3. Open store.
+4. Select model in catalog.
+5. Scan/filter/sort records.
+6. Open a record.
+7. Edit in Form or Raw YAML.
+8. Save and verify in History tab.
 
-Maryk App can connect to a Remote store served over HTTP, with optional SSH tunneling.
+## Store types
 
-Flow:
-1) Start a server on the remote host (`maryk --exec "serve ..."`) to expose the store over HTTP.
-2) In the app, add a store with type `Remote`.
-3) Set `Remote URL` (example: `http://remote-host:8210`).
-4) Optional SSH: enable `Use SSH tunnel` and set:
-   - `SSH host` (the remote machine).
-   - `SSH user` (optional).
-   - `SSH port` (optional, default 22).
-   - `Local port` (optional; auto-select if empty).
-   - `Identity file` (optional).
+- RocksDB:
+  - Local directory path.
+  - Single process lock applies.
+- FoundationDB:
+  - Directory path.
+  - Optional cluster file, optional tenant.
+- Remote:
+  - HTTP URL to CLI `serve` endpoint.
+  - Optional SSH tunnel.
+
+Saved configs: `~/.maryk/app/stores.conf`.
+
+## Remote setup (HTTP + optional SSH)
+
+Server side example:
+
+```bash
+maryk --exec "serve rocksdb --dir /path/to/store --port 8210"
+```
+
+Then in app:
+
+1. Add store type `Remote`.
+2. Set URL (`http://host:8210`).
+3. If needed, enable SSH tunnel and set host/user/port/identity.
 
 Notes:
-- Only plain HTTP is supported; use SSH for encryption.
-- If the server binds to `127.0.0.1` on the remote host, set the URL to `http://127.0.0.1:8210` and enable SSH with the remote host as the tunnel target.
 
-## Catalog (models)
+- Remote transport is HTTP; use SSH if transport encryption needed.
+- If server binds to loopback (`127.0.0.1`) on remote host, set URL to that loopback URL and use SSH tunnel.
 
-- Search by name with fuzzy match.
-- Shows model id, version badge, and row count (capped at 100+).
-- Context menu: export model schema, export model data.
+## UI map
 
-## Results: Data tab
+- Stores window:
+  - Saved store list.
+  - Add/edit/remove/open.
+- Browser window:
+  - Left: model catalog.
+  - Center: data/model tabs.
+  - Right: record inspector.
+  - Top bar: connection info, actions, panel toggles.
 
-- Scan results for selected model, paged loading.
-- Sort by key or by index; toggle ascending or descending.
-- Filter button opens builder or raw YAML editor.
-- Add record button opens the form editor.
-- Row context menu: edit, copy key, copy data as JSON/YAML, export row, delete.
-- Selection supports multi-select and keyboard navigation.
-- Pinned columns: pin fields from Model tab to add columns in the grid.
+## Data browsing
 
-## Results: Model tab
+- Model search with fuzzy match.
+- Scan paging.
+- Sort by key or index.
+- Filters via builder or raw YAML.
+- Pin model fields to columns.
+- Row actions: open, edit, copy key/data, export, delete.
 
-- Model tree with embedded fields and multi-type branches.
-- Key and index chips; click to select field.
-- Pin supported fields to show in the data grid.
-- Details panel: constraints, defaults, and type info.
-- Raw panel: quick definition summary and enum cases.
+## Record inspector
 
-## Inspector
+- Data tab:
+  - Structured tree view.
+  - Search.
+  - Reference navigation and preview.
+- Raw tab:
+  - YAML.
+  - Search/copy/edit.
+- History tab:
+  - Version timeline.
+  - Diff view.
 
-Tabs depend on mode:
-- Data: tree view of record fields, search, reference links with hover preview, edit button.
-- Raw: YAML view with search, copy, and raw editor.
-- History: timeline of versions and diff viewer.
+## Record editor
 
-## Editing records
+Two modes:
 
-- Form editor for add and edit.
-- Supports lists, sets, maps, embedded objects/values, enums, references, date/time pickers.
-- Validation on save with inline errors.
-- Raw YAML edit applies with a version guard to avoid overwrites.
+- Form mode:
+  - Typed inputs with inline validation.
+  - Supports scalar and complex definitions:
+    - List / Set / Map / IncrementingMap.
+    - Embedded object/values.
+    - MultiType (type select + value editing).
+    - Reference, bytes, date/time/datetime, enums, numbers, booleans, strings.
+- Raw YAML mode:
+  - Direct YAML edits.
+  - Save guarded against stale state.
 
-## Filtering and search
+## Import / export
 
-- Builder supports nested groups (and/or) and negation.
-- Operators: equals, comparisons, range, prefix, regex, exists, value in.
-- Raw tab accepts Maryk YAML filter expressions.
-
-## Import and export
-
-- Model schema export: JSON, YAML, Proto, Kotlin.
-- Data export: row, model, or all data; JSON, YAML, Proto; optional version history.
-- Import: format and scope auto-detected from file contents.
-- Model name guessed from file name; fallback prompts model picker.
-- Import expects Maryk export formats (ValuesWithMetaData and versioned changes).
-
-## History and references
-
-- History uses `getChanges`; requires a store that keeps versions.
-- Diff compares two versions and shows changes in YAML.
-- Reference values link to target record; back bar returns to previous record.
+- Schema export: JSON, YAML, Proto, Kotlin.
+- Data export: row/model/all.
+- Data import:
+  - Auto-detect format/scope.
+  - Expects Maryk export structures (metadata + versioned changes where applicable).
 
 ## Shortcuts
 
-- Cmd/Ctrl+R reload scan
-- Cmd/Ctrl+B toggle catalog
-- Cmd/Ctrl+I toggle inspector
-- Esc closes open drawer
-- Arrow keys / Page Up / Page Down move selection; Enter or Space opens record
-- Cmd/Ctrl+click multi-select; Shift range select
-- Menu: Data -&gt; Import data, Export all models, Export data
+- Cmd/Ctrl+R: reload scan.
+- Cmd/Ctrl+B: toggle catalog.
+- Cmd/Ctrl+I: toggle inspector.
+- Esc: close drawer/dialog.
+- Arrow/PageUp/PageDown: move selection.
+- Enter/Space: open selected record.
+- Cmd/Ctrl+click: multi-select.
+- Shift+click: range select.
 
-## Files and preferences
+## Troubleshooting
 
-- Store list: `~/.maryk/app/stores.conf`
-- UI preferences (pins, panel state) stored in Java Preferences node `io.maryk.app.ui`.
+- Cannot open RocksDB:
+  - Ensure no other process has the DB open.
+- FoundationDB connect fails:
+  - Check `libfdb_c`, cluster file, tenant path.
+- Remote connect fails:
+  - Verify CLI `serve` running.
+  - Check URL/port/tunnel target.
+- Empty scans:
+  - Confirm selected model and filter expression.
+
+## Local state paths
+
+- Store configs: `~/.maryk/app/stores.conf`.
+- UI prefs (panel/pins): Java Preferences node `io.maryk.app.ui`.

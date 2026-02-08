@@ -1,30 +1,30 @@
 # Maryk App (Desktop)
 
-Maryk App is a Kotlin Compose Multiplatform desktop UI for browsing and editing Maryk data stores.
-It connects to RocksDB, FoundationDB, or Remote stores and provides model catalogs, record scans, and editors.
+Desktop UI for browsing/editing Maryk stores.
+Built with Compose Multiplatform.
 
-## Key features
+## Features
 
-- Manage and connect to saved stores (RocksDB / FoundationDB / Remote).
-- Browse models, inspect schemas, and pin fields.
-- Scan records with sorting and filters.
-- Inspect record data, raw YAML, and history.
-- Add/edit records with validation or raw YAML.
-- Import/export model schemas and data.
-- Remote store support over HTTP/SSH (served by the CLI `serve` command).
+- Store manager (RocksDB / FoundationDB / Remote).
+- Model catalog + schema inspection.
+- Record scan/filter/sort + pinned columns.
+- Record inspector (data tree, YAML, history/diff).
+- Form editor + raw YAML editor.
+- Import/export for schemas and data.
 
-## Running
+## Run
 
-From the project root:
+From repo root:
 
 ```bash
 ./gradlew :app:run
 ```
 
 Notes:
-- FoundationDB requires the native client library (`libfdb_c`). See `/store/foundationdb/`.
-- Saved store configurations live at `~/.maryk/app/stores.conf`.
 
-## Docs
+- FoundationDB needs `libfdb_c` (see `/store/foundationdb/README.md`).
+- Saved store configs: `~/.maryk/app/stores.conf`.
 
-See `app/docs/README.md` for UI walkthroughs and workflows.
+## Full guide
+
+See `/app/docs/README.md`.

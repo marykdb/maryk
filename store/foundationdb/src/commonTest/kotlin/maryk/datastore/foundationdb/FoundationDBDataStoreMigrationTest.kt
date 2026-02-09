@@ -2,9 +2,7 @@
 
 package maryk.datastore.foundationdb
 
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withTimeout
 import maryk.core.exceptions.StorageException
 import maryk.core.models.migration.MigrationException
 import maryk.core.properties.types.Key
@@ -37,46 +35,29 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreMigrationTest {
-
     class CustomException : Error()
 
     @Test
-    fun testComplexMigrationCheckWithNoChange() = runBlocking {
-        withTimeout(5.minutes) {
-            val dirPath = listOf("maryk", "test", "fdb-migration-nochange", Uuid.random().toString())
+    fun testComplexMigrationCheckWithNoChange() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-nochange", Uuid.random().toString())
 
-            val firstStore = FoundationDBDataStore.open(
-                keepAllVersions = true,
-                fdbClusterFilePath = "fdb.cluster",
-                directoryPath = dirPath,
-                dataModelsById = dataModelsForTests,
-                databaseOptionsSetter = {
-                    setTransactionRetryLimit(3)
-                    setTransactionMaxRetryDelay(5000)
-                }
-            )
-            try {
-                // no-op, first open persists definitions
-            } finally {
-                firstStore.close()
-            }
+        var dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = dataModelsForTests
+        )
 
-            val secondStore = FoundationDBDataStore.open(
-                keepAllVersions = true,
-                fdbClusterFilePath = "fdb.cluster",
-                directoryPath = dirPath,
-                dataModelsById = dataModelsForTests,
-                databaseOptionsSetter = {
-                    setTransactionRetryLimit(3)
-                    setTransactionMaxRetryDelay(5000)
-                }
-            )
-            try {
-                // no-op, second open validates no migration needed
-            } finally {
-                secondStore.close()
-            }
-        }
+        dataStore.close()
+
+        dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = dataModelsForTests
+        )
+
+        dataStore.close()
     }
 
     @Test

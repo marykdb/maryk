@@ -25,8 +25,29 @@ Capabilities in the FDB engine:
 - Constructor flags:
   - `keepAllVersions`: whether to maintain historic data alongside latest.
   - `fdbClusterFilePath`, `tenantName`, `directoryRootPath`: FDB connectivity & subspace root.
+  - `enableClusterUpdateLog`: optional cluster-wide live update propagation for `executeFlow` (writes updates into an FDB log and tails them back into the in-memory listener flow).
 - Initializes per‑model directories via DirectoryLayer.
 - Launches the store actor (coroutine) to process incoming requests one by one. Within the actor, every request is handled in an FDB transaction (or uses an iterator scoped to the transaction).
+
+### Cluster Update Log (Optional)
+
+Goal: cluster-wide `executeFlow` updates (multi-writer, multi-reader) using only FoundationDB.
+
+Subspaces (under the configured store root + optional tenant):
+
+- `__updates__/v1/log`: append-only log entries written in the same transaction as the table mutation.
+  - Key uses a FoundationDB versionstamp to avoid collisions: `(shard, modelId, hlc_be_8, keyBytes, originIdBytes, versionstamp)`.
+  - Value contains `(originId, modelId, type, version, keyBytes, payload)` where payload is values (Add), changes (Change), or hardDelete flag (Delete).
+- `__updates__/v1/consumers/<consumerId>`: per-consumer cursors, one per shard. Each node/process must use a unique `consumerId`.
+- `__updates__/v1/heads`: "wake keys" updated with versionstamped values. Tailers watch these to avoid polling the entire log when idle.
+- `__updates__/v1/hlc`: cluster HLC markers. Each writer updates `hlc/<consumerId>` (8 bytes big-endian HLC timestamp) on every append.
+  - On startup, a node reads `max(hlc/<node>)` and advances its local HLC baseline so it never emits a version behind the cluster.
+
+Semantics:
+
+- Delivery is at-least-once. On failure/restart (or on `consumerId` change), consumers can see duplicate updates within the retention window.
+- No strict global order across shards. Ordering is stable within a shard (HLC + versionstamp).
+- Retention is time-based. A background GC clears per-shard ranges older than a cutoff (retention + skew margin) using HLC order.
 
 ### TableDirectories
 

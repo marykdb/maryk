@@ -122,11 +122,17 @@ abstract class AbstractDataStore(
         val listener = request.createUpdateListener(response)
 
         updateSharedFlow.emit(AddUpdateListenerAction(dataModelId, listener))
+        onUpdateListenerAdded(dataModelId)
 
         return listener.getFlow().onCompletion {
             updateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener))
+            onUpdateListenerRemoved(dataModelId)
         }
     }
+
+    protected open fun onUpdateListenerAdded(dataModelId: UInt) {}
+    protected open fun onUpdateListenerRemoved(dataModelId: UInt) {}
+    protected open fun onAllUpdateListenersRemoved() {}
 
     /** Get [dataModel] id to identify it for storage */
     fun getDataModelId(dataModel: IsRootDataModel) =
@@ -141,6 +147,7 @@ abstract class AbstractDataStore(
 
     override suspend fun closeAllListeners() {
         updateSharedFlow.emit(RemoveAllUpdateListenersAction)
+        onAllUpdateListenersRemoved()
     }
 
     suspend fun use(block: suspend AbstractDataStore.() -> Unit) {

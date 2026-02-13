@@ -37,6 +37,8 @@ import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.Update
+import maryk.datastore.foundationdb.clusterlog.ClusterLogAddition
+import maryk.core.properties.types.Bytes
 
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     tableDirs: IsTableDirectories,
@@ -141,11 +143,18 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                 }
             }
 
+            val finalValues = objectToAdd.change(emptyList())
             updateToEmit = Update.Addition(
                 dataModel,
                 key,
                 version.timestamp,
-                objectToAdd.change(emptyList())
+                finalValues
+            )
+
+            clusterUpdateLog?.append(
+                tr = tr,
+                modelId = getDataModelId(dataModel),
+                update = ClusterLogAddition(Bytes(key.bytes), version.timestamp, finalValues),
             )
 
             AddSuccess(key, version.timestamp, emptyList())

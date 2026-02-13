@@ -10,6 +10,7 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
+import maryk.core.properties.types.Bytes
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
@@ -27,6 +28,7 @@ import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.updates.Update
+import maryk.datastore.foundationdb.clusterlog.ClusterLogDeletion
 import maryk.lib.bytes.combineToByteArray
 import maryk.foundationdb.Range as FDBRange
 
@@ -147,6 +149,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         }
 
         updateToEmit = Update.Deletion(dataModel, key, version.timestamp, hardDelete)
+
+        clusterUpdateLog?.append(
+            tr = tr,
+            modelId = dbIndex,
+            update = ClusterLogDeletion(Bytes(key.bytes), version.timestamp, hardDelete),
+        )
 
         DeleteSuccess(version.timestamp)
     }.also {

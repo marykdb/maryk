@@ -62,6 +62,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.IsValuesGetter
 import maryk.core.values.Values
+import maryk.datastore.foundationdb.clusterlog.ClusterLogChange
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
@@ -624,7 +625,14 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 }
             }
 
-            updateToEmit = Update.Change(dataModel, key, version.timestamp, changes + outChanges)
+            val finalChanges = changes + outChanges
+            updateToEmit = Update.Change(dataModel, key, version.timestamp, finalChanges)
+
+            clusterUpdateLog?.append(
+                tr = tr,
+                modelId = getDataModelId(dataModel),
+                update = ClusterLogChange(Bytes(key.bytes), version.timestamp, finalChanges),
+            )
 
             ChangeSuccess(version.timestamp, outChanges)
         }.also {

@@ -29,6 +29,7 @@ internal class ClusterUpdateLog(
     private val headPrefix: ByteArray?,
     private val headGroupCount: Int,
     private val hlcPrefix: ByteArray?,
+    private val hlcMaxPrefix: ByteArray?,
     private val shardCount: Int,
     private val originId: String,
     private val dataModelsById: Map<UInt, IsRootDataModel>,
@@ -62,6 +63,9 @@ internal class ClusterUpdateLog(
 
         hlcPrefix?.also {
             tr.set(hlcNodeKey(), hlcBytes)
+        }
+        hlcMaxPrefix?.also {
+            tr.mutate(MutationType.BYTE_MAX, hlcMaxShardKey(shard), hlcBytes)
         }
 
         // Wake up tailers without polling (optional).
@@ -144,6 +148,16 @@ internal class ClusterUpdateLog(
     fun hlcRange(): Range {
         require(hlcPrefix != null) { "hlcPrefix missing" }
         return Range.startsWith(hlcPrefix)
+    }
+
+    fun hlcMaxShardKey(shard: Int): ByteArray {
+        require(hlcMaxPrefix != null) { "hlcMaxPrefix missing" }
+        return combineToByteArray(hlcMaxPrefix, Tuple.from(shard).pack())
+    }
+
+    fun hlcMaxRange(): Range {
+        require(hlcMaxPrefix != null) { "hlcMaxPrefix missing" }
+        return Range.startsWith(hlcMaxPrefix)
     }
 
     data class TailResult(

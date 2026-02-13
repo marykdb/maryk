@@ -19,6 +19,7 @@ class ClusterUpdateLogCodecTest {
         headPrefix = byteArrayOf(7, 8, 9),
         headGroupCount = 2,
         hlcPrefix = byteArrayOf(10, 11, 12),
+        hlcMaxPrefix = byteArrayOf(13, 14, 15),
         shardCount = 4,
         originId = "node-a",
         dataModelsById = models,

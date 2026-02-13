@@ -9,6 +9,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.atomicfu.atomic
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
@@ -147,8 +148,12 @@ class FoundationDBDataStore private constructor(
     private val clusterLogGcRuns = atomic(0L)
     private val clusterLogGcErrors = atomic(0L)
     private val clusterLogCurrentBackoffMs = atomic(0L)
+    private val clusterLogHlcSyncTransactions = atomic(0L)
+    private val clusterLogHlcSyncErrors = atomic(0L)
+    private val clusterLogHlcCurrentBackoffMs = atomic(0L)
     private val clusterLogLastTailAtMs = atomic(0L)
     private val clusterLogLastDecodedAtMs = atomic(0L)
+    private val clusterLogLastHlcSyncAtMs = atomic(0L)
 
     internal inline fun <T> runTransaction(
         crossinline block: (Transaction) -> T
@@ -256,6 +261,9 @@ class FoundationDBDataStore private constructor(
             val hlcDir = runTransaction { tr ->
                 rootDirectory.createOrOpen(tr, listOf("__updates__", "v1", "hlc")).awaitResult()
             }
+            val hlcMaxDir = runTransaction { tr ->
+                rootDirectory.createOrOpen(tr, listOf("__updates__", "v1", "hlc_max")).awaitResult()
+            }
             val consumerDir = runTransaction { tr ->
                 rootDirectory.createOrOpen(tr, listOf("__updates__", "v1", "consumers", consumerId)).awaitResult()
             }
@@ -266,6 +274,7 @@ class FoundationDBDataStore private constructor(
                 headPrefix = headDir.pack(),
                 headGroupCount = headGroupCount,
                 hlcPrefix = hlcDir.pack(),
+                hlcMaxPrefix = hlcMaxDir.pack(),
                 shardCount = clusterUpdateLogShardCount,
                 originId = originId,
                 dataModelsById = dataModelsById,
@@ -277,20 +286,47 @@ class FoundationDBDataStore private constructor(
         startFlows()
 
         clusterUpdateLog?.also { log ->
-            // Cluster HLC sync on startup: advance local HLC to max(hlc/<node>) to avoid emitting versions behind the cluster.
+            // Cluster HLC sync on startup: advance local HLC to max cluster marker.
             val maxClusterHlc = runTransaction { tr ->
-                var maxSeen = 0uL
-                val it = tr.getRange(log.hlcRange()).iterator()
-                while (it.hasNext()) {
-                    val kv = it.nextBlocking()
-                    if (kv.value.size >= 8) {
-                        val v = readULongBigEndian(kv.value)
-                        if (v > maxSeen) maxSeen = v
-                    }
-                }
-                maxSeen
+                readMaxClusterHlc(log, tr)
             }
             observedClusterHlc.value = maxOf(observedClusterHlc.value, maxClusterHlc)
+            clusterLogLastHlcSyncAtMs.value = HLC().toPhysicalUnixTime().toLong()
+
+            // Dedicated HLC syncer; independent from update listeners/tailing.
+            this.launch(updateDispatcher) {
+                val headGroupCount = clusterUpdateLogHeadGroupCount
+                var backoffMs = 100L
+                while (isActive) {
+                    try {
+                        val maxSeen = runTransaction { tr ->
+                            readMaxClusterHlc(log, tr)
+                        }
+                        observedClusterHlc.value = maxOf(observedClusterHlc.value, maxSeen)
+                        clusterLogHlcSyncTransactions.incrementAndGet()
+                        clusterLogLastHlcSyncAtMs.value = HLC().toPhysicalUnixTime().toLong()
+                        backoffMs = 100L
+                        clusterLogHlcCurrentBackoffMs.value = 0L
+
+                        try {
+                            waitForAnyClusterLogHeadChange(
+                                log = log,
+                                headGroupCount = headGroupCount,
+                                timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
+                            )
+                        } catch (_: Throwable) {
+                            kotlinx.coroutines.delay(clusterUpdateLogPollInterval)
+                        }
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Throwable) {
+                        clusterLogHlcSyncErrors.incrementAndGet()
+                        clusterLogHlcCurrentBackoffMs.value = backoffMs
+                        kotlinx.coroutines.delay(backoffMs)
+                        backoffMs = minOf(backoffMs * 2, 5_000L)
+                    }
+                }
+            }
 
             // Tail cluster log into this node's in-memory update flow.
             this.launch(updateDispatcher) {
@@ -324,7 +360,11 @@ class FoundationDBDataStore private constructor(
                             if (idle >= pairCount) {
                                 idle = 0
                                 try {
-                                    waitForAnyClusterLogHeadChange(log = log, headGroupCount = headGroupCount)
+                                    waitForAnyClusterLogHeadChange(
+                                        log = log,
+                                        headGroupCount = headGroupCount,
+                                        timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
+                                    )
                                 } catch (_: Throwable) {
                                     kotlinx.coroutines.delay(clusterUpdateLogPollInterval)
                                 }
@@ -400,7 +440,11 @@ class FoundationDBDataStore private constructor(
                                 idle = 0
                                 // Prefer watch-based wakeups (one watch per group) and fall back to polling.
                                 try {
-                                    waitForAnyClusterLogHeadChange(log = log, headGroupCount = headGroupCount)
+                                    waitForAnyClusterLogHeadChange(
+                                        log = log,
+                                        headGroupCount = headGroupCount,
+                                        timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
+                                    )
                                 } catch (_: Throwable) {
                                     kotlinx.coroutines.delay(clusterUpdateLogPollInterval)
                                 }
@@ -635,15 +679,19 @@ class FoundationDBDataStore private constructor(
                 gcRuns = clusterLogGcRuns.value,
                 gcErrors = clusterLogGcErrors.value,
                 currentBackoffMs = clusterLogCurrentBackoffMs.value,
+                hlcSyncTransactions = clusterLogHlcSyncTransactions.value,
+                hlcSyncErrors = clusterLogHlcSyncErrors.value,
+                hlcSyncCurrentBackoffMs = clusterLogHlcCurrentBackoffMs.value,
                 observedClusterHlc = observedClusterHlc.value,
                 observedClusterUnixMs = HLC(observedClusterHlc.value).toPhysicalUnixTime().toLong(),
                 lastTailAtUnixMs = clusterLogLastTailAtMs.value,
                 lastDecodedAtUnixMs = clusterLogLastDecodedAtMs.value,
+                lastHlcSyncAtUnixMs = clusterLogLastHlcSyncAtMs.value,
                 activeListenerCountsByModelId = activeUpdateListenersByModelId.mapValues { it.value.value },
             )
         }
 
-    private suspend fun waitForAnyClusterLogHeadChange(log: ClusterUpdateLog, headGroupCount: Int) {
+    private suspend fun waitForAnyClusterLogHeadChange(log: ClusterUpdateLog, headGroupCount: Int, timeoutMs: Long) {
         if (headGroupCount <= 0) return
         coroutineScope {
             val waiters = (0 until headGroupCount).map { group ->
@@ -654,9 +702,19 @@ class FoundationDBDataStore private constructor(
                 }
             }
             try {
-                select {
-                    for (w in waiters) {
-                        w.onAwait { }
+                if (timeoutMs > 0) {
+                    withTimeoutOrNull(timeoutMs) {
+                        select {
+                            for (w in waiters) {
+                                w.onAwait { }
+                            }
+                        }
+                    }
+                } else {
+                    select {
+                        for (w in waiters) {
+                            w.onAwait { }
+                        }
                     }
                 }
             } finally {
@@ -679,6 +737,31 @@ class FoundationDBDataStore private constructor(
         return v.toULong()
     }
 
+    private fun readMaxClusterHlc(log: ClusterUpdateLog, tr: Transaction): ULong {
+        var maxSeen = 0uL
+
+        val shardIt = tr.getRange(log.hlcMaxRange()).iterator()
+        while (shardIt.hasNext()) {
+            val kv = shardIt.nextBlocking()
+            if (kv.value.size >= 8) {
+                val v = readULongBigEndian(kv.value)
+                if (v > maxSeen) maxSeen = v
+            }
+        }
+
+        // Backward compatibility / bootstrap: include per-node markers.
+        val nodeIt = tr.getRange(log.hlcRange()).iterator()
+        while (nodeIt.hasNext()) {
+            val kv = nodeIt.nextBlocking()
+            if (kv.value.size >= 8) {
+                val v = readULongBigEndian(kv.value)
+                if (v > maxSeen) maxSeen = v
+            }
+        }
+
+        return maxSeen
+    }
+
     companion object {
         /**
          * Open a FoundationDB-backed Maryk store.
@@ -690,6 +773,8 @@ class FoundationDBDataStore private constructor(
          *   Required when `enableClusterUpdateLog = true`.
          * - `clusterUpdateLogOriginId`: defaults to consumer id; used to suppress echo of updates written by this node.
          * - `clusterUpdateLogRetention`: time window to keep update entries; old entries cleared by time-based range clears.
+         * - Cluster HLC safety: writes update per-node and shard-max HLC markers; a background syncer keeps local version generation
+         *   at/above observed cluster HLC even without active `executeFlow` listeners.
          */
         suspend fun open(
             keepAllVersions: Boolean = true,
@@ -743,9 +828,13 @@ internal data class ClusterUpdateLogStats(
     val gcRuns: Long,
     val gcErrors: Long,
     val currentBackoffMs: Long,
+    val hlcSyncTransactions: Long,
+    val hlcSyncErrors: Long,
+    val hlcSyncCurrentBackoffMs: Long,
     val observedClusterHlc: ULong,
     val observedClusterUnixMs: Long,
     val lastTailAtUnixMs: Long,
     val lastDecodedAtUnixMs: Long,
+    val lastHlcSyncAtUnixMs: Long,
     val activeListenerCountsByModelId: Map<UInt, Int>,
 )

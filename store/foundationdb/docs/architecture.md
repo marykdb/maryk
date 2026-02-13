@@ -40,8 +40,9 @@ Subspaces (under the configured store root + optional tenant):
   - Value contains `(originId, modelId, type, version, keyBytes, payload)` where payload is values (Add), changes (Change), or hardDelete flag (Delete).
 - `__updates__/v1/consumers/<consumerId>`: per-consumer cursors, one per shard. Each node/process must use a unique `consumerId`.
 - `__updates__/v1/heads`: "wake keys" updated with versionstamped values. Tailers watch these to avoid polling the entire log when idle.
-- `__updates__/v1/hlc`: cluster HLC markers. Each writer updates `hlc/<consumerId>` (8 bytes big-endian HLC timestamp) on every append.
-  - On startup, a node reads `max(hlc/<node>)` and advances its local HLC baseline so it never emits a version behind the cluster.
+- `__updates__/v1/hlc`: per-node HLC markers. Each writer updates `hlc/<consumerId>` (8 bytes big-endian HLC timestamp) on every append.
+- `__updates__/v1/hlc_max`: shard-local cluster HLC max markers. Each writer updates `hlc_max/<shard>` via atomic `BYTE_MAX` on every append.
+  - A background HLC syncer on every node watches heads and refreshes `max(hlc_max/*, hlc/*)` so local write versions never lag behind cluster HLC, even with zero active `executeFlow` listeners.
 
 Semantics:
 

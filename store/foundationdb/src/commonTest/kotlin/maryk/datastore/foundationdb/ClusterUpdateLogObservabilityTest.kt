@@ -144,6 +144,56 @@ class ClusterUpdateLogObservabilityTest {
             store.close()
         }
     }
+
+    @Test
+    fun clusterHlcSyncAdvancesWithoutActiveListeners() = runBlocking {
+        val root = listOf("maryk", "test", "hlc-sync", Uuid.random().toString())
+        val writer = FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = root,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+            enableClusterUpdateLog = true,
+            clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+        )
+        val reader = FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = root,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+            enableClusterUpdateLog = true,
+            clusterUpdateLogConsumerId = "reader-${Uuid.random()}",
+        )
+
+        try {
+            val readerBefore = reader.getClusterUpdateLogStats()
+            assertNotNull(readerBefore)
+            assertEquals(0, readerBefore.activeListenerCountsByModelId.values.sum())
+
+            val writeStatus = writer.execute(
+                Log.add(
+                    Log(message = "hlc-sync", severity = INFO, timestamp = LocalDateTime(2026, 1, 1, 10, 1, 0))
+                )
+            ).statuses.single()
+            val writeVersion = assertIs<AddSuccess<Log>>(writeStatus).version
+
+            waitForStat("cluster HLC sync without listeners") {
+                val stats = reader.getClusterUpdateLogStats()
+                stats != null &&
+                    stats.observedClusterHlc >= writeVersion &&
+                    stats.hlcSyncTransactions > readerBefore.hlcSyncTransactions
+            }
+
+            val readerAfter = reader.getClusterUpdateLogStats()
+            assertNotNull(readerAfter)
+            assertTrue(readerAfter.hlcSyncErrors >= 0)
+            assertTrue(readerAfter.lastHlcSyncAtUnixMs > 0)
+            assertEquals(0, readerAfter.activeListenerCountsByModelId.values.sum())
+        } finally {
+            reader.close()
+            writer.close()
+        }
+    }
 }
 
 private suspend fun waitForStat(name: String, check: () -> Boolean) {

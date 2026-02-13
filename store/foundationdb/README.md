@@ -118,12 +118,15 @@ Typical use cases:
 Notes:
 - Uses FDB itself (append-only, sharded) and writes the log entry in the same transaction as the data mutation.
 - Retention is time-based. If a node is offline longer than the retention window, it will resume at the retention cutoff (no replay beyond retention).
-- Cluster HLC sync: writers record their latest emitted HLC under `__updates__/v1/hlc/<clusterUpdateLogConsumerId>`; on startup a node reads the max across all nodes and advances its local HLC baseline to avoid emitting versions behind the cluster.
+- Cluster HLC sync:
+  - writers record their latest emitted HLC under `__updates__/v1/hlc/<clusterUpdateLogConsumerId>`.
+  - writers also update `__updates__/v1/hlc_max/<shard>` using FDB atomic `BYTE_MAX` (8-byte big-endian HLC), so cluster max advances without read-modify-write contention.
+  - each node runs a background HLC syncer (independent from update listeners) which watches heads and refreshes `max(hlc_max/*, hlc/*)` to keep local version generation safely at/above cluster floor.
 - `clusterUpdateLogConsumerId` should be stable per node/process across restarts. Changing it creates a fresh cursor (possible duplicate delivery for up to retention) and a new HLC marker key.
 - Log keys include `modelId` early, so consumers can range-scan only the models they care about.
 
 Observability:
-- `FoundationDBDataStore.getClusterUpdateLogStats()` exposes tail/GC counters, backoff, last activity timestamps, observed cluster HLC, and active listener counts per model.
+- `FoundationDBDataStore.getClusterUpdateLogStats()` exposes tail/GC counters, HLC sync counters/backoff, last activity timestamps, observed cluster HLC, and active listener counts per model.
 - Use it to detect stalled tailers (`lastDecodedAtUnixMs` / `lastTailAtUnixMs`), error spikes (`tailErrors` / `gcErrors`), or unnecessary tail load (`tailTransactions` growth).
 
 ## Operational Tips

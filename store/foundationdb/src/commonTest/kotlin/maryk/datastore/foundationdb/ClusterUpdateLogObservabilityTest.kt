@@ -4,6 +4,7 @@ package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDateTime
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
@@ -22,6 +23,32 @@ import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 class ClusterUpdateLogObservabilityTest {
+    @Test
+    fun clusterUpdateLogCloseCompletesAfterListenerStartup() = runBlocking {
+        val store = FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = listOf("maryk", "test", "observability", "close", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+            enableClusterUpdateLog = true,
+            clusterUpdateLogConsumerId = "close-${Uuid.random()}",
+        )
+
+        try {
+            val flow = store.executeFlow(Log.scanUpdates(fromVersion = 0uL))
+            assertNotNull(flow)
+
+            waitForStat("listener registration before close") {
+                val stats = store.getClusterUpdateLogStats()
+                stats != null && (stats.activeListenerCountsByModelId[4u] ?: 0) > 0
+            }
+        } finally {
+            withTimeout(10_000) {
+                store.close()
+            }
+        }
+    }
+
     @Test
     fun clusterUpdateLogStatsAreNullWhenDisabled() = runBlocking {
         val store = FoundationDBDataStore.open(

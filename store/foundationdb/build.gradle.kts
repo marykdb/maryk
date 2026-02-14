@@ -141,6 +141,11 @@ val resetFoundationDBTestData by tasks.registering {
     }
 }
 
+// In mixed task graphs (native + jvm tests), ensure reset never runs after start.
+startFoundationDBForTests.configure {
+    mustRunAfter(resetFoundationDBTestData)
+}
+
 tasks.named("jvmTest").configure {
     dependsOn(resetFoundationDBTestData, startFoundationDBForTests)
     finalizedBy(stopFoundationDBForTests)

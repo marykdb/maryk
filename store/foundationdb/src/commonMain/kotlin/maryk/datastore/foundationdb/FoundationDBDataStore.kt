@@ -4,6 +4,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
@@ -154,20 +155,25 @@ class FoundationDBDataStore private constructor(
     private val clusterLogLastTailAtMs = atomic(0L)
     private val clusterLogLastDecodedAtMs = atomic(0L)
     private val clusterLogLastHlcSyncAtMs = atomic(0L)
+    private val isClosing = atomic(false)
 
     internal inline fun <T> runTransaction(
         crossinline block: (Transaction) -> T
-    ): T =
-        tc.run { tr ->
+    ): T {
+        if (isClosing.value) throw CancellationException("Datastore closing")
+        return tc.run { tr ->
             block(tr)
         }
+    }
 
     internal inline fun <T> runTransactionAsync(
         crossinline block: (Transaction) -> FdbFuture<T>
-    ): FdbFuture<T> =
-        tc.runAsync { tr ->
+    ): FdbFuture<T> {
+        if (isClosing.value) throw CancellationException("Datastore closing")
+        return tc.runAsync { tr ->
             block(tr)
         }
+    }
 
     suspend fun initAsync() {
         rootDirectory = runTransactionAsync { tr ->
@@ -648,9 +654,24 @@ class FoundationDBDataStore private constructor(
     }
 
     override suspend fun close() {
-        this.tenantDB?.close()
-        this.db.close()
-        super.close()
+        if (!isClosing.compareAndSet(false, true)) return
+
+        // Stop new work first.
+        storeChannel.close()
+        val job = this.coroutineContext[Job]
+        job?.cancel()
+
+        // Give cooperative coroutines a brief chance to finish before forcing native close.
+        withTimeoutOrNull(2_000) {
+            job?.join()
+        }
+
+        runCatching { this.tenantDB?.close() }
+        runCatching { this.db.close() }
+
+        withTimeoutOrNull(10_000) {
+            job?.join()
+        }
     }
 
     override fun onUpdateListenerAdded(dataModelId: UInt) {

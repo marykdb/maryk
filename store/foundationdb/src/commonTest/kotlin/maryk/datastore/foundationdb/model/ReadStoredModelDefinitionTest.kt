@@ -11,6 +11,7 @@ import maryk.test.models.ModelWithDependents
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
@@ -87,6 +88,11 @@ class ReadStoredModelDefinitionTest {
                 2u to SimpleMarykModel,
             )
         )
+
+        val storedNames = dataStore.readStoredModelNamesById()
+        assertFalse(storedNames.isEmpty())
+        assertEquals(ModelWithDependents.Meta.name, storedNames[1u])
+        assertEquals(SimpleMarykModel.Meta.name, storedNames[2u])
 
         dataStore.close()
 

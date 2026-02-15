@@ -9,6 +9,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.atomicfu.atomic
@@ -796,7 +797,7 @@ class FoundationDBDataStore private constructor(
         if (!isSensitiveReference(modelId, reference)) return value
         val provider = fieldEncryptionProvider
             ?: throw RequestException("No fieldEncryptionProvider configured for sensitive property write")
-        val encrypted = provider.encrypt(value)
+        val encrypted = runBlocking { provider.encrypt(value) }
         return combineToByteArray(ENCRYPTED_VALUE_MAGIC, encrypted)
     }
 
@@ -805,14 +806,14 @@ class FoundationDBDataStore private constructor(
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
         val payload = value.copyOfRange(ENCRYPTED_VALUE_MAGIC.size, value.size)
-        return provider.decrypt(payload)
+        return runBlocking { provider.decrypt(payload) }
     }
 
     internal fun mapUniqueValueBytes(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
         if (!isSensitiveUniqueReference(modelId, reference)) return value
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
             ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
-        return tokenProvider.deriveDeterministicToken(modelId, reference, value)
+        return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value) }
     }
 
     private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean {

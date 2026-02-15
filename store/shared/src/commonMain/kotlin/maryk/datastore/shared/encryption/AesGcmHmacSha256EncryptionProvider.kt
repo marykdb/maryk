@@ -26,25 +26,24 @@ class AesGcmHmacSha256EncryptionProvider(
 ) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
     private val provider = CryptographyProvider.Default
     private val aesGcm = provider.get(AES.GCM)
-    private val aesKey = aesGcm.keyDecoder().decodeFromByteArrayBlocking(AES.Key.Format.RAW, encryptionKey)
-    private val aesCipher = aesKey.cipher()
-    private val nonceKeyGenerator = aesGcm.keyGenerator(AES.Key.Size.B128)
-
     private val hmac = provider.get(HMAC)
-    private val hmacKey = hmac.keyDecoder(SHA256).decodeFromByteArrayBlocking(HMAC.Key.Format.RAW, tokenKey)
-    private val tokenSignatureGenerator = hmacKey.signatureGenerator()
+    private val nonceKeyGenerator = aesGcm.keyGenerator(AES.Key.Size.B128)
+    private val encryptionKeyBytes = encryptionKey.copyOf()
+    private val tokenKeyBytes = tokenKey.copyOf()
 
     init {
         require(tokenSizeBytes in 8..32) { "tokenSizeBytes must be in range 8..32" }
     }
 
-    override fun encrypt(value: ByteArray): ByteArray {
+    override suspend fun encrypt(value: ByteArray): ByteArray {
+        val aesKey = aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, encryptionKeyBytes)
+        val aesCipher = aesKey.cipher()
         val nonce = generateNonce()
-        val cipherText = aesCipher.encryptWithIvBlocking(nonce, value, associatedData)
+        val cipherText = aesCipher.encryptWithIv(nonce, value, associatedData)
         return byteArrayOf(V1_PAYLOAD_HEADER) + nonce + cipherText
     }
 
-    override fun decrypt(value: ByteArray): ByteArray {
+    override suspend fun decrypt(value: ByteArray): ByteArray {
         require(value.size > 1 + GCM_NONCE_SIZE_BYTES) {
             "Encrypted payload too short"
         }
@@ -55,10 +54,12 @@ class AesGcmHmacSha256EncryptionProvider(
         val nonceEnd = nonceStart + GCM_NONCE_SIZE_BYTES
         val nonce = value.copyOfRange(nonceStart, nonceEnd)
         val cipherText = value.copyOfRange(nonceEnd, value.size)
-        return aesCipher.decryptWithIvBlocking(nonce, cipherText, associatedData)
+        val aesKey = aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, encryptionKeyBytes)
+        val aesCipher = aesKey.cipher()
+        return aesCipher.decryptWithIv(nonce, cipherText, associatedData)
     }
 
-    override fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+    override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
         val input = byteArrayOf(1) +
             modelId.toByteArray() +
             reference.size.toByteArray() +
@@ -66,14 +67,16 @@ class AesGcmHmacSha256EncryptionProvider(
             value.size.toByteArray() +
             value
 
-        val fullMac = tokenSignatureGenerator.generateSignatureBlocking(input)
+        val hmacKey = hmac.keyDecoder(SHA256).decodeFromByteArray(HMAC.Key.Format.RAW, tokenKeyBytes)
+        val tokenSignatureGenerator = hmacKey.signatureGenerator()
+        val fullMac = tokenSignatureGenerator.generateSignature(input)
         return fullMac.copyOf(tokenSizeBytes)
     }
 
-    private fun generateNonce(): ByteArray {
+    private suspend fun generateNonce(): ByteArray {
         // Generate cryptographically secure bytes through provider key generation.
         // The raw key bytes are random; first 12 bytes are used as AES-GCM nonce.
-        val random = nonceKeyGenerator.generateKeyBlocking().encodeToByteArrayBlocking(AES.Key.Format.RAW)
+        val random = nonceKeyGenerator.generateKey().encodeToByteArray(AES.Key.Format.RAW)
         return random.copyOf(GCM_NONCE_SIZE_BYTES)
     }
 
@@ -86,7 +89,7 @@ class AesGcmHmacSha256EncryptionProvider(
         private const val V1_PAYLOAD_HEADER: Byte = 1
         private const val GCM_NONCE_SIZE_BYTES = 12
 
-        fun generateKeyMaterial(
+        suspend fun generateKeyMaterial(
             encryptionKeySize: BinarySize = AES.Key.Size.B256,
             tokenKeySize: BinarySize = AES.Key.Size.B256,
         ): KeyMaterial {
@@ -95,11 +98,11 @@ class AesGcmHmacSha256EncryptionProvider(
             val hmac = provider.get(HMAC)
 
             val encryptionKey = aes.keyGenerator(encryptionKeySize)
-                .generateKeyBlocking()
-                .encodeToByteArrayBlocking(AES.Key.Format.RAW)
+                .generateKey()
+                .encodeToByteArray(AES.Key.Format.RAW)
             val tokenKey = hmac.keyGenerator(SHA256)
-                .generateKeyBlocking()
-                .encodeToByteArrayBlocking(HMAC.Key.Format.RAW)
+                .generateKey()
+                .encodeToByteArray(HMAC.Key.Format.RAW)
 
             val requestedTokenKeyBytes = tokenKeySize.inBytes
             require(requestedTokenKeyBytes <= tokenKey.size) {

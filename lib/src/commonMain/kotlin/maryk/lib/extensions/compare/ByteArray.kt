@@ -48,6 +48,8 @@ infix operator fun ByteArray.compareTo(other: ByteArray): Int {
  * - `byteArrayOf(2, 3).compareToRange(byteArrayOf(1, 2, 3, 4), 1, 2) == 0`
  */
 fun ByteArray.compareToRange(other: ByteArray, offset: Int, length: Int = other.size - offset): Int {
+    validateRange(offset = offset, length = length, arraySize = other.size)
+
     val minSize = minOf(this.size, length)
     var index = 0
     while (index < minSize) {
@@ -77,6 +79,8 @@ fun ByteArray.compareToRange(other: ByteArray, offset: Int, length: Int = other.
  * - No defensive bounds checks are performed for performance.
  */
 fun ByteArray.compareDefinedRange(other: ByteArray, offset: Int = 0, length: Int = other.size - offset): Int {
+    validateRange(offset = offset, length = length, arraySize = other.size)
+
     val minSize = minOf(this.size, length)
     var index = 0
     while (index < minSize) {
@@ -105,7 +109,14 @@ fun ByteArray.compareDefinedRange(other: ByteArray, offset: Int = 0, length: Int
  * - No defensive bounds checks are performed for performance.
  */
 fun ByteArray.matchesRange(fromOffset: Int, bytes: ByteArray, sourceLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
+    validateOffset(fromOffset, this.size)
+    validateOffset(offset, bytes.size)
+    requireNonNegative(sourceLength)
+    requireNonNegative(length)
+
     if (length != sourceLength) return false
+    validateRange(offset = fromOffset, length = length, arraySize = this.size)
+    validateRange(offset = offset, length = length, arraySize = bytes.size)
 
     var index = length - 1
     while (index >= 0) {
@@ -131,7 +142,14 @@ fun ByteArray.matchesRange(fromOffset: Int, bytes: ByteArray, sourceLength: Int 
  * - No defensive bounds checks are performed for performance.
  */
 fun ByteArray.matchesRangePart(fromOffset: Int, bytes: ByteArray, sourceLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
+    validateOffset(fromOffset, this.size)
+    validateOffset(offset, bytes.size)
+    requireNonNegative(sourceLength)
+    requireNonNegative(length)
+
     if (length > sourceLength) return false
+    validateRange(offset = fromOffset, length = length, arraySize = this.size)
+    validateRange(offset = offset, length = length, arraySize = bytes.size)
 
     var index = length - 1
     while (index >= 0) {
@@ -173,4 +191,22 @@ fun ByteArray.prevByteInSameLength(maxLengthToRead: Int? = null): ByteArray {
         newArray[i] = 0xFF.toByte()
     }
     throw IllegalStateException("Byte array already reached the minimum value")
+}
+
+private fun validateRange(offset: Int, length: Int, arraySize: Int) {
+    if (offset < 0 || length < 0 || offset > arraySize || length > arraySize - offset) {
+        throw IndexOutOfBoundsException("Range [$offset, ${offset + length}) out of bounds for size $arraySize")
+    }
+}
+
+private fun validateOffset(offset: Int, arraySize: Int) {
+    if (offset < 0 || offset > arraySize) {
+        throw IndexOutOfBoundsException("Offset $offset out of bounds for size $arraySize")
+    }
+}
+
+private fun requireNonNegative(value: Int) {
+    if (value < 0) {
+        throw IndexOutOfBoundsException("Length $value cannot be negative")
+    }
 }

@@ -9,6 +9,7 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
@@ -470,7 +471,7 @@ class RocksDBDataStore private constructor(
         if (!isSensitiveReference(modelId, reference)) return value
         val provider = fieldEncryptionProvider
             ?: throw RequestException("No fieldEncryptionProvider configured for sensitive property write")
-        val encrypted = provider.encrypt(value)
+        val encrypted = runBlocking { provider.encrypt(value) }
         return ENCRYPTED_VALUE_MAGIC + encrypted
     }
 
@@ -478,14 +479,14 @@ class RocksDBDataStore private constructor(
         if (!isEncryptedValue(value)) return value
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        return provider.decrypt(value.copyOfRange(ENCRYPTED_VALUE_MAGIC.size, value.size))
+        return runBlocking { provider.decrypt(value.copyOfRange(ENCRYPTED_VALUE_MAGIC.size, value.size)) }
     }
 
     internal fun mapUniqueValueBytes(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
         if (!isSensitiveUniqueReference(modelId, reference)) return value
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
             ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
-        return tokenProvider.deriveDeterministicToken(modelId, reference, value)
+        return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value) }
     }
 
     private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean =

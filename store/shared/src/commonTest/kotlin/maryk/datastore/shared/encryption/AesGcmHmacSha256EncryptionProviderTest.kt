@@ -1,5 +1,6 @@
 package maryk.datastore.shared.encryption
 
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -8,7 +9,7 @@ import kotlin.test.assertFalse
 
 class AesGcmHmacSha256EncryptionProviderTest {
     @Test
-    fun encryptDecryptRoundTrip() {
+    fun encryptDecryptRoundTrip() = runTest {
         val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
         val provider = AesGcmHmacSha256EncryptionProvider(
             encryptionKey = keyMaterial.encryptionKey,
@@ -24,7 +25,7 @@ class AesGcmHmacSha256EncryptionProviderTest {
     }
 
     @Test
-    fun encryptionIsNonceRandomized() {
+    fun encryptionIsNonceRandomized() = runTest {
         val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
         val provider = AesGcmHmacSha256EncryptionProvider(
             encryptionKey = keyMaterial.encryptionKey,
@@ -39,7 +40,7 @@ class AesGcmHmacSha256EncryptionProviderTest {
     }
 
     @Test
-    fun deterministicTokenIsStable() {
+    fun deterministicTokenIsStable() = runTest {
         val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
         val provider = AesGcmHmacSha256EncryptionProvider(
             encryptionKey = keyMaterial.encryptionKey,
@@ -58,7 +59,7 @@ class AesGcmHmacSha256EncryptionProviderTest {
     }
 
     @Test
-    fun deterministicTokenChangesByInput() {
+    fun deterministicTokenChangesByInput() = runTest {
         val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
         val provider = AesGcmHmacSha256EncryptionProvider(
             encryptionKey = keyMaterial.encryptionKey,
@@ -77,7 +78,7 @@ class AesGcmHmacSha256EncryptionProviderTest {
     }
 
     @Test
-    fun rejectsCorruptPayloadHeader() {
+    fun rejectsCorruptPayloadHeader() = runTest {
         val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
         val provider = AesGcmHmacSha256EncryptionProvider(
             encryptionKey = keyMaterial.encryptionKey,

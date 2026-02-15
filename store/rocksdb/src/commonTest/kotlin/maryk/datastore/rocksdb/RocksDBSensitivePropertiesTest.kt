@@ -127,8 +127,8 @@ class RocksDBSensitivePropertiesTest {
 }
 
 private class XorFieldEncryptionProvider : FieldEncryptionProvider {
-    override fun encrypt(value: ByteArray): ByteArray = xor(value)
-    override fun decrypt(value: ByteArray): ByteArray = xor(value)
+    override suspend fun encrypt(value: ByteArray): ByteArray = xor(value)
+    override suspend fun decrypt(value: ByteArray): ByteArray = xor(value)
 
     private fun xor(value: ByteArray): ByteArray =
         ByteArray(value.size) { i -> (value[i].toInt() xor 0x5A).toByte() }
@@ -137,10 +137,10 @@ private class XorFieldEncryptionProvider : FieldEncryptionProvider {
 private class XorWithTokenFieldEncryptionProvider :
     FieldEncryptionProvider,
     SensitiveIndexTokenProvider {
-    override fun encrypt(value: ByteArray): ByteArray = xor(value)
-    override fun decrypt(value: ByteArray): ByteArray = xor(value)
+    override suspend fun encrypt(value: ByteArray): ByteArray = xor(value)
+    override suspend fun decrypt(value: ByteArray): ByteArray = xor(value)
 
-    override fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+    override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
         val token = ByteArray(16)
         var i = 0
         for (b in reference) {

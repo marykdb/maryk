@@ -6,7 +6,7 @@ import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.shared.readValue
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.rocksdb.ReadOptions
 
 /**
@@ -26,7 +26,7 @@ internal fun <T : Any> getList(
 
         // First handle the count
         var ref = iterator.key()
-        val count = if (!iterator.isValid() || !ref.matchPart(0, keyAndReference)) {
+        val count = if (!iterator.isValid() || !ref.matchesRangePart(0, keyAndReference)) {
             return mutableListOf()
         } else {
             var readIndex = VERSION_BYTE_SIZE
@@ -40,7 +40,7 @@ internal fun <T : Any> getList(
         while (iterator.isValid()) {
             ref = iterator.key()
 
-            if (ref.matchPart(0, keyAndReference)) {
+            if (ref.matchesRangePart(0, keyAndReference)) {
                 val valueAsBytes = iterator.value()
                 var readIndex = VERSION_BYTE_SIZE // Skip version because reading from main table
                 val reader = { valueAsBytes[readIndex++] }

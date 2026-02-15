@@ -19,7 +19,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.TRUE
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.matchesRangePart
 
 internal fun FoundationDBDataStore.createValueWriter(
     dataModelId: UInt,
@@ -37,10 +37,10 @@ internal fun FoundationDBDataStore.createValueWriter(
             it.first.contentEquals(referenceBytes) &&
                 stored.size > VERSION_BYTE_SIZE &&
                 stored.size - VERSION_BYTE_SIZE == valueBytes.size &&
-                stored.matchPart(
+                stored.matchesRangePart(
                     fromOffset = VERSION_BYTE_SIZE,
                     bytes = valueBytes,
-                    fromLength = stored.size - VERSION_BYTE_SIZE
+                    sourceLength = stored.size - VERSION_BYTE_SIZE
                 )
         } == true
 

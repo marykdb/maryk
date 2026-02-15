@@ -6,7 +6,7 @@ import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.lib.bytes.combineToByteArray
-import maryk.lib.extensions.compare.compareToWithOffsetLength
+import maryk.lib.extensions.compare.compareToRange
 
 /**
  * Iterate over values for a [reference] prefix with FoundationDB range reads.
@@ -86,7 +86,7 @@ internal fun <R : Any> Transaction.iterateValues(
             }
             val encRefLength = sepIndex - refOffset
 
-            if (toVersionBytes.compareToWithOffsetLength(keyBytes, versionOffset) <= 0) {
+            if (toVersionBytes.compareToRange(keyBytes, versionOffset) <= 0) {
                 val value = kv.value
                 // Decode qualifier before handing to caller
                 val decodedQualifier = if (encRefLength > 0) {

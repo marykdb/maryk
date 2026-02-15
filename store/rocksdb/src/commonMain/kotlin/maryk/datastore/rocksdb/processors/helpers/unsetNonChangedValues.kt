@@ -5,7 +5,7 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.TypeIndicator
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.compare.compareToWithOffsetLength
+import maryk.lib.extensions.compare.compareToRange
 
 internal fun unsetNonChangedValues(
     transaction: Transaction,
@@ -21,7 +21,7 @@ internal fun unsetNonChangedValues(
 
     for ((qualifier, _) in currentValues) {
         val index = sortedQualifiersToKeep.binarySearch(fromIndex = minIndex) {
-            it.compareToWithOffsetLength(qualifier, key.bytes.size, qualifier.size - key.bytes.size)
+            it.compareToRange(qualifier, key.bytes.size, qualifier.size - key.bytes.size)
         }
         if (index < 0) {
             // Delete the value by setting it to the DeletedIndicator

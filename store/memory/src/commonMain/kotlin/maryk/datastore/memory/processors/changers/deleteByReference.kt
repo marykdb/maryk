@@ -25,7 +25,7 @@ import maryk.core.properties.types.invoke
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.matchesRangePart
 
 /**
  * Delete value by [reference] in [values] and record deletion below [version]
@@ -139,12 +139,12 @@ internal fun <T : Any> deleteByReference(
         val value = values[index]
         val refOfParent = referenceOfParent
 
-        if (value.reference.matchPart(0, referenceToCompareTo)) {
+        if (value.reference.matchesRangePart(0, referenceToCompareTo)) {
             if (toShiftListCount <= 0u) {
                 // Delete if not a list or no further list items
                 isDeleted = deleteByIndex<T>(values, index, value.reference, version, keepAllVersions) != null
             }
-        } else if (refOfParent != null && value.reference.matchPart(0, refOfParent)) {
+        } else if (refOfParent != null && value.reference.matchesRangePart(0, refOfParent)) {
             // To handle list shifting
             if (toShiftListCount > 0u) {
                 @Suppress("UNCHECKED_CAST")

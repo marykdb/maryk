@@ -2,7 +2,7 @@ package maryk.datastore.rocksdb
 
 import maryk.datastore.rocksdb.ChangeAction.Delete
 import maryk.datastore.rocksdb.ChangeAction.Put
-import maryk.lib.extensions.compare.compareDefinedTo
+import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareTo
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDBException
@@ -35,7 +35,7 @@ class TransactionIterator(
         startPrefix = target.copyOfRange(0, transaction.rocksDBDataStore.getPrefixSize(columnFamilyHandle))
 
         // Skip to end if prefix does not match
-        if (changesIndex < changes.size && target.compareDefinedTo(changes[changesIndex].key) != 0) {
+        if (changesIndex < changes.size && target.compareDefinedRange(changes[changesIndex].key) != 0) {
             lastChangesIndex = changesIndex
             changesIndex = changes.size
         }
@@ -51,7 +51,7 @@ class TransactionIterator(
         startPrefix = target.copyOfRange(0, transaction.rocksDBDataStore.getPrefixSize(columnFamilyHandle))
 
         // Skip to start if prefix does not match
-        if (changesIndex >= 0 && target.compareDefinedTo(changes[changesIndex].key) != 0) {
+        if (changesIndex >= 0 && target.compareDefinedRange(changes[changesIndex].key) != 0) {
             lastChangesIndex = changesIndex
             changesIndex = -1
         }
@@ -81,7 +81,7 @@ class TransactionIterator(
 
             changesIndex++
             // Skip to end if prefix does not match
-            if (changesIndex < changes.size && startPrefix != null && startPrefix!!.compareDefinedTo(changes[changesIndex].key) != 0) {
+            if (changesIndex < changes.size && startPrefix != null && startPrefix!!.compareDefinedRange(changes[changesIndex].key) != 0) {
                 lastChangesIndex = changesIndex
                 changesIndex = changes.size
             }
@@ -121,7 +121,7 @@ class TransactionIterator(
 
             changesIndex--
             // Skip to start if prefix does not match
-            if (changesIndex >= 0 && startPrefix != null && startPrefix!!.compareDefinedTo(changes[changesIndex].key) != 0) {
+            if (changesIndex >= 0 && startPrefix != null && startPrefix!!.compareDefinedRange(changes[changesIndex].key) != 0) {
                 lastChangesIndex = changesIndex
                 changesIndex = -1
             }

@@ -35,9 +35,9 @@ import maryk.datastore.foundationdb.processors.helpers.asByteArrayKey
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.lib.bytes.combineToByteArray
-import maryk.lib.extensions.compare.compareDefinedTo
+import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.compare.compareToWithOffsetLength
+import maryk.lib.extensions.compare.compareToRange
 import kotlin.math.min
 
 internal fun <DM : IsRootDataModel> scanIndex(
@@ -116,7 +116,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                     }
 
                     val cmpLength = min(begin.size, end.size)
-                    val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+                    val beginGteEnd = when (val cmp = begin.compareDefinedRange(end, 0, cmpLength)) {
                         0 -> begin.size >= end.size
                         else -> cmp > 0
                     }
@@ -138,7 +138,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue)) continue
 
                         if (startKeyFilter != null) {
-                            val cmp = sortingKey.compareDefinedTo(startKeyFilter)
+                            val cmp = sortingKey.compareDefinedRange(startKeyFilter)
                             if (cmp < 0) continue
                             if (!includeStartFilter && cmp == 0) continue
                         }
@@ -181,7 +181,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                     }
 
                     val cmpLength = min(begin.size, end.size)
-                    val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+                    val beginGteEnd = when (val cmp = begin.compareDefinedRange(end, 0, cmpLength)) {
                         0 -> begin.size >= end.size
                         else -> cmp > 0
                     }
@@ -196,7 +196,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         if (valueSize < 0) continue
                         val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
                         if (startIndexKey != null) {
-                            val cmp = sortingKey.compareDefinedTo(startIndexKey)
+                            val cmp = sortingKey.compareDefinedRange(startIndexKey)
                             if (cmp > 0) continue
                             if (!scanRequest.includeStart && cmp == 0) continue
                         }
@@ -263,7 +263,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
             }
 
             val cmpLength = min(begin.size, end.size)
-            val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+            val beginGteEnd = when (val cmp = begin.compareDefinedRange(end, 0, cmpLength)) {
                 0 -> begin.size >= end.size
                 else -> cmp > 0
             }
@@ -277,7 +277,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 val versionOffset = k.size - toVersionBytes.size
                 val sepIndex = versionOffset - 1
                 if (sepIndex < histBase.size || k[sepIndex] != 0.toByte()) continue
-                if (toVersionBytes.compareToWithOffsetLength(k, versionOffset) > 0) continue
+                if (toVersionBytes.compareToRange(k, versionOffset) > 0) continue
 
                 val encQualifier = k.copyOfRange(histBase.size, sepIndex)
                 val prevEnc = lastQualifierEncoded
@@ -312,7 +312,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
             ASC -> {
                 var idx = 0
                 startIndexKey?.let { si ->
-                    while (idx < results.size && results[idx].sort.compareDefinedTo(si) < 0) idx++
+                    while (idx < results.size && results[idx].sort.compareDefinedRange(si) < 0) idx++
                     if (!scanRequest.includeStart && idx < results.size && results[idx].sort.contentEquals(si)) idx++
                 }
                 while (idx < results.size && emitted < scanRequest.limit) {
@@ -325,7 +325,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
             DESC -> {
                 var idx = results.lastIndex
                 startIndexKey?.let { si ->
-                    while (idx >= 0 && results[idx].sort.compareDefinedTo(si) > 0) idx--
+                    while (idx >= 0 && results[idx].sort.compareDefinedRange(si) > 0) idx--
                     if (!scanRequest.includeStart && idx >= 0 && results[idx].sort.contentEquals(si)) idx--
                 }
                 while (idx >= 0 && emitted < scanRequest.limit) {

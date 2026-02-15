@@ -19,7 +19,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
-import maryk.lib.extensions.compare.compareDefinedTo
+import maryk.lib.extensions.compare.compareDefinedRange
 import kotlin.math.min
 
 internal fun <DM : IsRootDataModel> scanStore(
@@ -78,7 +78,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                 }
 
                 val cmpLength = min(begin.size, end.size)
-                val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+                val beginGteEnd = when (val cmp = begin.compareDefinedRange(end, 0, cmpLength)) {
                     0 -> begin.size >= end.size
                     else -> cmp > 0
                 }
@@ -93,7 +93,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                     if (!scanRange.matchesPartials(modelKeyBytes)) continue
 
                     if (effectiveStart != null) {
-                        val cmp = modelKeyBytes.compareDefinedTo(effectiveStart, 0, scanRange.keySize)
+                        val cmp = modelKeyBytes.compareDefinedRange(effectiveStart, 0, scanRange.keySize)
                         if (cmp < 0) continue
                         if (!effectiveInclude && cmp == 0) continue
                     }
@@ -148,7 +148,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                 }
 
                 val cmpLength = min(begin.size, end.size)
-                val beginGteEnd = when (val cmp = begin.compareDefinedTo(end, 0, cmpLength)) {
+                val beginGteEnd = when (val cmp = begin.compareDefinedRange(end, 0, cmpLength)) {
                     0 -> begin.size >= end.size
                     else -> cmp > 0
                 }
@@ -160,7 +160,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                     val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
                     if (startKeyFilter != null) {
-                        val cmp = modelKeyBytes.compareDefinedTo(startKeyFilter, 0, scanRange.keySize)
+                        val cmp = modelKeyBytes.compareDefinedRange(startKeyFilter, 0, scanRange.keySize)
                         if (cmp > 0) continue
                         if (!includeStartFilter && cmp == 0) continue
                     }

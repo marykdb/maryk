@@ -4,7 +4,7 @@ import maryk.core.exceptions.RequestException
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.lib.extensions.compare.compareToWithOffsetLength
+import maryk.lib.extensions.compare.compareToRange
 import maryk.rocksdb.ReadOptions
 
 /**
@@ -47,7 +47,7 @@ internal fun <R: Any> DBAccessor.iterateValues(
             while (iterator.isValid()) {
                 val referenceBytes = iterator.key()
                 val versionOffset = referenceBytes.size - toVersionBytes.size
-                if (toVersionBytes.compareToWithOffsetLength(referenceBytes, versionOffset) <= 0) {
+                if (toVersionBytes.compareToRange(referenceBytes, versionOffset) <= 0) {
                     val value = iterator.value()
                     val decrypted = this.dataStore.decryptValueIfNeeded(value)
                     handleValue(

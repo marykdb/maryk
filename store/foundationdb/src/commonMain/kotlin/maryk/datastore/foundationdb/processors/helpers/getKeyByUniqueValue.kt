@@ -5,7 +5,7 @@ import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.lib.extensions.compare.compareToWithOffsetLength
+import maryk.lib.extensions.compare.compareToRange
 
 /**
  * Resolve a unique [reference] to its key bytes and the version it was set at.
@@ -36,7 +36,7 @@ internal fun Transaction.getKeyByUniqueValue(
         while (it.hasNext()) {
             val kv = it.nextBlocking()
             val versionOffset = kv.key.size - toVersionBytes.size
-            if (toVersionBytes.compareToWithOffsetLength(kv.key, versionOffset) <= 0) {
+            if (toVersionBytes.compareToRange(kv.key, versionOffset) <= 0) {
                 val version = kv.key.readReversedVersionBytes(versionOffset)
                 val keyBytes = kv.value
                 if (keyBytes.isNotEmpty()) {

@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
-import maryk.lib.extensions.compare.compareDefinedTo
+import maryk.lib.extensions.compare.compareDefinedRange
 
 internal fun getCurrentValues(
     transaction: Transaction,
@@ -17,7 +17,7 @@ internal fun getCurrentValues(
     val iterator = transaction.getIterator(transaction.rocksDBDataStore.defaultReadOptions, columnFamilies.table)
     iterator.seek(prefix)
 
-    while (iterator.isValid() && prefix.compareDefinedTo(iterator.key()) == 0) {
+    while (iterator.isValid() && prefix.compareDefinedRange(iterator.key()) == 0) {
         currentValues.add(iterator.key() to iterator.value())
         iterator.next()
     }

@@ -22,8 +22,8 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.ScanType.IndexScan
-import maryk.lib.extensions.compare.compareToWithOffsetLength
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.compareToRange
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.rocksdb.ReadOptions
 
@@ -83,7 +83,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                     valueOffset,
                     processStoreValue,
                     { indexRecord, valueSize ->
-                        !indexRecord.matchPart(0, indexReference) ||
+                        !indexRecord.matchesRangePart(0, indexReference) ||
                         indexRange.keyOutOfRange(indexRecord, valueOffset, valueSize)
                     },
                     createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
@@ -124,7 +124,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                     valueOffset,
                     processStoreValue,
                     { indexRecord, valueSize ->
-                        !indexRecord.matchPart(0, indexReference) ||
+                        !indexRecord.matchesRangePart(0, indexReference) ||
                         indexRange.keyBeforeStart(indexRecord, valueOffset, valueSize)
                     },
                     createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
@@ -160,12 +160,12 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
                     while (iterator.isValid()) {
                         val newKey = iterator.key()
 
-                        if (!newKey.matchPart(0, indexKey, newKey.size, 0, indexKey.size - VERSION_BYTE_SIZE)) {
+                        if (!newKey.matchesRangePart(0, indexKey, newKey.size, 0, indexKey.size - VERSION_BYTE_SIZE)) {
                             iterator.prev() // Go back to last key, so it can be processed next
                             break // Key does not match anymore so break out
                         }
 
-                        if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - VERSION_BYTE_SIZE) > 0) {
+                        if (versionBytesToMatch.compareToRange(newKey, newKey.size - VERSION_BYTE_SIZE) > 0) {
                             // Continue to older version since key was too new for request
                             iterator.next()
                         } else {
@@ -186,13 +186,13 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
                     while (iterator.isValid()) {
                         val newKey = iterator.key()
                         // Check if new key matches expected key and otherwise skips out
-                        if (newKey.let { !it.matchPart(0, indexKey, it.size - VERSION_BYTE_SIZE, 0, indexKey.size - VERSION_BYTE_SIZE) }) {
+                        if (newKey.let { !it.matchesRangePart(0, indexKey, it.size - VERSION_BYTE_SIZE, 0, indexKey.size - VERSION_BYTE_SIZE) }) {
                             iterator.next() // Move back iterator so next call will start at right key
                             break
                         }
 
                         // Continue to newer versions until key is not of a valid version
-                        if (versionBytesToMatch.compareToWithOffsetLength(newKey, newKey.size - VERSION_BYTE_SIZE) <= 0) {
+                        if (versionBytesToMatch.compareToRange(newKey, newKey.size - VERSION_BYTE_SIZE) <= 0) {
                             validResult = iterator.value().contentEquals(EMPTY_ARRAY)
                             iterator.prev()
                         } else {
@@ -224,7 +224,7 @@ private fun <DM : IsRootDataModel> createGotoNext(
                 next()
             }
             // Skip all same index/value/key since they are different versions of the same
-            while (iterator.isValid() && iterator.key().let { it.matchPart(0, key, it.size, 0, keyOffset + keyLength) }) {
+            while (iterator.isValid() && iterator.key().let { it.matchesRangePart(0, key, it.size, 0, keyOffset + keyLength) }) {
                 next()
             }
         }

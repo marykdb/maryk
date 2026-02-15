@@ -13,7 +13,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.shared.helpers.convertToValue
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.rocksdb.ReadOptions
 
 /**
@@ -147,7 +147,7 @@ private class HistoricStoreIndexValuesGetter(
             if (iterator.isValid()) {
                 val qualifier = iterator.key()
 
-                if (qualifier.matchPart(0, keyAndReference)) {
+                if (qualifier.matchesRangePart(0, keyAndReference)) {
                     val valueBytes = iterator.value()
                     val historicReference =
                         ByteArray(reference.size + valueBytes.size + key.size + VERSION_BYTE_SIZE)

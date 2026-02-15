@@ -5,6 +5,12 @@ package maryk.lib.extensions.compare
  * Returns zero if this object is equal to the specified [other] object,
  * a negative number if it's less than [other],
  * or a positive number if it's greater than [other].
+ *
+ * Comparison is lexicographical on unsigned byte values (`0..255`), then on array size.
+ *
+ * Example:
+ * - `byteArrayOf(1, 2) < byteArrayOf(1, 2, 0)`
+ * - `byteArrayOf(0xFF.toByte()) > byteArrayOf(0x01)`
  */
 infix operator fun ByteArray.compareTo(other: ByteArray): Int {
     val minSize = minOf(this.size, other.size)
@@ -21,12 +27,27 @@ infix operator fun ByteArray.compareTo(other: ByteArray): Int {
 }
 
 /**
- * Compares ByteArray to [other] ByteArray.
- * Returns zero if this object is equal to the specified [other] object,
- * a negative number if it's less than [other],
- * or a positive number if it's greater than [other].
+ * Compares this byte array against a window in [other].
+ *
+ * [offset] points to the first byte in [other] to compare.
+ * [length] defines the window size in [other] (default: `other.size - offset`).
+ *
+ * Returns:
+ * - `0` when equal over compared bytes and same effective length
+ * - `< 0` when this is lexicographically smaller
+ * - `> 0` when this is lexicographically greater
+ *
+ * Comparison is lexicographical on unsigned byte values (`0..255`), then on
+ * `this.size - length`.
+ *
+ * Contract:
+ * - Caller must ensure `offset >= 0`, `length >= 0`, and `offset + length <= other.size`.
+ * - No defensive bounds checks are performed for performance.
+ *
+ * Example:
+ * - `byteArrayOf(2, 3).compareToRange(byteArrayOf(1, 2, 3, 4), 1, 2) == 0`
  */
-fun ByteArray.compareToWithOffsetLength(other: ByteArray, offset: Int, length: Int = other.size - offset): Int {
+fun ByteArray.compareToRange(other: ByteArray, offset: Int, length: Int = other.size - offset): Int {
     val minSize = minOf(this.size, length)
     var index = 0
     while (index < minSize) {
@@ -41,12 +62,21 @@ fun ByteArray.compareToWithOffsetLength(other: ByteArray, offset: Int, length: I
 }
 
 /**
- * Compares only defined bytes of ByteArray to [other] ByteArray.
- * Returns zero if this object is equal to the specified [other] object,
- * a negative number if it's less than [other],
- * or a positive number if it's greater than [other].
+ * Compares this byte array with up to [length] bytes from [other] starting at [offset].
+ *
+ * Like [compareToRange], but when compared prefix bytes are equal and [length] is
+ * smaller than `this.size`, this returns a positive value (`this.size - length`).
+ *
+ * Returns:
+ * - `0` when equal on compared bytes and [length] is not smaller than `this.size`
+ * - `< 0` when this is lexicographically smaller
+ * - `> 0` when this is lexicographically greater, or when equal prefix but `this` is longer
+ *
+ * Contract:
+ * - Caller must ensure `offset >= 0`, `length >= 0`, and `offset + length <= other.size`.
+ * - No defensive bounds checks are performed for performance.
  */
-fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int = 0, length: Int = other.size - offset): Int {
+fun ByteArray.compareDefinedRange(other: ByteArray, offset: Int = 0, length: Int = other.size - offset): Int {
     val minSize = minOf(this.size, length)
     var index = 0
     while (index < minSize) {
@@ -61,11 +91,21 @@ fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int = 0, length: Int = 
 }
 
 /**
- * Match given [bytes] to this byte array from index [fromOffset]
- * It will match in reverse order since that usage is faster in sorted lists
+ * Checks whether a range in this array exactly matches a range in [bytes].
+ *
+ * This compares [length] bytes, where:
+ * - source range starts at [fromOffset] in `this`
+ * - target range starts at [offset] in [bytes]
+ *
+ * [sourceLength] is expected size of the source range and must be equal to [length]
+ * for a match to be possible.
+ *
+ * Contract:
+ * - Caller must ensure compared ranges are within bounds.
+ * - No defensive bounds checks are performed for performance.
  */
-fun ByteArray.match(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
-    if (length != fromLength) return false
+fun ByteArray.matchesRange(fromOffset: Int, bytes: ByteArray, sourceLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
+    if (length != sourceLength) return false
 
     var index = length - 1
     while (index >= 0) {
@@ -78,11 +118,20 @@ fun ByteArray.match(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.si
 }
 
 /**
- * Match given [bytes] to a part from index [fromOffset]
- * It will match in reverse order since that usage is faster in sorted lists
+ * Checks whether a range in this array starts with [length] bytes from [bytes].
+ *
+ * This compares [length] bytes, where:
+ * - source range starts at [fromOffset] in `this`
+ * - target range starts at [offset] in [bytes]
+ *
+ * Returns false when [length] is larger than [sourceLength].
+ *
+ * Contract:
+ * - Caller must ensure compared ranges are within bounds.
+ * - No defensive bounds checks are performed for performance.
  */
-fun ByteArray.matchPart(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
-    if (length > fromLength) return false
+fun ByteArray.matchesRangePart(fromOffset: Int, bytes: ByteArray, sourceLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
+    if (length > sourceLength) return false
 
     var index = length - 1
     while (index >= 0) {

@@ -5,7 +5,7 @@ import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.lib.extensions.compare.compareDefinedTo
+import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.rocksdb.ReadOptions
 
 /** Get the current incrementing map key for [reference] */
@@ -25,7 +25,7 @@ internal fun getCurrentIncMapKey(
             iterator.next()
 
             val foundReference = iterator.key()
-            if (referenceToCompareTo.compareDefinedTo(foundReference, 0) == 0) {
+            if (referenceToCompareTo.compareDefinedRange(foundReference, 0) == 0) {
                 return foundReference.copyOfRange(key.size, foundReference.size)
             }
         }

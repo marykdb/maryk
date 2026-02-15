@@ -3,7 +3,7 @@ package maryk.datastore.memory.processors.changers
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IncMapReference
 import maryk.datastore.memory.records.DataRecordNode
-import maryk.lib.extensions.compare.compareDefinedTo
+import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareTo
 
 /** Get the current incrementing map key for [reference] from [values] */
@@ -19,7 +19,7 @@ internal fun getCurrentIncMapKey(
 
     val nextValueReference = values.getOrNull(valueIndex + 1)?.reference
 
-    return if (nextValueReference != null && referenceToCompareTo.compareDefinedTo(nextValueReference, 0) == 0) {
+    return if (nextValueReference != null && referenceToCompareTo.compareDefinedRange(nextValueReference, 0) == 0) {
         nextValueReference
     } else {
         // If nothing was found create a new reference

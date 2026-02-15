@@ -3,7 +3,7 @@ package maryk.datastore.rocksdb
 import maryk.datastore.rocksdb.ChangeAction.Delete
 import maryk.datastore.rocksdb.ChangeAction.Put
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.compare.compareToWithOffsetLength
+import maryk.lib.extensions.compare.compareToRange
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.RocksDBException
@@ -131,7 +131,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
 
     private fun getChangeOrNull(columnFamilyHandle: ColumnFamilyHandle, key: ByteArray, offset: Int = 0, length: Int = key.size): ChangeAction? {
         val columnChanges = changes[columnFamilyHandle.getID()] ?: return null
-        val index = columnChanges.binarySearch { it.key.compareToWithOffsetLength(key, offset, length) }
+        val index = columnChanges.binarySearch { it.key.compareToRange(key, offset, length) }
         return if (index >= 0) columnChanges[index] else null
     }
 }

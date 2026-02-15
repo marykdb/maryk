@@ -20,7 +20,7 @@ import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.bytes.combineToByteArray
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
@@ -199,7 +199,7 @@ private fun hardDeleteHistoricalUniqueValues(
         while (iterator.isValid()) {
             val qualifier = iterator.key()
 
-            if (qualifier.matchPart(0, referenceAndKey)) {
+            if (qualifier.matchesRangePart(0, referenceAndKey)) {
                 val valueBytes = iterator.value()
                 val plainValue = dataStore.decryptValueIfNeeded(valueBytes)
                 val uniqueValue = dataStore.mapUniqueValueBytes(dbIndex, reference, plainValue)

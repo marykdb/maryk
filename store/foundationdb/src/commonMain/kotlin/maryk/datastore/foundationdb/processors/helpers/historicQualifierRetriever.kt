@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import maryk.lib.extensions.compare.compareToWithOffsetLength
-import maryk.lib.extensions.compare.match
+import maryk.lib.extensions.compare.compareToRange
+import maryk.lib.extensions.compare.matchesRange
 
 /**
  * Historic qualifier retriever without extra buffering.
@@ -32,13 +32,13 @@ internal fun FDBIterator.historicQualifierRetriever(
 
             // Compare with last emitted qualifier (encoded form) to enforce maxVersions
             val currentLast = lastQualifier
-            if (currentLast != null && key.match(offset, currentLast, sepIndex - offset, offset, lastQualifierLength)) {
+            if (currentLast != null && key.matchesRange(offset, currentLast, sepIndex - offset, offset, lastQualifierLength)) {
                 if (counter >= maxVersions) continue
             } else {
                 counter = 0u
             }
 
-            if (toVersionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
+            if (toVersionBytes.compareToRange(key, versionOffset) <= 0) {
                 // Decode qualifier slice before returning it
                 val encodedQualifier = key.copyOfRange(offset, sepIndex)
                 val decodedQualifier = decodeZeroFreeUsing01(encodedQualifier)

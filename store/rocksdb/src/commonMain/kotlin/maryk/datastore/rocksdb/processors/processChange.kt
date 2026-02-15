@@ -99,7 +99,7 @@ import maryk.datastore.shared.readValue
 import maryk.datastore.shared.updates.Update
 import maryk.lib.bytes.combineToByteArray
 import maryk.core.extensions.bytes.invert
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
@@ -952,17 +952,17 @@ private fun doesCurrentNotContainExactQualifierAndValue(
         currentValues.none { (currentQualifier, currentValue) ->
             currentQualifier.size > keyBytes.size &&
                 currentQualifier.size - keyBytes.size == qualifier.size &&
-                currentQualifier.matchPart(
+                currentQualifier.matchesRangePart(
                     fromOffset = keyBytes.size,
                     bytes = qualifier,
-                    fromLength = currentQualifier.size - keyBytes.size
+                    sourceLength = currentQualifier.size - keyBytes.size
                 ) &&
                 currentValue.size > VERSION_BYTE_SIZE &&
                 currentValue.size - VERSION_BYTE_SIZE == value.size &&
-                currentValue.matchPart(
+                currentValue.matchesRangePart(
                     fromOffset = VERSION_BYTE_SIZE,
                     bytes = value,
-                    fromLength = currentValue.size - VERSION_BYTE_SIZE
+                    sourceLength = currentValue.size - VERSION_BYTE_SIZE
                 )
         }
     }

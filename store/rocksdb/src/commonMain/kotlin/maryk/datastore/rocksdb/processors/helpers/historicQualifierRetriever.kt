@@ -2,8 +2,8 @@ package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBIterator
-import maryk.lib.extensions.compare.compareToWithOffsetLength
-import maryk.lib.extensions.compare.match
+import maryk.lib.extensions.compare.compareToRange
+import maryk.lib.extensions.compare.matchesRange
 
 /** Find historic qualifiers on [iterator] for [key] */
 internal fun DBIterator.historicQualifierRetriever(
@@ -31,7 +31,7 @@ internal fun DBIterator.historicQualifierRetriever(
                 val qualifier: ByteArray = key()
                 val versionOffset = qualifier.size - toVersionBytes.size
                 val currentLastQualifier = lastQualifier
-                if (currentLastQualifier != null && qualifier.match(offset, currentLastQualifier, versionOffset - offset, offset, lastQualifierLength)) {
+                if (currentLastQualifier != null && qualifier.matchesRange(offset, currentLastQualifier, versionOffset - offset, offset, lastQualifierLength)) {
                     if (counter >= maxVersions) {
                         continue@qualifierFinder // Already returned this qualifier so skip
                     }
@@ -39,7 +39,7 @@ internal fun DBIterator.historicQualifierRetriever(
                     counter = 0u
                 }
 
-                if (toVersionBytes.compareToWithOffsetLength(qualifier, versionOffset) <= 0) {
+                if (toVersionBytes.compareToRange(qualifier, versionOffset) <= 0) {
                     isValid = true
 
                     lastQualifier = qualifier

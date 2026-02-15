@@ -16,33 +16,47 @@ class ByteArrayKtTest {
     }
 
     @Test
-    fun compareToWithOffsetLength() {
-        expect(0) { byteArrayOf(2, 3).compareToWithOffsetLength(byteArrayOf(1, 2, 3, 4), 1, 2) }
-        assertTrue { byteArrayOf(2, 4).compareToWithOffsetLength(byteArrayOf(1, 2, 3, 4), 1, 2) > 0 }
-        assertTrue { byteArrayOf(2).compareToWithOffsetLength(byteArrayOf(1, 2, 3, 4), 1, 2) < 0 }
+    fun compareToRange() {
+        expect(0) { byteArrayOf(2, 3).compareToRange(byteArrayOf(1, 2, 3, 4), 1, 2) }
+        assertTrue { byteArrayOf(2, 4).compareToRange(byteArrayOf(1, 2, 3, 4), 1, 2) > 0 }
+        assertTrue { byteArrayOf(2).compareToRange(byteArrayOf(1, 2, 3, 4), 1, 2) < 0 }
+        assertFailsWith<IndexOutOfBoundsException> {
+            byteArrayOf(1).compareToRange(byteArrayOf(1, 2), 2, 1)
+        }
     }
 
     @Test
-    fun compareDefinedTo() {
-        expect(0) { byteArrayOf(1, 2, 3).compareDefinedTo(byteArrayOf(1, 2, 3, 4), 0, 3) }
-        assertTrue { byteArrayOf(1, 2, 3, 4).compareDefinedTo(byteArrayOf(1, 2, 3), 0, 3) > 0 }
-        assertTrue { byteArrayOf(1, 2, 4).compareDefinedTo(byteArrayOf(1, 2, 3), 0, 3) > 0 }
-        assertTrue { byteArrayOf(1, 2, 3, 4).compareDefinedTo(byteArrayOf(1, 2, 3), 0, 2) > 0 }
+    fun compareDefinedRange() {
+        expect(0) { byteArrayOf(1, 2, 3).compareDefinedRange(byteArrayOf(1, 2, 3, 4), 0, 3) }
+        assertTrue { byteArrayOf(1, 2, 3, 4).compareDefinedRange(byteArrayOf(1, 2, 3), 0, 3) > 0 }
+        assertTrue { byteArrayOf(1, 2, 4).compareDefinedRange(byteArrayOf(1, 2, 3), 0, 3) > 0 }
+        assertTrue { byteArrayOf(1, 2, 3, 4).compareDefinedRange(byteArrayOf(1, 2, 3), 0, 2) > 0 }
+        assertFailsWith<IndexOutOfBoundsException> {
+            byteArrayOf(1, 2).compareDefinedRange(byteArrayOf(1), 1, 1)
+        }
     }
 
     @Test
     fun match() {
-        assertTrue { byteArrayOf(1, 2, 3).match(0, byteArrayOf(1, 2, 3)) }
-        assertTrue { byteArrayOf(0, 1, 2, 3, 0).match(1, byteArrayOf(1, 2, 3), 3) }
-        assertFalse { byteArrayOf(1, 2, 3).match(0, byteArrayOf(1, 2), 3) }
-        assertFalse { byteArrayOf(1, 2, 3).match(0, byteArrayOf(1, 3, 3), 3) }
+        assertTrue { byteArrayOf(1, 2, 3).matchesRange(0, byteArrayOf(1, 2, 3)) }
+        assertTrue { byteArrayOf(0, 1, 2, 3, 0).matchesRange(1, byteArrayOf(1, 2, 3), 3) }
+        assertTrue { byteArrayOf(9, 8, 7, 6).matchesRange(1, byteArrayOf(1, 8, 7, 2), 2, 1, 2) }
+        assertFalse { byteArrayOf(1, 2, 3).matchesRange(0, byteArrayOf(1, 2), 3) }
+        assertFalse { byteArrayOf(1, 2, 3).matchesRange(0, byteArrayOf(1, 3, 3), 3) }
+        assertFailsWith<IndexOutOfBoundsException> {
+            byteArrayOf(1, 2, 3).matchesRange(2, byteArrayOf(1, 2, 3), 2, 0, 2)
+        }
     }
 
     @Test
     fun matchPart() {
-        assertTrue { byteArrayOf(1, 2, 3).matchPart(0, byteArrayOf(1, 2)) }
-        assertTrue { byteArrayOf(1, 2, 3).matchPart(1, byteArrayOf(2, 3)) }
-        assertFalse { byteArrayOf(1, 2, 3).matchPart(1, byteArrayOf(3, 3)) }
+        assertTrue { byteArrayOf(1, 2, 3).matchesRangePart(0, byteArrayOf(1, 2)) }
+        assertTrue { byteArrayOf(1, 2, 3).matchesRangePart(1, byteArrayOf(2, 3)) }
+        assertTrue { byteArrayOf(5, 6, 7, 8).matchesRangePart(1, byteArrayOf(0, 6, 7, 9), 3, 1, 2) }
+        assertFalse { byteArrayOf(1, 2, 3).matchesRangePart(1, byteArrayOf(3, 3)) }
+        assertFailsWith<IndexOutOfBoundsException> {
+            byteArrayOf(1, 2, 3).matchesRangePart(2, byteArrayOf(1, 2, 3), 3, 0, 2)
+        }
     }
 
     @Test

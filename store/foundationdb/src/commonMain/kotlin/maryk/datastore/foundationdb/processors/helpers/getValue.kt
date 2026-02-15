@@ -7,7 +7,7 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.lib.bytes.combineToByteArray
-import maryk.lib.extensions.compare.compareToWithOffsetLength
+import maryk.lib.extensions.compare.compareToRange
 
 /**
  * Get a value for a [keyAndReference] from [tableDirs].
@@ -57,7 +57,7 @@ internal fun <T : Any> Transaction.getValue(
             if (key[versionOffset - 1] != 0.toByte()) {
                 throw RequestException("Missing separator in qualifier for versioned get value")
             }
-            if (toVersionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
+            if (toVersionBytes.compareToRange(key, versionOffset) <= 0) {
                 val result = kv.value
                 return if (decryptValue == null) {
                     handleResult(result, 0, result.size)

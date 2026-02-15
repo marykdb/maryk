@@ -33,7 +33,7 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.readValue
-import maryk.lib.extensions.compare.matchPart
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.extensions.compare.prevByteInSameLength
 import maryk.rocksdb.ReadOptions
 
@@ -182,7 +182,7 @@ internal fun <T : Any> deleteByReference(
     while (iterator.isValid()) {
         val ref = iterator.key()
 
-        if (ref.matchPart(0, referenceToCompareTo)) {
+        if (ref.matchesRangePart(0, referenceToCompareTo)) {
             // Delete if not a list or no further list items
             if (toShiftListCount <= 0u) {
                 if (shouldNotDeleteCompletely) {
@@ -191,7 +191,7 @@ internal fun <T : Any> deleteByReference(
                     deleteValue(transaction, columnFamilies, ref, version)
                 }
             }
-        } else if (refOfParent != null && ref.matchPart(0, refOfParent)) {
+        } else if (refOfParent != null && ref.matchesRangePart(0, refOfParent)) {
             // To handle list shifting
             if (toShiftListCount > 0u) {
                 val value = iterator.value()

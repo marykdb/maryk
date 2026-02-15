@@ -45,7 +45,7 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFetchRequest<DM, *>>(
                     maxOf(acc, value.changes.maxByOrNull { it.version }?.version ?: 0uL)
                 }
             }
-            else -> throw Exception("Unknown response type $response. Cannot process its values")
+            else -> throw IllegalArgumentException("Unknown response type $response. Cannot process its values")
         }
     }
 
@@ -100,7 +100,7 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFetchRequest<DM, *>>(
                     changes = response.changes
                 )
             )
-            else -> throw Exception("Unknown response type $response. Cannot process its values")
+            else -> throw IllegalArgumentException("Unknown response type $response. Cannot process its values")
         }
     }
 

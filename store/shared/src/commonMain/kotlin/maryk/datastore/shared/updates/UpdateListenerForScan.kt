@@ -57,7 +57,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                 response.changes.mapNotNull { it.sortingKey?.bytes }.let(::atomic)
             } else null
         }
-        else -> throw Exception("Unknown response type $response. Cannot process")
+        else -> throw IllegalArgumentException("Unknown response type $response. Cannot process")
     }
 
     override suspend fun process(

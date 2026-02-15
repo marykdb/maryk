@@ -23,7 +23,7 @@ actual fun createFolder(path: String): Boolean = memScoped {
     val error = errorRef.value
 
     if (error != null) {
-        throw Exception(error.localizedDescription)
+        throw IllegalStateException(error.localizedDescription)
     }
 
     result

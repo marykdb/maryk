@@ -50,11 +50,11 @@ actual fun deleteFolder(path: String): Boolean = memScoped {
                 lastError = error
                 NSThread.sleepForTimeInterval(0.1)
             }
-            else -> throw Exception(error.localizedDescription)
+            else -> throw IllegalStateException(error.localizedDescription)
         }
     }
 
-    lastError?.let { throw Exception(it.localizedDescription) }
+    lastError?.let { throw IllegalStateException(it.localizedDescription) }
 
     false
 }

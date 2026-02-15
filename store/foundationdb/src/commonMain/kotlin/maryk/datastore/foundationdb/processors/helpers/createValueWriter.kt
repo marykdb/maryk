@@ -14,13 +14,15 @@ import maryk.core.processors.datastore.ValueWriter
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.types.Key
+import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.TRUE
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.lib.extensions.compare.matchPart
 
-internal fun createValueWriter(
+internal fun FoundationDBDataStore.createValueWriter(
+    dataModelId: UInt,
     tr: Transaction,
     tableDirs: IsTableDirectories,
     key: Key<*>,
@@ -58,7 +60,8 @@ internal fun createValueWriter(
                 } catch (_: Throwable) { false }
 
                 if (isComparableUnique) {
-                    val uniqueRef = reference + valueBytes
+                    val uniqueValue = mapUniqueValueBytes(dataModelId, reference, valueBytes)
+                    val uniqueRef = reference + uniqueValue
                     try {
                         val uniqueExists = tr.get(packKey(tableDirs.uniquePrefix, uniqueRef)).awaitResult()
                         if (uniqueExists != null) {
@@ -72,8 +75,10 @@ internal fun createValueWriter(
                         // Remove old unique entry if present for this qualifier
                         val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, reference)).awaitResult()
                         if (currentTop != null) {
-                            val prevValueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
-                            val oldUniqueRef = reference + prevValueBytes
+                            val prevStoredValueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
+                            val prevValueBytes = decryptValueIfNeeded(prevStoredValueBytes)
+                            val oldUniqueValue = mapUniqueValueBytes(dataModelId, reference, prevValueBytes)
+                            val oldUniqueRef = reference + oldUniqueValue
                             tr.clear(packKey(tableDirs.uniquePrefix, oldUniqueRef))
                         }
 
@@ -87,7 +92,8 @@ internal fun createValueWriter(
                     }
                 }
 
-                setValue(tr, tableDirs, key.bytes, reference, versionBytes, valueBytes)
+                val encryptedValue = encryptValueIfSensitive(dataModelId, reference, valueBytes)
+                setValue(tr, tableDirs, key.bytes, reference, versionBytes, encryptedValue)
             }
         }
         ListSize, SetSize, MapSize -> {

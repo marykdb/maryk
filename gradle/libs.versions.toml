@@ -18,6 +18,7 @@ protobufPlugin = "0.9.6"
 protoc = "4.33.2"
 versionCatalogUpdate = "1.0.1"
 vico = "2.1.0"
+cryptography = "0.5.0"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "android" }
@@ -42,6 +43,8 @@ protoc = { module = "com.google.protobuf:protoc", version.ref = "protoc" }
 compose-material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "compose" }
 compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "compose" }
 vico-multiplatform-m3 = { module = "com.patrykandpatrick.vico:multiplatform-m3", version.ref = "vico" }
+cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
+cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
 
 [plugins]
 ben-manes-versions = { id = "com.github.ben-manes.versions", version.ref = "benManesVersions" }

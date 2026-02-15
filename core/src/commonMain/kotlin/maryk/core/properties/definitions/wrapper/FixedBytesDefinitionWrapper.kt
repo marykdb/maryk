@@ -19,6 +19,7 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
     override val name: String,
     override val definition: D,
     override val alternativeNames: Set<String>? = null,
+    override val sensitive: Boolean = false,
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, T) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> T?)? = null,
@@ -27,8 +28,7 @@ data class FixedBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext
 ) :
     AbstractDefinitionWrapper(index, name),
     IsSerializableFixedBytesEncodable<T, CX> by definition,
-    IsDefinitionWrapper<T, TO, CX, DO>,
-    IsValueDefinitionWrapper<T, TO, CX, DO>,
+    IsSensitiveValueDefinitionWrapper<T, TO, CX, DO>,
     IsFixedStorageBytesEncodable<T> {
     override val graphType = PropRef
 

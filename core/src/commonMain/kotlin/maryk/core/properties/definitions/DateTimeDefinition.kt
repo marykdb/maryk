@@ -189,18 +189,20 @@ fun IsValuesDataModel.dateTime(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
     minValue: LocalDateTime? = null,
     maxValue: LocalDateTime? = null,
     default: LocalDateTime? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<LocalDateTime, LocalDateTime, IsPropertyContext, DateTimeDefinition, Any>(
         index,
         name ?: propName,
         DateTimeDefinition(required, final, unique, precision, minValue, maxValue, default),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -210,14 +212,15 @@ fun <TO: Any, DO: Any> IsObjectDataModel<DO>.dateTime(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
     minValue: LocalDateTime? = null,
     maxValue: LocalDateTime? = null,
     default: LocalDateTime? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<LocalDateTime, TO, IsPropertyContext, DateTimeDefinition, DO>, DO, IsPropertyContext> =
-    dateTime(index, getter, name, required, final,  unique, precision, minValue, maxValue, default, alternativeNames, toSerializable = null)
+    dateTime(index, getter, name, required, final, sensitive,  unique, precision, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.dateTime(
     index: UInt,
@@ -225,6 +228,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.dateTime(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     precision: TimePrecision = TimePrecision.SECONDS,
     minValue: LocalDateTime? = null,
@@ -234,13 +238,14 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.dateTime(
     toSerializable: ((TO?, CX?) -> LocalDateTime?)? = null,
     fromSerializable: ((LocalDateTime?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, LocalDateTime) -> Unit)? = null
+    capturer: ((CX, LocalDateTime) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         DateTimeDefinition(required, final, unique, precision, minValue, maxValue, default),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

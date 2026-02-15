@@ -110,6 +110,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
     version: HLC,
     tableDirs: IsTableDirectories,
 ): IsChangeResponseStatus<DM> {
+    val dataModelId = getDataModelId(dataModel)
     var checkFailed = false
     val result: IsChangeResponseStatus<DM> = try {
         var updateToEmit: Update<DM>? = null
@@ -137,7 +138,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 ): T? {
                     val keyAndRef = combineToByteArray(key.bytes, propertyReference.toStorageByteArray())
                     @Suppress("UNCHECKED_CAST")
-                    return tr.getValue(tableDirs, null, keyAndRef) { valueBytes, offset, length ->
+                    return tr.getValue(tableDirs, null, keyAndRef, decryptValue = this@processChange::decryptValueIfNeeded) { valueBytes, offset, length ->
                         valueBytes.convertToValue(propertyReference, offset, length) as T?
                     }
                 }
@@ -155,7 +156,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                     val check = change as Check
                     for ((reference, expected) in check.referenceValuePairs) {
                         val keyAndRef = combineToByteArray(key.bytes, reference.toStorageByteArray())
-                        val actual = tr.getValue(tableDirs, null, keyAndRef) { bytes, offset, length ->
+                        val actual = tr.getValue(tableDirs, null, keyAndRef, decryptValue = this@processChange::decryptValueIfNeeded) { bytes, offset, length ->
                             bytes.convertToValue(reference, offset, length)
                         }
                         if (actual != expected) {
@@ -207,7 +208,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                     when (change) {
                         is ObjectSoftDeleteChange -> {
                             val softDeleteKey = key.bytes + SOFT_DELETE_INDICATOR
-                            val wasDeleted = tr.getValue(tableDirs, null, softDeleteKey) { b, o, _ ->
+                            val wasDeleted = tr.getValue(tableDirs, null, softDeleteKey, decryptValue = this@processChange::decryptValueIfNeeded) { b, o, _ ->
                                 b[o] == TRUE
                             } == true
 
@@ -232,7 +233,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 if (packed == null) {
                                     addValidation(InvalidValueException(reference, expected.toString()))
                                 } else {
-                                    val stored = packed.copyOfRange(VERSION_BYTE_SIZE, packed.size)
+                                    val stored = decryptValueIfNeeded(packed.copyOfRange(VERSION_BYTE_SIZE, packed.size))
                                     try {
                                         val storable = Value.castDefinition(reference.propertyDefinition)
                                         @Suppress("UNCHECKED_CAST")
@@ -242,8 +243,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         }
                                     } catch (_: Throwable) {
                                         // Fallback to decoded compare if not a simple value definition
-                                        var readIndex = VERSION_BYTE_SIZE
-                                        val actual = readValue(reference.comparablePropertyDefinition, { packed[readIndex++] }) { packed.size - readIndex }
+                                        var readIndex = 0
+                                        val actual = readValue(reference.comparablePropertyDefinition, { stored[readIndex++] }) { stored.size - readIndex }
                                         if (actual != expected) {
                                             checkFailed = true
                                         }
@@ -269,6 +270,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             @Suppress("UNCHECKED_CAST")
                                             val ref = reference as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
                                             val didChange = deleteByReference(
+                                                dataModelId = dataModelId,
                                                 tr,
                                                 tableDirs,
                                                 key,
@@ -296,7 +298,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
                                         checkParentReference(reference)
                                         @Suppress("UNCHECKED_CAST")
                                         writeMapToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, mapDef, value as Map<Any, Any>)
@@ -316,7 +318,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
                                         checkParentReference(reference)
                                         writeListToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
                                         val didDelete = unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
@@ -335,7 +337,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         } catch (e: ValidationException) { addValidation(e) }
                                         val keep = mutableListOf<ByteArray>()
                                         var didWrite = false
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current) { didWrite = true }
                                         checkParentReference(reference)
                                         writeSetToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
                                         val didDelete = unsetNonChangedValues(tr, tableDirs, key, current, keep, versionBytes)
@@ -353,7 +355,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, EMPTY_BYTEARRAY)
                                         }
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, null)
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, null)
                                         checkParentReference(reference)
                                         writeTypedValueToStorage(reference.calculateStorageByteLength(), reference::writeStorageBytes, writer, reference.propertyDefinition, value)
                                         isChanged = true
@@ -376,7 +378,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         }
 
                                         val keep = mutableListOf<ByteArray>()
-                                        val writer = createValueWriter(tr, tableDirs, key, versionBytes, keep, current)
+                                        val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes, keep, current)
                                         // Marker for embedded object
                                         writer(Embed, referenceBytes, reference.propertyDefinition, Unit)
                                         @Suppress("UNCHECKED_CAST")
@@ -403,7 +405,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         // Simple value (including list/map/set item refs)
                                         try {
                                             val keyAndReference = combineToByteArray(key.bytes, referenceBytes)
-                                            val previousValue = tr.getValue(tableDirs, null, keyAndReference) { b, o, l ->
+                                            val previousValue = tr.getValue(tableDirs, null, keyAndReference, decryptValue = this@processChange::decryptValueIfNeeded) { b, o, l ->
                                                 b.convertToValue(reference, o, l)
                                             }
 
@@ -414,7 +416,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
                                             if (previousValue == null) {
                                                 if (reference is IsPropertyReferenceWithParent<*, *, *, *> && reference !is ListItemReference<*, *> && reference.parentReference != null) {
-                                                    val parentExists = tr.getValue(tableDirs, null, combineToByteArray(key.bytes, reference.parentReference!!.toStorageByteArray())) { b, o, _ ->
+                                                    val parentExists = tr.getValue(
+                                                        tableDirs,
+                                                        null,
+                                                        combineToByteArray(key.bytes, reference.parentReference!!.toStorageByteArray()),
+                                                        decryptValue = this@processChange::decryptValueIfNeeded
+                                                    ) { b, o, _ ->
                                                         if (b[o] == TypeIndicator.DeletedIndicator.byte) null else true
                                                     } != null
                                                     if (!parentExists) {
@@ -431,7 +438,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
                                             reference.propertyDefinition.validateWithRef(previousValue = previousValue, newValue = value) { reference }
 
-                                            val writer = createValueWriter(tr, tableDirs, key, versionBytes)
+                                            val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes)
 
                                             // Unique handling if applicable is covered by writer for TypeValue; handle comparable uniques here
                                             val storableDef = try { Value.castDefinition(reference.comparablePropertyDefinition) } catch (_: Throwable) { null }
@@ -495,7 +502,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                                 setDef.valueDefinition.validateWithRef(null, value) { setItemRef as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>? }
 
                                                 val keyAndRef = combineToByteArray(key.bytes, setItemRef.toStorageByteArray())
-                                                val existed = tr.getValue(tableDirs, null, keyAndRef) { b, o, _ -> if (b[o] == TypeIndicator.DeletedIndicator.byte) null else true } != null
+                                                val existed = tr.getValue(
+                                                    tableDirs,
+                                                    null,
+                                                    keyAndRef,
+                                                    decryptValue = this@processChange::decryptValueIfNeeded
+                                                ) { b, o, _ -> if (b[o] == TypeIndicator.DeletedIndicator.byte) null else true } != null
                                                 if (!existed) countChange++
 
                                                 @Suppress("UNCHECKED_CAST")
@@ -536,7 +548,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                     }
 
                                     val currentIncKey = getCurrentIncMapKey(tr, tableDirs, key, incMapRef)
-                                    val writer = createValueWriter(tr, tableDirs, key, versionBytes)
+                                    val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes)
                                     val addedKeys = writeIncMapAdditionsToStorage(currentIncKey, writer, incMapRef.propertyDefinition.definition, addValues)
 
                                     if (addedKeys.isNotEmpty()) {
@@ -630,7 +642,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
             clusterUpdateLog?.append(
                 tr = tr,
-                modelId = getDataModelId(dataModel),
+                modelId = dataModelId,
                 update = ClusterLogChange(Bytes(key.bytes), version.timestamp, finalChanges),
             )
 

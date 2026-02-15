@@ -162,32 +162,35 @@ fun <DM: IsRootDataModel, TO: Any, DO: Any> IsObjectDataModel<DO>.reference(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: Key<DM>? = null,
     maxValue: Key<DM>? = null,
     default: Key<DM>? = null,
     dataModel: () -> DM,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Key<DM>, TO, IsPropertyContext, ReferenceDefinition<DM>, DO>, DO, IsPropertyContext> =
-    reference(index, getter, name, required, final,  unique, minValue, maxValue, default, dataModel, alternativeNames, toSerializable = null)
+    reference(index, getter, name, required, final, sensitive,  unique, minValue, maxValue, default, dataModel, alternativeNames, toSerializable = null)
 
 fun <DM: IsRootDataModel> IsValuesDataModel.reference(
     index: UInt,
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: Key<DM>? = null,
     maxValue: Key<DM>? = null,
     default: Key<DM>? = null,
     dataModel: () -> DM,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     ReferenceDefinitionWrapper<Key<DM>, DM, IsReferenceDefinition<DM, IsPropertyContext>, Any>(
         index,
         name ?: propName,
         ReferenceDefinition(required, final, unique, dataModel, minValue, maxValue, default) as IsReferenceDefinition<DM, IsPropertyContext>,
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -197,6 +200,7 @@ fun <DM: IsRootDataModel, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataM
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: Key<DM>? = null,
     maxValue: Key<DM>? = null,
@@ -206,13 +210,14 @@ fun <DM: IsRootDataModel, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataM
     toSerializable: ((TO?, CX?) -> Key<DM>?)? = null,
     fromSerializable: ((Key<DM>?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, Key<DM>) -> Unit)? = null
+    capturer: ((CX, Key<DM>) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         ReferenceDefinition(required, final, unique, dataModel, minValue, maxValue, default),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

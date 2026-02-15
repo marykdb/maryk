@@ -47,7 +47,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
                 key = key,
                 select = scanRequest.select,
                 toVersion = scanRequest.toVersion,
-                cachedRead = cacheReader
+                cachedRead = cacheReader,
+                decryptValue = this@processScanRequest::decryptValueIfNeeded
             )
             vwm?.also { valuesWithMeta.add(it) }
 
@@ -57,7 +58,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
                     ?: tr.getValue(
                         tableDirs = tableDirs,
                         toVersion = scanRequest.toVersion,
-                        keyAndReference = it.toStorageByteArray()
+                        keyAndReference = it.toStorageByteArray(),
+                        decryptValue = this@processScanRequest::decryptValueIfNeeded
                     ) { valueBytes, offset, length ->
                         (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(
                             valueBytes,

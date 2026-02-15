@@ -10,6 +10,13 @@ implementations of the DataStore, such as the [InMemoryDataStore](../memory/READ
 - Support for versioning and keeping multiple versions of the same data.
 - A modular design that allows for easy integration with different DataStore implementations.
 - Integration with Maryk's DataModel and Property system, allowing for powerful and flexible data modeling.
+- Shared sensitive-field encryption contracts:
+  - `maryk.datastore.shared.encryption.FieldEncryptionProvider`
+  - `maryk.datastore.shared.encryption.SensitiveIndexTokenProvider`
+- Built-in cross-platform provider:
+  - `maryk.datastore.shared.encryption.AesGcmHmacSha256EncryptionProvider`
+    - field encryption: AES-GCM
+    - deterministic sensitive lookup tokens: HMAC-SHA256
 
 ## Usage
 

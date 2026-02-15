@@ -43,7 +43,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
     toVersion: ULong?,
     maxVersions: UInt,
     sortingKey: ByteArray?,
-    cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
+    cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?,
+    decryptValue: ((ByteArray) -> ByteArray)? = null
 ): DataObjectVersionedChange<DM>? {
     val changes: List<VersionedChanges>
 
@@ -74,7 +75,9 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         cachedRead(reference, currentVersion) {
                             if (currentVersion >= fromVersion && keyBytes[prefixWithKeyRange.size] == 0.toByte()) {
-                                valueBytes.last() == TRUE
+                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
+                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                payload.lastOrNull() == TRUE
                             } else null
                         }
                     }
@@ -85,11 +88,13 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                     ?: reference.propertyDefinition
 
-                                index = VERSION_BYTE_SIZE
-                                val reader = { valueBytes[index++] }
+                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
+                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                index = 0
+                                val reader = { payload[index++] }
 
                                 readValue(definition, reader) {
-                                    valueBytes.size - index
+                                    payload.size - index
                                 }
                             }
                         } else null
@@ -98,8 +103,10 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                index = VERSION_BYTE_SIZE
-                                initIntByVar { valueBytes[index++] }
+                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
+                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                index = 0
+                                initIntByVar { payload[index++] }
                             }
                         } else null
                     }
@@ -107,8 +114,10 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                index = VERSION_BYTE_SIZE
-                                initIntByVar { valueBytes[index++] }
+                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
+                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                index = 0
+                                initIntByVar { payload[index++] }
                             }
                         } else null
                     }
@@ -116,8 +125,10 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                index = VERSION_BYTE_SIZE
-                                initIntByVar { valueBytes[index++] }
+                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
+                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                index = 0
+                                initIntByVar { payload[index++] }
                             }
                         } else null
                     }
@@ -161,12 +172,12 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         when (storageType) {
                             ObjectDelete -> {
                                 if (iterator.current.key[prefixWithKeyRange.size] == 0.toByte()) {
-                                    val v = iterator.current.value
+                                    val v = decryptValue?.invoke(iterator.current.value) ?: iterator.current.value
                                     v[0] == TRUE
                                 } else null
                             }
                             Value -> {
-                                val v = iterator.current.value
+                                val v = decryptValue?.invoke(iterator.current.value) ?: iterator.current.value
                                 index = 0
                                 val reader = { v[index++] }
 
@@ -177,17 +188,17 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 }
                             }
                             ListSize -> {
-                                val v = iterator.current.value
+                                val v = decryptValue?.invoke(iterator.current.value) ?: iterator.current.value
                                 index = 0
                                 initIntByVar { v[index++] }
                             }
                             SetSize -> {
-                                val v = iterator.current.value
+                                val v = decryptValue?.invoke(iterator.current.value) ?: iterator.current.value
                                 index = 0
                                 initIntByVar { v[index++] }
                             }
                             MapSize -> {
-                                val v = iterator.current.value
+                                val v = decryptValue?.invoke(iterator.current.value) ?: iterator.current.value
                                 index = 0
                                 initIntByVar { v[index++] }
                             }

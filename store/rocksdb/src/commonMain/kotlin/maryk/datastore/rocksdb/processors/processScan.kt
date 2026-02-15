@@ -37,6 +37,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
+    val dataModelId = getDataModelId(scanRequest.dataModel)
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(keepAllVersions)
@@ -67,11 +68,15 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                 @Suppress("UNCHECKED_CAST")
                 val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>)
                     .toStorageBytes(firstMatcher.value as Comparable<Any>)
+                val rawUniqueValue = ByteArray(1 + valueBytes.size).apply {
+                    this[0] = TypeIndicator.NoTypeIndicator.byte
+                    valueBytes.copyInto(this, 1)
+                }
+                val uniqueValue = mapUniqueValueBytes(dataModelId, firstMatcher.reference, rawUniqueValue)
 
-                val reference = ByteArray(firstMatcher.reference.size + 1 + valueBytes.size).apply {
+                val reference = ByteArray(firstMatcher.reference.size + uniqueValue.size).apply {
                     firstMatcher.reference.copyInto(this)
-                    this[firstMatcher.reference.size] = TypeIndicator.NoTypeIndicator.byte
-                    valueBytes.copyInto(this, firstMatcher.reference.size + 1)
+                    uniqueValue.copyInto(this, firstMatcher.reference.size)
                 }
 
                 getKeyByUniqueValue(dbAccessor, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->

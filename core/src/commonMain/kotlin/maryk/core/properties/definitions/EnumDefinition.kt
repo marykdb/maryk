@@ -249,17 +249,19 @@ fun <E : IndexedEnumComparable<E>> IsValuesDataModel.enum(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: E? = null,
     maxValue: E? = null,
     default: E? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<E, E, IsPropertyContext, EnumDefinition<E>, Any>(
         index,
         name ?: propName,
         EnumDefinition(required, final, unique, minValue, maxValue, default, enum),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -270,13 +272,14 @@ fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any> IsObjectDataModel<DO>.enum(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: E? = null,
     maxValue: E? = null,
     default: E? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<E, TO, IsPropertyContext, EnumDefinition<E>, DO>, DO, IsPropertyContext> =
-    enum(index, getter, enum, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
+    enum(index, getter, enum, name, required, final, sensitive,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.enum(
     index: UInt,
@@ -285,6 +288,7 @@ fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any, CX: IsPropertyContext> IsOb
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: E? = null,
     maxValue: E? = null,
@@ -293,13 +297,14 @@ fun <E : IndexedEnumComparable<E>, TO: Any, DO: Any, CX: IsPropertyContext> IsOb
     toSerializable: ((TO?, CX?) -> E?)? = null,
     fromSerializable: ((E?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, E) -> Unit)? = null
+    capturer: ((CX, E) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         EnumDefinition(required, final, unique, minValue, maxValue, default, enum),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

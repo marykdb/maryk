@@ -13,6 +13,8 @@ kotlin {
                 api(libs.kotlinx.coroutines.core)
                 api(projects.lib)
                 api(projects.core)
+                implementation(libs.cryptography.core)
+                implementation(libs.cryptography.provider.optimal)
             }
         }
         commonTest {

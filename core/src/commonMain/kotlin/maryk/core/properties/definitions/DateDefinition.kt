@@ -125,17 +125,19 @@ fun IsValuesDataModel.date(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: LocalDate? = null,
     maxValue: LocalDate? = null,
     default: LocalDate? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<LocalDate, LocalDate, IsPropertyContext, DateDefinition, Any>(
         index,
         name ?: propName,
         DateDefinition(required, final, unique, minValue, maxValue, default),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -145,13 +147,14 @@ fun <TO: Any, DO: Any> IsObjectDataModel<DO>.date(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: LocalDate? = null,
     maxValue: LocalDate? = null,
     default: LocalDate? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<LocalDate, TO, IsPropertyContext, DateDefinition, DO>, DO, IsPropertyContext> =
-    date(index, getter, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
+    date(index, getter, name, required, final, sensitive,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.date(
     index: UInt,
@@ -159,6 +162,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.date(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: LocalDate? = null,
     maxValue: LocalDate? = null,
@@ -167,13 +171,14 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.date(
     toSerializable: ((TO?, CX?) -> LocalDate?)? = null,
     fromSerializable: ((LocalDate?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, LocalDate) -> Unit)? = null
+    capturer: ((CX, LocalDate) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         DateDefinition(required, final, unique, minValue, maxValue, default),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

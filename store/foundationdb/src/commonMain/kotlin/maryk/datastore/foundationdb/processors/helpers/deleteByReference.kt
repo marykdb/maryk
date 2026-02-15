@@ -21,6 +21,7 @@ import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
+import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
@@ -32,7 +33,8 @@ import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
  * - Writes history tombstones when using [HistoricTableDirectories].
  * Returns true if anything was deleted.
  */
-internal fun <T : Any> deleteByReference(
+internal fun <T : Any> FoundationDBDataStore.deleteByReference(
+    dataModelId: UInt,
     tr: Transaction,
     tableDirs: IsTableDirectories,
     key: Key<*>,
@@ -137,8 +139,10 @@ internal fun <T : Any> deleteByReference(
     if (def is IsComparableDefinition<*, *> && def.unique) {
         val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes)).awaitResult()
         if (currentTop != null) {
-            val valueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
-            val uniqueRef = referenceBytes + valueBytes
+            val storedValueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
+            val valueBytes = decryptValueIfNeeded(storedValueBytes)
+            val uniqueValue = mapUniqueValueBytes(dataModelId, referenceBytes, valueBytes)
+            val uniqueRef = referenceBytes + uniqueValue
             tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))
             writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
         }

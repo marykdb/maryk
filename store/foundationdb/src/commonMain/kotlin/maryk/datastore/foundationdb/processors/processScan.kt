@@ -31,6 +31,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
+    val dataModelId = getDataModelId(scanRequest.dataModel)
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(keepAllVersions)
@@ -41,7 +42,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
         val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
         if (exists != null) {
             val createdVersion = HLC.fromStorageBytes(exists).timestamp
-            if (shouldProcessRecord(tr, tableDirs, key, createdVersion, scanRequest, keyScanRange)) {
+            if (shouldProcessRecord(tr, tableDirs, key, createdVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
                 processRecord(key, createdVersion, null)
             }
         }
@@ -54,17 +55,21 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
         @Suppress("UNCHECKED_CAST")
         val valueBytes = (firstMatcher.definition as IsComparableDefinition<Comparable<Any>, IsPropertyContext>)
             .toStorageBytes(firstMatcher.value as Comparable<Any>)
+        val rawUniqueValue = ByteArray(1 + valueBytes.size).apply {
+            this[0] = TypeIndicator.NoTypeIndicator.byte
+            valueBytes.copyInto(this, 1)
+        }
+        val uniqueValue = mapUniqueValueBytes(dataModelId, firstMatcher.reference, rawUniqueValue)
 
-        // Build (reference || NoTypeIndicator || valueBytes) to match how uniques are stored
-        val reference = ByteArray(firstMatcher.reference.size + 1 + valueBytes.size).apply {
+        // Build (reference || uniqueValue) to match how uniques are stored
+        val reference = ByteArray(firstMatcher.reference.size + uniqueValue.size).apply {
             firstMatcher.reference.copyInto(this)
-            this[firstMatcher.reference.size] = TypeIndicator.NoTypeIndicator.byte
-            valueBytes.copyInto(this, firstMatcher.reference.size + 1)
+            uniqueValue.copyInto(this, firstMatcher.reference.size)
         }
 
         tr.getKeyByUniqueValue(tableDirs, reference, scanRequest.toVersion) { keyBytes, setAtVersion ->
             val key = scanRequest.dataModel.key(keyBytes)
-            if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange)) {
+            if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
                 // Ensure we have the creation version for processRecord callback
                 val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
                 val createdVersion = createdBytes?.let { HLC.fromStorageBytes(it).timestamp }
@@ -96,6 +101,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
             scanRequest = scanRequest,
             direction = processedScanIndex.direction,
             scanRange = keyScanRange,
+            decryptValue = this::decryptValueIfNeeded,
             processStoreValue = processRecord
         )
         is ScanType.IndexScan ->
@@ -105,6 +111,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
                 scanRequest = scanRequest,
                 indexScan = processedScanIndex,
                 keyScanRange = keyScanRange,
+                decryptValue = this::decryptValueIfNeeded,
                 processStoreValue = processRecord
             )
     }
@@ -116,7 +123,8 @@ internal fun <DM : IsRootDataModel> shouldProcessRecord(
     key: Key<*>,
     createdVersion: ULong?,
     scanRequest: IsScanRequest<DM, *>,
-    scanRange: KeyScanRanges
+    scanRange: KeyScanRanges,
+    decryptValue: ((ByteArray) -> ByteArray)? = null
 ): Boolean {
     if (createdVersion == null) return false
     val keyBytes = key.bytes
@@ -130,6 +138,7 @@ internal fun <DM : IsRootDataModel> shouldProcessRecord(
         keyOffset = 0,
         keyLength = key.size,
         createdVersion = createdVersion,
-        toVersion = scanRequest.toVersion
+        toVersion = scanRequest.toVersion,
+        decryptValue = decryptValue
     )
 }

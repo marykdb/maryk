@@ -24,6 +24,7 @@ data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsR
     override val name: String,
     override val definition: D,
     override val alternativeNames: Set<String>? = null,
+    override val sensitive: Boolean = false,
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((IsPropertyContext, Key<DM>) -> Unit)? = null,
     override val toSerializable: ((TO?, IsPropertyContext?) -> Key<DM>?)? = null,
@@ -32,8 +33,7 @@ data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsR
 ) :
     AbstractDefinitionWrapper(index, name),
     IsReferenceDefinition<DM, IsPropertyContext> by definition,
-    IsDefinitionWrapper<Key<DM>, TO, IsPropertyContext, DO>,
-    IsValueDefinitionWrapper<Key<DM>, TO, IsPropertyContext, DO>,
+    IsSensitiveValueDefinitionWrapper<Key<DM>, TO, IsPropertyContext, DO>,
     IsFixedStorageBytesEncodable<Key<DM>> {
     override val graphType = PropRef
 
@@ -63,7 +63,7 @@ data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsR
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
         return super<IsReferenceDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason) &&
-                super<IsValueDefinitionWrapper>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+                super<IsSensitiveValueDefinitionWrapper>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
     }
 
     override fun validateWithRef(
@@ -71,7 +71,7 @@ data class ReferenceDefinitionWrapper<TO : Any, DM: IsRootDataModel, out D : IsR
         newValue: Key<DM>?,
         refGetter: () -> IsPropertyReference<Key<DM>, IsPropertyDefinition<Key<DM>>, *>?
     ) {
-        super<IsValueDefinitionWrapper>.validateWithRef(previousValue, newValue, refGetter)
+        super<IsSensitiveValueDefinitionWrapper>.validateWithRef(previousValue, newValue, refGetter)
         super<IsReferenceDefinition>.validateWithRef(previousValue, newValue, refGetter)
     }
 }

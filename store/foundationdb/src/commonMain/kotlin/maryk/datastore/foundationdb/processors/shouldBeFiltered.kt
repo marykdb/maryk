@@ -19,11 +19,12 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
     keyOffset: Int,
     keyLength: Int,
     createdVersion: ULong?, // Can be null in cases when creationVersion is certainly lower than toVersion
-    toVersion: ULong?
+    toVersion: ULong?,
+    decryptValue: ((ByteArray) -> ByteArray)? = null
 ) = when {
     toVersion != null && createdVersion != null && createdVersion > toVersion -> true
-    this.filterSoftDeleted && isSoftDeleted(transaction, tableDirs, toVersion, key, keyOffset, keyLength) -> true
+    this.filterSoftDeleted && isSoftDeleted(transaction, tableDirs, toVersion, key, keyOffset, keyLength, decryptValue) -> true
     else -> !matchesFilter(where) { propertyReference, valueMatcher ->
-        transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
+        transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, valueMatcher)
     }
 }

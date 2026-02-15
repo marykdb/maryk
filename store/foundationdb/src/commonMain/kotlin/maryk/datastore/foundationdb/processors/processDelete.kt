@@ -58,7 +58,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 propertyReference: IsPropertyReference<T, D, C>
             ): T? {
                 @Suppress("UNCHECKED_CAST")
-                return tr.getValue(tableDirs, null, combineToByteArray(key.bytes, propertyReference.toStorageByteArray())) { valueBytes, offset, length ->
+                return tr.getValue(
+                    tableDirs,
+                    null,
+                    combineToByteArray(key.bytes, propertyReference.toStorageByteArray()),
+                    decryptValue = this@processDelete::decryptValueIfNeeded
+                ) { valueBytes, offset, length ->
                     valueBytes.convertToValue(propertyReference, offset, length) as T?
                 }
             }
@@ -86,8 +91,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 if (def is IsComparableDefinition<*, *> && def.unique) {
                     val value = kv.value
                     // Stored as (version || value)
-                    val valueBytes = value.copyOfRange(VERSION_BYTE_SIZE, value.size)
-                    val uniqueRef = combineToByteArray(reference, valueBytes)
+                    val storedValueBytes = value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                    val valueBytes = decryptValueIfNeeded(storedValueBytes)
+                    val uniqueValue = mapUniqueValueBytes(dbIndex, reference, valueBytes)
+                    val uniqueRef = combineToByteArray(reference, uniqueValue)
 
                     // Delete current unique entry
                     tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))

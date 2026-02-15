@@ -62,7 +62,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             keyOffset = 0,
                             keyLength = key.size,
                             createdVersion = creationVersion,
-                            toVersion = getRequest.toVersion
+                            toVersion = getRequest.toVersion,
+                            decryptValue = this@processGetUpdatesRequest::decryptValueIfNeeded
                         )
                     ) {
                         Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
@@ -85,7 +86,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             toVersion = getRequest.toVersion,
                             maxVersions = getRequest.maxVersions,
                             sortingKey = null,
-                            cachedRead = cacheReader
+                            cachedRead = cacheReader,
+                            decryptValue = this@processGetUpdatesRequest::decryptValueIfNeeded
                         )?.let { changes ->
                             if (getRequest.toVersion == null && getRequest.maxVersions > 1u && tableDirs is HistoricTableDirectories) {
                                 addSoftDeleteChangeIfMissing(

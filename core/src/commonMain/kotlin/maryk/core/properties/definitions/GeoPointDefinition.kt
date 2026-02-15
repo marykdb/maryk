@@ -87,14 +87,16 @@ fun IsValuesDataModel.geoPoint(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     default: GeoPoint? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<GeoPoint, GeoPoint, IsPropertyContext, GeoPointDefinition, Any>(
         index,
         name ?: propName,
         GeoPointDefinition(required, final, default),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -104,10 +106,11 @@ fun <TO: Any, DO: Any> IsObjectDataModel<DO>.geoPoint(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     default: GeoPoint? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<GeoPoint, TO, IsPropertyContext, GeoPointDefinition, DO>, DO, IsPropertyContext> =
-    geoPoint(index, getter, name, required, final, default, alternativeNames, toSerializable = null)
+    geoPoint(index, getter, name, required, final, sensitive, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.geoPoint(
     index: UInt,
@@ -115,18 +118,20 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.geoPoint(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     default: GeoPoint? = null,
     alternativeNames: Set<String>? = null,
     toSerializable: ((TO?, CX?) -> GeoPoint?)? = null,
     fromSerializable: ((GeoPoint?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, GeoPoint) -> Unit)? = null
+    capturer: ((CX, GeoPoint) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         GeoPointDefinition(required, final, default),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

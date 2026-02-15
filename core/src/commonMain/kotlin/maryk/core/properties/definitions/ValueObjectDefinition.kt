@@ -208,17 +208,19 @@ fun <DO : ValueDataObject, DM : IsValueDataModel<DO, DM>> IsValuesDataModel.valu
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: DO? = null,
     maxValue: DO? = null,
     default: DO? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<DO, DO, IsPropertyContext, ValueObjectDefinition<DO, DM>, Any>(
         index,
         name ?: propName,
         ValueObjectDefinition(required, final, unique, dataModel, minValue, maxValue, default),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -229,13 +231,14 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueDataModel<VDO, DM>> IsO
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: VDO? = null,
     maxValue: VDO? = null,
     default: VDO? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<VDO, TO, IsPropertyContext, ValueObjectDefinition<VDO, DM>, DO>, DO, IsPropertyContext> =
-    valueObject(index, getter, dataModel, name, required, final, unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
+    valueObject(index, getter, dataModel, name, required, final, sensitive, unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueDataModel<VDO, DM>, CX: IsPropertyContext> IsObjectDataModel<DO>.valueObject(
     index: UInt,
@@ -244,6 +247,7 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueDataModel<VDO, DM>, CX:
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: VDO? = null,
     maxValue: VDO? = null,
@@ -252,13 +256,14 @@ fun <TO: Any, DO: Any, VDO: ValueDataObject, DM : IsValueDataModel<VDO, DM>, CX:
     toSerializable: ((TO?, CX?) -> VDO?)? = null,
     fromSerializable: ((VDO?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, VDO) -> Unit)? = null
+    capturer: ((CX, VDO) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         ValueObjectDefinition(required, final, unique, dataModel, minValue, maxValue, default),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

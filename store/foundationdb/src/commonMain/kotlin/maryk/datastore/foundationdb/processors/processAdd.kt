@@ -47,6 +47,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     version: HLC,
     objectToAdd: Values<DM>,
 ): IsAddResponseStatus<DM> = try {
+    val dataModelId = getDataModelId(dataModel)
     objectToAdd.validate()
 
     var updateToEmit: Update<DM>? = null
@@ -86,7 +87,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 
                         // Unique handling
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                            val uniqueRef = reference + valueBytes
+                            val uniqueValue = mapUniqueValueBytes(dataModelId, reference, valueBytes)
+                            val uniqueRef = reference + uniqueValue
                             checks += {
                                 val uniqueKey = packKey(tableDirs.uniquePrefix, uniqueRef)
                                 val uniqueExists = tr.get(uniqueKey).awaitResult()
@@ -103,7 +105,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                             uniqueWrites += uniqueRef
                         }
 
-                        setValue(tr, tableDirs, key.bytes, reference, versionBytes, valueBytes)
+                        val encryptedValue = encryptValueIfSensitive(dataModelId, reference, valueBytes)
+                        setValue(tr, tableDirs, key.bytes, reference, versionBytes, encryptedValue)
                     }
 
                     ListSize,
@@ -153,7 +156,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 
             clusterUpdateLog?.append(
                 tr = tr,
-                modelId = getDataModelId(dataModel),
+                modelId = dataModelId,
                 update = ClusterLogAddition(Bytes(key.bytes), version.timestamp, finalValues),
             )
 

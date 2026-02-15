@@ -27,13 +27,16 @@ internal fun <T: Any> DBAccessor.getValue(
         when {
             valueLength == rocksDBNotFound -> null
             valueLength > recyclableByteArray.size -> {
-                handleResult(this.get(columnFamilies.table, readOptions, keyAndReference)!!,
-                    VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE
-                )
+                val valueBytes = this.get(columnFamilies.table, readOptions, keyAndReference)!!
+                val decrypted = this.dataStore.decryptValueIfNeeded(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueLength))
+                handleResult(decrypted, 0, decrypted.size)
             }
-            else -> handleResult(recyclableByteArray,
-                VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE
-            )
+            else -> {
+                val decrypted = this.dataStore.decryptValueIfNeeded(
+                    recyclableByteArray.copyOfRange(VERSION_BYTE_SIZE, valueLength)
+                )
+                handleResult(decrypted, 0, decrypted.size)
+            }
         }
     } else {
         val versionBytes = toVersion.toReversedVersionBytes()
@@ -54,7 +57,8 @@ internal fun <T: Any> DBAccessor.getValue(
                     // Only match if version is valid, else read next version
                     if (versionBytes.compareToWithOffsetLength(key, versionOffset) <= 0) {
                         val result = iterator.value()
-                        return handleResult(result, 0, result.size)
+                        val decrypted = this.dataStore.decryptValueIfNeeded(result)
+                        return handleResult(decrypted, 0, decrypted.size)
                     }
                 } else break
 
@@ -64,4 +68,3 @@ internal fun <T: Any> DBAccessor.getValue(
         null
     }
 }
-

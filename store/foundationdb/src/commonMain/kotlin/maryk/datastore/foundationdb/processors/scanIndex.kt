@@ -46,6 +46,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
     scanRequest: IsScanRequest<DM, *>,
     indexScan: ScanType.IndexScan,
     keyScanRange: KeyScanRanges,
+    decryptValue: ((ByteArray) -> ByteArray)? = null,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
@@ -68,7 +69,13 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 propertyReference: IsPropertyReference<T, D, C>
             ): T? {
                 val keyAndRef = combineToByteArray(startKey.bytes, propertyReference.toStorageByteArray())
-                return tr.getValue(tableDirs, scanRequest.toVersion, keyAndRef, startKey.size) { valueBytes, offset, length ->
+                return tr.getValue(
+                    tableDirs,
+                    scanRequest.toVersion,
+                    keyAndRef,
+                    startKey.size,
+                    decryptValue = decryptValue
+                ) { valueBytes, offset, length ->
                     valueBytes.convertToValue(propertyReference, offset, length) as T?
                 }
             }
@@ -128,7 +135,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                         val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
-                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion)) continue
+                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue)) continue
 
                         if (startKeyFilter != null) {
                             val cmp = sortingKey.compareDefinedTo(startKeyFilter)
@@ -198,7 +205,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                         val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
-                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion)) continue
+                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue)) continue
 
                         val key = scanRequest.dataModel.key(keyBytes)
                         processStoreValue(key, createdVersion, sortingKey)
@@ -283,7 +290,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 if (!indexScanRange.matchesPartials(valueAndKey, 0, valueAndKey.size - keySize)) continue
 
                 val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
-                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion)) continue
+                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion, decryptValue)) continue
 
                 val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                 val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp

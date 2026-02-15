@@ -11,7 +11,8 @@ internal fun isSoftDeleted(
     toVersion: ULong?,
     key: ByteArray,
     keyOffset: Int = 0,
-    keyLength: Int = key.size
+    keyLength: Int = key.size,
+    decryptValue: ((ByteArray) -> ByteArray)? = null
 ): Boolean {
     val softDeleteQualifier = ByteArray(keyLength + 1)
     key.copyInto(softDeleteQualifier, 0, keyOffset, keyOffset + keyLength)
@@ -22,6 +23,7 @@ internal fun isSoftDeleted(
         toVersion,
         softDeleteQualifier,
         keyLength,
+        decryptValue = decryptValue,
     ) { b, o, l ->
         b[o + l - 1] == TRUE
     } == true

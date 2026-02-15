@@ -87,7 +87,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
 
                         // If a unique index, check if exists, and then write
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                            val uniqueReference = reference + valueBytes
+                            val uniqueValue = mapUniqueValueBytes(dbIndex, reference, valueBytes)
+                            val uniqueReference = reference + uniqueValue
 
                             checksBeforeWrite.add {
                                 val uniqueCount =
@@ -112,7 +113,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                             setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                         }
 
-                        setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+                        val encryptedValue = encryptValueIfSensitive(dbIndex, reference, valueBytes)
+                        setValue(transaction, columnFamilies, key, reference, versionBytes, encryptedValue)
                     }
                     ListSize,
                     SetSize,

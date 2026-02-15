@@ -111,13 +111,15 @@ fun IsValuesDataModel.flexBytes(
     default: Bytes? = null,
     minSize: UInt? = null,
     maxSize: UInt? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
+    sensitive: Boolean = false
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FlexBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FlexBytesDefinition, Any>(
         index,
         name ?: propName,
         FlexBytesDefinition(required, final, unique, minValue, maxValue, default, minSize, maxSize),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -127,15 +129,16 @@ fun <TO: Any, DO: Any> IsObjectDataModel<DO>.flexBytes(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: Bytes? = null,
     maxValue: Bytes? = null,
     default: Bytes? = null,
     minSize: UInt? = null,
     maxSize: UInt? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FlexBytesDefinition, DO>, DO, IsPropertyContext> =
-    flexBytes(index, getter, name, required, final,  unique, minValue, maxValue, default, minSize, maxSize, alternativeNames, toSerializable = null)
+    flexBytes(index, getter, name, required, final, sensitive,  unique, minValue, maxValue, default, minSize, maxSize, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.flexBytes(
     index: UInt,
@@ -143,6 +146,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.flexBytes(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: Bytes? = null,
     maxValue: Bytes? = null,
@@ -153,13 +157,14 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.flexBytes(
     toSerializable: ((TO?, CX?) -> Bytes?)? = null,
     fromSerializable: ((Bytes?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, Bytes) -> Unit)? = null
+    capturer: ((CX, Bytes) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FlexBytesDefinitionWrapper(
         index,
         name ?: propName,
         FlexBytesDefinition(required, final, unique, minValue, maxValue, default, minSize, maxSize),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

@@ -44,6 +44,16 @@ Subspaces (under the configured store root + optional tenant):
 - `__updates__/v1/hlc_max`: shard-local cluster HLC max markers. Each writer updates `hlc_max/<shard>` via atomic `BYTE_MAX` on every append.
   - A background HLC syncer on every node watches heads and refreshes `max(hlc_max/*, hlc/*)` so local write versions never lag behind cluster HLC, even with zero active `executeFlow` listeners.
 
+### Sensitive Field Encryption (Optional)
+
+- Property wrappers can be marked sensitive in model definitions (`sensitive = true`).
+- FoundationDB store encrypts sensitive value payloads before writing table/historic entries.
+- Read paths auto-decrypt when encrypted payload marker is present.
+- Current constraints:
+  - only simple value properties are supported
+  - sensitive+unique uses deterministic lookup tokens (provider must implement `SensitiveIndexTokenProvider`)
+  - sensitive+indexed is not supported
+
 Semantics:
 
 - Delivery is at-least-once. On failure/restart (or on `consumerId` change), consumers can see duplicate updates within the retention window.

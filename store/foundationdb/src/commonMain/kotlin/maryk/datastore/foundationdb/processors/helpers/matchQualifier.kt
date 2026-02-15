@@ -24,6 +24,7 @@ internal fun <T : Any> Transaction.matchQualifier(
     keyLength: Int,
     reference: IsPropertyReference<T, *, *>,
     toVersion: ULong?,
+    decryptValue: ((ByteArray) -> ByteArray)? = null,
     matcher: (T?) -> Boolean
 ): Boolean =
     this.matchQualifier(
@@ -34,6 +35,7 @@ internal fun <T : Any> Transaction.matchQualifier(
         reference = reference,
         qualifierMatcher = reference.toQualifierMatcher(),
         toVersion = toVersion,
+        decryptValue = decryptValue,
         matcher = matcher
     )
 
@@ -45,6 +47,7 @@ internal fun <T : Any> Transaction.matchQualifier(
     reference: IsPropertyReference<T, *, *>,
     qualifierMatcher: IsQualifierMatcher,
     toVersion: ULong?,
+    decryptValue: ((ByteArray) -> ByteArray)? = null,
     matcher: (T?) -> Boolean
 ): Boolean {
     when (qualifierMatcher) {
@@ -55,11 +58,17 @@ internal fun <T : Any> Transaction.matchQualifier(
 
             return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                 null -> {
-                    val value = this.getValue(tableDirs, toVersion, qualifier, keyLength = keyLength) { valueBytes, offset, length ->
+                    val value = this.getValue(
+                        tableDirs,
+                        toVersion,
+                        qualifier,
+                        keyLength = keyLength,
+                        decryptValue = decryptValue
+                    ) { valueBytes, offset, length ->
                         valueBytes.convertToValue(reference, offset, length)
                     }
                     if (value != null) matcher(value)
-                    else matchExactFromRange(tableDirs, toVersion, keyLength, qualifier, reference, matcher)
+                    else matchExactFromRange(tableDirs, toVersion, keyLength, qualifier, reference, decryptValue, matcher)
                 }
                 else ->
                     matchReferenced(
@@ -69,6 +78,7 @@ internal fun <T : Any> Transaction.matchQualifier(
                         keyLength = keyLength,
                         referencedMatcher = referencedMatcher,
                         reference = reference,
+                        decryptValue = decryptValue,
                         matcher = matcher
                     )
             }
@@ -79,7 +89,13 @@ internal fun <T : Any> Transaction.matchQualifier(
             key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
             firstPossible.copyInto(qualifier, keyLength)
 
-            val result = this.iterateValues(tableDirs, toVersion, keyLength, qualifier) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
+            val result = this.iterateValues(
+                tableDirs,
+                toVersion,
+                keyLength,
+                qualifier,
+                decryptValue = decryptValue
+            ) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
                 when (qualifierMatcher.isMatch(referenceBytes, refOffset, refLength)) {
                     NO_MATCH -> null
                     MATCH -> {
@@ -96,6 +112,7 @@ internal fun <T : Any> Transaction.matchQualifier(
                                     keyLength = keyLength,
                                     referencedMatcher = referencedMatcher,
                                     reference = reference,
+                                    decryptValue = decryptValue,
                                     matcher = matcher
                                 )
                         }
@@ -116,9 +133,16 @@ private fun <T : Any> Transaction.matchReferenced(
     keyLength: Int,
     referencedMatcher: ReferencedQualifierMatcher,
     reference: IsPropertyReference<T, *, *>,
+    decryptValue: ((ByteArray) -> ByteArray)? = null,
     matcher: (T?) -> Boolean
 ): Boolean {
-    val referencedKey = this.getValue(tableDirs, toVersion, qualifier, keyLength = keyLength) { valueBytes, offset, length ->
+    val referencedKey = this.getValue(
+        tableDirs,
+        toVersion,
+        qualifier,
+        keyLength = keyLength,
+        decryptValue = decryptValue
+    ) { valueBytes, offset, length ->
         valueBytes.convertToValue(referencedMatcher.reference, offset, length)
     }
 
@@ -135,6 +159,7 @@ private fun <T : Any> Transaction.matchReferenced(
         reference = reference,
         qualifierMatcher = referencedMatcher.qualifierMatcher,
         toVersion = toVersion,
+        decryptValue = decryptValue,
         matcher = matcher
     )
 }
@@ -149,10 +174,17 @@ private fun <T : Any> Transaction.matchExactFromRange(
     keyLength: Int,
     qualifier: ByteArray,
     reference: IsPropertyReference<T, *, *>,
+    decryptValue: ((ByteArray) -> ByteArray)? = null,
     matcher: (T?) -> Boolean
 ): Boolean {
     val exact = qualifier.copyOfRange(keyLength, qualifier.size)
-    val iterRes = this.iterateValues(tableDirs, toVersion, keyLength, qualifier) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
+    val iterRes = this.iterateValues(
+        tableDirs,
+        toVersion,
+        keyLength,
+        qualifier,
+        decryptValue = decryptValue
+    ) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
         if (refLength == exact.size) {
             var i = 0
             while (i < exact.size && referenceBytes[refOffset + i] == exact[i]) i++

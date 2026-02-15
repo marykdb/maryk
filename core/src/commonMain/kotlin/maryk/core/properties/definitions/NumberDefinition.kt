@@ -246,18 +246,20 @@ fun <T : Comparable<T>> IsValuesDataModel.number(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: T? = null,
     maxValue: T? = null,
     default: T? = null,
     reversedStorage: Boolean? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<T, T, IsPropertyContext, NumberDefinition<T>, Any>(
         index,
         name ?: propName,
         NumberDefinition(required, final, unique, minValue, maxValue, default, reversedStorage, type),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -268,14 +270,15 @@ fun <T : Comparable<T>, TO: Any, DO: Any> IsObjectDataModel<DO>.number(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: T? = null,
     maxValue: T? = null,
     default: T? = null,
     reversedStorage: Boolean? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<T, TO, IsPropertyContext, NumberDefinition<T>, DO>, DO, IsPropertyContext> =
-    number(index, getter, type, name, required, final,  unique, minValue, maxValue, default, reversedStorage, alternativeNames, toSerializable = null)
+    number(index, getter, type, name, required, final, sensitive,  unique, minValue, maxValue, default, reversedStorage, alternativeNames, toSerializable = null)
 
 fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.number(
     index: UInt,
@@ -284,6 +287,7 @@ fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataMod
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: T? = null,
     maxValue: T? = null,
@@ -293,13 +297,14 @@ fun <T : Comparable<T>, TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataMod
     toSerializable: ((TO?, CX?) -> T?)? = null,
     fromSerializable: ((T?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, T) -> Unit)? = null
+    capturer: ((CX, T) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         NumberDefinition(required, final, unique, minValue, maxValue, default, reversedStorage, type),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

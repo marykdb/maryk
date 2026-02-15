@@ -28,6 +28,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     scanRequest: IsScanRequest<DM, *>,
     direction: Direction,
     scanRange: KeyScanRanges,
+    decryptValue: ((ByteArray) -> ByteArray)? = null,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val prefix = tableDirs.keysPrefix
@@ -99,7 +100,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
                     val key = scanRequest.dataModel.key(modelKeyBytes)
                     val creationVersion = HLC.fromStorageBytes(kv.value).timestamp
-                    if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) continue
+                    if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) continue
 
                     processStoreValue(key, creationVersion, null)
                     streamed++
@@ -169,7 +170,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
                     val key = scanRequest.dataModel.key(modelKeyBytes)
                     val creationVersion = HLC.fromStorageBytes(kv.value).timestamp
-                    if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) continue
+                    if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) continue
 
                     processStoreValue(key, creationVersion, null)
                     emitted++

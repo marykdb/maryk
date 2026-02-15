@@ -102,17 +102,19 @@ fun IsValuesDataModel.fixedBytes(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: Bytes? = null,
     maxValue: Bytes? = null,
     default: Bytes? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<Bytes, Bytes, IsPropertyContext, FixedBytesDefinition, Any>(
         index,
         name ?: propName,
         FixedBytesDefinition(required, final, unique, minValue, maxValue, default, byteSize),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -123,13 +125,14 @@ fun <TO: Any, DO: Any> IsObjectDataModel<DO>.fixedBytes(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: Bytes? = null,
     maxValue: Bytes? = null,
     default: Bytes? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Bytes, TO, IsPropertyContext, FixedBytesDefinition, DO>, DO, IsPropertyContext> =
-    fixedBytes(index, getter, byteSize, name, required, final,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
+    fixedBytes(index, getter, byteSize, name, required, final, sensitive,  unique, minValue, maxValue, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.fixedBytes(
     index: UInt,
@@ -138,6 +141,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.fixedBytes(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: Bytes? = null,
     maxValue: Bytes? = null,
@@ -146,13 +150,14 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.fixedBytes(
     toSerializable: ((TO?, CX?) -> Bytes?)? = null,
     fromSerializable: ((Bytes?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, Bytes) -> Unit)? = null
+    capturer: ((CX, Bytes) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         FixedBytesDefinition(required, final, unique, minValue, maxValue, default, byteSize),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

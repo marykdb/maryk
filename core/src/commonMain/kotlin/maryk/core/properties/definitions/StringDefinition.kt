@@ -131,6 +131,7 @@ fun IsValuesDataModel.string(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: String? = null,
     maxValue: String? = null,
@@ -138,13 +139,14 @@ fun IsValuesDataModel.string(
     minSize: UInt? = null,
     maxSize: UInt? = null,
     regEx: String? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FlexBytesDefinitionWrapper<String, String, IsPropertyContext, StringDefinition, Any>(
         index,
         name ?: propName,
         StringDefinition(required, final, unique, minValue, maxValue, default, minSize, maxSize, regEx),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -154,6 +156,7 @@ fun <TO: Any, DO: Any> IsObjectDataModel<DO>.string(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: String? = null,
     maxValue: String? = null,
@@ -161,9 +164,9 @@ fun <TO: Any, DO: Any> IsObjectDataModel<DO>.string(
     minSize: UInt? = null,
     maxSize: UInt? = null,
     regEx: String? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FlexBytesDefinitionWrapper<String, TO, IsPropertyContext, StringDefinition, DO>, DO, IsPropertyContext> =
-    string(index, getter, name, required, final,  unique, minValue, maxValue, default, minSize, maxSize, regEx, alternativeNames, toSerializable = null)
+    string(index, getter, name, required, final, sensitive,  unique, minValue, maxValue, default, minSize, maxSize, regEx, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.string(
     index: UInt,
@@ -171,6 +174,7 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.string(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     unique: Boolean = false,
     minValue: String? = null,
     maxValue: String? = null,
@@ -182,13 +186,14 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.string(
     toSerializable: ((TO?, CX?) -> String?)? = null,
     fromSerializable: ((String?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, String) -> Unit)? = null
+    capturer: ((CX, String) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FlexBytesDefinitionWrapper(
         index,
         name ?: propName,
         StringDefinition(required, final, unique, minValue, maxValue, default, minSize, maxSize, regEx),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

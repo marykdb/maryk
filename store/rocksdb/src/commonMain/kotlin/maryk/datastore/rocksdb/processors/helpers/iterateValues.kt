@@ -26,10 +26,11 @@ internal fun <R: Any> DBAccessor.iterateValues(
             while (iterator.isValid()) {
                 val referenceBytes = iterator.key()
                 val value = iterator.value()
+                val decrypted = this.dataStore.decryptValueIfNeeded(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
                 handleValue(
                     referenceBytes, keyLength, referenceBytes.size - keyLength,
-                    value,
-                    VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE
+                    decrypted,
+                    0, decrypted.size
                 )?.let { return it }
                 iterator.next()
             }
@@ -48,9 +49,10 @@ internal fun <R: Any> DBAccessor.iterateValues(
                 val versionOffset = referenceBytes.size - toVersionBytes.size
                 if (toVersionBytes.compareToWithOffsetLength(referenceBytes, versionOffset) <= 0) {
                     val value = iterator.value()
+                    val decrypted = this.dataStore.decryptValueIfNeeded(value)
                     handleValue(
                         referenceBytes, keyLength, versionOffset,
-                        value, 0, value.size
+                        decrypted, 0, decrypted.size
                     )?.let { return it }
                 }
                 iterator.next()

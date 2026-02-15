@@ -22,6 +22,8 @@ The [FoundationDB](/store/foundationdb/README.md) persistence layer is available
 
 - **Version-Aware Storage and Queries**: Store data in [NoSQL data stores](store/memory/README.md) (in-memory/[RocksDB](store/rocksdb/README.md)/[FoundationDB](store/foundationdb/README.md)) and leverage [versioning](core/docs/versioning.md) to request historical states, compare past values, and minimize bandwidth by fetching only changed fields.
 
+- **Sensitive Field Protection**: Mark simple value properties with `sensitive = true` to encrypt stored payloads (sensitive+`unique` supported with token provider; sensitive+indexed not supported).
+
 - **Data Aggregations & Insights**: Perform [aggregations](core/docs/aggregations.md) (count, sum, average, min/max, grouped by time intervals or enums) for richer analytics and decision-making.
 
 - **CLI tooling**: Browse and edit records in a terminal via the [Maryk CLI](cli/README.md).

@@ -17,6 +17,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.IsValuesDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationHandler
 import maryk.core.models.migration.MigrationStatus
@@ -27,7 +28,13 @@ import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -49,6 +56,8 @@ import maryk.datastore.foundationdb.metadata.readStoredModelNames
 import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.clusterlog.ClusterUpdateLog
+import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
 import maryk.datastore.foundationdb.processors.AnyChangeStoreAction
 import maryk.datastore.foundationdb.processors.AnyDeleteStoreAction
@@ -88,11 +97,13 @@ import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.foundationdb.tuple.Tuple
+import maryk.lib.bytes.combineToByteArray
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
+private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
 
 /**
  * FoundationDB DataStore (JVM-only).
@@ -114,6 +125,7 @@ class FoundationDBDataStore private constructor(
     private val clusterUpdateLogRetention: Duration = 60.minutes,
     private val clusterUpdateLogBatchSize: Int = 256,
     private val clusterUpdateLogPollInterval: Duration = 250.milliseconds,
+    private val fieldEncryptionProvider: FieldEncryptionProvider? = null,
 ) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
@@ -156,6 +168,14 @@ class FoundationDBDataStore private constructor(
     private val clusterLogLastDecodedAtMs = atomic(0L)
     private val clusterLogLastHlcSyncAtMs = atomic(0L)
     private val isClosing = atomic(false)
+    private val sensitiveReferencesByModelId: Map<UInt, SensitiveModelReferences> =
+        dataModelsById.mapValues { (modelId, model) ->
+            collectSensitiveReferences(modelId, model)
+        }
+    private val sensitiveReferencePrefixesByModelId: Map<UInt, List<ByteArray>> =
+        sensitiveReferencesByModelId.mapValues { it.value.sensitiveReferences }
+    private val sensitiveUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
+        sensitiveReferencesByModelId.mapValues { it.value.sensitiveUniqueReferences }
 
     internal inline fun <T> runTransaction(
         crossinline block: (Transaction) -> T
@@ -249,6 +269,17 @@ class FoundationDBDataStore private constructor(
                     }
                 }
             }
+        }
+
+        if (sensitiveReferencePrefixesByModelId.values.any { it.isNotEmpty() } && fieldEncryptionProvider == null) {
+            throw RequestException(
+                "Sensitive properties configured but no fieldEncryptionProvider set on FoundationDBDataStore.open"
+            )
+        }
+        if (sensitiveUniqueReferencesByModelId.values.any { it.isNotEmpty() } && fieldEncryptionProvider !is SensitiveIndexTokenProvider) {
+            throw RequestException(
+                "Sensitive unique properties configured but fieldEncryptionProvider does not implement SensitiveIndexTokenProvider"
+            )
         }
 
         if (enableClusterUpdateLog) {
@@ -662,15 +693,18 @@ class FoundationDBDataStore private constructor(
         job?.cancel()
 
         // Give cooperative coroutines a brief chance to finish before forcing native close.
-        withTimeoutOrNull(2_000) {
+        val stoppedBeforeNativeClose = withTimeoutOrNull(2_000) {
             job?.join()
-        }
+            true
+        } ?: false
 
         runCatching { this.tenantDB?.close() }
         runCatching { this.db.close() }
 
-        withTimeoutOrNull(10_000) {
-            job?.join()
+        if (!stoppedBeforeNativeClose) {
+            withTimeoutOrNull(10_000) {
+                job?.join()
+            }
         }
     }
 
@@ -758,6 +792,122 @@ class FoundationDBDataStore private constructor(
         return v.toULong()
     }
 
+    internal fun encryptValueIfSensitive(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+        if (!isSensitiveReference(modelId, reference)) return value
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("No fieldEncryptionProvider configured for sensitive property write")
+        val encrypted = provider.encrypt(value)
+        return combineToByteArray(ENCRYPTED_VALUE_MAGIC, encrypted)
+    }
+
+    internal fun decryptValueIfNeeded(value: ByteArray): ByteArray {
+        if (!isEncryptedValue(value)) return value
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
+        val payload = value.copyOfRange(ENCRYPTED_VALUE_MAGIC.size, value.size)
+        return provider.decrypt(payload)
+    }
+
+    internal fun mapUniqueValueBytes(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+        if (!isSensitiveUniqueReference(modelId, reference)) return value
+        val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
+            ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
+        return tokenProvider.deriveDeterministicToken(modelId, reference, value)
+    }
+
+    private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean {
+        val prefixes = sensitiveReferencePrefixesByModelId[modelId] ?: return false
+        return prefixes.any { prefix -> reference.hasPrefix(prefix) }
+    }
+
+    private fun isSensitiveUniqueReference(modelId: UInt, reference: ByteArray): Boolean {
+        val references = sensitiveUniqueReferencesByModelId[modelId] ?: return false
+        return references.any { it.contentEquals(reference) }
+    }
+
+    private fun collectSensitiveReferences(modelId: UInt, dataModel: IsRootDataModel): SensitiveModelReferences {
+        val sensitiveReferences = mutableListOf<ByteArray>()
+        val sensitiveUniqueReferences = mutableListOf<ByteArray>()
+        collectSensitiveReferencesRecursive(
+            modelId = modelId,
+            rootDataModel = dataModel,
+            dataModel = dataModel,
+            parentRef = null,
+            sensitiveReferences = sensitiveReferences,
+            sensitiveUniqueReferences = sensitiveUniqueReferences,
+            modelPath = mutableListOf()
+        )
+        return SensitiveModelReferences(sensitiveReferences, sensitiveUniqueReferences)
+    }
+
+    private fun collectSensitiveReferencesRecursive(
+        modelId: UInt,
+        rootDataModel: IsRootDataModel,
+        dataModel: IsValuesDataModel,
+        parentRef: AnyPropertyReference?,
+        sensitiveReferences: MutableList<ByteArray>,
+        sensitiveUniqueReferences: MutableList<ByteArray>,
+        modelPath: MutableList<IsValuesDataModel>
+    ) {
+        if (modelPath.any { it === dataModel }) return
+        modelPath += dataModel
+
+        try {
+            dataModel.forEach { wrapper ->
+                val propertyReference = wrapper.ref(parentRef)
+                val reference = propertyReference.toStorageByteArray()
+                if (wrapper is IsSensitiveValueDefinitionWrapper<*, *, *, *> && wrapper.sensitive) {
+                    val isUnique = validateSensitiveWrapper(modelId, rootDataModel, dataModel, wrapper, propertyReference)
+                    sensitiveReferences += reference
+                    if (isUnique) {
+                        sensitiveUniqueReferences += reference
+                    }
+                }
+
+                val definition = wrapper.definition
+                if (definition is EmbeddedValuesDefinition<*>) {
+                    collectSensitiveReferencesRecursive(
+                        modelId = modelId,
+                        rootDataModel = rootDataModel,
+                        dataModel = definition.dataModel,
+                        parentRef = wrapper.ref(parentRef),
+                        sensitiveReferences = sensitiveReferences,
+                        sensitiveUniqueReferences = sensitiveUniqueReferences,
+                        modelPath = modelPath
+                    )
+                }
+            }
+        } finally {
+            modelPath.removeAt(modelPath.lastIndex)
+        }
+    }
+
+    private fun validateSensitiveWrapper(
+        modelId: UInt,
+        rootDataModel: IsRootDataModel,
+        dataModel: IsValuesDataModel,
+        wrapper: IsSensitiveValueDefinitionWrapper<*, *, *, *>,
+        propertyReference: AnyPropertyReference
+    ): Boolean {
+        val definition = wrapper.definition
+        val isUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
+        val indexed = rootDataModel.Meta.indexes?.any {
+            it.isForPropertyReference(propertyReference)
+        } == true
+        if (indexed) {
+            throw RequestException(
+                "Sensitive property ${dataModel.Meta.name}.${wrapper.name} (modelId=$modelId) cannot be indexed yet. Use explicit blind-index field"
+            )
+        }
+        return isUnique
+    }
+
+    private fun IsIndexable.isForPropertyReference(propertyReference: AnyPropertyReference): Boolean = when (this) {
+        is IsIndexablePropertyReference<*> -> isForPropertyReference(propertyReference)
+        is Multiple -> references.any { it.isForPropertyReference(propertyReference) }
+        else -> false
+    }
+
     private fun readMaxClusterHlc(log: ClusterUpdateLog, tr: Transaction): ULong {
         var maxSeen = 0uL
 
@@ -783,6 +933,21 @@ class FoundationDBDataStore private constructor(
         return maxSeen
     }
 
+    private fun isEncryptedValue(value: ByteArray): Boolean =
+        value.size >= ENCRYPTED_VALUE_MAGIC.size &&
+            value[0] == ENCRYPTED_VALUE_MAGIC[0] &&
+            value[1] == ENCRYPTED_VALUE_MAGIC[1] &&
+            value[2] == ENCRYPTED_VALUE_MAGIC[2] &&
+            value[3] == ENCRYPTED_VALUE_MAGIC[3]
+
+    private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
+        if (size < prefix.size) return false
+        for (i in prefix.indices) {
+            if (this[i] != prefix[i]) return false
+        }
+        return true
+    }
+
     companion object {
         /**
          * Open a FoundationDB-backed Maryk store.
@@ -796,6 +961,10 @@ class FoundationDBDataStore private constructor(
          * - `clusterUpdateLogRetention`: time window to keep update entries; old entries cleared by time-based range clears.
          * - Cluster HLC safety: writes update per-node and shard-max HLC markers; a background syncer keeps local version generation
          *   at/above observed cluster HLC even without active `executeFlow` listeners.
+         * - `fieldEncryptionProvider`: optional field-value encryption provider for properties marked with `sensitive = true`.
+         *   Sensitive properties are restricted to simple values.
+         *   Sensitive+unique requires the provider to also implement [SensitiveIndexTokenProvider].
+         *   Sensitive+index is not supported yet.
          */
         suspend fun open(
             keepAllVersions: Boolean = true,
@@ -814,6 +983,7 @@ class FoundationDBDataStore private constructor(
             clusterUpdateLogRetention: Duration = 60.minutes,
             clusterUpdateLogBatchSize: Int = 256,
             clusterUpdateLogPollInterval: Duration = 250.milliseconds,
+            fieldEncryptionProvider: FieldEncryptionProvider? = null,
         ) = FoundationDBDataStore(
             keepAllVersions = keepAllVersions,
             fdbClusterFilePath = fdbClusterFilePath,
@@ -831,6 +1001,7 @@ class FoundationDBDataStore private constructor(
             clusterUpdateLogRetention = clusterUpdateLogRetention,
             clusterUpdateLogBatchSize = clusterUpdateLogBatchSize,
             clusterUpdateLogPollInterval = clusterUpdateLogPollInterval,
+            fieldEncryptionProvider = fieldEncryptionProvider,
         ).apply {
             try {
                 initAsync()
@@ -858,4 +1029,9 @@ internal data class ClusterUpdateLogStats(
     val lastDecodedAtUnixMs: Long,
     val lastHlcSyncAtUnixMs: Long,
     val activeListenerCountsByModelId: Map<UInt, Int>,
+)
+
+private data class SensitiveModelReferences(
+    val sensitiveReferences: List<ByteArray>,
+    val sensitiveUniqueReferences: List<ByteArray>,
 )

@@ -25,7 +25,14 @@ import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
+import maryk.core.models.IsValuesDataModel
+import maryk.core.properties.definitions.EmbeddedValuesDefinition
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -84,6 +91,8 @@ import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.updates.Update
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
@@ -96,6 +105,8 @@ import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
 
+private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
+
 class RocksDBDataStore private constructor(
     override val keepAllVersions: Boolean = true,
     relativePath: String,
@@ -104,10 +115,19 @@ class RocksDBDataStore private constructor(
     private val onlyCheckModelVersion: Boolean = false,
     val migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
     val versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
+    val fieldEncryptionProvider: FieldEncryptionProvider? = null,
 ) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
+    private val sensitiveReferencesByModelId: Map<UInt, SensitiveModelReferences> =
+        dataModelsById.mapValues { (modelId, model) ->
+            collectSensitiveReferences(modelId, model)
+        }
+    private val sensitiveReferencePrefixesByModelId: Map<UInt, List<ByteArray>> =
+        sensitiveReferencesByModelId.mapValues { it.value.sensitiveReferences }
+    private val sensitiveUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
+        sensitiveReferencesByModelId.mapValues { it.value.sensitiveUniqueReferences }
 
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
@@ -181,6 +201,17 @@ class RocksDBDataStore private constructor(
     }
 
     private suspend fun initAsync() {
+        if (sensitiveReferencePrefixesByModelId.values.any { it.isNotEmpty() } && fieldEncryptionProvider == null) {
+            throw RequestException(
+                "Sensitive properties configured but no fieldEncryptionProvider set on RocksDBDataStore.open"
+            )
+        }
+        if (sensitiveUniqueReferencesByModelId.values.any { it.isNotEmpty() } && fieldEncryptionProvider !is SensitiveIndexTokenProvider) {
+            throw RequestException(
+                "Sensitive unique properties configured but fieldEncryptionProvider does not implement SensitiveIndexTokenProvider"
+            )
+        }
+
         val conversionContext = DefinitionsConversionContext()
 
         for ((index, dataModel) in dataModelsById) {
@@ -435,6 +466,130 @@ class RocksDBDataStore private constructor(
         }
     }
 
+    internal fun encryptValueIfSensitive(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+        if (!isSensitiveReference(modelId, reference)) return value
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("No fieldEncryptionProvider configured for sensitive property write")
+        val encrypted = provider.encrypt(value)
+        return ENCRYPTED_VALUE_MAGIC + encrypted
+    }
+
+    internal fun decryptValueIfNeeded(value: ByteArray): ByteArray {
+        if (!isEncryptedValue(value)) return value
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
+        return provider.decrypt(value.copyOfRange(ENCRYPTED_VALUE_MAGIC.size, value.size))
+    }
+
+    internal fun mapUniqueValueBytes(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+        if (!isSensitiveUniqueReference(modelId, reference)) return value
+        val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
+            ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
+        return tokenProvider.deriveDeterministicToken(modelId, reference, value)
+    }
+
+    private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean =
+        sensitiveReferencePrefixesByModelId[modelId]?.any { prefix -> reference.hasPrefix(prefix) } == true
+
+    private fun isSensitiveUniqueReference(modelId: UInt, reference: ByteArray): Boolean =
+        sensitiveUniqueReferencesByModelId[modelId]?.any { it.contentEquals(reference) } == true
+
+    private fun collectSensitiveReferences(modelId: UInt, dataModel: IsRootDataModel): SensitiveModelReferences {
+        val sensitiveReferences = mutableListOf<ByteArray>()
+        val sensitiveUniqueReferences = mutableListOf<ByteArray>()
+        collectSensitiveReferencesRecursive(
+            modelId = modelId,
+            rootDataModel = dataModel,
+            dataModel = dataModel,
+            parentRef = null,
+            sensitiveReferences = sensitiveReferences,
+            sensitiveUniqueReferences = sensitiveUniqueReferences,
+            modelPath = mutableListOf()
+        )
+        return SensitiveModelReferences(sensitiveReferences, sensitiveUniqueReferences)
+    }
+
+    private fun collectSensitiveReferencesRecursive(
+        modelId: UInt,
+        rootDataModel: IsRootDataModel,
+        dataModel: IsValuesDataModel,
+        parentRef: AnyPropertyReference?,
+        sensitiveReferences: MutableList<ByteArray>,
+        sensitiveUniqueReferences: MutableList<ByteArray>,
+        modelPath: MutableList<IsValuesDataModel>
+    ) {
+        if (modelPath.any { it === dataModel }) return
+        modelPath += dataModel
+        try {
+            dataModel.forEach { wrapper ->
+                val propertyReference = wrapper.ref(parentRef)
+                val reference = propertyReference.toStorageByteArray()
+                if (wrapper is IsSensitiveValueDefinitionWrapper<*, *, *, *> && wrapper.sensitive) {
+                    val isUnique = validateSensitiveWrapper(modelId, rootDataModel, dataModel, wrapper, propertyReference)
+                    sensitiveReferences += reference
+                    if (isUnique) {
+                        sensitiveUniqueReferences += reference
+                    }
+                }
+                val definition = wrapper.definition
+                if (definition is EmbeddedValuesDefinition<*>) {
+                    collectSensitiveReferencesRecursive(
+                        modelId = modelId,
+                        rootDataModel = rootDataModel,
+                        dataModel = definition.dataModel,
+                        parentRef = wrapper.ref(parentRef),
+                        sensitiveReferences = sensitiveReferences,
+                        sensitiveUniqueReferences = sensitiveUniqueReferences,
+                        modelPath = modelPath
+                    )
+                }
+            }
+        } finally {
+            modelPath.removeAt(modelPath.lastIndex)
+        }
+    }
+
+    private fun validateSensitiveWrapper(
+        modelId: UInt,
+        rootDataModel: IsRootDataModel,
+        dataModel: IsValuesDataModel,
+        wrapper: IsSensitiveValueDefinitionWrapper<*, *, *, *>,
+        propertyReference: AnyPropertyReference
+    ): Boolean {
+        val definition = wrapper.definition
+        val isUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
+        val indexed = rootDataModel.Meta.indexes?.any {
+            it.isForPropertyReference(propertyReference)
+        } == true
+        if (indexed) {
+            throw RequestException(
+                "Sensitive property ${dataModel.Meta.name}.${wrapper.name} (modelId=$modelId) cannot be indexed yet. Use explicit blind-index field"
+            )
+        }
+        return isUnique
+    }
+
+    private fun IsIndexable.isForPropertyReference(propertyReference: AnyPropertyReference): Boolean = when (this) {
+        is IsIndexablePropertyReference<*> -> isForPropertyReference(propertyReference)
+        is Multiple -> references.any { it.isForPropertyReference(propertyReference) }
+        else -> false
+    }
+
+    private fun isEncryptedValue(value: ByteArray): Boolean =
+        value.size >= ENCRYPTED_VALUE_MAGIC.size &&
+            value[0] == ENCRYPTED_VALUE_MAGIC[0] &&
+            value[1] == ENCRYPTED_VALUE_MAGIC[1] &&
+            value[2] == ENCRYPTED_VALUE_MAGIC[2] &&
+            value[3] == ENCRYPTED_VALUE_MAGIC[3]
+
+    private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
+        if (size < prefix.size) return false
+        for (i in prefix.indices) {
+            if (this[i] != prefix[i]) return false
+        }
+        return true
+    }
+
     companion object {
         suspend fun open(
             keepAllVersions: Boolean = true,
@@ -444,6 +599,7 @@ class RocksDBDataStore private constructor(
             onlyCheckModelVersion: Boolean = false,
             migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
             versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
+            fieldEncryptionProvider: FieldEncryptionProvider? = null,
         ): RocksDBDataStore {
             return RocksDBDataStore(
                 keepAllVersions = keepAllVersions,
@@ -453,6 +609,7 @@ class RocksDBDataStore private constructor(
                 onlyCheckModelVersion = onlyCheckModelVersion,
                 migrationHandler = migrationHandler,
                 versionUpdateHandler = versionUpdateHandler,
+                fieldEncryptionProvider = fieldEncryptionProvider,
             ).apply {
                 try {
                     initAsync()
@@ -464,3 +621,8 @@ class RocksDBDataStore private constructor(
         }
     }
 }
+
+private data class SensitiveModelReferences(
+    val sensitiveReferences: List<ByteArray>,
+    val sensitiveUniqueReferences: List<ByteArray>,
+)

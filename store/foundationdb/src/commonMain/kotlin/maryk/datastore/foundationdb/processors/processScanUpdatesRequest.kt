@@ -73,7 +73,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 key = key,
                 select = scanRequest.select,
                 toVersion = scanRequest.toVersion,
-                cachedRead = cacheReader
+                cachedRead = cacheReader,
+                decryptValue = this@processScanUpdatesRequest::decryptValueIfNeeded
             )
         }
 
@@ -94,7 +95,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
             // Add sorting index if requested
             sortingIndex?.let { idx ->
-                val getter = StoreValuesGetter(tr, tableDirs)
+                val getter = StoreValuesGetter(tr, tableDirs, this@processScanUpdatesRequest::decryptValueIfNeeded)
                 getter.moveToKey(key.bytes, scanRequest.toVersion)
                 idx.toStorageByteArrayForIndex(getter, key.bytes)?.let { indexableBytes ->
                     sortingKeys?.add(indexableBytes)
@@ -244,7 +245,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 /** Simple getter to compute index values for current key within a single transaction */
 private class StoreValuesGetter(
     private val tr: maryk.foundationdb.Transaction,
-    private val tableDirs: IsTableDirectories
+    private val tableDirs: IsTableDirectories,
+    private val decryptValue: ((ByteArray) -> ByteArray)? = null
 ) : IsValuesGetter {
     private lateinit var keyBytes: ByteArray
 
@@ -259,7 +261,13 @@ private class StoreValuesGetter(
         propertyReference: IsPropertyReference<T, D, C>
     ): T? {
         val keyAndRef = combineToByteArray(keyBytes, propertyReference.toStorageByteArray())
-        return tr.getValue(tableDirs, toVersion, keyAndRef, keyBytes.size) { valueBytes, offset, length ->
+        return tr.getValue(
+            tableDirs,
+            toVersion,
+            keyAndRef,
+            keyBytes.size,
+            decryptValue = decryptValue
+        ) { valueBytes, offset, length ->
             valueBytes.convertToValue(propertyReference, offset, length) as T?
         }
     }

@@ -66,13 +66,17 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                             transaction.get(columnFamilies.table, defaultReadOptions, referenceAndKey)!!
                         } else recyclableByteArray
 
+                        val storedValue = value.copyOfRange(VERSION_BYTE_SIZE, valueLength)
+                        val plainValue = decryptValueIfNeeded(storedValue)
+                        val uniqueValue = mapUniqueValueBytes(dbIndex, reference, plainValue)
+
                         deleteUniqueIndexValue(
                             transaction,
                             columnFamilies,
                             reference,
-                            value,
-                            VERSION_BYTE_SIZE,
-                            valueLength - VERSION_BYTE_SIZE,
+                            uniqueValue,
+                            0,
+                            uniqueValue.size,
                             versionBytes,
                             hardDelete
                         )
@@ -81,6 +85,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                     // Delete it from history if it is a hard delete
                     if (hardDelete && columnFamilies is HistoricTableColumnFamilies) {
                         hardDeleteHistoricalUniqueValues(
+                            this,
+                            dbIndex,
                             transaction,
                             columnFamilies,
                             defaultReadOptions,
@@ -178,6 +184,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
 
 /** Take care of hard deleting the historical unique values */
 private fun hardDeleteHistoricalUniqueValues(
+    dataStore: RocksDBDataStore,
+    dbIndex: UInt,
     transaction: Transaction,
     columnFamilies: HistoricTableColumnFamilies,
     readOptions: ReadOptions,
@@ -193,10 +201,16 @@ private fun hardDeleteHistoricalUniqueValues(
 
             if (qualifier.matchPart(0, referenceAndKey)) {
                 val valueBytes = iterator.value()
-                val historicReference = ByteArray(reference.size + valueBytes.size + VERSION_BYTE_SIZE)
+                val plainValue = dataStore.decryptValueIfNeeded(valueBytes)
+                val uniqueValue = dataStore.mapUniqueValueBytes(dbIndex, reference, plainValue)
+                val historicReference = ByteArray(reference.size + uniqueValue.size + VERSION_BYTE_SIZE)
                 reference.copyInto(historicReference)
-                valueBytes.copyInto(historicReference, reference.size)
-                qualifier.copyInto(historicReference, valueBytes.size + reference.size, qualifier.size - VERSION_BYTE_SIZE)
+                uniqueValue.copyInto(historicReference, reference.size)
+                qualifier.copyInto(
+                    historicReference,
+                    uniqueValue.size + reference.size,
+                    qualifier.size - VERSION_BYTE_SIZE
+                )
 
                 transaction.delete(columnFamilies.historic.unique, historicReference)
                 iterator.next()

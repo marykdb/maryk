@@ -44,7 +44,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                 } else {
                     val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
 
-                    if (getRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, getRequest.toVersion)) {
+                    if (getRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, getRequest.toVersion, this@processGetRequest::decryptValueIfNeeded)) {
                         null
                     } else {
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
@@ -58,7 +58,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                             key = key,
                             select = getRequest.select,
                             toVersion = getRequest.toVersion,
-                            cachedRead = cacheReader
+                            cachedRead = cacheReader,
+                            decryptValue = this@processGetRequest::decryptValueIfNeeded
                         )
                     }
                 }
@@ -73,7 +74,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                     ?: tr.getValue(
                             tableDirs = tableDirs,
                             toVersion = getRequest.toVersion,
-                            keyAndReference = it.toStorageByteArray()
+                            keyAndReference = it.toStorageByteArray(),
+                            decryptValue = this@processGetRequest::decryptValueIfNeeded
                         ) { valueBytes, offset, length ->
                             (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(
                                 valueBytes,

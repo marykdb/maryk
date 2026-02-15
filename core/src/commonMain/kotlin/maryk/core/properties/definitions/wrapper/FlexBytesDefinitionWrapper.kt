@@ -17,6 +17,7 @@ data class FlexBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext,
     override val name: String,
     override val definition: D,
     override val alternativeNames: Set<String>? = null,
+    override val sensitive: Boolean = false,
     override val getter: (DO) -> TO? = { null },
     override val capturer: ((CX, T) -> Unit)? = null,
     override val toSerializable: ((TO?, CX?) -> T?)? = null,
@@ -25,7 +26,7 @@ data class FlexBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext,
 ) :
     AbstractDefinitionWrapper(index, name),
     IsSerializableFlexBytesEncodable<T, CX> by definition,
-    IsValueDefinitionWrapper<T, TO, CX, DO> {
+    IsSensitiveValueDefinitionWrapper<T, TO, CX, DO> {
     override val graphType = PropRef
 
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {

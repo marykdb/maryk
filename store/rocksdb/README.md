@@ -84,3 +84,29 @@ RocksDBDataStore.open(
 This module is Kotlin Multiplatform and works on JVM, iOS, macOS, tvOS, watchOS, Android, Android Native, Windows and Linux via the `rocksdb-multiplatform` bindings.
 
 For a deeper dive into how data is laid out and how queries execute, check the [Architecture](documentation/architecture.md) and [Storage Layout](documentation/storage.md) docs.
+
+## Sensitive Properties
+
+`RocksDBDataStore.open` accepts a `fieldEncryptionProvider` argument using the shared encryption contract
+`maryk.datastore.shared.encryption.FieldEncryptionProvider`.
+
+Use `sensitive = true` on property definitions to encrypt value payloads at rest.
+
+```kotlin
+val secret by string(index = 3u, sensitive = true)
+
+val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
+val encryptionProvider = AesGcmHmacSha256EncryptionProvider(
+    encryptionKey = keyMaterial.encryptionKey,
+    tokenKey = keyMaterial.tokenKey
+)
+```
+
+Notes:
+- Sensitive values are encrypted in table payloads (latest + historic).
+- Reads auto-decrypt based on an encrypted payload marker.
+- Supported for simple value properties.
+- Sensitive+`unique` is supported when `fieldEncryptionProvider` also implements
+  `maryk.datastore.shared.encryption.SensitiveIndexTokenProvider`.
+- Sensitive+indexed is not supported.
+- Pass `fieldEncryptionProvider = encryptionProvider` to `RocksDBDataStore.open(...)`.

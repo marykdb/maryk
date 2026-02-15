@@ -81,6 +81,7 @@ Model changes that generally do NOT require a migration: adding models, indexes,
 - `clusterUpdateLogOriginId`: Optional. Defaults to `clusterUpdateLogConsumerId`. Used to skip “echo” of updates written by this same node when tailing.
 - `clusterUpdateLogShardCount`: Number of log shards (per store root). Higher spreads write hot-spotting; tailers read per-shard cursors.
 - `clusterUpdateLogRetention`: Time window to keep log entries (default 1 hour). A background job clears old ranges by timestamp.
+- `fieldEncryptionProvider`: Optional field-value encryption provider. Required when any model property is marked as sensitive (`sensitive = true`).
 
 Example: set custom transaction retry limits
 
@@ -93,6 +94,39 @@ val store = FoundationDBDataStore.open(
     }
 )
 ```
+
+### Sensitive Field Encryption (Optional)
+
+Mark a property as sensitive in a model:
+
+```kotlin
+val secret by string(index = 3u, sensitive = true)
+```
+
+Then configure a provider:
+
+```kotlin
+val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
+
+val store = FoundationDBDataStore.open(
+    dataModelsById = mapOf(1u to MyModel),
+    fieldEncryptionProvider = AesGcmHmacSha256EncryptionProvider(
+        encryptionKey = keyMaterial.encryptionKey,
+        tokenKey = keyMaterial.tokenKey
+    )
+)
+```
+
+Provider contracts live in shared module:
+- `maryk.datastore.shared.encryption.FieldEncryptionProvider`
+- `maryk.datastore.shared.encryption.SensitiveIndexTokenProvider` (needed for sensitive+unique)
+
+Notes:
+- Sensitive values are encrypted in table value payloads (latest + historic).
+- Reads auto-decrypt based on an encrypted payload marker.
+- Supported for simple value properties.
+- Sensitive+`unique` is supported when `fieldEncryptionProvider` also implements `SensitiveIndexTokenProvider`.
+- Sensitive+indexed is not supported.
 
 ## Cluster-Wide ExecuteFlow Updates (Optional)
 

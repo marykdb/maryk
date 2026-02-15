@@ -67,14 +67,16 @@ fun IsValuesDataModel.boolean(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     default: Boolean? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ) = DefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, Any>(
         index,
         name ?: propName,
         BooleanDefinition(required, final, default),
-        alternativeNames
+        alternativeNames,
+        sensitive,
     )
 }
 
@@ -84,10 +86,11 @@ fun <DO: Any> IsObjectDataModel<DO>.boolean(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     default: Boolean? = null,
-    alternativeNames: Set<String>? = null
+    alternativeNames: Set<String>? = null,
 ): ObjectDefinitionWrapperDelegateLoader<FixedBytesDefinitionWrapper<Boolean, Boolean, IsPropertyContext, BooleanDefinition, DO>, DO, IsPropertyContext> =
-    boolean(index, getter, name, required, final, default, alternativeNames, toSerializable = null)
+    boolean(index, getter, name, required, final, sensitive, default, alternativeNames, toSerializable = null)
 
 fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.boolean(
     index: UInt,
@@ -95,18 +98,20 @@ fun <TO: Any, DO: Any, CX: IsPropertyContext> IsObjectDataModel<DO>.boolean(
     name: String? = null,
     required: Boolean = true,
     final: Boolean = false,
+    sensitive: Boolean = false,
     default: Boolean? = null,
     alternativeNames: Set<String>? = null,
     toSerializable: ((TO?, CX?) -> Boolean?)? = null,
     fromSerializable: ((Boolean?) -> TO?)? = null,
     shouldSerialize: ((Any) -> Boolean)? = null,
-    capturer: ((CX, Boolean) -> Unit)? = null
+    capturer: ((CX, Boolean) -> Unit)? = null,
 ) = ObjectDefinitionWrapperDelegateLoader(this) { propName ->
     FixedBytesDefinitionWrapper(
         index,
         name ?: propName,
         BooleanDefinition(required, final, default),
         alternativeNames,
+        sensitive,
         getter = getter,
         capturer = capturer,
         toSerializable = toSerializable,

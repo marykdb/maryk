@@ -47,7 +47,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     key: Key<DM>,
     select: RootPropRefGraph<DM>?,
     toVersion: ULong?,
-    cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
+    cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?,
+    decryptValue: ((ByteArray) -> ByteArray)? = null
 ): ValuesWithMetaData<DM>? {
     var maxVersion = creationVersion
     var isDeleted = false
@@ -78,47 +79,54 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                 when (storageType) {
                     ObjectDelete -> {
                         currentVersion = maxOf(value.readVersionBytes(), maxVersion)
-                        index = VERSION_BYTE_SIZE
-                        isDeleted = value[index] == TRUE
+                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
+                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        isDeleted = payload.isNotEmpty() && payload[0] == TRUE
                         true
                     }
                     Value -> {
                         currentVersion = value.readVersionBytes()
-
-                        index = VERSION_BYTE_SIZE
-                        val reader = { value[index++] }
+                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
+                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        index = 0
+                        val reader = { payload[index++] }
 
                         cachedRead(reference, currentVersion) {
                             val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                 ?: reference.propertyDefinition
 
                             readValue(definition, reader) {
-                                value.size - index
+                                payload.size - index
                             }
                         }
                     }
                     ListSize -> {
                         currentVersion = value.readVersionBytes()
-                        index = VERSION_BYTE_SIZE
+                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
+                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        index = 0
 
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { value[index++] }
+                            initIntByVar { payload[index++] }
                         }
                     }
                     SetSize -> {
                         currentVersion = value.readVersionBytes()
-                        index = VERSION_BYTE_SIZE
+                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
+                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        index = 0
 
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { value[index++] }
+                            initIntByVar { payload[index++] }
                         }
                     }
                     MapSize -> {
                         currentVersion = value.readVersionBytes()
-
-                        index = VERSION_BYTE_SIZE
+                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
+                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        index = 0
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { value[index++] }
+                            initIntByVar { payload[index++] }
                         }
                     }
                     Embed -> {
@@ -158,7 +166,8 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                 if (storageType == ObjectDelete) {
                     val cached = cachedRead(reference, currentVersion) {
                         val value = iterator.current.value
-                        if (value.isNotEmpty()) value[0] == TRUE else true
+                        val payload = decryptValue?.invoke(value) ?: value
+                        if (payload.isNotEmpty()) payload[0] == TRUE else true
                     }
                     if (cached is Boolean) {
                         isDeleted = cached
@@ -166,7 +175,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     cached
                 } else {
                     cachedRead(reference, currentVersion) {
-                        val value = iterator.current.value
+                        val value = decryptValue?.invoke(iterator.current.value) ?: iterator.current.value
                         when (storageType) {
                             Value -> {
                                 index = 0

@@ -246,6 +246,25 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                             throw RequestException("Type Reference not allowed for deletes. Use the multi type parent.")
                                         }
 
+                                        if ((reference.propertyDefinition as? IsComparableDefinition<*, *>)?.unique == true) {
+                                            val keyAndReference = key.bytes + referenceAsBytes
+                                            transaction.getValue(columnFamilies, defaultReadOptions, null, keyAndReference) { b, o, l ->
+                                                val oldStoredValue = b.copyOfRange(o, o + l)
+                                                val oldValue = decryptValueIfNeeded(oldStoredValue)
+                                                val oldUniqueValue = mapUniqueValueBytes(dbIndex, referenceAsBytes, oldValue)
+                                                deleteUniqueIndexValue(
+                                                    transaction,
+                                                    columnFamilies,
+                                                    referenceAsBytes,
+                                                    oldUniqueValue,
+                                                    0,
+                                                    oldUniqueValue.size,
+                                                    versionBytes,
+                                                    false
+                                                )
+                                            }
+                                        }
+
                                         deleteByReference(transaction, columnFamilies, defaultReadOptions, key, reference, referenceAsBytes, versionBytes) { _, previousValue ->
                                             reference.propertyDefinition.validateWithRef(
                                                 previousValue = previousValue,
@@ -844,7 +863,8 @@ private fun RocksDBDataStore.createValueWriter(
                 onWrite?.invoke()
                 // If a unique index, check if exists, and then write
                 if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                    val uniqueReference = reference + valueBytes
+                    val uniqueValue = mapUniqueValueBytes(dbIndex, reference, valueBytes)
+                    val uniqueReference = reference + uniqueValue
 
                     try {
                         transaction.getForUpdate(defaultReadOptions, columnFamilies.unique, uniqueReference)
@@ -865,7 +885,10 @@ private fun RocksDBDataStore.createValueWriter(
                             null,
                             key.bytes + reference
                         ) { b, o, l ->
-                            deleteUniqueIndexValue(transaction, columnFamilies, reference, b, o, l, versionBytes, false)
+                            val oldStoredValue = b.copyOfRange(o, o + l)
+                            val oldValue = decryptValueIfNeeded(oldStoredValue)
+                            val oldUniqueValue = mapUniqueValueBytes(dbIndex, reference, oldValue)
+                            deleteUniqueIndexValue(transaction, columnFamilies, reference, oldUniqueValue, 0, oldUniqueValue.size, versionBytes, false)
                         }
 
                         // Creates index reference on the table if it not exists so delete can find
@@ -880,7 +903,8 @@ private fun RocksDBDataStore.createValueWriter(
                     }
                 }
 
-                setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
+                val encryptedValue = encryptValueIfSensitive(dbIndex, reference, valueBytes)
+                setValue(transaction, columnFamilies, key, reference, versionBytes, encryptedValue)
             }
         }
         ListSize,

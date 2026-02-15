@@ -21,10 +21,26 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
     propertyDefinition,
     parentReference
 ), HasEmbeddedPropertyReference<T>, CanContainListItemReference<List<T>, IsListDefinitionWrapper<T, Any, ListDefinition<T, CX>, CX, *>, AbstractValues<*, *>> {
-    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
-        '@' -> ListItemReference(name.substring(1).toUInt(), propertyDefinition.definition, this)
-        '*' -> ListAnyItemReference(propertyDefinition.definition, this)
-        else -> throw ParseException("Unknown List type $name[0]")
+    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference {
+        if (name.isEmpty()) {
+            throw ParseException("List reference name cannot be empty")
+        }
+
+        return when (name[0]) {
+            '@' -> {
+                if (name.length == 1) {
+                    throw ParseException("List item reference requires an index")
+                }
+                ListItemReference(name.substring(1).toUInt(), propertyDefinition.definition, this)
+            }
+            '*' -> {
+                if (name.length != 1) {
+                    throw ParseException("Wildcard list reference cannot contain extra characters: $name")
+                }
+                ListAnyItemReference(propertyDefinition.definition, this)
+            }
+            else -> throw ParseException("Unknown List type ${name[0]}")
+        }
     }
 
     override fun getEmbeddedRef(

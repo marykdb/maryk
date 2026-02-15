@@ -18,31 +18,57 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
     IsPropertyReferenceForValues<Map<K, V>, Any, D, CanHaveComplexChildReference<*, *, *, *>>,
     CanContainMapItemReference<Map<K, V>, D, AbstractValues<*, *>>,
     HasEmbeddedPropertyReference<Map<K, V>> {
-    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
-        '@' -> MapValueReference(
-            propertyDefinition.definition.keyDefinition.fromString(
-                name.substring(1)
-            ),
-            propertyDefinition.definition,
-            this
-        )
-        '#' -> MapKeyReference(
-            propertyDefinition.definition.keyDefinition.fromString(
-                name.substring(1)
-            ),
-            propertyDefinition.definition,
-            this
-        )
-        '*' -> MapAnyValueReference(
-            propertyDefinition.definition,
-            this
-        )
-        '^' -> IncMapAddIndexReference(
-            name.substring(1).toInt(),
-            propertyDefinition.definition,
-            this
-        )
-        else -> throw ParseException("Unknown List type $name[0]")
+    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference {
+        if (name.isEmpty()) {
+            throw ParseException("Map reference name cannot be empty")
+        }
+
+        return when (name[0]) {
+            '@' -> {
+                if (name.length == 1) {
+                    throw ParseException("Map value reference requires a key")
+                }
+                MapValueReference(
+                    propertyDefinition.definition.keyDefinition.fromString(
+                        name.substring(1)
+                    ),
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            '#' -> {
+                if (name.length == 1) {
+                    throw ParseException("Map key reference requires a key")
+                }
+                MapKeyReference(
+                    propertyDefinition.definition.keyDefinition.fromString(
+                        name.substring(1)
+                    ),
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            '*' -> {
+                if (name.length != 1) {
+                    throw ParseException("Wildcard map reference cannot contain extra characters: $name")
+                }
+                MapAnyValueReference(
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            '^' -> {
+                if (name.length == 1) {
+                    throw ParseException("Map add index reference requires an index")
+                }
+                IncMapAddIndexReference(
+                    name.substring(1).toInt(),
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            else -> throw ParseException("Unknown Map type ${name[0]}")
+        }
     }
 
     override fun getEmbeddedRef(

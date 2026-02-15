@@ -24,15 +24,26 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
     ),
     HasEmbeddedPropertyReference<T>,
     CanContainSetItemReference<Set<T>, SetDefinitionWrapper<T, CX, *>, AbstractValues<*, *>> {
-    override fun getEmbedded(name: String, context: IsPropertyContext?) = when (name[0]) {
-        '#' -> SetItemReference(
-            propertyDefinition.definition.valueDefinition.fromString(
-                name.substring(1)
-            ),
-            propertyDefinition.definition,
-            this
-        )
-        else -> throw ParseException("Unknown Set type $name[0]")
+    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference {
+        if (name.isEmpty()) {
+            throw ParseException("Set reference name cannot be empty")
+        }
+
+        return when (name[0]) {
+            '#' -> {
+                if (name.length == 1) {
+                    throw ParseException("Set item reference requires a value")
+                }
+                SetItemReference(
+                    propertyDefinition.definition.valueDefinition.fromString(
+                        name.substring(1)
+                    ),
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            else -> throw ParseException("Unknown Set type ${name[0]}")
+        }
     }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {

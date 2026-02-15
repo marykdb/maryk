@@ -16,6 +16,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.RequestContext
+import maryk.core.exceptions.TypeException
 import maryk.core.values.IsValueItems
 import maryk.core.values.ObjectValues
 
@@ -54,7 +55,7 @@ data class Requests internal constructor(
                 when (it) {
                     is TypedValue<*, *> -> it as TypedValue<RequestType, Any>
                     is IsTransportableRequest<*> -> TypedValue(it.requestType, it)
-                    else -> throw Exception("Unknown type for MultiType")
+                    else -> throw TypeException("Unknown type for request MultiType: ${it::class.simpleName}")
                 }
             }
         )

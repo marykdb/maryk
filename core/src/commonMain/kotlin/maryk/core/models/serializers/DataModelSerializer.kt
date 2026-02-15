@@ -300,7 +300,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                 ObjectValues(this.model, items, context as? RequestContext) as V
             is IsValuesDataModel ->
                 Values(this.model, items, context as? RequestContext) as V
-            else -> throw Exception("Unknown properties type ${this.model::class.simpleName}")
+            else -> throw IllegalStateException("Unknown properties type ${this.model::class.simpleName}")
         }
     }
 

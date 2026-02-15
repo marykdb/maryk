@@ -28,7 +28,7 @@ fun processQualifiers(
     val processorStack = mutableListOf<Pair<Int, QualifierProcessor>>()
 
     while (qualifierPresent) {
-        val qualifierReader = currentQualifierReader ?: throw Exception("Unexpected null for qualifier bytes")
+        val qualifierReader = currentQualifierReader ?: throw IllegalStateException("Unexpected null for qualifier bytes")
         // Remove anything from processor stack that does not match anymore
         lastQualifierReader?.let { lastReader ->
             val nonMatchIndex = firstNonMatchIndex(

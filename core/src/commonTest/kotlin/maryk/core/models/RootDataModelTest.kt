@@ -27,6 +27,7 @@ import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlReader
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.Option
@@ -36,6 +37,7 @@ import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 internal class RootDataModelTest {
@@ -68,6 +70,32 @@ internal class RootDataModelTest {
     fun testPropertyReferenceByName() {
         expect(mapRef) { TestMarykModel.getPropertyReferenceByName(mapRef.completeName) }
         expect(subModelRef) { TestMarykModel.getPropertyReferenceByName(subModelRef.completeName) }
+    }
+
+    @Test
+    fun testPropertyReferenceByNameRejectsEmptyPathSegment() {
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("map..#12:00:01")
+        }
+    }
+
+    @Test
+    fun testPropertyReferenceByNameRejectsMalformedEmbeddedTokens() {
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("listOfString.@")
+        }
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("map.^")
+        }
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("listOfString.*abc")
+        }
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("map.*abc")
+        }
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("incMap.*abc")
+        }
     }
 
     @Test

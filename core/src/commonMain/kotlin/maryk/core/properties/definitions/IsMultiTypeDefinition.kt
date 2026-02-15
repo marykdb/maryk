@@ -129,32 +129,40 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     fun resolveReferenceByName(
         name: String,
         parentReference: CanHaveComplexChildReference<*, *, *, *>? = null
-    ) = when (name[0]) {
-        '*' -> {
-            if (name.length == 1) {
-                @Suppress("UNCHECKED_CAST")
-                TypeReference(
-                    this,
-                    parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
-                ) as IsPropertyReference<Any, *, *>
-            } else {
-                val type = this.typeEnum.resolve(name.substring(1))
-                    ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
-                @Suppress("UNCHECKED_CAST")
-                typedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
-            }
+    ): IsPropertyReference<Any, *, *> {
+        if (name.isEmpty()) {
+            throw ParseException("Type reference name cannot be empty")
         }
-        '>' -> {
-            if (name.length == 1) {
-                throw ParseException("Not supported")
-            } else {
-                val type = this.typeEnum.resolve(name.substring(1))
-                    ?: throw UnexpectedValueException("Type ${name.substring(1)} is not known")
-                @Suppress("UNCHECKED_CAST")
-                simpleTypedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
+
+        return when (name[0]) {
+            '*' -> {
+                if (name.length == 1) {
+                    @Suppress("UNCHECKED_CAST")
+                    TypeReference(
+                        this,
+                        parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
+                    ) as IsPropertyReference<Any, *, *>
+                } else {
+                    val typeName = name.substring(1)
+                    val type = this.typeEnum.resolve(typeName)
+                        ?: throw UnexpectedValueException("Type $typeName is not known")
+                    @Suppress("UNCHECKED_CAST")
+                    typedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
+                }
             }
+            '>' -> {
+                if (name.length == 1) {
+                    throw ParseException("Not supported")
+                } else {
+                    val typeName = name.substring(1)
+                    val type = this.typeEnum.resolve(typeName)
+                        ?: throw UnexpectedValueException("Type $typeName is not known")
+                    @Suppress("UNCHECKED_CAST")
+                    simpleTypedValueRef(type, parentReference) as IsPropertyReference<Any, *, *>
+                }
+            }
+            else -> throw ParseException("Unknown Type type ${name[0]}")
         }
-        else -> throw ParseException("Unknown Type type $name[0]")
     }
 
     override fun asString(value: TypedValue<E, T>, context: CX?): String {

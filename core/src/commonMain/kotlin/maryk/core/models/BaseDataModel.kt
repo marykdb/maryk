@@ -94,6 +94,9 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
 
         var propertyReference: AnyPropertyReference? = null
         for (name in names) {
+            if (name.isEmpty()) {
+                throw ParseException("Property reference `$referenceName` contains an empty path segment")
+            }
             propertyReference = when (propertyReference) {
                 null -> this[name]?.ref(propertyReference)
                 is HasEmbeddedPropertyReference<*> -> propertyReference.getEmbedded(name, context)

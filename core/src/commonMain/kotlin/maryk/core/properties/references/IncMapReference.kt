@@ -24,26 +24,45 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
     CanContainMapItemReference<Map<K, V>, IncMapDefinitionWrapper<K, V, Any, CX, *>, AbstractValues<*, *>>,
     HasEmbeddedPropertyReference<Map<K, V>>,
     IsMapReference<K, V, CX, IncMapDefinitionWrapper<K, V, Any, CX, *>> {
-    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference = when (name[0]) {
-        '@' -> MapValueReference(
-            propertyDefinition.keyDefinition.fromString(
-                name.substring(1)
-            ),
-            propertyDefinition.definition,
-            this
-        )
-        '#' -> MapKeyReference(
-            propertyDefinition.keyDefinition.fromString(
-                name.substring(1)
-            ),
-            propertyDefinition.definition,
-            this
-        )
-        '*' -> MapAnyValueReference(
-            propertyDefinition.definition,
-            this
-        )
-        else -> throw ParseException("Unknown List type $name[0]")
+    override fun getEmbedded(name: String, context: IsPropertyContext?): AnyPropertyReference {
+        if (name.isEmpty()) throw ParseException("Incrementing map reference name cannot be empty")
+
+        return when (name[0]) {
+            '@' -> {
+                if (name.length == 1) {
+                    throw ParseException("Incrementing map value reference requires a key")
+                }
+                MapValueReference(
+                    propertyDefinition.keyDefinition.fromString(
+                        name.substring(1)
+                    ),
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            '#' -> {
+                if (name.length == 1) {
+                    throw ParseException("Incrementing map key reference requires a key")
+                }
+                MapKeyReference(
+                    propertyDefinition.keyDefinition.fromString(
+                        name.substring(1)
+                    ),
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            '*' -> {
+                if (name.length != 1) {
+                    throw ParseException("Wildcard incrementing map reference cannot contain extra characters: $name")
+                }
+                MapAnyValueReference(
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            else -> throw ParseException("Unknown Incrementing map type ${name[0]}")
+        }
     }
 
     override fun getEmbeddedRef(

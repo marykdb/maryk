@@ -57,7 +57,7 @@ data class ReferenceToMax<T : Any>(
             UInt8 -> UByte.MAX_VALUE
             Float64 -> Double.MAX_VALUE
             Float32 -> Float.MAX_VALUE
-            else -> throw Exception("Unknown type $def.type")
+            else -> throw IllegalStateException("Unknown number type ${def.type}")
         }) as T
         is DateDefinition -> (def.maxValue ?: DateDefinition.MAX) as T
         is DateTimeDefinition -> (def.maxValue ?: when (def.precision) {

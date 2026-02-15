@@ -7,7 +7,7 @@ import maryk.core.query.changes.ObjectSoftDeleteChange
 fun <DM: IsRootDataModel> processUpdateResponse(response: IsUpdateResponse<DM>, previousResults: List<ValuesWithMetaData<DM>>) =
     when (response) {
         is InitialValuesUpdate<DM> -> response.values
-        is InitialChangesUpdate<DM> -> throw Exception("processUpdateResponse cannot work with Change requests/responses")
+        is InitialChangesUpdate<DM> -> throw IllegalArgumentException("processUpdateResponse cannot work with Change requests/responses")
         is AdditionUpdate<DM> -> buildList(previousResults.size + 1) {
             addAll(previousResults)
             add(response.insertionIndex,
@@ -42,7 +42,7 @@ fun <DM: IsRootDataModel> processUpdateResponse(response: IsUpdateResponse<DM>, 
                     val oldIndex = indexOfFirst { it.key == response.key }
 
                     val value = getOrNull(oldIndex)
-                        ?: throw Exception("Could not find changed value in previous results: $response")
+                        ?: throw IllegalStateException("Could not find changed value in previous results: $response")
 
                     removeAt(oldIndex)
 
@@ -58,5 +58,5 @@ fun <DM: IsRootDataModel> processUpdateResponse(response: IsUpdateResponse<DM>, 
         }
         is RemovalUpdate<DM> -> previousResults.filter { it.key != response.key }
         is OrderedKeysUpdate<DM> -> previousResults
-        else -> throw Exception("Unknown update response type: $response")
+        else -> throw IllegalStateException("Unknown update response type: $response")
     }

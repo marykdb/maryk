@@ -3,6 +3,7 @@ package maryk.lib.bytes
 import maryk.lib.extensions.initByteArrayByHex
 import maryk.lib.extensions.toHex
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class StringTest {
@@ -38,6 +39,28 @@ class StringTest {
             }
 
             expect(hex) { b.toHex() }
+        }
+    }
+
+    @Test
+    fun testUnpairedHighSurrogateFails() {
+        val value = "\uD83D"
+        assertFailsWith<IllegalArgumentException> {
+            value.calculateUTF8ByteLength()
+        }
+        assertFailsWith<IllegalArgumentException> {
+            value.writeUTF8Bytes { }
+        }
+    }
+
+    @Test
+    fun testUnexpectedLowSurrogateFails() {
+        val value = "\uDC00"
+        assertFailsWith<IllegalArgumentException> {
+            value.calculateUTF8ByteLength()
+        }
+        assertFailsWith<IllegalArgumentException> {
+            value.writeUTF8Bytes { }
         }
     }
 }

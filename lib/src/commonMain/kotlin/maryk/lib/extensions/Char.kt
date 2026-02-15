@@ -1,7 +1,5 @@
 package maryk.lib.extensions
 
-internal val lineBreakChars = setOf('\r', '\n')
-fun Char.isLineBreak() = this in lineBreakChars
+fun Char.isLineBreak() = this == '\r' || this == '\n'
 
-internal val spacingChars = setOf(' ', '\t')
-fun Char.isSpacing() = this in spacingChars
+fun Char.isSpacing() = this == ' ' || this == '\t'

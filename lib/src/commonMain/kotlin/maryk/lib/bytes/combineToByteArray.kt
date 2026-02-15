@@ -1,8 +1,9 @@
 package maryk.lib.bytes
 
 fun combineToByteArray(vararg elements: Any): ByteArray {
-    val totalSize = elements.sumOf { element ->
-        when (element) {
+    var totalSize = 0
+    for (element in elements) {
+        totalSize += when (element) {
             is ByteArray -> element.size
             is Byte -> 1
             else -> throw IllegalArgumentException("Unsupported type: ${element::class.simpleName}")
@@ -12,7 +13,7 @@ fun combineToByteArray(vararg elements: Any): ByteArray {
     val result = ByteArray(totalSize)
     var offset = 0
 
-    elements.forEach { element ->
+    for (element in elements) {
         when (element) {
             is ByteArray -> {
                 element.copyInto(result, offset)

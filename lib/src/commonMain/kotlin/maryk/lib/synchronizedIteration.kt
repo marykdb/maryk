@@ -20,18 +20,28 @@ fun <T> synchronizedIteration(
 
     while (value1 != null || value2 != null) {
         when {
-            value2 == null || (value1 != null && comparator.compare(value1, value2) <= 0) -> {
-                if (value2 != null && comparator.compare(value1!!, value2) == 0) {
-                    processBoth(value1, value2)
-                    value2 = if (iterator2.hasNext()) iterator2.next() else null
-                } else {
-                    processOnlyOnIterator1(value1!!)
-                }
+            value2 == null -> {
+                processOnlyOnIterator1(value1!!)
                 value1 = if (iterator1.hasNext()) iterator1.next() else null
             }
-            else -> {
+            value1 == null -> {
                 processOnlyOnIterator2(value2)
                 value2 = if (iterator2.hasNext()) iterator2.next() else null
+            }
+            else -> {
+                val compareResult = comparator.compare(value1, value2)
+                if (compareResult <= 0) {
+                    if (compareResult == 0) {
+                        processBoth(value1, value2)
+                        value2 = if (iterator2.hasNext()) iterator2.next() else null
+                    } else {
+                        processOnlyOnIterator1(value1)
+                    }
+                    value1 = if (iterator1.hasNext()) iterator1.next() else null
+                } else {
+                    processOnlyOnIterator2(value2)
+                    value2 = if (iterator2.hasNext()) iterator2.next() else null
+                }
             }
         }
     }

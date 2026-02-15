@@ -8,12 +8,14 @@ package maryk.lib.extensions.compare
  */
 infix operator fun ByteArray.compareTo(other: ByteArray): Int {
     val minSize = minOf(this.size, other.size)
-    for (it in 0 until minSize) {
-        val a = this[it].toUByte()
-        val b = other[it].toUByte()
+    var index = 0
+    while (index < minSize) {
+        val a = this[index].toInt() and 0xFF
+        val b = other[index].toInt() and 0xFF
         if (a != b) {
-            return a.toInt() - b.toInt()
+            return a - b
         }
+        index++
     }
     return this.size - other.size
 }
@@ -26,12 +28,14 @@ infix operator fun ByteArray.compareTo(other: ByteArray): Int {
  */
 fun ByteArray.compareToWithOffsetLength(other: ByteArray, offset: Int, length: Int = other.size - offset): Int {
     val minSize = minOf(this.size, length)
-    for (it in 0 until minSize) {
-        val a = this[it].toUByte()
-        val b = other[it + offset].toUByte()
+    var index = 0
+    while (index < minSize) {
+        val a = this[index].toInt() and 0xFF
+        val b = other[index + offset].toInt() and 0xFF
         if (a != b) {
-            return a.toInt() - b.toInt()
+            return a - b
         }
+        index++
     }
     return this.size - length
 }
@@ -44,12 +48,14 @@ fun ByteArray.compareToWithOffsetLength(other: ByteArray, offset: Int, length: I
  */
 fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int = 0, length: Int = other.size - offset): Int {
     val minSize = minOf(this.size, length)
-    for (it in 0 until minSize) {
-        val a = this[it].toUByte()
-        val b = other[it + offset].toUByte()
+    var index = 0
+    while (index < minSize) {
+        val a = this[index].toInt() and 0xFF
+        val b = other[index + offset].toInt() and 0xFF
         if (a != b) {
-            return a.toInt() - b.toInt()
+            return a - b
         }
+        index++
     }
     return if (length < this.size) this.size - length else 0
 }
@@ -60,7 +66,15 @@ fun ByteArray.compareDefinedTo(other: ByteArray, offset: Int = 0, length: Int = 
  */
 fun ByteArray.match(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
     if (length != fromLength) return false
-    return (length - 1 downTo 0).all { this[it + fromOffset] == bytes[it + offset] }
+
+    var index = length - 1
+    while (index >= 0) {
+        if (this[index + fromOffset] != bytes[index + offset]) {
+            return false
+        }
+        index--
+    }
+    return true
 }
 
 /**
@@ -69,7 +83,15 @@ fun ByteArray.match(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.si
  */
 fun ByteArray.matchPart(fromOffset: Int, bytes: ByteArray, fromLength: Int = this.size, offset: Int = 0, length: Int = bytes.size): Boolean {
     if (length > fromLength) return false
-    return (length - 1 downTo 0).all { this[it + fromOffset] == bytes[it + offset] }
+
+    var index = length - 1
+    while (index >= 0) {
+        if (this[index + fromOffset] != bytes[index + offset]) {
+            return false
+        }
+        index--
+    }
+    return true
 }
 
 /**

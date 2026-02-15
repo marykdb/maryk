@@ -83,8 +83,11 @@ fun String.writeUTF8Bytes(writer: (byte: Byte) -> Unit) {
                 writer((0x80 or (0x3F and char.code)).toByte())
             }
             else -> {
+                if (!char.isHighSurrogate() || i + 1 >= this.length) {
+                    throw IllegalArgumentException("Unpaired surrogate at index: $i")
+                }
                 val low = this[++i]
-                if (i == this.length || !(char.isHighSurrogate() && low.isLowSurrogate())) {
+                if (!low.isLowSurrogate()) {
                     throw IllegalArgumentException("Unpaired surrogate at index: ${i - 1}")
                 }
 

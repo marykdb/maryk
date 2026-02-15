@@ -9,7 +9,6 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.lib.bytes.calculateUTF8ByteLength
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -86,7 +85,7 @@ internal class StringDefinitionTest {
             )
             def.writeStorageBytes(value, bc::write)
             expect(value) { def.readStorageBytes(bc.size, bc::read) }
-            expect(asHex) { bc.bytes!!.toHex() }
+            expect(asHex) { bc.bytes!!.toHexString() }
             bc.reset()
         }
     }
@@ -110,7 +109,7 @@ internal class StringDefinitionTest {
                     bc::read
                 )
             }
-            assertTrue { bc.bytes!!.toHex().endsWith(asHex) }
+            assertTrue { bc.bytes!!.toHexString().endsWith(asHex) }
             bc.reset()
         }
     }
@@ -160,7 +159,7 @@ internal class StringDefinitionTest {
     @Test
     fun convertToTransportByteArray() {
         for ((string, hex) in stringsToTest) {
-            assertEquals(hex, def.toTransportByteArray(string).toHex())
+            assertEquals(hex, def.toTransportByteArray(string).toHexString())
         }
     }
 

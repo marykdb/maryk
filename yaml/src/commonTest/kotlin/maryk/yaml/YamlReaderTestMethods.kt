@@ -14,7 +14,6 @@ import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Value
 import maryk.json.MapType
 import maryk.json.ValueType
-import maryk.lib.extensions.toHex
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -74,7 +73,7 @@ fun IsJsonLikeReader.assertByteArrayValue(value: ByteArray, type: ValueType<Byte
             val byteArray = this.value as? ByteArray
 
             byteArray?.let {
-                expect(value.toHex()) { it.toHex() }
+                expect(value.toHexString()) { it.toHexString() }
             } ?: fail("$this should be bytearray")
 
             assertEquals(type, this.type)

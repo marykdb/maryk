@@ -1,6 +1,5 @@
 package maryk.core.properties.types.numeric
 
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -45,7 +44,7 @@ internal class UInt64Test {
             bc.reserve(UInt64.size)
             UInt64.writeStorageBytes(value, bc::write)
 
-            expect(hexString) { bc.bytes?.toHex() }
+            expect(hexString) { bc.bytes?.toHexString() }
 
             expect(value) { UInt64.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
@@ -64,7 +63,7 @@ internal class UInt64Test {
             bc.reserve(UInt64.calculateTransportByteLength(value))
             UInt64.writeTransportBytes(value, bc::write)
 
-            expect(hexString) { bc.bytes?.toHex() }
+            expect(hexString) { bc.bytes?.toHexString() }
 
             expect(value) { UInt64.readTransportBytes(bc::read) }
             bc.reset()

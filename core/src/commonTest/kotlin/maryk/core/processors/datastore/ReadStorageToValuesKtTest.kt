@@ -4,7 +4,6 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maryk.core.models.emptyValues
 import maryk.core.properties.types.invoke
-import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.models.ComplexModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
@@ -18,7 +17,7 @@ class ReadStorageToValuesKtTest {
         val values = TestMarykModel.readStorageToValues(
             getQualifier = { resultHander ->
                 val qualifier = valuesAsStorables.getOrNull(++qualifierIndex)?.let {
-                    initByteArrayByHex(it.first)
+                    (it.first).hexToByteArray()
                 }
                 qualifier?.let { resultHander({ qualifier[it] }, qualifier.size); true } == true
             },
@@ -35,7 +34,7 @@ class ReadStorageToValuesKtTest {
         val values = ComplexModel.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = complexValuesAsStorables.getOrNull(++qualifierIndex)?.let {
-                    initByteArrayByHex(it.first)
+                    (it.first).hexToByteArray()
                 }
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },
@@ -52,7 +51,7 @@ class ReadStorageToValuesKtTest {
         val values = TestMarykModel.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesAsStorablesWithNulls.getOrNull(++qualifierIndex)?.let {
-                    initByteArrayByHex(it.first)
+                    (it.first).hexToByteArray()
                 }
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },
@@ -97,7 +96,7 @@ class ReadStorageToValuesKtTest {
         val values = TestMarykModel.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
-                    initByteArrayByHex(it.first)
+                    (it.first).hexToByteArray()
                 }
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },
@@ -124,7 +123,7 @@ class ReadStorageToValuesKtTest {
         val values = TestMarykModel.readStorageToValues(
             getQualifier = { resultHandler ->
                 val qualifier = valuesUnset.getOrNull(++qualifierIndex)?.let {
-                    initByteArrayByHex(it.first)
+                    (it.first).hexToByteArray()
                 }
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },

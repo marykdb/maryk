@@ -12,7 +12,6 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.ObjectValues
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykObject
 import kotlin.test.Test
@@ -93,7 +92,7 @@ internal class EmbeddedObjectDefinitionTest {
         expect(7) { bc.bytes!!.size }
         def.writeTransportBytesWithKey(5, value, cache, bc::write, null)
 
-        expect("2a050a036a7572") { bc.bytes!!.toHex() }
+        expect("2a050a036a7572") { bc.bytes!!.toHexString() }
 
         val key = ProtoBuf.readKey(bc::read)
         expect(LENGTH_DELIMITED) { key.wireType }

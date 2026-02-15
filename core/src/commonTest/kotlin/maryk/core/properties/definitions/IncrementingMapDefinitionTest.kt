@@ -15,7 +15,6 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
@@ -126,7 +125,7 @@ internal class IncrementingMapDefinitionTest {
         )
         def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
-        expect("220b080c1207237477656c7665220b081e120723746869727479220c086412082368756e64726564220e08e80712092374686f7573616e64") { bc.bytes!!.toHex() }
+        expect("220b080c1207237477656c7665220b081e120723746869727479220c086412082368756e64726564220e08e80712092374686f7573616e64") { bc.bytes!!.toHexString() }
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)

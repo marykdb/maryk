@@ -1,7 +1,6 @@
 package maryk.core.extensions.bytes
 
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -122,7 +121,7 @@ internal class LongKtTest {
 
         expect(long) { initLongByVar(bc::read) }
 
-        expect(hexValue) { bc.bytes!!.toHex() }
+        expect(hexValue) { bc.bytes!!.toHexString() }
         bc.reset()
     }
 
@@ -132,7 +131,7 @@ internal class LongKtTest {
 
         expect(long) { initLongLittleEndian(bc::read) }
 
-        expect(hexValue) { bc.bytes!!.toHex() }
+        expect(hexValue) { bc.bytes!!.toHexString() }
         bc.reset()
     }
 

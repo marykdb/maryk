@@ -13,7 +13,6 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.pairs.withType
-import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.models.ComplexModel
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.MarykTypeEnum.T3
@@ -87,7 +86,7 @@ class ReadStorageToChangesComplexKtTest {
         val values = ComplexModel.readStorageToChanges(
             getQualifier = { resultHandler ->
                 val qualifier = complexValuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
-                    initByteArrayByHex(it.first)
+                    (it.first).hexToByteArray()
                 }
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },

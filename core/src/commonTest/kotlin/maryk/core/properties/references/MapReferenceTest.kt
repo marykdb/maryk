@@ -1,7 +1,6 @@
 package maryk.core.properties.references
 
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -44,7 +43,7 @@ class MapReferenceTest {
             )
             mapReference.writeStorageBytes(::write)
 
-            expect("54") { bytes!!.toHex() }
+            expect("54") { bytes!!.toHexString() }
 
             expect(mapReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }

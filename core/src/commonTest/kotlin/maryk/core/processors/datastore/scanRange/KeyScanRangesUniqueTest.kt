@@ -4,7 +4,6 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
-import maryk.lib.extensions.toHex
 import maryk.test.models.CompleteMarykModel
 import kotlin.test.Test
 import kotlin.test.expect
@@ -21,7 +20,7 @@ class KeyScanRangesUniqueTest {
 
         expect(1) { scanRange.uniques?.size }
         scanRange.uniques?.get(0)?.let {
-            expect("09") { it.reference.toHex() }
+            expect("09") { it.reference.toHexString() }
             expect(CompleteMarykModel.string.definition) {
                 it.definition as StringDefinition
             }
@@ -43,7 +42,7 @@ class KeyScanRangesUniqueTest {
 
         expect(4) { uniques.size }
         uniques.get(0).let {
-            expect("09") { it.reference.toHex() }
+            expect("09") { it.reference.toHexString() }
             expect(CompleteMarykModel.string.definition) {
                 it.definition as StringDefinition
             }
@@ -53,7 +52,7 @@ class KeyScanRangesUniqueTest {
         }
 
         uniques.get(3).let {
-            expect("09") { it.reference.toHex() }
+            expect("09") { it.reference.toHexString() }
             expect(CompleteMarykModel.string.definition) {
                 it.definition as StringDefinition
             }

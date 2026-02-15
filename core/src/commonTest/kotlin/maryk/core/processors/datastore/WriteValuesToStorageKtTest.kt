@@ -14,7 +14,6 @@ import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsSimpleValueDefinition
-import maryk.lib.extensions.toHex
 import kotlin.test.Test
 import kotlin.test.assertIs
 import kotlin.test.expect
@@ -25,7 +24,7 @@ class WriteValuesToStorageKtTest {
         var counter = 0
         testMaryk.writeToStorage { type: StorageTypeEnum<*>, bytes: ByteArray, definition: IsPropertyDefinition<*>, value ->
             valuesAsStorables[counter].let { (hex, compareValue) ->
-                expect(hex) { bytes.toHex() }
+                expect(hex) { bytes.toHexString() }
                 expect(compareValue) { value }
             }
             when (type) {
@@ -61,7 +60,7 @@ class WriteValuesToStorageKtTest {
         var counter = 0
         complexValues.writeToStorage { _: StorageTypeEnum<*>, bytes: ByteArray, _: IsPropertyDefinition<*>, value ->
             complexValuesAsStorables[counter].let { (hex, compareValue) ->
-                expect(hex) { bytes.toHex() }
+                expect(hex) { bytes.toHexString() }
                 expect(compareValue) { value }
             }
             counter++

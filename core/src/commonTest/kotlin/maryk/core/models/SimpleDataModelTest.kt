@@ -3,8 +3,6 @@ package maryk.core.models
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykModel
 import maryk.yaml.YamlWriter
@@ -97,12 +95,12 @@ internal class SimpleDataModelTest {
 
         SimpleMarykModel.Serializer.writeProtoBuf(map, cache, bc::write)
 
-        expect("0a03686179") { bc.bytes!!.toHex() }
+        expect("0a03686179") { bc.bytes!!.toHexString() }
     }
 
     @Test
     fun convertProtoBufBytesToMap() {
-        val bytes = initByteArrayByHex("0a036861790008102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501")
+        val bytes = ("0a036861790008102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501").hexToByteArray()
         var index = 0
 
         val map = SimpleMarykModel.Serializer.readProtoBuf(bytes.size, {
@@ -124,7 +122,7 @@ internal class SimpleDataModelTest {
 
         SimpleMarykModel.Serializer.writeProtoBuf(testValues, cache, bc::write)
 
-        expect("0a0468616173") { bc.bytes!!.toHex() }
+        expect("0a0468616173") { bc.bytes!!.toHexString() }
 
         expect(testValues) { SimpleMarykModel.Serializer.readProtoBuf(bc.size, bc::read) }
     }

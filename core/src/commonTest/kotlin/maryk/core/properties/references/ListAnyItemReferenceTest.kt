@@ -3,7 +3,6 @@ package maryk.core.properties.references
 import maryk.core.processors.datastore.matchers.FuzzyExactLengthMatch
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -49,7 +48,7 @@ class ListAnyItemReferenceTest {
         val matcher = anyReference.toQualifierMatcher()
 
         assertIs<QualifierFuzzyMatcher>(matcher).let {
-            expect("7a") { it.firstPossible().toHex() }
+            expect("7a") { it.firstPossible().toHexString() }
             expect(1) { it.qualifierParts.size }
             expect(1) { it.fuzzyMatchers.size }
 

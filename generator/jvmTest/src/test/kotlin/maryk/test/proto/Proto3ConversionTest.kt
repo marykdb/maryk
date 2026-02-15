@@ -1,4 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
 package maryk.test.proto
 
 import com.google.protobuf.ByteString
@@ -10,7 +9,6 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.invoke
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnumEmbedded.E1
@@ -41,7 +39,7 @@ class Proto3ConversionTest {
         val protoBufByteArray = simpleObjectProto.toByteArray()
 
         // Compare result
-        expect(bc.bytes!!.toHex()) { protoBufByteArray.toHex() }
+        expect(bc.bytes!!.toHexString()) { protoBufByteArray.toHexString() }
     }
 
     @Test
@@ -77,7 +75,7 @@ class Proto3ConversionTest {
         val protoBufByteArray = numericObjectProto.toByteArray()
 
         // Compare result
-        expect(bc.bytes!!.toHex()) { protoBufByteArray.toHex() }
+        expect(bc.bytes!!.toHexString()) { protoBufByteArray.toHexString() }
     }
 
     @OptIn(ExperimentalTime::class)
@@ -153,6 +151,6 @@ class Proto3ConversionTest {
 
         val protoBytes = completeObjectProto.toByteArray()
 
-        expect(bc.bytes!!.toHex()) { protoBytes.toHex() }
+        expect(bc.bytes!!.toHexString()) { protoBytes.toHexString() }
     }
 }

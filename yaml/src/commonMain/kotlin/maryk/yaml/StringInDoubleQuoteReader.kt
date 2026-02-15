@@ -4,7 +4,7 @@ import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
 import maryk.json.TokenType
 import maryk.lib.bytes.fromCodePoint
-import maryk.lib.extensions.HEX_CHARS
+import maryk.lib.extensions.isLowerHexChar
 import maryk.yaml.SkipCharType.None
 import maryk.yaml.SkipCharType.StartNewEscaped
 import maryk.yaml.SkipCharType.UtfChar
@@ -60,15 +60,14 @@ internal fun IsYamlCharReader.doubleQuoteString(
                     '\n', '\r' -> None
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                is UtfChar -> when (lastChar.lowercaseChar()) {
-                    in HEX_CHARS -> {
-                        if (skipChar.addCharAndHasReachedEnd(lastChar)) {
-                            addCharAndResetSkipChar(skipChar.toCharString())
-                        } else {
-                            skipChar
-                        }
+                is UtfChar -> if (lastChar.lowercaseChar().isLowerHexChar()) {
+                    if (skipChar.addCharAndHasReachedEnd(lastChar)) {
+                        addCharAndResetSkipChar(skipChar.toCharString())
+                    } else {
+                        skipChar
                     }
-                    else -> addCharAndResetSkipChar("\\${skipChar.charType}${skipChar.toOriginalChars()}$lastChar")
+                } else {
+                    addCharAndResetSkipChar("\\${skipChar.charType}${skipChar.toOriginalChars()}$lastChar")
                 }
             }
             read()

@@ -1,7 +1,5 @@
 package maryk.lib.bytes
 
-import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.extensions.toHex
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
@@ -15,7 +13,7 @@ class StringTest {
     @Test
     fun testBytesWithReaderToString() {
         for ((hex, value) in stringsAndBytes) {
-            val b = initByteArrayByHex(hex)
+            val b = (hex).hexToByteArray()
 
             var i = 0
             expect(value) {
@@ -38,7 +36,7 @@ class StringTest {
                 b[i++] = it
             }
 
-            expect(hex) { b.toHex() }
+            expect(hex) { b.toHexString() }
         }
     }
 

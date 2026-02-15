@@ -3,7 +3,6 @@ package maryk.core.properties.references
 import kotlinx.datetime.LocalDate
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -68,7 +67,7 @@ class SetReferenceTest {
         )
         setReference.writeStorageBytes(bc::write)
 
-        expect("661e4b") { bc.bytes!!.toHex() }
+        expect("661e4b") { bc.bytes!!.toHexString() }
     }
 
     @Test
@@ -80,7 +79,7 @@ class SetReferenceTest {
         )
         reference.writeStorageBytes(bc::write)
 
-        expect("4b0480002c96") { bc.bytes!!.toHex() }
+        expect("4b0480002c96") { bc.bytes!!.toHexString() }
 
         expect(reference) { TestMarykModel.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
@@ -94,7 +93,7 @@ class SetReferenceTest {
         )
         subReference.writeStorageBytes(bc::write)
 
-        expect("661e4b0480002c96") { bc.bytes!!.toHex() }
+        expect("661e4b0480002c96") { bc.bytes!!.toHexString() }
 
         expect(subReference) { TestMarykModel.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }

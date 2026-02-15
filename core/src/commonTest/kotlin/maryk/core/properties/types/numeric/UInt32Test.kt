@@ -1,6 +1,5 @@
 package maryk.core.properties.types.numeric
 
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.expect
@@ -36,7 +35,7 @@ internal class UInt32Test {
             bc.reserve(UInt32.size)
             UInt32.writeStorageBytes(value, bc::write)
 
-            expect(hexString) { bc.bytes?.toHex() }
+            expect(hexString) { bc.bytes?.toHexString() }
 
             expect(value) { UInt32.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
@@ -55,7 +54,7 @@ internal class UInt32Test {
             bc.reserve(UInt32.calculateTransportByteLength(value))
             UInt32.writeTransportBytes(value, bc::write)
 
-            expect(hexString) { bc.bytes?.toHex() }
+            expect(hexString) { bc.bytes?.toHexString() }
 
             expect(value) { UInt32.readTransportBytes(bc::read) }
             bc.reset()

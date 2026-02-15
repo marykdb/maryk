@@ -1,7 +1,5 @@
 package maryk.lib.extensions.compare
 
-import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.extensions.toHex
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -49,24 +47,24 @@ class ByteArrayKtTest {
 
     @Test
     fun nextByteInSameLength() {
-        expect("000001") { initByteArrayByHex("000000").nextByteInSameLength().toHex() }
-        expect("0001ff") { initByteArrayByHex("0000ff").nextByteInSameLength().toHex() }
-        expect("01ffff") { initByteArrayByHex("00ffff").nextByteInSameLength().toHex() }
-        expect("ffffff") { initByteArrayByHex("ffffff").nextByteInSameLength().toHex() }
-        expect("0000ff") { initByteArrayByHex("0000fe").nextByteInSameLength().toHex() }
+        expect("000001") { "000000".hexToByteArray().nextByteInSameLength().toHexString() }
+        expect("0001ff") { "0000ff".hexToByteArray().nextByteInSameLength().toHexString() }
+        expect("01ffff") { "00ffff".hexToByteArray().nextByteInSameLength().toHexString() }
+        expect("ffffff") { "ffffff".hexToByteArray().nextByteInSameLength().toHexString() }
+        expect("0000ff") { "0000fe".hexToByteArray().nextByteInSameLength().toHexString() }
     }
 
     @Test
     fun prevByteInSameLength() {
         assertFailsWith<IllegalStateException> {
-            initByteArrayByHex("000000").prevByteInSameLength()
+            ("000000").hexToByteArray().prevByteInSameLength()
         }
 
-        expect("000000") { initByteArrayByHex("000001").prevByteInSameLength().toHex() }
-        expect("0000fe") { initByteArrayByHex("0000ff").prevByteInSameLength().toHex() }
-        expect("0000ff") { initByteArrayByHex("000100").prevByteInSameLength().toHex() }
-        expect("00ffff") { initByteArrayByHex("010000").prevByteInSameLength().toHex() }
-        expect("fffffe") { initByteArrayByHex("ffffff").prevByteInSameLength().toHex() }
-        expect("0100ff") { initByteArrayByHex("010100").prevByteInSameLength(2).toHex() }
+        expect("000000") { "000001".hexToByteArray().prevByteInSameLength().toHexString() }
+        expect("0000fe") { "0000ff".hexToByteArray().prevByteInSameLength().toHexString() }
+        expect("0000ff") { "000100".hexToByteArray().prevByteInSameLength().toHexString() }
+        expect("00ffff") { "010000".hexToByteArray().prevByteInSameLength().toHexString() }
+        expect("fffffe") { "ffffff".hexToByteArray().prevByteInSameLength().toHexString() }
+        expect("0100ff") { "010100".hexToByteArray().prevByteInSameLength(2).toHexString() }
     }
 }

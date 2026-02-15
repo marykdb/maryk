@@ -5,8 +5,6 @@ import maryk.core.extensions.bytes.initByteArray
 import maryk.core.extensions.bytes.writeBytes
 import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.extensions.toHex
 
 /**
  * Represents a ByteArray which is comparable
@@ -40,7 +38,7 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
 
     fun writeBytes(writer: (byte: Byte) -> Unit) = bytes.writeBytes(writer)
 
-    fun toHex() = this.bytes.toHex()
+    fun toHex() = this.bytes.toHexString()
 
     companion object : BytesDescriptor<Bytes>() {
         override fun invoke(bytes: ByteArray) = Bytes(bytes)
@@ -56,7 +54,7 @@ abstract class BytesDescriptor<T> {
     )
 
     fun ofHex(hex: String) = this(
-        initByteArrayByHex(hex)
+        hex.hexToByteArray()
     )
 
     abstract operator fun invoke(bytes: ByteArray): T

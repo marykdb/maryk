@@ -1,7 +1,6 @@
 package maryk.core.extensions.bytes
 
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -22,7 +21,7 @@ internal class UIntKtTest {
             bc.reserve(4)
             value.writeBytes(bc::write)
 
-            expect(hex) { bc.bytes?.toHex() }
+            expect(hex) { bc.bytes?.toHexString() }
 
             expect(value) { initUInt(bc::read) }
             bc.reset()
@@ -90,7 +89,7 @@ internal class UIntKtTest {
 
         expect(uInt) { initUIntByVar(bc::read) }
 
-        expect(hexValue) { bc.bytes!!.toHex() }
+        expect(hexValue) { bc.bytes!!.toHexString() }
         bc.reset()
     }
 

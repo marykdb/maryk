@@ -12,7 +12,6 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -97,7 +96,7 @@ internal class MapDefinitionWithMapTest {
         def.writeTransportBytesWithKey(4, value, cache, bc::write)
 
         expect("220f0818120b08021207237477656c7665220f083c120b0804120723746869727479221108c801120c080612082368756e64726564221208d00f120d080812092374686f7573616e64") {
-            bc.bytes!!.toHex()
+            bc.bytes!!.toHexString()
         }
 
         fun readKey() {

@@ -3,7 +3,6 @@ package maryk.core.properties.references
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.properties.types.invoke
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.MarykTypeEnum.T1
 import maryk.test.models.SimpleMarykTypeEnum.S2
@@ -59,7 +58,7 @@ class TypedValueReferenceTest {
         )
         typedValueReference.writeTransportBytes(cache, bc::write)
 
-        expect("0d0002") { bc.bytes!!.toHex() }
+        expect("0d0002") { bc.bytes!!.toHexString() }
 
         expect(typedValueReference) { TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read) }
     }
@@ -73,7 +72,7 @@ class TypedValueReferenceTest {
         )
         typedValueReference.writeStorageBytes(bc::write)
 
-        expect("6915") { bc.bytes!!.toHex() }
+        expect("6915") { bc.bytes!!.toHexString() }
 
         expect(typedValueReference) { TestMarykModel.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }

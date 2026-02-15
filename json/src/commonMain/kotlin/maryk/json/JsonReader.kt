@@ -20,8 +20,8 @@ import maryk.json.JsonToken.StartObject
 import maryk.json.JsonToken.Stopped
 import maryk.json.JsonToken.Suspended
 import maryk.json.JsonToken.Value
-import maryk.lib.extensions.HEX_CHARS
 import maryk.lib.extensions.isLineBreak
+import maryk.lib.extensions.isLowerHexChar
 
 private val skipArray = setOf(ObjectSeparator, ArraySeparator, StartDocument)
 
@@ -397,15 +397,14 @@ class JsonReader(
                     'u' -> SkipCharType.UtfChar('u', 4)
                     else -> addCharAndResetSkipChar("\\$lastChar")
                 }
-                is SkipCharType.UtfChar -> when (lastChar.lowercaseChar()) {
-                    in HEX_CHARS -> {
-                        if (skipChar.addCharAndHasReachedEnd(lastChar)) {
-                            addCharAndResetSkipChar(skipChar.toCharString())
-                        } else {
-                            skipChar
-                        }
+                is SkipCharType.UtfChar -> if (lastChar.lowercaseChar().isLowerHexChar()) {
+                    if (skipChar.addCharAndHasReachedEnd(lastChar)) {
+                        addCharAndResetSkipChar(skipChar.toCharString())
+                    } else {
+                        skipChar
                     }
-                    else -> addCharAndResetSkipChar("\\${skipChar.charType}${skipChar.toOriginalChars()}$lastChar")
+                } else {
+                    addCharAndResetSkipChar("\\${skipChar.charType}${skipChar.toOriginalChars()}$lastChar")
                 }
             }
             read()

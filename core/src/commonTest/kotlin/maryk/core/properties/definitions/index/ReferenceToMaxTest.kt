@@ -10,7 +10,6 @@ import maryk.core.properties.definitions.date
 import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.types.Bytes
 import maryk.core.query.DefinitionsConversionContext
-import maryk.lib.extensions.toHex
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -53,7 +52,7 @@ internal class ReferenceToMaxTest {
         )
         val without = indexable.toStorageByteArrayForIndex(valuesWithoutEnd)
         val withEnd = indexable.toStorageByteArrayForIndex(valuesWithEnd)
-        expect(withEnd!!.toHex()) { without!!.toHex() }
+        expect(withEnd!!.toHexString()) { without!!.toHexString() }
     }
 
     @Test
@@ -73,7 +72,7 @@ internal class ReferenceToMaxTest {
         )
         val without = indexable.toStorageByteArrayForIndex(valuesWithoutEnd)
         val withEnd = indexable.toStorageByteArrayForIndex(valuesWithEnd)
-        expect(withEnd!!.toHex()) { without!!.toHex() }
+        expect(withEnd!!.toHexString()) { without!!.toHexString() }
     }
 
     @Test
@@ -108,7 +107,7 @@ internal class ReferenceToMaxTest {
     @Test
     fun toReferenceStorageBytes() {
         expect("0d11") {
-            ReferenceToMax(PeriodModel.endDate.ref()).toReferenceStorageByteArray().toHex()
+            ReferenceToMax(PeriodModel.endDate.ref()).toReferenceStorageByteArray().toHexString()
         }
     }
 }

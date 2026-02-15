@@ -1,7 +1,6 @@
 package maryk.core.extensions.bytes
 
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -70,7 +69,7 @@ internal class ShortKtTest {
         short.writeVarBytes(bc::write)
         expect(short) { initShortByVar(bc::read) }
 
-        expect(hexValue) { bc.bytes!!.toHex() }
+        expect(hexValue) { bc.bytes!!.toHexString() }
 
         bc.reset()
     }

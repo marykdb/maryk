@@ -14,7 +14,6 @@ import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.Model.test
 import maryk.core.properties.references.dsl.any
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.TestMarykModel
@@ -95,7 +94,7 @@ internal class PropertyReferenceTest {
         )
         subRef.writeTransportBytes(cache, bc::write)
 
-        expect("0201") { bc.bytes!!.toHex() }
+        expect("0201") { bc.bytes!!.toHexString() }
 
         expect(subRef) { Model.getPropertyReferenceByBytes(bc.size, bc::read) }
     }
@@ -109,7 +108,7 @@ internal class PropertyReferenceTest {
         )
         subRef.writeStorageBytes(bc::write)
 
-        expect("1609") { bc.bytes!!.toHex() }
+        expect("1609") { bc.bytes!!.toHexString() }
 
         expect(subRef) { Model.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
     }
@@ -147,7 +146,7 @@ internal class PropertyReferenceTest {
         val matcher = subRef.toQualifierMatcher()
 
         assertIs<QualifierExactMatcher>(matcher).apply {
-            expect("1609") { qualifier.toHex() }
+            expect("1609") { qualifier.toHexString() }
         }
     }
 
@@ -156,11 +155,11 @@ internal class PropertyReferenceTest {
         val matcher = TestMarykModel { reference { string::ref } }.toQualifierMatcher()
 
         assertIs<QualifierExactMatcher>(matcher).apply {
-            expect("71") { qualifier.toHex() }
+            expect("71") { qualifier.toHexString() }
             assertIs<ReferencedQualifierMatcher>(referencedQualifierMatcher).apply {
                 expect(TestMarykModel { reference::ref }) { reference }
                 assertIs<QualifierExactMatcher>(qualifierMatcher).apply {
-                    expect("09") { qualifier.toHex() }
+                    expect("09") { qualifier.toHexString() }
                 }
             }
         }
@@ -171,9 +170,9 @@ internal class PropertyReferenceTest {
         val matcher = ComplexModel { incMap.any { marykModel { reference { map.refToAny() } } } }.toQualifierMatcher()
 
         assertIs<QualifierFuzzyMatcher>(matcher).apply {
-            expect("44") { firstPossible().toHex() }
+            expect("44") { firstPossible().toHexString() }
             expect(2) { qualifierParts.size }
-            expect("1e71") { qualifierParts[1].toHex() }
+            expect("1e71") { qualifierParts[1].toHexString() }
             expect(1) { fuzzyMatchers.size }
 
             fuzzyMatchers.first().let { matcher ->
@@ -186,7 +185,7 @@ internal class PropertyReferenceTest {
                 expect(ComplexModel { incMap.any { marykModel { reference::ref } } }) { reference }
 
                 assertIs<QualifierFuzzyMatcher>(qualifierMatcher).apply {
-                    expect("54") { firstPossible().toHex() }
+                    expect("54") { firstPossible().toHexString() }
                     expect(1) { qualifierParts.size }
                     expect(1) { fuzzyMatchers.size }
 

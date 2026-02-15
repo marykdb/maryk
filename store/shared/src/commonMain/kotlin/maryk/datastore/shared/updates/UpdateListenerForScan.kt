@@ -223,7 +223,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                                             changedHandler(adjustedIndex, true)
                                         }
                                     } else {
-                                        throw StorageException("Unexpected existing index for ${change.key} its sorted key {${indexUpdate.indexKey.toHex()} for changes ${change.changes}")
+                                        throw StorageException("Unexpected existing index for ${change.key} its sorted key {${indexUpdate.indexKey.bytes.toHexString()} for changes ${change.changes}")
                                     }
                                 } else { // removed
                                     changedHandler(null, false)

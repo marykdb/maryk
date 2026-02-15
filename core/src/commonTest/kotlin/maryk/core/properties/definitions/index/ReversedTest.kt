@@ -9,7 +9,6 @@ import maryk.core.models.key
 import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.dateTime
 import maryk.core.query.DefinitionsConversionContext
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.expect
@@ -49,7 +48,7 @@ internal class ReversedTest {
             expect(dt) { this.readStorageBytes(bc.size, bc::read) }
         }
 
-        expect("fe7fffffa6540703") { key.toHex() }
+        expect("fe7fffffa6540703") { key.bytes.toHexString() }
     }
 
     private val context = DefinitionsConversionContext(
@@ -87,6 +86,6 @@ internal class ReversedTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        expect("0b09") { Reversed(MarykModel.boolean.ref()).toReferenceStorageByteArray().toHex() }
+        expect("0b09") { Reversed(MarykModel.boolean.ref()).toReferenceStorageByteArray().toHexString() }
     }
 }

@@ -1,6 +1,5 @@
 package maryk.core.processors.datastore.matchers
 
-import maryk.lib.extensions.initByteArrayByHex
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -23,7 +22,7 @@ class IndexPartialToMatchTest {
     fun keyPartialRegExToMatch() {
         assertTrue {
             IndexPartialToRegexMatch(1, 5, Regex("^(TestMarykModel)$")).match(
-                initByteArrayByHex("000000546573744d6172796b4d6f64656c0E02FFFFFFFFFF")
+                "000000546573744d6172796b4d6f64656c0E02FFFFFFFFFF".hexToByteArray()
             )
         }
     }

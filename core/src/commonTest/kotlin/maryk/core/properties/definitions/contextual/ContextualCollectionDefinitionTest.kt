@@ -9,7 +9,6 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -44,7 +43,7 @@ class ContextualCollectionDefinitionTest {
         )
         def.writeTransportBytesWithKey(45, values, cache, bc::write, this.context)
 
-        expect(asHex) { bc.bytes!!.toHex() }
+        expect(asHex) { bc.bytes!!.toHexString() }
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)

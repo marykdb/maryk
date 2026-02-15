@@ -10,7 +10,6 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.MarykYamlReader
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykEnumEmbedded.E2
@@ -78,7 +77,7 @@ internal class EnumDefinitionTest {
             expect(14u) { key.tag }
             expect(VAR_INT) { key.wireType }
 
-            expect(expected) { bc.bytes!!.toHex() }
+            expect(expected) { bc.bytes!!.toHexString() }
 
             expect(enum) {
                 def.readTransportBytes(

@@ -17,7 +17,6 @@ import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
-import maryk.lib.extensions.toHex
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.number
 import maryk.test.models.CompleteMarykModel.time
@@ -101,9 +100,9 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        expect("00000005") { scanRange.ranges.first().start.toHex() }
+        expect("00000005") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("00000005") { scanRange.ranges.first().end?.toHex() }
+        expect("00000005") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
@@ -127,9 +126,9 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        expect("00000005") { scanRange.ranges.first().start.toHex() }
+        expect("00000005") { scanRange.ranges.first().start.toHexString() }
         assertFalse { scanRange.ranges.first().startInclusive }
-        expect("") { scanRange.ranges.first().end?.toHex() }
+        expect("") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertTrue { scanRange.ranges.first().keyBeforeStart(matchIndexValue) } // Because should skip
@@ -153,9 +152,9 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        expect("00000005") { scanRange.ranges.first().start.toHex() }
+        expect("00000005") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("") { scanRange.ranges.first().end?.toHex() }
+        expect("") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
@@ -179,9 +178,9 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        expect("") { scanRange.ranges.first().start.toHex() }
+        expect("") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("00000005") { scanRange.ranges.first().end?.toHex() }
+        expect("00000005") { scanRange.ranges.first().end?.toHexString() }
         assertFalse { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
@@ -205,9 +204,9 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        expect("") { scanRange.ranges.first().start.toHex() }
+        expect("") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("00000005") { scanRange.ranges.first().end?.toHex() }
+        expect("00000005") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
@@ -231,9 +230,9 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        expect("00000004") { scanRange.ranges.first().start.toHex() }
+        expect("00000004") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("00000006") { scanRange.ranges.first().end?.toHex() }
+        expect("00000006") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
@@ -263,19 +262,19 @@ class IndexableScanRangesTest {
 
         expect(3) { scanRange.ranges.size }
 
-        expect("00000003") { scanRange.ranges.first().start.toHex() }
+        expect("00000003") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("00000003") { scanRange.ranges.first().end?.toHex() }
+        expect("00000003") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
-        expect("00000005") { scanRange.ranges[1].start.toHex() }
+        expect("00000005") { scanRange.ranges[1].start.toHexString() }
         assertTrue { scanRange.ranges[1].startInclusive }
-        expect("00000005") { scanRange.ranges[1].end?.toHex() }
+        expect("00000005") { scanRange.ranges[1].end?.toHexString() }
         assertTrue { scanRange.ranges[1].endInclusive }
 
-        expect("00000006") { scanRange.ranges.last().start.toHex() }
+        expect("00000006") { scanRange.ranges.last().start.toHexString() }
         assertTrue { scanRange.ranges.last().startInclusive }
-        expect("00000006") { scanRange.ranges.last().end?.toHex() }
+        expect("00000006") { scanRange.ranges.last().end?.toHexString() }
         assertTrue { scanRange.ranges.last().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
@@ -319,9 +318,9 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        expect("00000005") { scanRange.ranges.first().start.toHex() }
+        expect("00000005") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("00000005029d6730") { scanRange.ranges.first().end?.toHex() }
+        expect("00000005029d6730") { scanRange.ranges.first().end?.toHexString() }
         assertFalse { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
@@ -345,8 +344,8 @@ class IndexableScanRangesTest {
 
         val scanRange = indexable.createScanRange(filter, keyScanRange)
 
-        expect("") { scanRange.ranges.first().start.toHex() }
-        expect("") { scanRange.ranges.first().end?.toHex() }
+        expect("") { scanRange.ranges.first().start.toHexString() }
+        expect("") { scanRange.ranges.first().end?.toHexString() }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue) }
@@ -369,8 +368,8 @@ class IndexableScanRangesTest {
 
         val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
 
-        expect("4a616e") { scanRange.ranges.first().start.toHex() }
-        expect("4a616e") { scanRange.ranges.first().end?.toHex() }
+        expect("4a616e") { scanRange.ranges.first().start.toHexString() }
+        expect("4a616e") { scanRange.ranges.first().end?.toHexString() }
 
         val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
@@ -405,8 +404,8 @@ class IndexableScanRangesTest {
 
         val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
 
-        expect("") { scanRange.ranges.first().start.toHex() }
-        expect("") { scanRange.ranges.first().end?.toHex() }
+        expect("") { scanRange.ranges.first().start.toHexString() }
+        expect("") { scanRange.ranges.first().end?.toHexString() }
 
         val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes

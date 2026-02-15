@@ -12,7 +12,6 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.BIT_32
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -91,7 +90,7 @@ internal class NumberDefinitionTest {
         )
         def.writeStorageBytes(32373957u, bc::write)
 
-        expect("01edfcc5") { bc.bytes?.toHex() }
+        expect("01edfcc5") { bc.bytes?.toHexString() }
 
         expect(32373957u) { def.readStorageBytes(bc.size, bc::read) }
     }
@@ -104,7 +103,7 @@ internal class NumberDefinitionTest {
         )
         defReversed.writeStorageBytes(32373957u, bc::write)
 
-        expect("fe12033a") { bc.bytes?.toHex() }
+        expect("fe12033a") { bc.bytes?.toHexString() }
 
         expect(32373957u) { defReversed.readStorageBytes(bc.size, bc::read) }
     }

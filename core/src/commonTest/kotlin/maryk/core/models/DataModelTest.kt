@@ -13,8 +13,6 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S3
@@ -328,7 +326,7 @@ internal class DataModelTest {
 
         TestMarykModel.Serializer.writeProtoBuf(map, cache, bc::write)
 
-        expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013803720701050105010501") { bc.bytes!!.toHex() }
+        expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013803720701050105010501") { bc.bytes!!.toHexString() }
     }
 
     @Test
@@ -342,7 +340,7 @@ internal class DataModelTest {
 
         TestMarykModel.Serializer.writeProtoBuf(testExtendedMarykModelObject, cache, bc::write)
 
-        expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") { bc.bytes!!.toHex() }
+        expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") { bc.bytes!!.toHexString() }
 
         expect(testExtendedMarykModelObject) { TestMarykModel.Serializer.readProtoBuf(bc.size, bc::read) }
     }
@@ -350,7 +348,7 @@ internal class DataModelTest {
     @Test
     fun skipReadingUnknownFields() {
         val bytes =
-            initByteArrayByHex("930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105")
+            "930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105".hexToByteArray()
         var index = 0
 
         val map = TestMarykModel.Serializer.readProtoBuf(bytes.size, {

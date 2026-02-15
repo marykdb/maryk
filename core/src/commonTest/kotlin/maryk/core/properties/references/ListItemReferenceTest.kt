@@ -3,7 +3,6 @@ package maryk.core.properties.references
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -62,7 +61,7 @@ class ListItemReferenceTest {
             )
             reference.writeStorageBytes(::write)
 
-            expect("7a00000005") { bytes!!.toHex() }
+            expect("7a00000005") { bytes!!.toHexString() }
 
             expect(reference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
@@ -76,7 +75,7 @@ class ListItemReferenceTest {
             )
             subReference.writeStorageBytes(::write)
 
-            expect("661e7a00000016") { bytes!!.toHex() }
+            expect("661e7a00000016") { bytes!!.toHexString() }
 
             expect(subReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
@@ -87,7 +86,7 @@ class ListItemReferenceTest {
         val matcher = reference.toQualifierMatcher()
 
         expect("7a00000005") {
-            assertIs<QualifierExactMatcher>(matcher).qualifier.toHex()
+            assertIs<QualifierExactMatcher>(matcher).qualifier.toHexString()
         }
     }
 }

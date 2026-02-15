@@ -10,7 +10,6 @@ import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
-import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.models.Option.V0
 import maryk.test.models.Option.V2
 import maryk.test.models.TestMarykModel
@@ -60,7 +59,7 @@ class ReadStorageToChangesKtTest {
         val values = TestMarykModel.readStorageToChanges(
             getQualifier = { resultHandler ->
                 val qualifier = valuesAsStorablesWithVersion.getOrNull(++qualifierIndex)?.let {
-                    initByteArrayByHex(it.first)
+                    (it.first).hexToByteArray()
                 }
                 qualifier?.let { resultHandler({ qualifier[it] }, qualifier.size); true } == true
             },

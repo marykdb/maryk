@@ -12,7 +12,6 @@ import maryk.core.query.filters.LessThanEquals
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
-import maryk.lib.extensions.toHex
 import maryk.test.models.Log
 import maryk.test.models.Severity.DEBUG
 import maryk.test.models.Severity.ERROR
@@ -73,9 +72,9 @@ class KeyScanRangesTest {
 
         assertEquals(9u, scanRange.equalBytes)
 
-        expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHex() }
+        expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("7fffffa3f445ec7fffffff") { scanRange.ranges.first().end?.toHex() }
+        expect("7fffffa3f445ec7fffffff") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(match.bytes) }
@@ -109,24 +108,24 @@ class KeyScanRangesTest {
 
         assertEquals(9u, scanRange1.equalBytes)
 
-        expect("7fffffa3f445ec7fff0003") { scanRange1.startKey!!.toHex() }
+        expect("7fffffa3f445ec7fff0003") { scanRange1.startKey!!.toHexString() }
         assertTrue(scanRange1.includeStart)
 
-        expect("7fffffa3f445ec7fff0000") { scanRange1.ranges.first().start.toHex() }
+        expect("7fffffa3f445ec7fff0000") { scanRange1.ranges.first().start.toHexString() }
         assertEquals(1, scanRange1.ranges.count())
         assertTrue { scanRange1.ranges.first().startInclusive }
-        expect("7fffffa3f445ec7fffffff") { scanRange1.ranges.first().end?.toHex() }
+        expect("7fffffa3f445ec7fffffff") { scanRange1.ranges.first().end?.toHexString() }
         assertTrue { scanRange1.ranges.first().endInclusive }
 
         val scanRange2 = Log.createScanRange(filter, logKey.bytes, false)
 
-        expect("7fffffa3f445ec7fff0003") { scanRange2.startKey!!.toHex() }
+        expect("7fffffa3f445ec7fff0003") { scanRange2.startKey!!.toHexString() }
         assertFalse(scanRange2.includeStart)
 
-        expect("7fffffa3f445ec7fff0000") { scanRange2.ranges.first().start.toHex() }
+        expect("7fffffa3f445ec7fff0000") { scanRange2.ranges.first().start.toHexString() }
         assertEquals(1, scanRange2.ranges.count())
         assertTrue { scanRange2.ranges.first().startInclusive }
-        expect("7fffffa3f445ec7fffffff") { scanRange2.ranges.first().end?.toHex() }
+        expect("7fffffa3f445ec7fffffff") { scanRange2.ranges.first().end?.toHexString() }
         assertTrue { scanRange2.ranges.first().endInclusive }
 
         // start key should be excluded when includeStart is false
@@ -145,9 +144,9 @@ class KeyScanRangesTest {
         assertEquals(0u, scanRange.equalBytes)
 
         // Order is reversed for timestamp
-        expect("0000000000000000000000") { scanRange.ranges.first().start.toHex() }
+        expect("0000000000000000000000") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().end?.toHex() }
+        expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().end?.toHexString() }
         assertFalse { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(match.bytes) }
@@ -174,9 +173,9 @@ class KeyScanRangesTest {
         assertEquals(0u, scanRange.equalBytes)
 
         // Order is reversed for timestamp
-        expect("0000000000000000000000") { scanRange.ranges.first().start.toHex() }
+        expect("0000000000000000000000") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("7fffffa3f445ec7fffffff") { scanRange.ranges.first().end?.toHex() }
+        expect("7fffffa3f445ec7fffffff") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(match.bytes) }
@@ -203,9 +202,9 @@ class KeyScanRangesTest {
         assertEquals(0u, scanRange.equalBytes)
 
         // Order is reversed for timestamp
-        expect("7fffffa3f445ec7fffffff") { scanRange.ranges.first().start.toHex() }
+        expect("7fffffa3f445ec7fffffff") { scanRange.ranges.first().start.toHexString() }
         assertFalse { scanRange.ranges.first().startInclusive }
-        expect("ffffffffffffffffffffff") { scanRange.ranges.first().end?.toHex() }
+        expect("ffffffffffffffffffffff") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertTrue { scanRange.ranges.first().keyBeforeStart(match.bytes) }
@@ -232,9 +231,9 @@ class KeyScanRangesTest {
         assertEquals(0u, scanRange.equalBytes)
 
         // Order is reversed for timestamp
-        expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHex() }
+        expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("ffffffffffffffffffffff") { scanRange.ranges.first().end?.toHex() }
+        expect("ffffffffffffffffffffff") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(match.bytes) }
@@ -260,9 +259,9 @@ class KeyScanRangesTest {
 
         assertEquals(5u, scanRange.equalBytes)
 
-        expect("7fffffa3f445cc7ffd0000") { scanRange.ranges.first().start.toHex() }
+        expect("7fffffa3f445cc7ffd0000") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("7fffffa3f446027ffeffff") { scanRange.ranges.first().end?.toHex() }
+        expect("7fffffa3f446027ffeffff") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(match.bytes) }
@@ -292,14 +291,14 @@ class KeyScanRangesTest {
 
         assertEquals(6u, scanRange.equalBytes)
 
-        expect("7fffffa3f44d087ffc0000") { scanRange.ranges.first().start.toHex() }
+        expect("7fffffa3f44d087ffc0000") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("7fffffa3f44d087ffcffff") { scanRange.ranges.first().end?.toHex() }
+        expect("7fffffa3f44d087ffcffff") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
-        expect("7fffffa3f44d827ffe0000") { scanRange.ranges.last().start.toHex() }
+        expect("7fffffa3f44d827ffe0000") { scanRange.ranges.last().start.toHexString() }
         assertTrue { scanRange.ranges.last().startInclusive }
-        expect("7fffffa3f44d827ffeffff") { scanRange.ranges.last().end?.toHex() }
+        expect("7fffffa3f44d827ffeffff") { scanRange.ranges.last().end?.toHexString() }
         assertTrue { scanRange.ranges.last().endInclusive }
 
         val match = Log.key(Log.create { message with "message"; severity with ERROR; timestamp with LocalDateTime(2018, 12, 8, 12, 2, 2, 2000000) })
@@ -349,9 +348,9 @@ class KeyScanRangesTest {
 
         assertEquals(10u, scanRange.equalBytes)
 
-        expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHex() }
+        expect("7fffffa3f445ec7fff0000") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("7fffffa3f445ec7fff0003") { scanRange.ranges.first().end?.toHex() }
+        expect("7fffffa3f445ec7fff0003") { scanRange.ranges.first().end?.toHexString() }
         assertFalse { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(match.bytes) }
@@ -377,9 +376,9 @@ class KeyScanRangesTest {
 
         assertEquals(0u, scanRange.equalBytes)
 
-        expect("0000000000000000000000") { scanRange.ranges.first().start.toHex() }
+        expect("0000000000000000000000") { scanRange.ranges.first().start.toHexString() }
         assertTrue { scanRange.ranges.first().startInclusive }
-        expect("ffffffffffffffffffffff") { scanRange.ranges.first().end?.toHex() }
+        expect("ffffffffffffffffffffff") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(match.bytes) }

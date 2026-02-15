@@ -9,8 +9,6 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WireType.START_GROUP
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.lib.exceptions.ParseException
-import maryk.lib.extensions.initByteArrayByHex
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -38,7 +36,7 @@ class ProtoBufTest {
         fun testGenerateKey(bc: ByteCollector, value: PBKey) {
             bc.reserve(ProtoBuf.calculateKeyLength(value.tag))
             ProtoBuf.writeKey(value.tag, value.wireType, bc::write)
-            expect(value.hexBytes) { bc.bytes!!.toHex() }
+            expect(value.hexBytes) { bc.bytes!!.toHexString() }
             bc.reset()
         }
 
@@ -52,7 +50,7 @@ class ProtoBufTest {
     @Test
     fun readKey() {
         fun testParseKey(value: PBKey) {
-            val bytes = initByteArrayByHex(value.hexBytes)
+            val bytes = (value.hexBytes).hexToByteArray()
             var index = 0
             val result = ProtoBuf.readKey { bytes[index++] }
             expect(value.tag) { result.tag }
@@ -110,7 +108,7 @@ class ProtoBufTest {
 
     @Test
     fun skipLengthDelimitedWithNegativeLengthShouldFail() {
-        val bytes = initByteArrayByHex("ffffffff0f")
+        val bytes = ("ffffffff0f").hexToByteArray()
         var index = 0
         assertFailsWith<ParseException> {
             ProtoBuf.skipField(LENGTH_DELIMITED) { bytes[index++] }
@@ -119,7 +117,7 @@ class ProtoBufTest {
 
     @Test
     fun getLengthDelimitedNegativeLengthShouldFail() {
-        val bytes = initByteArrayByHex("ffffffff0f")
+        val bytes = ("ffffffff0f").hexToByteArray()
         var index = 0
         assertFailsWith<ParseException> {
             ProtoBuf.getLength(LENGTH_DELIMITED) { bytes[index++] }

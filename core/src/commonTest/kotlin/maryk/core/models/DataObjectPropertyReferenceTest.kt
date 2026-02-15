@@ -7,7 +7,6 @@ import maryk.core.properties.references.dsl.at
 import maryk.core.properties.references.dsl.atType
 import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.references.dsl.refAtType
-import maryk.lib.extensions.toHex
 import maryk.test.models.ComplexModel
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.test.models.MarykTypeEnum.T4
@@ -80,50 +79,50 @@ internal class DataObjectPropertyReferenceTest {
 
     @Test
     fun testReferenceAsStorage() {
-        expect("09") { TestMarykModel { string::ref }.toStorageByteArray().toHex() }
-        expect("31") { TestMarykModel { bool::ref }.toStorageByteArray().toHex() }
+        expect("09") { TestMarykModel { string::ref }.toStorageByteArray().toHexString() }
+        expect("31") { TestMarykModel { bool::ref }.toStorageByteArray().toHexString() }
 
-        expect("6609") { TestMarykModel { embeddedValues { value::ref } }.toStorageByteArray().toHex() }
+        expect("6609") { TestMarykModel { embeddedValues { value::ref } }.toStorageByteArray().toHexString() }
 
-        expect("6616") { TestMarykModel { embeddedValues { model::ref } }.toStorageByteArray().toHex() }
-        expect("66161609") { TestMarykModel { embeddedValues { model { model { value::ref } } } }.toStorageByteArray().toHex() }
-        expect("6616161609") { TestMarykModel { embeddedValues { model { model { model { value::ref } } } } }.toStorageByteArray().toHex() }
+        expect("6616") { TestMarykModel { embeddedValues { model::ref } }.toStorageByteArray().toHexString() }
+        expect("66161609") { TestMarykModel { embeddedValues { model { model { value::ref } } } }.toStorageByteArray().toHexString() }
+        expect("6616161609") { TestMarykModel { embeddedValues { model { model { model { value::ref } } } } }.toStorageByteArray().toHexString() }
 
-        expect("661e4200000005") { TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHex() }
+        expect("661e4200000005") { TestMarykModel { embeddedValues { marykModel { list refAt 5u } } }.toStorageByteArray().toHexString() }
 
-        expect("661e4b0480004461") { TestMarykModel { embeddedValues { marykModel { set refAt LocalDate(2017, 12, 5) } } }.toStorageByteArray().toHex() }
-        expect("8b01") { TestMarykModel { setOfString::ref }.toStorageByteArray().toHex() }
-        expect("8b01027631") { TestMarykModel { setOfString refAt "v1" }.toStorageByteArray().toHex() }
+        expect("661e4b0480004461") { TestMarykModel { embeddedValues { marykModel { set refAt LocalDate(2017, 12, 5) } } }.toStorageByteArray().toHexString() }
+        expect("8b01") { TestMarykModel { setOfString::ref }.toStorageByteArray().toHexString() }
+        expect("8b01027631") { TestMarykModel { setOfString refAt "v1" }.toStorageByteArray().toHexString() }
 
-        expect("661e540300ae24") { TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(12, 23) } } }.toStorageByteArray().toHex() }
+        expect("661e540300ae24") { TestMarykModel { embeddedValues { marykModel { map refAt LocalTime(12, 23) } } }.toStorageByteArray().toHexString() }
 
-        expect("690d") { TestMarykModel { multi refAtType S1 }.toStorageByteArray().toHex() }
-        expect("69") { TestMarykModel { multi.refToType() }.toStorageByteArray().toHex() }
+        expect("690d") { TestMarykModel { multi refAtType S1 }.toStorageByteArray().toHexString() }
+        expect("69") { TestMarykModel { multi.refToType() }.toStorageByteArray().toHexString() }
 
-        expect("691d09") { TestMarykModel { multi.withType(S3) { value::ref } }.toStorageByteArray().toHex() }
-        expect("691d1609") { TestMarykModel { multi.withType(S3) { model { value::ref } } }.toStorageByteArray().toHex() }
+        expect("691d09") { TestMarykModel { multi.withType(S3) { value::ref } }.toStorageByteArray().toHexString() }
+        expect("691d1609") { TestMarykModel { multi.withType(S3) { model { value::ref } } }.toStorageByteArray().toHexString() }
         expect("691d1e4b0480004461") {
             TestMarykModel {
                 multi.withType(S3) {
                     marykModel { set refAt LocalDate(2017, 12, 5) }
                 }
-            }.toStorageByteArray().toHex()
+            }.toStorageByteArray().toHexString()
         }
 
-        expect("1c040000000209") { ComplexModel { mapIntObject.at(2u) { value::ref } }.toStorageByteArray().toHex() }
-        expect("1c04000000021609") { ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.toStorageByteArray().toHex() }
+        expect("1c040000000209") { ComplexModel { mapIntObject.at(2u) { value::ref } }.toStorageByteArray().toHexString() }
+        expect("1c04000000021609") { ComplexModel { mapIntObject.at(2u) { model { value::ref } } }.toStorageByteArray().toHexString() }
 
-        expect("2c016100000017") { ComplexModel { mapWithList.at("a") { refAt(23u) } }.toStorageByteArray().toHex() }
+        expect("2c016100000017") { ComplexModel { mapWithList.at("a") { refAt(23u) } }.toStorageByteArray().toHexString() }
 
-        expect("340162026233") { ComplexModel { mapWithSet.at("b") { refAt("b3") } }.toStorageByteArray().toHex() }
+        expect("340162026233") { ComplexModel { mapWithSet.at("b") { refAt("b3") } }.toStorageByteArray().toHexString() }
 
-        expect("3c01620163") { ComplexModel { mapWithMap.at("b") { refAt("c") } }.toStorageByteArray().toHex() }
+        expect("3c01620163") { ComplexModel { mapWithMap.at("b") { refAt("c") } }.toStorageByteArray().toHexString() }
 
-        expect("2404000000021d") { ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.toStorageByteArray().toHex() }
-        expect("2404000000021d09") { ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.toStorageByteArray().toHex() }
-        expect("2404000000021d1609") { ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHex() }
+        expect("2404000000021d") { ComplexModel { mapIntMulti.at(2u) { refAtType(T3) } }.toStorageByteArray().toHexString() }
+        expect("2404000000021d09") { ComplexModel { mapIntMulti.at(2u) { atType(T3) { value::ref } } }.toStorageByteArray().toHexString() }
+        expect("2404000000021d1609") { ComplexModel { mapIntMulti.at(2u) { atType(T3) { model { value::ref } } } }.toStorageByteArray().toHexString() }
 
-        expect("2404000000022500000005") { ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.toStorageByteArray().toHex() }
-        expect("2404000000022d0576616c7565") { ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.toStorageByteArray().toHex() }
+        expect("2404000000022500000005") { ComplexModel { mapIntMulti.at(2u) { atType(T4) { refAt(5u) } } }.toStorageByteArray().toHexString() }
+        expect("2404000000022d0576616c7565") { ComplexModel { mapIntMulti.at(2u) { atType(T5) { refAt("value") } } }.toStorageByteArray().toHexString() }
     }
 }

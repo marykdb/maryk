@@ -7,7 +7,6 @@ import maryk.core.properties.types.invoke
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykObject
 import maryk.test.models.Option.V1
@@ -185,7 +184,7 @@ internal class ObjectDataModelAsValuesTest {
         TestMarykObject.Serializer.writeProtoBuf(testExtendedObject, cache, bc::write)
 
         expect("0a036861791008182021713d0ad7a3700c4028ccf794d10530013801420744e024be35fc0b4a08c29102bc87028844520908a4eb021203796573520a08d49a0212046168756d5a0e800000060180000058dfa324010162060a04746573746a0f1a0d0a0b737562496e4d756c7469217a0574657374317a0c616e6f7468657220746573747a04f09fa497") {
-            bc.bytes!!.toHex()
+            bc.bytes!!.toHexString()
         }
 
         expect(testExtendedObject) { TestMarykObject.Serializer.readProtoBuf(bc.size, bc::read) }

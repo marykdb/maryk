@@ -4,11 +4,9 @@ import maryk.core.properties.enum.invoke
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.EmbeddedMarykModel
-import maryk.test.models.EmbeddedMarykModel.value
 import maryk.test.models.MarykTypeEnum.T3
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
@@ -116,7 +114,7 @@ internal class ComplexDataModelMapTest {
         ComplexModel.Serializer.writeProtoBuf(testComplexMap, cache, bc::write)
 
         expect("0a0d1a0b0a02753312050a0375653312070a02763112016112070a0276321201621a08080112040a0274311a08080212040a027432220a080212061a040a026d33") {
-            bc.bytes!!.toHex()
+            bc.bytes!!.toHexString()
         }
 
         expect(testComplexMap) { ComplexModel.Serializer.readProtoBuf(bc.size, bc::read) }

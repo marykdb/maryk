@@ -4,7 +4,6 @@ import maryk.datastore.rocksdb.ChangeAction.Delete
 import maryk.datastore.rocksdb.ChangeAction.Put
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToWithOffsetLength
-import maryk.lib.extensions.toHex
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.RocksDBException
@@ -81,10 +80,10 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
 
             if (check.value == null) {
                 if (current != null) {
-                    throw RocksDBException("Merge error, key ${check.key.toHex()} changed before commit")
+                    throw RocksDBException("Merge error, key ${check.key.toHexString()} changed before commit")
                 }
             } else if (current == null || check.value compareTo current != 0) {
-                throw RocksDBException("Merge error, key ${check.key.toHex()} changed before commit")
+                throw RocksDBException("Merge error, key ${check.key.toHexString()} changed before commit")
             }
         }
 

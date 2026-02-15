@@ -8,7 +8,6 @@ import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
 import maryk.core.query.ContainsDefinitionsContext
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.MarykTypeEnum.T1
@@ -50,7 +49,7 @@ internal class TypeReferenceTest {
         }
 
         val key = MarykModel.key(obj)
-        expect("0002") { key.bytes.toHex() }
+        expect("0002") { key.bytes.toHexString() }
 
         val keyDef = MarykModel.Meta.keyDefinition
 

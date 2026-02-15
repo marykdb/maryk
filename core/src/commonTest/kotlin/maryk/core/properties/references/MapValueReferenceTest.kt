@@ -4,7 +4,6 @@ import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -67,7 +66,7 @@ class MapValueReferenceTest {
             )
             valReference.writeStorageBytes(::write)
 
-            expect("540300d84f") { bytes!!.toHex() }
+            expect("540300d84f") { bytes!!.toHexString() }
 
             expect(valReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
@@ -82,7 +81,7 @@ class MapValueReferenceTest {
             )
             subReference.writeStorageBytes(::write)
 
-            expect("661e540300d84f") { bytes!!.toHex() }
+            expect("661e540300d84f") { bytes!!.toHexString() }
 
             expect(subReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
@@ -92,6 +91,6 @@ class MapValueReferenceTest {
     fun createValueRefQualifierMatcher() {
         val matcher = subReference.toQualifierMatcher()
 
-        expect("661e540300d84f") { assertIs<QualifierExactMatcher>(matcher).qualifier.toHex() }
+        expect("661e540300d84f") { assertIs<QualifierExactMatcher>(matcher).qualifier.toHexString() }
     }
 }

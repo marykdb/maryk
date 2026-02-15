@@ -2,7 +2,6 @@ package maryk.core.extensions.bytes
 
 import maryk.core.base64.Base64Maryk
 import maryk.lib.extensions.compare.compareTo
-import maryk.lib.extensions.initByteArrayByHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertTrue
@@ -30,8 +29,8 @@ internal class ByteArrayKtTest {
 
     @Test
     fun invertBytes() {
-        assertTrue { initByteArrayByHex("000000").invert().contentEquals(initByteArrayByHex("ffffff")) }
-        assertTrue { initByteArrayByHex("d3dfa7").invert().contentEquals(byteArrayOf(44, 32, 88)) }
-        assertTrue { initByteArrayByHex("ffffff").invert().contentEquals(initByteArrayByHex("000000")) }
+        assertTrue { "000000".hexToByteArray().invert().contentEquals("ffffff".hexToByteArray()) }
+        assertTrue { "d3dfa7".hexToByteArray().invert().contentEquals(byteArrayOf(44, 32, 88)) }
+        assertTrue { "ffffff".hexToByteArray().invert().contentEquals("000000".hexToByteArray()) }
     }
 }

@@ -16,7 +16,6 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -110,7 +109,7 @@ internal class ListDefinitionTest {
         )
         def.writeTransportBytesWithKey(1, values, cache, bc::write)
 
-        expect(asHex) { bc.bytes!!.toHex() }
+        expect(asHex) { bc.bytes!!.toHexString() }
 
         fun readKey() {
             val key = ProtoBuf.readKey(bc::read)
@@ -187,7 +186,7 @@ internal class ListDefinitionTest {
         )
         def.writeTransportBytesWithKey(index.toInt(), list, cache, bc::write)
 
-        expect(hex) { bc.bytes!!.toHex() }
+        expect(hex) { bc.bytes!!.toHexString() }
 
         val key = ProtoBuf.readKey(bc::read)
         expect(LENGTH_DELIMITED) { key.wireType }

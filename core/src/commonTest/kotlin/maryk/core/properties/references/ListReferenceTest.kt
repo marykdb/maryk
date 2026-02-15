@@ -2,7 +2,6 @@ package maryk.core.properties.references
 
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
-import maryk.lib.extensions.toHex
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -45,7 +44,7 @@ class ListReferenceTest {
             )
             listReference.writeStorageBytes(::write)
 
-            expect("661e7a") { bytes!!.toHex() }
+            expect("661e7a") { bytes!!.toHexString() }
         }
     }
 
@@ -57,7 +56,7 @@ class ListReferenceTest {
             )
             listReference.writeStorageBytes(::write)
 
-            expect("661e7a") { bytes!!.toHex() }
+            expect("661e7a") { bytes!!.toHexString() }
 
             expect(listReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
@@ -68,7 +67,7 @@ class ListReferenceTest {
         val matcher = listReference.toQualifierMatcher()
 
         expect("661e7a") {
-            assertIs<QualifierExactMatcher>(matcher).qualifier.toHex()
+            assertIs<QualifierExactMatcher>(matcher).qualifier.toHexString()
         }
     }
 }

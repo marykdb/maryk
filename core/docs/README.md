@@ -13,8 +13,8 @@ Maryk's core module provides the building blocks for defining data models and in
   - [Filters](filters.md): filter operators for narrowing query results.
   - [Aggregations](aggregations.md): aggregate data with value and bucket operators.
 - [Collect & Inject](collectAndInject.md): reuse values from previous responses in new requests.
-- [Serialization](serialization.md): write and read YAML, JSON or ProtoBuf.
-  - [ProtoBuf Transport](protobuf.md): details on ProtoBuf wire formats.
+- [Serialization](serialization/README.md): write and read YAML, JSON or ProtoBuf.
+  - [ProtoBuf Transport](serialization/protobuf.md): details on ProtoBuf wire formats.
 
 ### Properties Subfolder
 

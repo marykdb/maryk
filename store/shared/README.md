@@ -1,25 +1,24 @@
-# Maryk DataStore shared module
+# Maryk Store Shared
 
-This module contains common code used by all Maryk DataStore implementations. It provides the core functionality
-for creating and managing DataModels and executing queries. This module is designed to be used by specific 
-implementations of the DataStore, such as the [InMemoryDataStore](../memory/README.md) and [RocksDBDataStore](../rocksdb/README.md).
+Common datastore layer used by all store engines.
+Not intended as a standalone store.
 
-## Key features
+## What it contains
 
-- A unified interface for executing data operations, such as adding, modifying, and retrieving data.
-- Support for versioning and keeping multiple versions of the same data.
-- A modular design that allows for easy integration with different DataStore implementations.
-- Integration with Maryk's DataModel and Property system, allowing for powerful and flexible data modeling.
+- Unified datastore contracts and request orchestration used by all engines.
+- Shared update/listener flow behavior.
+- Shared versioning/query semantics.
 - Shared sensitive-field encryption contracts:
   - `maryk.datastore.shared.encryption.FieldEncryptionProvider`
   - `maryk.datastore.shared.encryption.SensitiveIndexTokenProvider`
 - Built-in cross-platform provider:
   - `maryk.datastore.shared.encryption.AesGcmHmacSha256EncryptionProvider`
-    - field encryption: AES-GCM
-    - deterministic sensitive lookup tokens: HMAC-SHA256
+  - Field encryption: AES-GCM
+  - Deterministic sensitive lookup tokens: HMAC-SHA256
 
-## Usage
+## Where to use
 
-This module is not meant to be used directly, but rather to be utilized by specific DataStore 
-implementations. For usage instructions and examples, see the documentation for the specific DataStore you are using,
-such as the [InMemoryDataStore](../memory/README.md) and [RocksDBDataStore](../rocksdb/README.md).
+Use through concrete engines:
+- [Memory store](../memory/README.md)
+- [RocksDB store](../rocksdb/README.md)
+- [FoundationDB store](../foundationdb/README.md)

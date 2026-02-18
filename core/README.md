@@ -1,21 +1,14 @@
 # Maryk Core
 
-Welcome to the Maryk Core project! This foundational component of the Maryk library provides a robust set of tools for 
-creating structured and type-safe data models, allowing you to efficiently query, parse, and serialize your data across
-various formats.
+Core module for Maryk data modeling, querying, and serialization.
 
-## Key Features
+## Start Here
 
-- **[Data Model Definition](docs/datamodel.md)**: Define complex data structures using Maryk's property system.
+- [Data Model Definition](docs/datamodel.md): define typed model structures.
+- [Property Types](docs/properties/README.md): supported property definitions and validation.
+- [Keys](docs/key.md): compose model keys and key parts.
+- [Querying](docs/query.md): add/change/delete/get/scan and update streams.
+- [Versioning](docs/versioning.md): historical reads and compatibility.
+- [Serialization](docs/serialization/README.md): YAML/JSON/ProtoBuf for models, values, and requests.
 
-- **[Property Types](docs/properties/README.md)**: Utilize a variety of property types tailored to your data needs.
-
-- **[Versioning](docs/versioning.md)**: Store versioned data and easily revert to earlier versions when necessary.
-
-- **[Query Language](docs/query.md)**: Extract meaningful insights from your datasets with a powerful query language.
-
-- **[Data Aggregation](docs/aggregations.md)**: Aggregate data to gain valuable insights and analytics.
-
-- **[Collect & Inject Values](docs/collectAndInject.md)**: Efficiently transport data between platforms using Collect & Inject requests.
-
-- **[Serialization Support](docs/serialization.md)**: Serialize and deserialize data in YAML, JSON, and ProtoBuf formats.
+For full navigation, see [core/docs/README.md](docs/README.md).

@@ -30,8 +30,8 @@ export default defineConfig({
                     label: 'Introduction',
                     items: [
                         {label: 'What is Maryk?', slug: 'what'},
-                        {label: 'Why choose Maryk?', slug: 'why'},
                         {label: 'Getting Started', slug: 'getting-started'},
+                        {label: 'Why choose Maryk?', slug: 'why'},
                     ],
                 },
                 {

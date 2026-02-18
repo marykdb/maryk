@@ -18,7 +18,7 @@ YAML is a human‑readable format suited for model definitions and example data.
 - Maryk provides its own streaming YAML module to ensure consistent behavior across platforms and to support required features.
   - Writer: `maryk.yaml.YamlWriter`
   - Reader: `maryk.core.yaml.MarykYamlReader`
-  - Module docs: [YAML module](../../yaml/README.md)
+  - Module docs: [YAML module](../../../yaml/README.md)
 
 ## Model Definition Example
 ```yaml

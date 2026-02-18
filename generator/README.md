@@ -1,48 +1,48 @@
 # Maryk Generator
 
+Generate Kotlin and Proto3 schema from Maryk model definitions.
 
-The Maryk Generator is a tool that generates code and schemas from Maryk models. It currently supports generating Kotlin 
-code and ProtoBuf schema representations of data models.
+## Flow
 
-# Generating Kotlin Code
+1. Read a model definition (YAML/JSON/ProtoBuf).
+2. Convert to a `RootDataModel`.
+3. Generate Kotlin or Proto3 output.
 
-To generate Kotlin code, you first need to read the serialized representation of the model. This model representation
-can be defined in YAML, ProtoBuf, or JSON format.
+## Read model definition
 
+Example with YAML:
 
-## Reading YAML and generate Data model
 ```kotlin
-    val reader = MarykYamlReader {
-        // read source. Iterate over char
-    }
+val yaml = """
+name: Person
+key:
+- !Ref username
+? 1: username
+: !String { required: true, final: true, unique: true }
+""".trimIndent()
 
-    val newContext = DefinitionsConversionContext()
+val reader = MarykYamlReader(yaml)
+val context = DefinitionsConversionContext()
 
-    val model = RootDataModel.Model.readJson(reader, newContext).toDataObject()
+val model = RootDataModel.Model.Serializer.readJson(reader, context).toDataObject()
 ```
 
-## Generating Kotlin code from Data model
+## Generate Kotlin
 
 ```kotlin
-    model.generateKotlin("package.name") { kotlinCode: String ->
-        // Do something with Kotlin code
-    }
-```
-## Generating ProtoBuf Schema
-
-To generate the ProtoBuf schema, you first need to create a `GenerationContext` instance so
-it can store any encountered submodels and enums which are found in the models. This way
-code is only generated once for them.
-
-```kotlin
-    // The Context stores values which should be known at time of processing of model like enums
-    val generationContext = GenerationContext()
+model.generateKotlin("package.name") { kotlinCode ->
+    // write kotlinCode
+}
 ```
 
-Then, you can generate the ProtoBuf schema like this:
+## Generate Proto3 schema
+
+Use a generation context to avoid duplicate enum/submodel output.
 
 ```kotlin
-    model.generateProto3Schema(generationContext) { protoBufSchema: String ->
-        // Do something with protobuf schema
-    }
+val generationContext = GenerationContext()
+
+model.generateProto3Schema(generationContext) { protoSchema ->
+    // write protoSchema
+}
 ```

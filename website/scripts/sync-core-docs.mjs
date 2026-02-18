@@ -113,11 +113,13 @@ const map = [
     ['(./docs/local-testing.md)', withPrefix('stores/foundationdb/local-testing/')],
     ['(documentation/storage.md)', withPrefix('stores/rocksdb/storage/')],
     ['(documentation/architecture.md)', withPrefix('stores/rocksdb/architecture/')],
+    ['(../remote/README.md)', '(../remote/)'],
+    ['(./remote/README.md)', '(./remote/)'],
     // Map code links to GitHub full URLs (main branch)
     ['(../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(../../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(../../core/src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
-    ['(core/src/', '(https://github.com/marykdb/maryk/blob/main/main/src/'],
+    ['(core/src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     // Add relative link variants
     ['(../datamodel.md)', withPrefix('data-modeling/datamodels/')],
     ['(../../datamodel.md)', withPrefix('data-modeling/datamodels/')],

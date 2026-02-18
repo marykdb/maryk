@@ -18,7 +18,7 @@ JSON is widely supported and easy to integrate with external services, tools, an
 - Maryk ships a streaming JSON module (Kotlin Multiplatform) to avoid large intermediate trees and ensure consistent behavior.
   - Writer: `maryk.json.JsonWriter`
   - Reader: `maryk.json.JsonReader`
-  - Module docs: [JSON module](../../json/README.md)
+  - Module docs: [JSON module](../../../json/README.md)
 
 ## Model Definition Example
 ```json

@@ -21,7 +21,7 @@ Maryk transports three things: your data models, the data itself, and the reques
 ## How Maryk Optimizes Transport
 
 - **Stable property indexes** — Each property has a stable `UInt` index. Encoders write compact tags without reflection, and decoders can skip unknown fields safely. See [Versioning](../versioning.md).
-- **Streaming encoders/decoders** — YAML and JSON use streaming writers/readers, avoiding large intermediate trees. See the module docs for [YAML](../../yaml/README.md) and [JSON](../../json/README.md).
+- **Streaming encoders/decoders** — YAML and JSON use streaming writers/readers, avoiding large intermediate trees. See the module docs for [YAML](../../../yaml/README.md) and [JSON](../../../json/README.md).
 - **ProtoBuf write cache** — Compute size once with `calculateProtoBufLength` and stream to a byte sink using `writeProtoBuf` and `WriteCache`.
 - **Select just what you need** — Query using property reference graphs to return only required fields before serialization. See [Selecting with Graphs](../reference-graphs.md).
 

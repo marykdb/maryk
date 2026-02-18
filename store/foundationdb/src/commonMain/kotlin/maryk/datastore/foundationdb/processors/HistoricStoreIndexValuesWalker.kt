@@ -3,12 +3,16 @@ package maryk.datastore.foundationdb.processors
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
 import maryk.core.exceptions.StorageException
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MapAnyKeyReference
+import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
@@ -36,6 +40,15 @@ internal class HistoricStoreIndexValuesWalker(
         indexable: IsIndexable,
         handleIndex: (ByteArray, ULong) -> Unit
     ) {
+        if (indexable is MapAnyKeyReference<*, *, *>) {
+            walkMapAnyKeyHistory(key, tr, indexable, handleIndex)
+            return
+        }
+        if (indexable is SetAnyValueReference<*, *>) {
+            walkSetAnyValueHistory(key, tr, indexable, handleIndex)
+            return
+        }
+
         getter.moveToKey(key, tr)
 
         do {
@@ -51,6 +64,88 @@ internal class HistoricStoreIndexValuesWalker(
                 // Skip failing index reference generation and keep walking
             }
         } while (getter.gotoNextVersion())
+    }
+
+    private fun walkMapAnyKeyHistory(
+        key: ByteArray,
+        tr: Transaction,
+        indexable: MapAnyKeyReference<*, *, *>,
+        handleIndex: (ByteArray, ULong) -> Unit
+    ) {
+        val parentReference = indexable.parentReference ?: return
+        val encodedParent = encodeZeroFreeUsing01(parentReference.toStorageByteArray())
+        val prefix = packKey(tableDirs.historicTablePrefix, key, encodedParent)
+        val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
+
+        while (iterator.hasNext()) {
+            val kv = iterator.nextBlocking()
+            val historicKey = kv.key
+
+            try {
+                val versionOffset = historicKey.size - VERSION_BYTE_SIZE
+                val sepIndex = versionOffset - 1
+                if (sepIndex < prefix.size || historicKey[sepIndex] != 0.toByte()) continue
+
+                val encodedMapKey = historicKey.copyOfRange(prefix.size, sepIndex)
+                val mapKeyBytes = decodeZeroFreeUsing01(encodedMapKey)
+
+                var readIndex = 0
+                val mapKeyLength = initIntByVar { mapKeyBytes[readIndex++] }
+                @Suppress("UNCHECKED_CAST")
+                val mapKey = (indexable as MapAnyKeyReference<Any, Any, *>).readStorageBytes(mapKeyLength) { mapKeyBytes[readIndex++] }
+                if (readIndex != mapKeyBytes.size) continue
+
+                val valueAndKey = ByteArray(indexable.calculateStorageByteLength(mapKey) + key.size)
+                var writeIndex = 0
+                indexable.writeStorageBytes(mapKey) { valueAndKey[writeIndex++] = it }
+                key.copyInto(valueAndKey, writeIndex)
+
+                handleIndex(valueAndKey, historicKey.readReversedVersionBytes(versionOffset))
+            } catch (_: Throwable) {
+                // Skip malformed entries and keep walking
+            }
+        }
+    }
+
+    private fun walkSetAnyValueHistory(
+        key: ByteArray,
+        tr: Transaction,
+        indexable: SetAnyValueReference<*, *>,
+        handleIndex: (ByteArray, ULong) -> Unit
+    ) {
+        val parentReference = indexable.parentReference ?: return
+        val encodedParent = encodeZeroFreeUsing01(parentReference.toStorageByteArray())
+        val prefix = packKey(tableDirs.historicTablePrefix, key, encodedParent)
+        val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
+
+        while (iterator.hasNext()) {
+            val kv = iterator.nextBlocking()
+            val historicKey = kv.key
+
+            try {
+                val versionOffset = historicKey.size - VERSION_BYTE_SIZE
+                val sepIndex = versionOffset - 1
+                if (sepIndex < prefix.size || historicKey[sepIndex] != 0.toByte()) continue
+
+                val encodedSetItem = historicKey.copyOfRange(prefix.size, sepIndex)
+                val setItemBytes = decodeZeroFreeUsing01(encodedSetItem)
+
+                var readIndex = 0
+                val setItemLength = initIntByVar { setItemBytes[readIndex++] }
+                @Suppress("UNCHECKED_CAST")
+                val setItem = (indexable as SetAnyValueReference<Any, *>).readStorageBytes(setItemLength) { setItemBytes[readIndex++] }
+                if (readIndex != setItemBytes.size) continue
+
+                val valueAndKey = ByteArray(indexable.calculateStorageByteLength(setItem) + key.size)
+                var writeIndex = 0
+                indexable.writeStorageBytes(setItem) { valueAndKey[writeIndex++] = it }
+                key.copyInto(valueAndKey, writeIndex)
+
+                handleIndex(valueAndKey, historicKey.readReversedVersionBytes(versionOffset))
+            } catch (_: Throwable) {
+                // Skip malformed entries and keep walking
+            }
+        }
     }
 }
 

@@ -28,6 +28,7 @@ import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.helpers.setValue
+import maryk.datastore.foundationdb.processors.helpers.packVersionedKey
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
 import maryk.datastore.shared.Cache
@@ -146,19 +147,32 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 
         // Delete indexed values
         dataModel.Meta.indexes?.let { indexes ->
+            val historicWalker = if (hardDelete && tableDirs is HistoricTableDirectories) {
+                HistoricStoreIndexValuesWalker(tableDirs)
+            } else null
+
             indexes.forEach { indexable ->
                 val indexReference = indexable.referenceStorageByteArray.bytes
                 indexable.toStorageByteArraysForIndex(valuesGetter, key.bytes).forEach { valueAndKey ->
                     // Delete current index entry
                     tr.clear(packKey(tableDirs.indexPrefix, indexReference, valueAndKey))
 
-                    if (hardDelete && tableDirs is HistoricTableDirectories) {
-                        // Hard delete: clean all historic index entries with this prefix
-                        val histPrefix = packKey(tableDirs.historicIndexPrefix, indexReference, valueAndKey)
-                        tr.clear(FDBRange.startsWith(histPrefix))
-                    } else if (tableDirs is HistoricTableDirectories) {
+                    if (!hardDelete && tableDirs is HistoricTableDirectories) {
                         // Non-hard delete: write a deletion marker into historic index
                         writeHistoricIndex(tr, tableDirs, indexReference, valueAndKey, versionBytes, EMPTY_BYTEARRAY)
+                    }
+                }
+
+                if (hardDelete && tableDirs is HistoricTableDirectories) {
+                    historicWalker?.walkHistoricalValuesForIndexKeys(key.bytes, tr, indexable) { valueAndKey, historicVersion ->
+                        val encodedQualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, valueAndKey))
+                        tr.clear(
+                            packVersionedKey(
+                                tableDirs.historicIndexPrefix,
+                                encodedQualifier,
+                                version = HLC.toStorageBytes(HLC(historicVersion))
+                            )
+                        )
                     }
                 }
             }

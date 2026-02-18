@@ -11,6 +11,7 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.CanContainMapItemReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
@@ -44,6 +45,10 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
     /** Get a reference to any map value on [parentMap] */
     fun anyValueRef(parentMap: CanContainMapItemReference<*, *, *>?) =
         MapAnyValueReference(this, parentMap)
+
+    /** Get a reference to any map key on [parentMap] */
+    fun anyKeyRef(parentMap: CanContainMapItemReference<*, *, *>?) =
+        MapAnyKeyReference(this, parentMap)
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null
     override fun getEmbeddedByIndex(index: UInt): IsDefinitionWrapper<*, *, *, *>? = null

@@ -71,9 +71,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             // Indexes
             dataModel.Meta.indexes?.forEach { indexDef ->
                 val indexRef = indexDef.referenceStorageByteArray.bytes
-                val valueAndKeyBytes = indexDef.toStorageByteArrayForIndex(objectToAdd, key.bytes)
-                    ?: return@forEach
-                setIndexValue(tr, tableDirs, indexRef, valueAndKeyBytes, versionBytes)
+                indexDef.toStorageByteArraysForIndex(objectToAdd, key.bytes).forEach { valueAndKeyBytes ->
+                    setIndexValue(tr, tableDirs, indexRef, valueAndKeyBytes, versionBytes)
+                }
             }
 
             // Values

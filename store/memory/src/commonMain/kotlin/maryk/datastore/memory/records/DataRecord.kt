@@ -9,9 +9,15 @@ import maryk.core.processors.datastore.matchers.IsQualifierMatcher
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.MapAnyKeyReference
+import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.properties.references.SimpleTypedValueReference
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.IsValuesGetter
@@ -33,8 +39,79 @@ internal data class DataRecord<DM : IsRootDataModel>(
 ) : IsValuesGetter {
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
         propertyReference: IsPropertyReference<T, D, C>
-    ): T? =
-        getValue<T>(this.values, propertyReference.toStorageByteArray())?.value
+    ): T? {
+        if (propertyReference is IsMapReference<*, *, *, *>) {
+            @Suppress("UNCHECKED_CAST")
+            return readMapValue(propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>?) as T?
+        }
+        if (propertyReference is SetReference<*, *>) {
+            @Suppress("UNCHECKED_CAST")
+            return readSetValue(propertyReference as SetReference<Any, IsPropertyContext>?) as T?
+        }
+        return getValue<T>(this.values, propertyReference.toStorageByteArray())?.value
+    }
+
+    private fun readMapValue(
+        propertyReference: IsMapReference<Any, Any, IsPropertyContext, *>?
+    ): Map<Any, Any>? {
+        if (propertyReference == null) return null
+        val mapDefinition = propertyReference.propertyDefinition.definition
+        val mapPrefix = propertyReference.toStorageByteArray()
+        val map = linkedMapOf<Any, Any>()
+
+        for (index in values.indices) {
+            val node = getValueAtIndex<Any>(values, index) ?: continue
+            val reference = node.reference
+            if (reference.size <= mapPrefix.size) continue
+            if (!reference.copyOfRange(0, mapPrefix.size).contentEquals(mapPrefix)) continue
+
+            val key = try {
+                var readIndex = mapPrefix.size
+                val mapKeyLength = initIntByVar { reference[readIndex++] }
+                val keyValue = mapDefinition.keyDefinition.readStorageBytes(mapKeyLength) { reference[readIndex++] }
+                if (readIndex != reference.size) continue
+                keyValue
+            } catch (_: Throwable) {
+                continue
+            }
+
+            map[key] = node.value
+        }
+
+        return map.takeIf { it.isNotEmpty() }
+    }
+
+    private fun readSetValue(
+        propertyReference: SetReference<Any, IsPropertyContext>?
+    ): Set<Any>? {
+        if (propertyReference == null) return null
+        val setDefinition = propertyReference.propertyDefinition.definition
+        val setPrefix = propertyReference.toStorageByteArray()
+        val set = linkedSetOf<Any>()
+
+        for (index in values.indices) {
+            val node = getValueAtIndex<Any>(values, index) ?: continue
+            val reference = node.reference
+            if (reference.size <= setPrefix.size) continue
+            if (!reference.copyOfRange(0, setPrefix.size).contentEquals(setPrefix)) continue
+
+            val setItem = try {
+                var readIndex = setPrefix.size
+                val setItemLength = initIntByVar { reference[readIndex++] }
+                @Suppress("UNCHECKED_CAST")
+                val valueDefinition = setDefinition.valueDefinition as maryk.core.properties.definitions.IsStorageBytesEncodable<Any>
+                val itemValue = valueDefinition.readStorageBytes(setItemLength) { reference[readIndex++] }
+                if (readIndex != reference.size) continue
+                itemValue
+            } catch (_: Throwable) {
+                continue
+            }
+
+            set += setItem
+        }
+
+        return set.takeIf { it.isNotEmpty() }
+    }
 
     fun isDeleted(toVersion: HLC?): Boolean =
         getValue<Boolean>(this.values, objectSoftDeleteQualifier, toVersion)?.value == true
@@ -90,7 +167,13 @@ internal data class DataRecord<DM : IsRootDataModel>(
                         NO_MATCH -> continue@qualifiers
                         MATCH -> {
                             val matches = when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
-                                null -> matcher(value.value)
+                                null -> {
+                                    val decoded = qualifierMatcher.reference?.let {
+                                        readFuzzyValue(it, value.reference)
+                                    }
+                                    @Suppress("UNCHECKED_CAST")
+                                    matcher((decoded ?: value.value) as T?)
+                                }
                                 else -> {
                                     recordFetcher(
                                         referencedMatcher.reference.comparablePropertyDefinition.dataModel,
@@ -108,6 +191,37 @@ internal data class DataRecord<DM : IsRootDataModel>(
                 }
                 return false
             }
+        }
+    }
+
+    private fun readFuzzyValue(
+        reference: IsPropertyReference<*, *, *>,
+        qualifierBytes: ByteArray
+    ): Any? {
+        return when (reference) {
+            is MapAnyKeyReference<*, *, *> -> {
+                val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
+                var readIndex = parentLength
+                if (readIndex >= qualifierBytes.size) return null
+
+                val keyLength = initIntByVar { qualifierBytes[readIndex++] }
+                if (readIndex + keyLength > qualifierBytes.size) return null
+
+                @Suppress("UNCHECKED_CAST")
+                (reference as MapAnyKeyReference<Any, Any, *>).readStorageBytes(keyLength) { qualifierBytes[readIndex++] }
+            }
+            is SetAnyValueReference<*, *> -> {
+                val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
+                var readIndex = parentLength
+                if (readIndex >= qualifierBytes.size) return null
+
+                val valueLength = initIntByVar { qualifierBytes[readIndex++] }
+                if (readIndex + valueLength > qualifierBytes.size) return null
+
+                @Suppress("UNCHECKED_CAST")
+                (reference as SetAnyValueReference<Any, *>).readStorageBytes(valueLength) { qualifierBytes[readIndex++] }
+            }
+            else -> null
         }
     }
 

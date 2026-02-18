@@ -32,6 +32,7 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.exceptions.createValidationUmbrellaException
 import maryk.core.properties.references.IncMapReference
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
@@ -79,6 +80,8 @@ import maryk.datastore.foundationdb.processors.helpers.getList
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.handleMapAdditionCount
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readMapByReference
+import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.setListValue
@@ -133,20 +136,53 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
             // Capture initial index values BEFORE any writes
             val storeGetter = object : IsValuesGetter {
+                private val cache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()
+
+                fun clearCache() {
+                    cache.clear()
+                }
+
                 override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
                     propertyReference: IsPropertyReference<T, D, C>
                 ): T? {
-                    val keyAndRef = combineToByteArray(key.bytes, propertyReference.toStorageByteArray())
-                    @Suppress("UNCHECKED_CAST")
-                    return tr.getValue(tableDirs, null, keyAndRef, decryptValue = this@processChange::decryptValueIfNeeded) { valueBytes, offset, length ->
-                        valueBytes.convertToValue(propertyReference, offset, length) as T?
+                    if (cache.containsKey(propertyReference)) {
+                        @Suppress("UNCHECKED_CAST")
+                        return cache[propertyReference] as T?
                     }
+
+                    val value = if (propertyReference is IsMapReference<*, *, *, *>) {
+                        @Suppress("UNCHECKED_CAST")
+                        tr.readMapByReference(
+                            tableDirs.tablePrefix,
+                            key.bytes,
+                            propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
+                            this@processChange::decryptValueIfNeeded
+                        ) as T?
+                    } else if (propertyReference is SetReference<*, *>) {
+                        @Suppress("UNCHECKED_CAST")
+                        tr.readSetByReference(
+                            tableDirs.tablePrefix,
+                            key.bytes,
+                            propertyReference as SetReference<Any, IsPropertyContext>
+                        ) as T?
+                    } else {
+                        val keyAndRef = combineToByteArray(key.bytes, propertyReference.toStorageByteArray())
+                        @Suppress("UNCHECKED_CAST")
+                        tr.getValue(tableDirs, null, keyAndRef, decryptValue = this@processChange::decryptValueIfNeeded) { valueBytes, offset, length ->
+                            valueBytes.convertToValue(propertyReference, offset, length) as T?
+                        }
+                    }
+
+                    cache[propertyReference] = value
+                    return value
                 }
             }
-            val initialIndexValues: MutableMap<IsIndexable, ByteArray?> = mutableMapOf()
+            val initialIndexValues: MutableMap<IsIndexable, List<ByteArray>> = mutableMapOf()
             dataModel.Meta.indexes?.forEach { idx ->
-                initialIndexValues[idx] = idx.toStorageByteArrayForIndex(storeGetter, key.bytes)
+                initialIndexValues[idx] = idx.toStorageByteArraysForIndex(storeGetter, key.bytes)
             }
+            // Clear old snapshot cache so subsequent reads reflect post-write transaction state.
+            storeGetter.clearCache()
 
             // Fast path: only Check operations — handle deterministically and return
             val onlyChecks = changes.all { it is Check }
@@ -605,27 +641,38 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             dataModel.Meta.indexes?.let { indexes ->
                 indexUpdates = mutableListOf()
                 for (index in indexes) {
-                    val oldKeyAndValue = initialIndexValues[index]
-                    val newKeyAndValue = index.toStorageByteArrayForIndex(overlayGetter, key.bytes)
+                    val oldValues = initialIndexValues[index].orEmpty()
+                    val newValues = index.toStorageByteArraysForIndex(overlayGetter, key.bytes)
 
-                    if (newKeyAndValue == null) {
-                        if (oldKeyAndValue != null) {
-                            // delete index
-                            tr.clear(packKey(tableDirs.indexPrefix, index.referenceStorageByteArray.bytes, oldKeyAndValue))
+                    val removed = oldValues.filter { oldValue ->
+                        newValues.none { it.contentEquals(oldValue) }
+                    }
+                    val added = newValues.filter { newValue ->
+                        oldValues.none { it.contentEquals(newValue) }
+                    }
+
+                    if (removed.size == 1 && added.size == 1) {
+                        val oldValue = removed.first()
+                        val newValue = added.first()
+                        tr.clear(packKey(tableDirs.indexPrefix, index.referenceStorageByteArray.bytes, oldValue))
+                        writeHistoricIndex(
+                            tr, tableDirs, index.referenceStorageByteArray.bytes, oldValue, versionBytes, EMPTY_BYTEARRAY
+                        )
+                        setIndexValue(tr, tableDirs, index.referenceStorageByteArray.bytes, newValue, versionBytes)
+                        indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newValue), Bytes(oldValue)))
+                    } else {
+                        removed.forEach { oldValue ->
+                            tr.clear(packKey(tableDirs.indexPrefix, index.referenceStorageByteArray.bytes, oldValue))
                             writeHistoricIndex(
-                                tr, tableDirs, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes, EMPTY_BYTEARRAY
+                                tr, tableDirs, index.referenceStorageByteArray.bytes, oldValue, versionBytes, EMPTY_BYTEARRAY
                             )
-                            indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldKeyAndValue)))
+                            indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldValue)))
                         }
-                    } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
-                        if (oldKeyAndValue != null) {
-                            tr.clear(packKey(tableDirs.indexPrefix, index.referenceStorageByteArray.bytes, oldKeyAndValue))
-                            writeHistoricIndex(
-                                tr, tableDirs, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes, EMPTY_BYTEARRAY
-                            )
+
+                        added.forEach { newValue ->
+                            setIndexValue(tr, tableDirs, index.referenceStorageByteArray.bytes, newValue, versionBytes)
+                            indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newValue), null))
                         }
-                        setIndexValue(tr, tableDirs, index.referenceStorageByteArray.bytes, newKeyAndValue, versionBytes)
-                        indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newKeyAndValue), oldKeyAndValue?.let { Bytes(it) }))
                     }
                 }
             }

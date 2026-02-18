@@ -57,6 +57,27 @@ SetChange(
 )
 ```
 
+## Indexing set values
+
+Set properties can be indexed on any set value with `refToAny()` (`set.*` in string notation).
+
+Example:
+```kotlin
+object ExampleModel : RootDataModel<ExampleModel>(
+    indexes = {
+        listOf(
+            ExampleModel { tags.refToAny() }
+        )
+    }
+) {
+    val tags by set(
+        index = 1u,
+        required = false,
+        valueDefinition = StringDefinition()
+    )
+}
+```
+
 ## Byte representation
 Depends on the specific implementation. The values are stored in their representative byte 
 representation.

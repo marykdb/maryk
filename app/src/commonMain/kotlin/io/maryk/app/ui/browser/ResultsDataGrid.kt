@@ -998,7 +998,7 @@ private fun buildSortOptions(dataModel: IsRootDataModel?): List<SortOption> {
 private fun collectIndexReferences(indexable: IsIndexable): List<IsIndexablePropertyReference<*>> {
     return when (indexable) {
         is UUIDKey -> emptyList()
-        is Multiple -> indexable.references
+        is Multiple -> indexable.references.flatMap { collectIndexReferences(it) }
         is Reversed<*> -> listOf(indexable.reference)
         is ReferenceToMax<*> -> listOf(indexable.reference)
         is IsIndexablePropertyReference<*> -> listOf(indexable)

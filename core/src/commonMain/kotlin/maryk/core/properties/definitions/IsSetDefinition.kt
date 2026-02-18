@@ -4,6 +4,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanContainSetItemReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 
@@ -14,6 +15,10 @@ interface IsSetDefinition<T : Any, CX : IsPropertyContext> :
     /** Get a reference by [value] to a specific set item of set of [setReference] */
     fun itemRef(value: T, setReference: CanContainSetItemReference<*, *, *>?) =
         SetItemReference(value, this, setReference)
+
+    /** Get a reference to any set item in [setReference] */
+    fun anyItemRef(setReference: SetReference<T, CX>?) =
+        SetAnyValueReference(this, setReference)
 
     override fun newMutableCollection(context: CX?) = mutableSetOf<T>()
 

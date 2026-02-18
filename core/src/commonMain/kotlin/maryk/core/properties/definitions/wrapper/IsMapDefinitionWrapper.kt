@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanContainMapItemReference
+import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapKeyReference
 import maryk.core.properties.references.MapValueReference
@@ -30,6 +31,13 @@ interface IsMapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyCont
             }
         }
 
+    /** Get a reference to any map key with optional [parentRef] */
+    private fun anyKeyRef(parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let { ref ->
+        cacheRef(ref, { "${it?.completeName}.~" }) {
+            this.definition.anyKeyRef(ref as CanContainMapItemReference<*, *, *>)
+        }
+    }
+
     /** Get a reference to any map value with optional [parentRef] */
     private fun anyValueRef(parentRef: AnyPropertyReference? = null) = this.ref(parentRef).let { ref ->
         cacheRef(ref, { "${it?.completeName}.*" }) {
@@ -45,7 +53,12 @@ interface IsMapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyCont
     infix fun refAt(key: K): (AnyOutPropertyReference?) -> MapValueReference<K, V, *> =
         { this.valueRef(key, it) }
 
+    /** For quick notation to get a map key reference at any key */
+    fun refToAnyKey(): (AnyOutPropertyReference?) -> MapAnyKeyReference<K, V, *> =
+        this::anyKeyRef
+
     /** For quick notation to get a map value reference at any key */
-    fun refToAny(): (AnyOutPropertyReference?) -> MapAnyValueReference<K, V, *> =
+    fun refToAnyValue(): (AnyOutPropertyReference?) -> MapAnyValueReference<K, V, *> =
         this::anyValueRef
+
 }

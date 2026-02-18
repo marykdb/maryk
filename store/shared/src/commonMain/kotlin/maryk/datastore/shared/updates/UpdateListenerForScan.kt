@@ -10,6 +10,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
 import maryk.core.query.changes.IndexUpdate
+import maryk.core.query.changes.IsIndexUpdate
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
@@ -48,7 +49,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         is ValuesResponse<DM> -> {
             if (scanType is IndexScan) {
                 response.values.mapNotNull { valuesWithMeta ->
-                    scanType.index.toStorageByteArrayForIndex(valuesWithMeta.values, valuesWithMeta.key.bytes)
+                    resolveIndexKey(valuesWithMeta.values, valuesWithMeta.key.bytes)
                 }.let(::atomic)
             } else null
         }
@@ -81,7 +82,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         // Find position and add it if necessary to order if it fits within limit
         return when (scanType) {
             is IndexScan -> {
-                val indexKey = scanType.index.toStorageByteArrayForIndex(values, key.bytes)
+                val indexKey = resolveIndexKey(values, key.bytes)
                     ?: return null
 
                 findSortedKeyIndex(indexKey)?.let { indexPosition ->
@@ -141,9 +142,26 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
 
         // Add sort key also to the end
         if (scanType is IndexScan && sortedValues != null) {
-            scanType.index.toStorageByteArrayForIndex(values, key.bytes)?.also {
+            resolveIndexKey(values, key.bytes)?.also {
                 sortedValues.value = sortedValues.value + it
             } ?: throw StorageException("Unexpected null at indexed value")
+        }
+    }
+
+    private fun resolveIndexKey(values: Values<DM>, keyBytes: ByteArray): ByteArray? {
+        val indexScan = scanType as? IndexScan ?: return null
+
+        val matchingIndexKeys = indexScan.index.toStorageByteArraysForIndex(values, keyBytes).filter { indexKey ->
+            indexScanRange?.let { range ->
+                range.keyWithinRanges(indexKey) && range.matchesPartials(indexKey)
+            } ?: true
+        }
+
+        if (matchingIndexKeys.isEmpty()) return null
+
+        return when (scanType.direction) {
+            ASC -> matchingIndexKeys.minWithOrNull { a, b -> a compareTo b }
+            DESC -> matchingIndexKeys.maxWithOrNull { a, b -> a compareTo b }
         }
     }
 
@@ -167,28 +185,31 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
             is IndexScan -> {
                 // Should always exist since earlier was checked if matchingKeys contains this key
                 val existingIndex = findKeyIndexForIndexScan(change.key)
+                val existingIndexKey = if (existingIndex >= 0) {
+                    sortedValues?.value?.getOrNull(existingIndex)
+                } else {
+                    null
+                }
 
                 val indexChange = change.changes.firstOrNull { it is IndexChange } as IndexChange?
+                val relevantIndexChanges = indexChange
+                    ?.changes
+                    ?.filter { it.index == scanType.index.referenceStorageByteArray }
+                    .orEmpty()
 
                 // Check if there are index changes for index needed to order this request
-                when(val indexUpdate = indexChange?.changes?.firstOrNull { it.index == scanType.index.referenceStorageByteArray }) {
-                    null -> { // Nothing changed
+                when {
+                    relevantIndexChanges.isEmpty() -> { // Nothing changed
                         if (existingIndex >= 0) {
                             changedHandler(existingIndex, false)
                         }
                     }
-                    is IndexDelete -> { // Was deleted from index
-                        if (existingIndex >= 0) {
-                            changedHandler(null, false)
-                        }
-                    }
-                    is IndexUpdate -> { // Was changed in order
+                    else -> { // Was changed in order
+                        val indexKey = resolveIndexKeyFromChanges(existingIndexKey, relevantIndexChanges)
+
                         // check if key is valid according to filters
-                        if (
-                            indexScanRange!!.keyWithinRanges(indexUpdate.indexKey.bytes)
-                            && indexScanRange.matchesPartials(indexUpdate.indexKey.bytes)
-                        ) {
-                            val index = findSortedKeyIndex(indexUpdate.indexKey.bytes)
+                        if (indexKey != null) {
+                            val index = findSortedKeyIndex(indexKey)
 
                             if (existingIndex == -1 || existingIndex != index) { // Is at new index
                                 if (existingIndex >= 0) {
@@ -203,27 +224,33 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                                         if (newIndex.toUInt() >= request.limit) {
                                             // Don't add items which are moved to after the limit
                                             changedHandler(null, false)
-                                        } else if (newIndex == 0 && indexScanRange.ranges.firstOrNull()?.keyBeforeStart(change.key.bytes) == true) {
-                                            // Remove items which are before the first start key/range
-                                            changedHandler(null, false)
                                         } else {
-                                            // correction if existing value delete made index to be off by one
-                                            val correction = if (existingIndex != -1 && existingIndex < newIndex) 1 else 0
-                                            val adjustedIndex = newIndex - correction
+                                            val beforeStartRange = indexScanRange
+                                                ?.ranges
+                                                ?.firstOrNull()
+                                                ?.keyBeforeStart(change.key.bytes) == true
+                                            if (newIndex == 0 && beforeStartRange) {
+                                                // Remove items which are before the first start key/range
+                                                changedHandler(null, false)
+                                            } else {
+                                                // correction if existing value delete made index to be off by one
+                                                val correction = if (existingIndex != -1 && existingIndex < newIndex) 1 else 0
+                                                val adjustedIndex = newIndex - correction
 
-                                            matchingKeys.value = buildList {
-                                                addAll(matchingKeys.value)
-                                                add(adjustedIndex, change.key)
-                                            }
-                                            sortedValues?.value = buildList {
-                                                addAll(sortedValues.value)
-                                                add(adjustedIndex, indexUpdate.indexKey.bytes)
-                                            }
+                                                matchingKeys.value = buildList {
+                                                    addAll(matchingKeys.value)
+                                                    add(adjustedIndex, change.key)
+                                                }
+                                                sortedValues?.value = buildList {
+                                                    addAll(sortedValues.value)
+                                                    add(adjustedIndex, indexKey)
+                                                }
 
-                                            changedHandler(adjustedIndex, true)
+                                                changedHandler(adjustedIndex, true)
+                                            }
                                         }
                                     } else {
-                                        throw StorageException("Unexpected existing index for ${change.key} its sorted key {${indexUpdate.indexKey.bytes.toHexString()} for changes ${change.changes}")
+                                        throw StorageException("Unexpected existing index for ${change.key} its sorted key {${indexKey.toHexString()} for changes ${change.changes}")
                                     }
                                 } else { // removed
                                     changedHandler(null, false)
@@ -240,6 +267,42 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                     }
                 }
             }
+        }
+    }
+
+    private fun resolveIndexKeyFromChanges(
+        existingIndexKey: ByteArray?,
+        indexChanges: List<IsIndexUpdate>
+    ): ByteArray? {
+        val candidates = mutableListOf<ByteArray>()
+        existingIndexKey?.let { candidates += it }
+
+        indexChanges.forEach { indexChange ->
+            when (indexChange) {
+                is IndexDelete -> {
+                    val toRemove = indexChange.indexKey.bytes
+                    candidates.removeAll { it.contentEquals(toRemove) }
+                }
+                is IndexUpdate -> {
+                    indexChange.previousIndexKey?.bytes?.let { previous ->
+                        candidates.removeAll { it.contentEquals(previous) }
+                    }
+                    candidates += indexChange.indexKey.bytes
+                }
+            }
+        }
+
+        val matchingCandidates = candidates.filter { indexKey ->
+            indexScanRange?.let { range ->
+                range.keyWithinRanges(indexKey) && range.matchesPartials(indexKey)
+            } ?: true
+        }
+
+        if (matchingCandidates.isEmpty()) return null
+
+        return when (scanType.direction) {
+            ASC -> matchingCandidates.minWithOrNull { a, b -> a compareTo b }
+            DESC -> matchingCandidates.maxWithOrNull { a, b -> a compareTo b }
         }
     }
 

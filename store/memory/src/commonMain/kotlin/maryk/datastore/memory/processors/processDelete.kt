@@ -34,16 +34,16 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
 
             // Delete indexed values
             dataModel.Meta.indexes?.forEach { indexable ->
-                val oldValue = indexable.toStorageByteArrayForIndex(objectToDelete, objectToDelete.key.bytes)
+                val oldValues = indexable.toStorageByteArraysForIndex(objectToDelete, objectToDelete.key.bytes)
                 val indexRef = indexable.referenceStorageByteArray.bytes
-                if (oldValue != null) {
+                oldValues.forEach { oldValue ->
                     dataStore.removeFromIndex(
                         objectToDelete,
                         indexRef,
                         version,
                         oldValue
                     )
-                } // else ignore since did not exist
+                } // ignore if no values existed
 
                 // Delete all historic values if historicStoreIndexValuesWalker was set
                 historicStoreIndexValuesWalker?.walkHistoricalValuesForIndexKeys(objectToDelete, indexable) { value, _ ->

@@ -572,7 +572,7 @@ class RocksDBDataStore private constructor(
 
     private fun IsIndexable.isForPropertyReference(propertyReference: AnyPropertyReference): Boolean = when (this) {
         is IsIndexablePropertyReference<*> -> isForPropertyReference(propertyReference)
-        is Multiple -> references.any { it.isForPropertyReference(propertyReference) }
+        is Multiple -> references.any { it is IsIndexablePropertyReference<*> && it.isForPropertyReference(propertyReference) }
         else -> false
     }
 

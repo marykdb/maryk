@@ -68,7 +68,7 @@ class FilterWithFetchRequestComplexKtTest {
 
         assertTrue {
             filterMatches(
-                Equals(ComplexModel { mapStringString.refToAny() } with "v2"),
+                Equals(ComplexModel { mapStringString.refToAnyValue() } with "v2"),
                 value1,
                 null,
                 recordFetcher

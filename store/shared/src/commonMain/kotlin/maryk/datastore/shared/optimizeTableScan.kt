@@ -30,7 +30,9 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
             when (indexable) {
                 is Multiple -> {
                     for (subIndexable in indexable.references) {
-                        if (!equalPairs.any { subIndexable.isForPropertyReference(it.reference) }) {
+                        if (subIndexable !is IsIndexablePropertyReference<*> ||
+                            !equalPairs.any { subIndexable.isForPropertyReference(it.reference) }
+                        ) {
                             continue@indexWalk // no equal pair found so continue
                         }
                     }

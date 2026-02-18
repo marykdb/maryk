@@ -1,6 +1,9 @@
 package maryk.datastore.test
 
 import maryk.datastore.shared.IsDataStore
+import maryk.test.models.AnyValueIncMapIndexModel
+import maryk.test.models.AnyValueMapIndexModel
+import maryk.test.models.AnyValueSetIndexModel
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.ComplexModel
 import maryk.test.models.Log
@@ -27,6 +30,7 @@ private val allTestClasses = arrayOf(
     "DataStoreScanChangesTest" to ::DataStoreScanChangesTest,
     "DataStoreScanMultiTypeTest" to ::DataStoreScanMultiTypeTest,
     "DataStoreScanOnIndexTest" to ::DataStoreScanOnIndexTest,
+    "DataStoreScanOnAnyValueIndexTest" to ::DataStoreScanOnAnyValueIndexTest,
     "DataStoreScanOnIndexWithPersonTest" to ::DataStoreScanOnIndexWithPersonTest,
     "DataStoreScanTest" to ::DataStoreScanTest,
     "DataStoreScanUniqueTest" to ::DataStoreScanUniqueTest,
@@ -48,6 +52,9 @@ val dataModelsForTests = mapOf(
     7u to ModelV2ExtraIndex,
     8u to Person,
     9u to Measurement,
+    10u to AnyValueMapIndexModel,
+    11u to AnyValueIncMapIndexModel,
+    12u to AnyValueSetIndexModel,
 )
 
 suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {

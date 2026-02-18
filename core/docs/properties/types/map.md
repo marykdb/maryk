@@ -66,6 +66,32 @@ MapChange(
 )
 ```
 
+## Indexing map keys
+
+Map properties can be indexed on:
+- any map key with `refToAnyKey()` (`map.~` in string notation)
+- specific map value/key refs like `refAt(key)` / `refToKey(key)`
+
+`refToAnyValue()` (`map.*`) is available for filtering, but is not indexable.
+
+Example:
+```kotlin
+object ExampleModel : RootDataModel<ExampleModel>(
+    indexes = {
+        listOf(
+            ExampleModel { mapValues.refToAnyKey() }
+        )
+    }
+) {
+    val mapValues by map(
+        index = 1u,
+        required = false,
+        keyDefinition = StringDefinition(),
+        valueDefinition = StringDefinition()
+    )
+}
+```
+
 ## Storage Byte representation
 Depends on the specific implementation. The values are stored in their representative byte 
 representation.

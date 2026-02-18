@@ -31,7 +31,7 @@ internal object HistoricStoreIndexValuesWalker {
         var lastVersion: ULong?
         do {
             try {
-                indexable.toStorageByteArrayForIndex(getter, record.key.bytes)?.let { historicIndexReference ->
+                indexable.toStorageByteArraysForIndex(getter, record.key.bytes).forEach { historicIndexReference ->
                     handleIndexReference(
                         historicIndexReference,
                         getter.latestOverallVersion ?: throw StorageException("Latest overall version not set")

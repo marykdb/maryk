@@ -104,13 +104,13 @@ class FilterValuesTest {
 
         assertTrue {
             value1.matches(
-                Equals(TestMarykModel { map.refToAny() } with "haha10")
+                Equals(TestMarykModel { map.refToAnyValue() } with "haha10")
             )
         }
 
         assertFalse {
             value1.matches(
-                Equals(TestMarykModel { map.refToAny() } with "haha11")
+                Equals(TestMarykModel { map.refToAnyValue() } with "haha11")
             )
         }
 

@@ -155,7 +155,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         val outChanges = mutableListOf<IsChange>()
 
         val oldIndexValues = dataModel.Meta.indexes?.map {
-            it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
+            it.toStorageByteArraysForIndex(objectToChange, objectToChange.key.bytes)
         }
 
         for (change in changes) {
@@ -686,17 +686,30 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                 indexUpdates = mutableListOf()
             }
 
-            val oldValue = oldIndexValues?.get(index)
-            val newValue = it.toStorageByteArrayForIndex(objectToChange, objectToChange.key.bytes)
+            val oldValues = oldIndexValues?.get(index).orEmpty()
+            val newValues = it.toStorageByteArraysForIndex(objectToChange, objectToChange.key.bytes)
 
-            if (newValue == null) {
-                if (oldValue != null) {
+            val removed = oldValues.filter { oldValue ->
+                newValues.none { it.contentEquals(oldValue) }
+            }
+            val added = newValues.filter { newValue ->
+                oldValues.none { it.contentEquals(newValue) }
+            }
+
+            if (removed.size == 1 && added.size == 1) {
+                val oldValue = removed.first()
+                val newValue = added.first()
+                dataStore.addToIndex(objectToChange, it.referenceStorageByteArray.bytes, newValue, version, oldValue)
+                indexUpdates.add(IndexUpdate(it.referenceStorageByteArray, Bytes(newValue), Bytes(oldValue)))
+            } else {
+                removed.forEach { oldValue ->
                     dataStore.removeFromIndex(objectToChange, it.referenceStorageByteArray.bytes, version, oldValue)
                     indexUpdates.add(IndexDelete(it.referenceStorageByteArray, Bytes(oldValue)))
-                } // else ignore since did not exist
-            } else if (oldValue == null || !newValue.contentEquals(oldValue)) {
-                dataStore.addToIndex(objectToChange, it.referenceStorageByteArray.bytes, newValue, version, oldValue)
-                indexUpdates.add(IndexUpdate(it.referenceStorageByteArray, Bytes(newValue), oldValue?.let { Bytes(oldValue) }))
+                }
+                added.forEach { newValue ->
+                    dataStore.addToIndex(objectToChange, it.referenceStorageByteArray.bytes, newValue, version)
+                    indexUpdates.add(IndexUpdate(it.referenceStorageByteArray, Bytes(newValue), null))
+                }
             }
         }
 

@@ -167,7 +167,7 @@ internal class PropertyReferenceTest {
 
     @Test
     fun createFuzzyReferenceMatcher() {
-        val matcher = ComplexModel { incMap.any { marykModel { reference { map.refToAny() } } } }.toQualifierMatcher()
+        val matcher = ComplexModel { incMap.any { marykModel { reference { map.refToAnyValue() } } } }.toQualifierMatcher()
 
         assertIs<QualifierFuzzyMatcher>(matcher).apply {
             expect("44") { firstPossible().toHexString() }

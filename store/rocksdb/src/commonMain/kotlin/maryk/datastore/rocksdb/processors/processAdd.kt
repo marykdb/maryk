@@ -72,10 +72,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
             // Find new index values to write
             dataModel.Meta.indexes?.forEach { indexDefinition ->
                 val indexReference = indexDefinition.referenceStorageByteArray.bytes
-                val valueAndKeyBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
-                    ?: return@forEach // skip if no complete values to index are found
-
-                setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
+                indexDefinition.toStorageByteArraysForIndex(objectToAdd, key.bytes).forEach { valueAndKeyBytes ->
+                    setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
+                }
             }
 
             objectToAdd.writeToStorage { type, reference, definition, value ->

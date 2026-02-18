@@ -63,6 +63,22 @@ Model { map refAt Time(12, 23) }
 
 In string notation this becomes `map.@12:23`. Validation errors that refer to the key use `map.$12:23`.
 
+### Wildcards for maps
+
+Maps support wildcard references for both values and keys:
+
+```kotlin
+// Any key in the map
+Model { map.refToAnyKey() }
+
+// Any value in the map
+Model { map.refToAnyValue() }
+```
+
+String notation:
+- `map.~` = any map key
+- `map.*` = any map value
+
 ## Referring to specific values in sets
 
 Items in sets can be selected by value
@@ -73,6 +89,17 @@ Model { set refAt Time(12, 23) }
 ```
 
 In string notation this is `set.$12:23`.
+
+### Wildcards for sets
+
+Sets support wildcard references to match any item value:
+
+```kotlin
+Model { set.refToAny() }
+```
+
+String notation:
+- `set.*` = any set value
 
 ## Referring to index of lists
 

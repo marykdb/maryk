@@ -760,20 +760,31 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             transactionGetter.moveToKey(key.bytes, transaction)
 
             for (index in indexes) {
-                val oldKeyAndValue = index.toStorageByteArrayForIndex(storeGetter, key.bytes)
-                val newKeyAndValue = index.toStorageByteArrayForIndex(transactionGetter, key.bytes)
+                val oldValues = index.toStorageByteArraysForIndex(storeGetter, key.bytes)
+                val newValues = index.toStorageByteArraysForIndex(transactionGetter, key.bytes)
 
-                if (newKeyAndValue == null) {
-                    if (oldKeyAndValue != null) {
-                        deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes)
-                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldKeyAndValue)))
-                    } // else ignore since did not exist
-                } else if (oldKeyAndValue == null || !newKeyAndValue.contentEquals(oldKeyAndValue)) {
-                    if (oldKeyAndValue != null) {
-                        deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldKeyAndValue, versionBytes)
+                val removed = oldValues.filter { oldValue ->
+                    newValues.none { it.contentEquals(oldValue) }
+                }
+                val added = newValues.filter { newValue ->
+                    oldValues.none { it.contentEquals(newValue) }
+                }
+
+                if (removed.size == 1 && added.size == 1) {
+                    val oldValue = removed.first()
+                    val newValue = added.first()
+                    deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldValue, versionBytes)
+                    setIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, newValue, versionBytes)
+                    indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newValue), Bytes(oldValue)))
+                } else {
+                    removed.forEach { oldValue ->
+                        deleteIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, oldValue, versionBytes)
+                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldValue)))
                     }
-                    setIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, newKeyAndValue, versionBytes)
-                    indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newKeyAndValue), oldKeyAndValue?.let { Bytes(oldKeyAndValue) }))
+                    added.forEach { newValue ->
+                        setIndexValue(transaction, columnFamilies, index.referenceStorageByteArray.bytes, newValue, versionBytes)
+                        indexUpdates.add(IndexUpdate(index.referenceStorageByteArray, Bytes(newValue), null))
+                    }
                 }
             }
         }

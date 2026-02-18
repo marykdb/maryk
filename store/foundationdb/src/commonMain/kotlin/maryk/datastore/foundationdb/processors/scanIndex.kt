@@ -9,8 +9,11 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
@@ -30,6 +33,8 @@ import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
+import maryk.datastore.foundationdb.processors.helpers.readMapByReference
+import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.asByteArrayKey
 import maryk.datastore.shared.ScanType
@@ -65,19 +70,46 @@ internal fun <DM : IsRootDataModel> scanIndex(
     // Build a helper valuesGetter for computing index start from the startKey (respecting toVersion)
     val startIndexKey: ByteArray? = scanRequest.startKey?.let { startKey ->
         val getter = object : IsValuesGetter {
+            private val cache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()
+
             override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
                 propertyReference: IsPropertyReference<T, D, C>
             ): T? {
-                val keyAndRef = combineToByteArray(startKey.bytes, propertyReference.toStorageByteArray())
-                return tr.getValue(
-                    tableDirs,
-                    scanRequest.toVersion,
-                    keyAndRef,
-                    startKey.size,
-                    decryptValue = decryptValue
-                ) { valueBytes, offset, length ->
-                    valueBytes.convertToValue(propertyReference, offset, length) as T?
+                if (cache.containsKey(propertyReference)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return cache[propertyReference] as T?
                 }
+
+                val value = if (propertyReference is IsMapReference<*, *, *, *> && scanRequest.toVersion == null) {
+                    @Suppress("UNCHECKED_CAST")
+                    tr.readMapByReference(
+                        tableDirs.tablePrefix,
+                        startKey.bytes,
+                        propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
+                        decryptValue
+                    ) as T?
+                } else if (propertyReference is SetReference<*, *> && scanRequest.toVersion == null) {
+                    @Suppress("UNCHECKED_CAST")
+                    tr.readSetByReference(
+                        tableDirs.tablePrefix,
+                        startKey.bytes,
+                        propertyReference as SetReference<Any, IsPropertyContext>
+                    ) as T?
+                } else {
+                    val keyAndRef = combineToByteArray(startKey.bytes, propertyReference.toStorageByteArray())
+                    tr.getValue(
+                        tableDirs,
+                        scanRequest.toVersion,
+                        keyAndRef,
+                        startKey.size,
+                        decryptValue = decryptValue
+                    ) { valueBytes, offset, length ->
+                        valueBytes.convertToValue(propertyReference, offset, length) as T?
+                    }
+                }
+
+                cache[propertyReference] = value
+                return value
             }
         }
         indexScan.index.toStorageByteArrayForIndex(getter, startKey.bytes)

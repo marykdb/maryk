@@ -246,7 +246,9 @@ private fun <T : Any> getDefinitionOrNull(
 ) {
     when (indexable) {
         is Multiple -> indexable.references.withIndex()
-            .firstOrNull { (_, keyDef) -> keyDef.isForPropertyReference(reference) }
+            .firstOrNull { (_, keyDef) ->
+                keyDef is IsIndexablePropertyReference<*> && keyDef.isForPropertyReference(reference)
+            }
             ?.let { (index, keyDef) ->
                 @Suppress("UNCHECKED_CAST")
                 processKeyDefinitionWhenFound(index, keyDef as IsIndexablePropertyReference<Any>)

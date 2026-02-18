@@ -40,12 +40,13 @@ internal class HistoricStoreIndexValuesWalker(
 
         do {
             try {
-                val valueAndKeyBytes = indexable.toStorageByteArrayForIndex(getter, key)
-                    ?: continue
+                val valuesAndKeys = indexable.toStorageByteArraysForIndex(getter, key)
                 val version = getter.latestVersion
                     ?: throw StorageException("Latest overall version was not set")
 
-                handleIndex(valueAndKeyBytes, version)
+                valuesAndKeys.forEach { valueAndKeyBytes ->
+                    handleIndex(valueAndKeyBytes, version)
+                }
             } catch (_: Throwable) {
                 // Skip failing index reference generation and keep walking
             }

@@ -54,9 +54,18 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
             }
             '*' -> {
                 if (name.length != 1) {
-                    throw ParseException("Wildcard incrementing map reference cannot contain extra characters: $name")
+                    throw ParseException("Wildcard incrementing map value reference cannot contain extra characters: $name")
                 }
                 MapAnyValueReference(
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            '~' -> {
+                if (name.length != 1) {
+                    throw ParseException("Wildcard incrementing map key reference cannot contain extra characters: $name")
+                }
+                MapAnyKeyReference(
                     propertyDefinition.definition,
                     this
                 )
@@ -94,6 +103,12 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
             }
             2u -> {
                 MapAnyValueReference(
+                    this.propertyDefinition.definition,
+                    this
+                )
+            }
+            4u -> {
+                MapAnyKeyReference(
                     this.propertyDefinition.definition,
                     this
                 )

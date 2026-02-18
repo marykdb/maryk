@@ -42,6 +42,15 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
                     this
                 )
             }
+            '*' -> {
+                if (name.length != 1) {
+                    throw ParseException("Wildcard set reference cannot contain extra characters: $name")
+                }
+                SetAnyValueReference(
+                    propertyDefinition.definition,
+                    this
+                )
+            }
             else -> throw ParseException("Unknown Set type ${name[0]}")
         }
     }
@@ -55,6 +64,12 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
                         ProtoBuf.getLength(protoKey.wireType, reader),
                         reader
                     ),
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            1u -> {
+                SetAnyValueReference(
                     propertyDefinition.definition,
                     this
                 )

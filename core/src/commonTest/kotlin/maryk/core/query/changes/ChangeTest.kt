@@ -148,7 +148,7 @@ class ChangeTest {
 
         changed = original.change(
             Change(
-                TestMarykModel { map.refToAny() } with "Hello"
+                TestMarykModel { map.refToAnyValue() } with "Hello"
             )
         )
 
@@ -258,7 +258,7 @@ class ChangeTest {
         assertEquals(mapOf(LocalTime(12, 0) to "Hi", LocalTime(1, 2) to "Hoi"), original { map })
 
         changed = original.change(
-            Change(TestMarykModel { map.refToAny() } with null)
+            Change(TestMarykModel { map.refToAnyValue() } with null)
         )
 
         assertEquals(emptyMap(), changed { map })

@@ -155,8 +155,19 @@ private fun IndexableChips(
         when (indexable) {
             is UUIDKey -> Chip(label = "UUID key", tone = tone)
             is Multiple -> ChipGroupBox(tone = tone) {
-                indexable.references.forEach { reference ->
-                    ReferenceChip(reference = reference, tone = tone, onSelect = onSelect)
+                indexable.references.forEach { nested ->
+                    when (nested) {
+                        is UUIDKey -> Chip(label = "UUID key", tone = tone)
+                        is Multiple -> IndexableChips(indexable = nested, tone = tone, onSelect = onSelect)
+                        is Reversed<*> -> ChipContainer(label = "Reversed", tone = tone) {
+                            ReferenceChip(reference = nested.reference, tone = tone, onSelect = onSelect)
+                        }
+                        is ReferenceToMax<*> -> ChipContainer(label = "Ref to Max", tone = tone) {
+                            ReferenceChip(reference = nested.reference, tone = tone, onSelect = onSelect)
+                        }
+                        is IsIndexablePropertyReference<*> -> ReferenceChip(reference = nested, tone = tone, onSelect = onSelect)
+                        else -> Chip(label = nested::class.simpleName.orEmpty(), tone = tone)
+                    }
                 }
             }
             is Reversed<*> -> ChipContainer(label = "Reversed", tone = tone) {

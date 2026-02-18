@@ -3,8 +3,10 @@ package maryk.datastore.foundationdb.processors
 import maryk.foundationdb.Range
 import maryk.foundationdb.TransactionContext
 import maryk.core.clock.HLC
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
@@ -14,6 +16,8 @@ import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readMapByReference
+import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.shared.helpers.convertToValue
@@ -39,6 +43,15 @@ internal fun walkDataRecordsAndFillIndex(
                 override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
                     propertyReference: IsPropertyReference<T, D, C>
                 ): T? {
+                    if (propertyReference is IsMapReference<*, *, *, *>) {
+                        @Suppress("UNCHECKED_CAST")
+                        return tr.readMapByReference(
+                            tableDirectories.tablePrefix,
+                            keyBytes,
+                            propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>
+                        ) as T?
+                    }
+
                     val keyAndRef = combineToByteArray(keyBytes, propertyReference.toStorageByteArray())
                     return tr.getValue(tableDirectories, null, keyAndRef) { valueBytes, offset, length ->
                         valueBytes.convertToValue(propertyReference, offset, length) as T?
@@ -48,13 +61,15 @@ internal fun walkDataRecordsAndFillIndex(
 
             for (indexable in indexesToIndex) {
                 val indexRef = indexable.referenceStorageByteArray.bytes
-                val valueAndKey = try {
-                    indexable.toStorageByteArrayForIndex(getter, keyBytes)
-                } catch (_: Throwable) { null }
+                val valuesAndKeys = try {
+                    indexable.toStorageByteArraysForIndex(getter, keyBytes)
+                } catch (_: Throwable) { emptyList() }
 
-                if (valueAndKey != null && latestVersion.size >= VERSION_BYTE_SIZE) {
-                    // Write current index value and corresponding historic index entry at latest version
-                    setIndexValue(tr, tableDirectories, indexRef, valueAndKey, latestVersion)
+                if (latestVersion.size >= VERSION_BYTE_SIZE) {
+                    valuesAndKeys.forEach { valueAndKey ->
+                        // Write current index value and corresponding historic index entry at latest version
+                        setIndexValue(tr, tableDirectories, indexRef, valueAndKey, latestVersion)
+                    }
                 }
 
                 // If historic tables available, walk full history and backfill historic index

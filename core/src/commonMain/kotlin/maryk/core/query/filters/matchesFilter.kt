@@ -1,5 +1,8 @@
 package maryk.core.query.filters
 
+import maryk.core.properties.references.MapAnyKeyReference
+import maryk.core.properties.references.MapAnyValueReference
+import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.ValueRange
 
@@ -47,7 +50,18 @@ fun matchesFilter(
         FilterType.Equals -> {
             val equals = filter as Equals
             for ((propRef, value) in equals.referenceValuePairs) {
-                if (!valueMatcher(propRef) { it == value }) return false
+                val isAnyCollectionReference =
+                    propRef is MapAnyValueReference<*, *, *> ||
+                        propRef is MapAnyKeyReference<*, *, *> ||
+                        propRef is SetAnyValueReference<*, *>
+
+                if (!valueMatcher(propRef) { actualValue ->
+                    if (isAnyCollectionReference && actualValue is Collection<*>) {
+                        actualValue.contains(value)
+                    } else {
+                        actualValue == value
+                    }
+                }) return false
             }
             return true
         }

@@ -2,9 +2,12 @@ package maryk.datastore.foundationdb.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.SetReference
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -20,6 +23,8 @@ import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readMapByReference
+import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.helpers.setValue
@@ -54,18 +59,45 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 
         // Values getter to read current values by property reference for index computation
         val valuesGetter = object : IsValuesGetter {
+            private val valueCache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()
+
             override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
                 propertyReference: IsPropertyReference<T, D, C>
             ): T? {
-                @Suppress("UNCHECKED_CAST")
-                return tr.getValue(
-                    tableDirs,
-                    null,
-                    combineToByteArray(key.bytes, propertyReference.toStorageByteArray()),
-                    decryptValue = this@processDelete::decryptValueIfNeeded
-                ) { valueBytes, offset, length ->
-                    valueBytes.convertToValue(propertyReference, offset, length) as T?
+                if (valueCache.containsKey(propertyReference)) {
+                    @Suppress("UNCHECKED_CAST")
+                    return valueCache[propertyReference] as T?
                 }
+
+                val value = if (propertyReference is IsMapReference<*, *, *, *>) {
+                    @Suppress("UNCHECKED_CAST")
+                    tr.readMapByReference(
+                        tableDirs.tablePrefix,
+                        key.bytes,
+                        propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
+                        this@processDelete::decryptValueIfNeeded
+                    ) as T?
+                } else if (propertyReference is SetReference<*, *>) {
+                    @Suppress("UNCHECKED_CAST")
+                    tr.readSetByReference(
+                        tableDirs.tablePrefix,
+                        key.bytes,
+                        propertyReference as SetReference<Any, IsPropertyContext>
+                    ) as T?
+                } else {
+                    @Suppress("UNCHECKED_CAST")
+                    tr.getValue(
+                        tableDirs,
+                        null,
+                        combineToByteArray(key.bytes, propertyReference.toStorageByteArray()),
+                        decryptValue = this@processDelete::decryptValueIfNeeded
+                    ) { valueBytes, offset, length ->
+                        valueBytes.convertToValue(propertyReference, offset, length) as T?
+                    }
+                }
+
+                valueCache[propertyReference] = value
+                return value
             }
         }
 
@@ -116,19 +148,18 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         dataModel.Meta.indexes?.let { indexes ->
             indexes.forEach { indexable ->
                 val indexReference = indexable.referenceStorageByteArray.bytes
-                val valueAndKey = indexable.toStorageByteArrayForIndex(valuesGetter, key.bytes)
-                    ?: return@forEach // skip if no complete values are found
+                indexable.toStorageByteArraysForIndex(valuesGetter, key.bytes).forEach { valueAndKey ->
+                    // Delete current index entry
+                    tr.clear(packKey(tableDirs.indexPrefix, indexReference, valueAndKey))
 
-                // Delete current index entry
-                tr.clear(packKey(tableDirs.indexPrefix, indexReference, valueAndKey))
-
-                if (hardDelete && tableDirs is HistoricTableDirectories) {
-                    // Hard delete: clean all historic index entries with this prefix
-                    val histPrefix = packKey(tableDirs.historicIndexPrefix, indexReference, valueAndKey)
-                    tr.clear(FDBRange.startsWith(histPrefix))
-                } else if (tableDirs is HistoricTableDirectories) {
-                    // Non-hard delete: write a deletion marker into historic index
-                    writeHistoricIndex(tr, tableDirs, indexReference, valueAndKey, versionBytes, EMPTY_BYTEARRAY)
+                    if (hardDelete && tableDirs is HistoricTableDirectories) {
+                        // Hard delete: clean all historic index entries with this prefix
+                        val histPrefix = packKey(tableDirs.historicIndexPrefix, indexReference, valueAndKey)
+                        tr.clear(FDBRange.startsWith(histPrefix))
+                    } else if (tableDirs is HistoricTableDirectories) {
+                        // Non-hard delete: write a deletion marker into historic index
+                        writeHistoricIndex(tr, tableDirs, indexReference, valueAndKey, versionBytes, EMPTY_BYTEARRAY)
+                    }
                 }
             }
         }

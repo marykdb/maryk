@@ -3,9 +3,12 @@ package maryk.datastore.foundationdb.processors
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.fromChanges
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
@@ -29,6 +32,8 @@ import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readMapByReference
+import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
@@ -249,10 +254,12 @@ private class StoreValuesGetter(
     private val decryptValue: ((ByteArray) -> ByteArray)? = null
 ) : IsValuesGetter {
     private lateinit var keyBytes: ByteArray
+    private val cache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()
 
     fun moveToKey(keyBytes: ByteArray, toVersion: ULong?) {
         this.keyBytes = keyBytes
         this.toVersion = toVersion
+        cache.clear()
     }
 
     private var toVersion: ULong? = null
@@ -260,15 +267,40 @@ private class StoreValuesGetter(
     override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
         propertyReference: IsPropertyReference<T, D, C>
     ): T? {
-        val keyAndRef = combineToByteArray(keyBytes, propertyReference.toStorageByteArray())
-        return tr.getValue(
-            tableDirs,
-            toVersion,
-            keyAndRef,
-            keyBytes.size,
-            decryptValue = decryptValue
-        ) { valueBytes, offset, length ->
-            valueBytes.convertToValue(propertyReference, offset, length) as T?
+        if (cache.containsKey(propertyReference)) {
+            @Suppress("UNCHECKED_CAST")
+            return cache[propertyReference] as T?
         }
+
+        val value = if (toVersion == null && propertyReference is IsMapReference<*, *, *, *>) {
+            @Suppress("UNCHECKED_CAST")
+            tr.readMapByReference(
+                tableDirs.tablePrefix,
+                keyBytes,
+                propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
+                decryptValue
+            ) as T?
+        } else if (toVersion == null && propertyReference is SetReference<*, *>) {
+            @Suppress("UNCHECKED_CAST")
+            tr.readSetByReference(
+                tableDirs.tablePrefix,
+                keyBytes,
+                propertyReference as SetReference<Any, IsPropertyContext>
+            ) as T?
+        } else {
+            val keyAndRef = combineToByteArray(keyBytes, propertyReference.toStorageByteArray())
+            tr.getValue(
+                tableDirs,
+                toVersion,
+                keyAndRef,
+                keyBytes.size,
+                decryptValue = decryptValue
+            ) { valueBytes, offset, length ->
+                valueBytes.convertToValue(propertyReference, offset, length) as T?
+            }
+        }
+
+        cache[propertyReference] = value
+        return value
     }
 }

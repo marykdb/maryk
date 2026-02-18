@@ -38,7 +38,7 @@ internal fun walkDataRecordsAndFillIndex(
                 for (index in indexesToIndex) {
                     storeGetter.lastVersion = null
                     // Store non-historic value
-                    index.toStorageByteArrayForIndex(storeGetter, key)?.let { indexValue ->
+                    index.toStorageByteArraysForIndex(storeGetter, key).forEach { indexValue ->
                         transaction.put(columnFamilies.index, index.referenceStorageByteArray.bytes + indexValue, storeGetter.lastVersion!!.toByteArray())
                     }
 

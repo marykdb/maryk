@@ -40,7 +40,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
     if (index < 0) {
         val recordValues = ArrayList<DataRecordNode>()
         var uniquesToIndex: MutableList<DataRecordValue<Comparable<Any>>>? = null
-        var toIndex: MutableMap<ByteArray, ByteArray>? = null
+        var toIndex: MutableList<Pair<ByteArray, ByteArray>>? = null
         val dataRecord = DataRecord(
             key = key,
             values = recordValues,
@@ -50,12 +50,12 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
         // Find new index values to write
         dataModel.Meta.indexes?.forEach { indexDefinition ->
-            val valueBytes = indexDefinition.toStorageByteArrayForIndex(objectToAdd, key.bytes)
-                ?: return@forEach // skip if no complete values to index are found
+            val valueBytesList = indexDefinition.toStorageByteArraysForIndex(objectToAdd, key.bytes)
+            if (valueBytesList.isEmpty()) return@forEach
 
-            if (toIndex == null) toIndex = mutableMapOf()
-            toIndex.let {
-                it[indexDefinition.referenceStorageByteArray.bytes] = valueBytes
+            val indexEntries = toIndex ?: mutableListOf<Pair<ByteArray, ByteArray>>().also { toIndex = it }
+            valueBytesList.forEach { valueBytes ->
+                indexEntries.add(indexDefinition.referenceStorageByteArray.bytes to valueBytes)
             }
         }
 

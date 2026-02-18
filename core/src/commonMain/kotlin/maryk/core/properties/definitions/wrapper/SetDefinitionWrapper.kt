@@ -10,6 +10,7 @@ import maryk.core.properties.references.AnyOutPropertyReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import kotlin.reflect.KProperty
@@ -46,10 +47,19 @@ data class SetDefinitionWrapper<T : Any, CX : IsPropertyContext, DO : Any> inter
             this.definition.itemRef(value, ref)
         }
 
+    /** Get a reference to any set item with optional [parentRef] */
+    private fun anyItemReference(parentRef: AnyPropertyReference? = null): SetAnyValueReference<T, CX> = this.ref(parentRef).let { ref ->
+        this.definition.anyItemRef(ref)
+    }
+
     /** For quick notation to get a set [item] reference */
     infix fun refAt(item: T): (AnyOutPropertyReference?) -> SetItemReference<T, *> {
         return { this.itemRef(item, it) }
     }
+
+    /** For quick notation to get any set item reference */
+    fun refToAny(): (AnyOutPropertyReference?) -> SetAnyValueReference<T, CX> =
+        this::anyItemReference
 
     // For delegation in definition
     @Suppress("unused")

@@ -1,9 +1,12 @@
 package maryk.core.properties.definitions.index
 
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.types.Bytes
 import maryk.core.values.IsValuesGetter
+import maryk.lib.bytes.combineToByteArray
 
 /**
  * Defines this item is usable to describe an Index Key
@@ -13,13 +16,33 @@ interface IsIndexable {
     val referenceStorageByteArray: Bytes
 
     /** Convert indexable to a ByteArray so it can be referenced */
-    fun toStorageByteArrayForIndex(values: IsValuesGetter, key: ByteArray? = null) = try {
-        var index = 0
-        ByteArray(this.calculateStorageByteLengthForIndex(values, key?.size ?: 0)).also { bytes ->
-            this.writeStorageBytesForIndex(values, key) { bytes[index++] = it }
+    fun toStorageByteArrayForIndex(values: IsValuesGetter, key: ByteArray? = null): ByteArray? =
+        toStorageByteArraysForIndex(values, key).firstOrNull()
+
+    /** Convert indexable to one or more ByteArrays for index entries */
+    fun toStorageByteArraysForIndex(values: IsValuesGetter, key: ByteArray? = null): List<ByteArray> = try {
+        toStorageByteArrays(values).map { valueBytes ->
+            val length = valueBytes.size
+            combineToByteArray(
+                valueBytes,
+                ByteArray(length.calculateVarByteLength()).also { lengthBytes ->
+                    var index = 0
+                    length.writeVarBytes { lengthBytes[index++] = it }
+                },
+                key ?: ByteArray(0)
+            )
         }
-    } catch (e: RequiredException) {
-        null
+    } catch (_: RequiredException) {
+        emptyList()
+    }
+
+    /** Convert indexable value bytes without index key lengths */
+    fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> = try {
+        val bytes = mutableListOf<Byte>()
+        this.writeStorageBytes(values) { bytes += it }
+        listOf(bytes.toByteArray())
+    } catch (_: RequiredException) {
+        emptyList()
     }
 
     /** Calculate byte length for reference to this indexable */

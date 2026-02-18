@@ -202,7 +202,7 @@ class FilterWithFetchRequestKtTest {
 
         assertTrue {
             filterMatches(
-                Equals(TestMarykModel { map.refToAny() } with "haha10"),
+                Equals(TestMarykModel { map.refToAnyValue() } with "haha10"),
                 value1,
                 null,
                 recordFetcher
@@ -211,7 +211,7 @@ class FilterWithFetchRequestKtTest {
 
         assertFalse {
             filterMatches(
-                Equals(TestMarykModel { map.refToAny() } with "haha11"),
+                Equals(TestMarykModel { map.refToAnyValue() } with "haha11"),
                 value1,
                 null,
                 recordFetcher

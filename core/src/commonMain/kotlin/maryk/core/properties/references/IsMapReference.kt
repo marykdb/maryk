@@ -50,9 +50,18 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
             }
             '*' -> {
                 if (name.length != 1) {
-                    throw ParseException("Wildcard map reference cannot contain extra characters: $name")
+                    throw ParseException("Wildcard map value reference cannot contain extra characters: $name")
                 }
                 MapAnyValueReference(
+                    propertyDefinition.definition,
+                    this
+                )
+            }
+            '~' -> {
+                if (name.length != 1) {
+                    throw ParseException("Wildcard map key reference cannot contain extra characters: $name")
+                }
+                MapAnyKeyReference(
                     propertyDefinition.definition,
                     this
                 )
@@ -100,6 +109,10 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
             )
             3u -> IncMapAddIndexReference(
                 initIntByVar(reader),
+                this.propertyDefinition.definition,
+                this
+            )
+            4u -> MapAnyKeyReference(
                 this.propertyDefinition.definition,
                 this
             )

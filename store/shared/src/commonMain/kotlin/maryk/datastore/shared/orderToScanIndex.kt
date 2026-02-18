@@ -110,7 +110,8 @@ private fun singleIndexableToScan(
     is Multiple ->
         when (val subIndexable = indexable.references[0]) {
             is Reversed<*> -> createSingleScan(subIndexable.reference, order, true, createScan)
-            else -> createSingleScan(subIndexable, order, false, createScan)
+            is IsIndexablePropertyReference<*> -> createSingleScan(subIndexable, order, false, createScan)
+            else -> null
         }
     is Reversed<*> -> createSingleScan(indexable.reference, order, true, createScan)
     is IsIndexablePropertyReference<*> -> createSingleScan(indexable, order, false, createScan)
@@ -196,6 +197,9 @@ private fun indexableToScan(
                     }
                 }
                 else -> {
+                    if (subIndexable !is IsIndexablePropertyReference<*>) {
+                        return null
+                    }
                     // Only continue if order is correct
                     if (subIndexable != currentOrderPart.propertyReference) {
                         if (equalPairs.any { it.reference == subIndexable }) {

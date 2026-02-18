@@ -8,7 +8,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.dateTime
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.UUIDv4Key
 import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.number
 import maryk.core.properties.enum.IndexedEnumImpl
@@ -44,7 +44,7 @@ object Measurement : RootDataModel<Measurement>(
         Multiple(
             Reversed(timestamp.ref()),
             measurement.typeRef(),
-            UUIDKey,
+            UUIDv4Key,
         )
     },
     indexes = {

@@ -72,7 +72,8 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.ReferenceToMax
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.UUIDv4Key
+import maryk.core.properties.definitions.index.UUIDv7Key
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
@@ -153,11 +154,13 @@ private fun IndexableChips(
         verticalSpacing = 6.dp,
     ) {
         when (indexable) {
-            is UUIDKey -> Chip(label = "UUID key", tone = tone)
+            is UUIDv4Key -> Chip(label = "UUIDv4 key", tone = tone)
+            is UUIDv7Key -> Chip(label = "UUIDv7 key", tone = tone)
             is Multiple -> ChipGroupBox(tone = tone) {
                 indexable.references.forEach { nested ->
                     when (nested) {
-                        is UUIDKey -> Chip(label = "UUID key", tone = tone)
+                        is UUIDv4Key -> Chip(label = "UUIDv4 key", tone = tone)
+                        is UUIDv7Key -> Chip(label = "UUIDv7 key", tone = tone)
                         is Multiple -> IndexableChips(indexable = nested, tone = tone, onSelect = onSelect)
                         is Reversed<*> -> ChipContainer(label = "Reversed", tone = tone) {
                             ReferenceChip(reference = nested.reference, tone = tone, onSelect = onSelect)

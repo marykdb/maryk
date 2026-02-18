@@ -13,7 +13,7 @@ import maryk.core.properties.PropertiesCollectionDefinitionWrapper
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.UUIDv4Key
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -42,7 +42,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
     meta: (String?) -> RootDataModelDefinition,
 ) : TypedValuesDataModel<DM>(), IsRootDataModel, MarykPrimitive {
     constructor(
-        keyDefinition: () -> IsIndexable = { UUIDKey },
+        keyDefinition: () -> IsIndexable = { UUIDv4Key },
         version: Version = Version(1),
         indexes: (() -> List<IsIndexable>)? = null,
         reservedIndices: List<UInt>? = null,
@@ -133,7 +133,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
         )
 
         return if (parentResult == MigrationStatus.AlreadyProcessed) {
-            return parentResult
+            parentResult
         } else if (indexesToIndex.isEmpty()) {
             parentResult
         } else when (parentResult) {

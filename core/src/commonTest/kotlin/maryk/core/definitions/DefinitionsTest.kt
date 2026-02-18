@@ -83,7 +83,7 @@ class DefinitionsTest {
                 final: false
             SimpleMarykModel: !RootModel
               version: 1.0
-              key: !UUID
+              key: !UUIDv4
               ? 1: value
               : !String
                 required: true

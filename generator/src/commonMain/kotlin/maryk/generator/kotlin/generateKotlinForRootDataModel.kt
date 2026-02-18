@@ -9,7 +9,8 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.ReferenceToMax
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.UUIDv4Key
+import maryk.core.properties.definitions.index.UUIDv7Key
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.SimpleTypedValueReference
 import maryk.core.properties.references.TypeReference
@@ -27,7 +28,7 @@ fun IsRootDataModel.generateKotlin(
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
-    // Add key definitions if they are not the default UUID key
+    // Add key definitions if they are not the default UUIDv4 key
     val versionAsKotlin = if (Meta.version != Version(1)) {
         val (major, minor, patch) = Meta.version
         val patchValue = if (patch == UShort.MIN_VALUE) "" else ", $patch"
@@ -37,8 +38,7 @@ fun IsRootDataModel.generateKotlin(
         "version = Version($major, $minor$patchValue)"
     } else null
 
-    // Add key definitions if they are not the default UUID key
-    val keyDefAsKotlin = if (Meta.keyDefinition != UUIDKey) {
+    val keyDefAsKotlin = if (Meta.keyDefinition != UUIDv4Key) {
         val keyDefs = Meta.keyDefinition.generateKotlin(packageName, Meta.name, addImport)
 
         "keyDefinition = ${keyDefs.prependIndent().prependIndent().trimStart()}"
@@ -93,9 +93,13 @@ private fun IsIndexable.generateKotlin(
     name: String,
     addImport: (String) -> Unit
 ): String = when (this) {
-    is UUIDKey -> {
-        addImport("maryk.core.properties.definitions.index.UUIDKey")
-        "UUIDKey"
+    is UUIDv4Key -> {
+        addImport("maryk.core.properties.definitions.index.UUIDv4Key")
+        "UUIDv4Key"
+    }
+    is UUIDv7Key -> {
+        addImport("maryk.core.properties.definitions.index.UUIDv7Key")
+        "UUIDv7Key"
     }
     is TypeReference<*, *, *> -> {
         val typeId = this

@@ -36,7 +36,7 @@ val johnSmith = Person.create {
 // Since there's no validation on the PropertyDefinitions, validation will succeed
 Person.validate(johnSmith)
 
-// Because no key definition was provided, this model will return a UUID-based key
+// Because no key definition was provided, this model will return a UUIDv4-based key
 val key = Person.key(johnSmith)
 ```
 

@@ -20,7 +20,8 @@ class MarykYamlTest {
         """
          - !Boolean { k1: v1 }
          - !String { k2: v2 }
-         - !UUID
+         - !UUIDv4
+         - !UUIDv7
          - !Ref test
         """.trimIndent()
         ).apply {
@@ -55,7 +56,12 @@ class MarykYamlTest {
             assertIs<EndObject>(nextToken())
 
             assertIs<Value<*>>(nextToken()).also {
-                expect(IndexKeyPartType.UUID) { it.type }
+                expect(IndexKeyPartType.UUIDv4) { it.type }
+                expect(null) { it.value }
+            }
+
+            assertIs<Value<*>>(nextToken()).also {
+                expect(IndexKeyPartType.UUIDv7) { it.type }
                 expect(null) { it.value }
             }
 

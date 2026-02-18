@@ -30,7 +30,6 @@ internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
             throw InvalidDefinitionException("Definition should have a fixed amount of bytes for a key")
         is Reversed<*> ->
             checkKeyDefinitionAndCountBytes(keyDefinition.reference)
-        is UUIDKey -> UUIDKey.byteSize
         else -> throw TypeException("Unknown key IsIndexable type: $keyDefinition")
     }
 }

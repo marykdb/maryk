@@ -97,7 +97,7 @@ add Client ./client.yaml --key AbCdEf123
 
 Notes:
 - `--meta` expects a metadata file saved via `save --meta`.
-- If `--key` is omitted, the key is derived from the values (UUID keys generate a new random key).
+- If `--key` is omitted, the key is derived from the values (UUIDv4/UUIDv7 keys generate a new key).
 - `add` works in both interactive and one-shot mode.
 - YAML/JSON files can contain multiple objects to add in one call.
 - Use `-` as the file path to read from stdin.

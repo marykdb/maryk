@@ -51,7 +51,7 @@ import maryk.core.properties.definitions.geoPoint
 import maryk.core.properties.definitions.incrementingMap
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.UUIDv4Key
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.multiType
@@ -100,7 +100,7 @@ sealed class MarykEnumEmbedded(
 object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
     version = Version(2, 1)
     keyDefinition = Multiple(
-        UUIDKey,
+        UUIDv4Key,
         multiForKey.typeRef(),
         booleanForKey.ref(),
         Reversed(dateForKey.ref())

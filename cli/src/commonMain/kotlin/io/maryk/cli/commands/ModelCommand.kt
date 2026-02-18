@@ -16,7 +16,8 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.ReferenceToMax
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.UUIDv4Key
+import maryk.core.properties.definitions.index.UUIDv7Key
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
@@ -464,7 +465,8 @@ private fun buildFormatSummaryLines(models: List<IsRootDataModel>): List<String>
 
 private fun formatIndexable(indexable: IsIndexable): String {
     return when (indexable) {
-        UUIDKey -> "uuid"
+        UUIDv4Key -> "uuidv4"
+        UUIDv7Key -> "uuidv7"
         is Multiple -> "multiple(${indexable.references.joinToString(", ") { formatIndexable(it) }})"
         is Reversed<*> -> "reversed(${formatIndexable(indexable.reference)})"
         is ReferenceToMax<*> -> "refToMax(${formatIndexable(indexable.reference)})"

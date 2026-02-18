@@ -23,13 +23,13 @@ import maryk.yaml.IsYamlReader
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-/** A key with a Universally Unique ID */
-object UUIDKey : IsFixedBytesPropertyReference<Uuid> {
-    override val indexKeyPartType = IndexKeyPartType.UUID
+/** A key with a Universally Unique ID v7 */
+object UUIDv7Key : IsFixedBytesPropertyReference<Uuid> {
+    override val indexKeyPartType = IndexKeyPartType.UUIDv7
     override val byteSize = 16
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
-    override fun getValue(values: IsValuesGetter) = Uuid.random()
+    override fun getValue(values: IsValuesGetter) = Uuid.generateV7()
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) = Uuid.fromLongs(
         initLong(reader),
@@ -53,18 +53,18 @@ object UUIDKey : IsFixedBytesPropertyReference<Uuid> {
         this.indexKeyPartType.index.writeVarBytes(writer)
     }
 
-    override fun toString() = "UUIDKey"
+    override fun toString() = "UUIDv7Key"
 
     override fun isCompatibleWithModel(dataModel: IsRootDataModel) = true
 
-    internal object Model : DefinitionModel<UUIDKey>() {
-        override fun invoke(values: SimpleObjectValues<UUIDKey>) = UUIDKey
+    internal object Model : DefinitionModel<UUIDv7Key>() {
+        override fun invoke(values: SimpleObjectValues<UUIDv7Key>) = UUIDv7Key
 
-        override val Serializer = object: ObjectDataModelSerializer<UUIDKey, IsObjectDataModel<UUIDKey>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this) {
+        override val Serializer = object: ObjectDataModelSerializer<UUIDv7Key, IsObjectDataModel<UUIDv7Key>, ContainsDefinitionsContext, ContainsDefinitionsContext>(this) {
             override fun readJson(reader: IsJsonLikeReader, context: ContainsDefinitionsContext?) =
                 if (reader is IsYamlReader) {
                     @Suppress("UNCHECKED_CAST")
-                    ObjectValues(this@Model, EmptyValueItems) as ObjectValues<UUIDKey, IsObjectDataModel<UUIDKey>>
+                    ObjectValues(this@Model, EmptyValueItems) as ObjectValues<UUIDv7Key, IsObjectDataModel<UUIDv7Key>>
                 } else {
                     super.readJson(reader, context)
                 }

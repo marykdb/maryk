@@ -11,7 +11,7 @@ import kotlin.test.expect
 class MultipleTest {
     private val multiple = TestMarykModel.run {
         Multiple(
-            UUIDKey,
+            UUIDv4Key,
             Reversed(bool.ref()),
             multi.typeRef(),
             string.ref(),
@@ -46,7 +46,7 @@ class MultipleTest {
     fun convertDefinitionToYAMLAndBack() {
         expect(
             """
-            - !UUID
+            - !UUIDv4
             - !Reversed bool
             - !Ref multi.*
             - !Ref string

@@ -14,31 +14,11 @@ import kotlin.test.assertTrue
 import kotlin.test.expect
 import kotlin.uuid.ExperimentalUuidApi
 
-internal class UUIDKeyTest {
+internal class UUIDv7KeyTest {
     object MarykModel : RootDataModel<MarykModel>(
-        keyDefinition = { UUIDKey },
+        keyDefinition = { UUIDv7Key },
     ) {
         val value by string(1u)
-    }
-
-    @Test
-    fun testConversion() {
-        val msb = 1039590204813653973
-        val lsb = 8429492950547628920
-
-        val b = "8e6d5dc885e4b7d5f4fb932d5a0d0378".hexToByteArray()
-
-        val keyDef = MarykModel.Meta.keyDefinition as UUIDKey
-
-        var i = 0
-        val uuid = keyDef.readStorageBytes(16) {
-            b[i++]
-        }
-
-        uuid.toLongs { first, second ->
-            expect(msb) { first }
-            expect(lsb) { second }
-        }
     }
 
     @Test
@@ -52,10 +32,14 @@ internal class UUIDKeyTest {
 
         val keyDef = MarykModel.Meta.keyDefinition
 
-        assertIs<UUIDKey>(keyDef).apply {
+        assertIs<UUIDv7Key>(keyDef).apply {
             var index = 0
             val uuid = readStorageBytes(key.size) {
                 key.bytes[index++]
+            }
+
+            uuid.toLongs { msb, _ ->
+                expect(7) { ((msb ushr 12) and 0xF).toInt() }
             }
 
             val bc = ByteCollector()
@@ -70,21 +54,21 @@ internal class UUIDKeyTest {
 
     @Test
     fun convertDefinitionToProtoBufAndBack() {
-        checkProtoBufConversion(UUIDKey, UUIDKey.Model)
+        checkProtoBufConversion(UUIDv7Key, UUIDv7Key.Model)
     }
 
     @Test
     fun convertDefinitionToJSONAndBack() {
-        checkJsonConversion(UUIDKey, UUIDKey.Model)
+        checkJsonConversion(UUIDv7Key, UUIDv7Key.Model)
     }
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        checkYamlConversion(UUIDKey, UUIDKey.Model)
+        checkYamlConversion(UUIDv7Key, UUIDv7Key.Model)
     }
 
     @Test
     fun toReferenceStorageBytes() {
-        expect("01") { UUIDKey.toReferenceStorageByteArray().toHexString() }
+        expect("06") { UUIDv7Key.toReferenceStorageByteArray().toHexString() }
     }
 }

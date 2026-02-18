@@ -23,7 +23,7 @@ import maryk.core.properties.definitions.index.ReferenceToMax as ReferenceToMaxI
 sealed class IndexKeyPartType<out T: IsIndexable>(
     index: UInt
 ) : IndexedEnumImpl<IndexKeyPartType<*>>(index), TokenType, IsCoreEnum, TypeEnum<T> {
-    object UUID : IndexKeyPartType<UUIDKey>(1u), IsNullValueType
+    object UUIDv4 : IndexKeyPartType<UUIDv4Key>(1u), IsNullValueType
     object Reference : ValueType<String>, IndexKeyPartType<IsIndexablePropertyReference<*>>(2u) {
         override val name = "Ref"
     }
@@ -32,17 +32,18 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
     object ReferenceToMax : IndexKeyPartType<ReferenceToMaxInstance<*>>(5u), ValueType<String> {
         override val name = "RefToMax"
     }
+    object UUIDv7 : IndexKeyPartType<UUIDv7Key>(6u), IsNullValueType
 
     companion object : IndexedEnumDefinition<IndexKeyPartType<*>>(
         IndexKeyPartType::class, {
-            listOf(UUID, Reference, Reversed, Multiple, ReferenceToMax)
+            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7)
         }
     )
 }
 
 internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexable>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOf(
-        IndexKeyPartType.UUID to EmbeddedObjectDefinition(dataModel = { UUIDKey.Model }),
+        IndexKeyPartType.UUIDv4 to EmbeddedObjectDefinition(dataModel = { UUIDv4Key.Model }),
         IndexKeyPartType.Reference to ContextualPropertyReferenceDefinition(
             contextualResolver = {
                 it?.propertyDefinitions as? BaseDataModel<*>?
@@ -50,7 +51,8 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
             }
         ),
         IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model }),
-        IndexKeyPartType.ReferenceToMax to EmbeddedObjectDefinition(dataModel = { ReferenceToMaxInstance.Model })
+        IndexKeyPartType.ReferenceToMax to EmbeddedObjectDefinition(dataModel = { ReferenceToMaxInstance.Model }),
+        IndexKeyPartType.UUIDv7 to EmbeddedObjectDefinition(dataModel = { UUIDv7Key.Model }),
     )
 
 internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =

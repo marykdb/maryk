@@ -4,7 +4,14 @@ Every DataObject is stored under a unique key that acts as its identifier. If ne
 
 ## Default UUID Keys
 
-If no key definition is provided the model generates 128‑bit v4 UUID keys. They are unique but offer no ordering benefits for scans.
+If no key definition is provided the model generates 128‑bit UUIDv4 keys. They are random and spread writes better in distributed stores.
+
+## UUIDv4 vs UUIDv7
+
+- **UUIDv4:** Random distribution. Better write spread. Lower hotspot risk in distributed mode. No natural time order for scans.
+- **UUIDv7:** Time-ordered prefix. Better temporal scan locality. Can hotspot on write-heavy distributed shards because many new keys land near each other.
+
+Choose UUIDv4 for high write concurrency on distributed backends. Choose UUIDv7 when time-order scans are primary and hotspotting is acceptable.
 
 ## Choosing the Right Key from the Start
 

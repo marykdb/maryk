@@ -10,7 +10,7 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.UUIDv4Key
 import maryk.core.properties.definitions.index.calculateKeyIndices
 import maryk.core.properties.definitions.index.checkKeyDefinitionAndCountBytes
 import maryk.core.properties.definitions.index.mapOfIndexKeyPartDefinitions
@@ -30,11 +30,11 @@ import maryk.json.IsJsonLikeWriter
  * DataModel definition for metadata for [maryk.core.models.DataModel],
  * so it can be stored and thus can have a key.
  * The key is defined by passing an ordered array of key definitions.
- * If no key is defined the data model will get a UUID.
+ * If no key is defined the data model will get a UUIDv4.
  */
 data class RootDataModelDefinition(
     override val name: String,
-    override val keyDefinition: IsIndexable = UUIDKey,
+    override val keyDefinition: IsIndexable = UUIDv4Key,
     override val version: Version = Version(1),
     override val indexes: List<IsIndexable>? = null,
     override val reservedIndices: List<UInt>? = null,
@@ -101,7 +101,7 @@ data class RootDataModelDefinition(
             RootDataModelDefinition(
                 name = values(1u),
                 version = values(2u),
-                keyDefinition = values(3u) ?: UUIDKey,
+                keyDefinition = values(3u) ?: UUIDv4Key,
                 indexes = values(4u),
                 reservedIndices = values(5u),
                 reservedNames = values(6u),

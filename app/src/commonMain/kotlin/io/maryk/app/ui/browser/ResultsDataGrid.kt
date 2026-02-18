@@ -116,7 +116,8 @@ import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.ReferenceToMax
 import maryk.core.properties.definitions.index.Reversed
-import maryk.core.properties.definitions.index.UUIDKey
+import maryk.core.properties.definitions.index.UUIDv4Key
+import maryk.core.properties.definitions.index.UUIDv7Key
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -997,7 +998,8 @@ private fun buildSortOptions(dataModel: IsRootDataModel?): List<SortOption> {
 
 private fun collectIndexReferences(indexable: IsIndexable): List<IsIndexablePropertyReference<*>> {
     return when (indexable) {
-        is UUIDKey -> emptyList()
+        is UUIDv4Key -> emptyList()
+        is UUIDv7Key -> emptyList()
         is Multiple -> indexable.references.flatMap { collectIndexReferences(it) }
         is Reversed<*> -> listOf(indexable.reference)
         is ReferenceToMax<*> -> listOf(indexable.reference)

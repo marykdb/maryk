@@ -101,7 +101,7 @@ class HelpCommand : Command {
                 "Notes:",
                 "  - YAML/JSON files can contain a list of objects to add multiple records.",
                 "  - Use `-` as the file path to read from stdin.",
-                "  - If --key is omitted, the key is derived from values (UUID keys generate a new random key).",
+                "  - If --key is omitted, the key is derived from values (UUIDv4/UUIDv7 keys generate a new key).",
                 "  - When --meta is used, --key must match the metadata key.",
             )
             "get" -> listOf(

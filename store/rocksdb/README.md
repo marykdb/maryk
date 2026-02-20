@@ -6,9 +6,7 @@ Each DataModel is mapped to multiple column families (keys/table/index/unique an
 
 ## Getting Started
 
-To get started with the Maryk RocksDB Store, simply use the following code snippet:
-
-Usage:
+Use the following snippet:
 ```kotlin
 RocksDBDataStore.open(
     keepAllVersions = false,
@@ -18,7 +16,7 @@ RocksDBDataStore.open(
         2u to Course
     )
 ).use { store ->
-    // Do operations on the store
+    // Run operations on the store
     
     store.execute(
         Account.add(
@@ -37,7 +35,8 @@ RocksDBDataStore.open(
 
 The `.use { ... }` scope closes the store automatically. If you don’t use `use`, call `close()` when finished to free native resources.
 
-Need remote access to this local RocksDB store? Expose it with the [Remote Store](../remote/README.md) via CLI `serve`.
+Need remote access to this local RocksDB store? Expose it with the
+[Remote Store](../remote/README.md) via CLI `serve`.
 
 ## Migrations and Version Updates
 

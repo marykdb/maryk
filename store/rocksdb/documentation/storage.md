@@ -29,8 +29,8 @@ The model id is the `UInt` key from `dataModelsById` passed to `RocksDBDataStore
 For efficient scans, the `Table` and `HistoricTable` families use a fixed‑length prefix extractor sized to the model key. The historic families use a custom comparator so qualifiers sort before versions (see `VersionedComparator`).
 
 ## Model
-Stores the model used for the data. Useful to get current structure and to check if current data can be
-read or updated with reference model from a client.
+Stores the persisted model definition for the data.
+Used to validate compatibility between stored data and client model definitions or to retrieve the structure for inspection apps.
 
 ## Keys
 Contains all object keys and their creation versions. Scan operations iterate this family to enumerate keys in order.

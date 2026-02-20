@@ -63,9 +63,10 @@ val remote = RemoteDataStore.connect(
 )
 ```
 
-Note: `RemoteDataStore.connect` is `suspend`; call it from a coroutine.
-Note: Only plain HTTP is supported; use SSH tunneling for encryption.
-Note: `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
+Notes:
+- `RemoteDataStore.connect` is `suspend`; call it from a coroutine.
+- Only plain HTTP is supported; use SSH tunneling for encryption.
+- `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
 
 Use it like any other store:
 

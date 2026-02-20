@@ -1,6 +1,6 @@
-## Local Test Server
+# Local Test Server
 
-The module can automatically install and run a local FoundationDB server for JVM tests.
+This module can automatically install and run a local FoundationDB server for JVM tests.
 
 - **Install script:** `scripts/install-foundationdb.sh` (macOS/Linux) and `scripts/install-foundationdb.ps1` (Windows).
 - **Run script:** `scripts/run-fdb-for-tests.sh` starts `fdbserver` on `127.0.0.1:4500`, writes logs to `build/testdatastore/logs`, and PID to `build/testdatastore/fdbserver.pid`.

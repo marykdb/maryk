@@ -1,7 +1,7 @@
 # Maryk Memory Store
 
-In-memory implementation of a Maryk data store.
-Fastest option for tests/dev. No persistence.
+In-memory Maryk data store implementation.
+Fastest option for tests and local development. No persistence.
 
 ## Getting started
 
@@ -13,7 +13,7 @@ InMemoryDataStore.open(
         2u to Course
     )
 ).use { store ->
-    // Do operations on the store
+    // Run operations on the store
     
     store.execute(
         Account.add(

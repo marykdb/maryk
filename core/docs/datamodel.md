@@ -9,7 +9,7 @@ Every property in a DataModel has both a name and a unique integer index. The in
 
 Consider a simple `Person` DataModel with first name, last name and date of birth.
 
-To create a model for a data object within Kotlin, you start by creating a Kotlin object that extends from `RootModel`.
+To create a model for a data object within Kotlin, you start by creating a Kotlin object that extends from `RootDataModel`.
 Within this object, you define properties by name, index, type and optional validations.
 
 ```kotlin
@@ -46,12 +46,12 @@ Basic DataModels form the foundation for defining data structures. DataModels co
 validated. Except for RootDataModels, they can be nested within other DataModels to group data more specifically. For
 example, address details can be stored within a Person DataModel.
 
-When defining the model using Kotlin, any DataModel should extend from the Model class.
+When defining the model using Kotlin, any DataModel should extend from the `DataModel` class.
 
 **Example**
 
 ```kotlin
-object Address : DataModel<Address> {
+object Address : DataModel<Address>() {
     val streetName by string(index = 1u)
     val city by string(index = 2u)
     val zipCode by string(index = 3u)
@@ -72,24 +72,26 @@ The first example above uses a RootDataModel.
 Below is an example:
 
 ```kotlin
-object PersonalDiaryItem : RootDataModel<Person>(
+object PersonalDiaryItem : RootDataModel<PersonalDiaryItem>(
     keyDefinition = {
         Multiple(
             user.ref(),
             Reversed(dateOfPosting.ref()),
         )
     },
-    indexes = listOf(
-        Multiple(
-            user.ref(),
-            tags.refToAny(),
-        ),
-    ),
+    indexes = {
+        listOf(
+            Multiple(
+                user.ref(),
+                tags.refToAny(),
+            ),
+        )
+    },
 ) {
     val user by reference(index = 1u, dataModel = { User })
     val dateOfPosting by string(index = 2u)
     val message by string(index = 3u, minSize = 3, maxSize = 5)
-    val tags by list(index = 4u, valueDefinition = StringDefinition())
+    val tags by set(index = 4u, valueDefinition = StringDefinition())
 }
 ```
 
@@ -166,10 +168,9 @@ object TimelineItem : RootDataModel<TimelineItem>(
     keyDefinition = {
         Multiple(
             Reversed(dateOfPosting.ref()),
-            TypeId(item)
+            item.refToType()
         )
-    },
-    properties = Properties
+    }
 ) {
     val dateOfPosting by dateTime(
         index = 1u,
@@ -180,11 +181,10 @@ object TimelineItem : RootDataModel<TimelineItem>(
     val item by multiType(
         index = 2u,
         final = true,
-        typeMap = mapOf(
-            1 to EmbeddedObjectDefinition(dataModel = { Post }),
-            2 to EmbeddedObjectDefinition(dataModel = { Event }),
-            3 to EmbeddedObjectDefinition(dataModel = { Advertisement })
-        )
+        typeEnum = TimelineItemType
     )
 }
 ```
+
+`TimelineItemType` is a `MultiTypeEnumDefinition` which maps each type id to an embedded definition
+(for example post/event/advertisement models).

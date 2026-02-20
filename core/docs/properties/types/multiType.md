@@ -21,12 +21,11 @@ cheaper to query on type.
 ## Validation Options
 - `required` - default true
 - `final` - default false
-- `unique` - default false
 
 ## Other options
 - `default` - the default value to be used if value was not set.
 - `typeIsFinal` - default true. Set to true to make type non changable once set.
-- `definitionMap` - Map which maps shorts to a property definition
+- `typeEnum` - `MultiTypeEnumDefinition` which maps ids to definitions
 
 ## Examples
 
@@ -41,7 +40,7 @@ sealed class MultiType<T: Any>(
 ) : IndexedEnumImpl<MultiType<*>>(index), MultiTypeEnum<T> {
     object S1: MultiType<String>(1u, StringDefinition())
     object S2: MultiType<Short>(2u, NumberDefinition(type = SInt16))
-    object S3: MultiType<Values<EmbeddedModel>>(3u, ValuesDefinition(EmbeddedModel))
+    object S3: MultiType<Values<EmbeddedModel>>(3u, EmbeddedValuesDefinition(dataModel = { EmbeddedModel }))
 
     class UnknownMultiType(index: UInt, override val name: String): MultiType<Any>(index, null)
 

@@ -76,6 +76,11 @@ ListChange(
 )
 ```
 
+## Indexing list values
+
+List references like `refAt(index)` and `refToAny()` (`list.*`) can be used in filters and changes.
+They are not indexable in `RootDataModel` index definitions.
+
 ## Storage Byte representation
 Depends on the specific implementation. The values are stored in their representative
 byte representation.

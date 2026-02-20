@@ -9,9 +9,9 @@ These operations can be defined in Kotlin or any of the serialization formats Ma
 This `Person` model has two top level fields (`firstName`, `lastName`) and an embedded `Address`:
 ```kotlin
 object Person : RootDataModel<Person>() {
-    val firstName = string(index = 1u)
-    val lastName = string(index = 2u)
-    val livingAddress = embed(
+    val firstName by string(index = 1u)
+    val lastName by string(index = 2u)
+    val livingAddress by embed(
         index = 3u,
         dataModel = { Address }
     )
@@ -20,8 +20,8 @@ object Person : RootDataModel<Person>() {
 
 ```kotlin
 object Address : DataModel<Address>() {
-  val street = string(index = 1u)
-  val city = string(index = 2u)
+  val street by string(index = 1u)
+  val city by string(index = 2u)
 }
 ```
 
@@ -111,3 +111,6 @@ Model { list refAt 5 }
 ```
 
 In string notation this is `list.@5`.
+
+`list.@<index>` and `list.*` references are usable for filtering and changes.
+They are not valid for `RootDataModel` index definitions.

@@ -60,7 +60,7 @@ object Address : DataModel<Address>() {
 
 object User : RootDataModel<User>() {
     val name by string(index = 1u)
-    val address by embeddedObject(index = 2u, dataModel = { Address })
+    val address by embed(index = 2u, dataModel = { Address })
     val tags by set(index = 3u, valueDefinition = StringDefinition())
 }
 ```
@@ -157,10 +157,10 @@ val g = Message.graph {
 }
 ```
 
-MultiType with keys: cluster by variant for fast scans using `TypeId(property)` in the key. This keeps same‑type values together on disk.
+MultiType with keys: cluster by variant for fast scans using `property.refToType()` in the key. This keeps same‑type values together on disk.
 ```kotlin
 object Activity : RootDataModel<Activity>(
-    keyDefinition = { Multiple(user.ref(), Reversed(timestamp.ref()), TypeId(item)) }
+    keyDefinition = { Multiple(user.ref(), Reversed(timestamp.ref()), item.refToType()) }
 ) {
     val user by reference(index = 1u, dataModel = { User })
     val timestamp by dateTime(index = 2u)
@@ -197,14 +197,14 @@ object Order : RootDataModel<Order>() {
 }
 
 // Split version
-object Order : RootDataModel<Order>(keyDefinition = { StringKey(orderId.ref()) }) {
+object Order : RootDataModel<Order>(keyDefinition = { UUIDv7Key }) {
     val orderId by string(index = 1u)
     val customerId by string(index = 2u)
 }
 
 object OrderLine : RootDataModel<OrderLine>(
-    keyDefinition = { Multiple(reference(Order) { order.ref() }, Incrementing()) },
-    indexes = listOf(Multiple(sku.ref()))
+    keyDefinition = { Multiple(order.ref(), lineNo.ref()) },
+    indexes = { listOf(Multiple(sku.ref())) }
 ) {
     val order by reference(index = 1u, dataModel = { Order })
     val lineNo by number(index = 2u, type = Int32)
@@ -225,12 +225,12 @@ Keys decide how data is clustered and thus how range scans perform.
 
 Common patterns
 - Owner + reversed timestamp: `Multiple(user.ref(), Reversed(date.ref()))` → latest first per user.
-- Include `TypeId(property)` to cluster polymorphic values by variant.
+- Include `property.refToType()` to cluster polymorphic values by variant.
 
 Feed example:
 ```kotlin
 object FeedItem : RootDataModel<FeedItem>(
-    keyDefinition = { Multiple(user.ref(), Reversed(postedAt.ref()), TypeId(content)) }
+    keyDefinition = { Multiple(user.ref(), Reversed(postedAt.ref()), content.refToType()) }
 ) {
     val user by reference(index = 1u, dataModel = { User })
     val postedAt by dateTime(index = 2u)

@@ -20,7 +20,7 @@ The table below lists the available property types and where they can be used.
 | [FixedBytes](types/fixedBytes.md)   |    ✅    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
 | [FlexBytes](types/flexBytes.md)     |    ❌    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
 | [MultiType](types/multiType.md)     |    🆔    |     ✅     |    ❌     |   ❌    |    ✅     |     ✅     |
-| [List](types/list.md)               |    ❌    |     ✅     |    ❌     |   ❌    |    ✅     |     ✅     |
+| [List](types/list.md)               |    ❌    |     ❌     |    ❌     |   ❌    |    ✅     |     ✅     |
 | [Set](types/set.md)                 |    ❌    |     ✅     |    ❌     |   ❌    |    ✅     |     ✅     |
 | [Map](types/map.md)                 |    ❌    |    🔑     |    ❌     |   ❌    |    ✅     |     ✅     |
 | [IncMap](types/incrementingMap.md)  |    ❌    |    🔑     |    ❌     |   ❌    |    ✅     |     ✅     |
@@ -57,4 +57,3 @@ Every property definition supports validation helpers. Common options include:
 * **default** – value to use if none is provided (default `null`)
 
 Each type may define extra validations such as `minSize`, `maxSize`, ranges or regex patterns. Refer to the individual type pages for full details.
-

@@ -8,7 +8,7 @@ Maryk defines a storage‑engine‑independent core. Each engine implements the 
 
 At runtime:
 
-- `FoundationDBDataStore` owns the FDB client (and optional tenant), opens the directory tree, and runs a single‑threaded coroutine actor that processes requests sequentially.
+- `FoundationDBDataStore` owns the FDB client, opens the directory tree, and runs a single‑threaded coroutine actor that processes requests sequentially.
 - “Processors” map each request type to concrete reads/writes against FDB.
 - “Helpers” encapsulate encoding/decoding, qualifier matching, version math, and index/unique management.
 - An in‑memory `Cache` helps de‑duplicate value decoding when a request needs the same property multiple times (e.g. aggregations).
@@ -24,7 +24,7 @@ Capabilities in the FDB engine:
 - Entry point to the engine.
 - Constructor flags:
   - `keepAllVersions`: whether to maintain historic data alongside latest.
-  - `fdbClusterFilePath`, `tenantName`, `directoryRootPath`: FDB connectivity & subspace root.
+  - `fdbClusterFilePath`, `directoryRootPath`: FDB connectivity & subspace root.
   - `enableClusterUpdateLog`: optional cluster-wide live update propagation for `executeFlow` (writes updates into an FDB log and tails them back into the in-memory listener flow).
 - Initializes per‑model directories via DirectoryLayer.
 - Launches the store actor (coroutine) to process incoming requests one by one. Within the actor, every request is handled in an FDB transaction (or uses an iterator scoped to the transaction).
@@ -33,7 +33,7 @@ Capabilities in the FDB engine:
 
 Goal: cluster-wide `executeFlow` updates (multi-writer, multi-reader) using only FoundationDB.
 
-Subspaces (under the configured store root + optional tenant):
+Subspaces (under the configured store root):
 
 - `__updates__/v1/log`: append-only log entries written in the same transaction as the table mutation.
   - Key uses a FoundationDB versionstamp to avoid collisions: `(shard, modelId, hlc_be_8, keyBytes, originIdBytes, versionstamp)`.

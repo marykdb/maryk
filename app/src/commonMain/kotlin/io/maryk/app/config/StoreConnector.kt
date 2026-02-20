@@ -15,7 +15,6 @@ import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.foundationdb.runSuspend
-import maryk.foundationdb.tuple.Tuple
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
 import maryk.datastore.shared.IsDataStore
@@ -89,7 +88,6 @@ class StoreConnector {
                 readStoredModelDefinitionsFromDirectory(
                     fdbClusterFilePath = definition.clusterFile,
                     directoryPath = directoryPath,
-                    tenantName = definition.tenant?.let { Tuple.from(it) },
                 )
             }
 
@@ -105,7 +103,6 @@ class StoreConnector {
                 detectKeepAllVersions(
                     clusterFilePath = definition.clusterFile,
                     directoryPath = directoryPath,
-                    tenantName = definition.tenant,
                     modelNames = effectiveModels.values.map { it.Meta.name },
                 ) ?: true
             }
@@ -115,7 +112,6 @@ class StoreConnector {
                     keepAllVersions = keepAllVersionsPreference,
                     fdbClusterFilePath = definition.clusterFile,
                     directoryPath = directoryPath,
-                    tenantName = definition.tenant?.let { Tuple.from(it) },
                     dataModelsById = effectiveModels,
                 )
             }
@@ -187,16 +183,13 @@ private fun Throwable.isRocksDbLockError(): Boolean {
 private suspend fun detectKeepAllVersions(
     clusterFilePath: String?,
     directoryPath: List<String>,
-    tenantName: String?,
     modelNames: List<String>,
 ): Boolean? {
     val modelName = modelNames.firstOrNull() ?: return null
     val fdb = FDB.selectAPIVersion(730)
     val db = if (clusterFilePath != null) fdb.open(clusterFilePath) else fdb.open()
 
-    val tenantTuple = tenantName?.takeIf { it.isNotBlank() }?.let { Tuple.from(it) }
-    val tenantDb = tenantTuple?.let { db.openTenant(it) }
-    val tc: TransactionContext = tenantDb ?: db
+    val tc: TransactionContext = db
 
     try {
         val rootDirectory: DirectorySubspace = try {
@@ -220,7 +213,6 @@ private suspend fun detectKeepAllVersions(
             if (t.isNoSuchDirectory()) false else null
         }
     } finally {
-        tenantDb?.close()
         db.close()
     }
 }

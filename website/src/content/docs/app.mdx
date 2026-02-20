@@ -39,7 +39,7 @@ From repo root:
   - Single process lock applies.
 - FoundationDB:
   - Directory path.
-  - Optional cluster file, optional tenant.
+  - Optional cluster file.
 - Remote:
   - HTTP URL to CLI `serve` endpoint.
   - Optional SSH tunnel.
@@ -139,7 +139,7 @@ Two modes:
 - Cannot open RocksDB:
   - Ensure no other process has the DB open.
 - FoundationDB connect fails:
-  - Check `libfdb_c`, cluster file, tenant path.
+  - Check `libfdb_c`, cluster file.
 - Remote connect fails:
   - Verify CLI `serve` running.
   - Check URL/port/tunnel target.

@@ -108,7 +108,6 @@ data class RocksDbStoreConnection(
 data class FoundationDbStoreConnection(
     val directoryPath: List<String>,
     val clusterFilePath: String?,
-    val tenantName: String?,
     override val dataStore: IsDataStore,
 ) : StoreConnection {
     override val type: StoreType = StoreType.FOUNDATION_DB

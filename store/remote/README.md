@@ -31,7 +31,7 @@ server.start(host = "0.0.0.0", port = 8210, wait = true)
 FoundationDB:
 
 ```text
-maryk --exec "serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --tenant myTenant --port 8210"
+maryk --exec "serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210"
 ```
 
 Config file (simple key/value or YAML-style):
@@ -52,7 +52,6 @@ Accepted config keys:
 - `store` or `type`: `rocksdb` | `foundationdb`
 - `dir` or `directory`: store path
 - `cluster` or `clusterFile`: FoundationDB cluster file
-- `tenant`: FoundationDB tenant
 - `host`: bind host (default `127.0.0.1`)
 - `port`: bind port (default `8210`)
 

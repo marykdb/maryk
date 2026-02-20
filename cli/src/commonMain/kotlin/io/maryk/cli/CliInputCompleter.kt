@@ -65,7 +65,7 @@ class CliInputCompleter(
 
     private fun completeConnectToken(tokens: List<String>, endsWithSpace: Boolean, currentToken: String): String? {
         val storeTypes = listOf("rocksdb", "foundationdb")
-        val options = listOf("--dir", "--cluster", "--tenant")
+        val options = listOf("--dir", "--cluster")
 
         if (tokens.size == 1 && endsWithSpace) {
             return completeToken("", storeTypes)

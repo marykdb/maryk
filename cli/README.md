@@ -31,7 +31,7 @@ Once running interactively, type `help` to see the available commands, or `help 
 ### Connecting to a store
 
 - RocksDB: `connect rocksdb --dir /path/to/rocksdb`
-- FoundationDB: `connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]`
+- FoundationDB: `connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster]`
 
 ### Serving a store over HTTP
 
@@ -39,7 +39,7 @@ Expose a local store via a lightweight Ktor server:
 
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
-serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --tenant myTenant --port 8210
+serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
 serve --config ./serve.conf
 ```
 

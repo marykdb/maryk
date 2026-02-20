@@ -452,7 +452,7 @@ private fun defaultRegistry(
 
 private fun printNonInteractiveHelp(registry: CommandRegistry) {
     println("Maryk CLI")
-    println("One-shot usage: maryk [--connect <store> [--dir <path>] [--cluster <file>] [--tenant <name>]] --exec \"<command>\"")
+    println("One-shot usage: maryk [--connect <store> [--dir <path>] [--cluster <file>]] --exec \"<command>\"")
     println("Type `help` to see available commands. Use Ctrl+C to exit.")
     val help = registry.execute("help", emptyList())
     help.lines.forEach { println(it) }
@@ -460,7 +460,7 @@ private fun printNonInteractiveHelp(registry: CommandRegistry) {
 
 internal fun printOneShotUsage() {
     println("One-shot usage:")
-    println("  maryk [--connect <store> [--dir <path>] [--cluster <file>] [--tenant <name>]] --exec \"<command>\"")
+    println("  maryk [--connect <store> [--dir <path>] [--cluster <file>]] --exec \"<command>\"")
 }
 
 internal data class OneShotOptions(

@@ -56,7 +56,7 @@ class HelpCommand : Command {
                 "Connect to a store (rocksdb or foundationdb).",
                 "Usage:",
                 "  connect rocksdb --dir <directory>",
-                "  connect foundationdb --dir <directory> [--cluster <cluster file>] [--tenant <tenant>]",
+                "  connect foundationdb --dir <directory> [--cluster <cluster file>]",
                 "Notes:",
                 "  - Run `connect` without arguments to use the interactive setup.",
             )
@@ -65,7 +65,7 @@ class HelpCommand : Command {
                 "Serve a local store over HTTP.",
                 "Usage:",
                 "  serve rocksdb --dir <directory> [--host <host>] [--port <port>]",
-                "  serve foundationdb --dir <directory> [--cluster <cluster file>] [--tenant <tenant>] [--host <host>] [--port <port>]",
+                "  serve foundationdb --dir <directory> [--cluster <cluster file>] [--host <host>] [--port <port>]",
                 "  serve --config <file>",
                 "Notes:",
                 "  - Config files support key/value (`key=value`) and YAML-style (`key: value`) entries.",

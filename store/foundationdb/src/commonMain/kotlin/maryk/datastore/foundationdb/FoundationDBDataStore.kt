@@ -97,7 +97,6 @@ import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
-import maryk.foundationdb.tuple.Tuple
 import maryk.lib.bytes.combineToByteArray
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration
@@ -112,7 +111,6 @@ private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1
 class FoundationDBDataStore private constructor(
     override val keepAllVersions: Boolean = true,
     val fdbClusterFilePath: String? = null,
-    val tenantName: Tuple? = null,
     val directoryRootPath: List<String> = listOf("maryk"),
     dataModelsById: Map<UInt, IsRootDataModel>,
     private val onlyCheckModelVersion: Boolean = false,
@@ -133,8 +131,7 @@ class FoundationDBDataStore private constructor(
 
     private val fdb = FDB.selectAPIVersion(730)
     private val db = (if (fdbClusterFilePath != null) fdb.open(fdbClusterFilePath) else fdb.open())
-    private val tenantDB = tenantName?.let { db.openTenant(tenantName) }
-    internal val tc: TransactionContext = tenantDB ?: db
+    internal val tc: TransactionContext = db
 
     init {
         db.options().apply {
@@ -699,7 +696,6 @@ class FoundationDBDataStore private constructor(
             true
         } ?: false
 
-        runCatching { this.tenantDB?.close() }
         runCatching { this.db.close() }
 
         if (!stoppedBeforeNativeClose) {
@@ -971,7 +967,6 @@ class FoundationDBDataStore private constructor(
             keepAllVersions: Boolean = true,
             fdbClusterFilePath: String? = null,
             directoryPath: List<String> = listOf("maryk"),
-            tenantName: Tuple? = null,
             dataModelsById: Map<UInt, IsRootDataModel>,
             onlyCheckModelVersion: Boolean = false,
             databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
@@ -989,7 +984,6 @@ class FoundationDBDataStore private constructor(
             keepAllVersions = keepAllVersions,
             fdbClusterFilePath = fdbClusterFilePath,
             directoryRootPath = directoryPath,
-            tenantName = tenantName,
             dataModelsById = dataModelsById,
             onlyCheckModelVersion = onlyCheckModelVersion,
             databaseOptionsSetter = databaseOptionsSetter,

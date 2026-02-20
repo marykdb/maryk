@@ -10,7 +10,6 @@ import maryk.foundationdb.FDB
 import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.runSuspend
 import maryk.foundationdb.directory.DirectoryLayer
-import maryk.foundationdb.tuple.Tuple
 import kotlinx.coroutines.withTimeout
 import maryk.foundationdb.directory.DirectorySubspace
 
@@ -23,13 +22,11 @@ private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by
 suspend fun readStoredModelDefinitionsFromDirectory(
     fdbClusterFilePath: String? = null,
     directoryPath: List<String> = listOf("maryk"),
-    tenantName: Tuple? = null,
 ): Map<UInt, RootDataModel<*>> {
     val fdb = FDB.selectAPIVersion(730)
     val db = if (fdbClusterFilePath != null) fdb.open(fdbClusterFilePath) else fdb.open()
 
-    val tenantDb = tenantName?.let { db.openTenant(it) }
-    val tc: TransactionContext = tenantDb ?: db
+    val tc: TransactionContext = db
 
     try {
         return withContext(Dispatchers.IO) {
@@ -82,7 +79,6 @@ suspend fun readStoredModelDefinitionsFromDirectory(
             storedModelsById
         }
     } finally {
-        tenantDb?.close()
         db.close()
     }
 }

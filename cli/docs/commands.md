@@ -45,7 +45,7 @@ Notes:
 
 ```text
 connect rocksdb --dir /path/to/rocksdb
-connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]
+connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster]
 ```
 
 ## Serve
@@ -54,7 +54,7 @@ Serve a local store over HTTP (Ktor):
 
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
-serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --tenant myTenant --port 8210
+serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
 ```
 
 Config file:

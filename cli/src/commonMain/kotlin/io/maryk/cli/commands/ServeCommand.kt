@@ -20,7 +20,7 @@ class ServeCommand(
                 lines = listOf(
                     "Serve configuration error: ${parseResult.reason}",
                     "Usage: serve rocksdb --dir <path> [--host <host>] [--port <port>]",
-                    "       serve foundationdb --dir <dir> [--cluster <file>] [--tenant <name>] [--host <host>] [--port <port>]",
+                    "       serve foundationdb --dir <dir> [--cluster <file>] [--host <host>] [--port <port>]",
                     "       serve --config <file>",
                 ),
                 isError = true,
@@ -86,7 +86,6 @@ private data class ServeConfigInput(
     val storeType: StoreType? = null,
     val directory: String? = null,
     val clusterFile: String? = null,
-    val tenant: String? = null,
     val host: String? = null,
     val port: Int? = null,
 ) {
@@ -94,7 +93,6 @@ private data class ServeConfigInput(
         storeType = override.storeType ?: storeType,
         directory = override.directory ?: directory,
         clusterFile = override.clusterFile ?: clusterFile,
-        tenant = override.tenant ?: tenant,
         host = override.host ?: host,
         port = override.port ?: port,
     )
@@ -145,7 +143,6 @@ private fun parseServeOptions(environment: CliEnvironment, arguments: List<Strin
             val options = ConnectCommand.FoundationOptions(
                 directoryPath = dirParts,
                 clusterFile = clusterFile,
-                tenant = merged.tenant?.ifBlank { null },
             )
             ServeParseResult.Success(
                 ServeOptions(
@@ -175,7 +172,6 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
     var storeType: StoreType? = null
     var directory: String? = null
     var clusterFile: String? = null
-    var tenant: String? = null
     var host: String? = null
     var port: Int? = null
 
@@ -218,15 +214,6 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
                 if (index + 1 >= arguments.size) return CliParseResult.Error("`--cluster` requires a value.")
                 clusterFile = arguments[++index]
             }
-            token.startsWith("--tenant=") -> {
-                if (tenant != null) return CliParseResult.Error("Tenant provided multiple times.")
-                tenant = token.substringAfter("=")
-            }
-            token == "--tenant" -> {
-                if (tenant != null) return CliParseResult.Error("Tenant provided multiple times.")
-                if (index + 1 >= arguments.size) return CliParseResult.Error("`--tenant` requires a value.")
-                tenant = arguments[++index]
-            }
             token.startsWith("--host=") -> {
                 if (host != null) return CliParseResult.Error("Host provided multiple times.")
                 host = token.substringAfter("=")
@@ -262,7 +249,6 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
                 storeType = storeType,
                 directory = directory,
                 clusterFile = clusterFile,
-                tenant = tenant,
                 host = host,
                 port = port,
             ),
@@ -280,7 +266,6 @@ private fun parseServeConfig(contents: String): ConfigParseResult {
     var storeType: StoreType? = null
     var directory: String? = null
     var clusterFile: String? = null
-    var tenant: String? = null
     var host: String? = null
     var port: Int? = null
 
@@ -301,7 +286,6 @@ private fun parseServeConfig(contents: String): ConfigParseResult {
                 ?: return ConfigParseResult.Error("Unknown store type on line ${index + 1}")
             "dir", "directory", "path" -> directory = value
             "cluster", "clusterfile" -> clusterFile = value
-            "tenant" -> tenant = value
             "host" -> host = value
             "port" -> port = value.toIntOrNull() ?: return ConfigParseResult.Error("Invalid port on line ${index + 1}")
             else -> return ConfigParseResult.Error("Unknown config key $key on line ${index + 1}")
@@ -313,7 +297,6 @@ private fun parseServeConfig(contents: String): ConfigParseResult {
             storeType = storeType,
             directory = directory,
             clusterFile = clusterFile,
-            tenant = tenant,
             host = host,
             port = port,
         )

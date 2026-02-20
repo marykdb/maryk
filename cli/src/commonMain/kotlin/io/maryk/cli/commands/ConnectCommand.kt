@@ -21,7 +21,6 @@ import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.foundationdb.runSuspend
-import maryk.foundationdb.tuple.Tuple
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
 
@@ -105,7 +104,7 @@ class ConnectCommand(
                 lines = listOf(
                     "Store type: ${StoreType.FOUNDATION_DB.displayName}",
                     "Status: failed - ${parseResult.reason}",
-                    "Usage: connect foundationdb --dir <directory> [--cluster <cluster file>] [--tenant <tenant>]",
+                    "Usage: connect foundationdb --dir <directory> [--cluster <cluster file>]",
                 ),
                 isError = true,
             )
@@ -226,7 +225,6 @@ class ConnectCommand(
     data class FoundationOptions(
         val directoryPath: List<String>,
         val clusterFile: String?,
-        val tenant: String?,
     )
 
     private fun defaultClusterFile(): String = "store/foundationdb/fdb.cluster"
@@ -288,7 +286,6 @@ class ConnectCommand(
 
         var directory: String? = null
         var cluster: String? = null
-        var tenant: String? = null
         var index = 0
         while (index < arguments.size) {
             val token = arguments[index]
@@ -326,21 +323,6 @@ class ConnectCommand(
                     }
                     cluster = arguments[++index]
                 }
-                token.startsWith("--tenant=") -> {
-                    if (tenant != null) {
-                        return ParseFoundationOptionsResult.Error("Tenant provided multiple times.")
-                    }
-                    tenant = token.substringAfter("=", missingDelimiterValue = "")
-                }
-                token == "--tenant" -> {
-                    if (tenant != null) {
-                        return ParseFoundationOptionsResult.Error("Tenant provided multiple times.")
-                    }
-                    if (index + 1 >= arguments.size) {
-                        return ParseFoundationOptionsResult.Error("`--tenant` requires a value.")
-                    }
-                    tenant = arguments[++index]
-                }
                 token.startsWith("-") -> {
                     return ParseFoundationOptionsResult.Error("Unknown option `$token`.")
                 }
@@ -360,7 +342,6 @@ class ConnectCommand(
                 FoundationOptions(
                     directoryPath = dirParts.ifEmpty { listOf(finalDirectory) },
                     clusterFile = clusterFileResolved,
-                    tenant = tenant?.ifEmpty { null },
                 ),
             )
         }
@@ -442,7 +423,7 @@ class ConnectCommand(
         override val promptLabel: String = "dir> "
         override val introLines: List<String> = listOf(
             "Enter the FoundationDB directory path (slash-separated).",
-            "Optional: append cluster file with --cluster <path> or tenant with --tenant <name> after choosing connect command non-interactively.",
+            "Optional: append cluster file with --cluster <path> after choosing connect command non-interactively.",
             "Type `cancel` to abort.",
         )
 
@@ -512,13 +493,10 @@ fun interface FoundationDbConnector {
 object DefaultFoundationDbConnector : FoundationDbConnector {
     override fun connect(options: ConnectCommand.FoundationOptions): ConnectCommand.FoundationDbConnectionOutcome {
         return try {
-            options.tenant
-
             val modelsById = runBlocking {
                 readStoredModelDefinitionsFromDirectory(
                     fdbClusterFilePath = options.clusterFile,
                     directoryPath = options.directoryPath,
-                    tenantName = options.tenant?.let { Tuple.from(it) },
                 )
             }
 
@@ -534,7 +512,6 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
                 detectKeepAllVersions(
                     clusterFilePath = options.clusterFile,
                     directoryPath = options.directoryPath,
-                    tenantName = options.tenant,
                     modelNames = effectiveModels.values.map { it.Meta.name },
                 ) ?: true
             }
@@ -544,7 +521,6 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
                     keepAllVersions = keepAllVersionsPreference,
                     fdbClusterFilePath = options.clusterFile,
                     directoryPath = options.directoryPath,
-                    tenantName = options.tenant?.let { Tuple.from(it) },
                     dataModelsById = effectiveModels,
                 )
             }
@@ -553,7 +529,6 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
                 FoundationDbStoreConnection(
                     directoryPath = options.directoryPath,
                     clusterFilePath = options.clusterFile,
-                    tenantName = options.tenant,
                     dataStore = dataStore,
                 ),
             )
@@ -581,16 +556,13 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
 private suspend fun detectKeepAllVersions(
     clusterFilePath: String?,
     directoryPath: List<String>,
-    tenantName: String?,
     modelNames: List<String>,
 ): Boolean? {
     val modelName = modelNames.firstOrNull() ?: return null
     val fdb = FDB.selectAPIVersion(730)
     val db = if (clusterFilePath != null) fdb.open(clusterFilePath) else fdb.open()
 
-    val tenantTuple = tenantName?.takeIf { it.isNotBlank() }?.let { Tuple.from(it) }
-    val tenantDb = tenantTuple?.let { db.openTenant(it) }
-    val tc: TransactionContext = tenantDb ?: db
+    val tc: TransactionContext = db
 
     try {
         val rootDirectory: DirectorySubspace = try {
@@ -614,7 +586,6 @@ private suspend fun detectKeepAllVersions(
             if (t.isNoSuchDirectory()) false else null
         }
     } finally {
-        tenantDb?.close()
         db.close()
     }
 }

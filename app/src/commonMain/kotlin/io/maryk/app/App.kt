@@ -233,7 +233,6 @@ private fun StoreEditorDialog(storesState: StoresState) {
     var type by remember(editing) { mutableStateOf(editing?.type ?: StoreKind.ROCKS_DB) }
     var directory by remember(editing) { mutableStateOf(editing?.directory.orEmpty()) }
     var clusterFile by remember(editing) { mutableStateOf(editing?.clusterFile.orEmpty()) }
-    var tenant by remember(editing) { mutableStateOf(editing?.tenant.orEmpty()) }
     var sshHost by remember(editing) { mutableStateOf(editing?.sshHost.orEmpty()) }
     var sshUser by remember(editing) { mutableStateOf(editing?.sshUser.orEmpty()) }
     var sshPort by remember(editing) { mutableStateOf(editing?.sshPort?.toString().orEmpty()) }
@@ -268,7 +267,7 @@ private fun StoreEditorDialog(storesState: StoresState) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(if (editing == null) "Add store" else "Edit store", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                SmallIconButton(modifier = Modifier.handPointer(), 
+                SmallIconButton(modifier = Modifier.handPointer(),
                     icon = Icons.Default.Close,
                     contentDescription = "Close",
                     onClick = { storesState.closeStoreEditor() },
@@ -305,12 +304,6 @@ private fun StoreEditorDialog(storesState: StoresState) {
                         value = clusterFile,
                         onValueChange = { clusterFile = it },
                         label = "Cluster file (optional)",
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    SmallOutlinedTextField(
-                        value = tenant,
-                        onValueChange = { tenant = it },
-                        label = "Tenant (optional)",
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -430,7 +423,6 @@ private fun StoreEditorDialog(storesState: StoresState) {
                             return@ModalPrimaryButton
                         }
                         val cluster = if (type == StoreKind.FOUNDATION_DB) clusterFile.trim().ifBlank { null } else null
-                        val tenantValue = if (type == StoreKind.FOUNDATION_DB) tenant.trim().ifBlank { null } else null
                         val sshEnabled = type == StoreKind.REMOTE && useSsh
                         val sshHostValue = if (sshEnabled) trimmedSshHost.ifBlank { null } else null
                         val sshUserValue = if (sshEnabled) trimmedSshUser.ifBlank { null } else null
@@ -441,7 +433,6 @@ private fun StoreEditorDialog(storesState: StoresState) {
                             type = type,
                             directory = trimmedDirectory,
                             clusterFile = cluster,
-                            tenant = tenantValue,
                             sshHost = sshHostValue,
                             sshUser = sshUserValue,
                             sshPort = if (sshEnabled) resolvedSshPort else null,

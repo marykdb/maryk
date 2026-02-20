@@ -15,7 +15,6 @@ data class StoreDefinition(
     val type: StoreKind,
     val directory: String,
     val clusterFile: String? = null,
-    val tenant: String? = null,
     val sshHost: String? = null,
     val sshUser: String? = null,
     val sshPort: Int? = null,
@@ -27,7 +26,6 @@ data class StoreDefinition(
         StoreKind.FOUNDATION_DB -> buildString {
             append(directory)
             clusterFile?.takeIf { it.isNotBlank() }?.let { append(" (cluster: ").append(it).append(')') }
-            tenant?.takeIf { it.isNotBlank() }?.let { append(" (tenant: ").append(it).append(')') }
         }
         StoreKind.REMOTE -> buildString {
             append(directory)
@@ -60,7 +58,7 @@ class StoreRepository(
         ensureParentDirectory(path)
         val body = buildString {
             append("# Maryk app store connections\n")
-            append("# id\tname\ttype\tpath_or_url\tcluster\ttenant\tssh_host\tssh_user\tssh_port\tssh_local_port\tssh_identity_file\n")
+            append("# id\tname\ttype\tpath_or_url\tcluster\tssh_host\tssh_user\tssh_port\tssh_local_port\tssh_identity_file\n")
             stores.forEach { store ->
                 append(encode(store.id))
                 append('\t')
@@ -71,8 +69,6 @@ class StoreRepository(
                 append(encode(store.directory))
                 append('\t')
                 append(encode(store.clusterFile.orEmpty()))
-                append('\t')
-                append(encode(store.tenant.orEmpty()))
                 append('\t')
                 append(encode(store.sshHost.orEmpty()))
                 append('\t')
@@ -100,7 +96,6 @@ class StoreRepository(
         val directory = decode(parts[3])
         if (name.isBlank() || directory.isBlank()) return null
         val clusterFile = parts.getOrNull(4)?.let { decode(it) }?.ifBlank { null }
-        val tenant = parts.getOrNull(5)?.let { decode(it) }?.ifBlank { null }
         val sshHost = parts.getOrNull(6)?.let { decode(it) }?.ifBlank { null }
         val sshUser = parts.getOrNull(7)?.let { decode(it) }?.ifBlank { null }
         val sshPort = parts.getOrNull(8)?.let { decode(it) }?.ifBlank { null }?.toIntOrNull()
@@ -112,7 +107,6 @@ class StoreRepository(
             type = type,
             directory = directory,
             clusterFile = clusterFile,
-            tenant = tenant,
             sshHost = sshHost,
             sshUser = sshUser,
             sshPort = sshPort,

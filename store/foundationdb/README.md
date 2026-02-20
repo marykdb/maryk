@@ -73,7 +73,6 @@ Model changes that generally do NOT require a migration: adding models, indexes,
 
 - `keepAllVersions`: Mirror latest writes into historic subspaces for time travel and change history.
 - `fdbClusterFilePath`: Optional path to an FDB cluster file; uses default environment if null.
-- `tenantName`: Optional `Tuple` to open a tenant.
 - `directoryPath`: Subspace root path under which model directories are created.
 - `databaseOptionsSetter`: Lambda executed once during startup on the underlying `DatabaseOptions`. Use this to enable tracing, tweak locality, or set transaction logging limits without forking Maryk.
 - `enableClusterUpdateLog`: Persist each local write (add/change/delete) into an FDB-backed update log and tail that log back into this process to drive `executeFlow` listeners across a whole cluster (multi-writer, multi-reader).

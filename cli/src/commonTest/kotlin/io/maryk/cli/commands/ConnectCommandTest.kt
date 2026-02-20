@@ -133,7 +133,7 @@ class ConnectCommandTest {
 
         val foundationConnector = FakeFoundationDbConnector { options ->
             ConnectCommand.FoundationDbConnectionOutcome.Success(
-                FoundationDbStoreConnection(options.directoryPath, options.clusterFile, options.tenant, FakeDataStore()),
+                FoundationDbStoreConnection(options.directoryPath, options.clusterFile, FakeDataStore()),
             )
         }
 
@@ -191,7 +191,7 @@ class ConnectCommandTest {
     private class FakeFoundationDbConnector(
         private val factory: (ConnectCommand.FoundationOptions) -> ConnectCommand.FoundationDbConnectionOutcome = {
             ConnectCommand.FoundationDbConnectionOutcome.Success(
-                FoundationDbStoreConnection(it.directoryPath, it.clusterFile, it.tenant, FakeDataStore()),
+                FoundationDbStoreConnection(it.directoryPath, it.clusterFile, FakeDataStore()),
             )
         },
     ) : FoundationDbConnector {

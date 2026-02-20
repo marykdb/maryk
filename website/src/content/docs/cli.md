@@ -23,7 +23,7 @@ Release binary (macOS example):
 
 ```text
 connect rocksdb --dir /path/to/rocksdb
-connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster] [--tenant myTenant]
+connect foundationdb --dir maryk/app/store [--cluster /path/to/fdb.cluster]
 ```
 
 ## Serve
@@ -32,7 +32,7 @@ Expose a local store over HTTP:
 
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
-serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --tenant myTenant --port 8210
+serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
 ```
 
 You can also pass `--config` with key/value config (see CLI commands doc for details).

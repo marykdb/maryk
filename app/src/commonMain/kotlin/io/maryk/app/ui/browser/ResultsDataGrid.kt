@@ -51,9 +51,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -80,9 +80,7 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -105,6 +103,7 @@ import io.maryk.app.ui.ModalSecondaryButton
 import io.maryk.app.ui.ModalSurface
 import io.maryk.app.ui.aggregate.AggregateTabPanel
 import io.maryk.app.ui.catalog.ModelTabPanel
+import io.maryk.app.ui.copyToClipboard
 import io.maryk.app.ui.handPointer
 import io.maryk.app.ui.horizontalResizeCursor
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -143,7 +142,6 @@ fun ResultsDataGrid(
     val listScope = rememberCoroutineScope()
     val density = LocalDensity.current
     var anchorIndex by remember { mutableStateOf<Int?>(null) }
-    val clipboard = LocalClipboardManager.current
     var deleteRow by remember { mutableStateOf<ScanRow?>(null) }
     var hardDelete by remember { mutableStateOf(false) }
     var showAddDialog by remember { mutableStateOf(false) }
@@ -260,7 +258,7 @@ fun ResultsDataGrid(
             }
             Column(modifier = Modifier.fillMaxWidth()) {
                 val tabs = listOf(ResultsTab.DATA, ResultsTab.MODEL, ResultsTab.AGGREGATE)
-                TabRow(
+                SecondaryTabRow(
                     selectedTabIndex = tabs.indexOf(uiState.resultsTab).coerceAtLeast(0),
                     modifier = Modifier.height(28.dp)
                 ) {
@@ -543,14 +541,14 @@ fun ResultsDataGrid(
                                         onCopyRowJson = {
                                             val model = state.currentDataModel() ?: return@resultRowContextItems
                                             val json = serializeValuesToJson(model, row.values, buildRequestContext(model))
-                                            clipboard.setText(AnnotatedString(json))
+                                            copyToClipboard(json)
                                         },
                                         onCopyRowYaml = {
                                             val model = state.currentDataModel() ?: return@resultRowContextItems
                                             val yaml = serializeValuesToYaml(model, row.values, buildRequestContext(model))
-                                            clipboard.setText(AnnotatedString(yaml))
+                                            copyToClipboard(yaml)
                                         },
-                                        onCopyKey = { clipboard.setText(AnnotatedString(row.keyText)) },
+                                        onCopyKey = { copyToClipboard(row.keyText) },
                                         onExportRow = {
                                             state.requestExportRowDialog(row)
                                         },

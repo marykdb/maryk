@@ -38,14 +38,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.maryk.app.data.formatHlcTimestamp
 import io.maryk.app.ui.ModalSurface
+import io.maryk.app.ui.copyToClipboard
 import io.maryk.app.ui.handPointer
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
@@ -65,7 +64,6 @@ import maryk.core.query.pairs.ReferenceNullPair
 fun HistoryTimeline(
     versions: List<VersionedChanges>,
 ) {
-    val clipboard = LocalClipboardManager.current
     var sortDescending by remember { mutableStateOf(true) }
     val chronological = versions.sortedBy { it.version }
     val sorted = if (sortDescending) chronological.asReversed() else chronological
@@ -117,14 +115,14 @@ fun HistoryTimeline(
                     title = null,
                     items = initialBatchDisplay,
                     previousByVersion = previousByVersion,
-                    onCopy = { clipboard.setText(AnnotatedString(it)) },
+                    onCopy = { copyToClipboard(it) },
                     onDiff = onDiffAction,
                 )
                 HistoryBatch(
                     title = null,
                     items = latestBatchDisplay,
                     previousByVersion = previousByVersion,
-                    onCopy = { clipboard.setText(AnnotatedString(it)) },
+                    onCopy = { copyToClipboard(it) },
                     onDiff = onDiffAction,
                 )
             } else {
@@ -132,7 +130,7 @@ fun HistoryTimeline(
                     title = null,
                     items = latestBatchDisplay,
                     previousByVersion = previousByVersion,
-                    onCopy = { clipboard.setText(AnnotatedString(it)) },
+                    onCopy = { copyToClipboard(it) },
                     onDiff = onDiffAction,
                 )
                 if (showSplit) {
@@ -140,7 +138,7 @@ fun HistoryTimeline(
                         title = null,
                         items = initialBatchDisplay,
                         previousByVersion = previousByVersion,
-                        onCopy = { clipboard.setText(AnnotatedString(it)) },
+                        onCopy = { copyToClipboard(it) },
                         onDiff = onDiffAction,
                     )
                 }

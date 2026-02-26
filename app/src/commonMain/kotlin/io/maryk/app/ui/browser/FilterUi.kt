@@ -44,9 +44,9 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
@@ -257,6 +257,7 @@ internal fun FilterStatusBar(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun FilterDialog(
     dataModel: IsRootDataModel,
@@ -346,7 +347,7 @@ internal fun FilterDialog(
                     color = MaterialTheme.colorScheme.error,
                 )
             }
-            TabRow(selectedTabIndex = activeTab.ordinal, modifier = Modifier.height(28.dp)) {
+            SecondaryTabRow(selectedTabIndex = activeTab.ordinal, modifier = Modifier.height(28.dp)) {
                 FilterTab.entries.forEach { tab ->
                     Tab(
                         selected = activeTab == tab,
@@ -1202,9 +1203,6 @@ private fun buildSimpleFilterYaml(
                 FilterOperator.LESS_THAN_EQUALS -> "!LessThanEquals"
                 FilterOperator.PREFIX -> "!Prefix"
                 FilterOperator.REGEX -> "!RegEx"
-                FilterOperator.EXISTS,
-                FilterOperator.RANGE,
-                FilterOperator.VALUE_IN -> "!Equals"
             }
             "$tag { ${reference.completeName}: $value }"
         }
@@ -1313,7 +1311,7 @@ private fun buildFilterChips(
 
 private fun buildFallbackChips(raw: String): List<FilterChipData> {
     val chips = mutableListOf<FilterChipData>()
-    val regex = Regex("!(Equals|GreaterThanEquals|GreaterThan|LessThanEquals|LessThan|Prefix|RegEx|Range|ValueIn)\\s*\\{\\s*([^:}]+):\\s*([^}]+)\\}")
+    val regex = Regex("!(Equals|GreaterThanEquals|GreaterThan|LessThanEquals|LessThan|Prefix|RegEx|Range|ValueIn)\\s*\\{\\s*([^:}]+):\\s*([^}]+)}")
     val existsRegex = Regex("!Exists\\s+([^\\s]+)")
     regex.findAll(raw).forEach { match ->
         val op = match.groupValues[1]

@@ -3,7 +3,8 @@
 android = "9.0.1"
 atomicfu = "0.31.0"
 benManesVersions = "0.53.0"
-compose = "1.7.3"
+compose = "1.9.3"
+composeMaterialIcons = "1.7.3"
 cryptography = "0.5.0"
 kotlin = "2.3.10"
 kotlinxCollectionsImmutable = "0.4.0"
@@ -23,8 +24,8 @@ vico = "2.4.3"
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "android" }
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
-compose-material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "compose" }
-compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "compose" }
+compose-material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "composeMaterialIcons" }
+compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeMaterialIcons" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }

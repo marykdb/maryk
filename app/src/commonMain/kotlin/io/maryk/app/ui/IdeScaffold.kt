@@ -48,8 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -180,8 +178,6 @@ private fun StoreChrome(
     val definition = connection?.definition
     val location = definition?.displayLocation() ?: "Not connected"
     val envLabel = definition?.type?.label ?: "Env"
-    val clipboard = LocalClipboardManager.current
-
     Column(
         modifier = Modifier.width(520.dp),
         verticalArrangement = Arrangement.spacedBy(2.dp),
@@ -214,7 +210,7 @@ private fun StoreChrome(
                 modifier = Modifier.weight(1f),
             )
             IconButton(
-                onClick = { clipboard.setText(AnnotatedString(location)) },
+                onClick = { copyToClipboard(location) },
                 modifier = Modifier.size(20.dp).handPointer(),
             ) {
                 Icon(

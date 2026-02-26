@@ -40,8 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
@@ -51,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import io.maryk.app.state.BrowserState
 import io.maryk.app.state.BrowserUiState
 import io.maryk.app.state.ModelFieldRef
+import io.maryk.app.ui.copyToClipboard
 import io.maryk.app.ui.handPointer
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsTypedDataModel
@@ -428,7 +427,6 @@ fun ModelRawPanel(
     modifier: Modifier = Modifier,
 ) {
     val selected = state.selectedModelField
-    val clipboard = LocalClipboardManager.current
     Column(
         modifier = modifier.fillMaxHeight().padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -437,7 +435,7 @@ fun ModelRawPanel(
             Text("Raw", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
             IconButton(
                 onClick = {
-                    selected?.let { clipboard.setText(AnnotatedString(buildModelRaw(it))) }
+                    selected?.let { copyToClipboard(buildModelRaw(it)) }
                 },
                 modifier = Modifier.size(20.dp).alpha(0.65f).handPointer(),
             ) {

@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package io.maryk.app.ui.browser
 
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -29,12 +31,13 @@ import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -48,7 +51,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -71,6 +73,7 @@ import io.maryk.app.ui.browser.editor.RecordEditorDialog
 import io.maryk.app.ui.browser.editor.RecordEditorMode
 import io.maryk.app.ui.catalog.ModelDetailsPanel
 import io.maryk.app.ui.catalog.ModelRawPanel
+import io.maryk.app.ui.copyToClipboard
 import io.maryk.app.ui.handPointer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -121,7 +124,7 @@ fun InspectorDrawer(
                 }
                 InspectorHeader(details)
             }
-            TabRow(selectedTabIndex = tabs.indexOf(tab).coerceAtLeast(0)) {
+            SecondaryTabRow(selectedTabIndex = tabs.indexOf(tab).coerceAtLeast(0)) {
                 tabs.forEach { item ->
                     Tab(
                         selected = tab == item,
@@ -182,7 +185,6 @@ private fun ModelDetailsHeader(
 
 @Composable
 private fun InspectorHeader(details: RecordDetails) {
-    val clipboard = LocalClipboardManager.current
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -200,7 +202,7 @@ private fun InspectorHeader(details: RecordDetails) {
                     )
                 }
             }
-            SmallCopyButton(onClick = { clipboard.setText(AnnotatedString(details.keyText)) })
+            SmallCopyButton(onClick = { copyToClipboard(details.keyText) })
         }
         Spacer(modifier = Modifier.height(6.dp))
         Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -346,7 +348,6 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
     var search by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
-    val clipboard = LocalClipboardManager.current
     val query = search.trim()
     val lines = remember(details.yaml) { details.yaml.lines() }
     val filteredLines = remember(query, lines) {
@@ -374,7 +375,7 @@ private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("Raw", style = MaterialTheme.typography.labelMedium, modifier = Modifier.weight(1f))
             IconButton(
-                onClick = { clipboard.setText(AnnotatedString(details.yaml)) },
+                onClick = { copyToClipboard(details.yaml) },
                 modifier = Modifier.size(20.dp).alpha(0.65f).handPointer(),
             ) {
                 Icon(

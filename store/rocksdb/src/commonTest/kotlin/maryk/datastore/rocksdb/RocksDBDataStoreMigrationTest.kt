@@ -1,8 +1,11 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.test.runTest
+import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.migration.MigrationException
+import maryk.core.models.migration.MigrationOutcome
+import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -30,6 +33,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.delay
 
 class RocksDBDataStoreMigrationTest {
 
@@ -260,6 +264,149 @@ class RocksDBDataStoreMigrationTest {
             )
         }
 
+        deleteFolder(path)
+    }
+
+    @Test
+    fun backgroundMigrationBlocksRequestsUntilDone() = runTest {
+        val path = createTestDBFolder("migrationBackground")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var attempts = 0
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationStartupBudgetMs = 1L,
+            continueMigrationsInBackground = true,
+            migrationHandler = { _ ->
+                attempts += 1
+                if (attempts >= 2) {
+                    MigrationOutcome.Success
+                } else {
+                    MigrationOutcome.Retry(retryAfterMs = 50)
+                }
+            },
+        )
+
+        repeat(50) {
+            if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
+            delay(10)
+        }
+        assertTrue { dataStore.pendingMigrations().containsKey(1u) }
+        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
+
+        assertFailsWith<RequestException> {
+            dataStore.execute(
+                ModelV2.add(
+                    ModelV2.create {
+                        value with "blocked"
+                        newNumber with 1
+                    }
+                )
+            )
+        }
+
+        dataStore.awaitMigration(1u)
+        assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+        dataStore.execute(
+            ModelV2.add(
+                ModelV2.create {
+                    value with "done"
+                    newNumber with 2
+                }
+            )
+        )
+
+        dataStore.close()
+        deleteFolder(path)
+    }
+
+    @Test
+    fun canPauseResumeAndCancelBackgroundMigration() = runTest {
+        val path = createTestDBFolder("migrationControl")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var allowSuccess = false
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationStartupBudgetMs = 1L,
+            continueMigrationsInBackground = true,
+            migrationHandler = { _ ->
+                if (allowSuccess) {
+                    MigrationOutcome.Success
+                } else {
+                    MigrationOutcome.Retry(retryAfterMs = 25)
+                }
+            },
+        )
+
+        repeat(50) {
+            if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
+            delay(10)
+        }
+        assertTrue { dataStore.pendingMigrations().containsKey(1u) }
+        assertTrue { dataStore.pauseMigration(1u) }
+        assertEquals(MigrationRuntimeState.Paused, dataStore.migrationStatus(1u).state)
+        delay(50)
+        assertTrue { dataStore.resumeMigration(1u) }
+        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
+
+        allowSuccess = true
+        dataStore.awaitMigration(1u)
+        assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+
+        // New run to check cancel path
+        dataStore.close()
+
+        val cancelPath = createTestDBFolder("migrationControlCancel")
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = cancelPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val cancelStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = cancelPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationStartupBudgetMs = 1L,
+            continueMigrationsInBackground = true,
+            migrationHandler = { _ -> MigrationOutcome.Retry(retryAfterMs = 25) },
+        )
+
+        repeat(50) {
+            if (cancelStore.pendingMigrations().containsKey(1u)) return@repeat
+            delay(10)
+        }
+        assertTrue { cancelStore.pendingMigrations().containsKey(1u) }
+        assertTrue { cancelStore.cancelMigration(1u, "test cancel") }
+        assertEquals(MigrationRuntimeState.Canceled, cancelStore.migrationStatus(1u).state)
+        assertFailsWith<RequestException> {
+            cancelStore.execute(
+                ModelV2.add(
+                    ModelV2.create {
+                        value with "canceled"
+                        newNumber with 3
+                    }
+                )
+            )
+        }
+
+        cancelStore.close()
+        deleteFolder(cancelPath)
         deleteFolder(path)
     }
 }

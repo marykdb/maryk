@@ -155,7 +155,18 @@ For scans, we slice by `(indexValue || key)` to include/exclude `startKey` and p
 ## Error Handling and Migrations
 
 - Any `RequestException` or validation error is wrapped in structured statuses (e.g. `AlreadyExists`, `ValidationFail`).
-- Schema migrations are coordinated through the `model` subspace and run during startup; they can schedule re‑indexing work where necessary.
+- Schema migrations are coordinated through the `model` subspace.
+- `migrationHandler` uses `MigrationContext` and returns `MigrationOutcome` (`Success`, `Partial`, `Retry`, `Fatal`).
+- Long migrations can hand off from startup to background (`migrationStartupBudgetMs`, `continueMigrationsInBackground`).
+- Pending models are request-blocked until migration completes (`assertModelReady` gate).
+- Runtime operations:
+  - `pendingMigrations`, `migrationStatus`, `migrationStatuses`, `awaitMigration`
+  - `pauseMigration`, `resumeMigration`, `cancelMigration`
+- Default lease is distributed (`FoundationDBMigrationLease`):
+  - per-model lease record in metadata
+  - owner token + TTL (`migrationLeaseTimeoutMs`)
+  - heartbeat renewal (`migrationLeaseHeartbeatMs`)
+  - takeover after TTL expiry when owner is gone
 
 ## Why this design?
 

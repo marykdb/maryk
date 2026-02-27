@@ -40,7 +40,16 @@ Need remote access to this local RocksDB store? Expose it with the
 
 ## Migrations and Version Updates
 
-On open, the store compares the stored model with your provided definitions and decides whether it is up‑to‑date, requires safe additions (including new indexes), or needs a migration. For incompatible changes you provide a `migrationHandler` that performs fixes and returns `true` to continue. After a successful update you can run custom logic via `versionUpdateHandler` (for example, seed data that depends on the new schema).
+On open, the store compares stored model definitions with configured models and decides:
+- up-to-date
+- safe adds/index backfill
+- migration required
+
+For incompatible changes, provide `migrationHandler` and return `MigrationOutcome`:
+- `Success`: migration complete
+- `Partial`: persisted progress, continue later
+- `Retry`: persisted progress, retry (optional delay)
+- `Fatal`: fail startup or background migration
 
 Notes:
 - You can add models, properties, and indexes and relax validation without a migration.
@@ -80,6 +89,30 @@ RocksDBDataStore.open(
     }
 )
 ```
+
+### Migration Control API
+
+If you configure:
+- `migrationStartupBudgetMs`
+- `continueMigrationsInBackground = true`
+
+then long migrations continue in background and the model is request-blocked until completion.
+
+Runtime controls:
+- `pendingMigrations()`
+- `migrationStatus(modelId)`
+- `migrationStatuses()`
+- `awaitMigration(modelId)`
+- `pauseMigration(modelId)`
+- `resumeMigration(modelId)`
+- `cancelMigration(modelId, reason)`
+
+### Lease Behavior
+
+RocksDB default lease is process-local (`RocksDBLocalMigrationLease`).
+- Prevents duplicate migration runners inside one process.
+- Cross-process migration lease is usually unnecessary for RocksDB because DB lock allows one opener.
+- You can still inject custom `migrationLease` for custom orchestration.
 
 ## Platform Support
 

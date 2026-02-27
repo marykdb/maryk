@@ -3,8 +3,12 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.delay
+import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.migration.MigrationException
+import maryk.core.models.migration.MigrationOutcome
+import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -294,5 +298,150 @@ class FoundationDBDataStoreMigrationTest {
                 dataModelsById = mapOf(1u to SimpleMarykModel)
             )
         }
+    }
+
+    @Test
+    fun backgroundMigrationBlocksRequestsUntilDone() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-background", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var attempts = 0
+        val dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationStartupBudgetMs = 1L,
+            continueMigrationsInBackground = true,
+            migrationHandler = { _ ->
+                attempts += 1
+                if (attempts >= 2) {
+                    MigrationOutcome.Success
+                } else {
+                    MigrationOutcome.Retry(retryAfterMs = 50)
+                }
+            },
+        )
+
+        repeat(50) {
+            if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
+            delay(10)
+        }
+        assertTrue { dataStore.pendingMigrations().containsKey(1u) }
+        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
+
+        assertFailsWith<RequestException> {
+            dataStore.execute(
+                ModelV2.add(
+                    ModelV2.create {
+                        value with "blocked"
+                        newNumber with 1
+                    }
+                )
+            )
+        }
+
+        dataStore.awaitMigration(1u)
+        assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+        dataStore.execute(
+            ModelV2.add(
+                ModelV2.create {
+                    value with "done"
+                    newNumber with 2
+                }
+            )
+        )
+
+        dataStore.close()
+    }
+
+    @Test
+    fun canPauseResumeAndCancelBackgroundMigration() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-control", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var allowSuccess = false
+        val dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationStartupBudgetMs = 1L,
+            continueMigrationsInBackground = true,
+            migrationHandler = { _ ->
+                if (allowSuccess) {
+                    MigrationOutcome.Success
+                } else {
+                    MigrationOutcome.Retry(retryAfterMs = 25)
+                }
+            },
+        )
+
+        repeat(50) {
+            if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
+            delay(10)
+        }
+        assertTrue { dataStore.pendingMigrations().containsKey(1u) }
+        assertTrue { dataStore.pauseMigration(1u) }
+        assertEquals(MigrationRuntimeState.Paused, dataStore.migrationStatus(1u).state)
+        delay(50)
+        assertTrue { dataStore.resumeMigration(1u) }
+        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
+
+        allowSuccess = true
+        dataStore.awaitMigration(1u)
+        assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+        dataStore.close()
+
+        // New run to check cancel path
+        val cancelPath = listOf("maryk", "test", "fdb-migration-control-cancel", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = cancelPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val cancelStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = cancelPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationStartupBudgetMs = 1L,
+            continueMigrationsInBackground = true,
+            migrationHandler = { _ -> MigrationOutcome.Retry(retryAfterMs = 25) },
+        )
+
+        repeat(50) {
+            if (cancelStore.pendingMigrations().containsKey(1u)) return@repeat
+            delay(10)
+        }
+        assertTrue { cancelStore.pendingMigrations().containsKey(1u) }
+        assertTrue { cancelStore.cancelMigration(1u, "test cancel") }
+        assertEquals(MigrationRuntimeState.Canceled, cancelStore.migrationStatus(1u).state)
+        assertFailsWith<RequestException> {
+            cancelStore.execute(
+                ModelV2.add(
+                    ModelV2.create {
+                        value with "canceled"
+                        newNumber with 3
+                    }
+                )
+            )
+        }
+
+        cancelStore.close()
     }
 }

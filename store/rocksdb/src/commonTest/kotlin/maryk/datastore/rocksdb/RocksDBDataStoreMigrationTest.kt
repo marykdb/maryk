@@ -1,12 +1,20 @@
+@file:Suppress("unused")
+
 package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.test.runTest
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
+import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.reference
+import maryk.core.properties.definitions.string
+import maryk.core.properties.types.Version
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -243,7 +251,7 @@ class RocksDBDataStoreMigrationTest {
         assertEquals(40, historicScanResponse.values[3].values { newNumber })
 
         dataStore.close()
-    
+
         deleteFolder(path)
     }
 
@@ -511,4 +519,98 @@ class RocksDBDataStoreMigrationTest {
 
         deleteFolder(path)
     }
+
+    @Test
+    fun migrationOrderFollowsModelDependencies() = runTest {
+        val path = createTestDBFolder("migrationDependencyOrder")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(
+                2u to Phase6OrderBaseV1,
+                1u to Phase6OrderDependentV1,
+            ),
+        ).close()
+
+        val migratedModels = mutableListOf<String>()
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(
+                2u to Phase6OrderBaseV2,
+                1u to Phase6OrderDependentV2,
+            ),
+            migrationHandler = { context ->
+                migratedModels += context.newDataModel.Meta.name
+                MigrationOutcome.Success
+            },
+        ).close()
+
+        assertEquals(listOf("Phase6OrderBase", "Phase6OrderDependent"), migratedModels)
+        deleteFolder(path)
+    }
+
+    @Test
+    fun migrationCycleInModelsIsRejected() = runTest {
+        val path = createTestDBFolder("migrationDependencyCycle")
+
+        val exception = assertFailsWith<MigrationException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(
+                    1u to Phase6CycleLeftModel,
+                    2u to Phase6CycleRightModel,
+                ),
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("Dependency cycle detected"))
+        deleteFolder(path)
+    }
+}
+
+private object Phase6OrderBaseV1 : RootDataModel<Phase6OrderBaseV1>(
+    name = "Phase6OrderBase",
+    version = Version(1),
+) {
+    val value by string(index = 1u)
+}
+
+private object Phase6OrderBaseV2 : RootDataModel<Phase6OrderBaseV2>(
+    name = "Phase6OrderBase",
+    version = Version(2),
+) {
+    val value by number(index = 1u, type = SInt32, required = true)
+}
+
+private object Phase6OrderDependentV1 : RootDataModel<Phase6OrderDependentV1>(
+    name = "Phase6OrderDependent",
+    version = Version(1),
+) {
+    val baseRef by reference(index = 1u, required = false, dataModel = { Phase6OrderBaseV1 })
+    val value by string(index = 2u)
+}
+
+private object Phase6OrderDependentV2 : RootDataModel<Phase6OrderDependentV2>(
+    name = "Phase6OrderDependent",
+    version = Version(2),
+) {
+    val baseRef by reference(index = 1u, required = false, dataModel = { Phase6OrderBaseV2 })
+    val value by number(index = 2u, type = SInt32, required = true)
+}
+
+private object Phase6CycleLeftModel : RootDataModel<Phase6CycleLeftModel>(
+    name = "Phase6CycleLeftModel",
+    version = Version(1),
+) {
+    val rightRef by reference(index = 1u, required = false, dataModel = { Phase6CycleRightModel })
+}
+
+private object Phase6CycleRightModel : RootDataModel<Phase6CycleRightModel>(
+    name = "Phase6CycleRightModel",
+    version = Version(1),
+) {
+    val leftRef by reference(index = 1u, required = false, dataModel = { Phase6CycleLeftModel })
 }

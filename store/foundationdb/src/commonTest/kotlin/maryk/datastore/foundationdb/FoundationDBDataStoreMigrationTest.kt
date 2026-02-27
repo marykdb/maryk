@@ -335,7 +335,10 @@ class FoundationDBDataStoreMigrationTest {
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
-        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatuses()[1u]?.state)
+        val runningStatus = dataStore.migrationStatuses()[1u]
+        assertEquals(MigrationRuntimeState.Running, runningStatus?.state)
+        val runningAttempt = runningStatus?.attempt
+        assertTrue { runningAttempt == null || runningAttempt > 0u }
 
         assertFailsWith<RequestException> {
             dataStore.execute(
@@ -398,7 +401,10 @@ class FoundationDBDataStoreMigrationTest {
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         assertTrue { dataStore.pauseMigration(1u) }
         assertEquals(MigrationRuntimeState.Paused, dataStore.migrationStatus(1u).state)
-        assertEquals(MigrationRuntimeState.Paused, dataStore.migrationStatuses()[1u]?.state)
+        val pausedStatus = dataStore.migrationStatuses()[1u]
+        assertEquals(MigrationRuntimeState.Paused, pausedStatus?.state)
+        val pausedAttempt = pausedStatus?.attempt
+        assertTrue { pausedAttempt == null || pausedAttempt > 0u }
         delay(50)
         assertTrue { dataStore.resumeMigration(1u) }
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
@@ -486,7 +492,15 @@ class FoundationDBDataStoreMigrationTest {
             delay(10)
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
-        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatuses()[1u]?.state)
+        var verifyRunningStatus = dataStore.migrationStatuses()[1u]
+        repeat(50) {
+            if (verifyRunningStatus?.attempt != null) return@repeat
+            delay(10)
+            verifyRunningStatus = dataStore.migrationStatuses()[1u]
+        }
+        assertEquals(MigrationRuntimeState.Running, verifyRunningStatus?.state)
+        val verifyRunningAttempt = verifyRunningStatus?.attempt
+        assertTrue { verifyRunningAttempt == null || verifyRunningAttempt > 0u }
 
         assertFailsWith<RequestException> {
             dataStore.execute(

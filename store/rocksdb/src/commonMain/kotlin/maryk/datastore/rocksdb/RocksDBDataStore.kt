@@ -2,6 +2,7 @@ package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,8 @@ import maryk.core.models.migration.MigrationHandler
 import maryk.core.models.migration.MigrationLease
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationPhase
+import maryk.core.models.migration.MigrationRuntimeState
+import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.MigrationStatus
@@ -33,7 +36,6 @@ import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingPropertie
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
-import maryk.core.models.migration.NoopMigrationLease
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -72,6 +74,7 @@ import maryk.datastore.rocksdb.metadata.ModelMeta
 import maryk.datastore.rocksdb.metadata.readMetaFile
 import maryk.datastore.rocksdb.metadata.writeMetaFile
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
+import maryk.datastore.rocksdb.model.RocksDBLocalMigrationLease
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import maryk.datastore.rocksdb.model.storeModelDefinition
 import maryk.datastore.rocksdb.processors.AnyAddStoreAction
@@ -128,7 +131,7 @@ class RocksDBDataStore private constructor(
     val migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
     val migrationStartupBudgetMs: Long? = null,
     val continueMigrationsInBackground: Boolean = false,
-    val migrationLease: MigrationLease = NoopMigrationLease,
+    val migrationLease: MigrationLease? = null,
     val versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
     val fieldEncryptionProvider: FieldEncryptionProvider? = null,
 ) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
@@ -169,6 +172,7 @@ class RocksDBDataStore private constructor(
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val pendingMigrationModelIds = atomic(setOf<UInt>())
     private val pendingMigrationReasons = atomic(mapOf<UInt, String>())
+    private val pendingMigrationWaiters = atomic(mapOf<UInt, CompletableDeferred<Unit>>())
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
@@ -231,6 +235,7 @@ class RocksDBDataStore private constructor(
 
         val conversionContext = DefinitionsConversionContext()
         val startupStarted = TimeSource.Monotonic.markNow()
+        val effectiveMigrationLease = migrationLease ?: RocksDBLocalMigrationLease(storePath)
         val migrationStateStore = RocksDBMigrationStateStore(
             db,
             columnFamilyHandlesByDataModelIndex.mapValues { (_, tableColumnFamilies) -> tableColumnFamilies.model }
@@ -274,11 +279,12 @@ class RocksDBDataStore private constructor(
                             ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
                         val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
                         val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
-                        val leaseAcquired = migrationLease.tryAcquire(index, migrationId)
+                        val leaseAcquired = effectiveMigrationLease.tryAcquire(index, migrationId)
                         if (!leaseAcquired) {
                             if (continueMigrationsInBackground) {
                                 pendingMigrationModelIds.update { it + index }
                                 pendingMigrationReasons.update { it + (index to "Migration lease held by another migrator for $migrationId") }
+                                ensurePendingMigrationWaiter(index)
                                 return@let
                             } else {
                                 throw MigrationException("Migration lease could not be acquired for ${dataModel.Meta.name}: $migrationId")
@@ -296,6 +302,7 @@ class RocksDBDataStore private constructor(
                                     pendingMigrationReasons.update {
                                         it + (index to "Migration for ${dataModel.Meta.name} is running in background")
                                     }
+                                    ensurePendingMigrationWaiter(index)
                                     this.launch {
                                         while (true) {
                                             val previousState = migrationStateStore.read(index)
@@ -333,6 +340,7 @@ class RocksDBDataStore private constructor(
                                                     writeMetaFile(storePath, modelMetas)
                                                     pendingMigrationModelIds.update { it - index }
                                                     pendingMigrationReasons.update { it - index }
+                                                    completePendingMigration(index)
                                                     break
                                                 }
                                                 is MigrationOutcome.Partial -> {
@@ -386,11 +394,12 @@ class RocksDBDataStore private constructor(
                                                     pendingMigrationReasons.update {
                                                         it + (index to "Migration failed for ${dataModel.Meta.name}: ${outcome.reason}")
                                                     }
+                                                    failPendingMigration(index, "Migration failed for ${dataModel.Meta.name}: ${outcome.reason}")
                                                     break
                                                 }
                                             }
                                         }
-                                        migrationLease.release(index, migrationId)
+                                        effectiveMigrationLease.release(index, migrationId)
                                     }
                                     break
                                 }
@@ -481,7 +490,7 @@ class RocksDBDataStore private constructor(
                             }
                         } finally {
                             if (completedInStartup) {
-                                migrationLease.release(index, migrationId)
+                                effectiveMigrationLease.release(index, migrationId)
                             }
                         }
                         if (!completedInStartup) {
@@ -823,6 +832,59 @@ class RocksDBDataStore private constructor(
         return true
     }
 
+    fun pendingMigrations(): Map<UInt, String> = pendingMigrationReasons.value
+
+    fun migrationStatus(modelId: UInt): MigrationRuntimeStatus {
+        val reason = pendingMigrationReasons.value[modelId] ?: return MigrationRuntimeStatus(MigrationRuntimeState.Idle)
+        val state = if (reason.startsWith("Migration failed")) MigrationRuntimeState.Failed else MigrationRuntimeState.Running
+        return MigrationRuntimeStatus(state, reason)
+    }
+
+    fun migrationStatuses(): Map<UInt, MigrationRuntimeStatus> =
+        pendingMigrationReasons.value.mapValues { (_, reason) ->
+            val state = if (reason.startsWith("Migration failed")) MigrationRuntimeState.Failed else MigrationRuntimeState.Running
+            MigrationRuntimeStatus(state, reason)
+        }
+
+    suspend fun awaitMigration(modelId: UInt) {
+        pendingMigrationWaiters.value[modelId]?.await()
+    }
+
+    private fun ensurePendingMigrationWaiter(modelId: UInt): CompletableDeferred<Unit> {
+        var waiter: CompletableDeferred<Unit>? = null
+        pendingMigrationWaiters.update { current ->
+            val existing = current[modelId]
+            if (existing != null) {
+                waiter = existing
+                current
+            } else {
+                CompletableDeferred<Unit>().let { created ->
+                    waiter = created
+                    current + (modelId to created)
+                }
+            }
+        }
+        return waiter ?: throw IllegalStateException("Pending waiter could not be created for model $modelId")
+    }
+
+    private fun completePendingMigration(modelId: UInt) {
+        var waiter: CompletableDeferred<Unit>? = null
+        pendingMigrationWaiters.update { current ->
+            waiter = current[modelId]
+            current - modelId
+        }
+        waiter?.complete(Unit)
+    }
+
+    private fun failPendingMigration(modelId: UInt, reason: String) {
+        var waiter: CompletableDeferred<Unit>? = null
+        pendingMigrationWaiters.update { current ->
+            waiter = current[modelId]
+            current - modelId
+        }
+        waiter?.completeExceptionally(MigrationException(reason))
+    }
+
     override fun assertModelReady(dataModelId: UInt) {
         if (pendingMigrationModelIds.value.contains(dataModelId)) {
             val modelName = dataModelsById[dataModelId]?.Meta?.name ?: dataModelId.toString()
@@ -841,7 +903,7 @@ class RocksDBDataStore private constructor(
             migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
             migrationStartupBudgetMs: Long? = null,
             continueMigrationsInBackground: Boolean = false,
-            migrationLease: MigrationLease = NoopMigrationLease,
+            migrationLease: MigrationLease? = null,
             versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
         ): RocksDBDataStore {

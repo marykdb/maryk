@@ -41,6 +41,7 @@ import maryk.core.models.migration.canTransitionTo
 import maryk.core.models.migration.defaultMigrationAuditEventReporter
 import maryk.core.models.migration.nextRuntimePhaseOrNull
 import maryk.core.models.migration.normalizedRuntimePhase
+import maryk.core.models.migration.orderMigrationModelIds
 import maryk.core.models.migration.remainingRuntimePhaseCount
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
@@ -270,7 +271,8 @@ class RocksDBDataStore private constructor(
             )
         }
 
-        for ((index, dataModel) in dataModelsById) {
+        for (index in orderMigrationModelIds(dataModelsById)) {
+            val dataModel = dataModelsById.getValue(index)
             columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
                 when (
                     val migrationStatus = checkModelIfMigrationIsNeeded(

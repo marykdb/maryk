@@ -78,6 +78,9 @@ Migration handler outcomes:
 - `MigrationOutcome.Retry`
 - `MigrationOutcome.Fatal`
 
+Optional `migrationVerifyHandler` runs after migration phase success and before model readiness.
+It uses the same context/outcome contract and persists `Verify` phase state.
+
 ### Migration Runtime Control
 
 For long migrations, configure:

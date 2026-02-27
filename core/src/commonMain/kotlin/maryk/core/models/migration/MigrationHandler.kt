@@ -9,3 +9,8 @@ typealias NewRootDataModelDefinition = IsRootDataModel
  * Handles migration with context and rich outcomes.
  */
 typealias MigrationHandler<DS> = suspend (MigrationContext<DS>) -> MigrationOutcome
+
+/**
+ * Optional post-migration verification hook.
+ */
+typealias MigrationVerifyHandler<DS> = suspend (MigrationContext<DS>) -> MigrationOutcome

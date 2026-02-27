@@ -51,6 +51,9 @@ For incompatible changes, provide `migrationHandler` and return `MigrationOutcom
 - `Retry`: persisted progress, retry (optional delay)
 - `Fatal`: fail startup or background migration
 
+Optional `migrationVerifyHandler` runs after migration phase success and before model readiness.
+It uses the same context/outcome contract and persists `Verify` phase state.
+
 Notes:
 - You can add models, properties, and indexes and relax validation without a migration.
 - Changing property types, renaming without alternatives, or tightening validation triggers a migration.

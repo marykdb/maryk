@@ -107,6 +107,7 @@ export default defineConfig({
                             items: [
                                 {label: 'RocksDB Store', slug: 'stores/rocksdb'},
                                 {label: 'RocksDB Architecture', slug: 'stores/rocksdb/architecture'},
+                                {label: 'RocksDB Migrations', slug: 'stores/rocksdb/migrations'},
                                 {label: 'RocksDB Storage Layout', slug: 'stores/rocksdb/storage'},
                             ],
                         },
@@ -116,6 +117,7 @@ export default defineConfig({
                             items: [
                                 {label: 'Overview', slug: 'stores/foundationdb'},
                                 {label: 'Architecture', slug: 'stores/foundationdb/architecture'},
+                                {label: 'Migrations', slug: 'stores/foundationdb/migrations'},
                                 {label: 'Local Testing', slug: 'stores/foundationdb/local-testing'},
                                 {label: 'Storage Layout', slug: 'stores/foundationdb/storage'},
                             ],

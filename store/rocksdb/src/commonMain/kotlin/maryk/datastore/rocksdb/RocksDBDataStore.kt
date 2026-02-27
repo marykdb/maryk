@@ -310,20 +310,172 @@ class RocksDBDataStore private constructor(
                             ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
                         val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
                         val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
-                        val leaseAcquired = effectiveMigrationLease.tryAcquire(index, migrationId)
-                        if (!leaseAcquired) {
-                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseRejected, message = "Lease held by other migrator")
-                            if (continueMigrationsInBackground) {
-                                pendingMigrationModelIds.update { it + index }
-                                pendingMigrationReasons.update { it + (index to "Migration lease held by another migrator for $migrationId") }
-                                ensurePendingMigrationWaiter(index)
-                                return@let
-                            } else {
-                                throw MigrationException("Migration lease could not be acquired for ${dataModel.Meta.name}: $migrationId")
+                        suspend fun delayWithCancellationChecks(retryAfterMs: Long?) {
+                            if (retryAfterMs == null || retryAfterMs <= 0L) return
+                            var remaining = retryAfterMs
+                            while (remaining > 0L) {
+                                if (canceledMigrationReasons.value.containsKey(index)) return
+                                val waitMs = minOf(remaining, 250L)
+                                delay(waitMs)
+                                remaining -= waitMs
                             }
                         }
-                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseAcquired)
+
+                        fun launchBackgroundMigration(
+                            leaseAlreadyAcquired: Boolean,
+                            executeStep: suspend (MigrationState?, UInt) -> Pair<MigrationPhase, MigrationOutcome>,
+                            writeState: suspend (MigrationState) -> Unit,
+                        ) {
+                            this.launch {
+                                var hasLease = leaseAlreadyAcquired
+                                try {
+                                    while (!hasLease) {
+                                        canceledMigrationReasons.value[index]?.let { cancelReason ->
+                                            pendingMigrationReasons.update {
+                                                it + (index to "Migration canceled by operator: $cancelReason")
+                                            }
+                                            failPendingMigration(index, "Migration canceled by operator: $cancelReason")
+                                            return@launch
+                                        }
+                                        if (pausedMigrationModelIds.value.contains(index)) {
+                                            pendingMigrationReasons.update {
+                                                it + (index to "Migration paused by operator")
+                                            }
+                                            delay(250)
+                                            continue
+                                        }
+                                        if (effectiveMigrationLease.tryAcquire(index, migrationId)) {
+                                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseAcquired)
+                                            pendingMigrationReasons.update {
+                                                it + (index to "Migration for ${dataModel.Meta.name} is running in background")
+                                            }
+                                            hasLease = true
+                                            break
+                                        }
+                                        pendingMigrationReasons.update {
+                                            it + (index to "Migration lease held by another migrator for $migrationId")
+                                        }
+                                        delay(250)
+                                    }
+
+                                    while (true) {
+                                        canceledMigrationReasons.value[index]?.let { cancelReason ->
+                                            pendingMigrationReasons.update {
+                                                it + (index to "Migration canceled by operator: $cancelReason")
+                                            }
+                                            failPendingMigration(index, "Migration canceled by operator: $cancelReason")
+                                            break
+                                        }
+                                        if (pausedMigrationModelIds.value.contains(index)) {
+                                            pendingMigrationReasons.update {
+                                                it + (index to "Migration paused by operator")
+                                            }
+                                            delay(250)
+                                            continue
+                                        }
+                                        val previousState = migrationStateStore.read(index)
+                                        val attempt = (previousState?.attempt ?: 0u) + 1u
+                                        val (phase, outcome) = executeStep(previousState, attempt)
+
+                                        when (outcome) {
+                                            MigrationOutcome.Success -> {
+                                                val nextPhase = phase.nextRuntimePhaseOrNull()
+                                                if (nextPhase != null) {
+                                                    if (!phase.canTransitionTo(nextPhase)) {
+                                                        throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
+                                                    }
+                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
+                                                    writeState(
+                                                        MigrationState(
+                                                            migrationId = migrationId,
+                                                            phase = nextPhase,
+                                                            status = MigrationStateStatus.Running,
+                                                            attempt = attempt,
+                                                            fromVersion = storedModel.Meta.version.toString(),
+                                                            toVersion = dataModel.Meta.version.toString(),
+                                                            message = "Migration phase complete; advancing to $nextPhase"
+                                                        )
+                                                    )
+                                                    continue
+                                                }
+                                                migrationStateStore.clear(index)
+                                                migrationRuntimeDetailsByModelId.update { it - index }
+                                                appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Completed, phase = phase, attempt = attempt)
+                                                migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
+                                                versionUpdateHandler?.invoke(this@RocksDBDataStore, storedModel, dataModel)
+                                                storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
+                                                writeMetaFile(storePath, modelMetas)
+                                                pendingMigrationModelIds.update { it - index }
+                                                pendingMigrationReasons.update { it - index }
+                                                pausedMigrationModelIds.update { it - index }
+                                                canceledMigrationReasons.update { it - index }
+                                                completePendingMigration(index)
+                                                break
+                                            }
+                                            is MigrationOutcome.Partial -> {
+                                                appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Partial, phase = phase, attempt = attempt, message = outcome.message)
+                                                writeState(
+                                                    MigrationState(
+                                                        migrationId = migrationId,
+                                                        phase = phase,
+                                                        status = MigrationStateStatus.Partial,
+                                                        attempt = attempt,
+                                                        fromVersion = storedModel.Meta.version.toString(),
+                                                        toVersion = dataModel.Meta.version.toString(),
+                                                        cursor = outcome.nextCursor,
+                                                        message = outcome.message
+                                                    )
+                                                )
+                                            }
+                                            is MigrationOutcome.Retry -> {
+                                                appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.RetryScheduled, phase = phase, attempt = attempt, message = outcome.message)
+                                                writeState(
+                                                    MigrationState(
+                                                        migrationId = migrationId,
+                                                        phase = phase,
+                                                        status = MigrationStateStatus.Retry,
+                                                        attempt = attempt,
+                                                        fromVersion = storedModel.Meta.version.toString(),
+                                                        toVersion = dataModel.Meta.version.toString(),
+                                                        cursor = outcome.nextCursor,
+                                                        message = outcome.message
+                                                    )
+                                                )
+                                                delayWithCancellationChecks(outcome.retryAfterMs)
+                                            }
+                                            is MigrationOutcome.Fatal -> {
+                                                appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
+                                                writeState(
+                                                    MigrationState(
+                                                        migrationId = migrationId,
+                                                        phase = phase,
+                                                        status = MigrationStateStatus.Failed,
+                                                        attempt = attempt,
+                                                        fromVersion = storedModel.Meta.version.toString(),
+                                                        toVersion = dataModel.Meta.version.toString(),
+                                                        cursor = previousState?.cursor,
+                                                        message = outcome.reason
+                                                    )
+                                                )
+                                                val failurePrefix = "Migration phase $phase failed"
+                                                pendingMigrationReasons.update {
+                                                    it + (index to "$failurePrefix for ${dataModel.Meta.name}: ${outcome.reason}")
+                                                }
+                                                failPendingMigration(index, "$failurePrefix for ${dataModel.Meta.name}: ${outcome.reason}")
+                                                break
+                                            }
+                                        }
+                                    }
+                                } finally {
+                                    if (hasLease) {
+                                        effectiveMigrationLease.release(index, migrationId)
+                                    }
+                                }
+                            }
+                        }
+
                         var completedInStartup = false
+                        var releaseLeaseInFinally: Boolean
                         suspend fun writeMigrationState(state: MigrationState) {
                             migrationStateStore.write(index, state)
                             updateMigrationRuntimeDetails(index, state)
@@ -370,6 +522,26 @@ class RocksDBDataStore private constructor(
                             return phase to outcome
                         }
 
+                        val leaseAcquired = effectiveMigrationLease.tryAcquire(index, migrationId)
+                        if (!leaseAcquired) {
+                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseRejected, message = "Lease held by other migrator")
+                            if (continueMigrationsInBackground) {
+                                pendingMigrationModelIds.update { it + index }
+                                pendingMigrationReasons.update { it + (index to "Migration lease held by another migrator for $migrationId") }
+                                ensurePendingMigrationWaiter(index)
+                                launchBackgroundMigration(
+                                    leaseAlreadyAcquired = false,
+                                    executeStep = { previousState, attempt -> executeMigrationOrVerifyStep(previousState, attempt) },
+                                    writeState = { state -> writeMigrationState(state) }
+                                )
+                                return@let
+                            } else {
+                                throw MigrationException("Migration lease could not be acquired for ${dataModel.Meta.name}: $migrationId")
+                            }
+                        }
+                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseAcquired)
+                        releaseLeaseInFinally = true
+
                         try {
                             while (true) {
                                 if (migrationStartupBudgetMs != null && startupStarted.elapsedNow().inWholeMilliseconds > migrationStartupBudgetMs) {
@@ -381,120 +553,12 @@ class RocksDBDataStore private constructor(
                                         it + (index to "Migration for ${dataModel.Meta.name} is running in background")
                                     }
                                     ensurePendingMigrationWaiter(index)
-                                    this.launch {
-                                        while (true) {
-                                            canceledMigrationReasons.value[index]?.let { cancelReason ->
-                                                pendingMigrationReasons.update {
-                                                    it + (index to "Migration canceled by operator: $cancelReason")
-                                                }
-                                                failPendingMigration(index, "Migration canceled by operator: $cancelReason")
-                                                break
-                                            }
-                                            if (pausedMigrationModelIds.value.contains(index)) {
-                                                pendingMigrationReasons.update {
-                                                    it + (index to "Migration paused by operator")
-                                                }
-                                                delay(250)
-                                                continue
-                                            }
-                                            val previousState = migrationStateStore.read(index)
-                                            val attempt = (previousState?.attempt ?: 0u) + 1u
-                                            val (phase, outcome) = executeMigrationOrVerifyStep(previousState, attempt)
-
-                                            when (outcome) {
-                                                MigrationOutcome.Success -> {
-                                                    val nextPhase = phase.nextRuntimePhaseOrNull()
-                                                    if (nextPhase != null) {
-                                                        if (!phase.canTransitionTo(nextPhase)) {
-                                                            throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
-                                                        }
-                                                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
-                                                        writeMigrationState(
-                                                            MigrationState(
-                                                                migrationId = migrationId,
-                                                                phase = nextPhase,
-                                                                status = MigrationStateStatus.Running,
-                                                                attempt = attempt,
-                                                                fromVersion = storedModel.Meta.version.toString(),
-                                                                toVersion = dataModel.Meta.version.toString(),
-                                                                message = "Migration phase complete; advancing to $nextPhase"
-                                                            )
-                                                        )
-                                                        continue
-                                                    }
-                                                    migrationStateStore.clear(index)
-                                                    migrationRuntimeDetailsByModelId.update { it - index }
-                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Completed, phase = phase, attempt = attempt)
-                                                    migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
-                                                    versionUpdateHandler?.invoke(this@RocksDBDataStore, storedModel, dataModel)
-                                                    storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
-                                                    writeMetaFile(storePath, modelMetas)
-                                                    pendingMigrationModelIds.update { it - index }
-                                                    pendingMigrationReasons.update { it - index }
-                                                    pausedMigrationModelIds.update { it - index }
-                                                    canceledMigrationReasons.update { it - index }
-                                                    completePendingMigration(index)
-                                                    break
-                                                }
-                                                is MigrationOutcome.Partial -> {
-                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Partial, phase = phase, attempt = attempt, message = outcome.message)
-                                                    writeMigrationState(
-                                                        MigrationState(
-                                                            migrationId = migrationId,
-                                                            phase = phase,
-                                                            status = MigrationStateStatus.Partial,
-                                                            attempt = attempt,
-                                                            fromVersion = storedModel.Meta.version.toString(),
-                                                            toVersion = dataModel.Meta.version.toString(),
-                                                            cursor = outcome.nextCursor,
-                                                            message = outcome.message
-                                                        )
-                                                    )
-                                                }
-                                                is MigrationOutcome.Retry -> {
-                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.RetryScheduled, phase = phase, attempt = attempt, message = outcome.message)
-                                                    writeMigrationState(
-                                                        MigrationState(
-                                                            migrationId = migrationId,
-                                                            phase = phase,
-                                                            status = MigrationStateStatus.Retry,
-                                                            attempt = attempt,
-                                                            fromVersion = storedModel.Meta.version.toString(),
-                                                            toVersion = dataModel.Meta.version.toString(),
-                                                            cursor = outcome.nextCursor,
-                                                            message = outcome.message
-                                                        )
-                                                    )
-                                                    val retryAfterMs = outcome.retryAfterMs
-                                                    if (retryAfterMs != null && retryAfterMs > 0) {
-                                                        delay(retryAfterMs)
-                                                    }
-                                                }
-                                                is MigrationOutcome.Fatal -> {
-                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
-                                                    writeMigrationState(
-                                                        MigrationState(
-                                                            migrationId = migrationId,
-                                                            phase = phase,
-                                                            status = MigrationStateStatus.Failed,
-                                                            attempt = attempt,
-                                                            fromVersion = storedModel.Meta.version.toString(),
-                                                            toVersion = dataModel.Meta.version.toString(),
-                                                            cursor = previousState?.cursor,
-                                                            message = outcome.reason
-                                                        )
-                                                    )
-                                                    val failurePrefix = "Migration phase $phase failed"
-                                                    pendingMigrationReasons.update {
-                                                        it + (index to "$failurePrefix for ${dataModel.Meta.name}: ${outcome.reason}")
-                                                    }
-                                                    failPendingMigration(index, "$failurePrefix for ${dataModel.Meta.name}: ${outcome.reason}")
-                                                    break
-                                                }
-                                            }
-                                        }
-                                        effectiveMigrationLease.release(index, migrationId)
-                                    }
+                                    launchBackgroundMigration(
+                                        leaseAlreadyAcquired = true,
+                                        executeStep = { previousState, attempt -> executeMigrationOrVerifyStep(previousState, attempt) },
+                                        writeState = { state -> writeMigrationState(state) }
+                                    )
+                                    releaseLeaseInFinally = false
                                     break
                                 }
 
@@ -558,10 +622,7 @@ class RocksDBDataStore private constructor(
                                                 message = outcome.message
                                             )
                                         )
-                                        val retryAfterMs = outcome.retryAfterMs
-                                        if (retryAfterMs != null && retryAfterMs > 0) {
-                                            delay(retryAfterMs)
-                                        }
+                                        delayWithCancellationChecks(outcome.retryAfterMs)
                                     }
                                     is MigrationOutcome.Fatal -> {
                                         appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
@@ -583,7 +644,7 @@ class RocksDBDataStore private constructor(
                                 }
                             }
                         } finally {
-                            if (completedInStartup) {
+                            if (releaseLeaseInFinally) {
                                 effectiveMigrationLease.release(index, migrationId)
                             }
                         }

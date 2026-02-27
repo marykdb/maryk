@@ -54,11 +54,14 @@ suspend fun openStore() = FoundationDBDataStore.open(
     keepAllVersions = true,
     directoryPath = listOf("maryk", "app"),
     dataModelsById = mapOf(1u to Account),
-    migrationHandler = { fdbStore, storedModel, newModel ->
-        // return true when handled successfully, false to abort
+    migrationHandler = { context ->
+        val fdbStore = context.store
+        val storedModel = context.storedDataModel
+        val newModel = context.newDataModel
+        // return Success when handled
         when (newModel) {
-            is Account -> true // example
-            else -> false
+            is Account -> MigrationOutcome.Success // example
+            else -> MigrationOutcome.Fatal("Unsupported model")
         }
     },
     versionUpdateHandler = { fdbStore, storedModel, newModel ->

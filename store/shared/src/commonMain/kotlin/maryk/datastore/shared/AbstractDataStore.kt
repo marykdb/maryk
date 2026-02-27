@@ -82,6 +82,7 @@ abstract class AbstractDataStore(
         request: RQ
     ): RP {
         waitForInit()
+        assertModelReady(getDataModelId(request.dataModel))
 
         val response = CompletableDeferred<RP>()
 
@@ -96,6 +97,7 @@ abstract class AbstractDataStore(
         updateResponse: UpdateResponse<DM>
     ): ProcessResponse<DM> {
         waitForInit()
+        assertModelReady(getDataModelId(updateResponse.dataModel))
 
         val response = CompletableDeferred<ProcessResponse<DM>>()
 
@@ -116,6 +118,7 @@ abstract class AbstractDataStore(
         waitForInit()
 
         val dataModelId = getDataModelId(request.dataModel)
+        assertModelReady(dataModelId)
 
         val response = execute(request)
 
@@ -133,6 +136,7 @@ abstract class AbstractDataStore(
     protected open fun onUpdateListenerAdded(dataModelId: UInt) {}
     protected open fun onUpdateListenerRemoved(dataModelId: UInt) {}
     protected open fun onAllUpdateListenersRemoved() {}
+    protected open fun assertModelReady(dataModelId: UInt) {}
 
     /** Get [dataModel] id to identify it for storage */
     fun getDataModelId(dataModel: IsRootDataModel) =

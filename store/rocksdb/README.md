@@ -55,17 +55,20 @@ RocksDBDataStore.open(
         1u to Account,
         2u to Course
     ),
-    migrationHandler = { rocksDBDataStore, storedDataModel, newDataModel ->
-        // example 
+    migrationHandler = { context ->
+        val rocksDBDataStore = context.store
+        val storedDataModel = context.storedDataModel
+        val newDataModel = context.newDataModel
+        // example
         when (newDataModel) {
-            is Account -> when(storedDataModel.version.major) {
-                1 -> {
+            is Account -> when (storedDataModel.version.major) {
+                1.toUShort() -> {
                     // Execute actions on rocksDBDataStore
-                    true
+                    MigrationOutcome.Success
                 }
-                else -> false
+                else -> MigrationOutcome.Fatal("Unsupported source version")
             }
-            else -> false
+            else -> MigrationOutcome.Fatal("Unsupported model")
         }
     },
     versionUpdateHandler = { rocksDBDataStore, storedDataModel, newDataModel ->

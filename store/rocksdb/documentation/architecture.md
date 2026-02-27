@@ -121,7 +121,7 @@ RocksDBDataStore.open(
     relativePath = "path/to/db",
     dataModelsById = mapOf(1u to Account, 2u to Course),
     rocksDBOptions = DBOptions(),
-    migrationHandler = { store, stored, new -> /* ... */ true },
+    migrationHandler = { context -> /* ... */ MigrationOutcome.Success },
     versionUpdateHandler = { store, stored, new -> /* ... */ }
 )
 ```
@@ -144,4 +144,3 @@ The `store/test` module contains a reusable test suite that the RocksDB store ru
 - `processors/*` – per-request processing and scan logic.
 - `processors/helpers/*` – version bytes, get/set value/index/unique, soft delete checks.
 - `Transaction.kt`, `DBAccessor.kt`, `DBIterator.kt` – local transaction and read wrappers.
-

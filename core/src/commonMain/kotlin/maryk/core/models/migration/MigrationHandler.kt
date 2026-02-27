@@ -6,7 +6,6 @@ typealias StoredRootDataModelDefinition = IsRootDataModel
 typealias NewRootDataModelDefinition = IsRootDataModel
 
 /**
- * Handles the migration for the to be migrated DataModels.
- * Throws MigrationException if version cannot be handled
+ * Handles migration with context and rich outcomes.
  */
-typealias MigrationHandler<DS> = suspend (DS, StoredRootDataModelDefinition, NewRootDataModelDefinition) -> Boolean
+typealias MigrationHandler<DS> = suspend (MigrationContext<DS>) -> MigrationOutcome

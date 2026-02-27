@@ -409,4 +409,57 @@ class RocksDBDataStoreMigrationTest {
         deleteFolder(cancelPath)
         deleteFolder(path)
     }
+
+    @Test
+    fun backgroundMigrationVerifyPhaseBlocksUntilVerificationDone() = runTest {
+        val path = createTestDBFolder("migrationVerifyBackground")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var verifyAttempts = 0
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationStartupBudgetMs = -1L,
+            continueMigrationsInBackground = true,
+            migrationHandler = { _ -> MigrationOutcome.Success },
+            migrationVerifyHandler = { _ ->
+                verifyAttempts += 1
+                if (verifyAttempts >= 2) {
+                    MigrationOutcome.Success
+                } else {
+                    MigrationOutcome.Retry(retryAfterMs = 25)
+                }
+            },
+        )
+
+        repeat(50) {
+            if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
+            delay(10)
+        }
+        assertTrue { dataStore.pendingMigrations().containsKey(1u) }
+
+        assertFailsWith<RequestException> {
+            dataStore.execute(
+                ModelV2.add(
+                    ModelV2.create {
+                        value with "verify-blocked"
+                        newNumber with 1
+                    }
+                )
+            )
+        }
+
+        dataStore.awaitMigration(1u)
+        assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+        assertTrue { verifyAttempts >= 2 }
+
+        dataStore.close()
+        deleteFolder(path)
+    }
 }

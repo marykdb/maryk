@@ -3,10 +3,32 @@ package maryk.core.models.migration
 import maryk.core.base64.Base64Maryk
 
 enum class MigrationPhase {
+    Expand,
+    Backfill,
+    Verify,
+    Contract,
+
+    // Legacy phases kept for backward compatibility when resuming persisted state.
     Startup,
     Migrate,
-    Verify,
 }
+
+fun MigrationPhase.normalizedRuntimePhase(): MigrationPhase = when (this) {
+    MigrationPhase.Startup -> MigrationPhase.Expand
+    MigrationPhase.Migrate -> MigrationPhase.Backfill
+    else -> this
+}
+
+fun MigrationPhase.nextRuntimePhaseOrNull(): MigrationPhase? = when (this.normalizedRuntimePhase()) {
+    MigrationPhase.Expand -> MigrationPhase.Backfill
+    MigrationPhase.Backfill -> MigrationPhase.Verify
+    MigrationPhase.Verify -> MigrationPhase.Contract
+    MigrationPhase.Contract -> null
+    else -> null
+}
+
+fun MigrationPhase.canTransitionTo(next: MigrationPhase): Boolean =
+    this.nextRuntimePhaseOrNull() == next.normalizedRuntimePhase()
 
 enum class MigrationStateStatus {
     Running,

@@ -32,6 +32,9 @@ import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationVerifyHandler
+import maryk.core.models.migration.canTransitionTo
+import maryk.core.models.migration.nextRuntimePhaseOrNull
+import maryk.core.models.migration.normalizedRuntimePhase
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.models.migration.MigrationStatus.NewModel
@@ -296,11 +299,7 @@ class RocksDBDataStore private constructor(
                         }
                         var completedInStartup = false
                         suspend fun executeMigrationOrVerifyStep(previousState: MigrationState?, attempt: UInt): Pair<MigrationPhase, MigrationOutcome> {
-                            val phase = if (previousState?.phase == MigrationPhase.Verify) {
-                                MigrationPhase.Verify
-                            } else {
-                                MigrationPhase.Migrate
-                            }
+                            val phase = previousState?.phase?.normalizedRuntimePhase() ?: MigrationPhase.Expand
                             migrationStateStore.write(
                                 index,
                                 MigrationState(
@@ -321,10 +320,11 @@ class RocksDBDataStore private constructor(
                                 previousState = previousState,
                                 attempt = attempt,
                             )
-                            val outcome = if (phase == MigrationPhase.Migrate) {
-                                handler(context)
-                            } else {
-                                migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
+                            val outcome = when (phase) {
+                                MigrationPhase.Backfill -> handler(context)
+                                MigrationPhase.Verify -> migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
+                                MigrationPhase.Expand, MigrationPhase.Contract -> MigrationOutcome.Success
+                                else -> MigrationOutcome.Fatal("Unsupported migration phase $phase")
                             }
                             return phase to outcome
                         }
@@ -362,17 +362,21 @@ class RocksDBDataStore private constructor(
 
                                             when (outcome) {
                                                 MigrationOutcome.Success -> {
-                                                    if (phase == MigrationPhase.Migrate) {
+                                                    val nextPhase = phase.nextRuntimePhaseOrNull()
+                                                    if (nextPhase != null) {
+                                                        if (!phase.canTransitionTo(nextPhase)) {
+                                                            throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
+                                                        }
                                                         migrationStateStore.write(
                                                             index,
                                                             MigrationState(
                                                                 migrationId = migrationId,
-                                                                phase = MigrationPhase.Verify,
+                                                                phase = nextPhase,
                                                                 status = MigrationStateStatus.Running,
                                                                 attempt = attempt,
                                                                 fromVersion = storedModel.Meta.version.toString(),
                                                                 toVersion = dataModel.Meta.version.toString(),
-                                                                message = "Migration phase complete; starting verify"
+                                                                message = "Migration phase complete; advancing to $nextPhase"
                                                             )
                                                         )
                                                         continue
@@ -437,11 +441,7 @@ class RocksDBDataStore private constructor(
                                                             message = outcome.reason
                                                         )
                                                     )
-                                                    val failurePrefix = if (phase == MigrationPhase.Verify) {
-                                                        "Migration verification failed"
-                                                    } else {
-                                                        "Migration failed"
-                                                    }
+                                                    val failurePrefix = "Migration phase $phase failed"
                                                     pendingMigrationReasons.update {
                                                         it + (index to "$failurePrefix for ${dataModel.Meta.name}: ${outcome.reason}")
                                                     }
@@ -461,17 +461,21 @@ class RocksDBDataStore private constructor(
 
                                 when (outcome) {
                                     MigrationOutcome.Success -> {
-                                        if (phase == MigrationPhase.Migrate) {
+                                        val nextPhase = phase.nextRuntimePhaseOrNull()
+                                        if (nextPhase != null) {
+                                            if (!phase.canTransitionTo(nextPhase)) {
+                                                throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
+                                            }
                                             migrationStateStore.write(
                                                 index,
                                                 MigrationState(
                                                     migrationId = migrationId,
-                                                    phase = MigrationPhase.Verify,
+                                                    phase = nextPhase,
                                                     status = MigrationStateStatus.Running,
                                                     attempt = attempt,
                                                     fromVersion = storedModel.Meta.version.toString(),
                                                     toVersion = dataModel.Meta.version.toString(),
-                                                    message = "Migration phase complete; starting verify"
+                                                    message = "Migration phase complete; advancing to $nextPhase"
                                                 )
                                             )
                                             continue
@@ -528,11 +532,7 @@ class RocksDBDataStore private constructor(
                                                 message = outcome.reason
                                             )
                                         )
-                                        val failurePrefix = if (phase == MigrationPhase.Verify) {
-                                            "Migration verification could not be handled"
-                                        } else {
-                                            "Migration could not be handled"
-                                        }
+                                        val failurePrefix = "Migration phase $phase could not be handled"
                                         throw MigrationException("$failurePrefix for ${dataModel.Meta.name}: ${outcome.reason}\n$migrationStatus")
                                     }
                                 }

@@ -15,4 +15,5 @@ data class MigrationRuntimeStatus(
     val attempt: UInt? = null,
     val lastError: String? = null,
     val hasCursor: Boolean? = null,
+    val etaMs: Long? = null,
 )

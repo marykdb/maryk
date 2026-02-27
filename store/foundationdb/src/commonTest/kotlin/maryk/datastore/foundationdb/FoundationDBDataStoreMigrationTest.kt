@@ -124,7 +124,9 @@ class FoundationDBDataStoreMigrationTest {
                 dataModelsById = mapOf(
                     1u to ModelV2,
                 ),
-                migrationHandler = { _, storedDataModel, newDataModel ->
+                migrationHandler = { context ->
+                    val storedDataModel = context.storedDataModel
+                    val newDataModel = context.newDataModel
                     assertEquals(ModelV2, newDataModel)
                     assertEquals(ModelV1_1.Meta.version, storedDataModel.Meta.version)
                     // Should throw this exception to proof it is entering this handler

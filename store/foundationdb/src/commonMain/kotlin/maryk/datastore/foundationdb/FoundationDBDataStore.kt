@@ -7,26 +7,35 @@ import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
+import maryk.core.models.migration.MigrationContext
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationHandler
+import maryk.core.models.migration.MigrationLease
+import maryk.core.models.migration.MigrationOutcome
+import maryk.core.models.migration.MigrationPhase
+import maryk.core.models.migration.MigrationState
+import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
+import maryk.core.models.migration.NoopMigrationLease
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -54,6 +63,7 @@ import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.foundationdb.metadata.readStoredModelNames
+import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
 import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.clusterlog.ClusterUpdateLog
@@ -101,6 +111,7 @@ import maryk.lib.bytes.combineToByteArray
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.TimeSource
 
 private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
 private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
@@ -116,6 +127,9 @@ class FoundationDBDataStore private constructor(
     private val onlyCheckModelVersion: Boolean = false,
     val databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
     val migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
+    val migrationStartupBudgetMs: Long? = null,
+    val continueMigrationsInBackground: Boolean = false,
+    val migrationLease: MigrationLease = NoopMigrationLease,
     val versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
     private val enableClusterUpdateLog: Boolean = false,
     private val clusterUpdateLogConsumerId: String? = null,
@@ -143,6 +157,8 @@ class FoundationDBDataStore private constructor(
     internal val updateDispatcher = Dispatchers.IO
 
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
+    private val pendingMigrationModelIds = atomic(setOf<UInt>())
+    private val pendingMigrationReasons = atomic(mapOf<UInt, String>())
 
     private lateinit var rootDirectory: DirectorySubspace
     private lateinit var metadataDirectory: DirectorySubspace
@@ -208,6 +224,11 @@ class FoundationDBDataStore private constructor(
         }
 
         val conversionContext = DefinitionsConversionContext()
+        val startupStarted = TimeSource.Monotonic.markNow()
+        val migrationStateStore = FoundationDBMigrationStateStore(
+            tc = tc,
+            modelPrefixesById = directoriesByDataModelIndex.mapValues { (_, tableDirectories) -> tableDirectories.modelPrefix }
+        )
 
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index]?.let { tableDirectories ->
@@ -250,11 +271,221 @@ class FoundationDBDataStore private constructor(
                         }
                     }
                     is NeedsMigration -> {
-                        val succeeded = migrationHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                        val handler = migrationHandler
                             ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
+                        val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
+                        val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
+                        val leaseAcquired = migrationLease.tryAcquire(index, migrationId)
+                        if (!leaseAcquired) {
+                            if (continueMigrationsInBackground) {
+                                pendingMigrationModelIds.update { it + index }
+                                pendingMigrationReasons.update { it + (index to "Migration lease held by another migrator for $migrationId") }
+                                return@let
+                            } else {
+                                throw MigrationException("Migration lease could not be acquired for ${dataModel.Meta.name}: $migrationId")
+                            }
+                        }
+                        var completedInStartup = false
 
-                        if (!succeeded) {
-                            throw MigrationException("Migration could not be handled for ${dataModel.Meta.name} & ${(migrationStatus.storedDataModel as? StoredRootDataModelDefinition)?.Meta?.version}\n$migrationStatus")
+                        try {
+                            while (true) {
+                                if (migrationStartupBudgetMs != null && startupStarted.elapsedNow().inWholeMilliseconds > migrationStartupBudgetMs) {
+                                    if (!continueMigrationsInBackground) {
+                                        throw MigrationException("Migration startup budget exceeded for ${dataModel.Meta.name} after ${migrationStartupBudgetMs}ms")
+                                    }
+                                    pendingMigrationModelIds.update { it + index }
+                                    pendingMigrationReasons.update {
+                                        it + (index to "Migration for ${dataModel.Meta.name} is running in background")
+                                    }
+                                    this.launch {
+                                        while (true) {
+                                            val previousState = migrationStateStore.read(index)
+                                            val attempt = (previousState?.attempt ?: 0u) + 1u
+                                            migrationStateStore.write(
+                                                index,
+                                                MigrationState(
+                                                    migrationId = migrationId,
+                                                    phase = MigrationPhase.Migrate,
+                                                    status = MigrationStateStatus.Running,
+                                                    attempt = attempt,
+                                                    fromVersion = storedModel.Meta.version.toString(),
+                                                    toVersion = dataModel.Meta.version.toString(),
+                                                    cursor = previousState?.cursor,
+                                                )
+                                            )
+
+                                            when (
+                                                val outcome = handler(
+                                                    MigrationContext(
+                                                        store = this@FoundationDBDataStore,
+                                                        storedDataModel = storedModel,
+                                                        newDataModel = dataModel,
+                                                        migrationStatus = migrationStatus,
+                                                        previousState = previousState,
+                                                        attempt = attempt,
+                                                    )
+                                                )
+                                            ) {
+                                                MigrationOutcome.Success -> {
+                                                    migrationStateStore.clear(index)
+                                                    migrationStatus.indexesToIndex?.let { fillIndex(it, tableDirectories) }
+                                                    storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
+                                                    versionUpdateHandler?.invoke(this@FoundationDBDataStore, storedModel, dataModel)
+                                                    pendingMigrationModelIds.update { it - index }
+                                                    pendingMigrationReasons.update { it - index }
+                                                    break
+                                                }
+                                                is MigrationOutcome.Partial -> {
+                                                    migrationStateStore.write(
+                                                        index,
+                                                        MigrationState(
+                                                            migrationId = migrationId,
+                                                            phase = MigrationPhase.Migrate,
+                                                            status = MigrationStateStatus.Partial,
+                                                            attempt = attempt,
+                                                            fromVersion = storedModel.Meta.version.toString(),
+                                                            toVersion = dataModel.Meta.version.toString(),
+                                                            cursor = outcome.nextCursor,
+                                                            message = outcome.message
+                                                        )
+                                                    )
+                                                }
+                                                is MigrationOutcome.Retry -> {
+                                                    migrationStateStore.write(
+                                                        index,
+                                                        MigrationState(
+                                                            migrationId = migrationId,
+                                                            phase = MigrationPhase.Migrate,
+                                                            status = MigrationStateStatus.Retry,
+                                                            attempt = attempt,
+                                                            fromVersion = storedModel.Meta.version.toString(),
+                                                            toVersion = dataModel.Meta.version.toString(),
+                                                            cursor = outcome.nextCursor,
+                                                            message = outcome.message
+                                                        )
+                                                    )
+                                                    val retryAfterMs = outcome.retryAfterMs
+                                                    if (retryAfterMs != null && retryAfterMs > 0) {
+                                                        delay(retryAfterMs)
+                                                    }
+                                                }
+                                                is MigrationOutcome.Fatal -> {
+                                                    migrationStateStore.write(
+                                                        index,
+                                                        MigrationState(
+                                                            migrationId = migrationId,
+                                                            phase = MigrationPhase.Migrate,
+                                                            status = MigrationStateStatus.Failed,
+                                                            attempt = attempt,
+                                                            fromVersion = storedModel.Meta.version.toString(),
+                                                            toVersion = dataModel.Meta.version.toString(),
+                                                            cursor = previousState?.cursor,
+                                                            message = outcome.reason
+                                                        )
+                                                    )
+                                                    pendingMigrationReasons.update {
+                                                        it + (index to "Migration failed for ${dataModel.Meta.name}: ${outcome.reason}")
+                                                    }
+                                                    break
+                                                }
+                                            }
+                                        }
+                                        migrationLease.release(index, migrationId)
+                                    }
+                                    break
+                                }
+
+                                val previousState = migrationStateStore.read(index)
+                                val attempt = (previousState?.attempt ?: 0u) + 1u
+                                migrationStateStore.write(
+                                    index,
+                                    MigrationState(
+                                        migrationId = migrationId,
+                                        phase = MigrationPhase.Migrate,
+                                        status = MigrationStateStatus.Running,
+                                        attempt = attempt,
+                                        fromVersion = storedModel.Meta.version.toString(),
+                                        toVersion = dataModel.Meta.version.toString(),
+                                        cursor = previousState?.cursor,
+                                    )
+                                )
+
+                                when (
+                                    val outcome = handler(
+                                        MigrationContext(
+                                            store = this,
+                                            storedDataModel = storedModel,
+                                            newDataModel = dataModel,
+                                            migrationStatus = migrationStatus,
+                                            previousState = previousState,
+                                            attempt = attempt,
+                                        )
+                                    )
+                                ) {
+                                    MigrationOutcome.Success -> {
+                                        migrationStateStore.clear(index)
+                                        completedInStartup = true
+                                        break
+                                    }
+                                    is MigrationOutcome.Partial -> {
+                                        migrationStateStore.write(
+                                            index,
+                                            MigrationState(
+                                                migrationId = migrationId,
+                                                phase = MigrationPhase.Migrate,
+                                                status = MigrationStateStatus.Partial,
+                                                attempt = attempt,
+                                                fromVersion = storedModel.Meta.version.toString(),
+                                                toVersion = dataModel.Meta.version.toString(),
+                                                cursor = outcome.nextCursor,
+                                                message = outcome.message
+                                            )
+                                        )
+                                    }
+                                    is MigrationOutcome.Retry -> {
+                                        migrationStateStore.write(
+                                            index,
+                                            MigrationState(
+                                                migrationId = migrationId,
+                                                phase = MigrationPhase.Migrate,
+                                                status = MigrationStateStatus.Retry,
+                                                attempt = attempt,
+                                                fromVersion = storedModel.Meta.version.toString(),
+                                                toVersion = dataModel.Meta.version.toString(),
+                                                cursor = outcome.nextCursor,
+                                                message = outcome.message
+                                            )
+                                        )
+                                        val retryAfterMs = outcome.retryAfterMs
+                                        if (retryAfterMs != null && retryAfterMs > 0) {
+                                            delay(retryAfterMs)
+                                        }
+                                    }
+                                    is MigrationOutcome.Fatal -> {
+                                        migrationStateStore.write(
+                                            index,
+                                            MigrationState(
+                                                migrationId = migrationId,
+                                                phase = MigrationPhase.Migrate,
+                                                status = MigrationStateStatus.Failed,
+                                                attempt = attempt,
+                                                fromVersion = storedModel.Meta.version.toString(),
+                                                toVersion = dataModel.Meta.version.toString(),
+                                                cursor = previousState?.cursor,
+                                                message = outcome.reason
+                                            )
+                                        )
+                                        throw MigrationException("Migration could not be handled for ${dataModel.Meta.name}: ${outcome.reason}\n$migrationStatus")
+                                    }
+                                }
+                            }
+                        } finally {
+                            if (completedInStartup) {
+                                migrationLease.release(index, migrationId)
+                            }
+                        }
+                        if (!completedInStartup) {
+                            return@let
                         }
 
                         migrationStatus.indexesToIndex?.let {
@@ -350,14 +581,14 @@ class FoundationDBDataStore private constructor(
                                 timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
                             )
                         } catch (_: Throwable) {
-                            kotlinx.coroutines.delay(clusterUpdateLogPollInterval)
+                            delay(clusterUpdateLogPollInterval)
                         }
                     } catch (e: CancellationException) {
                         throw e
                     } catch (_: Throwable) {
                         clusterLogHlcSyncErrors.incrementAndGet()
                         clusterLogHlcCurrentBackoffMs.value = backoffMs
-                        kotlinx.coroutines.delay(backoffMs)
+                        delay(backoffMs)
                         backoffMs = minOf(backoffMs * 2, 5_000L)
                     }
                 }
@@ -401,7 +632,7 @@ class FoundationDBDataStore private constructor(
                                         timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
                                     )
                                 } catch (_: Throwable) {
-                                    kotlinx.coroutines.delay(clusterUpdateLogPollInterval)
+                                    delay(clusterUpdateLogPollInterval)
                                 }
                             }
                             continue
@@ -481,7 +712,7 @@ class FoundationDBDataStore private constructor(
                                         timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
                                     )
                                 } catch (_: Throwable) {
-                                    kotlinx.coroutines.delay(clusterUpdateLogPollInterval)
+                                    delay(clusterUpdateLogPollInterval)
                                 }
                             }
                         } else {
@@ -497,7 +728,7 @@ class FoundationDBDataStore private constructor(
                         // Conservative retry loop: transient FDB errors, decode errors, etc.
                         clusterLogTailErrors.incrementAndGet()
                         clusterLogCurrentBackoffMs.value = backoffMs
-                        kotlinx.coroutines.delay(backoffMs)
+                        delay(backoffMs)
                         backoffMs = minOf(backoffMs * 2, 5_000L)
                     }
                 }
@@ -524,12 +755,12 @@ class FoundationDBDataStore private constructor(
                             shard = end
                         }
                         clusterLogGcRuns.incrementAndGet()
-                        kotlinx.coroutines.delay(5.minutes)
+                        delay(5.minutes)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (_: Throwable) {
                         clusterLogGcErrors.incrementAndGet()
-                        kotlinx.coroutines.delay(5_000L)
+                        delay(5_000L)
                     }
                 }
             }
@@ -945,6 +1176,14 @@ class FoundationDBDataStore private constructor(
         return true
     }
 
+    override fun assertModelReady(dataModelId: UInt) {
+        if (pendingMigrationModelIds.value.contains(dataModelId)) {
+            val modelName = dataModelsById[dataModelId]?.Meta?.name ?: dataModelId.toString()
+            val reason = pendingMigrationReasons.value[dataModelId] ?: "Migration in progress"
+            throw RequestException("Model $modelName is unavailable while migration is running: $reason")
+        }
+    }
+
     companion object {
         /**
          * Open a FoundationDB-backed Maryk store.
@@ -971,6 +1210,9 @@ class FoundationDBDataStore private constructor(
             onlyCheckModelVersion: Boolean = false,
             databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
             migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
+            migrationStartupBudgetMs: Long? = null,
+            continueMigrationsInBackground: Boolean = false,
+            migrationLease: MigrationLease = NoopMigrationLease,
             versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
             enableClusterUpdateLog: Boolean = false,
             clusterUpdateLogConsumerId: String? = null,
@@ -988,6 +1230,9 @@ class FoundationDBDataStore private constructor(
             onlyCheckModelVersion = onlyCheckModelVersion,
             databaseOptionsSetter = databaseOptionsSetter,
             migrationHandler = migrationHandler,
+            migrationStartupBudgetMs = migrationStartupBudgetMs,
+            continueMigrationsInBackground = continueMigrationsInBackground,
+            migrationLease = migrationLease,
             versionUpdateHandler = versionUpdateHandler,
             enableClusterUpdateLog = enableClusterUpdateLog,
             clusterUpdateLogConsumerId = clusterUpdateLogConsumerId,

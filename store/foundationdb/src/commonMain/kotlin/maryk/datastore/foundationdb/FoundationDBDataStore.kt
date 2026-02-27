@@ -164,6 +164,8 @@ class FoundationDBDataStore private constructor(
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val pendingMigrationModelIds = atomic(setOf<UInt>())
     private val pendingMigrationReasons = atomic(mapOf<UInt, String>())
+    private val pausedMigrationModelIds = atomic(setOf<UInt>())
+    private val canceledMigrationReasons = atomic(mapOf<UInt, String>())
     private val pendingMigrationWaiters = atomic(mapOf<UInt, CompletableDeferred<Unit>>())
 
     private lateinit var rootDirectory: DirectorySubspace
@@ -314,6 +316,20 @@ class FoundationDBDataStore private constructor(
                                     ensurePendingMigrationWaiter(index)
                                     this.launch {
                                         while (true) {
+                                            canceledMigrationReasons.value[index]?.let { cancelReason ->
+                                                pendingMigrationReasons.update {
+                                                    it + (index to "Migration canceled by operator: $cancelReason")
+                                                }
+                                                failPendingMigration(index, "Migration canceled by operator: $cancelReason")
+                                                break
+                                            }
+                                            if (pausedMigrationModelIds.value.contains(index)) {
+                                                pendingMigrationReasons.update {
+                                                    it + (index to "Migration paused by operator")
+                                                }
+                                                delay(250)
+                                                continue
+                                            }
                                             val previousState = migrationStateStore.read(index)
                                             val attempt = (previousState?.attempt ?: 0u) + 1u
                                             migrationStateStore.write(
@@ -348,6 +364,8 @@ class FoundationDBDataStore private constructor(
                                                     versionUpdateHandler?.invoke(this@FoundationDBDataStore, storedModel, dataModel)
                                                     pendingMigrationModelIds.update { it - index }
                                                     pendingMigrationReasons.update { it - index }
+                                                    pausedMigrationModelIds.update { it - index }
+                                                    canceledMigrationReasons.update { it - index }
                                                     completePendingMigration(index)
                                                     break
                                                 }
@@ -1197,15 +1215,51 @@ class FoundationDBDataStore private constructor(
 
     fun migrationStatus(modelId: UInt): MigrationRuntimeStatus {
         val reason = pendingMigrationReasons.value[modelId] ?: return MigrationRuntimeStatus(MigrationRuntimeState.Idle)
-        val state = if (reason.startsWith("Migration failed")) MigrationRuntimeState.Failed else MigrationRuntimeState.Running
+        val state = when {
+            canceledMigrationReasons.value.containsKey(modelId) -> MigrationRuntimeState.Canceled
+            pausedMigrationModelIds.value.contains(modelId) -> MigrationRuntimeState.Paused
+            reason.startsWith("Migration failed") -> MigrationRuntimeState.Failed
+            else -> MigrationRuntimeState.Running
+        }
         return MigrationRuntimeStatus(state, reason)
     }
 
     fun migrationStatuses(): Map<UInt, MigrationRuntimeStatus> =
-        pendingMigrationReasons.value.mapValues { (_, reason) ->
-            val state = if (reason.startsWith("Migration failed")) MigrationRuntimeState.Failed else MigrationRuntimeState.Running
+        pendingMigrationReasons.value.mapValues { (modelId, reason) ->
+            val state = when {
+                canceledMigrationReasons.value.containsKey(modelId) -> MigrationRuntimeState.Canceled
+                pausedMigrationModelIds.value.contains(modelId) -> MigrationRuntimeState.Paused
+                reason.startsWith("Migration failed") -> MigrationRuntimeState.Failed
+                else -> MigrationRuntimeState.Running
+            }
             MigrationRuntimeStatus(state, reason)
         }
+
+    fun pauseMigration(modelId: UInt): Boolean {
+        if (!pendingMigrationModelIds.value.contains(modelId)) return false
+        pausedMigrationModelIds.update { it + modelId }
+        pendingMigrationReasons.update { it + (modelId to "Migration paused by operator") }
+        return true
+    }
+
+    fun resumeMigration(modelId: UInt): Boolean {
+        val wasPaused = pausedMigrationModelIds.value.contains(modelId)
+        if (!wasPaused) return false
+        pausedMigrationModelIds.update { it - modelId }
+        if (pendingMigrationModelIds.value.contains(modelId)) {
+            pendingMigrationReasons.update { it + (modelId to "Migration resumed") }
+        }
+        return true
+    }
+
+    fun cancelMigration(modelId: UInt, reason: String = "Canceled by operator"): Boolean {
+        if (!pendingMigrationModelIds.value.contains(modelId)) return false
+        canceledMigrationReasons.update { it + (modelId to reason) }
+        pausedMigrationModelIds.update { it - modelId }
+        pendingMigrationReasons.update { it + (modelId to "Migration canceled by operator: $reason") }
+        failPendingMigration(modelId, "Migration canceled by operator: $reason")
+        return true
+    }
 
     suspend fun awaitMigration(modelId: UInt) {
         pendingMigrationWaiters.value[modelId]?.await()

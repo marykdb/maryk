@@ -3,6 +3,8 @@ package maryk.core.models.migration
 enum class MigrationRuntimeState {
     Idle,
     Running,
+    Paused,
+    Canceled,
     Failed,
 }
 

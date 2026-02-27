@@ -335,6 +335,7 @@ class FoundationDBDataStoreMigrationTest {
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
+        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatuses()[1u]?.state)
 
         assertFailsWith<RequestException> {
             dataStore.execute(
@@ -349,6 +350,7 @@ class FoundationDBDataStoreMigrationTest {
 
         dataStore.awaitMigration(1u)
         assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+        assertTrue { !dataStore.migrationStatuses().containsKey(1u) }
         dataStore.execute(
             ModelV2.add(
                 ModelV2.create {
@@ -396,13 +398,16 @@ class FoundationDBDataStoreMigrationTest {
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         assertTrue { dataStore.pauseMigration(1u) }
         assertEquals(MigrationRuntimeState.Paused, dataStore.migrationStatus(1u).state)
+        assertEquals(MigrationRuntimeState.Paused, dataStore.migrationStatuses()[1u]?.state)
         delay(50)
         assertTrue { dataStore.resumeMigration(1u) }
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
+        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatuses()[1u]?.state)
 
         allowSuccess = true
         dataStore.awaitMigration(1u)
         assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+        assertTrue { !dataStore.migrationStatuses().containsKey(1u) }
         dataStore.close()
 
         // New run to check cancel path
@@ -431,6 +436,7 @@ class FoundationDBDataStoreMigrationTest {
         assertTrue { cancelStore.pendingMigrations().containsKey(1u) }
         assertTrue { cancelStore.cancelMigration(1u, "test cancel") }
         assertEquals(MigrationRuntimeState.Canceled, cancelStore.migrationStatus(1u).state)
+        assertEquals(MigrationRuntimeState.Canceled, cancelStore.migrationStatuses()[1u]?.state)
         assertFailsWith<RequestException> {
             cancelStore.execute(
                 ModelV2.add(
@@ -480,6 +486,7 @@ class FoundationDBDataStoreMigrationTest {
             delay(10)
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
+        assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatuses()[1u]?.state)
 
         assertFailsWith<RequestException> {
             dataStore.execute(
@@ -494,6 +501,7 @@ class FoundationDBDataStoreMigrationTest {
 
         dataStore.awaitMigration(1u)
         assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+        assertTrue { !dataStore.migrationStatuses().containsKey(1u) }
         assertTrue { verifyAttempts >= 2 }
 
         dataStore.close()

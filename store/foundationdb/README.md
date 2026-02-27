@@ -5,6 +5,7 @@ A FoundationDB-backed implementation of the Maryk data store. This engine maps M
 See also:
 - [Storage layout](./docs/storage.md)
 - [Architecture overview](./docs/architecture.md)
+- [Migrations](./docs/migrations.md)
 - [Local testing](./docs/local-testing.md)
 
 ## Getting Started

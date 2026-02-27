@@ -154,6 +154,8 @@ For scans, we slice by `(indexValue || key)` to include/exclude `startKey` and p
 
 ## Error Handling and Migrations
 
+Full migration operations guide: [Migrations](./migrations.md).
+
 - Any `RequestException` or validation error is wrapped in structured statuses (e.g. `AlreadyExists`, `ValidationFail`).
 - Schema migrations are coordinated through the `model` subspace.
 - `migrationHandler` uses `MigrationContext` and returns `MigrationOutcome` (`Success`, `Partial`, `Retry`, `Fatal`).

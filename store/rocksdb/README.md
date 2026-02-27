@@ -3,6 +3,7 @@
 An embedded, high‑performance Maryk data store built on [RocksDB](https://rocksdb.org).
 
 Each DataModel is mapped to multiple column families (keys/table/index/unique and historic variants when enabled). See the detailed [Architecture](documentation/architecture.md) and [Storage Layout](documentation/storage.md).
+For migration runtime and operations, see [Migrations](documentation/migrations.md).
 
 ## Getting Started
 

@@ -102,6 +102,8 @@ This local transaction keeps the implementation portable across JVM and Native t
 
 ## Migrations and Version Updates
 
+Operational details and full runtime API are documented in [Migrations](./migrations.md).
+
 At open time, `RocksDBDataStore` compares the stored model in `Model` with the provided definition:
 - If models are equal → no work.
 - If only safe additions or new indexes exist → it backfills index data (`fillIndex`) and stores the new model.

@@ -56,9 +56,11 @@ const map = [
   ['src/content/docs/stores/memory.mdx', '../store/memory/README.md'],
   ['src/content/docs/stores/rocksdb.mdx', '../store/rocksdb/README.md'],
   ['src/content/docs/stores/rocksdb/architecture.mdx', '../store/rocksdb/documentation/architecture.md'],
+  ['src/content/docs/stores/rocksdb/migrations.mdx', '../store/rocksdb/documentation/migrations.md'],
   ['src/content/docs/stores/rocksdb/storage.mdx', '../store/rocksdb/documentation/storage.md'],
   ['src/content/docs/stores/foundationdb.mdx', '../store/foundationdb/README.md'],
   ['src/content/docs/stores/foundationdb/architecture.mdx', '../store/foundationdb/docs/architecture.md'],
+  ['src/content/docs/stores/foundationdb/migrations.mdx', '../store/foundationdb/docs/migrations.md'],
   ['src/content/docs/stores/foundationdb/storage.mdx', '../store/foundationdb/docs/storage.md'],
   ['src/content/docs/stores/foundationdb/local-testing.mdx', '../store/foundationdb/docs/local-testing.md'],
   ['src/content/docs/stores/remote.mdx', '../store/remote/README.md'],
@@ -110,9 +112,11 @@ const map = [
     // Stores links
     ['(./docs/storage.md)', withPrefix('stores/foundationdb/storage/')],
     ['(./docs/architecture.md)', withPrefix('stores/foundationdb/architecture/')],
+    ['(./docs/migrations.md)', withPrefix('stores/foundationdb/migrations/')],
     ['(./docs/local-testing.md)', withPrefix('stores/foundationdb/local-testing/')],
     ['(documentation/storage.md)', withPrefix('stores/rocksdb/storage/')],
     ['(documentation/architecture.md)', withPrefix('stores/rocksdb/architecture/')],
+    ['(documentation/migrations.md)', withPrefix('stores/rocksdb/migrations/')],
     ['(../remote/README.md)', '(../remote/)'],
     ['(./remote/README.md)', '(./remote/)'],
     // Map code links to GitHub full URLs (main branch)

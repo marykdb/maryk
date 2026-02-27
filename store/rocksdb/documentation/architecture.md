@@ -105,11 +105,21 @@ This local transaction keeps the implementation portable across JVM and Native t
 At open time, `RocksDBDataStore` compares the stored model in `Model` with the provided definition:
 - If models are equal → no work.
 - If only safe additions or new indexes exist → it backfills index data (`fillIndex`) and stores the new model.
-- If incompatible changes are detected → it calls `migrationHandler`; the handler can perform corrective writes and must return `true` to continue.
+- If incompatible changes are detected → it calls `migrationHandler`; the handler can perform corrective writes and must return:
+  - `MigrationOutcome.Success`
+  - `MigrationOutcome.Partial`
+  - `MigrationOutcome.Retry`
+  - `MigrationOutcome.Fatal`
 
 After a successful migration or a brand new model, `versionUpdateHandler` can run custom logic (e.g., seed data) before the new model is stored.
 
 See: `model/checkModelIfMigrationIsNeeded.kt` and `model/storeModelDefinition.kt`.
+
+Runtime operations:
+- `migrationStartupBudgetMs` + `continueMigrationsInBackground` support startup handoff to background migration.
+- Pending models are request-blocked via `assertModelReady`.
+- Operators can inspect/control with `pendingMigrations`, `migrationStatus(es)`, `awaitMigration`, `pauseMigration`, `resumeMigration`, `cancelMigration`.
+- Default lease is local (`RocksDBLocalMigrationLease`) to avoid duplicate runners inside one process.
 
 ## Configuration Surface
 

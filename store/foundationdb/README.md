@@ -72,6 +72,39 @@ suspend fun openStore() = FoundationDBDataStore.open(
 
 Model changes that generally do NOT require a migration: adding models, indexes, properties, or relaxing validation. Changes that DO: changing property types, renaming without alternatives, or tightening validation (these must go through migrations).
 
+Migration handler outcomes:
+- `MigrationOutcome.Success`
+- `MigrationOutcome.Partial`
+- `MigrationOutcome.Retry`
+- `MigrationOutcome.Fatal`
+
+### Migration Runtime Control
+
+For long migrations, configure:
+- `migrationStartupBudgetMs`
+- `continueMigrationsInBackground = true`
+
+The model stays request-blocked until migration completion.
+
+Control/status APIs:
+- `pendingMigrations()`
+- `migrationStatus(modelId)`
+- `migrationStatuses()`
+- `awaitMigration(modelId)`
+- `pauseMigration(modelId)`
+- `resumeMigration(modelId)`
+- `cancelMigration(modelId, reason)`
+
+### Migration Lease Behavior
+
+FoundationDB default lease is distributed (`FoundationDBMigrationLease`):
+- Keyed per model in metadata subspace.
+- Owner token + TTL (`migrationLeaseTimeoutMs`).
+- Background heartbeat (`migrationLeaseHeartbeatMs`) renews lease while migration is active.
+- Allows takeover after TTL expiry if migrator dies.
+
+You can inject a custom `migrationLease` if needed.
+
 ## Configuration
 
 - `keepAllVersions`: Mirror latest writes into historic subspaces for time travel and change history.

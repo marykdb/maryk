@@ -180,6 +180,7 @@ class RocksDBDataStore private constructor(
     private val pausedMigrationModelIds = atomic(setOf<UInt>())
     private val canceledMigrationReasons = atomic(mapOf<UInt, String>())
     private val pendingMigrationWaiters = atomic(mapOf<UInt, CompletableDeferred<Unit>>())
+    private val migrationRuntimeDetailsByModelId = atomic(mapOf<UInt, MigrationRuntimeDetails>())
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
@@ -298,10 +299,13 @@ class RocksDBDataStore private constructor(
                             }
                         }
                         var completedInStartup = false
+                        suspend fun writeMigrationState(state: MigrationState) {
+                            migrationStateStore.write(index, state)
+                            updateMigrationRuntimeDetails(index, state)
+                        }
                         suspend fun executeMigrationOrVerifyStep(previousState: MigrationState?, attempt: UInt): Pair<MigrationPhase, MigrationOutcome> {
                             val phase = previousState?.phase?.normalizedRuntimePhase() ?: MigrationPhase.Expand
-                            migrationStateStore.write(
-                                index,
+                            writeMigrationState(
                                 MigrationState(
                                     migrationId = migrationId,
                                     phase = phase,
@@ -367,8 +371,7 @@ class RocksDBDataStore private constructor(
                                                         if (!phase.canTransitionTo(nextPhase)) {
                                                             throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
                                                         }
-                                                        migrationStateStore.write(
-                                                            index,
+                                                        writeMigrationState(
                                                             MigrationState(
                                                                 migrationId = migrationId,
                                                                 phase = nextPhase,
@@ -382,6 +385,7 @@ class RocksDBDataStore private constructor(
                                                         continue
                                                     }
                                                     migrationStateStore.clear(index)
+                                                    migrationRuntimeDetailsByModelId.update { it - index }
                                                     migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
                                                     versionUpdateHandler?.invoke(this@RocksDBDataStore, storedModel, dataModel)
                                                     storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
@@ -394,8 +398,7 @@ class RocksDBDataStore private constructor(
                                                     break
                                                 }
                                                 is MigrationOutcome.Partial -> {
-                                                    migrationStateStore.write(
-                                                        index,
+                                                    writeMigrationState(
                                                         MigrationState(
                                                             migrationId = migrationId,
                                                             phase = phase,
@@ -409,8 +412,7 @@ class RocksDBDataStore private constructor(
                                                     )
                                                 }
                                                 is MigrationOutcome.Retry -> {
-                                                    migrationStateStore.write(
-                                                        index,
+                                                    writeMigrationState(
                                                         MigrationState(
                                                             migrationId = migrationId,
                                                             phase = phase,
@@ -428,8 +430,7 @@ class RocksDBDataStore private constructor(
                                                     }
                                                 }
                                                 is MigrationOutcome.Fatal -> {
-                                                    migrationStateStore.write(
-                                                        index,
+                                                    writeMigrationState(
                                                         MigrationState(
                                                             migrationId = migrationId,
                                                             phase = phase,
@@ -466,8 +467,7 @@ class RocksDBDataStore private constructor(
                                             if (!phase.canTransitionTo(nextPhase)) {
                                                 throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
                                             }
-                                            migrationStateStore.write(
-                                                index,
+                                            writeMigrationState(
                                                 MigrationState(
                                                     migrationId = migrationId,
                                                     phase = nextPhase,
@@ -481,12 +481,12 @@ class RocksDBDataStore private constructor(
                                             continue
                                         }
                                         migrationStateStore.clear(index)
+                                        migrationRuntimeDetailsByModelId.update { it - index }
                                         completedInStartup = true
                                         break
                                     }
                                     is MigrationOutcome.Partial -> {
-                                        migrationStateStore.write(
-                                            index,
+                                        writeMigrationState(
                                             MigrationState(
                                                 migrationId = migrationId,
                                                 phase = phase,
@@ -500,8 +500,7 @@ class RocksDBDataStore private constructor(
                                         )
                                     }
                                     is MigrationOutcome.Retry -> {
-                                        migrationStateStore.write(
-                                            index,
+                                        writeMigrationState(
                                             MigrationState(
                                                 migrationId = migrationId,
                                                 phase = phase,
@@ -519,8 +518,7 @@ class RocksDBDataStore private constructor(
                                         }
                                     }
                                     is MigrationOutcome.Fatal -> {
-                                        migrationStateStore.write(
-                                            index,
+                                        writeMigrationState(
                                             MigrationState(
                                                 migrationId = migrationId,
                                                 phase = phase,
@@ -885,24 +883,40 @@ class RocksDBDataStore private constructor(
 
     fun migrationStatus(modelId: UInt): MigrationRuntimeStatus {
         val reason = pendingMigrationReasons.value[modelId] ?: return MigrationRuntimeStatus(MigrationRuntimeState.Idle)
+        val details = migrationRuntimeDetailsByModelId.value[modelId]
         val state = when {
             canceledMigrationReasons.value.containsKey(modelId) -> MigrationRuntimeState.Canceled
             pausedMigrationModelIds.value.contains(modelId) -> MigrationRuntimeState.Paused
-            reason.startsWith("Migration failed") -> MigrationRuntimeState.Failed
+            details?.lastError != null || reason.contains("failed", ignoreCase = true) -> MigrationRuntimeState.Failed
             else -> MigrationRuntimeState.Running
         }
-        return MigrationRuntimeStatus(state, reason)
+        return MigrationRuntimeStatus(
+            state = state,
+            message = reason,
+            phase = details?.phase,
+            attempt = details?.attempt,
+            lastError = details?.lastError,
+            hasCursor = details?.hasCursor
+        )
     }
 
     fun migrationStatuses(): Map<UInt, MigrationRuntimeStatus> =
         pendingMigrationReasons.value.mapValues { (modelId, reason) ->
+            val details = migrationRuntimeDetailsByModelId.value[modelId]
             val state = when {
                 canceledMigrationReasons.value.containsKey(modelId) -> MigrationRuntimeState.Canceled
                 pausedMigrationModelIds.value.contains(modelId) -> MigrationRuntimeState.Paused
-                reason.startsWith("Migration failed") -> MigrationRuntimeState.Failed
+                details?.lastError != null || reason.contains("failed", ignoreCase = true) -> MigrationRuntimeState.Failed
                 else -> MigrationRuntimeState.Running
             }
-            MigrationRuntimeStatus(state, reason)
+            MigrationRuntimeStatus(
+                state = state,
+                message = reason,
+                phase = details?.phase,
+                attempt = details?.attempt,
+                lastError = details?.lastError,
+                hasCursor = details?.hasCursor
+            )
         }
 
     fun pauseMigration(modelId: UInt): Boolean {
@@ -959,6 +973,7 @@ class RocksDBDataStore private constructor(
             current - modelId
         }
         waiter?.complete(Unit)
+        migrationRuntimeDetailsByModelId.update { it - modelId }
     }
 
     private fun failPendingMigration(modelId: UInt, reason: String) {
@@ -968,6 +983,19 @@ class RocksDBDataStore private constructor(
             current - modelId
         }
         waiter?.completeExceptionally(MigrationException(reason))
+    }
+
+    private fun updateMigrationRuntimeDetails(modelId: UInt, state: MigrationState) {
+        migrationRuntimeDetailsByModelId.update {
+            it + (
+                modelId to MigrationRuntimeDetails(
+                    phase = state.phase.normalizedRuntimePhase(),
+                    attempt = state.attempt,
+                    lastError = if (state.status == MigrationStateStatus.Failed) state.message else null,
+                    hasCursor = state.cursor != null
+                )
+            )
+        }
     }
 
     override fun assertModelReady(dataModelId: UInt) {
@@ -1021,4 +1049,11 @@ class RocksDBDataStore private constructor(
 private data class SensitiveModelReferences(
     val sensitiveReferences: List<ByteArray>,
     val sensitiveUniqueReferences: List<ByteArray>,
+)
+
+private data class MigrationRuntimeDetails(
+    val phase: MigrationPhase?,
+    val attempt: UInt?,
+    val lastError: String?,
+    val hasCursor: Boolean?,
 )

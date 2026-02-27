@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
@@ -27,6 +28,8 @@ import maryk.core.models.migration.MigrationHandler
 import maryk.core.models.migration.MigrationLease
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationPhase
+import maryk.core.models.migration.MigrationRuntimeState
+import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.MigrationStatus
@@ -35,7 +38,6 @@ import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingPropertie
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
-import maryk.core.models.migration.NoopMigrationLease
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
@@ -63,6 +65,7 @@ import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.foundationdb.metadata.readStoredModelNames
+import maryk.datastore.foundationdb.model.FoundationDBMigrationLease
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
 import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.foundationdb.model.storeModelDefinition
@@ -129,7 +132,9 @@ class FoundationDBDataStore private constructor(
     val migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
     val migrationStartupBudgetMs: Long? = null,
     val continueMigrationsInBackground: Boolean = false,
-    val migrationLease: MigrationLease = NoopMigrationLease,
+    val migrationLease: MigrationLease? = null,
+    val migrationLeaseTimeoutMs: Long = 30_000L,
+    val migrationLeaseHeartbeatMs: Long = 10_000L,
     val versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
     private val enableClusterUpdateLog: Boolean = false,
     private val clusterUpdateLogConsumerId: String? = null,
@@ -159,6 +164,7 @@ class FoundationDBDataStore private constructor(
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val pendingMigrationModelIds = atomic(setOf<UInt>())
     private val pendingMigrationReasons = atomic(mapOf<UInt, String>())
+    private val pendingMigrationWaiters = atomic(mapOf<UInt, CompletableDeferred<Unit>>())
 
     private lateinit var rootDirectory: DirectorySubspace
     private lateinit var metadataDirectory: DirectorySubspace
@@ -225,6 +231,13 @@ class FoundationDBDataStore private constructor(
 
         val conversionContext = DefinitionsConversionContext()
         val startupStarted = TimeSource.Monotonic.markNow()
+        val effectiveMigrationLease = migrationLease ?: FoundationDBMigrationLease(
+            tc = tc,
+            modelPrefixesById = directoriesByDataModelIndex.mapValues { (_, tableDirectories) -> tableDirectories.modelPrefix },
+            scope = this,
+            leaseTimeoutMs = migrationLeaseTimeoutMs,
+            heartbeatIntervalMs = migrationLeaseHeartbeatMs,
+        )
         val migrationStateStore = FoundationDBMigrationStateStore(
             tc = tc,
             modelPrefixesById = directoriesByDataModelIndex.mapValues { (_, tableDirectories) -> tableDirectories.modelPrefix }
@@ -275,11 +288,12 @@ class FoundationDBDataStore private constructor(
                             ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
                         val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
                         val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
-                        val leaseAcquired = migrationLease.tryAcquire(index, migrationId)
+                        val leaseAcquired = effectiveMigrationLease.tryAcquire(index, migrationId)
                         if (!leaseAcquired) {
                             if (continueMigrationsInBackground) {
                                 pendingMigrationModelIds.update { it + index }
                                 pendingMigrationReasons.update { it + (index to "Migration lease held by another migrator for $migrationId") }
+                                ensurePendingMigrationWaiter(index)
                                 return@let
                             } else {
                                 throw MigrationException("Migration lease could not be acquired for ${dataModel.Meta.name}: $migrationId")
@@ -297,6 +311,7 @@ class FoundationDBDataStore private constructor(
                                     pendingMigrationReasons.update {
                                         it + (index to "Migration for ${dataModel.Meta.name} is running in background")
                                     }
+                                    ensurePendingMigrationWaiter(index)
                                     this.launch {
                                         while (true) {
                                             val previousState = migrationStateStore.read(index)
@@ -333,6 +348,7 @@ class FoundationDBDataStore private constructor(
                                                     versionUpdateHandler?.invoke(this@FoundationDBDataStore, storedModel, dataModel)
                                                     pendingMigrationModelIds.update { it - index }
                                                     pendingMigrationReasons.update { it - index }
+                                                    completePendingMigration(index)
                                                     break
                                                 }
                                                 is MigrationOutcome.Partial -> {
@@ -386,11 +402,12 @@ class FoundationDBDataStore private constructor(
                                                     pendingMigrationReasons.update {
                                                         it + (index to "Migration failed for ${dataModel.Meta.name}: ${outcome.reason}")
                                                     }
+                                                    failPendingMigration(index, "Migration failed for ${dataModel.Meta.name}: ${outcome.reason}")
                                                     break
                                                 }
                                             }
                                         }
-                                        migrationLease.release(index, migrationId)
+                                        effectiveMigrationLease.release(index, migrationId)
                                     }
                                     break
                                 }
@@ -481,7 +498,7 @@ class FoundationDBDataStore private constructor(
                             }
                         } finally {
                             if (completedInStartup) {
-                                migrationLease.release(index, migrationId)
+                                effectiveMigrationLease.release(index, migrationId)
                             }
                         }
                         if (!completedInStartup) {
@@ -1176,6 +1193,59 @@ class FoundationDBDataStore private constructor(
         return true
     }
 
+    fun pendingMigrations(): Map<UInt, String> = pendingMigrationReasons.value
+
+    fun migrationStatus(modelId: UInt): MigrationRuntimeStatus {
+        val reason = pendingMigrationReasons.value[modelId] ?: return MigrationRuntimeStatus(MigrationRuntimeState.Idle)
+        val state = if (reason.startsWith("Migration failed")) MigrationRuntimeState.Failed else MigrationRuntimeState.Running
+        return MigrationRuntimeStatus(state, reason)
+    }
+
+    fun migrationStatuses(): Map<UInt, MigrationRuntimeStatus> =
+        pendingMigrationReasons.value.mapValues { (_, reason) ->
+            val state = if (reason.startsWith("Migration failed")) MigrationRuntimeState.Failed else MigrationRuntimeState.Running
+            MigrationRuntimeStatus(state, reason)
+        }
+
+    suspend fun awaitMigration(modelId: UInt) {
+        pendingMigrationWaiters.value[modelId]?.await()
+    }
+
+    private fun ensurePendingMigrationWaiter(modelId: UInt): CompletableDeferred<Unit> {
+        var waiter: CompletableDeferred<Unit>? = null
+        pendingMigrationWaiters.update { current ->
+            val existing = current[modelId]
+            if (existing != null) {
+                waiter = existing
+                current
+            } else {
+                CompletableDeferred<Unit>().let { created ->
+                    waiter = created
+                    current + (modelId to created)
+                }
+            }
+        }
+        return waiter ?: throw IllegalStateException("Pending waiter could not be created for model $modelId")
+    }
+
+    private fun completePendingMigration(modelId: UInt) {
+        var waiter: CompletableDeferred<Unit>? = null
+        pendingMigrationWaiters.update { current ->
+            waiter = current[modelId]
+            current - modelId
+        }
+        waiter?.complete(Unit)
+    }
+
+    private fun failPendingMigration(modelId: UInt, reason: String) {
+        var waiter: CompletableDeferred<Unit>? = null
+        pendingMigrationWaiters.update { current ->
+            waiter = current[modelId]
+            current - modelId
+        }
+        waiter?.completeExceptionally(MigrationException(reason))
+    }
+
     override fun assertModelReady(dataModelId: UInt) {
         if (pendingMigrationModelIds.value.contains(dataModelId)) {
             val modelName = dataModelsById[dataModelId]?.Meta?.name ?: dataModelId.toString()
@@ -1212,7 +1282,9 @@ class FoundationDBDataStore private constructor(
             migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
             migrationStartupBudgetMs: Long? = null,
             continueMigrationsInBackground: Boolean = false,
-            migrationLease: MigrationLease = NoopMigrationLease,
+            migrationLease: MigrationLease? = null,
+            migrationLeaseTimeoutMs: Long = 30_000L,
+            migrationLeaseHeartbeatMs: Long = 10_000L,
             versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
             enableClusterUpdateLog: Boolean = false,
             clusterUpdateLogConsumerId: String? = null,
@@ -1233,6 +1305,8 @@ class FoundationDBDataStore private constructor(
             migrationStartupBudgetMs = migrationStartupBudgetMs,
             continueMigrationsInBackground = continueMigrationsInBackground,
             migrationLease = migrationLease,
+            migrationLeaseTimeoutMs = migrationLeaseTimeoutMs,
+            migrationLeaseHeartbeatMs = migrationLeaseHeartbeatMs,
             versionUpdateHandler = versionUpdateHandler,
             enableClusterUpdateLog = enableClusterUpdateLog,
             clusterUpdateLogConsumerId = clusterUpdateLogConsumerId,

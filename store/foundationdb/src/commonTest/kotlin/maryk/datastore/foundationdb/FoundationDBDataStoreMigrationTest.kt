@@ -4,11 +4,16 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
+import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationException
+import maryk.core.models.migration.MigrationLease
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
@@ -364,6 +369,7 @@ class FoundationDBDataStoreMigrationTest {
         assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
         assertTrue { !dataStore.migrationStatuses().containsKey(1u) }
         assertTrue { dataStore.migrationMetrics(1u).started > 0u }
+        assertTrue { dataStore.migrationMetrics().containsKey(1u) }
         assertTrue { dataStore.migrationAuditEvents(1u, limit = 10).isNotEmpty() }
         dataStore.execute(
             ModelV2.add(
@@ -604,6 +610,89 @@ class FoundationDBDataStoreMigrationTest {
         }
 
         assertTrue(exception.message.orEmpty().contains("Dependency cycle detected"))
+    }
+
+    @Test
+    fun leaseIsReleasedWhenStartupMigrationFails() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-lease-release-failure", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val lease = ScriptedMigrationLease(
+            mutableMapOf(1u to ArrayDeque(listOf(true)))
+        )
+
+        assertFailsWith<MigrationException> {
+            FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationLease = lease,
+                migrationHandler = { _ -> MigrationOutcome.Fatal("boom") },
+            )
+        }
+
+        assertEquals(1, lease.releaseCalls.value)
+    }
+
+    @Test
+    fun backgroundMigrationRetriesLeaseAcquisitionAndCompletes() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-lease-retry-background", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val lease = ScriptedMigrationLease(
+            mutableMapOf(1u to ArrayDeque(listOf(false, false, true)))
+        )
+        val dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            continueMigrationsInBackground = true,
+            migrationLease = lease,
+            migrationHandler = { _ -> MigrationOutcome.Success },
+        )
+
+        try {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000) {
+                    dataStore.awaitMigration(1u)
+                }
+            }
+            assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+            assertTrue(lease.tryAcquireCalls.value >= 3)
+            assertEquals(1, lease.releaseCalls.value)
+        } finally {
+            dataStore.close()
+        }
+    }
+}
+
+private class ScriptedMigrationLease(
+    private val outcomesByModelId: MutableMap<UInt, ArrayDeque<Boolean>> = mutableMapOf(),
+) : MigrationLease {
+    val tryAcquireCalls = atomic(0)
+    val releaseCalls = atomic(0)
+
+    override suspend fun tryAcquire(modelId: UInt, migrationId: String): Boolean {
+        tryAcquireCalls.incrementAndGet()
+        return outcomesByModelId[modelId]?.removeFirstOrNull() ?: true
+    }
+
+    override suspend fun release(modelId: UInt, migrationId: String) {
+        releaseCalls.incrementAndGet()
     }
 }
 

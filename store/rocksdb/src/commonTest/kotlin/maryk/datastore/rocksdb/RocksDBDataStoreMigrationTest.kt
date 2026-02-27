@@ -3,10 +3,15 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
+import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationException
+import maryk.core.models.migration.MigrationLease
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
@@ -330,6 +335,7 @@ class RocksDBDataStoreMigrationTest {
         assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
         assertTrue { !dataStore.migrationStatuses().containsKey(1u) }
         assertTrue { dataStore.migrationMetrics(1u).started > 0u }
+        assertTrue { dataStore.migrationMetrics().containsKey(1u) }
         assertTrue { dataStore.migrationAuditEvents(1u, limit = 10).isNotEmpty() }
         dataStore.execute(
             ModelV2.add(
@@ -568,6 +574,88 @@ class RocksDBDataStoreMigrationTest {
 
         assertTrue(exception.message.orEmpty().contains("Dependency cycle detected"))
         deleteFolder(path)
+    }
+
+    @Test
+    fun leaseIsReleasedWhenStartupMigrationFails() = runTest {
+        val path = createTestDBFolder("migrationLeaseReleaseOnFailure")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val lease = ScriptedMigrationLease(
+            mutableMapOf(1u to ArrayDeque(listOf(true)))
+        )
+
+        assertFailsWith<MigrationException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationLease = lease,
+                migrationHandler = { _ -> MigrationOutcome.Fatal("boom") },
+            )
+        }
+
+        assertEquals(1, lease.releaseCalls.value)
+        deleteFolder(path)
+    }
+
+    @Test
+    fun backgroundMigrationRetriesLeaseAcquisitionAndCompletes() = runTest {
+        val path = createTestDBFolder("migrationLeaseRetryBackground")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val lease = ScriptedMigrationLease(
+            mutableMapOf(1u to ArrayDeque(listOf(false, false, true)))
+        )
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            continueMigrationsInBackground = true,
+            migrationLease = lease,
+            migrationHandler = { _ -> MigrationOutcome.Success },
+        )
+
+        try {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000) {
+                    dataStore.awaitMigration(1u)
+                }
+            }
+
+            assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
+            assertTrue(lease.tryAcquireCalls.value >= 3)
+            assertEquals(1, lease.releaseCalls.value)
+        } finally {
+            dataStore.close()
+            deleteFolder(path)
+        }
+    }
+}
+
+private class ScriptedMigrationLease(
+    private val outcomesByModelId: MutableMap<UInt, ArrayDeque<Boolean>> = mutableMapOf(),
+) : MigrationLease {
+    val tryAcquireCalls = atomic(0)
+    val releaseCalls = atomic(0)
+
+    override suspend fun tryAcquire(modelId: UInt, migrationId: String): Boolean {
+        tryAcquireCalls.incrementAndGet()
+        return outcomesByModelId[modelId]?.removeFirstOrNull() ?: true
+    }
+
+    override suspend fun release(modelId: UInt, migrationId: String) {
+        releaseCalls.incrementAndGet()
     }
 }
 

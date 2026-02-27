@@ -8,6 +8,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationOutcome
+import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -319,6 +320,7 @@ class FoundationDBDataStoreMigrationTest {
             dataModelsById = mapOf(1u to ModelV2),
             migrationStartupBudgetMs = 1L,
             continueMigrationsInBackground = true,
+            persistMigrationAuditEvents = true,
             migrationHandler = { _ ->
                 attempts += 1
                 if (attempts >= 2) {
@@ -354,6 +356,8 @@ class FoundationDBDataStoreMigrationTest {
         dataStore.awaitMigration(1u)
         assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
         assertTrue { !dataStore.migrationStatuses().containsKey(1u) }
+        assertTrue { dataStore.migrationMetrics(1u).started > 0u }
+        assertTrue { dataStore.migrationAuditEvents(1u, limit = 10).isNotEmpty() }
         dataStore.execute(
             ModelV2.add(
                 ModelV2.create {
@@ -519,5 +523,28 @@ class FoundationDBDataStoreMigrationTest {
         assertTrue { verifyAttempts >= 2 }
 
         dataStore.close()
+    }
+
+    @Test
+    fun migrationRetryPolicyThresholdStopsRetryLoop() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-retry-policy", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        assertFailsWith<MigrationException> {
+            FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationRetryPolicy = MigrationRetryPolicy(maxAttempts = 1u),
+                migrationHandler = { _ -> MigrationOutcome.Retry(retryAfterMs = 1) },
+            )
+        }
     }
 }

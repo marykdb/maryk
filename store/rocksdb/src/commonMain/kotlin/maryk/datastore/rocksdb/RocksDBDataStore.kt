@@ -21,11 +21,16 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.migration.MigrationContext
+import maryk.core.models.migration.MigrationAuditEvent
+import maryk.core.models.migration.MigrationAuditEventType
+import maryk.core.models.migration.MigrationAuditLogStore
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationHandler
 import maryk.core.models.migration.MigrationLease
+import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationPhase
+import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.models.migration.MigrationState
@@ -33,8 +38,10 @@ import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.MigrationVerifyHandler
 import maryk.core.models.migration.canTransitionTo
+import maryk.core.models.migration.defaultMigrationAuditEventReporter
 import maryk.core.models.migration.nextRuntimePhaseOrNull
 import maryk.core.models.migration.normalizedRuntimePhase
+import maryk.core.models.migration.remainingRuntimePhaseCount
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.models.migration.MigrationStatus.NewModel
@@ -79,6 +86,7 @@ import maryk.datastore.rocksdb.metadata.readMetaFile
 import maryk.datastore.rocksdb.metadata.writeMetaFile
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.rocksdb.model.RocksDBLocalMigrationLease
+import maryk.datastore.rocksdb.model.RocksDBMigrationAuditLogStore
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import maryk.datastore.rocksdb.model.storeModelDefinition
 import maryk.datastore.rocksdb.processors.AnyAddStoreAction
@@ -134,9 +142,13 @@ class RocksDBDataStore private constructor(
     private val onlyCheckModelVersion: Boolean = false,
     val migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
     val migrationVerifyHandler: MigrationVerifyHandler<RocksDBDataStore>? = null,
+    val migrationRetryPolicy: MigrationRetryPolicy = MigrationRetryPolicy(),
     val migrationStartupBudgetMs: Long? = null,
     val continueMigrationsInBackground: Boolean = false,
     val migrationLease: MigrationLease? = null,
+    val persistMigrationAuditEvents: Boolean = false,
+    val migrationAuditLogMaxEntries: Int = 1000,
+    val migrationAuditEventReporter: ((MigrationAuditEvent) -> Unit) = ::defaultMigrationAuditEventReporter,
     val versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
     val fieldEncryptionProvider: FieldEncryptionProvider? = null,
 ) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
@@ -181,6 +193,8 @@ class RocksDBDataStore private constructor(
     private val canceledMigrationReasons = atomic(mapOf<UInt, String>())
     private val pendingMigrationWaiters = atomic(mapOf<UInt, CompletableDeferred<Unit>>())
     private val migrationRuntimeDetailsByModelId = atomic(mapOf<UInt, MigrationRuntimeDetails>())
+    private val migrationMetricsByModelId = atomic(mapOf<UInt, MigrationMetrics>())
+    private var migrationAuditLogStore: MigrationAuditLogStore? = null
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
@@ -248,6 +262,13 @@ class RocksDBDataStore private constructor(
             db,
             columnFamilyHandlesByDataModelIndex.mapValues { (_, tableColumnFamilies) -> tableColumnFamilies.model }
         )
+        if (persistMigrationAuditEvents) {
+            migrationAuditLogStore = RocksDBMigrationAuditLogStore(
+                rocksDB = db,
+                modelColumnFamiliesById = columnFamilyHandlesByDataModelIndex.mapValues { (_, tableColumnFamilies) -> tableColumnFamilies.model },
+                maxEntries = migrationAuditLogMaxEntries
+            )
+        }
 
         for ((index, dataModel) in dataModelsById) {
             columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
@@ -289,6 +310,7 @@ class RocksDBDataStore private constructor(
                         val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
                         val leaseAcquired = effectiveMigrationLease.tryAcquire(index, migrationId)
                         if (!leaseAcquired) {
+                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseRejected, message = "Lease held by other migrator")
                             if (continueMigrationsInBackground) {
                                 pendingMigrationModelIds.update { it + index }
                                 pendingMigrationReasons.update { it + (index to "Migration lease held by another migrator for $migrationId") }
@@ -298,6 +320,7 @@ class RocksDBDataStore private constructor(
                                 throw MigrationException("Migration lease could not be acquired for ${dataModel.Meta.name}: $migrationId")
                             }
                         }
+                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseAcquired)
                         var completedInStartup = false
                         suspend fun writeMigrationState(state: MigrationState) {
                             migrationStateStore.write(index, state)
@@ -305,6 +328,17 @@ class RocksDBDataStore private constructor(
                         }
                         suspend fun executeMigrationOrVerifyStep(previousState: MigrationState?, attempt: UInt): Pair<MigrationPhase, MigrationOutcome> {
                             val phase = previousState?.phase?.normalizedRuntimePhase() ?: MigrationPhase.Expand
+                            migrationRetryPolicy.maxAttempts?.let { maxAttempts ->
+                                if (attempt > maxAttempts) {
+                                    return phase to MigrationOutcome.Fatal("Retry policy exceeded max attempts $maxAttempts")
+                                }
+                            }
+                            migrationRetryPolicy.maxRetryOutcomes?.let { maxRetries ->
+                                val retriesSoFar = migrationRuntimeDetailsByModelId.value[index]?.retryCount ?: 0u
+                                if (retriesSoFar >= maxRetries) {
+                                    return phase to MigrationOutcome.Fatal("Retry policy exceeded max retries $maxRetries")
+                                }
+                            }
                             writeMigrationState(
                                 MigrationState(
                                     migrationId = migrationId,
@@ -316,6 +350,7 @@ class RocksDBDataStore private constructor(
                                     cursor = previousState?.cursor,
                                 )
                             )
+                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseStarted, phase = phase, attempt = attempt)
                             val context = MigrationContext(
                                 store = this@RocksDBDataStore,
                                 storedDataModel = storedModel,
@@ -371,6 +406,7 @@ class RocksDBDataStore private constructor(
                                                         if (!phase.canTransitionTo(nextPhase)) {
                                                             throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
                                                         }
+                                                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
                                                         writeMigrationState(
                                                             MigrationState(
                                                                 migrationId = migrationId,
@@ -386,6 +422,7 @@ class RocksDBDataStore private constructor(
                                                     }
                                                     migrationStateStore.clear(index)
                                                     migrationRuntimeDetailsByModelId.update { it - index }
+                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Completed, phase = phase, attempt = attempt)
                                                     migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
                                                     versionUpdateHandler?.invoke(this@RocksDBDataStore, storedModel, dataModel)
                                                     storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
@@ -398,6 +435,7 @@ class RocksDBDataStore private constructor(
                                                     break
                                                 }
                                                 is MigrationOutcome.Partial -> {
+                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Partial, phase = phase, attempt = attempt, message = outcome.message)
                                                     writeMigrationState(
                                                         MigrationState(
                                                             migrationId = migrationId,
@@ -412,6 +450,7 @@ class RocksDBDataStore private constructor(
                                                     )
                                                 }
                                                 is MigrationOutcome.Retry -> {
+                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.RetryScheduled, phase = phase, attempt = attempt, message = outcome.message)
                                                     writeMigrationState(
                                                         MigrationState(
                                                             migrationId = migrationId,
@@ -430,6 +469,7 @@ class RocksDBDataStore private constructor(
                                                     }
                                                 }
                                                 is MigrationOutcome.Fatal -> {
+                                                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
                                                     writeMigrationState(
                                                         MigrationState(
                                                             migrationId = migrationId,
@@ -467,6 +507,7 @@ class RocksDBDataStore private constructor(
                                             if (!phase.canTransitionTo(nextPhase)) {
                                                 throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
                                             }
+                                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
                                             writeMigrationState(
                                                 MigrationState(
                                                     migrationId = migrationId,
@@ -482,10 +523,12 @@ class RocksDBDataStore private constructor(
                                         }
                                         migrationStateStore.clear(index)
                                         migrationRuntimeDetailsByModelId.update { it - index }
+                                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Completed, phase = phase, attempt = attempt)
                                         completedInStartup = true
                                         break
                                     }
                                     is MigrationOutcome.Partial -> {
+                                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Partial, phase = phase, attempt = attempt, message = outcome.message)
                                         writeMigrationState(
                                             MigrationState(
                                                 migrationId = migrationId,
@@ -500,6 +543,7 @@ class RocksDBDataStore private constructor(
                                         )
                                     }
                                     is MigrationOutcome.Retry -> {
+                                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.RetryScheduled, phase = phase, attempt = attempt, message = outcome.message)
                                         writeMigrationState(
                                             MigrationState(
                                                 migrationId = migrationId,
@@ -518,6 +562,7 @@ class RocksDBDataStore private constructor(
                                         }
                                     }
                                     is MigrationOutcome.Fatal -> {
+                                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
                                         writeMigrationState(
                                             MigrationState(
                                                 migrationId = migrationId,
@@ -896,7 +941,8 @@ class RocksDBDataStore private constructor(
             phase = details?.phase,
             attempt = details?.attempt,
             lastError = details?.lastError,
-            hasCursor = details?.hasCursor
+            hasCursor = details?.hasCursor,
+            etaMs = details?.etaMs
         )
     }
 
@@ -915,7 +961,8 @@ class RocksDBDataStore private constructor(
                 phase = details?.phase,
                 attempt = details?.attempt,
                 lastError = details?.lastError,
-                hasCursor = details?.hasCursor
+                hasCursor = details?.hasCursor,
+                etaMs = details?.etaMs
             )
         }
 
@@ -923,6 +970,18 @@ class RocksDBDataStore private constructor(
         if (!pendingMigrationModelIds.value.contains(modelId)) return false
         pausedMigrationModelIds.update { it + modelId }
         pendingMigrationReasons.update { it + (modelId to "Migration paused by operator") }
+        migrationRuntimeDetailsByModelId.value[modelId]?.let { details ->
+            runBlocking {
+                appendMigrationAuditEvent(
+                    modelId = modelId,
+                    migrationId = details.migrationId,
+                    type = MigrationAuditEventType.Paused,
+                    phase = details.phase,
+                    attempt = details.attempt,
+                    message = "Paused by operator"
+                )
+            }
+        }
         return true
     }
 
@@ -933,6 +992,18 @@ class RocksDBDataStore private constructor(
         if (pendingMigrationModelIds.value.contains(modelId)) {
             pendingMigrationReasons.update { it + (modelId to "Migration resumed") }
         }
+        migrationRuntimeDetailsByModelId.value[modelId]?.let { details ->
+            runBlocking {
+                appendMigrationAuditEvent(
+                    modelId = modelId,
+                    migrationId = details.migrationId,
+                    type = MigrationAuditEventType.Resumed,
+                    phase = details.phase,
+                    attempt = details.attempt,
+                    message = "Resumed by operator"
+                )
+            }
+        }
         return true
     }
 
@@ -941,9 +1012,29 @@ class RocksDBDataStore private constructor(
         canceledMigrationReasons.update { it + (modelId to reason) }
         pausedMigrationModelIds.update { it - modelId }
         pendingMigrationReasons.update { it + (modelId to "Migration canceled by operator: $reason") }
+        migrationRuntimeDetailsByModelId.value[modelId]?.let { details ->
+            runBlocking {
+                appendMigrationAuditEvent(
+                    modelId = modelId,
+                    migrationId = details.migrationId,
+                    type = MigrationAuditEventType.Canceled,
+                    phase = details.phase,
+                    attempt = details.attempt,
+                    message = reason
+                )
+            }
+        }
         failPendingMigration(modelId, "Migration canceled by operator: $reason")
         return true
     }
+
+    fun migrationMetrics(modelId: UInt): MigrationMetrics =
+        migrationMetricsByModelId.value[modelId] ?: MigrationMetrics()
+
+    fun migrationMetrics(): Map<UInt, MigrationMetrics> = migrationMetricsByModelId.value
+
+    suspend fun migrationAuditEvents(modelId: UInt, limit: Int = 100): List<MigrationAuditEvent> =
+        migrationAuditLogStore?.read(modelId, limit) ?: emptyList()
 
     suspend fun awaitMigration(modelId: UInt) {
         pendingMigrationWaiters.value[modelId]?.await()
@@ -986,15 +1077,71 @@ class RocksDBDataStore private constructor(
     }
 
     private fun updateMigrationRuntimeDetails(modelId: UInt, state: MigrationState) {
+        val nowMs = HLC().toPhysicalUnixTime().toLong()
         migrationRuntimeDetailsByModelId.update {
+            val previous = it[modelId]
+            val stepDurationMs = previous?.lastUpdateAtMs?.let { last -> (nowMs - last).coerceAtLeast(0) }
+            val averageStepMs = when {
+                previous?.averageStepMs == null -> stepDurationMs
+                stepDurationMs == null -> previous.averageStepMs
+                else -> ((previous.averageStepMs * 3L) + stepDurationMs) / 4L
+            }
+            val phase = state.phase.normalizedRuntimePhase()
             it + (
                 modelId to MigrationRuntimeDetails(
-                    phase = state.phase.normalizedRuntimePhase(),
+                    migrationId = state.migrationId,
+                    phase = phase,
                     attempt = state.attempt,
                     lastError = if (state.status == MigrationStateStatus.Failed) state.message else null,
-                    hasCursor = state.cursor != null
+                    hasCursor = state.cursor != null,
+                    retryCount = if (state.status == MigrationStateStatus.Retry) (previous?.retryCount ?: 0u) + 1u else previous?.retryCount ?: 0u,
+                    startedAtMs = previous?.startedAtMs ?: nowMs,
+                    lastUpdateAtMs = nowMs,
+                    averageStepMs = averageStepMs,
+                    etaMs = averageStepMs?.let { avg -> avg * phase.remainingRuntimePhaseCount().toLong() },
                 )
             )
+        }
+    }
+
+    private suspend fun appendMigrationAuditEvent(
+        modelId: UInt,
+        migrationId: String,
+        type: MigrationAuditEventType,
+        phase: MigrationPhase? = null,
+        attempt: UInt? = null,
+        message: String? = null,
+    ) {
+        val event = MigrationAuditEvent(
+            timestampMs = HLC().toPhysicalUnixTime().toLong(),
+            modelId = modelId,
+            migrationId = migrationId,
+            type = type,
+            phase = phase?.normalizedRuntimePhase(),
+            attempt = attempt,
+            message = message
+        )
+        runCatching { migrationAuditEventReporter(event) }
+        migrationAuditLogStore?.append(modelId, event)
+        incrementMigrationMetric(modelId, type)
+    }
+
+    private fun incrementMigrationMetric(modelId: UInt, type: MigrationAuditEventType) {
+        val nowMs = HLC().toPhysicalUnixTime().toLong()
+        migrationMetricsByModelId.update { current ->
+            val previous = current[modelId] ?: MigrationMetrics()
+            val updated = when (type) {
+                MigrationAuditEventType.PhaseStarted -> previous.copy(started = previous.started + 1u, lastEventAtMs = nowMs)
+                MigrationAuditEventType.Completed -> previous.copy(completed = previous.completed + 1u, lastEventAtMs = nowMs)
+                MigrationAuditEventType.Failed -> previous.copy(failed = previous.failed + 1u, lastEventAtMs = nowMs)
+                MigrationAuditEventType.RetryScheduled -> previous.copy(retries = previous.retries + 1u, lastEventAtMs = nowMs)
+                MigrationAuditEventType.Partial -> previous.copy(partials = previous.partials + 1u, lastEventAtMs = nowMs)
+                MigrationAuditEventType.Paused -> previous.copy(paused = previous.paused + 1u, lastEventAtMs = nowMs)
+                MigrationAuditEventType.Resumed -> previous.copy(resumed = previous.resumed + 1u, lastEventAtMs = nowMs)
+                MigrationAuditEventType.Canceled -> previous.copy(canceled = previous.canceled + 1u, lastEventAtMs = nowMs)
+                else -> previous.copy(lastEventAtMs = nowMs)
+            }
+            current + (modelId to updated)
         }
     }
 
@@ -1015,9 +1162,13 @@ class RocksDBDataStore private constructor(
             onlyCheckModelVersion: Boolean = false,
             migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
             migrationVerifyHandler: MigrationVerifyHandler<RocksDBDataStore>? = null,
+            migrationRetryPolicy: MigrationRetryPolicy = MigrationRetryPolicy(),
             migrationStartupBudgetMs: Long? = null,
             continueMigrationsInBackground: Boolean = false,
             migrationLease: MigrationLease? = null,
+            persistMigrationAuditEvents: Boolean = false,
+            migrationAuditLogMaxEntries: Int = 1000,
+            migrationAuditEventReporter: ((MigrationAuditEvent) -> Unit) = ::defaultMigrationAuditEventReporter,
             versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
         ): RocksDBDataStore {
@@ -1029,9 +1180,13 @@ class RocksDBDataStore private constructor(
                 onlyCheckModelVersion = onlyCheckModelVersion,
                 migrationHandler = migrationHandler,
                 migrationVerifyHandler = migrationVerifyHandler,
+                migrationRetryPolicy = migrationRetryPolicy,
                 migrationStartupBudgetMs = migrationStartupBudgetMs,
                 continueMigrationsInBackground = continueMigrationsInBackground,
                 migrationLease = migrationLease,
+                persistMigrationAuditEvents = persistMigrationAuditEvents,
+                migrationAuditLogMaxEntries = migrationAuditLogMaxEntries,
+                migrationAuditEventReporter = migrationAuditEventReporter,
                 versionUpdateHandler = versionUpdateHandler,
                 fieldEncryptionProvider = fieldEncryptionProvider,
             ).apply {
@@ -1052,8 +1207,14 @@ private data class SensitiveModelReferences(
 )
 
 private data class MigrationRuntimeDetails(
+    val migrationId: String,
     val phase: MigrationPhase?,
     val attempt: UInt?,
     val lastError: String?,
     val hasCursor: Boolean?,
+    val retryCount: UInt = 0u,
+    val startedAtMs: Long,
+    val lastUpdateAtMs: Long,
+    val averageStepMs: Long?,
+    val etaMs: Long?,
 )

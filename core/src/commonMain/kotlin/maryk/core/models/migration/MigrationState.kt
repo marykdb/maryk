@@ -30,6 +30,14 @@ fun MigrationPhase.nextRuntimePhaseOrNull(): MigrationPhase? = when (this.normal
 fun MigrationPhase.canTransitionTo(next: MigrationPhase): Boolean =
     this.nextRuntimePhaseOrNull() == next.normalizedRuntimePhase()
 
+fun MigrationPhase.remainingRuntimePhaseCount(): Int = when (this.normalizedRuntimePhase()) {
+    MigrationPhase.Expand -> 4
+    MigrationPhase.Backfill -> 3
+    MigrationPhase.Verify -> 2
+    MigrationPhase.Contract -> 1
+    else -> 1
+}
+
 enum class MigrationStateStatus {
     Running,
     Partial,

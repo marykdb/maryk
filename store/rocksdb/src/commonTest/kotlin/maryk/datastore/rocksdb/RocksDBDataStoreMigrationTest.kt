@@ -5,6 +5,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationOutcome
+import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -284,6 +285,7 @@ class RocksDBDataStoreMigrationTest {
             dataModelsById = mapOf(1u to ModelV2),
             migrationStartupBudgetMs = 1L,
             continueMigrationsInBackground = true,
+            persistMigrationAuditEvents = true,
             migrationHandler = { _ ->
                 attempts += 1
                 if (attempts >= 2) {
@@ -319,6 +321,8 @@ class RocksDBDataStoreMigrationTest {
         dataStore.awaitMigration(1u)
         assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
         assertTrue { !dataStore.migrationStatuses().containsKey(1u) }
+        assertTrue { dataStore.migrationMetrics(1u).started > 0u }
+        assertTrue { dataStore.migrationAuditEvents(1u, limit = 10).isNotEmpty() }
         dataStore.execute(
             ModelV2.add(
                 ModelV2.create {
@@ -482,6 +486,29 @@ class RocksDBDataStoreMigrationTest {
         assertTrue { verifyAttempts >= 2 }
 
         dataStore.close()
+        deleteFolder(path)
+    }
+
+    @Test
+    fun migrationRetryPolicyThresholdStopsRetryLoop() = runTest {
+        val path = createTestDBFolder("migrationRetryPolicy")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        assertFailsWith<MigrationException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationRetryPolicy = MigrationRetryPolicy(maxAttempts = 1u),
+                migrationHandler = { _ -> MigrationOutcome.Retry(retryAfterMs = 1) },
+            )
+        }
+
         deleteFolder(path)
     }
 }

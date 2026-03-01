@@ -15,8 +15,11 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationLease
 import maryk.core.models.migration.MigrationOutcome
+import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
+import maryk.core.models.migration.MigrationStateStatus
+import maryk.core.models.migration.NoopMigrationLease
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.string
@@ -41,6 +44,7 @@ import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.ModelWithDependents
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -189,6 +193,49 @@ class FoundationDBDataStoreMigrationTest {
         ).close()
 
         assertEquals(listOf("expand", "backfill", "verify", "contract"), phases)
+    }
+
+    @Test
+    fun expandAndContractHooksSupportRetryAndPartial() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-hook-phases-retry", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var expandCalls = 0
+        var contractCalls = 0
+        val phases = mutableListOf<String>()
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationExpandHandler = { _ ->
+                phases += "expand"
+                expandCalls += 1
+                if (expandCalls == 1) MigrationOutcome.Retry(retryAfterMs = 1) else MigrationOutcome.Success
+            },
+            migrationHandler = { _ ->
+                phases += "backfill"
+                MigrationOutcome.Success
+            },
+            migrationVerifyHandler = { _ ->
+                phases += "verify"
+                MigrationOutcome.Success
+            },
+            migrationContractHandler = { _ ->
+                phases += "contract"
+                contractCalls += 1
+                if (contractCalls == 1) MigrationOutcome.Partial() else MigrationOutcome.Success
+            },
+        ).close()
+
+        assertEquals(listOf("expand", "expand", "backfill", "verify", "contract", "contract"), phases)
     }
 
     @Test
@@ -777,6 +824,185 @@ class FoundationDBDataStoreMigrationTest {
             )
         } finally {
             waitingStore.close()
+        }
+    }
+
+    @Test
+    fun reopensAndResumesEachPhaseFromRetryState() = runTest(timeout = 3.minutes) {
+        for (targetPhase in MigrationPhase.entries) {
+            val dirPath = listOf("maryk", "test", "fdb-migration-resume-${targetPhase.name.lowercase()}", Uuid.random().toString())
+            FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV1_1),
+            ).close()
+
+            var retryIssued = false
+            val firstStore = FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationLease = NoopMigrationLease,
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                migrationExpandHandler = {
+                    if (targetPhase == MigrationPhase.Expand && !retryIssued) {
+                        retryIssued = true
+                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
+                    } else {
+                        MigrationOutcome.Success
+                    }
+                },
+                migrationHandler = {
+                    if (targetPhase == MigrationPhase.Backfill && !retryIssued) {
+                        retryIssued = true
+                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
+                    } else {
+                        MigrationOutcome.Success
+                    }
+                },
+                migrationVerifyHandler = {
+                    if (targetPhase == MigrationPhase.Verify && !retryIssued) {
+                        retryIssued = true
+                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
+                    } else {
+                        MigrationOutcome.Success
+                    }
+                },
+                migrationContractHandler = {
+                    if (targetPhase == MigrationPhase.Contract && !retryIssued) {
+                        retryIssued = true
+                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
+                    } else {
+                        MigrationOutcome.Success
+                    }
+                },
+            )
+
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000) {
+                    while (true) {
+                        val status = firstStore.migrationStatus(1u)
+                        if (status.phase == targetPhase && status.hasCursor == true) break
+                        delay(10)
+                    }
+                }
+            }
+            val pendingStatus = firstStore.migrationStatus(1u)
+            assertEquals(targetPhase, pendingStatus.phase)
+            assertEquals(true, pendingStatus.hasCursor)
+            firstStore.close()
+
+            var resumed = false
+            val secondStore = FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationLease = NoopMigrationLease,
+                migrationExpandHandler = { context ->
+                    if (targetPhase == MigrationPhase.Expand) {
+                        val previousState = context.previousState
+                        assertNotNull(previousState)
+                        assertEquals(MigrationPhase.Expand, previousState.phase)
+                        assertEquals(MigrationStateStatus.Retry, previousState.status)
+                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                        resumed = true
+                    }
+                    MigrationOutcome.Success
+                },
+                migrationHandler = { context ->
+                    if (targetPhase == MigrationPhase.Backfill) {
+                        val previousState = context.previousState
+                        assertNotNull(previousState)
+                        assertEquals(MigrationPhase.Backfill, previousState.phase)
+                        assertEquals(MigrationStateStatus.Retry, previousState.status)
+                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                        resumed = true
+                    }
+                    MigrationOutcome.Success
+                },
+                migrationVerifyHandler = { context ->
+                    if (targetPhase == MigrationPhase.Verify) {
+                        val previousState = context.previousState
+                        assertNotNull(previousState)
+                        assertEquals(MigrationPhase.Verify, previousState.phase)
+                        assertEquals(MigrationStateStatus.Retry, previousState.status)
+                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                        resumed = true
+                    }
+                    MigrationOutcome.Success
+                },
+                migrationContractHandler = { context ->
+                    if (targetPhase == MigrationPhase.Contract) {
+                        val previousState = context.previousState
+                        assertNotNull(previousState)
+                        assertEquals(MigrationPhase.Contract, previousState.phase)
+                        assertEquals(MigrationStateStatus.Retry, previousState.status)
+                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                        resumed = true
+                    }
+                    MigrationOutcome.Success
+                },
+            )
+
+            assertTrue(resumed)
+            secondStore.close()
+        }
+    }
+
+    @Test
+    fun customLeaseWorksWithAllPhaseHooks() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-lease-all-phases", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val lease = ScriptedMigrationLease(
+            mutableMapOf(1u to ArrayDeque(listOf(false, false, true)))
+        )
+        val phases = mutableListOf<String>()
+        val dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            continueMigrationsInBackground = true,
+            migrationLease = lease,
+            migrationExpandHandler = { _ ->
+                phases += "expand"
+                MigrationOutcome.Success
+            },
+            migrationHandler = { _ ->
+                phases += "backfill"
+                MigrationOutcome.Success
+            },
+            migrationVerifyHandler = { _ ->
+                phases += "verify"
+                MigrationOutcome.Success
+            },
+            migrationContractHandler = { _ ->
+                phases += "contract"
+                MigrationOutcome.Success
+            },
+        )
+
+        try {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000) {
+                    dataStore.awaitMigration(1u)
+                }
+            }
+            assertEquals(listOf("expand", "backfill", "verify", "contract"), phases)
+            assertTrue(lease.tryAcquireCalls.value >= 3)
+        } finally {
+            dataStore.close()
         }
     }
 }

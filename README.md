@@ -8,6 +8,8 @@ Maryk is a **Kotlin Multiplatform** framework for defining, validating, serializ
 The [RocksDB](/store/rocksdb/README.md) persistence layer is available for the **JVM**, **iOS**, **macOS**, **tvOS**, **watchOS**, **Android**, **Android Native**, **Windows** and **Linux**.
 The [FoundationDB](/store/foundationdb/README.md) persistence layer is available on supported platforms that have the FoundationDB client library (`libfdb_c`) present (JVM, macOS, linux).
 
+Check the [Website](http://marykdb.github.io/maryk/) for more context and documentation. It is maintained in the `website` folder.
+
 ## Key Features
 
 - **Unified Data Modeling**: Define your [data models](core/docs/datamodel.md) once and use them everywhere, ensuring a single source of truth across platforms.

@@ -13,8 +13,11 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationLease
 import maryk.core.models.migration.MigrationOutcome
+import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
+import maryk.core.models.migration.MigrationStateStatus
+import maryk.core.models.migration.NoopMigrationLease
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.string
@@ -41,6 +44,7 @@ import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.ModelWithDependents
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -770,13 +774,250 @@ class RocksDBDataStoreMigrationTest {
             resumedStore.execute(
                 ModelV2.add(
                     ModelV2.create {
-                        value with "resumed"
+                        value with "haresumed"
                         newNumber with 5
                     }
                 )
             )
         } finally {
             resumedStore.close()
+            deleteFolder(path)
+        }
+    }
+
+    @Test
+    fun omittedOptionalPhaseHooksDefaultToSuccess() = runTest {
+        val path = createTestDBFolder("migrationOmittedOptionalHooks")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var backfillCalls = 0
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationHandler = { _ ->
+                backfillCalls += 1
+                MigrationOutcome.Success
+            },
+        ).close()
+
+        assertEquals(1, backfillCalls)
+        deleteFolder(path)
+    }
+
+    @Test
+    fun expandAndContractFatalFailMigration() = runTest {
+        val expandPath = createTestDBFolder("migrationExpandFatal")
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = expandPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val expandException = assertFailsWith<MigrationException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = expandPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationExpandHandler = { _ -> MigrationOutcome.Fatal("expand failed") },
+                migrationHandler = { _ -> MigrationOutcome.Success },
+            )
+        }
+        assertTrue(expandException.message.orEmpty().contains("Expand"))
+        deleteFolder(expandPath)
+
+        val contractPath = createTestDBFolder("migrationContractFatal")
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = contractPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val contractException = assertFailsWith<MigrationException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = contractPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationHandler = { _ -> MigrationOutcome.Success },
+                migrationVerifyHandler = { _ -> MigrationOutcome.Success },
+                migrationContractHandler = { _ -> MigrationOutcome.Fatal("contract failed") },
+            )
+        }
+        assertTrue(contractException.message.orEmpty().contains("Contract"))
+        deleteFolder(contractPath)
+    }
+
+    @Test
+    fun reopensAndResumesEachPhaseFromRetryState() = runTest {
+        for (targetPhase in MigrationPhase.entries) {
+            val path = createTestDBFolder("migrationResume${targetPhase.name}")
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV1_1),
+            ).close()
+
+            var retryIssued = false
+            val firstStore = RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationLease = NoopMigrationLease,
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                migrationExpandHandler = {
+                    if (targetPhase == MigrationPhase.Expand && !retryIssued) {
+                        retryIssued = true
+                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
+                    } else {
+                        MigrationOutcome.Success
+                    }
+                },
+                migrationHandler = {
+                    if (targetPhase == MigrationPhase.Backfill && !retryIssued) {
+                        retryIssued = true
+                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
+                    } else {
+                        MigrationOutcome.Success
+                    }
+                },
+                migrationVerifyHandler = {
+                    if (targetPhase == MigrationPhase.Verify && !retryIssued) {
+                        retryIssued = true
+                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
+                    } else {
+                        MigrationOutcome.Success
+                    }
+                },
+                migrationContractHandler = {
+                    if (targetPhase == MigrationPhase.Contract && !retryIssued) {
+                        retryIssued = true
+                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
+                    } else {
+                        MigrationOutcome.Success
+                    }
+                },
+            )
+
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000) {
+                    while (true) {
+                        val status = firstStore.migrationStatus(1u)
+                        if (status.phase == targetPhase && status.hasCursor == true) break
+                        delay(10)
+                    }
+                }
+            }
+            val pendingStatus = firstStore.migrationStatus(1u)
+            assertEquals(targetPhase, pendingStatus.phase)
+            assertEquals(true, pendingStatus.hasCursor)
+            firstStore.close()
+
+            var resumed = false
+            val secondStore = RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationLease = NoopMigrationLease,
+                migrationExpandHandler = { context ->
+                    if (targetPhase == MigrationPhase.Expand) {
+                        val previousState = context.previousState
+                        assertNotNull(previousState)
+                        assertEquals(MigrationPhase.Expand, previousState.phase)
+                        assertEquals(MigrationStateStatus.Retry, previousState.status)
+                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                        resumed = true
+                    }
+                    MigrationOutcome.Success
+                },
+                migrationHandler = { context ->
+                    if (targetPhase == MigrationPhase.Backfill) {
+                        val previousState = context.previousState
+                        assertNotNull(previousState)
+                        assertEquals(MigrationPhase.Backfill, previousState.phase)
+                        assertEquals(MigrationStateStatus.Retry, previousState.status)
+                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                        resumed = true
+                    }
+                    MigrationOutcome.Success
+                },
+                migrationVerifyHandler = { context ->
+                    if (targetPhase == MigrationPhase.Verify) {
+                        val previousState = context.previousState
+                        assertNotNull(previousState)
+                        assertEquals(MigrationPhase.Verify, previousState.phase)
+                        assertEquals(MigrationStateStatus.Retry, previousState.status)
+                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                        resumed = true
+                    }
+                    MigrationOutcome.Success
+                },
+                migrationContractHandler = { context ->
+                    if (targetPhase == MigrationPhase.Contract) {
+                        val previousState = context.previousState
+                        assertNotNull(previousState)
+                        assertEquals(MigrationPhase.Contract, previousState.phase)
+                        assertEquals(MigrationStateStatus.Retry, previousState.status)
+                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                        resumed = true
+                    }
+                    MigrationOutcome.Success
+                },
+            )
+
+            assertTrue(resumed)
+            secondStore.close()
+            deleteFolder(path)
+        }
+    }
+
+    @Test
+    fun auditLogAndMetricsTrackPhaseOutcomes() = runTest {
+        val path = createTestDBFolder("migrationAuditMetrics")
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var expandCalls = 0
+        var verifyCalls = 0
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            persistMigrationAuditEvents = true,
+            migrationExpandHandler = { _ ->
+                expandCalls += 1
+                if (expandCalls == 1) MigrationOutcome.Retry(retryAfterMs = 1) else MigrationOutcome.Success
+            },
+            migrationHandler = { _ -> MigrationOutcome.Success },
+            migrationVerifyHandler = { _ ->
+                verifyCalls += 1
+                if (verifyCalls == 1) MigrationOutcome.Partial(nextCursor = byteArrayOf(9)) else MigrationOutcome.Success
+            },
+            migrationContractHandler = { _ -> MigrationOutcome.Success },
+        )
+
+        try {
+            val metrics = dataStore.migrationMetrics(1u)
+            assertEquals(6u, metrics.started)
+            assertEquals(1u, metrics.retries)
+            assertEquals(1u, metrics.partials)
+            assertEquals(1u, metrics.completed)
+
+            val events = dataStore.migrationAuditEvents(1u, limit = 20)
+            assertTrue(events.any { it.type.name == "RetryScheduled" && it.phase == MigrationPhase.Expand })
+            assertTrue(events.any { it.type.name == "Partial" && it.phase == MigrationPhase.Verify })
+            assertTrue(events.any { it.type.name == "Completed" && it.phase == MigrationPhase.Contract })
+        } finally {
+            dataStore.close()
             deleteFolder(path)
         }
     }

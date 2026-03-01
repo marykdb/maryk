@@ -76,6 +76,14 @@ Behavior:
 
 `cancelMigration` is terminal for the current store instance: the model stays blocked and you must reopen the store to resume from persisted state.
 
+Operator semantics:
+- `awaitMigration(modelId)` returns normally when migration completes successfully.
+- `awaitMigration(modelId)` completes exceptionally with `MigrationException` if migration fails or is canceled.
+- `pauseMigration(modelId)` only affects pending/background progress. It does not interrupt a currently running phase step.
+- While paused, the model remains request-blocked.
+- `resumeMigration(modelId)` allows the next background loop iteration to continue from the persisted `MigrationState`.
+- After `cancelMigration`, the current store instance keeps the model blocked. Reopening the store resumes from the persisted phase/cursor.
+
 ## Lease behavior (distributed)
 
 Default lease is `FoundationDBMigrationLease`.
@@ -117,3 +125,29 @@ Audit:
 3. Monitor runtime status/metrics.
 4. Intervene with pause/resume/cancel only when required.
 5. Keep persisted audit logs opt-in; use default reporter for baseline observability.
+
+## Minimal four-phase example
+
+```kotlin
+FoundationDBDataStore.open(
+    keepAllVersions = true,
+    directoryPath = listOf("maryk", "app"),
+    dataModelsById = mapOf(1u to Account),
+    migrationExpandHandler = { context ->
+        // Prepare compatibility before data rewrite
+        MigrationOutcome.Success
+    },
+    migrationHandler = { context ->
+        // Backfill existing rows
+        MigrationOutcome.Success
+    },
+    migrationVerifyHandler = { context ->
+        // Validate rewritten data
+        MigrationOutcome.Success
+    },
+    migrationContractHandler = { context ->
+        // Final cleanup after verification
+        MigrationOutcome.Success
+    }
+)
+```

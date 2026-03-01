@@ -79,6 +79,14 @@ Behavior:
 These APIs are intended for operational tooling and rollout control.
 `cancelMigration` is terminal for the current store instance: the model stays blocked and you must reopen the store to resume from persisted state.
 
+Operator semantics:
+- `awaitMigration(modelId)` returns normally when migration completes successfully.
+- `awaitMigration(modelId)` completes exceptionally with `MigrationException` if migration fails or is canceled.
+- `pauseMigration(modelId)` only affects pending/background progress. It does not interrupt a currently running phase step.
+- While paused, the model remains request-blocked.
+- `resumeMigration(modelId)` allows the next background loop iteration to continue from the persisted `MigrationState`.
+- After `cancelMigration`, the current store instance keeps the model blocked. Reopening the store resumes from the persisted phase/cursor.
+
 ## Lease behavior
 
 Default lease is `RocksDBLocalMigrationLease`.
@@ -117,3 +125,29 @@ Audit events:
 3. Watch `migrationStatuses()` and `migrationMetrics()`.
 4. Use `pause/resume/cancel` only for operator interventions.
 5. Enable persisted audit events only when durable per-model history is required.
+
+## Minimal four-phase example
+
+```kotlin
+RocksDBDataStore.open(
+    keepAllVersions = true,
+    relativePath = "path/to/store",
+    dataModelsById = mapOf(1u to Account),
+    migrationExpandHandler = { context ->
+        // Prepare compatibility before data rewrite
+        MigrationOutcome.Success
+    },
+    migrationHandler = { context ->
+        // Backfill existing rows
+        MigrationOutcome.Success
+    },
+    migrationVerifyHandler = { context ->
+        // Validate rewritten data
+        MigrationOutcome.Success
+    },
+    migrationContractHandler = { context ->
+        // Final cleanup after verification
+        MigrationOutcome.Success
+    }
+)
+```

@@ -12,7 +12,7 @@ class MigrationStateTest {
     fun roundTripStateEncoding() {
         val state = MigrationState(
             migrationId = "Person:1.0.0->2.0.0",
-            phase = MigrationPhase.Migrate,
+            phase = MigrationPhase.Backfill,
             status = MigrationStateStatus.Partial,
             attempt = 3u,
             fromVersion = "1.0.0",
@@ -34,9 +34,9 @@ class MigrationStateTest {
     }
 
     @Test
-    fun phaseTransitionsAndLegacyNormalization() {
-        assertEquals(MigrationPhase.Expand, MigrationPhase.Startup.normalizedRuntimePhase())
-        assertEquals(MigrationPhase.Backfill, MigrationPhase.Migrate.normalizedRuntimePhase())
+    fun phaseTransitionsAndCounts() {
+        assertEquals(MigrationPhase.Expand, MigrationPhase.Expand.normalizedRuntimePhase())
+        assertEquals(MigrationPhase.Backfill, MigrationPhase.Backfill.normalizedRuntimePhase())
         assertEquals(MigrationPhase.Contract, MigrationPhase.Verify.nextRuntimePhaseOrNull())
         assertEquals(null, MigrationPhase.Contract.nextRuntimePhaseOrNull())
 
@@ -44,5 +44,10 @@ class MigrationStateTest {
         assertTrue(MigrationPhase.Backfill.canTransitionTo(MigrationPhase.Verify))
         assertTrue(MigrationPhase.Verify.canTransitionTo(MigrationPhase.Contract))
         assertFalse(MigrationPhase.Expand.canTransitionTo(MigrationPhase.Contract))
+
+        assertEquals(4, MigrationPhase.Expand.remainingRuntimePhaseCount())
+        assertEquals(3, MigrationPhase.Backfill.remainingRuntimePhaseCount())
+        assertEquals(2, MigrationPhase.Verify.remainingRuntimePhaseCount())
+        assertEquals(1, MigrationPhase.Contract.remainingRuntimePhaseCount())
     }
 }

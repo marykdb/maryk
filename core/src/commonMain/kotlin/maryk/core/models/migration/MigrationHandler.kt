@@ -6,7 +6,12 @@ typealias StoredRootDataModelDefinition = IsRootDataModel
 typealias NewRootDataModelDefinition = IsRootDataModel
 
 /**
- * Handles migration with context and rich outcomes.
+ * Optional pre-migration expansion hook.
+ */
+typealias MigrationExpandHandler<DS> = suspend (MigrationContext<DS>) -> MigrationOutcome
+
+/**
+ * Handles data backfill migration with context and rich outcomes.
  */
 typealias MigrationHandler<DS> = suspend (MigrationContext<DS>) -> MigrationOutcome
 
@@ -14,3 +19,8 @@ typealias MigrationHandler<DS> = suspend (MigrationContext<DS>) -> MigrationOutc
  * Optional post-migration verification hook.
  */
 typealias MigrationVerifyHandler<DS> = suspend (MigrationContext<DS>) -> MigrationOutcome
+
+/**
+ * Optional post-verification contraction hook.
+ */
+typealias MigrationContractHandler<DS> = suspend (MigrationContext<DS>) -> MigrationOutcome

@@ -19,13 +19,17 @@ Migration required:
 
 ## Handler contract
 
-`migrationHandler` receives `MigrationContext<FoundationDBDataStore>` and returns `MigrationOutcome`:
+All migration hooks receive `MigrationContext<FoundationDBDataStore>` and return `MigrationOutcome`:
 - `Success`
 - `Partial`
 - `Retry`
 - `Fatal`
 
-Optional `migrationVerifyHandler` executes after backfill and before model readiness.
+Available hooks:
+- `migrationExpandHandler`
+- `migrationHandler` (`Backfill`)
+- `migrationVerifyHandler`
+- `migrationContractHandler`
 
 ## Runtime phases
 
@@ -37,6 +41,12 @@ Execution phases:
 
 Progress is persisted via `MigrationState` per model (phase/status/attempt/cursor/message).
 Restart resumes from persisted state.
+
+Current handler hooks:
+- `Expand`: runs `migrationExpandHandler`
+- `Backfill`: runs `migrationHandler`
+- `Verify`: runs `migrationVerifyHandler`
+- `Contract`: runs `migrationContractHandler`
 
 ## Dependency ordering and cycles
 
@@ -63,6 +73,8 @@ Behavior:
 - `pauseMigration(modelId)`
 - `resumeMigration(modelId)`
 - `cancelMigration(modelId, reason)`
+
+`cancelMigration` is terminal for the current store instance: the model stays blocked and you must reopen the store to resume from persisted state.
 
 ## Lease behavior (distributed)
 

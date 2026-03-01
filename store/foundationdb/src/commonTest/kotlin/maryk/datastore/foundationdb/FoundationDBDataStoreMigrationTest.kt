@@ -154,6 +154,44 @@ class FoundationDBDataStoreMigrationTest {
     }
 
     @Test
+    fun migrationRunsAllPhaseHooksInOrder() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-hook-phases", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val phases = mutableListOf<String>()
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationExpandHandler = { _ ->
+                phases += "expand"
+                MigrationOutcome.Success
+            },
+            migrationHandler = { _ ->
+                phases += "backfill"
+                MigrationOutcome.Success
+            },
+            migrationVerifyHandler = { _ ->
+                phases += "verify"
+                MigrationOutcome.Success
+            },
+            migrationContractHandler = { _ ->
+                phases += "contract"
+                MigrationOutcome.Success
+            },
+        ).close()
+
+        assertEquals(listOf("expand", "backfill", "verify", "contract"), phases)
+    }
+
+    @Test
     fun testMigrationWithDependents() = runTest(timeout = 3.minutes) {
         val dirPath = listOf("maryk", "test", "fdb-migration-with-deps", Uuid.random().toString())
         var dataStore = FoundationDBDataStore.open(
@@ -324,22 +362,18 @@ class FoundationDBDataStoreMigrationTest {
             dataModelsById = mapOf(1u to ModelV1_1),
         ).close()
 
-        var attempts = 0
+        val releaseMigration = kotlinx.coroutines.CompletableDeferred<Unit>()
         val dataStore = FoundationDBDataStore.open(
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            migrationStartupBudgetMs = 1L,
+            migrationStartupBudgetMs = -1L,
             continueMigrationsInBackground = true,
             persistMigrationAuditEvents = true,
             migrationHandler = { _ ->
-                attempts += 1
-                if (attempts >= 2) {
-                    MigrationOutcome.Success
-                } else {
-                    MigrationOutcome.Retry(retryAfterMs = 50)
-                }
+                releaseMigration.await()
+                MigrationOutcome.Success
             },
         )
 
@@ -358,13 +392,14 @@ class FoundationDBDataStoreMigrationTest {
             dataStore.execute(
                 ModelV2.add(
                     ModelV2.create {
-                        value with "blocked"
+                        value with "hablocked"
                         newNumber with 1
                     }
                 )
             )
         }
 
+        releaseMigration.complete(Unit)
         dataStore.awaitMigration(1u)
         assertEquals(MigrationRuntimeState.Idle, dataStore.migrationStatus(1u).state)
         assertTrue { !dataStore.migrationStatuses().containsKey(1u) }
@@ -374,7 +409,7 @@ class FoundationDBDataStoreMigrationTest {
         dataStore.execute(
             ModelV2.add(
                 ModelV2.create {
-                    value with "done"
+                    value with "hadone"
                     newNumber with 2
                 }
             )
@@ -464,7 +499,7 @@ class FoundationDBDataStoreMigrationTest {
             cancelStore.execute(
                 ModelV2.add(
                     ModelV2.create {
-                        value with "canceled"
+                        value with "hacanceled"
                         newNumber with 3
                     }
                 )
@@ -523,7 +558,7 @@ class FoundationDBDataStoreMigrationTest {
             dataStore.execute(
                 ModelV2.add(
                     ModelV2.create {
-                        value with "verify-blocked"
+                        value with "haverify-blocked"
                         newNumber with 1
                     }
                 )
@@ -678,6 +713,72 @@ class FoundationDBDataStoreMigrationTest {
             dataStore.close()
         }
     }
+
+    @Test
+    fun waitingMigratorDoesNotRunStalePlanAfterAnotherStoreCompletes() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-stale-plan-handoff", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val allowAcquire = atomic(false)
+        val delayedLease = GatedMigrationLease { allowAcquire.value }
+        val firstHandlerCalls = atomic(0)
+
+        val waitingStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            continueMigrationsInBackground = true,
+            migrationLease = delayedLease,
+            migrationHandler = { _ ->
+                firstHandlerCalls.incrementAndGet()
+                MigrationOutcome.Fatal("stale plan should not run")
+            },
+        )
+
+        try {
+            repeat(50) {
+                if (waitingStore.pendingMigrations().containsKey(1u)) return@repeat
+                delay(10)
+            }
+            assertTrue { waitingStore.pendingMigrations().containsKey(1u) }
+
+            FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationHandler = { _ -> MigrationOutcome.Success },
+            ).close()
+
+            allowAcquire.value = true
+
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000) {
+                    waitingStore.awaitMigration(1u)
+                }
+            }
+
+            assertEquals(0, firstHandlerCalls.value)
+            assertEquals(MigrationRuntimeState.Idle, waitingStore.migrationStatus(1u).state)
+            waitingStore.execute(
+                ModelV2.add(
+                    ModelV2.create {
+                        value with "hapost-handoff"
+                        newNumber with 6
+                    }
+                )
+            )
+        } finally {
+            waitingStore.close()
+        }
+    }
 }
 
 private class ScriptedMigrationLease(
@@ -694,6 +795,14 @@ private class ScriptedMigrationLease(
     override suspend fun release(modelId: UInt, migrationId: String) {
         releaseCalls.incrementAndGet()
     }
+}
+
+private class GatedMigrationLease(
+    private val canAcquire: () -> Boolean,
+) : MigrationLease {
+    override suspend fun tryAcquire(modelId: UInt, migrationId: String): Boolean = canAcquire()
+
+    override suspend fun release(modelId: UInt, migrationId: String) = Unit
 }
 
 private object Phase6OrderBaseV1 : RootDataModel<Phase6OrderBaseV1>(

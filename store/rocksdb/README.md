@@ -46,14 +46,23 @@ On open, the store compares stored model definitions with configured models and 
 - safe adds/index backfill
 - migration required
 
-For incompatible changes, provide `migrationHandler` and return `MigrationOutcome`:
+For incompatible changes, provide migration hooks and return `MigrationOutcome`:
 - `Success`: migration complete
 - `Partial`: persisted progress, continue later
 - `Retry`: persisted progress, retry (optional delay)
 - `Fatal`: fail startup or background migration
 
-Optional `migrationVerifyHandler` runs after migration phase success and before model readiness.
-It uses the same context/outcome contract and persists `Verify` phase state.
+All hooks use the same context/outcome contract:
+- `migrationExpandHandler`
+- `migrationHandler` (`Backfill`)
+- `migrationVerifyHandler`
+- `migrationContractHandler`
+
+Phase notes:
+- `migrationExpandHandler` runs during `Expand`.
+- `migrationHandler` runs during `Backfill`.
+- `migrationVerifyHandler` runs during `Verify`.
+- `migrationContractHandler` runs during `Contract`.
 
 Notes:
 - You can add models, properties, and indexes and relax validation without a migration.
@@ -110,6 +119,8 @@ Runtime controls:
 - `pauseMigration(modelId)`
 - `resumeMigration(modelId)`
 - `cancelMigration(modelId, reason)`
+
+`cancelMigration` is terminal for the current store instance. The model remains blocked; reopen the store to resume from persisted migration state.
 
 ### Lease Behavior
 

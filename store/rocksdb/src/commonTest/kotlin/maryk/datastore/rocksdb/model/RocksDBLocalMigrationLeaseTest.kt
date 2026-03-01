@@ -20,12 +20,21 @@ class RocksDBLocalMigrationLeaseTest {
     }
 
     @Test
-    fun sameMigrationIdCanReacquire() = runTest {
+    fun sameOwnerCanReacquire() = runTest {
         val storePath = "lease-test-store-same-migration"
+        val lease = RocksDBLocalMigrationLease(storePath)
+
+        assertTrue(lease.tryAcquire(1u, "m1"))
+        assertTrue(lease.tryAcquire(1u, "m1"))
+    }
+
+    @Test
+    fun sameMigrationIdDoesNotBypassOtherOwnerLock() = runTest {
+        val storePath = "lease-test-store-same-migration-different-owner"
         val leaseA = RocksDBLocalMigrationLease(storePath)
         val leaseB = RocksDBLocalMigrationLease(storePath)
 
         assertTrue(leaseA.tryAcquire(1u, "m1"))
-        assertTrue(leaseB.tryAcquire(1u, "m1"))
+        assertFalse(leaseB.tryAcquire(1u, "m1"))
     }
 }

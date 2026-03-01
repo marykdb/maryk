@@ -23,6 +23,8 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.migration.MigrationContext
+import maryk.core.models.migration.MigrationContractHandler
+import maryk.core.models.migration.MigrationExpandHandler
 import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.models.migration.MigrationAuditEventType
 import maryk.core.models.migration.MigrationAuditLogStore
@@ -142,8 +144,10 @@ class FoundationDBDataStore private constructor(
     dataModelsById: Map<UInt, IsRootDataModel>,
     private val onlyCheckModelVersion: Boolean = false,
     val databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
+    val migrationExpandHandler: MigrationExpandHandler<FoundationDBDataStore>? = null,
     val migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
     val migrationVerifyHandler: MigrationVerifyHandler<FoundationDBDataStore>? = null,
+    val migrationContractHandler: MigrationContractHandler<FoundationDBDataStore>? = null,
     val migrationRetryPolicy: MigrationRetryPolicy = MigrationRetryPolicy(),
     val migrationStartupBudgetMs: Long? = null,
     val continueMigrationsInBackground: Boolean = false,
@@ -319,6 +323,50 @@ class FoundationDBDataStore private constructor(
                             ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
                         val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
                         val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
+                        suspend fun failOrCompleteIfMigrationPlanChangedWhileWaiting(): Boolean {
+                            val currentStatus = checkModelIfMigrationIsNeeded(
+                                tc = tc,
+                                metadataPrefix = metadataPrefix,
+                                modelId = index,
+                                model = tableDirectories.modelPrefix,
+                                dataModel = dataModel,
+                                onlyCheckModelVersion = onlyCheckModelVersion,
+                                conversionContext = DefinitionsConversionContext(),
+                            )
+
+                            return when (currentStatus) {
+                                UpToDate, MigrationStatus.AlreadyProcessed -> {
+                                    migrationStateStore.clear(index)
+                                    pendingMigrationModelIds.update { it - index }
+                                    pendingMigrationReasons.update { it - index }
+                                    pausedMigrationModelIds.update { it - index }
+                                    canceledMigrationReasons.update { it - index }
+                                    completePendingMigration(index)
+                                    false
+                                }
+                                is NeedsMigration -> {
+                                    val currentStoredModel = currentStatus.storedDataModel as StoredRootDataModelDefinition
+                                    if (currentStoredModel.Meta.version == storedModel.Meta.version) {
+                                        true
+                                    } else {
+                                        val currentMigrationId =
+                                            "${dataModel.Meta.name}:${currentStoredModel.Meta.version}->${dataModel.Meta.version}"
+                                        val reason =
+                                            "Migration plan changed while waiting on lease for ${dataModel.Meta.name}: expected $migrationId but found $currentMigrationId. Reopen the store."
+                                        pendingMigrationReasons.update { it + (index to reason) }
+                                        failPendingMigration(index, reason)
+                                        false
+                                    }
+                                }
+                                else -> {
+                                    val reason =
+                                        "Migration plan changed while waiting on lease for ${dataModel.Meta.name}: $currentStatus. Reopen the store."
+                                    pendingMigrationReasons.update { it + (index to reason) }
+                                    failPendingMigration(index, reason)
+                                    false
+                                }
+                            }
+                        }
                         suspend fun delayWithCancellationChecks(retryAfterMs: Long?) {
                             if (retryAfterMs == null || retryAfterMs <= 0L) return
                             var remaining = retryAfterMs
@@ -365,6 +413,9 @@ class FoundationDBDataStore private constructor(
                                             it + (index to "Migration lease held by another migrator for $migrationId")
                                         }
                                         delay(250)
+                                    }
+                                    if (!leaseAlreadyAcquired && !failOrCompleteIfMigrationPlanChangedWhileWaiting()) {
+                                        return@launch
                                     }
 
                                     while (true) {
@@ -522,10 +573,10 @@ class FoundationDBDataStore private constructor(
                                 attempt = attempt,
                             )
                             val outcome = when (phase) {
+                                MigrationPhase.Expand -> migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
                                 MigrationPhase.Backfill -> handler(context)
                                 MigrationPhase.Verify -> migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
-                                MigrationPhase.Expand, MigrationPhase.Contract -> MigrationOutcome.Success
-                                else -> MigrationOutcome.Fatal("Unsupported migration phase $phase")
+                                MigrationPhase.Contract -> migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
                             }
                             return phase to outcome
                         }
@@ -1433,9 +1484,10 @@ class FoundationDBDataStore private constructor(
 
     fun cancelMigration(modelId: UInt, reason: String = "Canceled by operator"): Boolean {
         if (!pendingMigrationModelIds.value.contains(modelId)) return false
-        canceledMigrationReasons.update { it + (modelId to reason) }
+        val cancellationReason = "$reason. Reopen store to resume migration."
+        canceledMigrationReasons.update { it + (modelId to cancellationReason) }
         pausedMigrationModelIds.update { it - modelId }
-        pendingMigrationReasons.update { it + (modelId to "Migration canceled by operator: $reason") }
+        pendingMigrationReasons.update { it + (modelId to "Migration canceled by operator: $cancellationReason") }
         migrationRuntimeDetailsByModelId.value[modelId]?.let { details ->
             runBlocking {
                 appendMigrationAuditEvent(
@@ -1444,11 +1496,11 @@ class FoundationDBDataStore private constructor(
                     type = MigrationAuditEventType.Canceled,
                     phase = details.phase,
                     attempt = details.attempt,
-                    message = reason
+                    message = cancellationReason
                 )
             }
         }
-        failPendingMigration(modelId, "Migration canceled by operator: $reason")
+        failPendingMigration(modelId, "Migration canceled by operator: $cancellationReason")
         return true
     }
 
@@ -1602,8 +1654,10 @@ class FoundationDBDataStore private constructor(
             dataModelsById: Map<UInt, IsRootDataModel>,
             onlyCheckModelVersion: Boolean = false,
             databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
+            migrationExpandHandler: MigrationExpandHandler<FoundationDBDataStore>? = null,
             migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
             migrationVerifyHandler: MigrationVerifyHandler<FoundationDBDataStore>? = null,
+            migrationContractHandler: MigrationContractHandler<FoundationDBDataStore>? = null,
             migrationRetryPolicy: MigrationRetryPolicy = MigrationRetryPolicy(),
             migrationStartupBudgetMs: Long? = null,
             continueMigrationsInBackground: Boolean = false,
@@ -1629,8 +1683,10 @@ class FoundationDBDataStore private constructor(
             dataModelsById = dataModelsById,
             onlyCheckModelVersion = onlyCheckModelVersion,
             databaseOptionsSetter = databaseOptionsSetter,
+            migrationExpandHandler = migrationExpandHandler,
             migrationHandler = migrationHandler,
             migrationVerifyHandler = migrationVerifyHandler,
+            migrationContractHandler = migrationContractHandler,
             migrationRetryPolicy = migrationRetryPolicy,
             migrationStartupBudgetMs = migrationStartupBudgetMs,
             continueMigrationsInBackground = continueMigrationsInBackground,

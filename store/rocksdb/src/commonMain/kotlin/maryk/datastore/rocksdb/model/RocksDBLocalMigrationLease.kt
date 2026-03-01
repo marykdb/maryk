@@ -15,7 +15,7 @@ internal class RocksDBLocalMigrationLease(
         leases.update { current ->
             val key = "$storePath:$modelId"
             val existing = current[key]
-            if (existing == null || existing.ownerToken == ownerToken || existing.migrationId == migrationId) {
+            if (existing == null || existing.ownerToken == ownerToken) {
                 acquired = true
                 current + (key to LocalLease(ownerToken, migrationId))
             } else {

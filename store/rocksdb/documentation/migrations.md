@@ -19,13 +19,17 @@ Migration required:
 
 ## Handler contract
 
-`migrationHandler` receives `MigrationContext<RocksDBDataStore>` and returns `MigrationOutcome`:
+All migration hooks receive `MigrationContext<RocksDBDataStore>` and return `MigrationOutcome`:
 - `Success`: phase complete
 - `Partial`: progress persisted, continue with provided cursor/message
 - `Retry`: retry same phase (optional delay)
 - `Fatal`: migration fails
 
-Optional `migrationVerifyHandler` runs after backfill success and before model readiness.
+Available hooks:
+- `migrationExpandHandler`
+- `migrationHandler` (`Backfill`)
+- `migrationVerifyHandler`
+- `migrationContractHandler`
 
 ## Runtime phases
 
@@ -37,6 +41,12 @@ Runtime phase order:
 
 Progress is persisted per model with `MigrationState` (phase, status, attempt, cursor, message, version range).
 If the process restarts, migration resumes from persisted state.
+
+Current handler hooks:
+- `Expand`: runs `migrationExpandHandler`
+- `Backfill`: runs `migrationHandler`
+- `Verify`: runs `migrationVerifyHandler`
+- `Contract`: runs `migrationContractHandler`
 
 ## Dependency ordering and cycles
 
@@ -67,6 +77,7 @@ Behavior:
 - `cancelMigration(modelId, reason)`
 
 These APIs are intended for operational tooling and rollout control.
+`cancelMigration` is terminal for the current store instance: the model stays blocked and you must reopen the store to resume from persisted state.
 
 ## Lease behavior
 

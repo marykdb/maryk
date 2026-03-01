@@ -2,40 +2,37 @@ package maryk.core.models.migration
 
 import maryk.core.base64.Base64Maryk
 
+/**
+ * Internal migration phases.
+ *
+ * User-provided handlers can run during all phases:
+ * `Expand` (`migrationExpandHandler`), `Backfill` (`migrationHandler`),
+ * `Verify` (`migrationVerifyHandler`), and `Contract` (`migrationContractHandler`).
+ */
 enum class MigrationPhase {
     Expand,
     Backfill,
     Verify,
     Contract,
-
-    // Legacy phases kept for backward compatibility when resuming persisted state.
-    Startup,
-    Migrate,
 }
 
-fun MigrationPhase.normalizedRuntimePhase(): MigrationPhase = when (this) {
-    MigrationPhase.Startup -> MigrationPhase.Expand
-    MigrationPhase.Migrate -> MigrationPhase.Backfill
-    else -> this
-}
+fun MigrationPhase.normalizedRuntimePhase(): MigrationPhase = this
 
-fun MigrationPhase.nextRuntimePhaseOrNull(): MigrationPhase? = when (this.normalizedRuntimePhase()) {
+fun MigrationPhase.nextRuntimePhaseOrNull(): MigrationPhase? = when (this) {
     MigrationPhase.Expand -> MigrationPhase.Backfill
     MigrationPhase.Backfill -> MigrationPhase.Verify
     MigrationPhase.Verify -> MigrationPhase.Contract
     MigrationPhase.Contract -> null
-    else -> null
 }
 
 fun MigrationPhase.canTransitionTo(next: MigrationPhase): Boolean =
-    this.nextRuntimePhaseOrNull() == next.normalizedRuntimePhase()
+    this.nextRuntimePhaseOrNull() == next
 
-fun MigrationPhase.remainingRuntimePhaseCount(): Int = when (this.normalizedRuntimePhase()) {
+fun MigrationPhase.remainingRuntimePhaseCount(): Int = when (this) {
     MigrationPhase.Expand -> 4
     MigrationPhase.Backfill -> 3
     MigrationPhase.Verify -> 2
     MigrationPhase.Contract -> 1
-    else -> 1
 }
 
 enum class MigrationStateStatus {

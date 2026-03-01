@@ -48,7 +48,9 @@ Notes:
 
 ## Migrations and Update Handling
 
-On startup, the engine checks stored model definitions against the running models. When changes require a migration, you must supply a `migrationHandler`. A `versionUpdateHandler` can perform post‑migration tasks.
+On startup, the engine checks stored model definitions against the running models. Compatible changes are applied automatically; incompatible changes require migration hooks. A `versionUpdateHandler` can perform post‑migration tasks.
+
+For the full migration model, hook contracts, runtime phases, control APIs, lease behavior, and operational guidance, see [Migrations](./docs/migrations.md).
 
 ```kotlin
 suspend fun openStore() = FoundationDBDataStore.open(
@@ -70,45 +72,6 @@ suspend fun openStore() = FoundationDBDataStore.open(
     }
 )
 ```
-
-Model changes that generally do NOT require a migration: adding models, indexes, properties, or relaxing validation. Changes that DO: changing property types, renaming without alternatives, or tightening validation (these must go through migrations).
-
-Migration hook outcomes:
-- `MigrationOutcome.Success`
-- `MigrationOutcome.Partial`
-- `MigrationOutcome.Retry`
-- `MigrationOutcome.Fatal`
-
-All hooks use the same context/outcome contract:
-- `migrationExpandHandler`
-- `migrationHandler` (`Backfill`)
-- `migrationVerifyHandler`
-- `migrationContractHandler`
-
-Phase notes:
-- `migrationExpandHandler` runs during `Expand`.
-- `migrationHandler` runs during `Backfill`.
-- `migrationVerifyHandler` runs during `Verify`.
-- `migrationContractHandler` runs during `Contract`.
-
-### Migration Runtime Control
-
-For long migrations, configure:
-- `migrationStartupBudgetMs`
-- `continueMigrationsInBackground = true`
-
-The model stays request-blocked until migration completion.
-
-Control/status APIs:
-- `pendingMigrations()`
-- `migrationStatus(modelId)`
-- `migrationStatuses()`
-- `awaitMigration(modelId)`
-- `pauseMigration(modelId)`
-- `resumeMigration(modelId)`
-- `cancelMigration(modelId, reason)`
-
-`cancelMigration` is terminal for the current store instance. The model remains blocked; reopen the store to resume from persisted migration state.
 
 ### Migration Lease Behavior
 

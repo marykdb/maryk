@@ -41,32 +41,9 @@ Need remote access to this local RocksDB store? Expose it with the
 
 ## Migrations and Version Updates
 
-On open, the store compares stored model definitions with configured models and decides:
-- up-to-date
-- safe adds/index backfill
-- migration required
+On open, the store compares stored model definitions with configured models and either applies compatible changes automatically or requires a migration for incompatible schema changes.
 
-For incompatible changes, provide migration hooks and return `MigrationOutcome`:
-- `Success`: migration complete
-- `Partial`: persisted progress, continue later
-- `Retry`: persisted progress, retry (optional delay)
-- `Fatal`: fail startup or background migration
-
-All hooks use the same context/outcome contract:
-- `migrationExpandHandler`
-- `migrationHandler` (`Backfill`)
-- `migrationVerifyHandler`
-- `migrationContractHandler`
-
-Phase notes:
-- `migrationExpandHandler` runs during `Expand`.
-- `migrationHandler` runs during `Backfill`.
-- `migrationVerifyHandler` runs during `Verify`.
-- `migrationContractHandler` runs during `Contract`.
-
-Notes:
-- You can add models, properties, and indexes and relax validation without a migration.
-- Changing property types, renaming without alternatives, or tightening validation triggers a migration.
+For the full migration model, hook contracts, runtime phases, control APIs, lease behavior, and operational guidance, see [Migrations](documentation/migrations.md).
 
 ```kotlin
 RocksDBDataStore.open(
@@ -102,25 +79,6 @@ RocksDBDataStore.open(
     }
 )
 ```
-
-### Migration Control API
-
-If you configure:
-- `migrationStartupBudgetMs`
-- `continueMigrationsInBackground = true`
-
-then long migrations continue in background and the model is request-blocked until completion.
-
-Runtime controls:
-- `pendingMigrations()`
-- `migrationStatus(modelId)`
-- `migrationStatuses()`
-- `awaitMigration(modelId)`
-- `pauseMigration(modelId)`
-- `resumeMigration(modelId)`
-- `cancelMigration(modelId, reason)`
-
-`cancelMigration` is terminal for the current store instance. The model remains blocked; reopen the store to resume from persisted migration state.
 
 ### Lease Behavior
 

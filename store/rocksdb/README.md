@@ -45,6 +45,9 @@ On open, the store compares stored model definitions with configured models and 
 
 For the full migration model, hook contracts, runtime phases, control APIs, lease behavior, and operational guidance, see [Migrations](documentation/migrations.md).
 
+Group migration settings under `migrationConfiguration = MigrationConfiguration(...)`.
+Put `migrationHandler`, `migrationExpandHandler`, `migrationVerifyHandler`, and `migrationContractHandler` inside that configuration.
+
 ```kotlin
 RocksDBDataStore.open(
     // True if the data store should keep all past versions of the data
@@ -54,22 +57,24 @@ RocksDBDataStore.open(
         1u to Account,
         2u to Course
     ),
-    migrationHandler = { context ->
-        val rocksDBDataStore = context.store
-        val storedDataModel = context.storedDataModel
-        val newDataModel = context.newDataModel
-        // example
-        when (newDataModel) {
-            is Account -> when (storedDataModel.version.major) {
-                1.toUShort() -> {
-                    // Execute actions on rocksDBDataStore
-                    MigrationOutcome.Success
+    migrationConfiguration = MigrationConfiguration(
+        migrationHandler = { context ->
+            val rocksDBDataStore = context.store
+            val storedDataModel = context.storedDataModel
+            val newDataModel = context.newDataModel
+            // example
+            when (newDataModel) {
+                is Account -> when (storedDataModel.version.major) {
+                    1.toUShort() -> {
+                        // Execute actions on rocksDBDataStore
+                        MigrationOutcome.Success
+                    }
+                    else -> MigrationOutcome.Fatal("Unsupported source version")
                 }
-                else -> MigrationOutcome.Fatal("Unsupported source version")
+                else -> MigrationOutcome.Fatal("Unsupported model")
             }
-            else -> MigrationOutcome.Fatal("Unsupported model")
         }
-    },
+    ),
     versionUpdateHandler = { rocksDBDataStore, storedDataModel, newDataModel ->
         // example 
         when (storedDataModel) {

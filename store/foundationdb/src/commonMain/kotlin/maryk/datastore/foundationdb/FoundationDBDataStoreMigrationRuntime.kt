@@ -177,7 +177,7 @@ internal suspend fun FoundationDBDataStore.appendMigrationAuditEventInternal(
         attempt = attempt,
         message = message,
     )
-    runCatching { migrationAuditEventReporter(event) }
+    runCatching { migrationConfiguration.migrationAuditEventReporter(event) }
     migrationAuditLogStore?.append(modelId, event)
     incrementMigrationMetricInternal(modelId, type)
 }

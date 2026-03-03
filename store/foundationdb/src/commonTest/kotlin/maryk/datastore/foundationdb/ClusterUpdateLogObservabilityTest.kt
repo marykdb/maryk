@@ -17,8 +17,8 @@ import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
-import kotlin.test.assertNull
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
@@ -30,8 +30,10 @@ class ClusterUpdateLogObservabilityTest {
             directoryPath = listOf("maryk", "test", "observability", "close", Uuid.random().toString()),
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "close-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "close-${Uuid.random()}",
+            )
         )
 
         try {
@@ -56,7 +58,9 @@ class ClusterUpdateLogObservabilityTest {
             directoryPath = listOf("maryk", "test", "observability", "disabled", Uuid.random().toString()),
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = false,
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = false,
+            )
         )
         try {
             assertNull(store.getClusterUpdateLogStats())
@@ -72,8 +76,10 @@ class ClusterUpdateLogObservabilityTest {
             directoryPath = listOf("maryk", "test", "observability", Uuid.random().toString()),
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "single-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "single-${Uuid.random()}",
+            )
         )
 
         try {
@@ -142,8 +148,10 @@ class ClusterUpdateLogObservabilityTest {
             directoryPath = listOf("maryk", "test", "observability", "multi-listener", Uuid.random().toString()),
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "multi-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "multi-${Uuid.random()}",
+            )
         )
         try {
             val logFlow1 = store.executeFlow(Log.scanUpdates(fromVersion = 0uL))
@@ -180,16 +188,20 @@ class ClusterUpdateLogObservabilityTest {
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            )
         )
         val reader = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "reader-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "reader-${Uuid.random()}",
+            )
         )
 
         try {

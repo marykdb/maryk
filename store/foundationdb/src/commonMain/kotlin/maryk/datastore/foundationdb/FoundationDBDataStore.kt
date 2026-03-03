@@ -24,13 +24,9 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.models.migration.MigrationAuditEventType
 import maryk.core.models.migration.MigrationAuditLogStore
-import maryk.core.models.migration.MigrationContractHandler
-import maryk.core.models.migration.MigrationExpandHandler
-import maryk.core.models.migration.MigrationHandler
-import maryk.core.models.migration.MigrationLease
+import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationPhase
-import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStatus
@@ -39,10 +35,8 @@ import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingPropertie
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
-import maryk.core.models.migration.MigrationVerifyHandler
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
-import maryk.core.models.migration.defaultMigrationAuditEventReporter
 import maryk.core.models.migration.orderMigrationModelIds
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
@@ -117,8 +111,6 @@ import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.lib.bytes.combineToByteArray
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 
@@ -135,27 +127,10 @@ class FoundationDBDataStore private constructor(
     dataModelsById: Map<UInt, IsRootDataModel>,
     private val onlyCheckModelVersion: Boolean = false,
     val databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
-    val migrationExpandHandler: MigrationExpandHandler<FoundationDBDataStore>? = null,
-    val migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
-    val migrationVerifyHandler: MigrationVerifyHandler<FoundationDBDataStore>? = null,
-    val migrationContractHandler: MigrationContractHandler<FoundationDBDataStore>? = null,
-    val migrationRetryPolicy: MigrationRetryPolicy = MigrationRetryPolicy(),
-    val migrationStartupBudgetMs: Long? = null,
-    val continueMigrationsInBackground: Boolean = false,
-    val migrationLease: MigrationLease? = null,
-    val persistMigrationAuditEvents: Boolean = false,
-    val migrationAuditLogMaxEntries: Int = 1000,
-    val migrationAuditEventReporter: ((MigrationAuditEvent) -> Unit) = ::defaultMigrationAuditEventReporter,
-    val migrationLeaseTimeoutMs: Long = 30_000L,
-    val migrationLeaseHeartbeatMs: Long = 10_000L,
+    val migrationConfiguration: MigrationConfiguration<FoundationDBDataStore> = MigrationConfiguration(),
+    val migrationLeaseConfiguration: FoundationDBMigrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(),
     val versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
-    private val enableClusterUpdateLog: Boolean = false,
-    private val clusterUpdateLogConsumerId: String? = null,
-    private val clusterUpdateLogOriginId: String? = null,
-    private val clusterUpdateLogShardCount: Int = 64,
-    private val clusterUpdateLogRetention: Duration = 60.minutes,
-    private val clusterUpdateLogBatchSize: Int = 256,
-    private val clusterUpdateLogPollInterval: Duration = 250.milliseconds,
+    private val clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
     private val fieldEncryptionProvider: FieldEncryptionProvider? = null,
 ) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
     override val supportsFuzzyQualifierFiltering: Boolean = true
@@ -249,22 +224,22 @@ class FoundationDBDataStore private constructor(
 
         val conversionContext = DefinitionsConversionContext()
         val startupStarted = TimeSource.Monotonic.markNow()
-        val effectiveMigrationLease = migrationLease ?: FoundationDBMigrationLease(
+        val effectiveMigrationLease = migrationConfiguration.migrationLease ?: FoundationDBMigrationLease(
             tc = tc,
             modelPrefixesById = directoriesByDataModelIndex.mapValues { (_, tableDirectories) -> tableDirectories.modelPrefix },
             scope = this,
-            leaseTimeoutMs = migrationLeaseTimeoutMs,
-            heartbeatIntervalMs = migrationLeaseHeartbeatMs,
+            leaseTimeoutMs = migrationLeaseConfiguration.migrationLeaseTimeoutMs,
+            heartbeatIntervalMs = migrationLeaseConfiguration.migrationLeaseHeartbeatMs,
         )
         val migrationStateStore = FoundationDBMigrationStateStore(
             tc = tc,
             modelPrefixesById = directoriesByDataModelIndex.mapValues { (_, tableDirectories) -> tableDirectories.modelPrefix }
         )
-        if (persistMigrationAuditEvents) {
+        if (migrationConfiguration.persistMigrationAuditEvents) {
             migrationAuditLogStore = FoundationDBMigrationAuditLogStore(
                 tc = tc,
                 modelPrefixesById = directoriesByDataModelIndex.mapValues { (_, tableDirectories) -> tableDirectories.modelPrefix },
-                maxEntries = migrationAuditLogMaxEntries
+                maxEntries = migrationConfiguration.migrationAuditLogMaxEntries
             )
         }
 
@@ -355,10 +330,10 @@ class FoundationDBDataStore private constructor(
             )
         }
 
-        if (enableClusterUpdateLog) {
-            val consumerId = clusterUpdateLogConsumerId
+        if (clusterUpdateLogConfiguration.enableClusterUpdateLog) {
+            val consumerId = clusterUpdateLogConfiguration.clusterUpdateLogConsumerId
                 ?: throw RequestException("Cluster update log enabled but clusterUpdateLogConsumerId is missing")
-            val originId = clusterUpdateLogOriginId ?: consumerId
+            val originId = clusterUpdateLogConfiguration.clusterUpdateLogOriginId ?: consumerId
 
             val headGroupCount = 8
             clusterUpdateLogHeadGroupCount = headGroupCount
@@ -385,11 +360,11 @@ class FoundationDBDataStore private constructor(
                 headGroupCount = headGroupCount,
                 hlcPrefix = hlcDir.pack(),
                 hlcMaxPrefix = hlcMaxDir.pack(),
-                shardCount = clusterUpdateLogShardCount,
+                shardCount = clusterUpdateLogConfiguration.clusterUpdateLogShardCount,
                 originId = originId,
                 dataModelsById = dataModelsById,
                 consumerId = consumerId,
-                retention = clusterUpdateLogRetention,
+                retention = clusterUpdateLogConfiguration.clusterUpdateLogRetention,
             )
         }
 
@@ -422,10 +397,10 @@ class FoundationDBDataStore private constructor(
                             waitForAnyClusterLogHeadChange(
                                 log = log,
                                 headGroupCount = headGroupCount,
-                                timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
+                                timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                             )
                         } catch (_: Throwable) {
-                            delay(clusterUpdateLogPollInterval)
+                            delay(clusterUpdateLogConfiguration.clusterUpdateLogPollInterval)
                         }
                     } catch (e: CancellationException) {
                         throw e
@@ -440,7 +415,7 @@ class FoundationDBDataStore private constructor(
 
             // Tail cluster log into this node's in-memory update flow.
             this.launch(updateDispatcher) {
-                val shardCount = clusterUpdateLogShardCount
+                val shardCount = clusterUpdateLogConfiguration.clusterUpdateLogShardCount
                 val headGroupCount = clusterUpdateLogHeadGroupCount
                 val modelIds = dataModelsById.keys.sorted()
                 val modelCount = modelIds.size
@@ -473,16 +448,16 @@ class FoundationDBDataStore private constructor(
                                     waitForAnyClusterLogHeadChange(
                                         log = log,
                                         headGroupCount = headGroupCount,
-                                        timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
+                                        timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                                     )
                                 } catch (_: Throwable) {
-                                    delay(clusterUpdateLogPollInterval)
+                                    delay(clusterUpdateLogConfiguration.clusterUpdateLogPollInterval)
                                 }
                             }
                             continue
                         }
 
-                        val cutoff = ClusterUpdateLog.cutoffTimestamp(clusterUpdateLogRetention)
+                        val cutoff = ClusterUpdateLog.cutoffTimestamp(clusterUpdateLogConfiguration.clusterUpdateLogRetention)
                         val i = idx(modelIndex, shard)
                         if (cursors[i] == null) {
                             val existingCursor = runTransaction { tr ->
@@ -496,7 +471,7 @@ class FoundationDBDataStore private constructor(
                                 val cutoffCursor = log.minimalKeyAtOrAfter(
                                     shard,
                                     modelId,
-                                    ClusterUpdateLog.cutoffTimestamp(clusterUpdateLogRetention)
+                                    ClusterUpdateLog.cutoffTimestamp(clusterUpdateLogConfiguration.clusterUpdateLogRetention)
                                 )
                                 cursors[i] = cutoffCursor
                                 runTransaction { tr ->
@@ -522,7 +497,7 @@ class FoundationDBDataStore private constructor(
                                 shard = shard,
                                 modelId = modelId,
                                 cursorKey = cursorKey,
-                                limit = clusterUpdateLogBatchSize
+                                limit = clusterUpdateLogConfiguration.clusterUpdateLogBatchSize
                             )
                         }
 
@@ -553,10 +528,10 @@ class FoundationDBDataStore private constructor(
                                     waitForAnyClusterLogHeadChange(
                                         log = log,
                                         headGroupCount = headGroupCount,
-                                        timeoutMs = clusterUpdateLogPollInterval.inWholeMilliseconds
+                                        timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                                     )
                                 } catch (_: Throwable) {
-                                    delay(clusterUpdateLogPollInterval)
+                                    delay(clusterUpdateLogConfiguration.clusterUpdateLogPollInterval)
                                 }
                             }
                         } else {
@@ -580,12 +555,12 @@ class FoundationDBDataStore private constructor(
 
             // Retention GC. Clears by HLC timestamp from key.
             this.launch(updateDispatcher) {
-                val shardCount = clusterUpdateLogShardCount
+                val shardCount = clusterUpdateLogConfiguration.clusterUpdateLogShardCount
                 val batch = 8
                 val modelIds = dataModelsById.keys.sorted()
                 while (isActive) {
                     try {
-                        val cutoff = ClusterUpdateLog.cutoffTimestamp(clusterUpdateLogRetention)
+                        val cutoff = ClusterUpdateLog.cutoffTimestamp(clusterUpdateLogConfiguration.clusterUpdateLogRetention)
                         var shard = 0
                         while (shard < shardCount) {
                             val end = minOf(shard + batch, shardCount)
@@ -1064,12 +1039,14 @@ class FoundationDBDataStore private constructor(
          * Open a FoundationDB-backed Maryk store.
          *
          * Cluster update log (optional):
-         * - `enableClusterUpdateLog`: write each local mutation (add/change/delete) into an FDB-backed log and tail it back into this store's update flow.
+         * - `clusterUpdateLogConfiguration.enableClusterUpdateLog`: write each local mutation (add/change/delete) into an FDB-backed log and tail it back into this store's update flow.
          *   This enables `executeFlow` listeners to observe updates made by other processes connected to the same FDB cluster + `directoryPath`.
-         * - `clusterUpdateLogConsumerId`: identifies the tailer cursor location. Must be unique per node/process if multiple nodes tail the same store root.
-         *   Required when `enableClusterUpdateLog = true`.
-         * - `clusterUpdateLogOriginId`: defaults to consumer id; used to suppress echo of updates written by this node.
-         * - `clusterUpdateLogRetention`: time window to keep update entries; old entries cleared by time-based range clears.
+         * - `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId`: identifies the tailer cursor location. Must be unique per node/process if multiple nodes tail the same store root.
+         *   Required when `clusterUpdateLogConfiguration.enableClusterUpdateLog = true`.
+         * - `clusterUpdateLogConfiguration.clusterUpdateLogOriginId`: defaults to consumer id; used to suppress echo of updates written by this node.
+         * - `clusterUpdateLogConfiguration.clusterUpdateLogRetention`: time window to keep update entries; old entries cleared by time-based range clears.
+         * - `migrationConfiguration`: contains migration hooks, retry policy, startup budget, audit settings, and optional custom lease.
+         * - `migrationLeaseConfiguration`: configures FoundationDB's default distributed migration lease heartbeat + timeout.
          * - Cluster HLC safety: writes update per-node and shard-max HLC markers; a background syncer keeps local version generation
          *   at/above observed cluster HLC even without active `executeFlow` listeners.
          * - `fieldEncryptionProvider`: optional field-value encryption provider for properties marked with `sensitive = true`.
@@ -1084,27 +1061,10 @@ class FoundationDBDataStore private constructor(
             dataModelsById: Map<UInt, IsRootDataModel>,
             onlyCheckModelVersion: Boolean = false,
             databaseOptionsSetter: DatabaseOptions.() -> Unit = {},
-            migrationExpandHandler: MigrationExpandHandler<FoundationDBDataStore>? = null,
-            migrationHandler: MigrationHandler<FoundationDBDataStore>? = null,
-            migrationVerifyHandler: MigrationVerifyHandler<FoundationDBDataStore>? = null,
-            migrationContractHandler: MigrationContractHandler<FoundationDBDataStore>? = null,
-            migrationRetryPolicy: MigrationRetryPolicy = MigrationRetryPolicy(),
-            migrationStartupBudgetMs: Long? = null,
-            continueMigrationsInBackground: Boolean = false,
-            migrationLease: MigrationLease? = null,
-            persistMigrationAuditEvents: Boolean = false,
-            migrationAuditLogMaxEntries: Int = 1000,
-            migrationAuditEventReporter: ((MigrationAuditEvent) -> Unit) = ::defaultMigrationAuditEventReporter,
-            migrationLeaseTimeoutMs: Long = 30_000L,
-            migrationLeaseHeartbeatMs: Long = 10_000L,
+            migrationConfiguration: MigrationConfiguration<FoundationDBDataStore> = MigrationConfiguration(),
+            migrationLeaseConfiguration: FoundationDBMigrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(),
             versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
-            enableClusterUpdateLog: Boolean = false,
-            clusterUpdateLogConsumerId: String? = null,
-            clusterUpdateLogOriginId: String? = null,
-            clusterUpdateLogShardCount: Int = 64,
-            clusterUpdateLogRetention: Duration = 60.minutes,
-            clusterUpdateLogBatchSize: Int = 256,
-            clusterUpdateLogPollInterval: Duration = 250.milliseconds,
+            clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
         ) = FoundationDBDataStore(
             keepAllVersions = keepAllVersions,
@@ -1113,27 +1073,10 @@ class FoundationDBDataStore private constructor(
             dataModelsById = dataModelsById,
             onlyCheckModelVersion = onlyCheckModelVersion,
             databaseOptionsSetter = databaseOptionsSetter,
-            migrationExpandHandler = migrationExpandHandler,
-            migrationHandler = migrationHandler,
-            migrationVerifyHandler = migrationVerifyHandler,
-            migrationContractHandler = migrationContractHandler,
-            migrationRetryPolicy = migrationRetryPolicy,
-            migrationStartupBudgetMs = migrationStartupBudgetMs,
-            continueMigrationsInBackground = continueMigrationsInBackground,
-            migrationLease = migrationLease,
-            persistMigrationAuditEvents = persistMigrationAuditEvents,
-            migrationAuditLogMaxEntries = migrationAuditLogMaxEntries,
-            migrationAuditEventReporter = migrationAuditEventReporter,
-            migrationLeaseTimeoutMs = migrationLeaseTimeoutMs,
-            migrationLeaseHeartbeatMs = migrationLeaseHeartbeatMs,
+            migrationConfiguration = migrationConfiguration,
+            migrationLeaseConfiguration = migrationLeaseConfiguration,
             versionUpdateHandler = versionUpdateHandler,
-            enableClusterUpdateLog = enableClusterUpdateLog,
-            clusterUpdateLogConsumerId = clusterUpdateLogConsumerId,
-            clusterUpdateLogOriginId = clusterUpdateLogOriginId,
-            clusterUpdateLogShardCount = clusterUpdateLogShardCount,
-            clusterUpdateLogRetention = clusterUpdateLogRetention,
-            clusterUpdateLogBatchSize = clusterUpdateLogBatchSize,
-            clusterUpdateLogPollInterval = clusterUpdateLogPollInterval,
+            clusterUpdateLogConfiguration = clusterUpdateLogConfiguration,
             fieldEncryptionProvider = fieldEncryptionProvider,
         ).apply {
             try {
@@ -1143,6 +1086,7 @@ class FoundationDBDataStore private constructor(
                 throw e.unwrapFdb()
             }
         }
+
     }
 }
 

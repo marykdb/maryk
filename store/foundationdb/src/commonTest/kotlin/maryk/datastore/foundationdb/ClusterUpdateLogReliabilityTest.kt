@@ -29,16 +29,20 @@ class ClusterUpdateLogReliabilityTest {
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "node-a-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "node-a-${Uuid.random()}",
+            )
         )
         val nodeB = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "node-b-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "node-b-${Uuid.random()}",
+            )
         )
 
         try {
@@ -88,8 +92,10 @@ class ClusterUpdateLogReliabilityTest {
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            )
         )
 
         var restarted = FoundationDBDataStore.open(
@@ -97,8 +103,10 @@ class ClusterUpdateLogReliabilityTest {
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = stableConsumerId,
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = stableConsumerId,
+            )
         )
 
         try {
@@ -122,8 +130,10 @@ class ClusterUpdateLogReliabilityTest {
                 directoryPath = root,
                 dataModelsById = dataModelsForTests,
                 keepAllVersions = false,
-                enableClusterUpdateLog = true,
-                clusterUpdateLogConsumerId = stableConsumerId,
+                clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                    enableClusterUpdateLog = true,
+                    clusterUpdateLogConsumerId = stableConsumerId,
+                )
             )
 
             waitForReliabilityStat("restarted node catches up to max written $maxWritten") {
@@ -147,16 +157,20 @@ class ClusterUpdateLogReliabilityTest {
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            )
         )
         val reader = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "reader-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "reader-${Uuid.random()}",
+            )
         )
 
         try {
@@ -205,16 +219,20 @@ class ClusterUpdateLogReliabilityTest {
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            )
         )
         val reader = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "reader-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "reader-${Uuid.random()}",
+            )
         )
 
         try {
@@ -253,8 +271,10 @@ class ClusterUpdateLogReliabilityTest {
                 directoryPath = root,
                 dataModelsById = dataModelsForTests,
                 keepAllVersions = false,
-                enableClusterUpdateLog = true,
-                clusterUpdateLogConsumerId = "node-$idx-${Uuid.random()}",
+                clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                    enableClusterUpdateLog = true,
+                    clusterUpdateLogConsumerId = "node-$idx-${Uuid.random()}",
+                )
             )
         }
 
@@ -289,16 +309,20 @@ class ClusterUpdateLogReliabilityTest {
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            )
         )
         var reader = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = root,
             dataModelsById = dataModelsForTests,
             keepAllVersions = false,
-            enableClusterUpdateLog = true,
-            clusterUpdateLogConsumerId = readerConsumerId,
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = readerConsumerId,
+            )
         )
 
         try {
@@ -321,8 +345,10 @@ class ClusterUpdateLogReliabilityTest {
                 directoryPath = root,
                 dataModelsById = dataModelsForTests,
                 keepAllVersions = false,
-                enableClusterUpdateLog = true,
-                clusterUpdateLogConsumerId = readerConsumerId,
+                clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                    enableClusterUpdateLog = true,
+                    clusterUpdateLogConsumerId = readerConsumerId,
+                )
             )
             val log = reader.clusterUpdateLog ?: error("Cluster log must be enabled")
             val modelId = 4u
@@ -339,8 +365,10 @@ class ClusterUpdateLogReliabilityTest {
                 directoryPath = root,
                 dataModelsById = dataModelsForTests,
                 keepAllVersions = false,
-                enableClusterUpdateLog = true,
-                clusterUpdateLogConsumerId = readerConsumerId,
+                clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                    enableClusterUpdateLog = true,
+                    clusterUpdateLogConsumerId = readerConsumerId,
+                )
             )
             reader.executeFlow(Log.scanUpdates(fromVersion = 0uL))
             val beforeReplay = reader.getClusterUpdateLogStats() ?: error("stats missing")

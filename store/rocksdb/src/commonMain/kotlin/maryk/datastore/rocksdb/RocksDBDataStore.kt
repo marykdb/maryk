@@ -21,13 +21,9 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.models.migration.MigrationAuditEventType
 import maryk.core.models.migration.MigrationAuditLogStore
-import maryk.core.models.migration.MigrationContractHandler
-import maryk.core.models.migration.MigrationExpandHandler
-import maryk.core.models.migration.MigrationHandler
-import maryk.core.models.migration.MigrationLease
+import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationPhase
-import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStatus
@@ -36,10 +32,8 @@ import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingPropertie
 import maryk.core.models.migration.MigrationStatus.NewModel
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
-import maryk.core.models.migration.MigrationVerifyHandler
 import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.VersionUpdateHandler
-import maryk.core.models.migration.defaultMigrationAuditEventReporter
 import maryk.core.models.migration.orderMigrationModelIds
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
@@ -133,17 +127,7 @@ class RocksDBDataStore private constructor(
     dataModelsById: Map<UInt, IsRootDataModel>,
     rocksDBOptions: DBOptions? = null,
     private val onlyCheckModelVersion: Boolean = false,
-    val migrationExpandHandler: MigrationExpandHandler<RocksDBDataStore>? = null,
-    val migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
-    val migrationVerifyHandler: MigrationVerifyHandler<RocksDBDataStore>? = null,
-    val migrationContractHandler: MigrationContractHandler<RocksDBDataStore>? = null,
-    val migrationRetryPolicy: MigrationRetryPolicy = MigrationRetryPolicy(),
-    val migrationStartupBudgetMs: Long? = null,
-    val continueMigrationsInBackground: Boolean = false,
-    val migrationLease: MigrationLease? = null,
-    val persistMigrationAuditEvents: Boolean = false,
-    val migrationAuditLogMaxEntries: Int = 1000,
-    val migrationAuditEventReporter: ((MigrationAuditEvent) -> Unit) = ::defaultMigrationAuditEventReporter,
+    val migrationConfiguration: MigrationConfiguration<RocksDBDataStore> = MigrationConfiguration(),
     val versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
     val fieldEncryptionProvider: FieldEncryptionProvider? = null,
 ) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
@@ -252,16 +236,16 @@ class RocksDBDataStore private constructor(
 
         val conversionContext = DefinitionsConversionContext()
         val startupStarted = TimeSource.Monotonic.markNow()
-        val effectiveMigrationLease = migrationLease ?: RocksDBLocalMigrationLease(storePath)
+        val effectiveMigrationLease = migrationConfiguration.migrationLease ?: RocksDBLocalMigrationLease(storePath)
         val migrationStateStore = RocksDBMigrationStateStore(
             db,
             columnFamilyHandlesByDataModelIndex.mapValues { (_, tableColumnFamilies) -> tableColumnFamilies.model }
         )
-        if (persistMigrationAuditEvents) {
+        if (migrationConfiguration.persistMigrationAuditEvents) {
             migrationAuditLogStore = RocksDBMigrationAuditLogStore(
                 rocksDB = db,
                 modelColumnFamiliesById = columnFamilyHandlesByDataModelIndex.mapValues { (_, tableColumnFamilies) -> tableColumnFamilies.model },
-                maxEntries = migrationAuditLogMaxEntries
+                maxEntries = migrationConfiguration.migrationAuditLogMaxEntries
             )
         }
 
@@ -704,17 +688,7 @@ class RocksDBDataStore private constructor(
             dataModelsById: Map<UInt, IsRootDataModel>,
             rocksDBOptions: DBOptions? = null,
             onlyCheckModelVersion: Boolean = false,
-            migrationExpandHandler: MigrationExpandHandler<RocksDBDataStore>? = null,
-            migrationHandler: MigrationHandler<RocksDBDataStore>? = null,
-            migrationVerifyHandler: MigrationVerifyHandler<RocksDBDataStore>? = null,
-            migrationContractHandler: MigrationContractHandler<RocksDBDataStore>? = null,
-            migrationRetryPolicy: MigrationRetryPolicy = MigrationRetryPolicy(),
-            migrationStartupBudgetMs: Long? = null,
-            continueMigrationsInBackground: Boolean = false,
-            migrationLease: MigrationLease? = null,
-            persistMigrationAuditEvents: Boolean = false,
-            migrationAuditLogMaxEntries: Int = 1000,
-            migrationAuditEventReporter: ((MigrationAuditEvent) -> Unit) = ::defaultMigrationAuditEventReporter,
+            migrationConfiguration: MigrationConfiguration<RocksDBDataStore> = MigrationConfiguration(),
             versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
         ): RocksDBDataStore {
@@ -724,17 +698,7 @@ class RocksDBDataStore private constructor(
                 dataModelsById = dataModelsById,
                 rocksDBOptions = rocksDBOptions,
                 onlyCheckModelVersion = onlyCheckModelVersion,
-                migrationExpandHandler = migrationExpandHandler,
-                migrationHandler = migrationHandler,
-                migrationVerifyHandler = migrationVerifyHandler,
-                migrationContractHandler = migrationContractHandler,
-                migrationRetryPolicy = migrationRetryPolicy,
-                migrationStartupBudgetMs = migrationStartupBudgetMs,
-                continueMigrationsInBackground = continueMigrationsInBackground,
-                migrationLease = migrationLease,
-                persistMigrationAuditEvents = persistMigrationAuditEvents,
-                migrationAuditLogMaxEntries = migrationAuditLogMaxEntries,
-                migrationAuditEventReporter = migrationAuditEventReporter,
+                migrationConfiguration = migrationConfiguration,
                 versionUpdateHandler = versionUpdateHandler,
                 fieldEncryptionProvider = fieldEncryptionProvider,
             ).apply {
@@ -746,6 +710,7 @@ class RocksDBDataStore private constructor(
                 }
             }
         }
+
     }
 }
 

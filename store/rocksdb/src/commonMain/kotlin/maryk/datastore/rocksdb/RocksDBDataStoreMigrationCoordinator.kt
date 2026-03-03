@@ -32,7 +32,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
     finalizeInBackground: suspend (StoredRootDataModelDefinition) -> Unit,
     finalizeInStartup: (StoredRootDataModelDefinition) -> Unit,
 ) {
-    val handler = migrationHandler
+    val handler = migrationConfiguration.migrationHandler
         ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
     val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
     val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
@@ -90,12 +90,12 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
 
     suspend fun executeStep(previousState: MigrationState?, attempt: UInt): Pair<MigrationPhase, MigrationOutcome> {
         val phase = previousState?.phase?.normalizedRuntimePhase() ?: MigrationPhase.Expand
-        migrationRetryPolicy.maxAttempts?.let { maxAttempts ->
+        migrationConfiguration.migrationRetryPolicy.maxAttempts?.let { maxAttempts ->
             if (attempt > maxAttempts) {
                 return phase to MigrationOutcome.Fatal("Retry policy exceeded max attempts $maxAttempts")
             }
         }
-        migrationRetryPolicy.maxRetryOutcomes?.let { maxRetries ->
+        migrationConfiguration.migrationRetryPolicy.maxRetryOutcomes?.let { maxRetries ->
             val retriesSoFar = migrationRuntimeDetailsByModelId.value[index]?.retryCount ?: 0u
             if (retriesSoFar >= maxRetries) {
                 return phase to MigrationOutcome.Fatal("Retry policy exceeded max retries $maxRetries")
@@ -122,10 +122,10 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
             attempt = attempt,
         )
         val outcome = when (phase) {
-            MigrationPhase.Expand -> migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
+            MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
             MigrationPhase.Backfill -> handler(context)
-            MigrationPhase.Verify -> migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
-            MigrationPhase.Contract -> migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
+            MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
+            MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
         }
         return phase to outcome
     }
@@ -274,7 +274,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
     val leaseAcquired = effectiveMigrationLease.tryAcquire(index, migrationId)
     if (!leaseAcquired) {
         appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseRejected, message = "Lease held by other migrator")
-        if (continueMigrationsInBackground) {
+        if (migrationConfiguration.continueMigrationsInBackground) {
             pendingMigrationModelIds.update { it + index }
             pendingMigrationReasons.update { it + (index to "Migration lease held by another migrator for $migrationId") }
             ensurePendingMigrationWaiter(index)
@@ -290,9 +290,10 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
 
     try {
         while (true) {
-            if (migrationStartupBudgetMs != null && startupStarted.elapsedNow().inWholeMilliseconds > migrationStartupBudgetMs) {
-                if (!continueMigrationsInBackground) {
-                    throw MigrationException("Migration startup budget exceeded for ${dataModel.Meta.name} after ${migrationStartupBudgetMs}ms")
+            val startupBudgetMs = migrationConfiguration.migrationStartupBudgetMs
+            if (startupBudgetMs != null && startupStarted.elapsedNow().inWholeMilliseconds > startupBudgetMs) {
+                if (!migrationConfiguration.continueMigrationsInBackground) {
+                    throw MigrationException("Migration startup budget exceeded for ${dataModel.Meta.name} after ${startupBudgetMs}ms")
                 }
                 pendingMigrationModelIds.update { it + index }
                 pendingMigrationReasons.update { it + (index to "Migration for ${dataModel.Meta.name} is running in background") }

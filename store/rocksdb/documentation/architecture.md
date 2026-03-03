@@ -107,18 +107,21 @@ Operational details and full runtime API are documented in [Migrations](./migrat
 At open time, `RocksDBDataStore` compares the stored model in `Model` with the provided definition:
 - If models are equal → no work.
 - If only safe additions or new indexes exist → it backfills index data (`fillIndex`) and stores the new model.
-- If incompatible changes are detected → it calls `migrationHandler`; the handler can perform corrective writes and must return:
+- If incompatible changes are detected → it calls `migrationConfiguration.migrationHandler`; the handler can perform corrective writes and must return:
   - `MigrationOutcome.Success`
   - `MigrationOutcome.Partial`
   - `MigrationOutcome.Retry`
   - `MigrationOutcome.Fatal`
+
+Pass these settings under `migrationConfiguration = MigrationConfiguration(...)` from `maryk.core.models.migration`.
 
 After a successful migration or a brand new model, `versionUpdateHandler` can run custom logic (e.g., seed data) before the new model is stored.
 
 See: `model/checkModelIfMigrationIsNeeded.kt` and `model/storeModelDefinition.kt`.
 
 Runtime operations:
-- `migrationStartupBudgetMs` + `continueMigrationsInBackground` support startup handoff to background migration.
+- `migrationConfiguration.migrationStartupBudgetMs` + `migrationConfiguration.continueMigrationsInBackground` support startup handoff to background migration.
+- Optional phase hooks also live under `migrationConfiguration`: `migrationExpandHandler`, `migrationVerifyHandler`, `migrationContractHandler`.
 - Pending models are request-blocked via `assertModelReady`.
 - Operators can inspect/control with `pendingMigrations`, `migrationStatus(es)`, `awaitMigration`, `pauseMigration`, `resumeMigration`, `cancelMigration`.
 - Default lease is local (`RocksDBLocalMigrationLease`) to avoid duplicate runners inside one process.
@@ -133,7 +136,9 @@ RocksDBDataStore.open(
     relativePath = "path/to/db",
     dataModelsById = mapOf(1u to Account, 2u to Course),
     rocksDBOptions = DBOptions(),
-    migrationHandler = { context -> /* ... */ MigrationOutcome.Success },
+    migrationConfiguration = MigrationConfiguration(
+        migrationHandler = { context -> /* ... */ MigrationOutcome.Success }
+    ),
     versionUpdateHandler = { store, stored, new -> /* ... */ }
 )
 ```

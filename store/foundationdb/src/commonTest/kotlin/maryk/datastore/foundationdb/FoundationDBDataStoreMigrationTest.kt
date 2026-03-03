@@ -3,15 +3,16 @@
 
 package maryk.datastore.foundationdb
 
-import kotlinx.coroutines.test.runTest
+import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
-import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.withTimeout
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
+import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationLease
 import maryk.core.models.migration.MigrationOutcome
@@ -23,9 +24,9 @@ import maryk.core.models.migration.NoopMigrationLease
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.string
+import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.SInt32
-import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
 import maryk.core.query.orders.ascending
@@ -133,7 +134,9 @@ class FoundationDBDataStoreMigrationTest {
                 dataModelsById = mapOf(
                     1u to ModelV2,
                 ),
-                migrationHandler = null
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = null,
+                )
             )
         }
 
@@ -145,14 +148,16 @@ class FoundationDBDataStoreMigrationTest {
                 dataModelsById = mapOf(
                     1u to ModelV2,
                 ),
-                migrationHandler = { context ->
-                    val storedDataModel = context.storedDataModel
-                    val newDataModel = context.newDataModel
-                    assertEquals(ModelV2, newDataModel)
-                    assertEquals(ModelV1_1.Meta.version, storedDataModel.Meta.version)
-                    // Should throw this exception to proof it is entering this handler
-                    throw CustomException()
-                }
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { context ->
+                        val storedDataModel = context.storedDataModel
+                        val newDataModel = context.newDataModel
+                        assertEquals(ModelV2, newDataModel)
+                        assertEquals(ModelV1_1.Meta.version, storedDataModel.Meta.version)
+                        // Should throw this exception to proof it is entering this handler
+                        throw CustomException()
+                    },
+                )
             )
         }
     }
@@ -165,7 +170,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         val phases = mutableListOf<String>()
@@ -174,22 +179,24 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            migrationExpandHandler = { _ ->
-                phases += "expand"
-                MigrationOutcome.Success
-            },
-            migrationHandler = { _ ->
-                phases += "backfill"
-                MigrationOutcome.Success
-            },
-            migrationVerifyHandler = { _ ->
-                phases += "verify"
-                MigrationOutcome.Success
-            },
-            migrationContractHandler = { _ ->
-                phases += "contract"
-                MigrationOutcome.Success
-            },
+            migrationConfiguration = MigrationConfiguration(
+                migrationExpandHandler = { _ ->
+                    phases += "expand"
+                    MigrationOutcome.Success
+                },
+                migrationHandler = { _ ->
+                    phases += "backfill"
+                    MigrationOutcome.Success
+                },
+                migrationVerifyHandler = { _ ->
+                    phases += "verify"
+                    MigrationOutcome.Success
+                },
+                migrationContractHandler = { _ ->
+                    phases += "contract"
+                    MigrationOutcome.Success
+                },
+            )
         ).close()
 
         assertEquals(listOf("expand", "backfill", "verify", "contract"), phases)
@@ -203,7 +210,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         var expandCalls = 0
@@ -215,24 +222,26 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            migrationExpandHandler = { _ ->
-                phases += "expand"
-                expandCalls += 1
-                if (expandCalls == 1) MigrationOutcome.Retry(retryAfterMs = 1) else MigrationOutcome.Success
-            },
-            migrationHandler = { _ ->
-                phases += "backfill"
-                MigrationOutcome.Success
-            },
-            migrationVerifyHandler = { _ ->
-                phases += "verify"
-                MigrationOutcome.Success
-            },
-            migrationContractHandler = { _ ->
-                phases += "contract"
-                contractCalls += 1
-                if (contractCalls == 1) MigrationOutcome.Partial() else MigrationOutcome.Success
-            },
+            migrationConfiguration = MigrationConfiguration(
+                migrationExpandHandler = { _ ->
+                    phases += "expand"
+                    expandCalls += 1
+                    if (expandCalls == 1) MigrationOutcome.Retry(retryAfterMs = 1) else MigrationOutcome.Success
+                },
+                migrationHandler = { _ ->
+                    phases += "backfill"
+                    MigrationOutcome.Success
+                },
+                migrationVerifyHandler = { _ ->
+                    phases += "verify"
+                    MigrationOutcome.Success
+                },
+                migrationContractHandler = { _ ->
+                    phases += "contract"
+                    contractCalls += 1
+                    if (contractCalls == 1) MigrationOutcome.Partial() else MigrationOutcome.Success
+                },
+            )
         ).close()
 
         assertEquals(listOf("expand", "expand", "backfill", "verify", "contract", "contract"), phases)
@@ -406,7 +415,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         val releaseMigration = kotlinx.coroutines.CompletableDeferred<Unit>()
@@ -415,13 +424,15 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            migrationStartupBudgetMs = -1L,
-            continueMigrationsInBackground = true,
-            persistMigrationAuditEvents = true,
-            migrationHandler = { _ ->
-                releaseMigration.await()
-                MigrationOutcome.Success
-            },
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                persistMigrationAuditEvents = true,
+                migrationHandler = { _ ->
+                    releaseMigration.await()
+                    MigrationOutcome.Success
+                },
+            )
         )
 
         repeat(50) {
@@ -473,7 +484,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         var allowSuccess = false
@@ -482,15 +493,17 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            migrationStartupBudgetMs = 1L,
-            continueMigrationsInBackground = true,
-            migrationHandler = { _ ->
-                if (allowSuccess) {
-                    MigrationOutcome.Success
-                } else {
-                    MigrationOutcome.Retry(retryAfterMs = 25)
-                }
-            },
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = 1L,
+                continueMigrationsInBackground = true,
+                migrationHandler = { _ ->
+                    if (allowSuccess) {
+                        MigrationOutcome.Success
+                    } else {
+                        MigrationOutcome.Retry(retryAfterMs = 25)
+                    }
+                },
+            )
         )
 
         repeat(50) {
@@ -521,7 +534,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = cancelPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         val cancelStore = FoundationDBDataStore.open(
@@ -529,9 +542,11 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = cancelPath,
             dataModelsById = mapOf(1u to ModelV2),
-            migrationStartupBudgetMs = 1L,
-            continueMigrationsInBackground = true,
-            migrationHandler = { _ -> MigrationOutcome.Retry(retryAfterMs = 25) },
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = 1L,
+                continueMigrationsInBackground = true,
+                migrationHandler = { _ -> MigrationOutcome.Retry(retryAfterMs = 25) },
+            )
         )
 
         repeat(50) {
@@ -564,7 +579,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         var verifyAttempts = 0
@@ -573,17 +588,19 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            migrationStartupBudgetMs = -1L,
-            continueMigrationsInBackground = true,
-            migrationHandler = { _ -> MigrationOutcome.Success },
-            migrationVerifyHandler = { _ ->
-                verifyAttempts += 1
-                if (verifyAttempts >= 2) {
-                    MigrationOutcome.Success
-                } else {
-                    MigrationOutcome.Retry(retryAfterMs = 25)
-                }
-            },
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                migrationHandler = { _ -> MigrationOutcome.Success },
+                migrationVerifyHandler = { _ ->
+                    verifyAttempts += 1
+                    if (verifyAttempts >= 2) {
+                        MigrationOutcome.Success
+                    } else {
+                        MigrationOutcome.Retry(retryAfterMs = 25)
+                    }
+                },
+            )
         )
 
         repeat(50) {
@@ -628,7 +645,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         assertFailsWith<MigrationException> {
@@ -637,8 +654,10 @@ class FoundationDBDataStoreMigrationTest {
                 fdbClusterFilePath = "fdb.cluster",
                 directoryPath = dirPath,
                 dataModelsById = mapOf(1u to ModelV2),
-                migrationRetryPolicy = MigrationRetryPolicy(maxAttempts = 1u),
-                migrationHandler = { _ -> MigrationOutcome.Retry(retryAfterMs = 1) },
+                migrationConfiguration = MigrationConfiguration(
+                    migrationRetryPolicy = MigrationRetryPolicy(maxAttempts = 1u),
+                    migrationHandler = { _ -> MigrationOutcome.Retry(retryAfterMs = 1) },
+                )
             )
         }
     }
@@ -654,7 +673,7 @@ class FoundationDBDataStoreMigrationTest {
             dataModelsById = mapOf(
                 2u to Phase6OrderBaseV1,
                 1u to Phase6OrderDependentV1,
-            ),
+            )
         ).close()
 
         val migratedModels = mutableListOf<String>()
@@ -666,10 +685,12 @@ class FoundationDBDataStoreMigrationTest {
                 2u to Phase6OrderBaseV2,
                 1u to Phase6OrderDependentV2,
             ),
-            migrationHandler = { context ->
-                migratedModels += context.newDataModel.Meta.name
-                MigrationOutcome.Success
-            },
+            migrationConfiguration = MigrationConfiguration(
+                migrationHandler = { context ->
+                    migratedModels += context.newDataModel.Meta.name
+                    MigrationOutcome.Success
+                },
+            )
         ).close()
 
         assertEquals(listOf("Phase6OrderBase", "Phase6OrderDependent"), migratedModels)
@@ -687,7 +708,7 @@ class FoundationDBDataStoreMigrationTest {
                 dataModelsById = mapOf(
                     1u to Phase6CycleLeftModel,
                     2u to Phase6CycleRightModel,
-                ),
+                )
             )
         }
 
@@ -702,7 +723,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         val lease = ScriptedMigrationLease(
@@ -715,8 +736,10 @@ class FoundationDBDataStoreMigrationTest {
                 fdbClusterFilePath = "fdb.cluster",
                 directoryPath = dirPath,
                 dataModelsById = mapOf(1u to ModelV2),
-                migrationLease = lease,
-                migrationHandler = { _ -> MigrationOutcome.Fatal("boom") },
+                migrationConfiguration = MigrationConfiguration(
+                    migrationLease = lease,
+                    migrationHandler = { _ -> MigrationOutcome.Fatal("boom") },
+                )
             )
         }
 
@@ -731,7 +754,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         val lease = ScriptedMigrationLease(
@@ -742,9 +765,11 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            continueMigrationsInBackground = true,
-            migrationLease = lease,
-            migrationHandler = { _ -> MigrationOutcome.Success },
+            migrationConfiguration = MigrationConfiguration(
+                continueMigrationsInBackground = true,
+                migrationLease = lease,
+                migrationHandler = { _ -> MigrationOutcome.Success },
+            )
         )
 
         try {
@@ -769,7 +794,7 @@ class FoundationDBDataStoreMigrationTest {
             keepAllVersions = true,
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
-            dataModelsById = mapOf(1u to ModelV1_1),
+            dataModelsById = mapOf(1u to ModelV1_1)
         ).close()
 
         val allowAcquire = atomic(false)
@@ -781,12 +806,14 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            continueMigrationsInBackground = true,
-            migrationLease = delayedLease,
-            migrationHandler = { _ ->
-                firstHandlerCalls.incrementAndGet()
-                MigrationOutcome.Fatal("stale plan should not run")
-            },
+            migrationConfiguration = MigrationConfiguration(
+                continueMigrationsInBackground = true,
+                migrationLease = delayedLease,
+                migrationHandler = { _ ->
+                    firstHandlerCalls.incrementAndGet()
+                    MigrationOutcome.Fatal("stale plan should not run")
+                },
+            )
         )
 
         try {
@@ -801,7 +828,9 @@ class FoundationDBDataStoreMigrationTest {
                 fdbClusterFilePath = "fdb.cluster",
                 directoryPath = dirPath,
                 dataModelsById = mapOf(1u to ModelV2),
-                migrationHandler = { _ -> MigrationOutcome.Success },
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { _ -> MigrationOutcome.Success },
+                )
             ).close()
 
             allowAcquire.value = true
@@ -835,7 +864,7 @@ class FoundationDBDataStoreMigrationTest {
                 keepAllVersions = true,
                 fdbClusterFilePath = "fdb.cluster",
                 directoryPath = dirPath,
-                dataModelsById = mapOf(1u to ModelV1_1),
+                dataModelsById = mapOf(1u to ModelV1_1)
             ).close()
 
             var retryIssued = false
@@ -844,41 +873,55 @@ class FoundationDBDataStoreMigrationTest {
                 fdbClusterFilePath = "fdb.cluster",
                 directoryPath = dirPath,
                 dataModelsById = mapOf(1u to ModelV2),
-                migrationLease = NoopMigrationLease,
-                migrationStartupBudgetMs = -1L,
-                continueMigrationsInBackground = true,
-                migrationExpandHandler = {
-                    if (targetPhase == MigrationPhase.Expand && !retryIssued) {
-                        retryIssued = true
-                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
-                    } else {
-                        MigrationOutcome.Success
-                    }
-                },
-                migrationHandler = {
-                    if (targetPhase == MigrationPhase.Backfill && !retryIssued) {
-                        retryIssued = true
-                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
-                    } else {
-                        MigrationOutcome.Success
-                    }
-                },
-                migrationVerifyHandler = {
-                    if (targetPhase == MigrationPhase.Verify && !retryIssued) {
-                        retryIssued = true
-                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
-                    } else {
-                        MigrationOutcome.Success
-                    }
-                },
-                migrationContractHandler = {
-                    if (targetPhase == MigrationPhase.Contract && !retryIssued) {
-                        retryIssued = true
-                        MigrationOutcome.Retry(nextCursor = byteArrayOf(targetPhase.ordinal.toByte()), retryAfterMs = 5_000)
-                    } else {
-                        MigrationOutcome.Success
-                    }
-                },
+                migrationConfiguration = MigrationConfiguration(
+                    migrationLease = NoopMigrationLease,
+                    migrationStartupBudgetMs = -1L,
+                    continueMigrationsInBackground = true,
+                    migrationExpandHandler = {
+                        if (targetPhase == MigrationPhase.Expand && !retryIssued) {
+                            retryIssued = true
+                            MigrationOutcome.Retry(
+                                nextCursor = byteArrayOf(targetPhase.ordinal.toByte()),
+                                retryAfterMs = 5_000
+                            )
+                        } else {
+                            MigrationOutcome.Success
+                        }
+                    },
+                    migrationHandler = {
+                        if (targetPhase == MigrationPhase.Backfill && !retryIssued) {
+                            retryIssued = true
+                            MigrationOutcome.Retry(
+                                nextCursor = byteArrayOf(targetPhase.ordinal.toByte()),
+                                retryAfterMs = 5_000
+                            )
+                        } else {
+                            MigrationOutcome.Success
+                        }
+                    },
+                    migrationVerifyHandler = {
+                        if (targetPhase == MigrationPhase.Verify && !retryIssued) {
+                            retryIssued = true
+                            MigrationOutcome.Retry(
+                                nextCursor = byteArrayOf(targetPhase.ordinal.toByte()),
+                                retryAfterMs = 5_000
+                            )
+                        } else {
+                            MigrationOutcome.Success
+                        }
+                    },
+                    migrationContractHandler = {
+                        if (targetPhase == MigrationPhase.Contract && !retryIssued) {
+                            retryIssued = true
+                            MigrationOutcome.Retry(
+                                nextCursor = byteArrayOf(targetPhase.ordinal.toByte()),
+                                retryAfterMs = 5_000
+                            )
+                        } else {
+                            MigrationOutcome.Success
+                        }
+                    },
+                )
             )
 
             withContext(Dispatchers.Default.limitedParallelism(1)) {
@@ -901,51 +944,53 @@ class FoundationDBDataStoreMigrationTest {
                 fdbClusterFilePath = "fdb.cluster",
                 directoryPath = dirPath,
                 dataModelsById = mapOf(1u to ModelV2),
-                migrationLease = NoopMigrationLease,
-                migrationExpandHandler = { context ->
-                    if (targetPhase == MigrationPhase.Expand) {
-                        val previousState = context.previousState
-                        assertNotNull(previousState)
-                        assertEquals(MigrationPhase.Expand, previousState.phase)
-                        assertEquals(MigrationStateStatus.Retry, previousState.status)
-                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
-                        resumed = true
-                    }
-                    MigrationOutcome.Success
-                },
-                migrationHandler = { context ->
-                    if (targetPhase == MigrationPhase.Backfill) {
-                        val previousState = context.previousState
-                        assertNotNull(previousState)
-                        assertEquals(MigrationPhase.Backfill, previousState.phase)
-                        assertEquals(MigrationStateStatus.Retry, previousState.status)
-                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
-                        resumed = true
-                    }
-                    MigrationOutcome.Success
-                },
-                migrationVerifyHandler = { context ->
-                    if (targetPhase == MigrationPhase.Verify) {
-                        val previousState = context.previousState
-                        assertNotNull(previousState)
-                        assertEquals(MigrationPhase.Verify, previousState.phase)
-                        assertEquals(MigrationStateStatus.Retry, previousState.status)
-                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
-                        resumed = true
-                    }
-                    MigrationOutcome.Success
-                },
-                migrationContractHandler = { context ->
-                    if (targetPhase == MigrationPhase.Contract) {
-                        val previousState = context.previousState
-                        assertNotNull(previousState)
-                        assertEquals(MigrationPhase.Contract, previousState.phase)
-                        assertEquals(MigrationStateStatus.Retry, previousState.status)
-                        assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
-                        resumed = true
-                    }
-                    MigrationOutcome.Success
-                },
+                migrationConfiguration = MigrationConfiguration(
+                    migrationLease = NoopMigrationLease,
+                    migrationExpandHandler = { context ->
+                        if (targetPhase == MigrationPhase.Expand) {
+                            val previousState = context.previousState
+                            assertNotNull(previousState)
+                            assertEquals(MigrationPhase.Expand, previousState.phase)
+                            assertEquals(MigrationStateStatus.Retry, previousState.status)
+                            assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                            resumed = true
+                        }
+                        MigrationOutcome.Success
+                    },
+                    migrationHandler = { context ->
+                        if (targetPhase == MigrationPhase.Backfill) {
+                            val previousState = context.previousState
+                            assertNotNull(previousState)
+                            assertEquals(MigrationPhase.Backfill, previousState.phase)
+                            assertEquals(MigrationStateStatus.Retry, previousState.status)
+                            assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                            resumed = true
+                        }
+                        MigrationOutcome.Success
+                    },
+                    migrationVerifyHandler = { context ->
+                        if (targetPhase == MigrationPhase.Verify) {
+                            val previousState = context.previousState
+                            assertNotNull(previousState)
+                            assertEquals(MigrationPhase.Verify, previousState.phase)
+                            assertEquals(MigrationStateStatus.Retry, previousState.status)
+                            assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                            resumed = true
+                        }
+                        MigrationOutcome.Success
+                    },
+                    migrationContractHandler = { context ->
+                        if (targetPhase == MigrationPhase.Contract) {
+                            val previousState = context.previousState
+                            assertNotNull(previousState)
+                            assertEquals(MigrationPhase.Contract, previousState.phase)
+                            assertEquals(MigrationStateStatus.Retry, previousState.status)
+                            assertContentEquals(byteArrayOf(targetPhase.ordinal.toByte()), previousState.cursor)
+                            resumed = true
+                        }
+                        MigrationOutcome.Success
+                    },
+                )
             )
 
             assertTrue(resumed)
@@ -973,24 +1018,26 @@ class FoundationDBDataStoreMigrationTest {
             fdbClusterFilePath = "fdb.cluster",
             directoryPath = dirPath,
             dataModelsById = mapOf(1u to ModelV2),
-            continueMigrationsInBackground = true,
-            migrationLease = lease,
-            migrationExpandHandler = { _ ->
-                phases += "expand"
-                MigrationOutcome.Success
-            },
-            migrationHandler = { _ ->
-                phases += "backfill"
-                MigrationOutcome.Success
-            },
-            migrationVerifyHandler = { _ ->
-                phases += "verify"
-                MigrationOutcome.Success
-            },
-            migrationContractHandler = { _ ->
-                phases += "contract"
-                MigrationOutcome.Success
-            },
+            migrationConfiguration = MigrationConfiguration(
+                continueMigrationsInBackground = true,
+                migrationLease = lease,
+                migrationExpandHandler = { _ ->
+                    phases += "expand"
+                    MigrationOutcome.Success
+                },
+                migrationHandler = { _ ->
+                    phases += "backfill"
+                    MigrationOutcome.Success
+                },
+                migrationVerifyHandler = { _ ->
+                    phases += "verify"
+                    MigrationOutcome.Success
+                },
+                migrationContractHandler = { _ ->
+                    phases += "contract"
+                    MigrationOutcome.Success
+                },
+            )
         )
 
         try {

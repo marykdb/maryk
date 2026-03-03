@@ -2,6 +2,11 @@
 
 This guide documents migration behavior in `FoundationDBDataStore` and operational controls.
 
+Preferred API:
+- pass migration settings as `migrationConfiguration = MigrationConfiguration(...)`
+- pass distributed lease tuning as `migrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(...)`
+- flat migration arguments on `FoundationDBDataStore.open(...)` still work for compatibility
+
 ## When migration is required
 
 On startup, the store compares stored model definitions with configured models.
@@ -57,8 +62,8 @@ Model migrations are ordered by dependency graph.
 ## Startup budget and background continuation
 
 Use:
-- `migrationStartupBudgetMs`
-- `continueMigrationsInBackground = true`
+- `migrationConfiguration.migrationStartupBudgetMs`
+- `migrationConfiguration.continueMigrationsInBackground = true`
 
 Behavior:
 - Startup can hand migration over to background.
@@ -89,8 +94,8 @@ Operator semantics:
 Default lease is `FoundationDBMigrationLease`.
 - Lease key per model in metadata subspace
 - owner token
-- TTL via `migrationLeaseTimeoutMs`
-- heartbeat via `migrationLeaseHeartbeatMs`
+- TTL via `migrationLeaseConfiguration.migrationLeaseTimeoutMs`
+- heartbeat via `migrationLeaseConfiguration.migrationLeaseHeartbeatMs`
 - automatic takeover after TTL expiry
 
 Use custom `migrationLease` only if external orchestrator semantics are needed.
@@ -98,8 +103,8 @@ Use custom `migrationLease` only if external orchestrator semantics are needed.
 ## Observability
 
 Retry thresholds:
-- `migrationRetryPolicy.maxAttempts`
-- `migrationRetryPolicy.maxRetryOutcomes`
+- `migrationConfiguration.migrationRetryPolicy.maxAttempts`
+- `migrationConfiguration.migrationRetryPolicy.maxRetryOutcomes`
 
 Status payload includes:
 - state
@@ -114,8 +119,8 @@ Metrics:
 - `migrationMetrics(modelId)` / `migrationMetrics()`
 
 Audit:
-- default sink: `migrationAuditEventReporter` (default line logger)
-- optional persisted audit store: `persistMigrationAuditEvents = true`
+- default sink: `migrationConfiguration.migrationAuditEventReporter` (default line logger)
+- optional persisted audit store: `migrationConfiguration.persistMigrationAuditEvents = true`
 - query persisted events: `migrationAuditEvents(modelId, limit)`
 
 ## Operational rollout pattern
@@ -133,21 +138,23 @@ FoundationDBDataStore.open(
     keepAllVersions = true,
     directoryPath = listOf("maryk", "app"),
     dataModelsById = mapOf(1u to Account),
-    migrationExpandHandler = { context ->
-        // Prepare compatibility before data rewrite
-        MigrationOutcome.Success
-    },
-    migrationHandler = { context ->
-        // Backfill existing rows
-        MigrationOutcome.Success
-    },
-    migrationVerifyHandler = { context ->
-        // Validate rewritten data
-        MigrationOutcome.Success
-    },
-    migrationContractHandler = { context ->
-        // Final cleanup after verification
-        MigrationOutcome.Success
-    }
+    migrationConfiguration = MigrationConfiguration(
+        migrationExpandHandler = { context ->
+            // Prepare compatibility before data rewrite
+            MigrationOutcome.Success
+        },
+        migrationHandler = { context ->
+            // Backfill existing rows
+            MigrationOutcome.Success
+        },
+        migrationVerifyHandler = { context ->
+            // Validate rewritten data
+            MigrationOutcome.Success
+        },
+        migrationContractHandler = { context ->
+            // Final cleanup after verification
+            MigrationOutcome.Success
+        }
+    )
 )
 ```

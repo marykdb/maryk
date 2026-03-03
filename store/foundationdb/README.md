@@ -52,21 +52,29 @@ On startup, the engine checks stored model definitions against the running model
 
 For the full migration model, hook contracts, runtime phases, control APIs, lease behavior, and operational guidance, see [Migrations](./docs/migrations.md).
 
+Configure FoundationDBDataStore.open with:
+- pass migration settings as `migrationConfiguration = MigrationConfiguration(...)`
+- pass FoundationDB lease tuning as `migrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(...)`
+- pass cluster log settings as `clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(...)`
+- put `migrationHandler`, `migrationExpandHandler`, `migrationVerifyHandler`, and `migrationContractHandler` inside `migrationConfiguration`
+
 ```kotlin
 suspend fun openStore() = FoundationDBDataStore.open(
     keepAllVersions = true,
     directoryPath = listOf("maryk", "app"),
     dataModelsById = mapOf(1u to Account),
-    migrationHandler = { context ->
-        val fdbStore = context.store
-        val storedModel = context.storedDataModel
-        val newModel = context.newDataModel
-        // return Success when handled
-        when (newModel) {
-            is Account -> MigrationOutcome.Success // example
-            else -> MigrationOutcome.Fatal("Unsupported model")
+    migrationConfiguration = MigrationConfiguration(
+        migrationHandler = { context ->
+            val fdbStore = context.store
+            val storedModel = context.storedDataModel
+            val newModel = context.newDataModel
+            // return Success when handled
+            when (newModel) {
+                is Account -> MigrationOutcome.Success // example
+                else -> MigrationOutcome.Fatal("Unsupported model")
+            }
         }
-    },
+    ),
     versionUpdateHandler = { fdbStore, storedModel, newModel ->
         // seed or backfill after a successful migration/update
     }
@@ -77,8 +85,8 @@ suspend fun openStore() = FoundationDBDataStore.open(
 
 FoundationDB default lease is distributed (`FoundationDBMigrationLease`):
 - Keyed per model in metadata subspace.
-- Owner token + TTL (`migrationLeaseTimeoutMs`).
-- Background heartbeat (`migrationLeaseHeartbeatMs`) renews lease while migration is active.
+- Owner token + TTL (`migrationLeaseConfiguration.migrationLeaseTimeoutMs`).
+- Background heartbeat (`migrationLeaseConfiguration.migrationLeaseHeartbeatMs`) renews lease while migration is active.
 - Allows takeover after TTL expiry if migrator dies.
 
 You can inject a custom `migrationLease` if needed.
@@ -89,11 +97,11 @@ You can inject a custom `migrationLease` if needed.
 - `fdbClusterFilePath`: Optional path to an FDB cluster file; uses default environment if null.
 - `directoryPath`: Subspace root path under which model directories are created.
 - `databaseOptionsSetter`: Lambda executed once during startup on the underlying `DatabaseOptions`. Use this to enable tracing, tweak locality, or set transaction logging limits without forking Maryk.
-- `enableClusterUpdateLog`: Persist each local write (add/change/delete) into an FDB-backed update log and tail that log back into this process to drive `executeFlow` listeners across a whole cluster (multi-writer, multi-reader).
-- `clusterUpdateLogConsumerId`: Required when `enableClusterUpdateLog = true`. Must be unique per node/process (cursor stored under `__updates__/v1/consumers/<id>`).
-- `clusterUpdateLogOriginId`: Optional. Defaults to `clusterUpdateLogConsumerId`. Used to skip “echo” of updates written by this same node when tailing.
-- `clusterUpdateLogShardCount`: Number of log shards (per store root). Higher spreads write hot-spotting; tailers read per-shard cursors.
-- `clusterUpdateLogRetention`: Time window to keep log entries (default 1 hour). A background job clears old ranges by timestamp.
+- `clusterUpdateLogConfiguration.enableClusterUpdateLog`: Persist each local write (add/change/delete) into an FDB-backed update log and tail that log back into this process to drive `executeFlow` listeners across a whole cluster (multi-writer, multi-reader).
+- `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId`: Required when cluster update logging is enabled. Must be unique per node/process (cursor stored under `__updates__/v1/consumers/<id>`).
+- `clusterUpdateLogConfiguration.clusterUpdateLogOriginId`: Optional. Defaults to the consumer id. Used to skip “echo” of updates written by this same node when tailing.
+- `clusterUpdateLogConfiguration.clusterUpdateLogShardCount`: Number of log shards (per store root). Higher spreads write hot-spotting; tailers read per-shard cursors.
+- `clusterUpdateLogConfiguration.clusterUpdateLogRetention`: Time window to keep log entries (default 1 hour). A background job clears old ranges by timestamp.
 - `fieldEncryptionProvider`: Optional field-value encryption provider. Required when any model property is marked as sensitive (`sensitive = true`).
 
 Example: set custom transaction retry limits
@@ -151,8 +159,10 @@ Enable the cluster update log to propagate updates between multiple processes co
 val store = FoundationDBDataStore.open(
     directoryPath = listOf("maryk", "app"),
     dataModelsById = mapOf(1u to Account),
-    enableClusterUpdateLog = true,
-    clusterUpdateLogConsumerId = "node-1",
+    clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+        enableClusterUpdateLog = true,
+        clusterUpdateLogConsumerId = "node-1",
+    ),
 )
 ```
 
@@ -169,7 +179,7 @@ Notes:
   - writers record their latest emitted HLC under `__updates__/v1/hlc/<clusterUpdateLogConsumerId>`.
   - writers also update `__updates__/v1/hlc_max/<shard>` using FDB atomic `BYTE_MAX` (8-byte big-endian HLC), so cluster max advances without read-modify-write contention.
   - each node runs a background HLC syncer (independent from update listeners) which watches heads and refreshes `max(hlc_max/*, hlc/*)` to keep local version generation safely at/above cluster floor.
-- `clusterUpdateLogConsumerId` should be stable per node/process across restarts. Changing it creates a fresh cursor (possible duplicate delivery for up to retention) and a new HLC marker key.
+- `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId` should be stable per node/process across restarts. Changing it creates a fresh cursor (possible duplicate delivery for up to retention) and a new HLC marker key.
 - Log keys include `modelId` early, so consumers can range-scan only the models they care about.
 
 Observability:

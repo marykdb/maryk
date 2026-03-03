@@ -25,7 +25,7 @@ Capabilities in the FDB engine:
 - Constructor flags:
   - `keepAllVersions`: whether to maintain historic data alongside latest.
   - `fdbClusterFilePath`, `directoryRootPath`: FDB connectivity & subspace root.
-  - `enableClusterUpdateLog`: optional cluster-wide live update propagation for `executeFlow` (writes updates into an FDB log and tails them back into the in-memory listener flow).
+  - `clusterUpdateLogConfiguration`: optional cluster-wide live update propagation for `executeFlow` (writes updates into an FDB log and tails them back into the in-memory listener flow).
 - Initializes per‑model directories via DirectoryLayer.
 - Launches the store actor (coroutine) to process incoming requests one by one. Within the actor, every request is handled in an FDB transaction (or uses an iterator scoped to the transaction).
 
@@ -158,16 +158,18 @@ Full migration operations guide: [Migrations](./migrations.md).
 
 - Any `RequestException` or validation error is wrapped in structured statuses (e.g. `AlreadyExists`, `ValidationFail`).
 - Schema migrations are coordinated through the `model` subspace.
-- `migrationHandler` uses `MigrationContext` and returns `MigrationOutcome` (`Success`, `Partial`, `Retry`, `Fatal`).
-- Long migrations can hand off from startup to background (`migrationStartupBudgetMs`, `continueMigrationsInBackground`).
+- `migrationConfiguration.migrationHandler` uses `MigrationContext` and returns `MigrationOutcome` (`Success`, `Partial`, `Retry`, `Fatal`).
+- `migrationConfiguration = MigrationConfiguration(...)` from `maryk.core.models.migration`.
+- Optional phase hooks also live there: `migrationExpandHandler`, `migrationVerifyHandler`, `migrationContractHandler`.
+- Long migrations can hand off from startup to background (`migrationConfiguration.migrationStartupBudgetMs`, `migrationConfiguration.continueMigrationsInBackground`).
 - Pending models are request-blocked until migration completes (`assertModelReady` gate).
 - Runtime operations:
   - `pendingMigrations`, `migrationStatus`, `migrationStatuses`, `awaitMigration`
   - `pauseMigration`, `resumeMigration`, `cancelMigration`
 - Default lease is distributed (`FoundationDBMigrationLease`):
   - per-model lease record in metadata
-  - owner token + TTL (`migrationLeaseTimeoutMs`)
-  - heartbeat renewal (`migrationLeaseHeartbeatMs`)
+  - owner token + TTL (`migrationLeaseConfiguration.migrationLeaseTimeoutMs`)
+  - heartbeat renewal (`migrationLeaseConfiguration.migrationLeaseHeartbeatMs`)
   - takeover after TTL expiry when owner is gone
 
 ## Why this design?

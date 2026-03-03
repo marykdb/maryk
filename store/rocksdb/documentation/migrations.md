@@ -2,6 +2,10 @@
 
 This guide documents migration behavior in `RocksDBDataStore` and how to operate it safely.
 
+Preferred API:
+- pass migration settings as `migrationConfiguration = MigrationConfiguration(...)`
+- flat migration arguments on `RocksDBDataStore.open(...)` still work for compatibility
+
 ## When migration is required
 
 On open, the store compares persisted model definitions with configured models.
@@ -59,8 +63,8 @@ This prevents dependent models from migrating against stale referenced schemas.
 ## Startup handoff to background
 
 Use:
-- `migrationStartupBudgetMs`
-- `continueMigrationsInBackground = true`
+- `migrationConfiguration.migrationStartupBudgetMs`
+- `migrationConfiguration.continueMigrationsInBackground = true`
 
 Behavior:
 - If budget is exceeded, migration continues in background.
@@ -98,8 +102,8 @@ You can inject `migrationLease` for custom orchestration.
 ## Observability
 
 Retry controls:
-- `migrationRetryPolicy.maxAttempts`
-- `migrationRetryPolicy.maxRetryOutcomes`
+- `migrationConfiguration.migrationRetryPolicy.maxAttempts`
+- `migrationConfiguration.migrationRetryPolicy.maxRetryOutcomes`
 
 Status payload includes:
 - runtime state
@@ -114,13 +118,13 @@ Metrics:
 - `migrationMetrics(modelId)` / `migrationMetrics()`
 
 Audit events:
-- default: emitted to `migrationAuditEventReporter` (default reporter logs line output)
-- optional persistence: set `persistMigrationAuditEvents = true`
+- default: emitted to `migrationConfiguration.migrationAuditEventReporter` (default reporter logs line output)
+- optional persistence: set `migrationConfiguration.persistMigrationAuditEvents = true`
 - read persisted history: `migrationAuditEvents(modelId, limit)`
 
 ## Recommended rollout pattern
 
-1. Deploy with `continueMigrationsInBackground = true`.
+1. Deploy with `migrationConfiguration.continueMigrationsInBackground = true`.
 2. Set conservative retry policy.
 3. Watch `migrationStatuses()` and `migrationMetrics()`.
 4. Use `pause/resume/cancel` only for operator interventions.
@@ -133,21 +137,23 @@ RocksDBDataStore.open(
     keepAllVersions = true,
     relativePath = "path/to/store",
     dataModelsById = mapOf(1u to Account),
-    migrationExpandHandler = { context ->
-        // Prepare compatibility before data rewrite
-        MigrationOutcome.Success
-    },
-    migrationHandler = { context ->
-        // Backfill existing rows
-        MigrationOutcome.Success
-    },
-    migrationVerifyHandler = { context ->
-        // Validate rewritten data
-        MigrationOutcome.Success
-    },
-    migrationContractHandler = { context ->
-        // Final cleanup after verification
-        MigrationOutcome.Success
-    }
+    migrationConfiguration = MigrationConfiguration(
+        migrationExpandHandler = { context ->
+            // Prepare compatibility before data rewrite
+            MigrationOutcome.Success
+        },
+        migrationHandler = { context ->
+            // Backfill existing rows
+            MigrationOutcome.Success
+        },
+        migrationVerifyHandler = { context ->
+            // Validate rewritten data
+            MigrationOutcome.Success
+        },
+        migrationContractHandler = { context ->
+            // Final cleanup after verification
+            MigrationOutcome.Success
+        }
+    )
 )
 ```

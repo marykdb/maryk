@@ -1,5 +1,6 @@
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
+    id("maryk.conventions.publishing")
 }
 
 kotlin {

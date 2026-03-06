@@ -6,7 +6,9 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Normalize
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.normalizeStringForIndex
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
@@ -178,10 +180,17 @@ private fun handleRegEx(
     listOfIndexParts: MutableList<IsIndexPartialToMatch>
 ) {
     for ((reference, regex) in filter.referenceValuePairs) {
-        getDefinitionOrNull(indexable, reference) { index, _ ->
-            listOfIndexParts += IndexPartialToRegexMatch(index, keySize, regex)
+        getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
+            listOfIndexParts += IndexPartialToRegexMatch(index, keySize, regex, stringTransformerForIndex(keyDefinition))
         }
     }
+}
+
+private fun stringTransformerForIndex(
+    indexableRef: IsIndexablePropertyReference<Any>,
+) = when (indexableRef) {
+    is Normalize -> ::normalizeStringForIndex
+    else -> null
 }
 
 private fun indexPartialWithDirection(

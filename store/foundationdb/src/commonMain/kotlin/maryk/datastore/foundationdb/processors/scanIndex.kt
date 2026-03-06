@@ -167,7 +167,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                         val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
-                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue)) continue
+                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) continue
 
                         if (startKeyFilter != null) {
                             val cmp = sortingKey.compareDefinedRange(startKeyFilter)
@@ -237,7 +237,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                         val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
-                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue)) continue
+                        if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) continue
 
                         val key = scanRequest.dataModel.key(keyBytes)
                         processStoreValue(key, createdVersion, sortingKey)
@@ -322,7 +322,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 if (!indexScanRange.matchesPartials(valueAndKey, 0, valueAndKey.size - keySize)) continue
 
                 val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
-                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion, decryptValue)) continue
+                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion, decryptValue, indexScan.index)) continue
 
                 val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                 val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp

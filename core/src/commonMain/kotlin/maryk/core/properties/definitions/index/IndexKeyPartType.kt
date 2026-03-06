@@ -16,6 +16,7 @@ import maryk.json.TokenType
 import maryk.json.ValueType
 import maryk.json.ValueType.IsNullValueType
 import maryk.core.properties.definitions.index.Multiple as MultipleInstance
+import maryk.core.properties.definitions.index.Normalize as NormalizeInstance
 import maryk.core.properties.definitions.index.Reversed as ReversedInstance
 import maryk.core.properties.definitions.index.ReferenceToMax as ReferenceToMaxInstance
 
@@ -33,10 +34,11 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
         override val name = "RefToMax"
     }
     object UUIDv7 : IndexKeyPartType<UUIDv7Key>(6u), IsNullValueType
+    object Normalize : IndexKeyPartType<NormalizeInstance>(7u), ValueType<String>
 
     companion object : IndexedEnumDefinition<IndexKeyPartType<*>>(
         IndexKeyPartType::class, {
-            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7)
+            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7, Normalize)
         }
     )
 }
@@ -53,6 +55,7 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
         IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model }),
         IndexKeyPartType.ReferenceToMax to EmbeddedObjectDefinition(dataModel = { ReferenceToMaxInstance.Model }),
         IndexKeyPartType.UUIDv7 to EmbeddedObjectDefinition(dataModel = { UUIDv7Key.Model }),
+        IndexKeyPartType.Normalize to EmbeddedObjectDefinition(dataModel = { NormalizeInstance.Model }),
     )
 
 internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =

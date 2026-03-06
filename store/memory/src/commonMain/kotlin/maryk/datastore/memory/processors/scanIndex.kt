@@ -76,7 +76,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         continue
                     }
 
-                    if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher)) {
+                    if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher, indexScan.index)) {
                         continue
                     }
 
@@ -123,7 +123,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         continue
                     }
 
-                    if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher)) {
+                    if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher, indexScan.index)) {
                         continue
                     }
 

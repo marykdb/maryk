@@ -76,6 +76,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                     columnFamilies,
                     defaultReadOptions,
                     iterator,
+                    indexScan,
                     keySize,
                     scanRequest,
                     indexScanRange,
@@ -117,6 +118,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                     columnFamilies,
                     defaultReadOptions,
                     iterator,
+                    indexScan,
                     keySize,
                     scanRequest,
                     indexScanRange,
@@ -236,6 +238,7 @@ private fun <DM : IsRootDataModel> checkAndProcess(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     iterator: DBIterator,
+    indexScan: IndexScan,
     keySize: Int,
     scanRequest: IsScanRequest<DM, *>,
     indexScanRange: IndexableScanRanges,
@@ -266,7 +269,8 @@ private fun <DM : IsRootDataModel> checkAndProcess(
                     keyOffset,
                     keySize,
                     null, // Since version is checked in checkVersion, created version does not need to be checked
-                    null
+                    null,
+                    indexScan.index
                 )
             ) {
                 val key = createKey(scanRequest.dataModel, indexRecord, keyOffset)

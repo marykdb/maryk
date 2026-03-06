@@ -55,7 +55,10 @@ fun IsRootDataModel.orderToScanType(
             }
 
             // Walk all indexes and try to match given Orders
-            this.Meta.indexes?.let { indexes ->
+            val indexes = this.Meta.indexes
+                ?: throw RequestException("No indexes defined on model ${this.Meta.name} so order $order is not allowed")
+
+            run {
                 indexLoop@ for (indexable in indexes) {
                     indexableToScan(indexable, order.orders, equalPairs) { direction ->
                         IndexScan(
@@ -68,7 +71,7 @@ fun IsRootDataModel.orderToScanType(
                 }
 
                 throw RequestException("No index match found on model ${this.Meta.name} for order $order")
-            } ?: throw RequestException("No indexes defined on model ${this.Meta.name} so order $order is not allowed")
+            }
         }
         else -> throw TypeException("Order type of $order is not supported")
     }
@@ -125,7 +128,11 @@ private fun createSingleScan(
     reversed: Boolean,
     createScan: (Direction) -> ScanType
 ): ScanType? {
-    return if (subIndexable == order.propertyReference) {
+    val propertyReference = order.propertyReference ?: return null
+    return if (
+        subIndexable is IsIndexablePropertyReference<*> &&
+        subIndexable.isForPropertyReference(propertyReference)
+    ) {
         val ascending = order.direction == ASC
         val direction = when {
             (ascending && !reversed) || (!ascending && reversed) -> ASC
@@ -176,10 +183,11 @@ private fun indexableToScan(
                 }
             }
 
+            val propertyReference = currentOrderPart.propertyReference
             when (subIndexable) {
                 is Reversed<*> -> {
                     // Only continue if order is correct
-                    if (subIndexable.reference != currentOrderPart.propertyReference) {
+                    if (propertyReference == null || !subIndexable.isForPropertyReference(propertyReference)) {
                         if (equalPairs.any { it.reference == subIndexable.reference }) {
                             currentOrderIndex-- // substract because of a non order match
                         } else {
@@ -201,8 +209,8 @@ private fun indexableToScan(
                         return null
                     }
                     // Only continue if order is correct
-                    if (subIndexable != currentOrderPart.propertyReference) {
-                        if (equalPairs.any { it.reference == subIndexable }) {
+                    if (propertyReference == null || !subIndexable.isForPropertyReference(propertyReference)) {
+                        if (equalPairs.any { subIndexable.isForPropertyReference(it.reference) }) {
                             currentOrderIndex-- // substract because of a non order match
                         } else {
                             return null
@@ -234,9 +242,9 @@ private fun indexableToScan(
                         last.direction -> createScan(direction)
                         else -> throw RequestException("Cannot have a reversed Table order as last index parameter compared to index scan direction")
                     }
-                } else return null
+                } else null
             }
-            currentOrderIndex < orders.size -> return null
+            currentOrderIndex < orders.size -> null
             else -> // Index match found
                 createScan(direction)
         }

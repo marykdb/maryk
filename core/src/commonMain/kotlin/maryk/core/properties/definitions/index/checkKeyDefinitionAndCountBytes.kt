@@ -28,6 +28,8 @@ internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
         is IsFixedBytesPropertyReference<*> -> keyDefinition.byteSize
         is ValueWithFlexBytesPropertyReference<*, *, *, *> ->
             throw InvalidDefinitionException("Definition should have a fixed amount of bytes for a key")
+        is Normalize ->
+            checkKeyDefinitionAndCountBytes(keyDefinition.reference)
         is Reversed<*> ->
             checkKeyDefinitionAndCountBytes(keyDefinition.reference)
         else -> throw TypeException("Unknown key IsIndexable type: $keyDefinition")

@@ -39,7 +39,8 @@ data class IndexPartialToMatch(
 data class IndexPartialToRegexMatch(
     override val indexableIndex: Int,
     override val keySize: Int,
-    val regex: Regex
+    val regex: Regex,
+    val valueTransformer: ((String) -> String)? = null
 ) : IsIndexPartialToMatch {
     // Cannot be set because is string, so needs to be encoded
     override val fromByteIndex: Int? = null
@@ -48,7 +49,8 @@ data class IndexPartialToRegexMatch(
     override fun match(bytes: ByteArray, offset: Int, length: Int): Boolean {
         val (internalOffset, size) = findByteIndexAndSizeByPartIndex(indexableIndex, bytes, keySize)
         val fullOffset = offset + internalOffset
-        return regex.matches(bytes.decodeToString(fullOffset, fullOffset + size))
+        val stringValue = bytes.decodeToString(fullOffset, fullOffset + size)
+        return regex.matches(valueTransformer?.invoke(stringValue) ?: stringValue)
     }
 }
 

@@ -12,6 +12,10 @@ internal fun calculateKeyIndices(keyDefinition: IsIndexable): IntArray {
             index.also {
                 val propDef: IsFixedStorageBytesEncodable<*> = when (def) {
                     is IsFixedStorageBytesEncodable<*> -> def
+                    is Normalize ->
+                        if (def.reference is IsFixedStorageBytesEncodable<*>) {
+                            def.reference
+                        } else throw InvalidDefinitionException("Key cannot contain flex bytes encodables")
                     is Reversed<*> ->
                         if (def.reference is IsFixedStorageBytesEncodable<*>) {
                             def.reference

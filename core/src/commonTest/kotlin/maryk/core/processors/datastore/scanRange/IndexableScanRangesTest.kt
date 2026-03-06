@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.key
+import maryk.core.properties.definitions.index.Normalize
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.types.invoke
 import maryk.core.query.filters.And
@@ -394,6 +395,27 @@ class IndexableScanRangesTest {
         assertFalse { scanRange.ranges.first().keyBeforeStart(laterStringIndexValue) }
         assertTrue { scanRange.ranges.first().keyOutOfRange(laterStringIndexValue) }
         assertTrue { scanRange.matchesPartials(laterStringIndexValue) }
+    }
+
+    @Test
+    fun convertPrefixFilterToNormalizeScanRange() {
+        val filter = Prefix(
+            CompleteMarykModel { string::ref } with " j-a n "
+        )
+
+        val normalizedIndexable = Normalize(CompleteMarykModel.string.ref())
+        val scanRange = normalizedIndexable.createScanRange(filter, keyScanRange)
+
+        expect("6a616e") { scanRange.ranges.first().start.toHexString() }
+        expect("6a616e") { scanRange.ranges.first().end?.toHexString() }
+
+        val matchStringIndexValue = normalizedIndexable.toStorageByteArrayForIndex(
+            matchDO, matchKey.bytes
+        )!!
+
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue) }
+        assertTrue { scanRange.matchesPartials(matchStringIndexValue) }
     }
 
     @Test

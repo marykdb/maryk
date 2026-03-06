@@ -54,7 +54,7 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
         return process(valueDef, value, null is T) { it is T }
     }
 
-    fun <T: Any?> process(
+    fun <T> process(
         valueDef: IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>,
         value: Any?,
         nullAllowed: Boolean,
@@ -129,16 +129,19 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
     }
 
     /** Test if values matches given [filter] */
-    fun matches(filter: IsFilter?) = maryk.core.query.filters.matchesFilter(filter) { propertyReference, valueMatcher ->
-        @Suppress("UNCHECKED_CAST")
-        val value = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
+    fun matches(filter: IsFilter?) = maryk.core.query.filters.matchesFilter(
+        filter,
+        valueMatcher = { propertyReference, valueMatcher ->
+            @Suppress("UNCHECKED_CAST")
+            val value = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
 
-        if (value is List<*> && propertyReference !is ListReference<*, *>) {
-            value.any { valueMatcher(it) }
-        } else {
-            valueMatcher(value)
+            if (value is List<*> && propertyReference !is ListReference<*, *>) {
+                value.any { valueMatcher(it) }
+            } else {
+                valueMatcher(value)
+            }
         }
-    }
+    )
 
     @Suppress("UNCHECKED_CAST")
     override operator fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(

@@ -93,7 +93,7 @@ data class Split(
                 )
             ),
             toSerializable = { value, _ -> value?.let { TypedValue(it.indexKeyPartType, it) } },
-            fromSerializable = { it?.value as IsIndexablePropertyReference<String>? }
+            fromSerializable = { it?.toStringIndexablePropertyReference() }
         )
 
         val on by enum(

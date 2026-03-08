@@ -86,7 +86,7 @@ data class Normalize(
                 )
             ),
             toSerializable = { value, _ -> value?.let { TypedValue(it.indexKeyPartType, it) } },
-            fromSerializable = { it?.value as IsIndexablePropertyReference<String>? }
+            fromSerializable = { it?.toStringIndexablePropertyReference() }
         )
 
         override fun invoke(values: ObjectValues<Normalize, Model>) = Normalize(

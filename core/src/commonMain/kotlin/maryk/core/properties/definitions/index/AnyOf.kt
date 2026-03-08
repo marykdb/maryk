@@ -85,7 +85,7 @@ data class AnyOf(
             toSerializable = { value ->
                 TypedValue(value.indexKeyPartType, value)
             },
-            fromSerializable = { it.value as IsIndexablePropertyReference<String> }
+            fromSerializable = { it.toStringIndexablePropertyReference() }
         )
 
         override fun invoke(values: ObjectValues<AnyOf, Model>) = AnyOf(

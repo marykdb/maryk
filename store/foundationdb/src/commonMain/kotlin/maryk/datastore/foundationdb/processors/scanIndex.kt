@@ -535,7 +535,11 @@ private fun hasHistoricMatchingPrefixValue(
             continue
         }
 
-        return kv.value.isEmpty()
+        if (kv.value.isEmpty()) {
+            return true
+        }
+
+        settledQualifier = encodedQualifier
     }
 
     return false

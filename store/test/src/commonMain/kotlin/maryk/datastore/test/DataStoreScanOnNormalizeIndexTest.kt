@@ -1,5 +1,7 @@
 package maryk.datastore.test
 
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
@@ -13,10 +15,12 @@ import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.CaseInsensitivePerson
@@ -43,6 +47,7 @@ class DataStoreScanOnNormalizeIndexTest(
         "executeNamedAnyOfMultiTermMatchesWithoutOrderToVersion" to ::executeNamedAnyOfMultiTermMatchesWithoutOrderToVersion,
         "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersion" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersion,
         "executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrderToVersion" to ::executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrderToVersion,
+        "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersionSkipsDeletedSiblingToken" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersionSkipsDeletedSiblingToken,
         "executeNamedAnyOfMatchesRegexWithoutOrder" to ::executeNamedAnyOfMatchesRegexWithoutOrder,
         "executePropertyEqualsDoesNotUseNamedAnyOfSearch" to ::executePropertyEqualsDoesNotUseNamedAnyOfSearch,
     )
@@ -438,6 +443,58 @@ class DataStoreScanOnNormalizeIndexTest(
 
         expect(1) { scanResponse.values.size }
         expect(persons[6]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "mila".encodeToByteArray(),
+            stopKey = "milb".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersionSkipsDeletedSiblingToken() {
+        if (!dataStore.keepAllVersions) return
+
+        dataStore.execute(
+            CaseInsensitivePerson.change(
+                keys[6].change(
+                    Change(
+                        CaseInsensitivePerson { surname::ref } with "Verhoeven Vermeer"
+                    )
+                )
+            )
+        ).statuses.first().also {
+            assertStatusIs<ChangeSuccess<CaseInsensitivePerson>>(it)
+        }
+
+        val latestVersion = dataStore.execute(
+            CaseInsensitivePerson.change(
+                keys[6].change(
+                    Change(
+                        CaseInsensitivePerson { surname::ref } with "Vermeer"
+                    )
+                )
+            )
+        ).statuses.first().let {
+            assertStatusIs<ChangeSuccess<CaseInsensitivePerson>>(it).version
+        }
+
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = MatchesPrefix(
+                    "name" with "mila ver"
+                ),
+                toVersion = latestVersion
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(
+            CaseInsensitivePerson.create {
+                firstName with "Mila"
+                surname with "Vermeer"
+            }
+        ) { scanResponse.values.first().values }
+        expect(keys[6]) { scanResponse.values.first().key }
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,

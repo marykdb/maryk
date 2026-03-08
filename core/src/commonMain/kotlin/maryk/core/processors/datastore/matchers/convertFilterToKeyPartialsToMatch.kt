@@ -76,8 +76,12 @@ private fun handleMatches(
     for ((name, value) in filter.nameValuePairs) {
         if (indexable.name != name) continue
 
-        val matchBytes = indexable.queryToStorageByteArrays(value).firstOrNull() ?: continue
-        listOfIndexParts += IndexPartialToMatch(0, null, keySize, matchBytes)
+        val matchBytes = indexable.queryToStorageByteArrays(value)
+        if (matchBytes.isEmpty()) continue
+
+        listOfIndexParts += matchBytes.map { bytes ->
+            IndexPartialToMatch(0, null, keySize, bytes)
+        }
         return
     }
 }
@@ -93,8 +97,12 @@ private fun handleMatchesPrefix(
     for ((name, value) in filter.nameValuePairs) {
         if (indexable.name != name) continue
 
-        val matchBytes = indexable.queryToStorageByteArrays(value).firstOrNull() ?: continue
-        listOfIndexParts += IndexPartialToMatch(0, null, keySize, matchBytes, partialMatch = true)
+        val matchBytes = indexable.queryToStorageByteArrays(value)
+        if (matchBytes.isEmpty()) continue
+
+        listOfIndexParts += matchBytes.map { bytes ->
+            IndexPartialToMatch(0, null, keySize, bytes, partialMatch = true)
+        }
         return
     }
 }

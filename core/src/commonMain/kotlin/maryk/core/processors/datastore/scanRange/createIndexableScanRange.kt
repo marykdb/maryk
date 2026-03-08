@@ -7,6 +7,7 @@ import maryk.core.processors.datastore.matchers.IndexPartialToBeSmaller
 import maryk.core.processors.datastore.matchers.IndexPartialToMatch
 import maryk.core.processors.datastore.matchers.IndexPartialToRegexMatch
 import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
+import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.processors.datastore.matchers.convertFilterToIndexPartsToMatch
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.query.filters.IsFilter
@@ -16,7 +17,7 @@ fun IsIndexable.createScanRange(filter: IsFilter?, keyScanRange: KeyScanRanges, 
     val listOfKeyParts = mutableListOf<IsIndexPartialToMatch>()
     convertFilterToIndexPartsToMatch(this, keyScanRange.keySize, null, filter, listOfKeyParts)
     listOfKeyParts.sortBy { it.indexableIndex }
-    return createScanRangeFromParts(listOfKeyParts, keyScanRange, startIndexKey)
+    return createScanRangeFromParts(listOfKeyParts, keyScanRange, startIndexKey, this is AnyOf)
 }
 
 /**
@@ -26,7 +27,8 @@ fun IsIndexable.createScanRange(filter: IsFilter?, keyScanRange: KeyScanRanges, 
 private fun createScanRangeFromParts(
     listOfParts: MutableList<IsIndexPartialToMatch>,
     keyScanRange: KeyScanRanges,
-    startIndexKey: ByteArray?
+    startIndexKey: ByteArray?,
+    isAnyOf: Boolean
 ): IndexableScanRanges {
     val start = mutableListOf(mutableListOf<Byte>())
     val end = mutableListOf(mutableListOf<Byte>())
@@ -39,6 +41,8 @@ private fun createScanRangeFromParts(
     var startInclusive = true
     var endInclusive = true
 
+    val anchoredIndexParts = mutableSetOf<Int>()
+    val valueMatches = mutableListOf<IndexValueMatch>()
     val toAdd = mutableListOf<IsIndexPartialToMatch>()
     val toRemove = mutableListOf<IsIndexPartialToMatch>()
 
@@ -56,6 +60,13 @@ private fun createScanRangeFromParts(
 
         when (keyPart) {
             is IndexPartialToMatch -> {
+                if (isAnyOf && keyPart.indexableIndex in anchoredIndexParts) {
+                    valueMatches += IndexValueMatch(keyPart.toMatch, keyPart.partialMatch)
+                    toRemove += keyPart
+                    continue
+                }
+
+                val appliedToRange = startShouldContinue || endShouldContinue
                 keyPart.toMatch.forEach { byte ->
                     if (startShouldContinue) addByte(start, byte)
                     if (endShouldContinue) addByte(end, byte)
@@ -65,12 +76,18 @@ private fun createScanRangeFromParts(
                 if (!keyPart.partialMatch) {
                     // Add size checker for exact matches
                     toAdd += IndexPartialSizeToMatch(keyIndex, null, keyPart.keySize, keyPart.toMatch.size)
-                } else {
+                }
+
+                if (keyPart.partialMatch && appliedToRange) {
                     // Ensure no more parts are added with partial match by invalidating the keyIndex
                     startShouldContinue = false
                     endShouldContinue = false
                 }
-                toRemove += keyPart
+
+                if (appliedToRange) {
+                    anchoredIndexParts += keyPart.indexableIndex
+                    toRemove += keyPart
+                }
             }
             is IndexPartialToBeBigger -> {
                 if (startShouldContinue) {
@@ -91,7 +108,8 @@ private fun createScanRangeFromParts(
                     return IndexableScanRanges(
                         ranges = emptyList(),
                         partialMatches = listOfParts,
-                        keyScanRange = keyScanRange
+                        keyScanRange = keyScanRange,
+                        valueMatches = valueMatches
                     )
                 }
                 val startSizeBefore = start.size
@@ -125,6 +143,7 @@ private fun createScanRangeFromParts(
     return IndexableScanRanges(
         ranges = createRanges(start, end, startInclusive, endInclusive, startIndexKey),
         partialMatches = listOfParts,
-        keyScanRange = keyScanRange
+        keyScanRange = keyScanRange,
+        valueMatches = valueMatches
     )
 }

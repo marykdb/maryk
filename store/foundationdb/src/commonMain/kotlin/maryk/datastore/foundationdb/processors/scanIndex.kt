@@ -4,9 +4,12 @@ import maryk.foundationdb.Range
 import maryk.foundationdb.ReadTransaction
 import maryk.foundationdb.Transaction
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
+import maryk.core.processors.datastore.scanRange.IndexValueMatch
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.IsPropertyContext
@@ -43,6 +46,7 @@ import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToRange
+import maryk.lib.extensions.compare.matchesRangePart
 import kotlin.math.min
 
 internal fun <DM : IsRootDataModel> scanIndex(
@@ -165,6 +169,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
                         val keyOffset = valueOffset + valueSize
                         val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
+                        if (!hasAdditionalMatches(tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, null)) continue
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                         val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
                         if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) continue
@@ -235,6 +240,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) continue
                         val keyOffset = valueOffset + valueSize
                         val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
+                        if (!hasAdditionalMatches(tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, null)) continue
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
                         val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
                         if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) continue
@@ -322,6 +328,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 if (!indexScanRange.matchesPartials(valueAndKey, 0, valueAndKey.size - keySize)) continue
 
                 val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
+                if (!hasHistoricAdditionalMatches(tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, scanRequest.toVersion!!)) continue
                 if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion, decryptValue, indexScan.index)) continue
 
                 val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
@@ -376,4 +383,160 @@ internal fun <DM : IsRootDataModel> scanIndex(
         startKey = responseStartKey,
         stopKey = responseStopKey
     )
+}
+
+private fun hasAdditionalMatches(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    indexReference: ByteArray,
+    recordKey: ByteArray,
+    matches: List<IndexValueMatch>,
+    toVersion: ULong?
+) = matches.all { match ->
+    if (toVersion == null) {
+        if (match.partialMatch) {
+            hasMatchingPrefixValue(tr, tableDirs, indexReference, recordKey, match.toMatch)
+        } else {
+            hasMatchingExactValue(tr, tableDirs, indexReference, recordKey, match.toMatch)
+        }
+    } else {
+        val historicTableDirs = tableDirs as? HistoricTableDirectories ?: return@all false
+        if (match.partialMatch) {
+            hasHistoricMatchingPrefixValue(tr, historicTableDirs, indexReference, recordKey, match.toMatch, toVersion)
+        } else {
+            hasHistoricMatchingExactValue(tr, historicTableDirs, indexReference, recordKey, match.toMatch, toVersion)
+        }
+    }
+}
+
+private fun hasMatchingExactValue(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    indexReference: ByteArray,
+    recordKey: ByteArray,
+    value: ByteArray
+) = tr.get(
+    packKey(tableDirs.indexPrefix, indexReference, createIndexValue(value, recordKey))
+).awaitResult() != null
+
+private fun hasMatchingPrefixValue(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    indexReference: ByteArray,
+    recordKey: ByteArray,
+    prefix: ByteArray
+): Boolean {
+    val prefixKey = packKey(tableDirs.indexPrefix, indexReference, prefix)
+    val iterator = tr.getRange(Range.startsWith(prefixKey)).iterator()
+
+    while (iterator.hasNext()) {
+        val indexKeyBytes = iterator.nextBlocking().key
+        val keyOffset = indexKeyBytes.size - recordKey.size
+        if (indexKeyBytes.size < prefixKey.size + recordKey.size) continue
+        if (indexKeyBytes.matchesRangePart(keyOffset, recordKey, length = recordKey.size)) {
+            return true
+        }
+    }
+
+    return false
+}
+
+private fun hasHistoricAdditionalMatches(
+    tr: Transaction,
+    tableDirs: HistoricTableDirectories,
+    indexReference: ByteArray,
+    recordKey: ByteArray,
+    matches: List<IndexValueMatch>,
+    toVersion: ULong
+) = matches.all { match ->
+    if (match.partialMatch) {
+        hasHistoricMatchingPrefixValue(tr, tableDirs, indexReference, recordKey, match.toMatch, toVersion)
+    } else {
+        hasHistoricMatchingExactValue(tr, tableDirs, indexReference, recordKey, match.toMatch, toVersion)
+    }
+}
+
+private fun hasHistoricMatchingExactValue(
+    tr: Transaction,
+    tableDirs: HistoricTableDirectories,
+    indexReference: ByteArray,
+    recordKey: ByteArray,
+    value: ByteArray,
+    toVersion: ULong
+): Boolean {
+    val qualifier = encodeZeroFreeUsing01(combineToByteArray(indexReference, createIndexValue(value, recordKey)))
+    val prefix = packKey(tableDirs.historicIndexPrefix, qualifier)
+    val toVersionBytes = toVersion.toReversedVersionBytes()
+    val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
+
+    while (iterator.hasNext()) {
+        val kv = iterator.nextBlocking()
+        val versionOffset = kv.key.size - toVersionBytes.size
+        if (toVersionBytes.compareToRange(kv.key, versionOffset) <= 0) {
+            return kv.value.isEmpty()
+        }
+    }
+
+    return false
+}
+
+private fun createIndexValue(value: ByteArray, key: ByteArray): ByteArray {
+    val valueLength = value.size
+    return combineToByteArray(
+        value,
+        ByteArray(valueLength.calculateVarByteLength()).also { lengthBytes ->
+            var index = 0
+            valueLength.writeVarBytes { lengthBytes[index++] = it }
+        },
+        key
+    )
+}
+
+private fun hasHistoricMatchingPrefixValue(
+    tr: Transaction,
+    tableDirs: HistoricTableDirectories,
+    indexReference: ByteArray,
+    recordKey: ByteArray,
+    prefix: ByteArray,
+    toVersion: ULong
+): Boolean {
+    val qualifierPrefix = encodeZeroFreeUsing01(combineToByteArray(indexReference, prefix))
+    val iterator = tr.getRange(Range.startsWith(packKey(tableDirs.historicIndexPrefix, qualifierPrefix))).iterator()
+    val toVersionBytes = toVersion.toReversedVersionBytes()
+    var settledQualifier: ByteArray? = null
+
+    while (iterator.hasNext()) {
+        val kv = iterator.nextBlocking()
+        val key = kv.key
+        val versionOffset = key.size - toVersionBytes.size
+        val sepIndex = versionOffset - 1
+        if (sepIndex < tableDirs.historicIndexPrefix.size || key[sepIndex] != 0.toByte()) continue
+
+        val encodedQualifier = key.copyOfRange(tableDirs.historicIndexPrefix.size, sepIndex)
+        if (!encodedQualifier.matchesRangePart(0, qualifierPrefix, length = qualifierPrefix.size)) {
+            return false
+        }
+        if (settledQualifier?.contentEquals(encodedQualifier) == true) continue
+
+        if (toVersionBytes.compareToRange(key, versionOffset) > 0) {
+            continue
+        }
+
+        val qualifier = decodeZeroFreeUsing01(encodedQualifier)
+        if (qualifier.size <= indexReference.size + recordKey.size) {
+            settledQualifier = encodedQualifier
+            continue
+        }
+
+        val valueAndKey = qualifier.copyOfRange(indexReference.size, qualifier.size)
+        val keyOffset = valueAndKey.size - recordKey.size
+        if (keyOffset < 0 || !valueAndKey.matchesRangePart(keyOffset, recordKey, length = recordKey.size)) {
+            settledQualifier = encodedQualifier
+            continue
+        }
+
+        return kv.value.isEmpty()
+    }
+
+    return false
 }

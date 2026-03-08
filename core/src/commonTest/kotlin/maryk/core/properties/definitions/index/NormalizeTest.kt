@@ -153,6 +153,20 @@ internal class NormalizeTest {
     }
 
     @Test
+    fun namedSearchQueryTermsAreDedupedByContent() {
+        val index = AnyOf(
+            "name",
+            TokenModel.family.ref(),
+            TokenModel { given.refToAny() }
+        ).normalize().split(WordBoundary)
+
+        expect(listOf("garcia")) {
+            index.queryToStorageByteArrays("garcia")
+                .map { it.decodeToString() }
+        }
+    }
+
+    @Test
     fun anyOfKeepsNameAcrossTransforms() {
         val index = AnyOf(
             "name",

@@ -1,6 +1,7 @@
 package maryk.datastore.test
 
 import maryk.core.properties.types.Key
+import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Matches
 import maryk.core.query.filters.MatchesPrefix
@@ -25,6 +26,7 @@ class DataStoreScanOnNormalizeIndexTest(
     val dataStore: IsDataStore
 ) : IsDataStoreTest {
     private val keys = mutableListOf<Key<CaseInsensitivePerson>>()
+    private var initialVersion: ULong? = null
 
     override val allTests = mapOf(
         "executeIndexScanRequestOnNormalizeIndex" to ::executeIndexScanRequestOnNormalizeIndex,
@@ -33,7 +35,14 @@ class DataStoreScanOnNormalizeIndexTest(
         "executeIndexRegexScanRequestOnNormalizeIndex" to ::executeIndexRegexScanRequestOnNormalizeIndex,
         "executeIndexOnlyNormalizesConfiguredPart" to ::executeIndexOnlyNormalizesConfiguredPart,
         "executeNamedAnyOfMatchesWithoutOrder" to ::executeNamedAnyOfMatchesWithoutOrder,
+        "executeNamedAnyOfMultiTermMatchesWithoutOrder" to ::executeNamedAnyOfMultiTermMatchesWithoutOrder,
         "executeNamedAnyOfMatchesPrefixWithoutOrder" to ::executeNamedAnyOfMatchesPrefixWithoutOrder,
+        "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrder" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrder,
+        "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderNoFalsePositive" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderNoFalsePositive,
+        "executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrder" to ::executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrder,
+        "executeNamedAnyOfMultiTermMatchesWithoutOrderToVersion" to ::executeNamedAnyOfMultiTermMatchesWithoutOrderToVersion,
+        "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersion" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersion,
+        "executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrderToVersion" to ::executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrderToVersion,
         "executeNamedAnyOfMatchesRegexWithoutOrder" to ::executeNamedAnyOfMatchesRegexWithoutOrder,
         "executePropertyEqualsDoesNotUseNamedAnyOfSearch" to ::executePropertyEqualsDoesNotUseNamedAnyOfSearch,
     )
@@ -63,6 +72,14 @@ class DataStoreScanOnNormalizeIndexTest(
             firstName with "Marie"
             surname with "van   der  Waals"
         },
+        CaseInsensitivePerson.create {
+            firstName with "Mila"
+            surname with "Verhoeven"
+        },
+        CaseInsensitivePerson.create {
+            firstName with "Mila"
+            surname with "Rijnders"
+        },
     )
 
     override suspend fun initData() {
@@ -70,7 +87,12 @@ class DataStoreScanOnNormalizeIndexTest(
             CaseInsensitivePerson.add(*persons)
         )
         addResponse.statuses.forEach { status ->
-            keys.add(assertStatusIs<AddSuccess<CaseInsensitivePerson>>(status).key)
+            assertStatusIs<AddSuccess<CaseInsensitivePerson>>(status).also {
+                keys.add(it.key)
+                if (initialVersion == null) {
+                    initialVersion = it.version
+                }
+            }
         }
     }
 
@@ -81,6 +103,7 @@ class DataStoreScanOnNormalizeIndexTest(
             assertStatusIs<DeleteSuccess<*>>(it)
         }
         keys.clear()
+        initialVersion = null
     }
 
     private suspend fun executeIndexScanRequestOnNormalizeIndex() {
@@ -93,7 +116,7 @@ class DataStoreScanOnNormalizeIndexTest(
             )
         )
 
-        expect(6) { scanResponse.values.size }
+        expect(8) { scanResponse.values.size }
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![0].referenceStorageByteArray.bytes,
@@ -118,12 +141,20 @@ class DataStoreScanOnNormalizeIndexTest(
             expect(keys[0]) { it.key }
         }
         scanResponse.values[4].let {
+            expect(persons[7]) { it.values }
+            expect(keys[7]) { it.key }
+        }
+        scanResponse.values[5].let {
             expect(persons[3]) { it.values }
             expect(keys[3]) { it.key }
         }
-        scanResponse.values[5].let {
+        scanResponse.values[6].let {
             expect(persons[5]) { it.values }
             expect(keys[5]) { it.key }
+        }
+        scanResponse.values[7].let {
+            expect(persons[6]) { it.values }
+            expect(keys[6]) { it.key }
         }
     }
 
@@ -242,6 +273,25 @@ class DataStoreScanOnNormalizeIndexTest(
         )) { scanResponse.dataFetchType }
     }
 
+    private suspend fun executeNamedAnyOfMultiTermMatchesWithoutOrder() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = Matches(
+                    "name" with "van der waals"
+                )
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[5]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "van".encodeToByteArray(),
+            stopKey = "vao".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
     private suspend fun executeNamedAnyOfMatchesPrefixWithoutOrder() {
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
@@ -258,6 +308,141 @@ class DataStoreScanOnNormalizeIndexTest(
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
             startKey = "gar".encodeToByteArray(),
             stopKey = "gas".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMultiTermMatchesPrefixWithoutOrder() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = MatchesPrefix(
+                    "name" with "mila verh"
+                )
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[6]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "mila".encodeToByteArray(),
+            stopKey = "milb".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderNoFalsePositive() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = MatchesPrefix(
+                    "name" with "mila rij verh"
+                )
+            )
+        )
+
+        expect(0) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "mila".encodeToByteArray(),
+            stopKey = "milb".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrder() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = And(
+                    MatchesPrefix(
+                        "name" with "mila verh"
+                    ),
+                    Equals(
+                        CaseInsensitivePerson { firstName::ref } with "Mila"
+                    )
+                )
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[6]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "mila".encodeToByteArray(),
+            stopKey = "milb".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMultiTermMatchesWithoutOrderToVersion() {
+        if (!dataStore.keepAllVersions) return
+
+        val version = initialVersion ?: error("Missing initial version")
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = Matches(
+                    "name" with "van der waals"
+                ),
+                toVersion = version
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[5]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "van".encodeToByteArray(),
+            stopKey = "vao".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersion() {
+        if (!dataStore.keepAllVersions) return
+
+        val version = initialVersion ?: error("Missing initial version")
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = MatchesPrefix(
+                    "name" with "mila verh"
+                ),
+                toVersion = version
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[6]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "mila".encodeToByteArray(),
+            stopKey = "milb".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrderToVersion() {
+        if (!dataStore.keepAllVersions) return
+
+        val version = initialVersion ?: error("Missing initial version")
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = And(
+                    MatchesPrefix(
+                        "name" with "mila verh"
+                    ),
+                    Equals(
+                        CaseInsensitivePerson { firstName::ref } with "Mila"
+                    )
+                ),
+                toVersion = version
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[6]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "mila".encodeToByteArray(),
+            stopKey = "milb".encodeToByteArray(),
         )) { scanResponse.dataFetchType }
     }
 

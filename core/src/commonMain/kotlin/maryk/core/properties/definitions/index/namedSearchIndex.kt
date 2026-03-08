@@ -17,7 +17,7 @@ internal fun AnyOf.queryToStorageByteArrays(value: String): List<ByteArray> =
                 reference.writeStorageBytes(queryValue) { byteArray[writeIndex++] = it }
             }
         }
-    }.distinct()
+    }.distinctByContent()
 
 internal fun IsIndexablePropertyReference<String>.toQueryStrings(value: String): List<String> =
     when (val transformed = this.directStringIndexTransform().apply(value)) {
@@ -99,4 +99,14 @@ private fun IsIndexablePropertyReference<String>.toPropertyReference(): IsProper
     is Split -> this.reference.toPropertyReference()
     is IsPropertyReference<*, *, *> -> this
     else -> throw IllegalArgumentException("Search index reference $this cannot be resolved to a property reference")
+}
+
+private fun List<ByteArray>.distinctByContent(): List<ByteArray> {
+    val distinct = mutableListOf<ByteArray>()
+    this.forEach { bytes ->
+        if (distinct.none { it.contentEquals(bytes) }) {
+            distinct.add(bytes)
+        }
+    }
+    return distinct
 }

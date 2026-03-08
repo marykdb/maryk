@@ -1,8 +1,11 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
+import maryk.core.processors.datastore.scanRange.IndexValueMatch
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
@@ -12,8 +15,11 @@ import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
+import maryk.datastore.memory.records.index.AbstractIndexValues
 import maryk.datastore.shared.ScanType.IndexScan
+import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.matchesRangePart
 import kotlin.math.min
 
 internal fun <DM : IsRootDataModel> scanIndex(
@@ -76,6 +82,10 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         continue
                     }
 
+                    if (!hasAdditionalMatches(index, dataRecord, indexScanRange.valueMatches, toVersion)) {
+                        continue
+                    }
+
                     if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher, indexScan.index)) {
                         continue
                     }
@@ -123,6 +133,10 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         continue
                     }
 
+                    if (!hasAdditionalMatches(index, dataRecord, indexScanRange.valueMatches, toVersion)) {
+                        continue
+                    }
+
                     if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher, indexScan.index)) {
                         continue
                     }
@@ -141,5 +155,60 @@ internal fun <DM : IsRootDataModel> scanIndex(
         direction = indexScan.direction,
         startKey = overallStartKey,
         stopKey = overallStopKey,
+    )
+}
+
+private fun <DM : IsRootDataModel> hasAdditionalMatches(
+    index: AbstractIndexValues<DM, ByteArray>,
+    dataRecord: DataRecord<DM>,
+    matches: List<IndexValueMatch>,
+    toVersion: HLC?
+) = matches.all { match ->
+    if (match.partialMatch) {
+        hasMatchingPrefixValue(index, dataRecord, match.toMatch, toVersion)
+    } else {
+        val fullIndexValue = createIndexValue(match.toMatch, dataRecord.key.bytes)
+        if (toVersion == null) {
+            index[fullIndexValue] != null
+        } else {
+            index[fullIndexValue, toVersion] != null
+        }
+    }
+}
+
+private fun <DM : IsRootDataModel> hasMatchingPrefixValue(
+    index: AbstractIndexValues<DM, ByteArray>,
+    dataRecord: DataRecord<DM>,
+    prefix: ByteArray,
+    toVersion: HLC?
+): Boolean {
+    val startIndex = index.indexValues.binarySearch { it.value compareTo prefix }.let { valueIndex ->
+        if (valueIndex < 0) valueIndex * -1 - 1 else valueIndex
+    }
+
+    for (i in startIndex until index.indexValues.size) {
+        val indexValue = index.indexValues[i]
+        if (!indexValue.value.matchesRangePart(0, prefix, length = prefix.size)) {
+            return false
+        }
+
+        val recordAtVersion = if (toVersion == null) indexValue.record else indexValue.recordAtVersion(toVersion)
+        if (recordAtVersion == dataRecord) {
+            return true
+        }
+    }
+
+    return false
+}
+
+private fun createIndexValue(value: ByteArray, key: ByteArray): ByteArray {
+    val valueLength = value.size
+    return combineToByteArray(
+        value,
+        ByteArray(valueLength.calculateVarByteLength()).also { lengthBytes ->
+            var index = 0
+            valueLength.writeVarBytes { lengthBytes[index++] = it }
+        },
+        key
     )
 }

@@ -1,9 +1,12 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
+import maryk.core.processors.datastore.scanRange.IndexValueMatch
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
@@ -22,9 +25,12 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.ScanType.IndexScan
+import maryk.lib.bytes.combineToByteArray
+import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.extensions.compare.nextByteInSameLength
+import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ReadOptions
 
 internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
@@ -77,6 +83,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                     defaultReadOptions,
                     iterator,
                     indexScan,
+                    indexColumnHandle,
                     keySize,
                     scanRequest,
                     indexScanRange,
@@ -119,6 +126,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                     defaultReadOptions,
                     iterator,
                     indexScan,
+                    indexColumnHandle,
                     keySize,
                     scanRequest,
                     indexScanRange,
@@ -239,6 +247,7 @@ private fun <DM : IsRootDataModel> checkAndProcess(
     readOptions: ReadOptions,
     iterator: DBIterator,
     indexScan: IndexScan,
+    indexColumnHandle: ColumnFamilyHandle,
     keySize: Int,
     scanRequest: IsScanRequest<DM, *>,
     indexScanRange: IndexableScanRanges,
@@ -254,12 +263,26 @@ private fun <DM : IsRootDataModel> checkAndProcess(
         val indexRecord = iterator.key()
         val valueSize = indexRecord.size - valueOffset - keySize - versionSize
         val keyOffset = valueOffset + valueSize
+        val partialMatchBytes = if (versionSize == 0) indexRecord else indexRecord.copyOf(indexRecord.size - versionSize)
 
         if (isPastRange(indexRecord, valueSize)) {
             break
         }
 
-        if (indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize) && checkVersion(indexRecord)) {
+        if (
+            indexScanRange.matchesPartials(partialMatchBytes, valueOffset, valueSize) &&
+            hasAdditionalMatches(
+                dbAccessor,
+                indexColumnHandle,
+                readOptions,
+                keySize,
+                indexScan.index.referenceStorageByteArray.bytes,
+                indexScanRange.valueMatches,
+                indexRecord.copyOfRange(keyOffset, keyOffset + keySize),
+                scanRequest.toVersion
+            ) &&
+            checkVersion(indexRecord)
+        ) {
             if (
                 !scanRequest.shouldBeFiltered(
                     dbAccessor,
@@ -291,6 +314,176 @@ private fun <DM : IsRootDataModel> checkAndProcess(
 
         next(indexRecord, keyOffset, keySize)
     }
+}
+
+private fun hasAdditionalMatches(
+    dbAccessor: DBAccessor,
+    indexColumnHandle: ColumnFamilyHandle,
+    readOptions: ReadOptions,
+    keySize: Int,
+    indexReference: ByteArray,
+    matches: List<IndexValueMatch>,
+    recordKey: ByteArray,
+    toVersion: ULong?
+) = matches.all { match ->
+    if (match.partialMatch) {
+        hasMatchingPrefixValue(dbAccessor, indexColumnHandle, readOptions, keySize, indexReference, match.toMatch, recordKey, toVersion)
+    } else {
+        hasMatchingExactValue(dbAccessor, indexColumnHandle, readOptions, indexReference, match.toMatch, recordKey, toVersion)
+    }
+}
+
+private fun hasMatchingExactValue(
+    dbAccessor: DBAccessor,
+    indexColumnHandle: ColumnFamilyHandle,
+    readOptions: ReadOptions,
+    indexReference: ByteArray,
+    value: ByteArray,
+    recordKey: ByteArray,
+    toVersion: ULong?
+): Boolean {
+    val fullIndexValue = indexReference + createIndexValue(value, recordKey)
+    return if (toVersion == null) {
+        dbAccessor.get(indexColumnHandle, readOptions, fullIndexValue) != null
+    } else {
+        val versionBytes = toVersion.toReversedVersionBytes()
+        dbAccessor.getIterator(readOptions, indexColumnHandle).use { iterator ->
+            iterator.seek(fullIndexValue + versionBytes)
+            while (iterator.isValid()) {
+                val key = iterator.key()
+                if (!key.matchesRangePart(0, fullIndexValue, length = fullIndexValue.size)) {
+                    return false
+                }
+
+                val versionOffset = key.size - VERSION_BYTE_SIZE
+                if (versionBytes.compareToRange(key, versionOffset) <= 0) {
+                    return iterator.value().contentEquals(EMPTY_ARRAY)
+                }
+                iterator.next()
+            }
+        }
+        false
+    }
+}
+
+private fun hasMatchingPrefixValue(
+    dbAccessor: DBAccessor,
+    indexColumnHandle: ColumnFamilyHandle,
+    readOptions: ReadOptions,
+    keySize: Int,
+    indexReference: ByteArray,
+    prefix: ByteArray,
+    recordKey: ByteArray,
+    toVersion: ULong?
+): Boolean {
+    val prefixWithReference = combineToByteArray(indexReference, prefix)
+    val iterator = dbAccessor.getIterator(readOptions, indexColumnHandle)
+    val versionBytes = toVersion?.toReversedVersionBytes()
+
+    iterator.seek(prefixWithReference)
+
+    if (versionBytes != null) {
+        while (iterator.isValid()) {
+            val firstKey = iterator.key()
+            if (prefixWithReference.compareDefinedRange(firstKey, 0, prefixWithReference.size) > 0) {
+                iterator.next()
+                continue
+            }
+            if (!firstKey.matchesRangePart(0, prefixWithReference, length = prefixWithReference.size)) {
+                return false
+            }
+
+            val qualifierSize = firstKey.size - indexReference.size - keySize - VERSION_BYTE_SIZE
+            val qualifierKeyEnd = indexReference.size + qualifierSize + keySize
+            val qualifier = firstKey.copyOfRange(indexReference.size, qualifierKeyEnd)
+            val recordKeyOffset = qualifier.size - keySize
+            var foundVisibleVersion = false
+            while (iterator.isValid()) {
+                val indexRecord = iterator.key()
+                if (!indexRecord.matchesRangePart(0, prefixWithReference, length = prefixWithReference.size)) {
+                    return false
+                }
+
+                if (!indexRecord.matchesRangePart(indexReference.size, qualifier, length = qualifier.size)) {
+                    break
+                }
+
+                val versionOffset = indexRecord.size - VERSION_BYTE_SIZE
+                if (versionBytes.compareToRange(indexRecord, versionOffset) <= 0) {
+                    foundVisibleVersion = true
+                    if (
+                        iterator.value().contentEquals(EMPTY_ARRAY) &&
+                        qualifier.matchesRangePart(recordKeyOffset, recordKey, length = recordKey.size)
+                    ) {
+                        return true
+                    }
+                    break
+                }
+
+                iterator.next()
+            }
+
+            if (!foundVisibleVersion) {
+                continue
+            }
+
+            while (iterator.isValid()) {
+                val indexRecord = iterator.key()
+                if (!indexRecord.matchesRangePart(0, prefixWithReference, length = prefixWithReference.size)) {
+                    return false
+                }
+                if (!indexRecord.matchesRangePart(indexReference.size, qualifier, length = qualifier.size)) {
+                    break
+                }
+                iterator.next()
+            }
+        }
+
+        return false
+    }
+
+    var settledValueAndKey: ByteArray? = null
+    while (iterator.isValid()) {
+        val indexRecord = iterator.key()
+        if (prefixWithReference.compareDefinedRange(indexRecord, 0, prefixWithReference.size) > 0) {
+            iterator.next()
+            continue
+        }
+        if (!indexRecord.matchesRangePart(0, prefixWithReference, length = prefixWithReference.size)) {
+            return false
+        }
+
+        val valueSize = indexRecord.size - indexReference.size - keySize - (versionBytes?.size ?: 0)
+        val keyOffset = indexReference.size + valueSize
+        val valueAndKey = indexRecord.copyOfRange(indexReference.size, keyOffset + keySize)
+
+        if (settledValueAndKey?.contentEquals(valueAndKey) == true) {
+            iterator.next()
+            continue
+        }
+
+        if (indexRecord.matchesRangePart(keyOffset, recordKey, length = recordKey.size)) {
+            return true
+        } else {
+            settledValueAndKey = valueAndKey
+        }
+
+        iterator.next()
+    }
+
+    return false
+}
+
+private fun createIndexValue(value: ByteArray, key: ByteArray): ByteArray {
+    val valueLength = value.size
+    return combineToByteArray(
+        value,
+        ByteArray(valueLength.calculateVarByteLength()).also { lengthBytes ->
+            var index = 0
+            valueLength.writeVarBytes { lengthBytes[index++] = it }
+        },
+        key
+    )
 }
 
 /** Creates a Key out of a [indexRecord] by reading from [keyOffset] */

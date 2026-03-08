@@ -8,7 +8,8 @@ import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 data class IndexableScanRanges internal constructor(
     override val ranges: List<ScanRange>,
     override val partialMatches: List<IsIndexPartialToMatch>? = null,
-    val keyScanRange: KeyScanRanges
+    val keyScanRange: KeyScanRanges,
+    val valueMatches: List<IndexValueMatch> = emptyList()
 ): ScanRanges {
     override fun matchesPartials(key: ByteArray, offset: Int, length: Int): Boolean {
         val keyIndex = key.size - keyScanRange.keySize

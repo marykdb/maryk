@@ -3,8 +3,8 @@ package maryk.datastore.foundationdb.processors
 import maryk.foundationdb.Transaction
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.hasNormalizeIndex
-import maryk.core.properties.definitions.index.normalizeStringForIndex
+import maryk.core.properties.definitions.index.matchesNamedSearchIndex
+import maryk.core.properties.definitions.index.stringIndexTransform
 import maryk.core.query.filters.matchesFilter
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.foundationdb.IsTableDirectories
@@ -34,13 +34,15 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
             transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, valueMatcher)
         },
         normalizer = { propertyReference, value ->
-            if (normalizingIndex?.hasNormalizeIndex(propertyReference) != true) {
-                value
-            } else {
-                when (value) {
-                    is String -> normalizeStringForIndex(value)
-                    else -> value
-                }
+            val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilter value
+            when (value) {
+                is String -> transform.apply(value)
+                else -> value
+            }
+        },
+        searchMatcher = { name, value ->
+            this.dataModel.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
+                transaction.matchQualifier(tableDirs, key, keyOffset, keyLength, propertyReference, toVersion, decryptValue, valueMatcher)
             }
         }
     )

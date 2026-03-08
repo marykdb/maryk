@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.InternalMultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.IndexKeyPartType
+import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.UUIDv4Key
 import maryk.core.properties.definitions.index.calculateKeyIndices
@@ -45,6 +46,15 @@ data class RootDataModelDefinition(
 
     override val keyByteSize = checkKeyDefinitionAndCountBytes(keyDefinition)
     override val keyIndices = calculateKeyIndices(keyDefinition)
+
+    init {
+        indexes
+            ?.filterIsInstance<AnyOf>()
+            ?.mapNotNull { it.name }
+            ?.let { names ->
+                require(names.size == names.distinct().size) { "Named AnyOf indexes should have unique names" }
+            }
+    }
 
     object Model : DefinitionModel<RootDataModelDefinition>(){
         val name by string(1u, RootDataModelDefinition::name)

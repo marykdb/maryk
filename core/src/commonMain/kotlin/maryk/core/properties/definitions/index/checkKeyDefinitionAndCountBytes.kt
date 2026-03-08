@@ -30,6 +30,9 @@ internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
             throw InvalidDefinitionException("Definition should have a fixed amount of bytes for a key")
         is Normalize ->
             checkKeyDefinitionAndCountBytes(keyDefinition.reference)
+        is Split,
+        is AnyOf ->
+            throw InvalidDefinitionException("Definition should not fan out or split for a key")
         is Reversed<*> ->
             checkKeyDefinitionAndCountBytes(keyDefinition.reference)
         else -> throw TypeException("Unknown key IsIndexable type: $keyDefinition")

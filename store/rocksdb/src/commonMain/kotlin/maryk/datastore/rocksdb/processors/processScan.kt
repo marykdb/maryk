@@ -97,6 +97,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                 scanRequest.dataModel.optimizeTableScan(
                     scanIndex,
                     keyScanRange,
+                    filter = scanRequest.where,
                     allowTableScan = scanRequest.allowTableScan
                 )
             } else scanIndex

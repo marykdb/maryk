@@ -4,10 +4,13 @@ import maryk.core.exceptions.TypeException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Normalize
+import maryk.core.properties.definitions.index.Split
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.queryToStorageByteArrays
 import maryk.core.properties.definitions.index.normalizeStringForIndex
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -19,6 +22,7 @@ import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.IsReferenceValuePairsFilter
 import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
+import maryk.core.query.filters.Matches
 import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
@@ -42,6 +46,7 @@ fun convertFilterToIndexPartsToMatch(
         null -> return
         is Equals -> handleEquals(filter, indexable, convertIndex, keySize, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
         is Prefix -> handlePrefix(filter, indexable, convertIndex, keySize, listOfIndexParts, listOfUniqueFilters)
+        is Matches -> handleMatches(filter, indexable, keySize, listOfIndexParts)
         is GreaterThan -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, false, false)
         is GreaterThanEquals -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, false, true)
         is LessThan -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, true, false)
@@ -53,6 +58,23 @@ fun convertFilterToIndexPartsToMatch(
             convertFilterToIndexPartsToMatch(indexable, keySize, convertIndex, subFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
         }
         else -> { /* Skip unsupported filters */ }
+    }
+}
+
+private fun handleMatches(
+    filter: Matches,
+    indexable: IsIndexable,
+    keySize: Int,
+    listOfIndexParts: MutableList<IsIndexPartialToMatch>
+) {
+    if (indexable !is AnyOf) return
+
+    for ((name, value) in filter.nameValuePairs) {
+        if (indexable.name != name) continue
+
+        val matchBytes = indexable.queryToStorageByteArrays(value).firstOrNull() ?: continue
+        listOfIndexParts += IndexPartialToMatch(0, null, keySize, matchBytes)
+        return
     }
 }
 
@@ -96,6 +118,7 @@ private fun handleComparison(
     isInclusive: Boolean
 ) {
     walkFilterReferencesAndValues(filter, indexable) { index, keyDefinition, byteArray ->
+        if (keyDefinition is Split) return@walkFilterReferencesAndValues
         val keyIndex = convertIndex?.invoke(index)
         listOfIndexParts.add(
             indexPartialWithDirection(
@@ -119,6 +142,7 @@ private fun handleRange(
 ) {
     for ((reference, value) in filter.referenceValuePairs) {
         getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
+            if (keyDefinition is Split) return@getDefinitionOrNull
             val keyIndex = convertIndex?.invoke(index)
             val fromBytes = convertValueToIndexableBytes(keyDefinition, value.from)
             val toBytes = convertValueToIndexableBytes(keyDefinition, value.to)
@@ -261,6 +285,12 @@ private fun <T : Any> getDefinitionOrNull(
             ?.let { (index, keyDef) ->
                 @Suppress("UNCHECKED_CAST")
                 processKeyDefinitionWhenFound(index, keyDef as IsIndexablePropertyReference<Any>)
+            }
+        is AnyOf -> indexable.references.withIndex()
+            .firstOrNull { (_, keyDef) -> keyDef.isForPropertyReference(reference) }
+            ?.let { (_, keyDef) ->
+                @Suppress("UNCHECKED_CAST")
+                processKeyDefinitionWhenFound(0, keyDef as IsIndexablePropertyReference<Any>)
             }
         is IsIndexablePropertyReference<*> -> {
             if (indexable.isForPropertyReference(reference)) {

@@ -4,10 +4,14 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.index.SplitOn.Whitespace
+import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
 import maryk.core.query.DefinitionsConversionContext
 import maryk.test.ByteCollector
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 internal class NormalizeTest {
@@ -17,6 +21,26 @@ internal class NormalizeTest {
         val value by string(
             index = 1u,
             final = true
+        )
+    }
+
+    object TokenModel : RootDataModel<TokenModel>(
+        indexes = {
+            listOf(
+                AnyOf(
+                    "name",
+                    TokenModel.family.ref().normalize().split(Whitespace),
+                    TokenModel { given.refToAny() }.normalize().split(Whitespace),
+                )
+            )
+        }
+    ) {
+        val family by string(index = 1u, final = true)
+        val given by set(
+            index = 2u,
+            required = false,
+            final = true,
+            valueDefinition = StringDefinition()
         )
     }
 
@@ -79,7 +103,7 @@ internal class NormalizeTest {
 
     @Test
     fun convertDefinitionToYAMLAndBack() {
-        expect("value") {
+        expect("!Ref value") {
             checkYamlConversion(
                 value = Normalize(MarykModel.value.ref()),
                 dataModel = Normalize.Model,
@@ -90,6 +114,45 @@ internal class NormalizeTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        expect("0f09") { Normalize(MarykModel.value.ref()).toReferenceStorageByteArray().toHexString() }
+        expect("170a09") { Normalize(MarykModel.value.ref()).toReferenceStorageByteArray().toHexString() }
+    }
+
+    @Test
+    fun splitAndAnyOfEmitTokens() {
+        val values = TokenModel.create {
+            family with "van der Berg"
+            given with setOf("José María")
+        }
+
+        expect(listOf("berg", "der", "jose", "maria", "van")) {
+            TokenModel.Meta.indexes!![0].toStorageByteArrays(values)
+                .map { it.decodeToString() }
+                .sorted()
+        }
+    }
+
+    @Test
+    fun anyOfKeepsNameAcrossTransforms() {
+        val index = AnyOf(
+            "name",
+            TokenModel.family.ref(),
+            TokenModel { given.refToAny() }
+        ).normalize().split(Whitespace)
+
+        expect("name") { index.name }
+    }
+
+    @Test
+    fun namedAnyOfIndexesShouldBeUnique() {
+        assertFailsWith<IllegalArgumentException> {
+            object : RootDataModel<RootDataModel<*>>(
+                indexes = {
+                    listOf(
+                        AnyOf("name", MarykModel.value.ref()),
+                        AnyOf("name", MarykModel.value.ref())
+                    )
+                }
+            ) {}.Meta
+        }
     }
 }

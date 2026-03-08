@@ -87,6 +87,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
             scanRequest.dataModel.optimizeTableScan(
                 it,
                 keyScanRange,
+                filter = scanRequest.where,
                 allowTableScan = scanRequest.allowTableScan
             )
         } else it

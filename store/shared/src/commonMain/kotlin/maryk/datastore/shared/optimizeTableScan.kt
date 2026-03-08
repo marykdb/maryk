@@ -4,9 +4,15 @@ import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
+import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.Split
 import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.query.filters.And
+import maryk.core.query.filters.IsFilter
+import maryk.core.query.filters.Matches
+import maryk.core.query.filters.Or
 import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
@@ -14,14 +20,14 @@ import maryk.datastore.shared.ScanType.TableScan
 /**
  * Try to find index scans for Table Scan since they can make the scan a lot shorter
  *
- * This only compares on equal pairs. While there could be other methods to
- * go to an optimized scan, the equals comparison is the only one to guarantee the
- * order. If user wants to scan over an index, they should use an Order to select
- * that index.
+ * This compares on equal pairs for ordering indexes and named search matches for
+ * search indexes. If user wants to scan over a specific ordering index, they should
+ * use an Order to select that index.
  */
 fun <DM: IsRootDataModel> DM.optimizeTableScan(
     tableScan: TableScan,
     keyScanRanges: KeyScanRanges,
+    filter: IsFilter? = null,
     allowTableScan: Boolean = false,
 ): ScanType {
     val equalPairs = keyScanRanges.equalPairs
@@ -50,6 +56,13 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
                     }
                     return IndexScan(indexable, ASC)
                 }
+                is AnyOf -> {
+                    if (!hasSupportedSearchMatch(indexable, filter)) {
+                        continue@indexWalk
+                    }
+                    return IndexScan(indexable, ASC)
+                }
+                is Split -> continue@indexWalk
                 else -> throw TypeException("Indexable type of $indexable is not supported")
             }
         }
@@ -62,4 +75,12 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
     }
 
     return tableScan
+}
+
+private fun hasSupportedSearchMatch(indexable: AnyOf, filter: IsFilter?): Boolean = when (filter) {
+    null -> false
+    is Matches -> filter.nameValuePairs.any { (name, _) -> indexable.name == name }
+    is And -> filter.filters.any { hasSupportedSearchMatch(indexable, it) }
+    is Or -> filter.filters.any { hasSupportedSearchMatch(indexable, it) }
+    else -> false
 }

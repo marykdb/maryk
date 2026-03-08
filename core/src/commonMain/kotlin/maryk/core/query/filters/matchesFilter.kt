@@ -12,7 +12,8 @@ import maryk.core.query.ValueRange
 fun matchesFilter(
     filter: IsFilter?,
     valueMatcher: (AnyPropertyReference, (Any?) -> Boolean) -> Boolean,
-    normalizer: (AnyPropertyReference, Any?) -> Any? = { _, value -> value }
+    normalizer: (AnyPropertyReference, Any?) -> Any? = { _, value -> value },
+    searchMatcher: (String, String) -> Boolean = { _, _ -> false }
 ): Boolean {
     if (filter == null) {
         return true
@@ -22,14 +23,14 @@ fun matchesFilter(
         FilterType.And -> {
             val and = filter as And
             for (aFilter in and.filters) {
-                if (!matchesFilter(aFilter, valueMatcher, normalizer)) return false
+                if (!matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher)) return false
             }
             return true
         }
         FilterType.Or -> {
             val or = filter as Or
             for (aFilter in or.filters) {
-                if (matchesFilter(aFilter, valueMatcher, normalizer)) return true
+                if (matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher)) return true
             }
             return false
         }
@@ -37,7 +38,7 @@ fun matchesFilter(
             val notFilter = (filter as Not)
             for (aFilter in notFilter.filters) {
                 // If internal filter succeeds, then fail
-                if (matchesFilter(aFilter, valueMatcher, normalizer)) return false
+                if (matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher)) return false
             }
             return true
         }
@@ -59,9 +60,9 @@ fun matchesFilter(
                 if (!valueMatcher(propRef) { actualValue ->
                     val normalizedValue = normalizer(propRef, value)
                     if (isAnyCollectionReference && actualValue is Collection<*>) {
-                        actualValue.any { normalizer(propRef, it) == normalizedValue }
+                        actualValue.any { transformedEquals(normalizer(propRef, it), normalizedValue) }
                     } else {
-                        normalizer(propRef, actualValue) == normalizedValue
+                        transformedEquals(normalizer(propRef, actualValue), normalizedValue)
                     }
                 }) return false
             }
@@ -119,9 +120,21 @@ fun matchesFilter(
             val prefixFilter = filter as Prefix
             for ((propRef, prefix) in prefixFilter.referenceValuePairs) {
                 if (!valueMatcher(propRef) {
-                        val normalizedActual = normalizer(propRef, it) as? String
-                        val normalizedPrefix = normalizer(propRef, prefix) as String
-                        normalizedActual != null && normalizedActual.startsWith(normalizedPrefix)
+                        val normalizedActual = normalizer(propRef, it)
+                        val normalizedPrefix = normalizer(propRef, prefix)
+                        when {
+                            normalizedActual is Collection<*> && normalizedPrefix is Collection<*> ->
+                                normalizedPrefix.all { prefixPart ->
+                                    prefixPart is String && normalizedActual.any { it is String && it.startsWith(prefixPart) }
+                                }
+                            normalizedActual is Collection<*> && normalizedPrefix is String ->
+                                normalizedActual.any { it is String && it.startsWith(normalizedPrefix) }
+                            normalizedActual is String && normalizedPrefix is Collection<*> ->
+                                normalizedPrefix.any { it is String && normalizedActual.startsWith(it) }
+                            normalizedActual is String && normalizedPrefix is String ->
+                                normalizedActual.startsWith(normalizedPrefix)
+                            else -> false
+                        }
                     }) return false
             }
             return true
@@ -141,8 +154,11 @@ fun matchesFilter(
             val regExFilter = filter as RegEx
             for ((propRef, regEx) in regExFilter.referenceValuePairs) {
                 if (!valueMatcher(propRef) {
-                        val normalizedActual = normalizer(propRef, it) as? String
-                        normalizedActual != null && regEx.matches(normalizedActual)
+                        when (val normalizedActual = normalizer(propRef, it)) {
+                            is Collection<*> -> normalizedActual.any { it is String && regEx.matches(it) }
+                            is String -> regEx.matches(normalizedActual)
+                            else -> false
+                        }
                     }) return false
             }
             return true
@@ -152,8 +168,15 @@ fun matchesFilter(
             for ((propRef, values) in valueInFilter.referenceValuePairs) {
                 if (!valueMatcher(propRef) {
                         val normalizedActual = normalizer(propRef, it)
-                        normalizedActual != null && values.any { value -> normalizer(propRef, value) == normalizedActual }
+                        normalizedActual != null && values.any { value -> transformedEquals(normalizedActual, normalizer(propRef, value)) }
                     }) return false
+            }
+            return true
+        }
+        FilterType.Matches -> {
+            val matches = filter as Matches
+            for ((name, value) in matches.nameValuePairs) {
+                if (!searchMatcher(name, value)) return false
             }
             return true
         }
@@ -170,3 +193,12 @@ private fun ValueRange<*>.normalized(
     inclusiveFrom = this.inclusiveFrom,
     inclusiveTo = this.inclusiveTo
 )
+
+private fun transformedEquals(actual: Any?, expected: Any?): Boolean = when {
+    actual is Collection<*> && expected is Collection<*> -> expected.all { expectedValue ->
+        actual.any { it == expectedValue }
+    }
+    actual is Collection<*> -> actual.any { it == expected }
+    expected is Collection<*> -> expected.any { it == actual }
+    else -> actual == expected
+}

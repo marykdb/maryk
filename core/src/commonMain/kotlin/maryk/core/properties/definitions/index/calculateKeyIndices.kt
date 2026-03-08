@@ -16,6 +16,8 @@ internal fun calculateKeyIndices(keyDefinition: IsIndexable): IntArray {
                         if (def.reference is IsFixedStorageBytesEncodable<*>) {
                             def.reference
                         } else throw InvalidDefinitionException("Key cannot contain flex bytes encodables")
+                    is Split,
+                    is AnyOf -> throw InvalidDefinitionException("Key cannot contain split or anyOf indexables")
                     is Reversed<*> ->
                         if (def.reference is IsFixedStorageBytesEncodable<*>) {
                             def.reference

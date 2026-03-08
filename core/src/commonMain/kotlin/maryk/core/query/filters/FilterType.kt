@@ -22,7 +22,8 @@ enum class FilterType(
     Prefix(10u),
     Range(11u),
     RegEx(12u),
-    ValueIn(13u);
+    ValueIn(13u),
+    Matches(14u);
 
     companion object : IndexedEnumDefinition<FilterType>(
         FilterType::class, { entries }

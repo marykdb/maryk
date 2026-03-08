@@ -2,6 +2,7 @@ package maryk.datastore.test
 
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
+import maryk.core.query.filters.Matches
 import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.RegEx
 import maryk.core.query.orders.Direction
@@ -29,6 +30,8 @@ class DataStoreScanOnNormalizeIndexTest(
         "executeIndexPrefixScanRequestOnNormalizeIndex" to ::executeIndexPrefixScanRequestOnNormalizeIndex,
         "executeIndexRegexScanRequestOnNormalizeIndex" to ::executeIndexRegexScanRequestOnNormalizeIndex,
         "executeIndexOnlyNormalizesConfiguredPart" to ::executeIndexOnlyNormalizesConfiguredPart,
+        "executeNamedAnyOfMatchesWithoutOrder" to ::executeNamedAnyOfMatchesWithoutOrder,
+        "executePropertyEqualsDoesNotUseNamedAnyOfSearch" to ::executePropertyEqualsDoesNotUseNamedAnyOfSearch,
     )
 
     private val persons = arrayOf(
@@ -214,5 +217,37 @@ class DataStoreScanOnNormalizeIndexTest(
         )
 
         expect(0) { wrongFirstNameNormalization.values.size }
+    }
+
+    private suspend fun executeNamedAnyOfMatchesWithoutOrder() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = Matches(
+                    "name" with "jose"
+                )
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[4]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "jose".encodeToByteArray(),
+            stopKey = "josf".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executePropertyEqualsDoesNotUseNamedAnyOfSearch() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = Equals(
+                    CaseInsensitivePerson { surname::ref } with "garcia",
+                ),
+                allowTableScan = true
+            )
+        )
+
+        expect(0) { scanResponse.values.size }
     }
 }

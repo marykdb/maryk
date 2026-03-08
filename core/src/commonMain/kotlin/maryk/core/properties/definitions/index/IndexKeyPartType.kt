@@ -15,8 +15,10 @@ import maryk.json.ArrayType
 import maryk.json.TokenType
 import maryk.json.ValueType
 import maryk.json.ValueType.IsNullValueType
+import maryk.core.properties.definitions.index.AnyOf as AnyOfInstance
 import maryk.core.properties.definitions.index.Multiple as MultipleInstance
 import maryk.core.properties.definitions.index.Normalize as NormalizeInstance
+import maryk.core.properties.definitions.index.Split as SplitInstance
 import maryk.core.properties.definitions.index.Reversed as ReversedInstance
 import maryk.core.properties.definitions.index.ReferenceToMax as ReferenceToMaxInstance
 
@@ -35,10 +37,12 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
     }
     object UUIDv7 : IndexKeyPartType<UUIDv7Key>(6u), IsNullValueType
     object Normalize : IndexKeyPartType<NormalizeInstance>(7u), ValueType<String>
+    object Split : IndexKeyPartType<SplitInstance>(8u), ValueType<String>
+    object AnyOf : IndexKeyPartType<AnyOfInstance>(9u), ArrayType
 
     companion object : IndexedEnumDefinition<IndexKeyPartType<*>>(
         IndexKeyPartType::class, {
-            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7, Normalize)
+            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7, Normalize, Split, AnyOf)
         }
     )
 }
@@ -56,9 +60,20 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
         IndexKeyPartType.ReferenceToMax to EmbeddedObjectDefinition(dataModel = { ReferenceToMaxInstance.Model }),
         IndexKeyPartType.UUIDv7 to EmbeddedObjectDefinition(dataModel = { UUIDv7Key.Model }),
         IndexKeyPartType.Normalize to EmbeddedObjectDefinition(dataModel = { NormalizeInstance.Model }),
+        IndexKeyPartType.Split to EmbeddedObjectDefinition(dataModel = { SplitInstance.Model }),
     )
 
 internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOfSimpleIndexKeyPartDefinitions.plus(
-        IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { MultipleInstance.Model })
+        mapOf(
+            IndexKeyPartType.Multiple to EmbeddedObjectDefinition(dataModel = { MultipleInstance.Model }),
+            IndexKeyPartType.AnyOf to EmbeddedObjectDefinition(dataModel = { AnyOfInstance.Model })
+        )
+    )
+
+internal val mapOfStringIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =
+    mapOf(
+        IndexKeyPartType.Reference to mapOfSimpleIndexKeyPartDefinitions.getValue(IndexKeyPartType.Reference),
+        IndexKeyPartType.Normalize to EmbeddedObjectDefinition(dataModel = { NormalizeInstance.Model }),
+        IndexKeyPartType.Split to EmbeddedObjectDefinition(dataModel = { SplitInstance.Model }),
     )

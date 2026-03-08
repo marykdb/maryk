@@ -3,9 +3,11 @@ package maryk.datastore.shared
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.Split
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
@@ -113,9 +115,13 @@ private fun singleIndexableToScan(
     is Multiple ->
         when (val subIndexable = indexable.references[0]) {
             is Reversed<*> -> createSingleScan(subIndexable.reference, order, true, createScan)
+            is Split,
+            is AnyOf -> null
             is IsIndexablePropertyReference<*> -> createSingleScan(subIndexable, order, false, createScan)
             else -> null
         }
+    is Split,
+    is AnyOf -> null
     is Reversed<*> -> createSingleScan(indexable.reference, order, true, createScan)
     is IsIndexablePropertyReference<*> -> createSingleScan(indexable, order, false, createScan)
     else -> throw TypeException("Indexable type of $indexable is not supported")

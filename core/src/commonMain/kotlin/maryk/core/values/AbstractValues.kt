@@ -3,6 +3,7 @@ package maryk.core.values
 import maryk.core.exceptions.ContextNotFoundException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.inject.AnyInject
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsStorableDataModel
 import maryk.core.models.IsTypedDataModel
 import maryk.core.models.IsTypedObjectDataModel
@@ -28,6 +29,7 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
+import maryk.core.properties.definitions.index.matchesNamedSearchIndex
 import maryk.lib.exceptions.ParseException
 
 typealias AnyAbstractValues = AbstractValues<Any, IsTypedDataModel<Any>>
@@ -140,6 +142,13 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
             } else {
                 valueMatcher(value)
             }
+        },
+        searchMatcher = { name, value ->
+            (dataModel as? IsRootDataModel)?.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
+                @Suppress("UNCHECKED_CAST")
+                val actualValue = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
+                valueMatcher(actualValue)
+            } ?: false
         }
     )
 

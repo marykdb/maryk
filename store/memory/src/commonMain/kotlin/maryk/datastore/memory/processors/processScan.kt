@@ -69,6 +69,7 @@ internal fun <DM : IsRootDataModel> processScan(
                 scanRequest.dataModel.optimizeTableScan(
                     scanIndex,
                     keyScanRange,
+                    filter = scanRequest.where,
                     allowTableScan = scanRequest.allowTableScan
                 )
             } else scanIndex

@@ -3,8 +3,8 @@ package maryk.datastore.memory.processors
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.hasNormalizeIndex
-import maryk.core.properties.definitions.index.normalizeStringForIndex
+import maryk.core.properties.definitions.index.matchesNamedSearchIndex
+import maryk.core.properties.definitions.index.stringIndexTransform
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.matchesFilter
@@ -24,7 +24,7 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
 ) = when {
     toVersion != null && dataRecord.firstVersion > toVersion -> true
     this.filterSoftDeleted && dataRecord.isDeleted(toVersion) -> true
-    else -> !filterMatches(normalizingIndex, where, dataRecord, toVersion, recordFetcher)
+    else -> !filterMatches(this.dataModel, normalizingIndex, where, dataRecord, toVersion, recordFetcher)
 }
 
 /** Test if [dataRecord] is passing given [filter]. True if filter matches. */
@@ -41,8 +41,8 @@ internal fun <DM : IsRootDataModel> filterMatches(
         }
     )
 
-/** Test if [dataRecord] is passing given [filter]. True if filter matches. */
 internal fun <DM : IsRootDataModel> filterMatches(
+    dataModel: DM,
     normalizingIndex: IsIndexable?,
     filter: IsFilter?,
     dataRecord: DataRecord<DM>,
@@ -55,13 +55,15 @@ internal fun <DM : IsRootDataModel> filterMatches(
             dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
         },
         normalizer = { propertyReference, value ->
-            if (normalizingIndex?.hasNormalizeIndex(propertyReference) != true) {
-                value
-            } else {
-                when (value) {
-                    is String -> normalizeStringForIndex(value)
-                    else -> value
-                }
+            val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilter value
+            when (value) {
+                is String -> transform.apply(value)
+                else -> value
+            }
+        },
+        searchMatcher = { name, value ->
+            dataModel.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
+                dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
             }
         }
     )

@@ -2,8 +2,8 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
-import maryk.core.properties.definitions.index.hasNormalizeIndex
-import maryk.core.properties.definitions.index.normalizeStringForIndex
+import maryk.core.properties.definitions.index.matchesNamedSearchIndex
+import maryk.core.properties.definitions.index.stringIndexTransform
 import maryk.core.query.filters.matchesFilter
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.rocksdb.DBAccessor
@@ -35,13 +35,15 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
             dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
         },
         normalizer = { propertyReference, value ->
-            if (normalizingIndex?.hasNormalizeIndex(propertyReference) != true) {
-                value
-            } else {
-                when (value) {
-                    is String -> normalizeStringForIndex(value)
-                    else -> value
-                }
+            val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilter value
+            when (value) {
+                is String -> transform.apply(value)
+                else -> value
+            }
+        },
+        searchMatcher = { name, value ->
+            this.dataModel.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
+                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
             }
         }
     )

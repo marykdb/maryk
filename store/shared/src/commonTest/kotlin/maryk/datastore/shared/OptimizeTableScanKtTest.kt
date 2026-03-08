@@ -5,10 +5,12 @@ import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.query.filters.Equals
+import maryk.core.query.filters.Matches
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.pairs.with
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
+import maryk.test.models.CaseInsensitivePerson
 import maryk.test.models.Option.V3
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -96,6 +98,31 @@ class OptimizeTableScanKtTest {
             TestMarykModel.optimizeTableScan(
                 tableScan,
                 keyScanRanges,
+            )
+        }
+    }
+
+    @Test
+    fun optimizeTableScanNamedSearchIndex() {
+        val filter = Matches(
+            "name" with "garcia"
+        )
+        val keyScanRanges = CaseInsensitivePerson.createScanRange(
+            filter = filter,
+            startKey = null
+        )
+
+        expect(
+            IndexScan(
+                CaseInsensitivePerson.Meta.indexes!![1],
+                ASC
+            )
+        ) {
+            CaseInsensitivePerson.optimizeTableScan(
+                tableScan,
+                keyScanRanges,
+                filter = filter,
+                allowTableScan = true
             )
         }
     }

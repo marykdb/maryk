@@ -3,7 +3,9 @@ package maryk.core.properties.definitions.index
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.string
+import maryk.core.properties.types.numeric.UInt32
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -37,6 +39,45 @@ private object NestedIndexModel : RootDataModel<NestedIndexModel>(
     minimumKeyScanByteRange = 0u,
 ) {
     val info by embed(index = 1u, required = false, dataModel = { InfoModel })
+}
+
+private object SharedLastNameModel : DataModel<SharedLastNameModel>() {
+    val lastName by string(index = 1u, required = false)
+}
+
+private object SharedNameModel : DataModel<SharedNameModel>() {
+    val familyName by embed(index = 1u, required = false, dataModel = { SharedLastNameModel })
+}
+
+private object CacheCollisionInfoModelA : DataModel<CacheCollisionInfoModelA>() {
+    val name by embed(index = 1u, required = false, dataModel = { SharedNameModel })
+}
+
+private object CacheCollisionInfoModelB : DataModel<CacheCollisionInfoModelB>() {
+    val marker by number(index = 1u, type = UInt32, required = false)
+    val name by embed(index = 2u, required = false, dataModel = { SharedNameModel })
+}
+
+private object CacheCollisionRootModelA : RootDataModel<CacheCollisionRootModelA>(
+    indexes = {
+        listOf(
+            CacheCollisionRootModelA { info { name { familyName { lastName::ref } } } }
+        )
+    },
+    minimumKeyScanByteRange = 0u,
+) {
+    val info by embed(index = 1u, required = false, dataModel = { CacheCollisionInfoModelA })
+}
+
+private object CacheCollisionRootModelB : RootDataModel<CacheCollisionRootModelB>(
+    indexes = {
+        listOf(
+            CacheCollisionRootModelB { info { name { familyName { lastName::ref } } } }
+        )
+    },
+    minimumKeyScanByteRange = 0u,
+) {
+    val info by embed(index = 1u, required = false, dataModel = { CacheCollisionInfoModelB })
 }
 
 class NestedEmbeddedIndexReferenceTest {
@@ -111,6 +152,27 @@ class NestedEmbeddedIndexReferenceTest {
                     }
                 }
             }.toStorageByteArraysForIndex(values, rootKey).single()
+        )
+    }
+
+    @Test
+    fun resolvesSharedEmbeddedReferencesAcrossDifferentParentLayouts() {
+        CacheCollisionRootModelA { info { name { familyName { lastName::ref } } } }
+
+        val values = CacheCollisionRootModelB.create {
+            info with {
+                marker with 7u
+                name with {
+                    familyName with {
+                        lastName with "Different Parent Layout"
+                    }
+                }
+            }
+        }
+
+        assertEquals(
+            "Different Parent Layout",
+            values[CacheCollisionRootModelB { info { name { familyName { lastName::ref } } } }]
         )
     }
 }

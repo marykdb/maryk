@@ -2,8 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
-import kotlinx.collections.immutable.PersistentMap
-import maryk.core.properties.references.IsPropertyReference
+import kotlinx.collections.immutable.PersistentList
 
 private val regEx = Regex("[a-z]+[a-zA-Z0-9]*")
 
@@ -19,6 +18,6 @@ abstract class AbstractDefinitionWrapper(
     }
 
     /** Cache for all references, so they are not created over and over */
-    override val refCache: AtomicRef<PersistentMap<String, IsPropertyReference<*, *, *>>?> =
+    override val refCache: AtomicRef<PersistentList<RefCacheEntry>?> =
         atomic(null)
 }

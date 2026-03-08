@@ -56,13 +56,13 @@ data class MultiTypeDefinitionWrapper<E : TypeEnum<T>, T: Any, TO : Any, in CX :
     }
 
     private fun typedValueReference(type: E, parentReference: AnyPropertyReference?) = this.ref(parentReference).let { ref ->
-        cacheRef(ref, { "${it?.completeName}.*$type" }) {
+        cacheRef(ref, type to "*") {
             super.typedValueRef(type, ref)
         }
     }
 
     private fun simpleTypedValueReference(type: E, parentReference: AnyPropertyReference?): SimpleTypedValueReference<E, T, CX> = this.ref(parentReference).let { ref ->
-        cacheRef(ref, { "${it?.completeName}.>$type" }) {
+        cacheRef(ref, type to ">") {
             super.simpleTypedValueRef(type, ref)
         }
     }

@@ -89,6 +89,7 @@ Use the [Maryk App](../app/) for a desktop UI to browse models and edit records.
 ## Next steps
 
 - Learn how models and properties work in [Data design](../data-modeling/data-design/).
+- Learn how indexes are composed in [Index design](../data-modeling/index-design/).
 - Explore queries, filters, and aggregations in [Querying](../querying/).
 - Check out how to persist data in [Stores](../stores/).
 - Browse and edit data interactively with the [CLI](../cli/).

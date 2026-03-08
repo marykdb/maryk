@@ -5,6 +5,7 @@ Core module for Maryk data modeling, querying, and serialization.
 ## Start Here
 
 - [Data Model Definition](docs/datamodel.md): define typed model structures.
+- [Index Design](docs/index-design.md): compose ordered and search-oriented indexes.
 - [Property Types](docs/properties/README.md): supported property definitions and validation.
 - [Keys](docs/key.md): compose model keys and key parts.
 - [Querying](docs/query.md): add/change/delete/get/scan and update streams.

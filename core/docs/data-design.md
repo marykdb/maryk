@@ -13,6 +13,7 @@ What you’ll learn
 
 - DataModel: the schema for a record, with named properties that each have a stable `UInt` index for fast, reflection‑free serialization. See [Data Models](datamodel.md).
 - RootDataModel: a top‑level model that can be stored and queried. Roots define keys and indexes. See [Keys](key.md).
+- Secondary indexes: ordered tuple indexes and search indexes built from composable index operators. See [Index Design](index-design.md).
 - Properties: rich types including embedded objects, lists/sets/maps, references, and [MultiType](properties/types/multiType.md).
 - Queries: filter using property references and select fields with reference graphs. See [Property References](properties/references.md) and [Reference Graphs](reference-graphs.md).
 - Versioning: evolve safely with built‑in schema/data versioning. See [Versioning](versioning.md).

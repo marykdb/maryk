@@ -1,10 +1,43 @@
 # Filters
 
-Filters narrow query results. They can be applied to [Get](query.md#get) and [Scan](query.md#scan) requests and combined to form complex logic. Use [`And`](#and) and [`Or`](#or) to combine conditions or [`Not`](#not) to invert them.
+Filters narrow query results. They can be applied to [Get](query.md#get) and [Scan](query.md#scan) requests.
 
-## Reference Filters
+Maryk has two filter groups:
 
-The filters below target a specific property via a [property reference](properties/references.md).
+- property filters
+- named search filters
+
+Property filters target explicit property references.
+
+Named search filters target a named search surface such as `"name"`.
+
+For index design and when to use ordered indexes versus search indexes, see [Index Design](index-design.md). This page focuses on the filters themselves.
+
+## Property filters
+
+Property filters target one or more explicit [property references](properties/references.md).
+
+Use them when the query is about a specific field.
+
+Examples:
+
+```kotlin
+Equals(
+    Person { surname::ref } with "Mous"
+)
+```
+
+```kotlin
+GreaterThan(
+    Person { age::ref } with 42
+)
+```
+
+```kotlin
+Prefix(
+    Person { surname::ref } with "Mo"
+)
+```
 
 ### Exists
 
@@ -77,8 +110,6 @@ LessThanEquals(
 
 Checks whether the value falls within a range.
 
-Maryk YAML:
-
 ```kotlin
 Range(
     intPropertyReference with 2..42,
@@ -87,7 +118,7 @@ Range(
         to = "zeplin",
         inclusiveTo = false,
     )
-) 
+)
 ```
 
 ### Prefix
@@ -107,8 +138,8 @@ Matches values that satisfy a regular expression.
 
 ```kotlin
 RegEx(
-    stringPropertyReference with "[A-Z]+al.*",
-    anotherStringPropertyReference with "[E-Z]+al.*",
+    stringPropertyReference with Regex("[A-Z]+al.*"),
+    anotherStringPropertyReference with Regex("[E-Z]+al.*"),
 )
 ```
 
@@ -123,9 +154,82 @@ ValueIn(
 )
 ```
 
-## Filter operations
+## Named search filters
 
-Filter operations combine other filters to build complex queries.
+Named search filters target a named search surface instead of one explicit property reference.
+
+Use them when the query should behave like a search box.
+
+Examples:
+
+```kotlin
+Matches(
+    "name" with "garcia lopez"
+)
+```
+
+```kotlin
+MatchesPrefix(
+    "name" with "gar"
+)
+```
+
+```kotlin
+MatchesRegEx(
+    "name" with Regex("^gar.*$")
+)
+```
+
+### Matches
+
+`Matches` does exact term matching on the emitted search terms of a named search surface.
+
+If the query text becomes multiple terms, all resulting query terms must match.
+
+Example:
+
+```kotlin
+Matches(
+    "name" with "van der waals"
+)
+```
+
+This behaves as:
+
+- transform the query according to the search index definition
+- if that produces multiple terms, require all of them to be present
+
+### MatchesPrefix
+
+`MatchesPrefix` works like `Matches`, but query terms are treated as prefixes.
+
+Example:
+
+```kotlin
+MatchesPrefix(
+    "name" with "gar"
+)
+```
+
+If the query produces multiple terms, all of those prefixes must match.
+
+### MatchesRegEx
+
+`MatchesRegEx` applies a regex to the emitted search terms of a named search surface.
+
+Example:
+
+```kotlin
+MatchesRegEx(
+    "name" with Regex("^gar.*$")
+)
+```
+
+If the search surface transforms values before indexing, the regex runs against those transformed terms.
+
+## Combining filters
+
+Filters can be combined to form more complex logic.
 
 ### And
 
@@ -138,6 +242,19 @@ And(
     ),
     GreaterThan(
         intPropertyReference with 42
+    )
+)
+```
+
+You can also mix filter groups:
+
+```kotlin
+And(
+    Matches(
+        "name" with "garcia"
+    ),
+    Equals(
+        Person { active::ref } with true
     )
 )
 ```
@@ -163,7 +280,26 @@ Or(
 
 ```kotlin
 Not(
-    Equals(stringPropertyReference equals "value"),
+    Equals(
+        stringPropertyReference with "value"
+    ),
     Exists(intPropertyReference),
 )
 ```
+
+## Choosing the right filter
+
+Use a property filter when:
+
+- the query is about one explicit field
+- exact field semantics matter
+
+Use a named search filter when:
+
+- the query should search one named search surface
+- the query should behave like user-entered search text
+
+Rule of thumb:
+
+- `Equals(surname.ref() with "Mous")` means "surname equals Mous"
+- `Matches("name" with "mous")` means "search the named name surface"

@@ -7,6 +7,7 @@ Maryk's core module provides the building blocks for defining data models and in
 - [Data Models](datamodel.md): define model structures and property indexes.
   - [Properties](properties/README.md): overview of property types, validations, operations and references.
   - [Keys](key.md): design unique and efficient keys for data objects.
+  - [Index Design](index-design.md): choose between ordered, normalized, and search-oriented indexes.
 - [Versioning](versioning.md): track and request historical value versions.
 - [Querying Data](query.md): add, change, get and scan objects.
   - [Reference Graphs](reference-graphs.md): select specific properties to return.

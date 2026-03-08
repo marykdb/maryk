@@ -4,7 +4,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Normalize
-import maryk.core.properties.definitions.index.SplitOn.Whitespace
+import maryk.core.properties.definitions.index.SplitOn.WordBoundary
 import maryk.core.properties.definitions.index.normalize
 import maryk.core.properties.definitions.index.split
 import maryk.core.properties.definitions.string
@@ -18,7 +18,7 @@ object CaseInsensitivePerson : RootDataModel<CaseInsensitivePerson>(
             "name",
             surname.ref(),
             firstName.ref(),
-        ).normalize().split(Whitespace),
+        ).normalize().split(WordBoundary),
     ) },
 ) {
     val firstName by string(

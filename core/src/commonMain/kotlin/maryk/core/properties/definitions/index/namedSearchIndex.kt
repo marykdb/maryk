@@ -48,6 +48,46 @@ fun IsRootDataModel.matchesNamedSearchIndex(
     }
 }
 
+fun IsRootDataModel.matchesNamedSearchIndexPrefix(
+    name: String,
+    value: String,
+    valueMatcher: (IsPropertyReference<*, *, *>, (Any?) -> Boolean) -> Boolean
+): Boolean {
+    val searchIndex = namedSearchIndex(name) ?: return false
+    val expectedPrefixes = searchIndex.references.flatMap { it.toQueryStrings(value) }.distinct()
+    if (expectedPrefixes.isEmpty()) return false
+
+    return expectedPrefixes.all { expectedPrefix ->
+        searchIndex.references.any { reference ->
+            valueMatcher(reference.toPropertyReference()) { actualValue ->
+                when (val transformed = reference.directStringIndexTransform().apply(actualValue as? String ?: return@valueMatcher false)) {
+                    is Collection<*> -> transformed.any { it is String && it.startsWith(expectedPrefix) }
+                    is String -> transformed.startsWith(expectedPrefix)
+                    else -> false
+                }
+            }
+        }
+    }
+}
+
+fun IsRootDataModel.matchesNamedSearchIndexRegex(
+    name: String,
+    regex: Regex,
+    valueMatcher: (IsPropertyReference<*, *, *>, (Any?) -> Boolean) -> Boolean
+): Boolean {
+    val searchIndex = namedSearchIndex(name) ?: return false
+
+    return searchIndex.references.any { reference ->
+        valueMatcher(reference.toPropertyReference()) { actualValue ->
+            when (val transformed = reference.directStringIndexTransform().apply(actualValue as? String ?: return@valueMatcher false)) {
+                is Collection<*> -> transformed.any { it is String && regex.matches(it) }
+                is String -> regex.matches(transformed)
+                else -> false
+            }
+        }
+    }
+}
+
 private fun IsIndexablePropertyReference<String>.directStringIndexTransform(): StringIndexTransform = when (this) {
     is Normalize -> this.reference.directStringIndexTransform().copy(normalize = true)
     is Split -> this.reference.directStringIndexTransform().copy(splitOn = on)

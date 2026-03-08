@@ -3,6 +3,8 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.matchesNamedSearchIndex
+import maryk.core.properties.definitions.index.matchesNamedSearchIndexPrefix
+import maryk.core.properties.definitions.index.matchesNamedSearchIndexRegex
 import maryk.core.properties.definitions.index.stringIndexTransform
 import maryk.core.query.filters.matchesFilter
 import maryk.core.query.requests.IsFetchRequest
@@ -43,6 +45,16 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
         },
         searchMatcher = { name, value ->
             this.dataModel.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
+                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
+            }
+        },
+        searchPrefixMatcher = { name, value ->
+            this.dataModel.matchesNamedSearchIndexPrefix(name, value) { propertyReference, valueMatcher ->
+                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
+            }
+        },
+        searchRegexMatcher = { name, regex ->
+            this.dataModel.matchesNamedSearchIndexRegex(name, regex) { propertyReference, valueMatcher ->
                 dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
             }
         }

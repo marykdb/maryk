@@ -4,6 +4,8 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.matchesNamedSearchIndex
+import maryk.core.properties.definitions.index.matchesNamedSearchIndexPrefix
+import maryk.core.properties.definitions.index.matchesNamedSearchIndexRegex
 import maryk.core.properties.definitions.index.stringIndexTransform
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.IsFilter
@@ -63,6 +65,16 @@ internal fun <DM : IsRootDataModel> filterMatches(
         },
         searchMatcher = { name, value ->
             dataModel.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
+                dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
+            }
+        },
+        searchPrefixMatcher = { name, value ->
+            dataModel.matchesNamedSearchIndexPrefix(name, value) { propertyReference, valueMatcher ->
+                dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
+            }
+        },
+        searchRegexMatcher = { name, regex ->
+            dataModel.matchesNamedSearchIndexRegex(name, regex) { propertyReference, valueMatcher ->
                 dataRecord.matchQualifier(propertyReference, toVersion, recordFetcher, valueMatcher)
             }
         }

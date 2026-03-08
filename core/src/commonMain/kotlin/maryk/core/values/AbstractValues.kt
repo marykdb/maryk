@@ -30,6 +30,8 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
 import maryk.core.properties.definitions.index.matchesNamedSearchIndex
+import maryk.core.properties.definitions.index.matchesNamedSearchIndexPrefix
+import maryk.core.properties.definitions.index.matchesNamedSearchIndexRegex
 import maryk.lib.exceptions.ParseException
 
 typealias AnyAbstractValues = AbstractValues<Any, IsTypedDataModel<Any>>
@@ -145,6 +147,20 @@ abstract class AbstractValues<DO : Any, DM : IsTypedDataModel<DO>> : IsValues<DM
         },
         searchMatcher = { name, value ->
             (dataModel as? IsRootDataModel)?.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
+                @Suppress("UNCHECKED_CAST")
+                val actualValue = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
+                valueMatcher(actualValue)
+            } ?: false
+        },
+        searchPrefixMatcher = { name, value ->
+            (dataModel as? IsRootDataModel)?.matchesNamedSearchIndexPrefix(name, value) { propertyReference, valueMatcher ->
+                @Suppress("UNCHECKED_CAST")
+                val actualValue = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
+                valueMatcher(actualValue)
+            } ?: false
+        },
+        searchRegexMatcher = { name, regex ->
+            (dataModel as? IsRootDataModel)?.matchesNamedSearchIndexRegex(name, regex) { propertyReference, valueMatcher ->
                 @Suppress("UNCHECKED_CAST")
                 val actualValue = get(propertyReference as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>)
                 valueMatcher(actualValue)

@@ -10,26 +10,26 @@ import maryk.core.query.RequestContext
 import maryk.core.query.pairs.NamedValuePair
 import maryk.core.values.ObjectValues
 
-/** Named search index in [nameValuePairs] should match given search token values */
-data class Matches internal constructor(
+/** Named search index in [nameValuePairs] should match given search prefix */
+data class MatchesPrefix internal constructor(
     val nameValuePairs: List<NamedValuePair>
 ) : IsFilter {
-    override val filterType = FilterType.Matches
+    override val filterType = FilterType.MatchesPrefix
 
     constructor(vararg nameValuePair: NamedValuePair) : this(nameValuePair.toList())
 
     override fun singleReference(predicate: (IsPropertyReference<*, *, *>) -> Boolean) = null
 
-    companion object : TypedObjectDataModel<Matches, Companion, RequestContext, RequestContext>() {
+    companion object : TypedObjectDataModel<MatchesPrefix, Companion, RequestContext, RequestContext>() {
         val nameValuePairs by list(
             index = 1u,
-            getter = Matches::nameValuePairs,
+            getter = MatchesPrefix::nameValuePairs,
             valueDefinition = EmbeddedObjectDefinition(
                 dataModel = { NamedValuePair }
             )
         )
 
-        override fun invoke(values: ObjectValues<Matches, Companion>) = Matches(
+        override fun invoke(values: ObjectValues<MatchesPrefix, Companion>) = MatchesPrefix(
             nameValuePairs = values(1u)
         )
     }

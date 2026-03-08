@@ -3,6 +3,8 @@ package maryk.datastore.test
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Matches
+import maryk.core.query.filters.MatchesPrefix
+import maryk.core.query.filters.MatchesRegEx
 import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.RegEx
 import maryk.core.query.orders.Direction
@@ -31,6 +33,8 @@ class DataStoreScanOnNormalizeIndexTest(
         "executeIndexRegexScanRequestOnNormalizeIndex" to ::executeIndexRegexScanRequestOnNormalizeIndex,
         "executeIndexOnlyNormalizesConfiguredPart" to ::executeIndexOnlyNormalizesConfiguredPart,
         "executeNamedAnyOfMatchesWithoutOrder" to ::executeNamedAnyOfMatchesWithoutOrder,
+        "executeNamedAnyOfMatchesPrefixWithoutOrder" to ::executeNamedAnyOfMatchesPrefixWithoutOrder,
+        "executeNamedAnyOfMatchesRegexWithoutOrder" to ::executeNamedAnyOfMatchesRegexWithoutOrder,
         "executePropertyEqualsDoesNotUseNamedAnyOfSearch" to ::executePropertyEqualsDoesNotUseNamedAnyOfSearch,
     )
 
@@ -223,7 +227,7 @@ class DataStoreScanOnNormalizeIndexTest(
         val scanResponse = dataStore.execute(
             CaseInsensitivePerson.scan(
                 where = Matches(
-                    "name" with "jose"
+                    "name" with "garcia"
                 )
             )
         )
@@ -233,9 +237,41 @@ class DataStoreScanOnNormalizeIndexTest(
         expect(FetchByIndexScan(
             direction = Direction.ASC,
             index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
-            startKey = "jose".encodeToByteArray(),
-            stopKey = "josf".encodeToByteArray(),
+            startKey = "garcia".encodeToByteArray(),
+            stopKey = "garcib".encodeToByteArray(),
         )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMatchesPrefixWithoutOrder() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = MatchesPrefix(
+                    "name" with "gar"
+                )
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[4]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "gar".encodeToByteArray(),
+            stopKey = "gas".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMatchesRegexWithoutOrder() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = MatchesRegEx(
+                    "name" with Regex("^gar.*$")
+                )
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[4]) { scanResponse.values.first().values }
     }
 
     private suspend fun executePropertyEqualsDoesNotUseNamedAnyOfSearch() {

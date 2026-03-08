@@ -23,6 +23,8 @@ import maryk.core.query.filters.IsReferenceValuePairsFilter
 import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
 import maryk.core.query.filters.Matches
+import maryk.core.query.filters.MatchesPrefix
+import maryk.core.query.filters.MatchesRegEx
 import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
@@ -47,6 +49,8 @@ fun convertFilterToIndexPartsToMatch(
         is Equals -> handleEquals(filter, indexable, convertIndex, keySize, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
         is Prefix -> handlePrefix(filter, indexable, convertIndex, keySize, listOfIndexParts, listOfUniqueFilters)
         is Matches -> handleMatches(filter, indexable, keySize, listOfIndexParts)
+        is MatchesPrefix -> handleMatchesPrefix(filter, indexable, keySize, listOfIndexParts)
+        is MatchesRegEx -> handleMatchesRegEx(filter, indexable, keySize, listOfIndexParts)
         is GreaterThan -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, false, false)
         is GreaterThanEquals -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, false, true)
         is LessThan -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, true, false)
@@ -74,6 +78,39 @@ private fun handleMatches(
 
         val matchBytes = indexable.queryToStorageByteArrays(value).firstOrNull() ?: continue
         listOfIndexParts += IndexPartialToMatch(0, null, keySize, matchBytes)
+        return
+    }
+}
+
+private fun handleMatchesPrefix(
+    filter: MatchesPrefix,
+    indexable: IsIndexable,
+    keySize: Int,
+    listOfIndexParts: MutableList<IsIndexPartialToMatch>
+) {
+    if (indexable !is AnyOf) return
+
+    for ((name, value) in filter.nameValuePairs) {
+        if (indexable.name != name) continue
+
+        val matchBytes = indexable.queryToStorageByteArrays(value).firstOrNull() ?: continue
+        listOfIndexParts += IndexPartialToMatch(0, null, keySize, matchBytes, partialMatch = true)
+        return
+    }
+}
+
+private fun handleMatchesRegEx(
+    filter: MatchesRegEx,
+    indexable: IsIndexable,
+    keySize: Int,
+    listOfIndexParts: MutableList<IsIndexPartialToMatch>
+) {
+    if (indexable !is AnyOf) return
+
+    for ((name, regex) in filter.nameRegexPairs) {
+        if (indexable.name != name) continue
+
+        listOfIndexParts += IndexPartialToRegexMatch(0, keySize, regex, null)
         return
     }
 }

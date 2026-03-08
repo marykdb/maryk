@@ -13,7 +13,9 @@ fun matchesFilter(
     filter: IsFilter?,
     valueMatcher: (AnyPropertyReference, (Any?) -> Boolean) -> Boolean,
     normalizer: (AnyPropertyReference, Any?) -> Any? = { _, value -> value },
-    searchMatcher: (String, String) -> Boolean = { _, _ -> false }
+    searchMatcher: (String, String) -> Boolean = { _, _ -> false },
+    searchPrefixMatcher: (String, String) -> Boolean = { _, _ -> false },
+    searchRegexMatcher: (String, Regex) -> Boolean = { _, _ -> false }
 ): Boolean {
     if (filter == null) {
         return true
@@ -23,14 +25,14 @@ fun matchesFilter(
         FilterType.And -> {
             val and = filter as And
             for (aFilter in and.filters) {
-                if (!matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher)) return false
+                if (!matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
             }
             return true
         }
         FilterType.Or -> {
             val or = filter as Or
             for (aFilter in or.filters) {
-                if (matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher)) return true
+                if (matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return true
             }
             return false
         }
@@ -38,7 +40,7 @@ fun matchesFilter(
             val notFilter = (filter as Not)
             for (aFilter in notFilter.filters) {
                 // If internal filter succeeds, then fail
-                if (matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher)) return false
+                if (matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
             }
             return true
         }
@@ -177,6 +179,20 @@ fun matchesFilter(
             val matches = filter as Matches
             for ((name, value) in matches.nameValuePairs) {
                 if (!searchMatcher(name, value)) return false
+            }
+            return true
+        }
+        FilterType.MatchesPrefix -> {
+            val matchesPrefix = filter as MatchesPrefix
+            for ((name, value) in matchesPrefix.nameValuePairs) {
+                if (!searchPrefixMatcher(name, value)) return false
+            }
+            return true
+        }
+        FilterType.MatchesRegEx -> {
+            val matchesRegEx = filter as MatchesRegEx
+            for ((name, regex) in matchesRegEx.nameRegexPairs) {
+                if (!searchRegexMatcher(name, regex)) return false
             }
             return true
         }

@@ -5,6 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.index.SplitOn.WordBoundary
 import maryk.core.properties.definitions.index.SplitOn.Whitespace
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
@@ -132,6 +133,26 @@ internal class NormalizeTest {
     }
 
     @Test
+    fun splitOnNameEmitsHyphenatedNameTokens() {
+        val index = AnyOf(
+            "name",
+            TokenModel.family.ref(),
+            TokenModel { given.refToAny() }
+        ).normalize().split(WordBoundary)
+
+        val values = TokenModel.create {
+            family with "García-López"
+            given with setOf("Jean-Luc")
+        }
+
+        expect(listOf("garcia", "jean", "lopez", "luc")) {
+            index.toStorageByteArrays(values)
+                .map { it.decodeToString() }
+                .sorted()
+        }
+    }
+
+    @Test
     fun anyOfKeepsNameAcrossTransforms() {
         val index = AnyOf(
             "name",
@@ -151,7 +172,8 @@ internal class NormalizeTest {
                         AnyOf("name", MarykModel.value.ref()),
                         AnyOf("name", MarykModel.value.ref())
                     )
-                }
+                },
+                name = "DuplicateNameModel"
             ) {}.Meta
         }
     }

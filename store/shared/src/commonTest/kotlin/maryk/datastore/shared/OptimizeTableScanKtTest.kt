@@ -6,6 +6,8 @@ import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Matches
+import maryk.core.query.filters.MatchesPrefix
+import maryk.core.query.filters.MatchesRegEx
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.pairs.with
 import maryk.datastore.shared.ScanType.IndexScan
@@ -106,6 +108,56 @@ class OptimizeTableScanKtTest {
     fun optimizeTableScanNamedSearchIndex() {
         val filter = Matches(
             "name" with "garcia"
+        )
+        val keyScanRanges = CaseInsensitivePerson.createScanRange(
+            filter = filter,
+            startKey = null
+        )
+
+        expect(
+            IndexScan(
+                CaseInsensitivePerson.Meta.indexes!![1],
+                ASC
+            )
+        ) {
+            CaseInsensitivePerson.optimizeTableScan(
+                tableScan,
+                keyScanRanges,
+                filter = filter,
+                allowTableScan = true
+            )
+        }
+    }
+
+    @Test
+    fun optimizeTableScanNamedSearchIndexPrefix() {
+        val filter = MatchesPrefix(
+            "name" with "gar"
+        )
+        val keyScanRanges = CaseInsensitivePerson.createScanRange(
+            filter = filter,
+            startKey = null
+        )
+
+        expect(
+            IndexScan(
+                CaseInsensitivePerson.Meta.indexes!![1],
+                ASC
+            )
+        ) {
+            CaseInsensitivePerson.optimizeTableScan(
+                tableScan,
+                keyScanRanges,
+                filter = filter,
+                allowTableScan = true
+            )
+        }
+    }
+
+    @Test
+    fun optimizeTableScanNamedSearchIndexRegEx() {
+        val filter = MatchesRegEx(
+            "name" with Regex("^gar.*$")
         )
         val keyScanRanges = CaseInsensitivePerson.createScanRange(
             filter = filter,

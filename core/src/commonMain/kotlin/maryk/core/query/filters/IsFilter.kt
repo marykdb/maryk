@@ -25,5 +25,7 @@ internal val mapOfFilterDefinitions = mapOf(
     FilterType.Range to EmbeddedObjectDefinition(dataModel = { Range }),
     FilterType.RegEx to EmbeddedObjectDefinition(dataModel = { RegEx }),
     FilterType.ValueIn to EmbeddedObjectDefinition(dataModel = { ValueIn }),
-    FilterType.Matches to EmbeddedObjectDefinition(dataModel = { Matches })
+    FilterType.Matches to EmbeddedObjectDefinition(dataModel = { Matches }),
+    FilterType.MatchesPrefix to EmbeddedObjectDefinition(dataModel = { MatchesPrefix }),
+    FilterType.MatchesRegEx to EmbeddedObjectDefinition(dataModel = { MatchesRegEx })
 )

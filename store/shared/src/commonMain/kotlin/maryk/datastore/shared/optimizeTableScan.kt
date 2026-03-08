@@ -12,6 +12,8 @@ import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.filters.And
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.Matches
+import maryk.core.query.filters.MatchesPrefix
+import maryk.core.query.filters.MatchesRegEx
 import maryk.core.query.filters.Or
 import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.shared.ScanType.IndexScan
@@ -80,6 +82,8 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
 private fun hasSupportedSearchMatch(indexable: AnyOf, filter: IsFilter?): Boolean = when (filter) {
     null -> false
     is Matches -> filter.nameValuePairs.any { (name, _) -> indexable.name == name }
+    is MatchesPrefix -> filter.nameValuePairs.any { (name, _) -> indexable.name == name }
+    is MatchesRegEx -> filter.nameRegexPairs.any { (name, _) -> indexable.name == name }
     is And -> filter.filters.any { hasSupportedSearchMatch(indexable, it) }
     is Or -> filter.filters.any { hasSupportedSearchMatch(indexable, it) }
     else -> false

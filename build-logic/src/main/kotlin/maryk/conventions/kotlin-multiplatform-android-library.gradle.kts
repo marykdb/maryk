@@ -9,7 +9,7 @@ kotlin {
     jvmToolchain(21)
     androidLibrary {
         namespace = "io.maryk"
-        compileSdk = 34
+        compileSdk = 36
         minSdk = 21
     }
 }

@@ -14,6 +14,7 @@ import maryk.datastore.shared.IsDataStore
 open class FakeDataStore(
     override val dataModelsById: Map<UInt, IsRootDataModel> = emptyMap(),
     override val keepAllVersions: Boolean = true,
+    override val keepUpdateHistoryIndex: Boolean = false,
 ) : IsDataStore {
     override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (id, model) ->
         model.Meta.name to id

@@ -8,8 +8,9 @@ internal class HistoricTableColumnFamilies(
     table: ColumnFamilyHandle,
     index: ColumnFamilyHandle,
     unique: ColumnFamilyHandle,
+    updateHistory: ColumnFamilyHandle? = null,
     val historic: BasicTableColumnFamilies
-) : TableColumnFamilies(model, keys, table, index, unique) {
+) : TableColumnFamilies(model, keys, table, index, unique, updateHistory) {
     override fun close() {
         super.close()
         historic.close()

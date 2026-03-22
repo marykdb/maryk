@@ -14,7 +14,8 @@ internal enum class TableType(
     Unique(5),
     HistoricTable(6),
     HistoricIndex(7),
-    HistoricUnique(8);
+    HistoricUnique(8),
+    UpdateHistory(9);
 
     fun getDescriptor(tableIndex: UInt, nameSize: Int, options: ColumnFamilyOptions? = null): ColumnFamilyDescriptor {
         var index = 0

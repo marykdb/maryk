@@ -15,6 +15,7 @@ import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.ValuesResponse
@@ -23,6 +24,7 @@ import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
+import maryk.datastore.shared.ScanType.UpdateHistoryScan
 import maryk.datastore.shared.orderToScanType
 import maryk.datastore.shared.updates.Update.Change
 import maryk.lib.extensions.compare.compareTo
@@ -36,7 +38,13 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     request,
     response
 ) {
-    private val scanType = request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
+    internal val usesUpdateHistoryIndex =
+        response is UpdatesResponse<DM> && response.dataFetchType is FetchByUpdateHistoryIndex
+
+    private val scanType = when {
+        usesUpdateHistoryIndex -> UpdateHistoryScan()
+        else -> request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
+    }
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
 
@@ -70,11 +78,21 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                 ASC -> !scanRange.keyBeforeStart(update.key.bytes, 0)
                 DESC -> !scanRange.keyAfterStart(update.key.bytes, 0)
             }
+            is UpdateHistoryScan -> !scanRange.keyBeforeStart(update.key.bytes, 0)
             is IndexScan -> true
         }
 
-        if (shouldProcess && scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
-            update.process(this, dataStore, sendFlow)
+        when (scanType) {
+            is UpdateHistoryScan -> {
+                if (shouldProcess && scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
+                    update.process(this, dataStore, sendFlow)
+                }
+            }
+            else -> {
+                if (shouldProcess && scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
+                    update.process(this, dataStore, sendFlow)
+                }
+            }
         }
     }
 
@@ -122,6 +140,17 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                         }
                         // else already in list
                         else -> indexPosition
+                    }
+                }
+            }
+            is UpdateHistoryScan -> {
+                val existingIndex = matchingKeys.value.indexOf(key)
+                when {
+                    existingIndex >= 0 -> existingIndex
+                    request.limit == 0u -> null
+                    else -> {
+                        matchingKeys.value = listOf(key) + matchingKeys.value
+                        0
                     }
                 }
             }
@@ -180,6 +209,20 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                 val index = findKeyIndexForTableScan(change.key)
                 if (index >= 0) {
                     changedHandler(index, false)
+                }
+            }
+            is UpdateHistoryScan -> {
+                val existingIndex = matchingKeys.value.indexOf(change.key)
+                when {
+                    existingIndex == 0 -> changedHandler(0, false)
+                    existingIndex > 0 -> {
+                        matchingKeys.value = buildList {
+                            add(change.key)
+                            addAll(matchingKeys.value.filterIndexed { i, _ -> i != existingIndex })
+                        }
+                        changedHandler(0, true)
+                    }
+                    else -> changedHandler(0, true)
                 }
             }
             is IndexScan -> {

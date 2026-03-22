@@ -25,4 +25,22 @@ class InMemoryDataStoreTest {
             dataStore.close()
         }
     }
+
+    @Test
+    fun testDataStoreWithUpdateHistoryIndex() = runTest {
+        val dataStore = InMemoryDataStore.open(
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+            dataModelsById = dataModelsForTests
+        )
+        try {
+            runDataStoreTests(dataStore, "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex")
+            runDataStoreTests(dataStore, "executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion")
+        } finally {
+            dataStore.close()
+        }
+    }
 }

@@ -32,6 +32,7 @@ import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
+import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.updates.Update
@@ -68,6 +69,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
             // Store first and last version
             setCreatedVersion(transaction, columnFamilies, key, versionBytes)
             setLatestVersion(transaction, columnFamilies, key, versionBytes)
+            columnFamilies.updateHistory?.let {
+                transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, EMPTY_ARRAY)
+            }
 
             // Find new index values to write
             dataModel.Meta.indexes?.forEach { indexDefinition ->

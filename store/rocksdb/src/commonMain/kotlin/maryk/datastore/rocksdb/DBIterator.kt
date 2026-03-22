@@ -18,6 +18,13 @@ open class DBIterator(
     open fun seek(target: ByteArray) = rocksIterator.seek(target)
 
     /**
+     * Position at the first entry in the source.
+     *
+     * The iterator is valid after this call if the source is not empty.
+     */
+    open fun seekToFirst() = rocksIterator.seekToFirst()
+
+    /**
      * Position at the first entry in the source whose key is that or
      * before target.
      *

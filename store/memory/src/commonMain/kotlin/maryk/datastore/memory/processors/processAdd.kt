@@ -87,6 +87,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         }
 
         dataStore.records.add((index * -1) - 1, dataRecord)
+        dataStore.addToUpdateHistory(version, key.bytes)
 
         val changes = listOf<IsChange>()
 

@@ -16,6 +16,7 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
+import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.updates.Update.Deletion
@@ -167,6 +168,9 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                         )
                     }
 
+                }
+                columnFamilies.updateHistory?.let {
+                    transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, if (hardDelete) byteArrayOf(1) else EMPTY_ARRAY)
                 }
                 transaction.commit()
             }

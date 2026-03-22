@@ -20,6 +20,7 @@ import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
+import maryk.datastore.shared.ScanType.UpdateHistoryScan
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
@@ -125,6 +126,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                         processRecord
                     )
                 }
+                is UpdateHistoryScan -> throw IllegalStateException("UpdateHistoryScan is only supported by scanUpdates")
             }
         }
     }

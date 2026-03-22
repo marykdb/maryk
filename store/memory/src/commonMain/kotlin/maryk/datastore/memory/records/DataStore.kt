@@ -12,11 +12,25 @@ import maryk.lib.extensions.compare.compareTo
  * An in memory data store containing records and indexes
  */
 internal class DataStore<DM : IsRootDataModel>(
-    val keepAllVersions: Boolean
+    val keepAllVersions: Boolean,
+    val keepUpdateHistoryIndex: Boolean
 ) {
+    data class UpdateHistoryRecord(
+        val version: ULong,
+        val keyBytes: ByteArray,
+        val isHardDelete: Boolean = false
+    )
+
     val records: MutableList<DataRecord<DM>> = mutableListOf()
+    val updateHistory = mutableListOf<UpdateHistoryRecord>()
     private val indexes: MutableList<IndexValues<DM>> = mutableListOf()
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, Comparable<Any>>> = mutableListOf()
+
+    internal fun addToUpdateHistory(version: HLC, keyBytes: ByteArray, isHardDelete: Boolean = false) {
+        if (keepUpdateHistoryIndex) {
+            updateHistory.add(0, UpdateHistoryRecord(version.timestamp, keyBytes.copyOf(), isHardDelete))
+        }
+    }
 
     /** Add [record] to index for [value] and pass [previousValue] so that index reference can be deleted */
     internal fun addToIndex(

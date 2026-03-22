@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
@@ -42,6 +41,8 @@ import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -66,6 +67,7 @@ import maryk.datastore.rocksdb.TableType.Index
 import maryk.datastore.rocksdb.TableType.Keys
 import maryk.datastore.rocksdb.TableType.Model
 import maryk.datastore.rocksdb.TableType.Table
+import maryk.datastore.rocksdb.TableType.UpdateHistory
 import maryk.datastore.rocksdb.TableType.Unique
 import maryk.datastore.rocksdb.metadata.ModelMeta
 import maryk.datastore.rocksdb.metadata.readMetaFile
@@ -74,6 +76,7 @@ import maryk.datastore.rocksdb.model.RocksDBLocalMigrationLease
 import maryk.datastore.rocksdb.model.RocksDBMigrationAuditLogStore
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
+import maryk.datastore.rocksdb.model.modelUpdateHistoryBackfillCompleteKey
 import maryk.datastore.rocksdb.model.storeModelDefinition
 import maryk.datastore.rocksdb.processors.AnyAddStoreAction
 import maryk.datastore.rocksdb.processors.AnyChangeStoreAction
@@ -87,6 +90,7 @@ import maryk.datastore.rocksdb.processors.AnyScanStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
+import maryk.datastore.rocksdb.processors.addSoftDeleteChangeIfMissing
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.rocksdb.processors.processAddRequest
 import maryk.datastore.rocksdb.processors.processAdditionUpdate
@@ -98,9 +102,13 @@ import maryk.datastore.rocksdb.processors.processGetChangesRequest
 import maryk.datastore.rocksdb.processors.processGetRequest
 import maryk.datastore.rocksdb.processors.processGetUpdatesRequest
 import maryk.datastore.rocksdb.processors.processInitialChangesUpdate
+import maryk.datastore.rocksdb.processors.readTransactionIntoObjectChanges
 import maryk.datastore.rocksdb.processors.processScanChangesRequest
 import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
+import maryk.datastore.rocksdb.processors.helpers.getLastVersion
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
@@ -123,6 +131,7 @@ private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1
 
 class RocksDBDataStore private constructor(
     override val keepAllVersions: Boolean = true,
+    override val keepUpdateHistoryIndex: Boolean = false,
     relativePath: String,
     dataModelsById: Map<UInt, IsRootDataModel>,
     rocksDBOptions: DBOptions? = null,
@@ -166,6 +175,7 @@ class RocksDBDataStore private constructor(
     }
 
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
+    private val updateHistoryReadyModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationReasons = atomic(mapOf<UInt, String>())
     internal val pausedMigrationModelIds = atomic(setOf<UInt>())
@@ -197,6 +207,7 @@ class RocksDBDataStore private constructor(
                         table = handles[handleIndex++],
                         index = handles[handleIndex++],
                         unique = handles[handleIndex++],
+                        updateHistory = if (keepUpdateHistoryIndex) handles[handleIndex++] else null,
                         historic = BasicTableColumnFamilies(
                             table = handles[handleIndex++],
                             index = handles[handleIndex++],
@@ -212,7 +223,8 @@ class RocksDBDataStore private constructor(
                         keys = handles[handleIndex++],
                         table = handles[handleIndex++],
                         index = handles[handleIndex++],
-                        unique = handles[handleIndex++]
+                        unique = handles[handleIndex++],
+                        updateHistory = if (keepUpdateHistoryIndex) handles[handleIndex++] else null
                     )
                 }
             }
@@ -305,6 +317,7 @@ class RocksDBDataStore private constructor(
                             migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
                             versionUpdateHandler?.invoke(this, storedModel, dataModel)
                             storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
+                            ensureUpdateHistoryIndexReady(index, dataModel, tableColumnFamilies)
                             writeMetaFile(storePath, modelMetas)
                         },
                         finalizeInStartup = {
@@ -312,9 +325,18 @@ class RocksDBDataStore private constructor(
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                                 storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
+                                ensureUpdateHistoryIndexReady(index, dataModel, tableColumnFamilies)
                             }
                         }
                     )
+                }
+            }
+        }
+
+        if (keepUpdateHistoryIndex) {
+            for ((index, dataModel) in dataModelsById) {
+                if (index !in pendingMigrationModelIds.value) {
+                    ensureUpdateHistoryIndexReady(index, dataModel, getColumnFamilies(index))
                 }
             }
         }
@@ -400,6 +422,94 @@ class RocksDBDataStore private constructor(
         walkDataRecordsAndFillIndex(this, tableColumnFamilies, indexesToIndex)
     }
 
+    internal fun canUseUpdateHistoryIndex(dbIndex: UInt) =
+        keepUpdateHistoryIndex && dbIndex in updateHistoryReadyModelIds.value
+
+    private fun ensureUpdateHistoryIndexReady(
+        dbIndex: UInt,
+        dataModel: IsRootDataModel,
+        tableColumnFamilies: TableColumnFamilies,
+    ) {
+        if (!keepUpdateHistoryIndex || tableColumnFamilies.updateHistory == null || canUseUpdateHistoryIndex(dbIndex)) return
+        if (db.get(tableColumnFamilies.model, modelUpdateHistoryBackfillCompleteKey)?.firstOrNull() == 1.toByte()) {
+            updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
+            return
+        }
+
+        backfillUpdateHistoryIndex(dbIndex, dataModel, tableColumnFamilies)
+        db.put(tableColumnFamilies.model, modelUpdateHistoryBackfillCompleteKey, byteArrayOf(1))
+        updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
+    }
+
+    private fun backfillUpdateHistoryIndex(
+        dbIndex: UInt,
+        dataModel: IsRootDataModel,
+        tableColumnFamilies: TableColumnFamilies,
+    ) {
+        if (tableColumnFamilies.updateHistory == null) return
+
+        DBAccessor(this).use { dbAccessor ->
+            dbAccessor.getIterator(defaultReadOptions, tableColumnFamilies.keys).use { keyIterator ->
+                keyIterator.seekToFirst()
+
+                if (keepAllVersions && tableColumnFamilies is HistoricTableColumnFamilies) {
+                    val cache = Cache()
+
+                    while (keyIterator.isValid()) {
+                        val key = Key<IsRootDataModel>(keyIterator.key().copyOf())
+                        val creationVersion = keyIterator.value().readVersionBytes()
+                        val cachedRead = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                            cache.readValue(dbIndex, key, reference, version, valueReader)
+                        }
+
+                        dbAccessor.getIterator(defaultReadOptions, tableColumnFamilies.historic.table).use { objectIterator ->
+                            dataModel.readTransactionIntoObjectChanges(
+                                iterator = objectIterator,
+                                creationVersion = creationVersion,
+                                columnFamilies = tableColumnFamilies,
+                                key = key,
+                                select = null,
+                                fromVersion = 0uL,
+                                toVersion = null,
+                                maxVersions = UInt.MAX_VALUE,
+                                sortingKey = null,
+                                cachedRead = cachedRead
+                            )
+                        }?.let { changes ->
+                            addSoftDeleteChangeIfMissing(
+                                dbAccessor = dbAccessor,
+                                columnFamilies = tableColumnFamilies,
+                                readOptions = defaultReadOptions,
+                                key = key,
+                                fromVersion = 0uL,
+                                objectChange = changes
+                            )
+                        }?.changes?.forEach { versionedChange ->
+                            db.put(
+                                tableColumnFamilies.updateHistory,
+                                versionedChange.version.toReversedVersionBytes() + key.bytes,
+                                EMPTY_ARRAY
+                            )
+                        }
+
+                        keyIterator.next()
+                    }
+                } else {
+                    while (keyIterator.isValid()) {
+                        val key = Key<IsRootDataModel>(keyIterator.key().copyOf())
+                        val lastVersion = getLastVersion(dbAccessor, tableColumnFamilies, defaultReadOptions, key)
+                        db.put(
+                            tableColumnFamilies.updateHistory,
+                            lastVersion.toReversedVersionBytes() + key.bytes,
+                            EMPTY_ARRAY
+                        )
+                        keyIterator.next()
+                    }
+                }
+            }
+        }
+    }
+
     private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: IsRootDataModel) {
         val nameSize = tableIndex.calculateVarByteLength() + 1
 
@@ -413,6 +523,9 @@ class RocksDBDataStore private constructor(
         descriptors += Table.getDescriptor(tableIndex, nameSize, tableOptions)
         descriptors += Index.getDescriptor(tableIndex, nameSize)
         descriptors += Unique.getDescriptor(tableIndex, nameSize)
+        if (keepUpdateHistoryIndex) {
+            descriptors += UpdateHistory.getDescriptor(tableIndex, nameSize)
+        }
 
         if (keepAllVersions) {
             val comparatorOptions = ComparatorOptions()
@@ -506,14 +619,14 @@ class RocksDBDataStore private constructor(
 
     internal fun emitUpdate(updateToEmit: Update<*>?) {
         if (updateToEmit != null) {
-            launch(this.updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
+            launch(this.updateDispatcher) {
                 updateSharedFlow.emit(updateToEmit)
             }
         }
     }
 
     internal fun emitUpdates(updatesToEmit: List<Update<*>>) {
-        launch(this.updateDispatcher, start = CoroutineStart.UNDISPATCHED) {
+        launch(this.updateDispatcher) {
             updateSharedFlow.emitAll(updatesToEmit.asFlow())
         }
     }
@@ -684,6 +797,7 @@ class RocksDBDataStore private constructor(
     companion object {
         suspend fun open(
             keepAllVersions: Boolean = true,
+            keepUpdateHistoryIndex: Boolean = false,
             relativePath: String,
             dataModelsById: Map<UInt, IsRootDataModel>,
             rocksDBOptions: DBOptions? = null,
@@ -694,6 +808,7 @@ class RocksDBDataStore private constructor(
         ): RocksDBDataStore {
             return RocksDBDataStore(
                 keepAllVersions = keepAllVersions,
+                keepUpdateHistoryIndex = keepUpdateHistoryIndex,
                 relativePath = relativePath,
                 dataModelsById = dataModelsById,
                 rocksDBOptions = rocksDBOptions,

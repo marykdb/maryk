@@ -41,4 +41,26 @@ class RocksDBDataStoreTest {
             deleteFolder(folder)
         }
     }
+
+    @Test
+    fun testDataStoreWithUpdateHistoryIndex() = runTest {
+        val folder = createTestDBFolder("update-history")
+
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+            dataModelsById = dataModelsForTests,
+        )
+        try {
+            runDataStoreTests(dataStore, "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex")
+            runDataStoreTests(dataStore, "executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion")
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
 }

@@ -5,7 +5,7 @@ This document explains how Maryk stores data in FoundationDB (FDB): what subspac
 ## TL;DR
 
 - Every DataModel gets its own FDB directory (subspace) tree under a configurable root.
-- We keep small, well‑known subspaces per model: `keys`, `table`, `unique`, `index`. If history is enabled, we also have `*_versioned` variants.
+- We keep small, well‑known subspaces per model: `keys`, `table`, `unique`, `index`. If history is enabled, we also have `*_versioned` variants. If update-history indexing is enabled, we also have `update_history`.
 - “Latest” values live in `table` and are encoded as `(version || value)`. History (if enabled) lives in separate subspaces keyed by an inverted version suffix to keep “latest first” ordering.
 - Soft deletes are object‑level flags stored as a special qualifier. Hard deletes clear all records (and history) for a key.
 - Uniques and Indexes are first‑class citizens with current and (optionally) historic representations.
@@ -36,6 +36,10 @@ If `keepAllVersions = true`, we also create historic subspaces:
 - `table_versioned`  – all historical values per object key.
 - `unique_versioned` – historic unique entries (tombstones and key snapshots).
 - `index_versioned`  – historic index entries (tombstones and value snapshots).
+
+If `keepUpdateHistoryIndex = true`, we also create:
+
+- `update_history` – engine-level update history entries ordered by change version.
 
 All of the above are regular FDB subspaces created via the DirectoryLayer. They give us *prefix isolation* so we can read/write/scan per model efficiently.
 
@@ -111,6 +115,7 @@ This design enables:
 - Get by key: check `keys` for existence and creation version, apply filters (including soft delete), then read values out of `table` or `table_versioned` depending on `toVersion`.
 - Scan by key: compute key ranges from the model and filters, walk `keys` in ASC or DESC, apply filters, and collect up to `limit`.
 - Scan by index: build index ranges from the filter and order, scan `index` (value+key) and map back to primary keys. When `toVersion` is provided, perform a historic index scan by computing the index value at that version per key and applying the same ordering and range filters.
+- Scan updates with no explicit order: if `keepUpdateHistoryIndex = true`, scan `update_history` newest-first and map entries back to current records.
 - Changes APIs (GetChanges/ScanChanges): instead of returning full values, we stream `VersionedChanges` (creation + field changes) between `fromVersion`..`toVersion`, with `maxVersions` limiting per field.
 
 ## Filtering
@@ -135,3 +140,12 @@ Keeping current data in `table` and history in `table_versioned` gives us:
 - forward‑only streaming (because of inverted version suffix) for time windows.
 
 This maps neatly to FoundationDB’s range read strengths, while preserving Maryk’s model semantics.
+
+## Update History
+
+When `keepUpdateHistoryIndex = true`, each add/change/delete also writes:
+
+- Key: `updateHistoryPrefix + inverted(version) + key`
+- Value: empty
+
+This is used for `scanUpdates(order = null)` so a forward scan returns newest-first object updates.

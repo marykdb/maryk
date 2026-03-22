@@ -33,6 +33,7 @@ import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.setTypedValue
 import maryk.datastore.foundationdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.foundationdb.processors.helpers.setValue
+import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.shared.UniqueException
@@ -64,6 +65,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             // Store first and last version markers
             setCreatedVersion(tr, tableDirs, key.bytes, versionBytes)
             setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+            tableDirs.updateHistoryPrefix?.let { prefix ->
+                tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
+            }
 
             val checks: MutableList<() -> Unit> = mutableListOf()
             val uniqueWrites: MutableList<ByteArray> = mutableListOf()

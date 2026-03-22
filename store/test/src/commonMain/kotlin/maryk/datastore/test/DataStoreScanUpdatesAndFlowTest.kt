@@ -1,6 +1,14 @@
 package maryk.datastore.test
 
 import kotlinx.datetime.LocalDateTime
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import maryk.core.models.graph
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
@@ -20,6 +28,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.requests.scanUpdates
+import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -27,6 +36,7 @@ import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.NotInRange
@@ -38,6 +48,7 @@ import maryk.test.models.TestMarykModel
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 val t0 = TestMarykModel.create {
@@ -90,10 +101,17 @@ class DataStoreScanUpdatesAndFlowTest(
 
     override val allTests = mapOf(
         "executeSimpleScanUpdatesRequest" to ::executeSimpleScanUpdatesRequest,
+        "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex" to ::executeSimpleScanUpdatesRequestWithUpdateHistoryIndex,
+        "executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates" to ::executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates,
         "executeOrderedScanUpdatesRequest" to ::executeOrderedScanUpdatesRequest,
         "executeScanValuesAsFlowRequest" to ::executeScanValuesAsFlowRequest,
+        "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill" to ::executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
         "executeScanUpdatesAsFlowRequest" to ::executeScanUpdatesAsFlowRequest,
+        "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex" to ::executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex,
+        "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey" to ::executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey,
+        "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexStartKey" to ::executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexStartKey,
+        "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion" to ::executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion,
         "executeScanUpdatesAsFlowWithMutableWhereRequest" to ::executeScanUpdatesAsFlowWithMutableWhereRequest,
         "executeScanUpdatesIncludingInitValuesAsFlowRequest" to ::executeScanUpdatesIncludingInitValuesAsFlowRequest,
         "executeScanUpdatesAsFlowWithSelectRequest" to ::executeScanUpdatesAsFlowWithSelectRequest,
@@ -182,6 +200,58 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
+    private suspend fun executeSimpleScanUpdatesRequestWithUpdateHistoryIndex() {
+        if (!dataStore.keepUpdateHistoryIndex) return
+
+        val change1 = Change(TestMarykModel { string::ref } with "ha history 1")
+        assertStatusIs<ChangeSuccess<*>>(
+            dataStore.execute(TestMarykModel.change(testKeys[1].change(change1))).statuses.first()
+        )
+
+        val change2 = Change(TestMarykModel { string::ref } with "ha history 2")
+        assertStatusIs<ChangeSuccess<*>>(
+            dataStore.execute(TestMarykModel.change(testKeys[3].change(change2))).statuses.first()
+        )
+
+        val scanResponse = dataStore.execute(
+            TestMarykModel.scanUpdates(limit = 3u)
+        )
+        val orderedKeys = assertIs<OrderedKeysUpdate<TestMarykModel>>(scanResponse.updates[0]).keys
+
+        assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
+        assertEquals(3, orderedKeys.size)
+        assertEquals(setOf(testKeys[1], testKeys[3]), orderedKeys.take(2).toSet())
+        assertTrue(orderedKeys[2] in setOf(testKeys[0], testKeys[2], testKeys[4]))
+
+        val additionUpdates = scanResponse.updates.drop(1).filterIsInstance<AdditionUpdate<TestMarykModel>>()
+        assertEquals(3, additionUpdates.size)
+        assertEquals(orderedKeys.toSet(), additionUpdates.map { it.key }.toSet())
+    }
+
+    private suspend fun executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates() {
+        if (!dataStore.keepUpdateHistoryIndex) return
+
+        val change = Change(TestMarykModel { string::ref } with "ha history change update")
+        assertStatusIs<ChangeSuccess<*>>(
+            dataStore.execute(TestMarykModel.change(testKeys[1].change(change))).statuses.first()
+        )
+
+        val scanResponse = dataStore.execute(
+            TestMarykModel.scanUpdates(
+                fromVersion = highestInitVersion + 1uL,
+                limit = 3u
+            )
+        )
+
+        assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
+        assertIs<OrderedKeysUpdate<TestMarykModel>>(scanResponse.updates.first())
+        assertIs<ChangeUpdate<TestMarykModel>>(scanResponse.updates[1]).apply {
+            assertEquals(testKeys[1], key)
+            assertEquals(listOf(change), changes)
+            assertEquals(0, index)
+        }
+    }
+
     private suspend fun executeScanValuesAsFlowRequest() {
         updateListenerTester(
             dataStore,
@@ -207,6 +277,41 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(change), changes)
             }
+        }
+    }
+
+    private suspend fun executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill() {
+        if (!dataStore.keepUpdateHistoryIndex) return
+
+        val change = Change(TestMarykModel { string::ref } with "ha refill ordering")
+        dataStore.execute(TestMarykModel.change(testKeys[4].change(change))).also {
+            assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+        }
+
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scan(limit = 2u),
+            3
+        ) { responses ->
+            assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[0], testKeys[1]), values.map { it.key })
+            }
+
+            dataStore.execute(TestMarykModel.delete(testKeys[0], hardDelete = true)).also {
+                assertStatusIs<DeleteSuccess<*>>(it.statuses.first())
+            }
+
+            assertIs<RemovalUpdate<*>>(responses[1].await()).apply {
+                assertEquals(testKeys[0], key)
+                assertEquals(HardDelete, reason)
+            }
+
+            assertIs<AdditionUpdate<TestMarykModel>>(responses[2].await()).apply {
+                assertEquals(testKeys[2], key)
+                assertEquals(t2, values)
+            }
+
+            testKeys.removeAt(0)
         }
     }
 
@@ -339,6 +444,198 @@ class DataStoreScanUpdatesAndFlowTest(
 
             // Delete all keys of removed items
             testKeys.removeAt(2)
+        }
+    }
+
+    private suspend fun executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex() {
+        if (!dataStore.keepUpdateHistoryIndex) return
+
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scanUpdates(
+                fromVersion = highestInitVersion + 1uL,
+                limit = 5u
+            ),
+            2
+        ) { responses ->
+            assertIs<OrderedKeysUpdate<*>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[4], testKeys[3], testKeys[2], testKeys[1], testKeys[0]), keys)
+                assertEquals(highestInitVersion, version)
+            }
+
+            val change = Change(TestMarykModel { string::ref } with "ha history flow")
+            dataStore.execute(TestMarykModel.change(testKeys[1].change(change))).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
+
+            assertIs<ChangeUpdate<*>>(responses[1].await()).apply {
+                assertEquals(testKeys[1], key)
+                assertEquals(0, index)
+                assertEquals(listOf(change), changes)
+            }
+        }
+    }
+
+    private suspend fun executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey() = coroutineScope {
+        if (!dataStore.keepUpdateHistoryIndex) return@coroutineScope
+
+        val responses = Channel<IsUpdateResponse<TestMarykModel>>(8)
+        val listenerSetupComplete = Channel<Unit>(1)
+        val listenJob = launch {
+            dataStore.executeFlow(
+                TestMarykModel.scanUpdates(
+                    fromVersion = highestInitVersion + 1uL,
+                    limit = 2u
+                )
+            ).also {
+                listenerSetupComplete.send(Unit)
+            }.collect {
+                responses.send(it)
+            }
+        }
+
+        listenerSetupComplete.receive()
+
+        try {
+            suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5000) { responses.receive() }
+            }
+
+            val initialUpdate = receiveRealTimeResponse()
+            assertIs<OrderedKeysUpdate<*>>(initialUpdate).apply {
+                assertEquals(listOf(testKeys[4], testKeys[3]), keys)
+            }
+
+            val change = Change(TestMarykModel { string::ref } with "ha enters top range")
+            dataStore.execute(TestMarykModel.change(testKeys[1].change(change))).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
+
+            val removalUpdate = receiveRealTimeResponse()
+            assertIs<RemovalUpdate<*>>(removalUpdate).apply {
+                assertEquals(testKeys[3], key)
+                assertEquals(NotInRange, reason)
+            }
+
+            val additionUpdate = receiveRealTimeResponse()
+            assertIs<AdditionUpdate<*>>(additionUpdate).apply {
+                assertEquals(testKeys[1], key)
+                assertEquals(0, insertionIndex)
+            }
+
+            val followUpChange = Change(TestMarykModel { string::ref } with "ha stays tracked")
+            dataStore.execute(TestMarykModel.change(testKeys[1].change(followUpChange))).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
+
+            val trackedChangeUpdate = receiveRealTimeResponse()
+            assertIs<ChangeUpdate<*>>(trackedChangeUpdate).apply {
+                assertEquals(testKeys[1], key)
+                assertEquals(0, index)
+                assertEquals(listOf(followUpChange), changes)
+            }
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
+        }
+    }
+
+    private suspend fun executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexStartKey() = coroutineScope {
+        if (!dataStore.keepUpdateHistoryIndex) return@coroutineScope
+
+        val responses = Channel<IsUpdateResponse<TestMarykModel>>(4)
+        val listenJob = launch {
+            dataStore.executeFlow(
+                TestMarykModel.scanUpdates(
+                    startKey = testKeys[2],
+                    fromVersion = highestInitVersion + 1uL,
+                    limit = 3u
+                )
+            ).collect {
+                responses.send(it)
+            }
+        }
+
+        try {
+            assertIs<OrderedKeysUpdate<*>>(withTimeout(5000) { responses.receive() }).apply {
+                assertEquals(listOf(testKeys[2], testKeys[3], testKeys[4]), keys)
+            }
+
+            val change = Change(TestMarykModel { string::ref } with "ha out of range")
+            dataStore.execute(TestMarykModel.change(testKeys[1].change(change))).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
+
+            assertNull(withTimeoutOrNull(250) { responses.receive() })
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
+        }
+    }
+
+    private suspend fun executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion() = coroutineScope {
+        if (!dataStore.keepUpdateHistoryIndex) return@coroutineScope
+
+        val beforeWindowChange = Change(TestMarykModel { string::ref } with "ha before listener window")
+        val beforeWindowVersion = assertStatusIs<ChangeSuccess<*>>(
+            dataStore.execute(TestMarykModel.change(testKeys[2].change(beforeWindowChange))).statuses.first()
+        ).version
+
+        val refillCandidateChange = Change(TestMarykModel { string::ref } with "ha refill candidate")
+        assertStatusIs<ChangeSuccess<*>>(
+            dataStore.execute(TestMarykModel.change(testKeys[3].change(refillCandidateChange))).statuses.first()
+        )
+
+        val inWindowChange = Change(TestMarykModel { string::ref } with "ha inside listener window")
+        assertStatusIs<ChangeSuccess<*>>(
+            dataStore.execute(TestMarykModel.change(testKeys[4].change(inWindowChange))).statuses.first()
+        )
+
+        val responses = Channel<IsUpdateResponse<TestMarykModel>>(6)
+        val listenJob = launch {
+            dataStore.executeFlow(
+                TestMarykModel.scanUpdates(
+                    fromVersion = beforeWindowVersion + 1uL,
+                    limit = 1u
+                )
+            ).collect {
+                responses.send(it)
+            }
+        }
+
+        try {
+            suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5000) { responses.receive() }
+            }
+
+            assertIs<OrderedKeysUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(listOf(testKeys[4]), keys)
+            }
+
+            assertIs<ChangeUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(testKeys[4], key)
+                assertEquals(listOf(inWindowChange), changes)
+                assertEquals(0, index)
+            }
+
+            dataStore.execute(TestMarykModel.delete(testKeys[4], hardDelete = true)).also {
+                assertStatusIs<DeleteSuccess<*>>(it.statuses.first())
+            }
+
+            assertIs<RemovalUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(testKeys[4], key)
+                assertEquals(HardDelete, reason)
+            }
+
+            assertIs<AdditionUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(testKeys[3], key)
+                assertEquals(0, insertionIndex)
+            }
+
+            testKeys.removeAt(4)
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
         }
     }
 

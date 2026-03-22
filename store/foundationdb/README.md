@@ -16,6 +16,7 @@ Add the FoundationDB store to your application and open a datastore. At minimum 
 suspend fun main() {
     val store = FoundationDBDataStore.open(
         keepAllVersions = true,                     // keep historic versions
+        keepUpdateHistoryIndex = true,             // keep newest-first update history index
         fdbClusterFilePath = "./fdb.cluster",      // or null to use default
         directoryPath = listOf("maryk", "app"),    // directory root (subspace)
         dataModelsById = mapOf(
@@ -61,6 +62,7 @@ Configure FoundationDBDataStore.open with:
 ```kotlin
 suspend fun openStore() = FoundationDBDataStore.open(
     keepAllVersions = true,
+    keepUpdateHistoryIndex = true,
     directoryPath = listOf("maryk", "app"),
     dataModelsById = mapOf(1u to Account),
     migrationConfiguration = MigrationConfiguration(
@@ -94,6 +96,7 @@ You can inject a custom `migrationLease` if needed.
 ## Configuration
 
 - `keepAllVersions`: Mirror latest writes into historic subspaces for time travel and change history.
+- `keepUpdateHistoryIndex`: Add a per-model `update_history` subspace keyed by change version + key. With this enabled, `scanUpdates(order = null)` reads newest-first from this engine index by default.
 - `fdbClusterFilePath`: Optional path to an FDB cluster file; uses default environment if null.
 - `directoryPath`: Subspace root path under which model directories are created.
 - `databaseOptionsSetter`: Lambda executed once during startup on the underlying `DatabaseOptions`. Use this to enable tracing, tweak locality, or set transaction logging limits without forking Maryk.

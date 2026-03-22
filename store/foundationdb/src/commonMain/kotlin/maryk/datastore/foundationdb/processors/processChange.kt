@@ -86,6 +86,7 @@ import maryk.datastore.foundationdb.processors.helpers.setIndexValue
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.setListValue
 import maryk.datastore.foundationdb.processors.helpers.setValue
+import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.unsetNonChangedValues
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.helpers.withCountUpdate
@@ -685,6 +686,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             }
 
             val finalChanges = changes + outChanges
+            tableDirs.updateHistoryPrefix?.let { prefix ->
+                tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
+            }
             updateToEmit = Update.Change(dataModel, key, version.timestamp, finalChanges)
 
             clusterUpdateLog?.append(

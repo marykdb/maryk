@@ -92,6 +92,7 @@ import maryk.datastore.rocksdb.processors.helpers.setListValue
 import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
+import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.unsetNonChangedValues
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
@@ -746,6 +747,9 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             val lastVersion = getLastVersion(transaction, columnFamilies, defaultReadOptions, key)
             if (version.timestamp > lastVersion) {
                 setLatestVersion(transaction, columnFamilies, key, versionBytes)
+            }
+            columnFamilies.updateHistory?.let {
+                transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, EMPTY_ARRAY)
             }
         }
 

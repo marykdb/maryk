@@ -1,6 +1,7 @@
 package maryk.core.query.responses
 
 import maryk.core.query.orders.Direction
+import maryk.core.query.orders.Direction.DESC
 
 sealed class DataFetchType
 
@@ -56,6 +57,10 @@ data class FetchByIndexScan(
 }
 
 object FetchByKey: DataFetchType()
+
+data class FetchByUpdateHistoryIndex(
+    val direction: Direction = DESC,
+): DataFetchType()
 
 data class FetchByUniqueKey(
     val uniqueIndex: ByteArray,

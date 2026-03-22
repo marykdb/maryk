@@ -4,6 +4,7 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 
 - Common logic lives in `store/shared` and powers every engine.
 - All engines support Maryk’s versioned data model, indexes, uniques, and the standard request types (Add/Change/Delete/Get/Scan/GetChanges/ScanChanges/Updates).
+- Memory, RocksDB, and FoundationDB can optionally maintain an engine-level update history index via `keepUpdateHistoryIndex` to speed up newest-first `scanUpdates(order = null)`.
 
 ## Selecting an Engine
 

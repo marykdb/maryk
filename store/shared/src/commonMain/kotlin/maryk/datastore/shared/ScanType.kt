@@ -13,6 +13,11 @@ sealed class ScanType {
         override val direction: Direction = ASC
     ) : ScanType()
 
+    /** Scan over update history in [direction] */
+    data class UpdateHistoryScan(
+        override val direction: Direction = Direction.DESC
+    ) : ScanType()
+
     /** Scan over [index] in [direction]*/
     data class IndexScan(
         val index: IsIndexable,

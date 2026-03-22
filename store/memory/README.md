@@ -8,6 +8,7 @@ Fastest option for tests and local development. No persistence.
 ```kotlin
 InMemoryDataStore.open(
     keepAllVersions = true,
+    keepUpdateHistoryIndex = true,
     dataModelsById = mapOf(
         1u to Account,
         2u to Course
@@ -42,3 +43,8 @@ The `.use { ... }` scope closes the store automatically.
 
 - Data is lost on close/shutdown.
 - Not suitable as persistent production storage.
+
+## Options
+
+- `keepAllVersions`: Keep historic values/indexes/uniques for `toVersion`, changes, and history queries.
+- `keepUpdateHistoryIndex`: Keep an engine-level update history index ordered by latest change. With this enabled, `scanUpdates(order = null)` uses newest-first change order by default.

@@ -1,6 +1,7 @@
 package maryk.datastore.shared.updates
 
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.yield
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.graph
 import maryk.core.properties.graph.RootPropRefGraph
@@ -11,8 +12,10 @@ import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsChangesRequest
 import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
@@ -53,7 +56,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> Update<DM
                         )
 
                         // Remove any values after the limit
-                        if (updateListener is UpdateListenerForScan<DM, *> && updateListener.request.limit - 1u == insertIndex.toUInt()) {
+                        if (updateListener is UpdateListenerForScan<DM, *> && updateListener.matchingKeys.value.size > updateListener.request.limit.toInt()) {
                             val keyToRemove = updateListener.getLast()
                             updateListener.removeKey(keyToRemove)
 
@@ -113,13 +116,16 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> Update<DM
                             }
                         }
                     }
-                } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, *> && updateListener.indexScanRange != null) {
+                } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, *> && (updateListener.indexScanRange != null || updateListener.usesUpdateHistoryIndex)) {
                     val lastKey = currentKeys.last()
                     val lastSortedKey = updateListener.sortedValues?.value?.lastOrNull()
 
                     // Only process further if order has changed to move this value into range
                     updateListener.changeOrder(this@process) { newIndex, _ ->
                         if (newIndex != null) {
+                            // Let single-threaded stores finish the outer write before doing a follow-up fetch.
+                            yield()
+
                             // Check if object matches the filter
                             val response = dataStore.execute(
                                 request.dataModel.get(
@@ -132,6 +138,13 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> Update<DM
 
                             // Only handle change if it matches against key
                             if (response.values.isNotEmpty()) {
+                                if (updateListener.usesUpdateHistoryIndex && key !in updateListener.matchingKeys.value) {
+                                    updateListener.matchingKeys.value = buildList {
+                                        add(key)
+                                        addAll(updateListener.matchingKeys.value)
+                                    }
+                                }
+
                                 if (currentKeys.size.toUInt() >= updateListener.request.limit) {
                                     updateListener.removeKey(lastKey)
 
@@ -157,7 +170,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> Update<DM
                                 )
                             } else {
                                 // Add back removed values since filter does not match
-                                updateListener.matchingKeys.value = currentKeys + lastKey
+                                updateListener.matchingKeys.value = currentKeys
                                 lastSortedKey?.let { updateListener.sortedValues.value = updateListener.sortedValues.value + it }
                             }
                         }
@@ -222,7 +235,12 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> handleDele
     }
 
     if (updateListener is UpdateListenerForScan<DM, *> && updateListener.request.limit - 1u == updateListener.matchingKeys.value.size.toUInt()) {
-        dataStore.requestNextValues(updateListener.request, updateListener.matchingKeys.value)?.also { additionUpdate ->
+        val nextValue = dataStore.requestNextValues(
+            updateListener.request,
+            updateListener.matchingKeys.value,
+            updateListener.usesUpdateHistoryIndex
+        )
+        nextValue?.also { additionUpdate ->
             // Always at the end so no need to order
             updateListener.addValuesAtEnd(additionUpdate.key, additionUpdate.values)
 
@@ -251,8 +269,31 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> handleDele
 /** Requests next values object after last key in [currentKeys] */
 private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
     request: IsScanRequest<DM, *>,
-    currentKeys: List<Key<DM>>
+    currentKeys: List<Key<DM>>,
+    useUpdateHistoryIndex: Boolean
 ): AdditionUpdate<DM>? {
+    if (useUpdateHistoryIndex) {
+        val updatesRequest = request as? ScanUpdatesRequest<DM>
+            ?: error("Update history refill requires ScanUpdatesRequest")
+        val nextResults = execute(
+            request.dataModel.scanUpdates(
+                startKey = request.startKey,
+                select = request.select,
+                where = request.where,
+                filterSoftDeleted = request.filterSoftDeleted,
+                limit = request.limit,
+                includeStart = request.includeStart,
+                fromVersion = updatesRequest.fromVersion,
+                maxVersions = updatesRequest.maxVersions,
+                orderedKeys = currentKeys
+            )
+        )
+
+        return nextResults.updates
+            .filterIsInstance<AdditionUpdate<DM>>()
+            .firstOrNull { it.key !in currentKeys }
+    }
+
     val nextResults = execute(
         request.dataModel.scan(
             currentKeys.last(),

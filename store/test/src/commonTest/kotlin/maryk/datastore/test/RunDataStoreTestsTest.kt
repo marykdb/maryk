@@ -31,6 +31,7 @@ private object NoOpDataStore : IsDataStore {
     override val dataModelsById: Map<UInt, IsRootDataModel> = emptyMap()
     override val dataModelIdsByString: Map<String, UInt> = emptyMap()
     override val keepAllVersions: Boolean = true
+    override val keepUpdateHistoryIndex: Boolean = false
     override val supportsFuzzyQualifierFiltering: Boolean = false
     override val supportsSubReferenceFiltering: Boolean = false
 

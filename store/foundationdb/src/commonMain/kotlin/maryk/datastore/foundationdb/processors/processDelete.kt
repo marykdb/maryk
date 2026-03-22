@@ -26,6 +26,7 @@ import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
 import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
+import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.helpers.setValue
 import maryk.datastore.foundationdb.processors.helpers.packVersionedKey
@@ -198,6 +199,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 versionBytes,
                 byteArrayOf(TRUE)
             )
+        }
+
+        tableDirs.updateHistoryPrefix?.let { prefix ->
+            tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), if (hardDelete) byteArrayOf(1) else EMPTY_BYTEARRAY)
         }
 
         updateToEmit = Update.Deletion(dataModel, key, version.timestamp, hardDelete)

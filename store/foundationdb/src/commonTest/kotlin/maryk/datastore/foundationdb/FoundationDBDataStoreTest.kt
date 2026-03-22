@@ -41,4 +41,22 @@ class FoundationDBDataStoreTest {
 
         dataStore.close()
     }
+
+    @Test
+    fun testDataStoreWithUpdateHistoryIndex() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "update-history", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+
+        runDataStoreTests(dataStore, "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex")
+        runDataStoreTests(dataStore, "executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates")
+        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
+        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey")
+        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion")
+
+        dataStore.close()
+    }
 }

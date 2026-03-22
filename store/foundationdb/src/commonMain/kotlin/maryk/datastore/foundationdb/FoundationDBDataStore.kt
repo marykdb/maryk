@@ -45,6 +45,7 @@ import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -68,6 +69,7 @@ import maryk.datastore.foundationdb.model.FoundationDBMigrationAuditLogStore
 import maryk.datastore.foundationdb.model.FoundationDBMigrationLease
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
 import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
+import maryk.datastore.foundationdb.model.modelUpdateHistoryBackfillCompleteKey
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
 import maryk.datastore.foundationdb.processors.AnyChangeStoreAction
@@ -79,9 +81,15 @@ import maryk.datastore.foundationdb.processors.AnyProcessUpdateResponseStoreActi
 import maryk.datastore.foundationdb.processors.AnyScanChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanUpdatesStoreAction
+import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
+import maryk.datastore.foundationdb.processors.SOFT_DELETE_INDICATOR
 import maryk.datastore.foundationdb.processors.deleteCompleteIndexContents
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
+import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
+import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.foundationdb.processors.processAddRequest
 import maryk.datastore.foundationdb.processors.processAdditionUpdate
@@ -111,17 +119,22 @@ import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.lib.bytes.combineToByteArray
+import maryk.lib.extensions.compare.nextByteInSameLength
+import maryk.foundationdb.Range
+import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 
 private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
 private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
+private const val UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE = 256
 
 /**
  * FoundationDB DataStore (JVM-only).
  */
 class FoundationDBDataStore private constructor(
     override val keepAllVersions: Boolean = true,
+    override val keepUpdateHistoryIndex: Boolean = false,
     val fdbClusterFilePath: String? = null,
     val directoryRootPath: List<String> = listOf("maryk"),
     dataModelsById: Map<UInt, IsRootDataModel>,
@@ -150,6 +163,7 @@ class FoundationDBDataStore private constructor(
     internal val updateDispatcher = Dispatchers.IO
 
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
+    private val updateHistoryReadyModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationReasons = atomic(mapOf<UInt, String>())
     internal val pausedMigrationModelIds = atomic(setOf<UInt>())
@@ -305,16 +319,26 @@ class FoundationDBDataStore private constructor(
                         finalizeInBackground = { storedModel ->
                             migrationStatus.indexesToIndex?.let { fillIndex(it, tableDirectories) }
                             storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
+                            ensureUpdateHistoryIndexReady(index, tableDirectories)
                             versionUpdateHandler?.invoke(this, storedModel, dataModel)
                         },
                         finalizeInStartup = {
                             migrationStatus.indexesToIndex?.let { fillIndex(it, tableDirectories) }
                             storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
+                            ensureUpdateHistoryIndexReady(index, tableDirectories)
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                             }
                         }
                     )
+                }
+            }
+        }
+
+        if (keepUpdateHistoryIndex) {
+            for ((index, dataModel) in dataModelsById) {
+                if (index !in pendingMigrationModelIds.value) {
+                    ensureUpdateHistoryIndexReady(index, getTableDirs(index))
                 }
             }
         }
@@ -597,6 +621,9 @@ class FoundationDBDataStore private constructor(
         val tableDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "table")).awaitResult()
         val uniqueDir       = rootDirectory.createOrOpen(tr, listOf(modelName, "unique")).awaitResult()
         val indexDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "index")).awaitResult()
+        val updateHistoryDir = if (keepUpdateHistoryIndex) {
+            rootDirectory.createOrOpen(tr, listOf(modelName, "update_history")).awaitResult()
+        } else null
 
         if (!historic) {
             TableDirectories(
@@ -605,7 +632,8 @@ class FoundationDBDataStore private constructor(
                 keys   = keysDir,
                 table  = tableDir,
                 unique = uniqueDir,
-                index  = indexDir
+                index  = indexDir,
+                updateHistory = updateHistoryDir
             )
         } else {
             val histTableDir    = rootDirectory.createOrOpen(tr, listOf(modelName, "table_versioned")).awaitResult()
@@ -619,6 +647,7 @@ class FoundationDBDataStore private constructor(
                 table         = tableDir,
                 unique        = uniqueDir,
                 index         = indexDir,
+                updateHistory = updateHistoryDir,
                 historicTable = histTableDir,
                 historicIndex = histIndexDir,
                 historicUnique= histUniqueDir
@@ -709,6 +738,107 @@ class FoundationDBDataStore private constructor(
         }
 
         walkDataRecordsAndFillIndex(tc, tableDirectories, indexesToIndex)
+    }
+
+    internal fun canUseUpdateHistoryIndex(dbIndex: UInt) =
+        keepUpdateHistoryIndex && dbIndex in updateHistoryReadyModelIds.value
+
+    private fun ensureUpdateHistoryIndexReady(
+        dbIndex: UInt,
+        tableDirectories: IsTableDirectories,
+    ) {
+        val updateHistoryPrefix = tableDirectories.updateHistoryPrefix ?: return
+        if (!keepUpdateHistoryIndex || canUseUpdateHistoryIndex(dbIndex)) return
+
+        val markerKey = packKey(tableDirectories.modelPrefix, modelUpdateHistoryBackfillCompleteKey)
+        val complete = runTransaction { tr ->
+            tr.get(markerKey).awaitResult()?.firstOrNull() == 1.toByte()
+        }
+        if (complete) {
+            updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
+            return
+        }
+
+        backfillUpdateHistoryIndex(tableDirectories, updateHistoryPrefix)
+        runTransaction { tr ->
+            tr.set(markerKey, byteArrayOf(1))
+        }
+        updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
+    }
+
+    private fun backfillUpdateHistoryIndex(
+        tableDirectories: IsTableDirectories,
+        updateHistoryPrefix: ByteArray,
+    ) {
+        var nextStart = tableDirectories.keysPrefix
+        val end = tableDirectories.keysPrefix.nextByteInSameLength()
+        val batchSize = 128
+        while (true) {
+            val batch = runTransaction { tr ->
+                val iterator = tr.getRange(Range(nextStart, end), batchSize, false).iterator()
+                buildList {
+                    while (iterator.hasNext()) {
+                        val entry = iterator.nextBlocking()
+                        add(entry.key.copyOf() to entry.value.copyOf())
+                    }
+                }
+            }
+            if (batch.isEmpty()) break
+
+            batch.forEach { (packedKey, storedValue) ->
+                val keyBytes = packedKey.copyOfRange(tableDirectories.keysPrefix.size, packedKey.size)
+                val key = Key<IsRootDataModel>(keyBytes)
+
+                if (keepAllVersions && tableDirectories is HistoricTableDirectories) {
+                    val creationVersion = HLC.fromStorageBytes(storedValue).timestamp
+                    val versions = runTransaction { tr ->
+                        buildSet {
+                            add(creationVersion)
+
+                            val historicIterator = tr.getRange(Range.startsWith(packKey(tableDirectories.historicTablePrefix, key.bytes))).iterator()
+                            while (historicIterator.hasNext()) {
+                                val historicEntry = historicIterator.nextBlocking()
+                                val historicKey = historicEntry.key
+                                if (historicKey.size <= tableDirectories.historicTablePrefix.size + key.size + VERSION_BYTE_SIZE) continue
+
+                                val versionOffset = historicKey.size - VERSION_BYTE_SIZE
+                                val separatorIndex = versionOffset - 1
+                                if (separatorIndex < 0 || historicKey[separatorIndex] != 0.toByte()) continue
+
+                                add(historicKey.readReversedVersionBytes(versionOffset))
+                            }
+
+                            tr.get(packKey(tableDirectories.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR)).awaitResult()?.let { softDeleteValue ->
+                                add(HLC.fromStorageBytes(softDeleteValue).timestamp)
+                            }
+                        }
+                    }.toList().sorted()
+
+                    versions.chunked(UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE).forEach { versionChunk ->
+                        runTransaction { tr ->
+                            versionChunk.forEach { version ->
+                                tr.set(
+                                    packKey(updateHistoryPrefix, version.toReversedVersionBytes(), key.bytes),
+                                    EMPTY_BYTEARRAY
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    val lastVersion = runTransaction { tr ->
+                        getLastVersion(tr, tableDirectories, key)
+                    }
+                    runTransaction { tr ->
+                        tr.set(
+                            packKey(updateHistoryPrefix, lastVersion.toReversedVersionBytes(), key.bytes),
+                            EMPTY_BYTEARRAY
+                        )
+                    }
+                }
+
+                nextStart = packedKey + byteArrayOf(0)
+            }
+        }
     }
 
     internal fun getTableDirs(dataModel: IsRootDataModel) =
@@ -1056,6 +1186,7 @@ class FoundationDBDataStore private constructor(
          */
         suspend fun open(
             keepAllVersions: Boolean = true,
+            keepUpdateHistoryIndex: Boolean = false,
             fdbClusterFilePath: String? = null,
             directoryPath: List<String> = listOf("maryk"),
             dataModelsById: Map<UInt, IsRootDataModel>,
@@ -1068,6 +1199,7 @@ class FoundationDBDataStore private constructor(
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
         ) = FoundationDBDataStore(
             keepAllVersions = keepAllVersions,
+            keepUpdateHistoryIndex = keepUpdateHistoryIndex,
             fdbClusterFilePath = fdbClusterFilePath,
             directoryRootPath = directoryPath,
             dataModelsById = dataModelsById,

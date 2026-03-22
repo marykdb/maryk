@@ -41,6 +41,7 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
                         updateListeners.getOrPut(update.dataModelId) { mutableListOf() }
 
                     dataModelListeners += update.listener
+                    update.completion?.complete(Unit)
                 }
                 is RemoveUpdateListenerAction -> {
                     val dataModelListeners =
@@ -48,6 +49,7 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
 
                     update.listener.close()
                     dataModelListeners -= update.listener
+                    update.completion?.complete(Unit)
                 }
                 is RemoveAllUpdateListenersAction -> {
                     updateListeners.values.forEach { it.forEach(UpdateListener<*, *>::close) }

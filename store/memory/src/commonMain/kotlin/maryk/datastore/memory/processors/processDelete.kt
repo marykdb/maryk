@@ -79,6 +79,8 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                 dataStore.records[index] = newRecord
             }
 
+            dataStore.addToUpdateHistory(version, key.bytes, hardDelete)
+
             updateSharedFlow.emit(
                 Deletion(dataModel, key, version.timestamp, hardDelete)
             )

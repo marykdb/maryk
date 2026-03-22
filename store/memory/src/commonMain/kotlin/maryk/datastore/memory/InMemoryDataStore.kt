@@ -57,6 +57,7 @@ import maryk.datastore.shared.DISPATCHER
  */
 class InMemoryDataStore private constructor(
     override val keepAllVersions: Boolean = false,
+    override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
 ) : AbstractDataStore(dataModelsById, DISPATCHER) {
     override val supportsFuzzyQualifierFiltering: Boolean = true
@@ -86,7 +87,7 @@ class InMemoryDataStore private constructor(
                             val index = dataModelIdsByString[model.Meta.name] ?: throw DefNotFoundException(model.Meta.name)
                             @Suppress("UNCHECKED_CAST")
                             dataStores.getOrPut(index) {
-                                DataStore<IsRootDataModel>(keepAllVersions)
+                                DataStore<IsRootDataModel>(keepAllVersions, keepUpdateHistoryIndex)
                             } as DataStore<IsRootDataModel>
                         }
 
@@ -140,9 +141,11 @@ class InMemoryDataStore private constructor(
     companion object {
         fun open(
             keepAllVersions: Boolean = false,
+            keepUpdateHistoryIndex: Boolean = false,
             dataModelsById: Map<UInt, IsRootDataModel>,
         ) = InMemoryDataStore(
             keepAllVersions = keepAllVersions,
+            keepUpdateHistoryIndex = keepUpdateHistoryIndex,
             dataModelsById = dataModelsById,
         )
     }

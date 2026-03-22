@@ -138,6 +138,48 @@ class SoftDeleteLegacyTimeTravelTest {
         dataStore.close()
         deleteFolder(folder)
     }
+
+    @Test
+    fun softDeleteFallbackAppearsInUpdateHistoryScanUpdates() = runTest {
+        val folder = createTestDBFolder("soft-delete-legacy-time-travel-history")
+
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+            dataModelsById = dataModelsForTests,
+        )
+
+        val values = Log("legacy-log-history")
+        val key = Log.key(values)
+
+        val addResponse = dataStore.execute(Log.add(key to values))
+        assertIs<AddSuccess<*>>(addResponse.statuses.first())
+
+        val deleteResponse = dataStore.execute(Log.delete(key, hardDelete = false))
+        val deleteStatus = assertIs<DeleteSuccess<*>>(deleteResponse.statuses.first())
+
+        val columnFamilies = dataStore.getColumnFamilies(Log) as HistoricTableColumnFamilies
+        val versionBytes = HLC.toStorageBytes(HLC(deleteStatus.version))
+        val historicReference = combineToByteArray(key.bytes, SOFT_DELETE_INDICATOR, versionBytes).apply {
+            invert(size - versionBytes.size)
+        }
+        dataStore.db.delete(columnFamilies.historic.table, historicReference)
+
+        val scanUpdatesResponse = dataStore.execute(
+            Log.scanUpdates(
+                startKey = key,
+                includeStart = true,
+                limit = 1u,
+                maxVersions = 100u,
+                filterSoftDeleted = false
+            )
+        )
+        assertTrue(hasSoftDeleteUpdate(scanUpdatesResponse.updates))
+
+        dataStore.close()
+        deleteFolder(folder)
+    }
 }
 
 private fun hasSoftDeleteChange(changes: List<maryk.core.query.changes.VersionedChanges>): Boolean =

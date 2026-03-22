@@ -213,6 +213,7 @@ private fun buildRemoteStoreInfo(dataStore: IsDataStore): RemoteStoreInfo {
         definitions = definitions,
         modelIds = modelIds,
         keepAllVersions = dataStore.keepAllVersions,
+        keepUpdateHistoryIndex = dataStore.keepUpdateHistoryIndex,
         supportsFuzzyQualifierFiltering = dataStore.supportsFuzzyQualifierFiltering,
         supportsSubReferenceFiltering = dataStore.supportsSubReferenceFiltering,
     )

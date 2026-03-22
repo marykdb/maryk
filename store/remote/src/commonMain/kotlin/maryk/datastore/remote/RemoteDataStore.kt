@@ -55,6 +55,7 @@ class RemoteDataStore private constructor(
     private val ownsClient: Boolean,
     override val dataModelsById: Map<UInt, IsRootDataModel>,
     override val keepAllVersions: Boolean,
+    override val keepUpdateHistoryIndex: Boolean,
     override val supportsFuzzyQualifierFiltering: Boolean,
     override val supportsSubReferenceFiltering: Boolean,
 ) : IsDataStore {
@@ -117,6 +118,7 @@ class RemoteDataStore private constructor(
                     ownsClient = ownsClient,
                     dataModelsById = modelMap,
                     keepAllVersions = infoResult.info.keepAllVersions,
+                    keepUpdateHistoryIndex = infoResult.info.keepUpdateHistoryIndex,
                     supportsFuzzyQualifierFiltering = infoResult.info.supportsFuzzyQualifierFiltering,
                     supportsSubReferenceFiltering = infoResult.info.supportsSubReferenceFiltering,
                 )

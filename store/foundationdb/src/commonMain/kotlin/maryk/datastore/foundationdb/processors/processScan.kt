@@ -115,6 +115,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
                 decryptValue = this::decryptValueIfNeeded,
                 processStoreValue = processRecord
             )
+        is ScanType.UpdateHistoryScan -> throw IllegalStateException("UpdateHistoryScan is only supported by scanUpdates")
     }
 }
 

@@ -657,6 +657,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             if (version > objectToChange.lastVersion) {
                 objectToChange.lastVersion = version
             }
+            dataStore.addToUpdateHistory(version, objectToChange.key.bytes)
         }
 
         uniquesToIndex?.forEach { (value, previousValue) ->

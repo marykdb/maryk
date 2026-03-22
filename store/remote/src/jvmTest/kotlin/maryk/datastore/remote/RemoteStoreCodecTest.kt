@@ -50,4 +50,12 @@ class RemoteStoreCodecTest {
         assertEquals(256, result?.length)
         assertEquals(4, result?.nextOffset)
     }
+
+    @Test
+    fun remoteStoreInfoPreservesLegacyFieldNumbers() {
+        assertEquals(3u, RemoteStoreInfo.keepAllVersions.index)
+        assertEquals(4u, RemoteStoreInfo.supportsFuzzyQualifierFiltering.index)
+        assertEquals(5u, RemoteStoreInfo.supportsSubReferenceFiltering.index)
+        assertEquals(6u, RemoteStoreInfo.keepUpdateHistoryIndex.index)
+    }
 }

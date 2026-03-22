@@ -11,6 +11,7 @@ Use the following snippet:
 ```kotlin
 RocksDBDataStore.open(
     keepAllVersions = false,
+    keepUpdateHistoryIndex = false,
     relativePath = "path/to/folder/on/disk/for/store", 
     dataModelsById = mapOf(
         1u to Account,
@@ -52,6 +53,7 @@ Put `migrationHandler`, `migrationExpandHandler`, `migrationVerifyHandler`, and 
 RocksDBDataStore.open(
     // True if the data store should keep all past versions of the data
     keepAllVersions = true,
+    keepUpdateHistoryIndex = true,
     relativePath = "path/to/folder/on/disk/for/store", 
     dataModelsById = mapOf(
         1u to Account,
@@ -97,6 +99,11 @@ RocksDB default lease is process-local (`RocksDBLocalMigrationLease`).
 This module is Kotlin Multiplatform and works on JVM, iOS, macOS, tvOS, watchOS, Android, Android Native, Windows and Linux via the `rocksdb-multiplatform` bindings.
 
 For a deeper dive into how data is laid out and how queries execute, check the [Architecture](documentation/architecture.md) and [Storage Layout](documentation/storage.md) docs.
+
+## Options
+
+- `keepAllVersions`: Keep historic table/index/unique column families for time-travel and change-history reads.
+- `keepUpdateHistoryIndex`: Add an `UpdateHistory` column family keyed by change version + key. With this enabled, `scanUpdates(order = null)` reads newest-first from this engine index by default.
 
 ## Sensitive Properties
 

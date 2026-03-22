@@ -123,12 +123,16 @@ abstract class AbstractDataStore(
         val response = execute(request)
 
         val listener = request.createUpdateListener(response)
+        val listenerAdded = CompletableDeferred<Unit>()
 
-        updateSharedFlow.emit(AddUpdateListenerAction(dataModelId, listener))
+        updateSharedFlow.emit(AddUpdateListenerAction(dataModelId, listener, listenerAdded))
+        listenerAdded.await()
         onUpdateListenerAdded(dataModelId)
 
         return listener.getFlow().onCompletion {
-            updateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener))
+            val listenerRemoved = CompletableDeferred<Unit>()
+            updateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
+            listenerRemoved.await()
             onUpdateListenerRemoved(dataModelId)
         }
     }

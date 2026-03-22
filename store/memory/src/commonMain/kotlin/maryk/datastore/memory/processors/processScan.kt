@@ -14,6 +14,7 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
+import maryk.datastore.shared.ScanType.UpdateHistoryScan
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
@@ -97,6 +98,7 @@ internal fun <DM : IsRootDataModel> processScan(
                         processRecord
                     )
                 }
+                is UpdateHistoryScan -> throw IllegalStateException("UpdateHistoryScan is only supported by scanUpdates")
             }
         }
     }

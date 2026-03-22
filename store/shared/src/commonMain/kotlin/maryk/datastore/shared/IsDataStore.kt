@@ -15,6 +15,7 @@ interface IsDataStore {
     val dataModelsById: Map<UInt, IsRootDataModel>
     val dataModelIdsByString: Map<String, UInt>
     val keepAllVersions: Boolean
+    val keepUpdateHistoryIndex: Boolean
 
     val supportsFuzzyQualifierFiltering: Boolean
     val supportsSubReferenceFiltering: Boolean

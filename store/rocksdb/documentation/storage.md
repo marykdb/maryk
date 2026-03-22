@@ -11,7 +11,7 @@ This metadata is written whenever a model definition is stored and read during s
 
 ## Column Family Layout
 
-Each DataModel is represented by multiple column families that hold the actual data. At minimum a model has `Model`, `Keys`, `Table`, `Index` and `Unique`. When `keepAllVersions = true` the historic variants are also created to store previous versions.
+Each DataModel is represented by multiple column families that hold the actual data. At minimum a model has `Model`, `Keys`, `Table`, `Index` and `Unique`. When `keepAllVersions = true` the historic variants are also created to store previous versions. When `keepUpdateHistoryIndex = true` an extra `UpdateHistory` family is created for version-ordered update scans.
 
 The column family name is a compact byte array made of two parts: a single type byte followed by the varint‑encoded model id. The type byte values are:
 
@@ -23,6 +23,7 @@ The column family name is a compact byte array made of two parts: a single type 
 - Historic Table (6) – only when `keepAllVersions = true`
 - Historic Index (7) – only when `keepAllVersions = true`
 - Historic Unique (8) – only when `keepAllVersions = true`
+- Update History (9) – only when `keepUpdateHistoryIndex = true`
 
 The model id is the `UInt` key from `dataModelsById` passed to `RocksDBDataStore.open`.
 
@@ -75,3 +76,11 @@ Stores unique value history.
 - `UNIQUE_REF || VALUE_BYTES || inverted(VERSION)` → `KEY` (set) or empty (unset tombstone).
 
 This enables resolving which key owned a unique value at or before a given version.
+
+## Update History
+Supports model-wide update scans ordered by latest change.
+
+- `inverted(VERSION) || KEY` → empty
+
+`scanUpdates(order = null)` uses this family when `keepUpdateHistoryIndex = true`.
+Forward scan yields newest-first.

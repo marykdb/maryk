@@ -102,7 +102,7 @@ class DataStoreScanUpdatesAndFlowTest(
     override val allTests = mapOf(
         "executeSimpleScanUpdatesRequest" to ::executeSimpleScanUpdatesRequest,
         "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex" to ::executeSimpleScanUpdatesRequestWithUpdateHistoryIndex,
-        "executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates" to ::executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates,
+        "executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex" to ::executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex,
         "executeOrderedScanUpdatesRequest" to ::executeOrderedScanUpdatesRequest,
         "executeScanValuesAsFlowRequest" to ::executeScanValuesAsFlowRequest,
         "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill" to ::executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill,
@@ -228,7 +228,7 @@ class DataStoreScanUpdatesAndFlowTest(
         assertEquals(orderedKeys.toSet(), additionUpdates.map { it.key }.toSet())
     }
 
-    private suspend fun executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates() {
+    private suspend fun executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex() {
         if (!dataStore.keepUpdateHistoryIndex) return
 
         val change = Change(TestMarykModel { string::ref } with "ha history change update")
@@ -243,12 +243,12 @@ class DataStoreScanUpdatesAndFlowTest(
             )
         )
 
-        assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
-        assertIs<OrderedKeysUpdate<TestMarykModel>>(scanResponse.updates.first())
+        assertTrue(scanResponse.dataFetchType !is FetchByUpdateHistoryIndex)
+        val orderedKeys = assertIs<OrderedKeysUpdate<TestMarykModel>>(scanResponse.updates.first()).keys
         assertIs<ChangeUpdate<TestMarykModel>>(scanResponse.updates[1]).apply {
             assertEquals(testKeys[1], key)
             assertEquals(listOf(change), changes)
-            assertEquals(0, index)
+            assertEquals(orderedKeys.indexOf(key), index)
         }
     }
 
@@ -453,7 +453,6 @@ class DataStoreScanUpdatesAndFlowTest(
         updateListenerTester(
             dataStore,
             TestMarykModel.scanUpdates(
-                fromVersion = highestInitVersion + 1uL,
                 limit = 5u
             ),
             2
@@ -484,7 +483,6 @@ class DataStoreScanUpdatesAndFlowTest(
         val listenJob = launch {
             dataStore.executeFlow(
                 TestMarykModel.scanUpdates(
-                    fromVersion = highestInitVersion + 1uL,
                     limit = 2u
                 )
             ).also {
@@ -548,7 +546,6 @@ class DataStoreScanUpdatesAndFlowTest(
             dataStore.executeFlow(
                 TestMarykModel.scanUpdates(
                     startKey = testKeys[2],
-                    fromVersion = highestInitVersion + 1uL,
                     limit = 3u
                 )
             ).collect {
@@ -577,9 +574,9 @@ class DataStoreScanUpdatesAndFlowTest(
         if (!dataStore.keepUpdateHistoryIndex) return@coroutineScope
 
         val beforeWindowChange = Change(TestMarykModel { string::ref } with "ha before listener window")
-        val beforeWindowVersion = assertStatusIs<ChangeSuccess<*>>(
+        assertStatusIs<ChangeSuccess<*>>(
             dataStore.execute(TestMarykModel.change(testKeys[2].change(beforeWindowChange))).statuses.first()
-        ).version
+        )
 
         val refillCandidateChange = Change(TestMarykModel { string::ref } with "ha refill candidate")
         assertStatusIs<ChangeSuccess<*>>(
@@ -595,7 +592,6 @@ class DataStoreScanUpdatesAndFlowTest(
         val listenJob = launch {
             dataStore.executeFlow(
                 TestMarykModel.scanUpdates(
-                    fromVersion = beforeWindowVersion + 1uL,
                     limit = 1u
                 )
             ).collect {

@@ -129,7 +129,6 @@ class SoftDeleteLegacyTimeTravelTest {
                 startKey = key,
                 includeStart = true,
                 limit = 1u,
-                maxVersions = 100u,
                 filterSoftDeleted = false
             )
         )
@@ -171,7 +170,6 @@ class SoftDeleteLegacyTimeTravelTest {
                 startKey = key,
                 includeStart = true,
                 limit = 1u,
-                maxVersions = 100u,
                 filterSoftDeleted = false
             )
         )

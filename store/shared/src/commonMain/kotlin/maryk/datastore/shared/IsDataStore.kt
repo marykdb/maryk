@@ -2,7 +2,7 @@ package maryk.datastore.shared
 
 import kotlinx.coroutines.flow.Flow
 import maryk.core.models.IsRootDataModel
-import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
@@ -26,7 +26,7 @@ interface IsDataStore {
     ): RP
 
     /** Execute a single store [request] and retrieve a flow of responses */
-    suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, RP>, RP: IsDataResponse<DM>> executeFlow(
+    suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, RP>, RP: IsDataResponse<DM>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM>>
 

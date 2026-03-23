@@ -15,6 +15,7 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
+import maryk.core.query.requests.ScanUpdateHistoryRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.UpdateResponse
@@ -33,6 +34,7 @@ import maryk.datastore.memory.processors.AnyGetUpdatesStoreAction
 import maryk.datastore.memory.processors.AnyProcessUpdateResponseStoreAction
 import maryk.datastore.memory.processors.AnyScanChangesStoreAction
 import maryk.datastore.memory.processors.AnyScanStoreAction
+import maryk.datastore.memory.processors.AnyScanUpdateHistoryStoreAction
 import maryk.datastore.memory.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.memory.processors.processAddRequest
 import maryk.datastore.memory.processors.processAdditionUpdate
@@ -46,6 +48,7 @@ import maryk.datastore.memory.processors.processGetUpdatesRequest
 import maryk.datastore.memory.processors.processInitialChangesUpdate
 import maryk.datastore.memory.processors.processScanChangesRequest
 import maryk.datastore.memory.processors.processScanRequest
+import maryk.datastore.memory.processors.processScanUpdateHistoryRequest
 import maryk.datastore.memory.processors.processScanUpdatesRequest
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.AbstractDataStore
@@ -109,6 +112,8 @@ class InMemoryDataStore private constructor(
                                 processScanRequest(storeAction as AnyScanStoreAction, dataStoreFetcher)
                             is ScanChangesRequest<*> ->
                                 processScanChangesRequest(storeAction as AnyScanChangesStoreAction, dataStoreFetcher)
+                            is ScanUpdateHistoryRequest<*> ->
+                                processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, dataStoreFetcher)
                             is ScanUpdatesRequest<*> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, dataStoreFetcher)
                             is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {

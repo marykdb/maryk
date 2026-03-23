@@ -2,7 +2,6 @@ package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.requests.GetUpdatesRequest
@@ -63,20 +62,24 @@ internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
                 null,
                 record
             )?.let { objectChange ->
-                updates += objectChange.changes.map { versionedChange ->
+                updates += objectChange.changes.mapNotNull { versionedChange ->
                     val changes = versionedChange.changes
 
                     if (changes.contains(ObjectCreate)) {
-                        val addedValues = getRequest.dataModel.fromChanges(null, changes)
-
-                        AdditionUpdate(
-                            key = objectChange.key,
-                            version = versionedChange.version,
-                            firstVersion = versionedChange.version,
-                            insertionIndex = insertionIndex,
-                            isDeleted = false,
-                            values = addedValues
-                        )
+                        getRequest.dataModel.recordToValueWithMeta(
+                            getRequest.select,
+                            HLC(versionedChange.version),
+                            record
+                        )?.let { valuesWithMeta ->
+                            AdditionUpdate(
+                                key = objectChange.key,
+                                version = versionedChange.version,
+                                firstVersion = valuesWithMeta.firstVersion,
+                                insertionIndex = insertionIndex,
+                                isDeleted = valuesWithMeta.isDeleted,
+                                values = valuesWithMeta.values
+                            )
+                        }
                     } else {
                         ChangeUpdate(
                             key = objectChange.key,

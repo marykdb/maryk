@@ -29,7 +29,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
-import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.requests.Requests
@@ -293,7 +293,7 @@ class RemoteDataStore private constructor(
         return RemoteStoreCodec.decode(request.responseModel.Serializer, payloadBytes, responseContext) as RP
     }
 
-    override suspend fun <DM : IsRootDataModel, RQ : IsFetchRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
+    override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
         request: RQ,
     ): Flow<IsUpdateResponse<DM>> {
         ensureDataModelReference(request.dataModel)

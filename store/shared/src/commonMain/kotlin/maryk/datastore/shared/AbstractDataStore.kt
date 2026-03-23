@@ -18,7 +18,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
-import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.requests.IsStoreRequest
@@ -108,7 +108,7 @@ abstract class AbstractDataStore(
         return response.await()
     }
 
-    override suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, RP>, RP: IsDataResponse<DM>> executeFlow(
+    override suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, RP>, RP: IsDataResponse<DM>> executeFlow(
         request: RQ
     ): Flow<IsUpdateResponse<DM>> {
         if (request.toVersion != null) {
@@ -168,7 +168,7 @@ abstract class AbstractDataStore(
 }
 
 /** Creates update listener for request with [response] */
-private fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> IsFetchRequest<DM, RP>.createUpdateListener(
+private fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> IsFlowRequest<DM, RP>.createUpdateListener(
     response: RP
 ) =
     when (this) {

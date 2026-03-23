@@ -11,7 +11,7 @@ import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
 import maryk.core.query.changes.IndexUpdate
 import maryk.core.query.orders.ascending
-import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.requests.scanUpdates
@@ -144,7 +144,7 @@ class UpdateListenerForScanTest {
                     values = emptyList()
                 ) as RP
 
-                override suspend fun <DM : IsRootDataModel, RQ : IsFetchRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
+                override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
                     request: RQ
                 ): Flow<IsUpdateResponse<DM>> = error("unused")
 
@@ -209,7 +209,7 @@ class UpdateListenerForScanTest {
                     ) as RP
                 }
 
-                override suspend fun <DM : IsRootDataModel, RQ : IsFetchRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
+                override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
                     request: RQ
                 ): Flow<IsUpdateResponse<DM>> = error("unused")
 

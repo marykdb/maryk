@@ -3,7 +3,6 @@ package maryk.datastore.memory.processors
 import maryk.core.clock.HLC
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
@@ -39,7 +38,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
 
     val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
 
-    if (scanRequest.order == null && dataStore.keepUpdateHistoryIndex) {
+    if (scanRequest.canUseUpdateHistoryIndex() && dataStore.keepUpdateHistoryIndex) {
         processScanUpdatesByUpdateHistory(storeAction, dataStore, recordFetcher)
         return
     }
@@ -88,16 +87,20 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                 val changes = versionedChange.changes
 
                 if (changes.contains(ObjectCreate)) {
-                    val addedValues = scanRequest.dataModel.fromChanges(null, changes)
-
-                    AdditionUpdate(
-                        key = objectChange.key,
-                        version = versionedChange.version,
-                        firstVersion = versionedChange.version,
-                        insertionIndex = insertionIndex,
-                        isDeleted = false,
-                        values = addedValues
-                    )
+                    scanRequest.dataModel.recordToValueWithMeta(
+                        scanRequest.select,
+                        HLC(versionedChange.version),
+                        record
+                    )?.let { valuesWithMeta ->
+                        AdditionUpdate(
+                            key = objectChange.key,
+                            version = versionedChange.version,
+                            firstVersion = valuesWithMeta.firstVersion,
+                            insertionIndex = insertionIndex,
+                            isDeleted = valuesWithMeta.isDeleted,
+                            values = valuesWithMeta.values
+                        )
+                    }
                 } else {
                     if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
                         ChangeUpdate(
@@ -247,16 +250,20 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                 val changes = versionedChange.changes
 
                 if (changes.contains(ObjectCreate)) {
-                    val addedValues = scanRequest.dataModel.fromChanges(null, changes)
-
-                    AdditionUpdate(
-                        key = objectChange.key,
-                        version = versionedChange.version,
-                        firstVersion = versionedChange.version,
-                        insertionIndex = matchingKeys.lastIndex,
-                        isDeleted = false,
-                        values = addedValues
-                    )
+                    scanRequest.dataModel.recordToValueWithMeta(
+                        scanRequest.select,
+                        HLC(versionedChange.version),
+                        record
+                    )?.let { valuesWithMeta ->
+                        AdditionUpdate(
+                            key = objectChange.key,
+                            version = versionedChange.version,
+                            firstVersion = valuesWithMeta.firstVersion,
+                            insertionIndex = matchingKeys.lastIndex,
+                            isDeleted = valuesWithMeta.isDeleted,
+                            values = valuesWithMeta.values
+                        )
+                    }
                 } else {
                     if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
                         ChangeUpdate(
@@ -345,3 +352,6 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
         )
     )
 }
+
+private fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
+    order == null && fromVersion == 0uL && toVersion == null && maxVersions == 1u

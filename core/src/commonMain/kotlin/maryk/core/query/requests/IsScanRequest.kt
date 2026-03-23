@@ -19,7 +19,7 @@ import maryk.core.query.orders.OrderType
 import maryk.core.query.orders.OrderType.ORDER
 import maryk.core.query.orders.OrderType.ORDERS
 import maryk.core.query.orders.mapOfOrderTypeToEmbeddedObject
-import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.IsDataResponse
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.StartArray
@@ -29,7 +29,7 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
 /** Defines a Scan from key request. */
-interface IsScanRequest<DM : IsRootDataModel, RP : IsResponse> : IsFetchRequest<DM, RP> {
+interface IsScanRequest<DM : IsRootDataModel, RP : IsDataResponse<DM>> : IsFlowRequest<DM, RP> {
     val startKey: Key<DM>?
     val order: IsOrder?
     val limit: UInt

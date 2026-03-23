@@ -4,7 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.runTest
 import maryk.core.models.IsRootDataModel
-import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
@@ -41,7 +41,7 @@ private object NoOpDataStore : IsDataStore {
         throw NotImplementedError("No-op datastore should not execute requests")
     }
 
-    override suspend fun <DM : IsRootDataModel, RQ : IsFetchRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
+    override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
         request: RQ,
     ): Flow<IsUpdateResponse<DM>> = emptyFlow()
 

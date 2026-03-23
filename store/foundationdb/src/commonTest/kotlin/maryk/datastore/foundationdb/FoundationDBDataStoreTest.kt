@@ -52,10 +52,8 @@ class FoundationDBDataStoreTest {
         )
 
         runDataStoreTests(dataStore, "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex")
-        runDataStoreTests(dataStore, "executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates")
-        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
-        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey")
-        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion")
+        runDataStoreTests(dataStore, "executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex")
+        runDataStoreTests(dataStore, "executeScanUpdateHistoryReturnsVersionOrderedEntries")
 
         dataStore.close()
     }

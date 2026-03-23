@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.onStart
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
-import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdatesResponse
@@ -20,7 +20,7 @@ import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Change
 
 /** Listener for updates on a data store */
-abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFetchRequest<DM, *>>(
+abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     val request: RQ,
     val response: IsDataResponse<DM>
 ) {

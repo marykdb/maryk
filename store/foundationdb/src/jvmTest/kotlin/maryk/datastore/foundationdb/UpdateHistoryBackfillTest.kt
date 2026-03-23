@@ -8,6 +8,7 @@ import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
+import maryk.core.query.requests.scanUpdateHistory
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.statuses.AddSuccess
@@ -98,15 +99,14 @@ class UpdateHistoryBackfillTest {
         ).let { dataStore ->
             try {
             val scanResponse = dataStore.execute(
-                Log.scanUpdates(
+                Log.scanUpdateHistory(
                     fromVersion = addVersion + 1uL,
                     limit = 1u
                 )
             )
 
             assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
-            assertEquals(listOf(key), assertIs<OrderedKeysUpdate<Log>>(scanResponse.updates.first()).keys)
-            assertEquals(key, assertIs<ChangeUpdate<Log>>(scanResponse.updates[1]).key)
+            assertEquals(key, assertIs<ChangeUpdate<Log>>(scanResponse.updates.first()).key)
             } finally {
                 dataStore.close()
             }
@@ -156,16 +156,14 @@ class UpdateHistoryBackfillTest {
         ).let { dataStore ->
             try {
                 val scanResponse = dataStore.execute(
-                    Log.scanUpdates(
+                    Log.scanUpdateHistory(
                         fromVersion = firstChangeVersion,
-                        limit = 1u,
-                        maxVersions = 500u
+                        limit = 500u
                     )
                 )
 
                 assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
-                assertEquals(listOf(key), assertIs<OrderedKeysUpdate<Log>>(scanResponse.updates.first()).keys)
-                assertTrue(scanResponse.updates.drop(1).filterIsInstance<ChangeUpdate<Log>>().isNotEmpty())
+                assertTrue(scanResponse.updates.filterIsInstance<ChangeUpdate<Log>>().isNotEmpty())
             } finally {
                 dataStore.close()
             }

@@ -24,7 +24,7 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
-import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.requests.Requests
@@ -142,11 +142,11 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
                 )
                 @Suppress("UNCHECKED_CAST")
                 val rawRequests = requests.requests as List<Any>
-                val fetchRequest = rawRequests.singleOrNull()?.let { resolveRequest(it, operation = "flow") } as? IsFetchRequest<*, *>
-                    ?: throw RequestValidationException(HttpStatusCode.BadRequest, "Remote flow expects a single fetch request")
+                val fetchRequest = rawRequests.singleOrNull()?.let { resolveRequest(it, operation = "flow") } as? IsFlowRequest<*, *>
+                    ?: throw RequestValidationException(HttpStatusCode.BadRequest, "Remote flow expects a single flow request")
 
                 @Suppress("UNCHECKED_CAST")
-                val typedFetch = fetchRequest as IsFetchRequest<IsRootDataModel, IsDataResponse<IsRootDataModel>>
+                val typedFetch = fetchRequest as IsFlowRequest<IsRootDataModel, IsDataResponse<IsRootDataModel>>
                 val updates = dataStore.executeFlow(typedFetch)
 
                 call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {

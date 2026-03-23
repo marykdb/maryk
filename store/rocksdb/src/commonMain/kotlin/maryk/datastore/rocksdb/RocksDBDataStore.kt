@@ -51,6 +51,7 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
+import maryk.core.query.requests.ScanUpdateHistoryRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.UpdateResponse
@@ -87,6 +88,7 @@ import maryk.datastore.rocksdb.processors.AnyGetUpdatesStoreAction
 import maryk.datastore.rocksdb.processors.AnyProcessUpdateResponseStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanChangesStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanStoreAction
+import maryk.datastore.rocksdb.processors.AnyScanUpdateHistoryStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
@@ -105,6 +107,7 @@ import maryk.datastore.rocksdb.processors.processInitialChangesUpdate
 import maryk.datastore.rocksdb.processors.readTransactionIntoObjectChanges
 import maryk.datastore.rocksdb.processors.processScanChangesRequest
 import maryk.datastore.rocksdb.processors.processScanRequest
+import maryk.datastore.rocksdb.processors.processScanUpdateHistoryRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
@@ -381,6 +384,8 @@ class RocksDBDataStore private constructor(
                                 processScanRequest(storeAction as AnyScanStoreAction, cache)
                             is ScanChangesRequest<*> ->
                                 processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache)
+                            is ScanUpdateHistoryRequest<*> ->
+                                processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, cache)
                             is ScanUpdatesRequest<*> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache)
                             is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {

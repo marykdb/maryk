@@ -10,7 +10,7 @@ import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.IsChangesRequest
-import maryk.core.query.requests.IsFetchRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.requests.get
@@ -30,7 +30,7 @@ import maryk.datastore.shared.updates.Update.Change
 import maryk.datastore.shared.updates.Update.Deletion
 
 /** processes a single update */
-internal suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> Update<DM>.process(
+internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>.process(
     updateListener: UpdateListener<DM, RQ>,
     dataStore: IsDataStore,
     sharedFlow: MutableSharedFlow<IsUpdateResponse<DM>>
@@ -215,7 +215,7 @@ private fun <DM : IsRootDataModel> Change<DM>.createChangeUpdate(
 }
 
 /** Handles the deletion of Values defined in [change] and if necessary request a new value to put at end */
-private suspend fun <DM : IsRootDataModel, RQ: IsFetchRequest<DM, *>> handleDeletion(
+private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDeletion(
     dataStore: IsDataStore,
     change: Update<DM>,
     reason: RemovalReason,

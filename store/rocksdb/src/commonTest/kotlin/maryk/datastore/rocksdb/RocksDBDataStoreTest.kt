@@ -54,10 +54,8 @@ class RocksDBDataStoreTest {
         )
         try {
             runDataStoreTests(dataStore, "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex")
-            runDataStoreTests(dataStore, "executeScanUpdatesRequestWithUpdateHistoryIndexReturnsChangeUpdates")
-            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
-            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey")
-            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion")
+            runDataStoreTests(dataStore, "executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex")
+            runDataStoreTests(dataStore, "executeScanUpdateHistoryReturnsVersionOrderedEntries")
         } finally {
             dataStore.close()
             deleteFolder(folder)

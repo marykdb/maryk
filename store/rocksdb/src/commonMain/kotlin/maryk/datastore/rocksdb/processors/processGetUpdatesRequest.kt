@@ -2,7 +2,6 @@ package maryk.datastore.rocksdb.processors
 
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.fromChanges
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.ObjectCreate
@@ -87,6 +86,26 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                         }
                     }
 
+                    fun getSingleValues(version: ULong?) =
+                        dbAccessor.getIterator(
+                            defaultReadOptions,
+                            if ((version != null || getRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
+                                columnFamilies.historic.table
+                            } else {
+                                columnToScan
+                            }
+                        ).use { deepIterator ->
+                            getRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                                deepIterator,
+                                creationVersion,
+                                columnFamilies,
+                                key,
+                                getRequest.select,
+                                version.takeIf { columnFamilies is HistoricTableColumnFamilies },
+                                cacheReader
+                            )
+                        }
+
                     getRequest.dataModel.readTransactionIntoObjectChanges(
                         iterator,
                         creationVersion,
@@ -99,7 +118,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                         null,
                         cacheReader
                     )?.let { changes ->
-                        if (getRequest.toVersion == null && getRequest.maxVersions > 1u && columnFamilies is HistoricTableColumnFamilies) {
+                        if (getRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
                             addSoftDeleteChangeIfMissing(
                                 dbAccessor = dbAccessor,
                                 columnFamilies = columnFamilies,
@@ -112,20 +131,20 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                             changes
                         }
                     }?.also { objectChange ->
-                        updates += objectChange.changes.map { versionedChange ->
+                        updates += objectChange.changes.mapNotNull { versionedChange ->
                             val changes = versionedChange.changes
 
                             if (changes.contains(ObjectCreate)) {
-                                val addedValues = getRequest.dataModel.fromChanges(null, changes)
-
-                                AdditionUpdate(
-                                    objectChange.key,
-                                    versionedChange.version,
-                                    versionedChange.version,
-                                    insertionIndex,
-                                    false,
-                                    addedValues
-                                )
+                                getSingleValues(versionedChange.version)?.let { valuesWithMeta ->
+                                    AdditionUpdate(
+                                        objectChange.key,
+                                        versionedChange.version,
+                                        valuesWithMeta.firstVersion,
+                                        insertionIndex,
+                                        valuesWithMeta.isDeleted,
+                                        valuesWithMeta.values
+                                    )
+                                }
                             } else {
                                 ChangeUpdate(
                                     objectChange.key,
@@ -163,3 +182,6 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
         )
     )
 }
+
+private fun GetUpdatesRequest<*>.needsSoftDeleteFallback() =
+    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)

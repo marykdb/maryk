@@ -54,6 +54,7 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.GetRequest
 import maryk.core.query.requests.GetUpdatesRequest
 import maryk.core.query.requests.ScanChangesRequest
+import maryk.core.query.requests.ScanUpdateHistoryRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.UpdateResponse
@@ -80,6 +81,7 @@ import maryk.datastore.foundationdb.processors.AnyGetUpdatesStoreAction
 import maryk.datastore.foundationdb.processors.AnyProcessUpdateResponseStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanChangesStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanStoreAction
+import maryk.datastore.foundationdb.processors.AnyScanUpdateHistoryStoreAction
 import maryk.datastore.foundationdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 import maryk.datastore.foundationdb.processors.SOFT_DELETE_INDICATOR
@@ -103,6 +105,7 @@ import maryk.datastore.foundationdb.processors.processGetUpdatesRequest
 import maryk.datastore.foundationdb.processors.processInitialChangesUpdate
 import maryk.datastore.foundationdb.processors.processScanChangesRequest
 import maryk.datastore.foundationdb.processors.processScanRequest
+import maryk.datastore.foundationdb.processors.processScanUpdateHistoryRequest
 import maryk.datastore.foundationdb.processors.processScanUpdatesRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
@@ -336,7 +339,7 @@ class FoundationDBDataStore private constructor(
         }
 
         if (keepUpdateHistoryIndex) {
-            for ((index, dataModel) in dataModelsById) {
+            for ((index, _) in dataModelsById) {
                 if (index !in pendingMigrationModelIds.value) {
                     ensureUpdateHistoryIndexReady(index, getTableDirs(index))
                 }
@@ -689,6 +692,8 @@ class FoundationDBDataStore private constructor(
                                 processGetChangesRequest(storeAction as AnyGetChangesStoreAction, cache)
                             is ScanChangesRequest<*> ->
                                 processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache)
+                            is ScanUpdateHistoryRequest<*> ->
+                                processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, cache)
                             is GetUpdatesRequest<*> ->
                                 processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, cache)
                             is ScanUpdatesRequest<*> ->

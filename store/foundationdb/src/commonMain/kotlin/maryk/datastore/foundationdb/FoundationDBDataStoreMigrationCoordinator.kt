@@ -20,6 +20,7 @@ import maryk.core.models.migration.canTransitionTo
 import maryk.core.models.migration.nextRuntimePhaseOrNull
 import maryk.core.models.migration.normalizedRuntimePhase
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
+import kotlin.time.Duration.Companion.milliseconds
 
 internal suspend fun FoundationDBDataStore.handleRequiredMigration(
     index: UInt,
@@ -78,7 +79,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         while (remaining > 0L) {
             if (canceledMigrationReasons.value.containsKey(index)) return
             val waitMs = minOf(remaining, 250L)
-            delay(waitMs)
+            delay(waitMs.milliseconds)
             remaining -= waitMs
         }
     }
@@ -142,7 +143,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                     }
                     if (pausedMigrationModelIds.value.contains(index)) {
                         pendingMigrationReasons.update { it + (index to "Migration paused by operator") }
-                        delay(250)
+                        delay(250.milliseconds)
                         continue
                     }
                     if (effectiveMigrationLease.tryAcquire(index, migrationId)) {
@@ -156,7 +157,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                     pendingMigrationReasons.update {
                         it + (index to "Migration lease held by another migrator for $migrationId")
                     }
-                    delay(250)
+                    delay(250.milliseconds)
                 }
                 if (!leaseAlreadyAcquired && !failOrCompleteIfMigrationPlanChangedWhileWaiting()) {
                     return@launch
@@ -170,7 +171,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                     }
                     if (pausedMigrationModelIds.value.contains(index)) {
                         pendingMigrationReasons.update { it + (index to "Migration paused by operator") }
-                        delay(250)
+                        delay(250.milliseconds)
                         continue
                     }
                     val previousState = migrationStateStore.read(index)

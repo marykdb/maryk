@@ -14,6 +14,7 @@ import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import kotlinx.datetime.Clock
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 internal class FoundationDBMigrationLease(
     private val tc: TransactionContext,
@@ -63,7 +64,7 @@ internal class FoundationDBMigrationLease(
         heartbeatJobs.value[modelId]?.cancel()
         val job = scope.launch {
             while (true) {
-                delay(heartbeatIntervalMs)
+                delay(heartbeatIntervalMs.milliseconds)
                 val nowMs = Clock.System.now().toEpochMilliseconds()
                 val nextExpiry = nowMs + leaseTimeoutMs
                 val shouldContinue = tc.run { tr ->

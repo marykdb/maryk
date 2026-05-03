@@ -17,6 +17,7 @@ import java.io.File
 import java.nio.file.Paths
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 private const val RECORDS_PER_TABLE = 30
@@ -106,6 +107,6 @@ private suspend fun <DM : IsRootDataModel> addAll(
 
 private suspend fun keepRunning() {
     while (true) {
-        delay(60_000)
+        delay(60.seconds)
     }
 }

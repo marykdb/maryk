@@ -13,6 +13,7 @@ import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 class FoundationDBMigrationLeaseTest {
@@ -46,7 +47,7 @@ class FoundationDBMigrationLeaseTest {
 
         try {
             assertTrue(ownerLease.tryAcquire(1u, "migration-v1-v2"))
-            delay(650)
+            delay(650.milliseconds)
             assertFalse(contenderLease.tryAcquire(1u, "migration-v1-v2"))
         } finally {
             ownerLease.release(1u, "migration-v1-v2")
@@ -87,7 +88,7 @@ class FoundationDBMigrationLeaseTest {
 
         try {
             assertTrue(ownerLease.tryAcquire(1u, "migration-v1-v2"))
-            delay(300)
+            delay(300.milliseconds)
             assertTrue(contenderLease.tryAcquire(1u, "migration-v1-v2"))
         } finally {
             ownerLease.release(1u, "migration-v1-v2")

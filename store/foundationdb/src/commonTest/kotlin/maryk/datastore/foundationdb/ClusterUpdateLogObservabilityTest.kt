@@ -20,6 +20,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 class ClusterUpdateLogObservabilityTest {
@@ -45,7 +46,7 @@ class ClusterUpdateLogObservabilityTest {
                 stats != null && (stats.activeListenerCountsByModelId[4u] ?: 0) > 0
             }
         } finally {
-            withTimeout(10_000) {
+            withTimeout(10_000.milliseconds) {
                 store.close()
             }
         }
@@ -95,7 +96,7 @@ class ClusterUpdateLogObservabilityTest {
                 )
             ).statuses.forEach { assertIs<AddSuccess<Log>>(it) }
 
-            delay(300)
+            delay(300.milliseconds)
 
             val withoutListeners = store.getClusterUpdateLogStats()
             assertNotNull(withoutListeners)
@@ -121,7 +122,7 @@ class ClusterUpdateLogObservabilityTest {
                     Log(message = "with-listener", severity = INFO, timestamp = LocalDateTime(2026, 1, 1, 10, 0, 1))
                 )
             ).statuses.forEach { assertIs<AddSuccess<Log>>(it) }
-            delay(300)
+            delay(300.milliseconds)
 
             val withListeners = store.getClusterUpdateLogStats()
             assertNotNull(withListeners)
@@ -131,7 +132,7 @@ class ClusterUpdateLogObservabilityTest {
             assertTrue((withListeners.activeListenerCountsByModelId[modelId] ?: 0) > 0)
 
             store.closeAllListeners()
-            delay(50)
+            delay(50.milliseconds)
 
             val afterClose = store.getClusterUpdateLogStats()
             assertNotNull(afterClose)
@@ -169,7 +170,7 @@ class ClusterUpdateLogObservabilityTest {
             }
 
             store.closeAllListeners()
-            delay(50)
+            delay(50.milliseconds)
 
             val afterClose = store.getClusterUpdateLogStats()
             assertNotNull(afterClose)
@@ -238,7 +239,7 @@ class ClusterUpdateLogObservabilityTest {
 private suspend fun waitForStat(name: String, check: () -> Boolean) {
     repeat(60) {
         if (check()) return
-        delay(100)
+        delay(100.milliseconds)
     }
     throw AssertionError("Timed out while waiting for $name")
 }

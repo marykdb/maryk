@@ -23,6 +23,7 @@ import maryk.foundationdb.directory.DirectorySubspace
 import maryk.foundationdb.runSuspend
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
+import kotlin.time.Duration.Companion.milliseconds
 
 class ConnectCommand(
     private val rocksDbConnector: RocksDbConnector = DefaultRocksDbConnector,
@@ -566,7 +567,7 @@ private suspend fun detectKeepAllVersions(
 
     try {
         val rootDirectory: DirectorySubspace = try {
-            withTimeout(10_000) {
+            withTimeout(10_000.milliseconds) {
                 tc.runSuspend { tr ->
                     DirectoryLayer.getDefault().open(tr, directoryPath).await()
                 }
@@ -576,7 +577,7 @@ private suspend fun detectKeepAllVersions(
         }
 
         return try {
-            withTimeout(10_000) {
+            withTimeout(10_000.milliseconds) {
                 tc.runSuspend { tr ->
                     rootDirectory.open(tr, listOf(modelName, "table_versioned")).await()
                 }

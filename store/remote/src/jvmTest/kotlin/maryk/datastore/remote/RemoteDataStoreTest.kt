@@ -40,6 +40,7 @@ import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
+import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
     @Test
@@ -581,7 +582,7 @@ class RemoteDataStoreTest {
 
         try {
             assertFailsWith<NoSuchElementException> {
-                withTimeout(2_000) {
+                withTimeout(2_000.milliseconds) {
                     remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
                 }
             }

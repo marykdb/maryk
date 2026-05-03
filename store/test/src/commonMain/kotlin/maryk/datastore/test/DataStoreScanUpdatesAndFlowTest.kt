@@ -50,6 +50,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.expect
+import kotlin.time.Duration.Companion.milliseconds
 
 val t0 = TestMarykModel.create {
     string with "ha world 1"
@@ -496,7 +497,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
         try {
             suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5000) { responses.receive() }
+                withTimeout(5000.milliseconds) { responses.receive() }
             }
 
             val initialUpdate = receiveRealTimeResponse()
@@ -554,7 +555,7 @@ class DataStoreScanUpdatesAndFlowTest(
         }
 
         try {
-            assertIs<OrderedKeysUpdate<*>>(withTimeout(5000) { responses.receive() }).apply {
+            assertIs<OrderedKeysUpdate<*>>(withTimeout(5000.milliseconds) { responses.receive() }).apply {
                 assertEquals(listOf(testKeys[2], testKeys[3], testKeys[4]), keys)
             }
 
@@ -563,7 +564,7 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
 
-            assertNull(withTimeoutOrNull(250) { responses.receive() })
+            assertNull(withTimeoutOrNull(250.milliseconds) { responses.receive() })
         } finally {
             dataStore.closeAllListeners()
             listenJob.cancelAndJoin()
@@ -601,7 +602,7 @@ class DataStoreScanUpdatesAndFlowTest(
 
         try {
             suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5000) { responses.receive() }
+                withTimeout(5000.milliseconds) { responses.receive() }
             }
 
             assertIs<OrderedKeysUpdate<*>>(receiveRealTimeResponse()).apply {

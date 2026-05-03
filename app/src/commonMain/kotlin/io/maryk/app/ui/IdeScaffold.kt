@@ -63,6 +63,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 
 private val topBarHeight = 60.dp
@@ -154,7 +155,7 @@ fun AppScaffold(
             }
             state.exportToastMessage?.let { message ->
                 LaunchedEffect(message) {
-                    delay(2800)
+                    delay(2800.milliseconds)
                     state.clearExportToast()
                 }
                 ExportToast(
@@ -544,7 +545,7 @@ private fun SuccessToast(
     modifier: Modifier = Modifier,
 ) {
     LaunchedEffect(message) {
-        delay(3000)
+        delay(3000.milliseconds)
         onDismiss()
     }
     Surface(

@@ -3,6 +3,7 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
@@ -18,6 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 class ClusterUpdateLogReliabilityTest {
@@ -287,7 +289,7 @@ class ClusterUpdateLogReliabilityTest {
                     }
                     versions
                 }
-            }.map { it.await() }
+            }.awaitAll()
 
             for (versions in results) {
                 assertEquals(25, versions.size)
@@ -399,7 +401,7 @@ private suspend fun FoundationDBDataStore.addLog(message: String, sequence: Int)
 private suspend fun waitForReliabilityStat(name: String, check: () -> Boolean) {
     repeat(80) {
         if (check()) return
-        delay(100)
+        delay(100.milliseconds)
     }
     throw AssertionError("Timed out while waiting for $name")
 }

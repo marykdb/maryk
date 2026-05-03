@@ -52,6 +52,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -437,7 +438,7 @@ class FoundationDBDataStoreMigrationTest {
 
         repeat(50) {
             if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
@@ -508,7 +509,7 @@ class FoundationDBDataStoreMigrationTest {
 
         repeat(50) {
             if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         assertTrue { dataStore.pauseMigration(1u) }
@@ -517,7 +518,7 @@ class FoundationDBDataStoreMigrationTest {
         assertEquals(MigrationRuntimeState.Paused, pausedStatus?.state)
         val pausedAttempt = pausedStatus?.attempt
         assertTrue { pausedAttempt == null || pausedAttempt > 0u }
-        delay(50)
+        delay(50.milliseconds)
         assertTrue { dataStore.resumeMigration(1u) }
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatuses()[1u]?.state)
@@ -551,7 +552,7 @@ class FoundationDBDataStoreMigrationTest {
 
         repeat(50) {
             if (cancelStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
         assertTrue { cancelStore.pendingMigrations().containsKey(1u) }
         assertTrue { cancelStore.cancelMigration(1u, "test cancel") }
@@ -605,13 +606,13 @@ class FoundationDBDataStoreMigrationTest {
 
         repeat(50) {
             if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         var verifyRunningStatus = dataStore.migrationStatuses()[1u]
         repeat(50) {
             if (verifyRunningStatus?.attempt != null) return@repeat
-            delay(10)
+            delay(10.milliseconds)
             verifyRunningStatus = dataStore.migrationStatuses()[1u]
         }
         assertEquals(MigrationRuntimeState.Running, verifyRunningStatus?.state)
@@ -774,7 +775,7 @@ class FoundationDBDataStoreMigrationTest {
 
         try {
             withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5_000) {
+                withTimeout(5_000.milliseconds) {
                     dataStore.awaitMigration(1u)
                 }
             }
@@ -819,7 +820,7 @@ class FoundationDBDataStoreMigrationTest {
         try {
             repeat(50) {
                 if (waitingStore.pendingMigrations().containsKey(1u)) return@repeat
-                delay(10)
+                delay(10.milliseconds)
             }
             assertTrue { waitingStore.pendingMigrations().containsKey(1u) }
 
@@ -836,7 +837,7 @@ class FoundationDBDataStoreMigrationTest {
             allowAcquire.value = true
 
             withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5_000) {
+                withTimeout(5_000.milliseconds) {
                     waitingStore.awaitMigration(1u)
                 }
             }
@@ -925,11 +926,11 @@ class FoundationDBDataStoreMigrationTest {
             )
 
             withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5_000) {
+                withTimeout(5_000.milliseconds) {
                     while (true) {
                         val status = firstStore.migrationStatus(1u)
                         if (status.phase == targetPhase && status.hasCursor == true) break
-                        delay(10)
+                        delay(10.milliseconds)
                     }
                 }
             }
@@ -1042,7 +1043,7 @@ class FoundationDBDataStoreMigrationTest {
 
         try {
             withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5_000) {
+                withTimeout(5_000.milliseconds) {
                     dataStore.awaitMigration(1u)
                 }
             }

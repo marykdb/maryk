@@ -125,6 +125,7 @@ import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.foundationdb.Range
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 
@@ -434,7 +435,7 @@ class FoundationDBDataStore private constructor(
                     } catch (_: Throwable) {
                         clusterLogHlcSyncErrors.incrementAndGet()
                         clusterLogHlcCurrentBackoffMs.value = backoffMs
-                        delay(backoffMs)
+                        delay(backoffMs.milliseconds)
                         backoffMs = minOf(backoffMs * 2, 5_000L)
                     }
                 }
@@ -574,7 +575,7 @@ class FoundationDBDataStore private constructor(
                         // Conservative retry loop: transient FDB errors, decode errors, etc.
                         clusterLogTailErrors.incrementAndGet()
                         clusterLogCurrentBackoffMs.value = backoffMs
-                        delay(backoffMs)
+                        delay(backoffMs.milliseconds)
                         backoffMs = minOf(backoffMs * 2, 5_000L)
                     }
                 }
@@ -606,7 +607,7 @@ class FoundationDBDataStore private constructor(
                         throw e
                     } catch (_: Throwable) {
                         clusterLogGcErrors.incrementAndGet()
-                        delay(5_000L)
+                        delay(5_000L.milliseconds)
                     }
                 }
             }
@@ -882,7 +883,7 @@ class FoundationDBDataStore private constructor(
         job?.cancel()
 
         // Give cooperative coroutines a brief chance to finish before forcing native close.
-        val stoppedBeforeNativeClose = withTimeoutOrNull(2_000) {
+        val stoppedBeforeNativeClose = withTimeoutOrNull(2_000.milliseconds) {
             job?.join()
             true
         } ?: false
@@ -890,7 +891,7 @@ class FoundationDBDataStore private constructor(
         runCatching { this.db.close() }
 
         if (!stoppedBeforeNativeClose) {
-            withTimeoutOrNull(10_000) {
+            withTimeoutOrNull(10_000.milliseconds) {
                 job?.join()
             }
         }
@@ -946,7 +947,7 @@ class FoundationDBDataStore private constructor(
             }
             try {
                 if (timeoutMs > 0) {
-                    withTimeoutOrNull(timeoutMs) {
+                    withTimeoutOrNull(timeoutMs.milliseconds) {
                         select {
                             for (w in waiters) {
                                 w.onAwait { }

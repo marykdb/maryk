@@ -53,6 +53,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class RocksDBDataStoreMigrationTest {
 
@@ -403,7 +404,7 @@ class RocksDBDataStoreMigrationTest {
 
         repeat(50) {
             if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
@@ -473,7 +474,7 @@ class RocksDBDataStoreMigrationTest {
 
         repeat(50) {
             if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         assertTrue { dataStore.pauseMigration(1u) }
@@ -482,7 +483,7 @@ class RocksDBDataStoreMigrationTest {
         assertEquals(MigrationRuntimeState.Paused, pausedStatus?.state)
         val pausedAttempt = pausedStatus?.attempt
         assertTrue { pausedAttempt == null || pausedAttempt > 0u }
-        delay(50)
+        delay(50.milliseconds)
         assertTrue { dataStore.resumeMigration(1u) }
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatus(1u).state)
         assertEquals(MigrationRuntimeState.Running, dataStore.migrationStatuses()[1u]?.state)
@@ -515,7 +516,7 @@ class RocksDBDataStoreMigrationTest {
 
         repeat(50) {
             if (cancelStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
         assertTrue { cancelStore.pendingMigrations().containsKey(1u) }
         assertTrue { cancelStore.cancelMigration(1u, "test cancel") }
@@ -569,13 +570,13 @@ class RocksDBDataStoreMigrationTest {
 
         repeat(50) {
             if (dataStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
         assertTrue { dataStore.pendingMigrations().containsKey(1u) }
         var verifyRunningStatus = dataStore.migrationStatuses()[1u]
         repeat(50) {
             if (verifyRunningStatus?.attempt != null) return@repeat
-            delay(10)
+            delay(10.milliseconds)
             verifyRunningStatus = dataStore.migrationStatuses()[1u]
         }
         assertEquals(MigrationRuntimeState.Running, verifyRunningStatus?.state)
@@ -735,7 +736,7 @@ class RocksDBDataStoreMigrationTest {
 
         try {
             withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5_000) {
+                withTimeout(5_000.milliseconds) {
                     dataStore.awaitMigration(1u)
                 }
             }
@@ -772,7 +773,7 @@ class RocksDBDataStoreMigrationTest {
 
         repeat(50) {
             if (canceledStore.pendingMigrations().containsKey(1u)) return@repeat
-            delay(10)
+            delay(10.milliseconds)
         }
 
         assertTrue { canceledStore.pendingMigrations().containsKey(1u) }
@@ -954,11 +955,11 @@ class RocksDBDataStoreMigrationTest {
             )
 
             withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(5_000) {
+                withTimeout(5_000.milliseconds) {
                     while (true) {
                         val status = firstStore.migrationStatus(1u)
                         if (status.phase == targetPhase && status.hasCursor == true) break
-                        delay(10)
+                        delay(10.milliseconds)
                     }
                 }
             }

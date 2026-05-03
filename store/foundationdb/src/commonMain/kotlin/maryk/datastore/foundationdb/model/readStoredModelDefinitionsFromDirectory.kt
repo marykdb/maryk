@@ -12,6 +12,7 @@ import maryk.foundationdb.runSuspend
 import maryk.foundationdb.directory.DirectoryLayer
 import kotlinx.coroutines.withTimeout
 import maryk.foundationdb.directory.DirectorySubspace
+import kotlin.time.Duration.Companion.milliseconds
 
 private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
 
@@ -31,7 +32,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
     try {
         return withContext(Dispatchers.IO) {
             val rootDirectory: DirectorySubspace = try {
-                withTimeout(10_000) {
+                withTimeout(10_000.milliseconds) {
                     tc.runSuspend { tr ->
                         DirectoryLayer.getDefault().open(tr, directoryPath).await()
                     }
@@ -42,7 +43,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
             }
 
             val metadataDirectory: DirectorySubspace = try {
-                withTimeout(10_000) {
+                withTimeout(10_000.milliseconds) {
                     tc.runSuspend { tr ->
                         rootDirectory.open(tr, storeMetadataModelsByIdDirectoryPath).await()
                     }
@@ -53,7 +54,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
             }
             val metadataPrefix = metadataDirectory.pack()
 
-            val storedNamesById = withTimeout(10_000) {
+            val storedNamesById = withTimeout(10_000.milliseconds) {
                 readStoredModelNames(tc, metadataPrefix)
             }
             if (storedNamesById.isEmpty()) {
@@ -64,7 +65,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
             val storedModelsById = mutableMapOf<UInt, RootDataModel<*>>()
 
             for ((id, modelName) in storedNamesById) {
-                val modelPrefix = withTimeout(10_000) {
+                val modelPrefix = withTimeout(10_000.milliseconds) {
                     tc.runSuspend { tr ->
                         rootDirectory.open(tr, listOf(modelName, "meta")).await().pack()
                     }

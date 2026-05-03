@@ -791,6 +791,12 @@ class FoundationDBDataStore private constructor(
             if (batch.isEmpty()) break
 
             batch.forEach { (packedKey, storedValue) ->
+                // Backfill only handles key-table rows with created-version values.
+                if (storedValue.size != ULong.SIZE_BYTES) {
+                    nextStart = packedKey + byteArrayOf(0)
+                    return@forEach
+                }
+
                 val keyBytes = packedKey.copyOfRange(tableDirectories.keysPrefix.size, packedKey.size)
                 val key = Key<IsRootDataModel>(keyBytes)
 

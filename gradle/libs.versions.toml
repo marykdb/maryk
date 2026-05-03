@@ -1,25 +1,25 @@
 ## Version catalog for the Maryk build.
 [versions]
-android = "9.1.0"
+android = "9.2.0"
 atomicfu = "0.32.1"
-benManesVersions = "0.53.0"
+benManesVersions = "0.54.0"
 compose = "1.10.3"
 composeMaterialIcons = "1.7.3"
 cryptography = "0.6.0"
-kotlin = "2.3.20"
+kotlin = "2.3.21"
 kotlinxCollectionsImmutable = "0.4.0"
 kotlinxCoroutines = "1.10.2"
 kotlinxDataframe = "0.15.0"
 kotlinxDatetime = "0.7.1-0.6.x-compat"
 kotter = "1.2.1"
-ktor = "3.4.2"
+ktor = "3.4.3"
 marykFoundationdb = "7.3.73"
-marykRocksdb = "10.6.2"
+marykRocksdb = "10.10.1"
 protobuf = "4.34.1"
-protobufPlugin = "0.9.6"
+protobufPlugin = "0.10.0"
 protoc = "4.34.1"
 versionCatalogUpdate = "1.1.0"
-vico = "2.4.3"
+vico = "2.4.4"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "android" }

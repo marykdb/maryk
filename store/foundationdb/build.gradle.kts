@@ -122,22 +122,24 @@ val stopFoundationDBForTests by tasks.registering(Exec::class) {
     }
 }
 
-val resetFoundationDBTestData by tasks.registering {
+val stopFoundationDBForReset = if (!os.isWindows) {
+    providers.exec {
+        commandLine("bash", scriptsDir.resolve("stop-fdb-for-tests.sh").absolutePath)
+        isIgnoreExitValue = true
+    }
+} else null
+
+val resetFoundationDBTestData by tasks.registering(Delete::class) {
     group = "verification"
     description = "Stop local fdbserver and reset FoundationDB test data directory"
     doNotTrackState("Always reset FoundationDB test data before local runs.")
-    doLast {
-        if (!os.isWindows) {
-            project.providers.exec {
-                commandLine("bash", scriptsDir.resolve("stop-fdb-for-tests.sh").absolutePath)
-                setIgnoreExitValue(true)
-            }.result.get()
-        }
-        project.delete(
-            layout.buildDirectory.dir("testdatastore/data"),
-            layout.buildDirectory.dir("testdatastore/logs"),
-            layout.buildDirectory.file("testdatastore/fdbserver.pid")
-        )
+    delete(
+        layout.buildDirectory.dir("testdatastore/data"),
+        layout.buildDirectory.dir("testdatastore/logs"),
+        layout.buildDirectory.file("testdatastore/fdbserver.pid")
+    )
+    doFirst {
+        stopFoundationDBForReset?.result?.get()
     }
 }
 

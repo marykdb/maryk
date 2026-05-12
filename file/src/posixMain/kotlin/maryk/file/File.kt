@@ -24,6 +24,7 @@ import platform.posix.stat
 import platform.posix.write
 
 private fun fileExists(path: String): Boolean = access(path, F_OK) == 0
+private const val maxFileSize = Int.MAX_VALUE.toLong()
 
 private fun createParentDirectories(path: String): Boolean {
     val parentPath = path.substringBeforeLast('/', "")
@@ -63,21 +64,7 @@ private fun fileSize(path: String): Long {
 actual object File {
     @OptIn(ExperimentalForeignApi::class)
     actual fun readText(path: String): String? {
-        if (!fileExists(path)) return null
-        val size = fileSize(path)
-        if (size <= 0) return ""
-        val fd = open(path, O_RDONLY, 0)
-        if (fd < 0) return null
-        try {
-            val buffer = ByteArray(size.toInt())
-            buffer.usePinned { pinned ->
-                val readBytes: ULong = read(fd, pinned.addressOf(0), size.convert()).convert()
-                if (readBytes < 0uL) return null
-                return buffer.decodeToString(endIndex = readBytes.convert())
-            }
-        } finally {
-            close(fd)
-        }
+        return readBytes(path)?.decodeToString()
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -85,15 +72,20 @@ actual object File {
         if (!fileExists(path)) return null
         val size = fileSize(path)
         if (size <= 0) return ByteArray(0)
+        if (size > maxFileSize) return null
         val fd = open(path, O_RDONLY, 0)
         if (fd < 0) return null
         try {
             val buffer = ByteArray(size.toInt())
             buffer.usePinned { pinned ->
-                val readBytes: ULong = read(fd, pinned.addressOf(0), size.convert()).convert()
-                if (readBytes < 0uL) return null
-                val readCount = readBytes.toInt()
-                return if (readCount == buffer.size) buffer else buffer.copyOf(readCount)
+                var offset = 0
+                while (offset < buffer.size) {
+                    val readBytes = read(fd, pinned.addressOf(offset), (buffer.size - offset).convert())
+                    if (readBytes < 0) return null
+                    if (readBytes == 0L) break
+                    offset += readBytes.toInt()
+                }
+                return if (offset == buffer.size) buffer else buffer.copyOf(offset)
             }
         } finally {
             close(fd)
@@ -107,9 +99,7 @@ actual object File {
         if (fd < 0) return
         try {
             val bytes = contents.encodeToByteArray()
-            bytes.usePinned { pinned ->
-                write(fd, pinned.addressOf(0), bytes.size.convert())
-            }
+            writeAll(fd, bytes)
         } finally {
             close(fd)
         }
@@ -121,9 +111,7 @@ actual object File {
         val fd = open(path, O_WRONLY or O_CREAT or O_TRUNC, 0x1A4) // 0644
         if (fd < 0) return
         try {
-            contents.usePinned { pinned ->
-                write(fd, pinned.addressOf(0), contents.size.convert())
-            }
+            writeAll(fd, contents)
         } finally {
             close(fd)
         }
@@ -136,9 +124,7 @@ actual object File {
         if (fd < 0) return
         try {
             val bytes = contents.encodeToByteArray()
-            bytes.usePinned { pinned ->
-                write(fd, pinned.addressOf(0), bytes.size.convert())
-            }
+            writeAll(fd, bytes)
         } finally {
             close(fd)
         }
@@ -146,4 +132,18 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun delete(path: String): Boolean = platform.posix.remove(path) == 0
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun writeAll(fd: Int, bytes: ByteArray) {
+    bytes.usePinned { pinned ->
+        var offset = 0
+        while (offset < bytes.size) {
+            val written = write(fd, pinned.addressOf(offset), (bytes.size - offset).convert())
+            if (written <= 0) {
+                throw IllegalStateException("Could not write file contents")
+            }
+            offset += written.toInt()
+        }
+    }
 }

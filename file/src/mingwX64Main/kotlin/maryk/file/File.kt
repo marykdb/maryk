@@ -29,6 +29,8 @@ import platform.windows.ReadFile
 import platform.windows.SetFilePointer
 import platform.windows.WriteFile
 
+private const val maxFileSize = Int.MAX_VALUE.toLong()
+
 private fun createParentDirectories(path: String): Boolean {
     val separatorIndex = path.lastIndexOfAny(charArrayOf('\\', '/'))
     if (separatorIndex <= 0) return true
@@ -69,38 +71,18 @@ private fun createParentDirectories(path: String): Boolean {
     return true
 }
 
+@OptIn(ExperimentalForeignApi::class)
+private fun fileSize(handle: HANDLE?): Long? {
+    return memScoped {
+        val li = alloc<LARGE_INTEGER>()
+        if (GetFileSizeEx(handle, li.ptr) != 0) li.QuadPart else null
+    }
+}
+
 actual object File {
     @OptIn(ExperimentalForeignApi::class)
     actual fun readText(path: String): String? {
-        val handle: HANDLE? = CreateFileW(
-            path,
-            GENERIC_READ,
-            0u,
-            null,
-            OPEN_EXISTING.toUInt(),
-            FILE_ATTRIBUTE_NORMAL.toUInt(),
-            null
-        )
-        if (handle == null || handle == INVALID_HANDLE_VALUE) return null
-        try {
-            val size = memScoped {
-                val li = alloc<LARGE_INTEGER>()
-                if (GetFileSizeEx(handle, li.ptr) != 0) li.QuadPart.toInt() else 0
-            }
-            if (size <= 0) return ""
-            val buffer = ByteArray(size)
-            buffer.usePinned { pinned ->
-                memScoped {
-                    val read = alloc<DWORDVar>()
-                    if (ReadFile(handle, pinned.addressOf(0), size.toUInt(), read.ptr, null) != 0) {
-                        return buffer.decodeToString(endIndex = read.value.toInt())
-                    }
-                }
-            }
-        } finally {
-            CloseHandle(handle)
-        }
-        return null
+        return readBytes(path)?.decodeToString()
     }
 
     @OptIn(ExperimentalForeignApi::class)
@@ -116,20 +98,26 @@ actual object File {
         )
         if (handle == null || handle == INVALID_HANDLE_VALUE) return null
         try {
-            val size = memScoped {
-                val li = alloc<LARGE_INTEGER>()
-                if (GetFileSizeEx(handle, li.ptr) != 0) li.QuadPart.toInt() else 0
-            }
+            val size = fileSize(handle) ?: return null
             if (size <= 0) return ByteArray(0)
-            val buffer = ByteArray(size)
+            if (size > maxFileSize) return null
+            val buffer = ByteArray(size.toInt())
             buffer.usePinned { pinned ->
-                memScoped {
-                    val read = alloc<DWORDVar>()
-                    if (ReadFile(handle, pinned.addressOf(0), size.toUInt(), read.ptr, null) != 0) {
-                        val readCount = read.value.toInt()
-                        return if (readCount == buffer.size) buffer else buffer.copyOf(readCount)
+                var offset = 0
+                while (offset < buffer.size) {
+                    memScoped {
+                        val read = alloc<DWORDVar>()
+                        val chunkSize = (buffer.size - offset).toUInt()
+                        if (ReadFile(handle, pinned.addressOf(offset), chunkSize, read.ptr, null) == 0) {
+                            return null
+                        }
+                        if (read.value == 0u) {
+                            return if (offset == buffer.size) buffer else buffer.copyOf(offset)
+                        }
+                        offset += read.value.toInt()
                     }
                 }
+                return buffer
             }
         } finally {
             CloseHandle(handle)
@@ -152,12 +140,7 @@ actual object File {
         if (handle == null || handle == INVALID_HANDLE_VALUE) return
         try {
             val bytes = contents.encodeToByteArray()
-            bytes.usePinned { pinned ->
-                memScoped {
-                    val written = alloc<DWORDVar>()
-                    WriteFile(handle, pinned.addressOf(0), bytes.size.toUInt(), written.ptr, null)
-                }
-            }
+            writeAll(handle, bytes)
         } finally {
             CloseHandle(handle)
         }
@@ -177,12 +160,7 @@ actual object File {
         )
         if (handle == null || handle == INVALID_HANDLE_VALUE) return
         try {
-            contents.usePinned { pinned ->
-                memScoped {
-                    val written = alloc<DWORDVar>()
-                    WriteFile(handle, pinned.addressOf(0), contents.size.toUInt(), written.ptr, null)
-                }
-            }
+            writeAll(handle, contents)
         } finally {
             CloseHandle(handle)
         }
@@ -205,12 +183,7 @@ actual object File {
             // Move to end
             SetFilePointer(handle, 0, null, FILE_END.toUInt())
             val bytes = contents.encodeToByteArray()
-            bytes.usePinned { pinned ->
-                memScoped {
-                    val written = alloc<DWORDVar>()
-                    WriteFile(handle, pinned.addressOf(0), bytes.size.toUInt(), written.ptr, null)
-                }
-            }
+            writeAll(handle, bytes)
         } finally {
             CloseHandle(handle)
         }
@@ -218,5 +191,25 @@ actual object File {
 
     actual fun delete(path: String): Boolean {
         return DeleteFileW(path) != 0
+    }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun writeAll(handle: HANDLE?, bytes: ByteArray) {
+    bytes.usePinned { pinned ->
+        var offset = 0
+        while (offset < bytes.size) {
+            memScoped {
+                val written = alloc<DWORDVar>()
+                val chunkSize = (bytes.size - offset).toUInt()
+                if (WriteFile(handle, pinned.addressOf(offset), chunkSize, written.ptr, null) == 0) {
+                    throw IllegalStateException("Could not write file contents")
+                }
+                if (written.value == 0u) {
+                    throw IllegalStateException("Could not write file contents")
+                }
+                offset += written.value.toInt()
+            }
+        }
     }
 }

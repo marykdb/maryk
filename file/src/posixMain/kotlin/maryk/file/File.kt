@@ -1,4 +1,5 @@
 @file:OptIn(UnsafeNumber::class)
+@file:Suppress("REDUNDANT_CALL_OF_CONVERSION_METHOD")
 package maryk.file
 
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -82,7 +83,7 @@ actual object File {
                 while (offset < buffer.size) {
                     val readBytes = read(fd, pinned.addressOf(offset), (buffer.size - offset).convert())
                     if (readBytes < 0) return null
-                    if (readBytes == 0L) break
+                    if (readBytes.toLong() == 0L) break
                     offset += readBytes.toInt()
                 }
                 return if (offset == buffer.size) buffer else buffer.copyOf(offset)

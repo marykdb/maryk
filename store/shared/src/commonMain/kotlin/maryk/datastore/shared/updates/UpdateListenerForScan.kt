@@ -107,8 +107,8 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                     when {
                         indexPosition < 0 -> {
                             val newPos = indexPosition * -1 - 1
-                            // Only add when position is smaller than limit and after first key
-                            if (newPos != 0 && newPos < request.limit.toInt()) {
+                            val beforeStartKey = request.startKey != null && newPos == 0
+                            if (!beforeStartKey && newPos.toUInt() < request.limit) {
                                 sortedValues?.value = buildList {
                                     addAll(sortedValues.value)
                                     add(newPos, indexKey)
@@ -272,11 +272,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                                             // Don't add items which are moved to after the limit
                                             changedHandler(null, false)
                                         } else {
-                                            val beforeStartRange = indexScanRange
-                                                ?.ranges
-                                                ?.firstOrNull()
-                                                ?.keyBeforeStart(change.key.bytes) == true
-                                            if (newIndex == 0 && beforeStartRange) {
+                                            if (request.startKey != null && newIndex == 0) {
                                                 // Remove items which are before the first start key/range
                                                 changedHandler(null, false)
                                             } else {

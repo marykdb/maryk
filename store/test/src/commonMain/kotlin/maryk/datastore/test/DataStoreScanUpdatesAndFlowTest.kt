@@ -120,7 +120,9 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeScanUpdatesAsFlowWithSelectRequest" to ::executeScanUpdatesAsFlowWithSelectRequest,
         "executeReversedScanUpdatesAsFlowRequest" to ::executeReversedScanUpdatesAsFlowRequest,
         "executeOrderedScanUpdatesAsFlowRequest" to ::executeOrderedScanUpdatesAsFlowRequest,
-        "executeReverseOrderedScanUpdatesAsFlowRequest" to ::executeReverseOrderedScanUpdatesAsFlowRequest
+        "executeReverseOrderedScanUpdatesAsFlowRequest" to ::executeReverseOrderedScanUpdatesAsFlowRequest,
+        "executeEmptyIndexedScanValuesAsFlowAddsChangedValue" to ::executeEmptyIndexedScanValuesAsFlowAddsChangedValue,
+        "executeOrderedScanValuesAsFlowAddsNewTopValue" to ::executeOrderedScanValuesAsFlowAddsNewTopValue
     )
 
     override suspend fun initData() {
@@ -346,6 +348,94 @@ class DataStoreScanUpdatesAndFlowTest(
                 withTimeoutOrNull(250.milliseconds) { responses.receive() }
             }
             assertNull(unexpectedResponse)
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
+        }
+    }
+
+    private suspend fun executeEmptyIndexedScanValuesAsFlowAddsChangedValue() = coroutineScope {
+        val responses = Channel<IsUpdateResponse<TestMarykModel>>(2)
+        val listenJob = launch {
+            dataStore.executeFlow(
+                TestMarykModel.scan(
+                    where = Equals(TestMarykModel { int::ref } with 6),
+                    order = TestMarykModel { int::ref }.ascending(),
+                    limit = 2u
+                )
+            ).collect {
+                responses.send(it)
+            }
+        }
+
+        try {
+            suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5000.milliseconds) { responses.receive() }
+            }
+
+            assertIs<InitialValuesUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(emptyList(), values.map { it.key })
+            }
+
+            val change = Change(TestMarykModel { int::ref } with 6)
+            dataStore.execute(TestMarykModel.change(testKeys[4].change(change))).also {
+                assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
+            }
+
+            assertIs<AdditionUpdate<TestMarykModel>>(receiveRealTimeResponse()).apply {
+                assertEquals(testKeys[4], key)
+                assertEquals(0, insertionIndex)
+            }
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
+        }
+    }
+
+    private suspend fun executeOrderedScanValuesAsFlowAddsNewTopValue() = coroutineScope {
+        val responses = Channel<IsUpdateResponse<TestMarykModel>>(3)
+        val listenJob = launch {
+            dataStore.executeFlow(
+                TestMarykModel.scan(
+                    order = TestMarykModel { int::ref }.ascending(),
+                    limit = 2u
+                )
+            ).collect {
+                responses.send(it)
+            }
+        }
+
+        try {
+            suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5000.milliseconds) { responses.receive() }
+            }
+
+            assertIs<InitialValuesUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(listOf(testKeys[1], testKeys[3]), values.map { it.key })
+            }
+
+            val newDataObject = TestMarykModel.create {
+                string with "ha new top"
+                int with -20
+                uint with 999998u
+                bool with true
+                double with 11.0
+                dateTime with LocalDateTime(2026, 5, 12, 0, 0)
+            }
+
+            dataStore.execute(TestMarykModel.add(newDataObject)).also {
+                testKeys.add(assertStatusIs<AddSuccess<TestMarykModel>>(it.statuses.first()).key)
+            }
+
+            assertIs<AdditionUpdate<TestMarykModel>>(receiveRealTimeResponse()).apply {
+                assertEquals(newDataObject, values)
+                assertEquals(0, insertionIndex)
+            }
+
+            assertIs<RemovalUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(testKeys[3], key)
+                assertEquals(NotInRange, reason)
+            }
         } finally {
             dataStore.closeAllListeners()
             listenJob.cancelAndJoin()

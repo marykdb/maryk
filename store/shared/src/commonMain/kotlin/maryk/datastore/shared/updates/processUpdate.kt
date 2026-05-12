@@ -294,18 +294,33 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
             .firstOrNull { it.key !in currentKeys }
     }
 
-    val nextResults = execute(
-        request.dataModel.scan(
-            currentKeys.last(),
-            request.select,
-            where = request.where,
-            order = request.order,
-            limit = 1u,
-            includeStart = false,
-            toVersion = request.toVersion,
-            filterSoftDeleted = request.filterSoftDeleted
+    val nextResults = if (currentKeys.isEmpty()) {
+        execute(
+            request.dataModel.scan(
+                startKey = request.startKey,
+                select = request.select,
+                where = request.where,
+                order = request.order,
+                limit = 1u,
+                includeStart = request.includeStart,
+                toVersion = request.toVersion,
+                filterSoftDeleted = request.filterSoftDeleted
+            )
         )
-    )
+    } else {
+        execute(
+            request.dataModel.scan(
+                startKey = currentKeys.last(),
+                select = request.select,
+                where = request.where,
+                order = request.order,
+                limit = 1u,
+                includeStart = false,
+                toVersion = request.toVersion,
+                filterSoftDeleted = request.filterSoftDeleted
+            )
+        )
+    }
 
     return if (nextResults.values.isNotEmpty()) {
         val nextValues = nextResults.values.first()

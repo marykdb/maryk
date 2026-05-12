@@ -132,11 +132,15 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                     when {
                         indexPosition < 0 -> {
                             val newPos = indexPosition * -1 - 1
-                            matchingKeys.value = buildList {
-                                addAll(matchingKeys.value)
-                                add(newPos, key)
+                            if (newPos.toUInt() < request.limit) {
+                                matchingKeys.value = buildList {
+                                    addAll(matchingKeys.value)
+                                    add(newPos, key)
+                                }
+                                newPos
+                            } else {
+                                null
                             }
-                            newPos
                         }
                         // else already in list
                         else -> indexPosition

@@ -105,6 +105,8 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex" to ::executeSimpleScanUpdatesRequestWithUpdateHistoryIndex,
         "executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex" to ::executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex,
         "executeOrderedScanUpdatesRequest" to ::executeOrderedScanUpdatesRequest,
+        "executeLimitedScanValuesAsFlowRefillsAfterDeletingOnlyVisibleKey" to ::executeLimitedScanValuesAsFlowRefillsAfterDeletingOnlyVisibleKey,
+        "executeLimitedScanValuesAsFlowIgnoresAddAfterWindow" to ::executeLimitedScanValuesAsFlowIgnoresAddAfterWindow,
         "executeScanValuesAsFlowRequest" to ::executeScanValuesAsFlowRequest,
         "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill" to ::executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
@@ -278,6 +280,75 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(change), changes)
             }
+        }
+    }
+
+    private suspend fun executeLimitedScanValuesAsFlowRefillsAfterDeletingOnlyVisibleKey() {
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scan(limit = 1u),
+            3
+        ) { responses ->
+            assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[0]), values.map { it.key })
+            }
+
+            dataStore.execute(TestMarykModel.delete(testKeys[0], hardDelete = true)).also {
+                assertStatusIs<DeleteSuccess<*>>(it.statuses.first())
+            }
+
+            assertIs<RemovalUpdate<*>>(responses[1].await()).apply {
+                assertEquals(testKeys[0], key)
+                assertEquals(HardDelete, reason)
+            }
+
+            assertIs<AdditionUpdate<TestMarykModel>>(responses[2].await()).apply {
+                assertEquals(testKeys[1], key)
+                assertEquals(t1, values)
+                assertEquals(0, insertionIndex)
+            }
+
+            testKeys.removeAt(0)
+        }
+    }
+
+    private suspend fun executeLimitedScanValuesAsFlowIgnoresAddAfterWindow() = coroutineScope {
+        val responses = Channel<IsUpdateResponse<TestMarykModel>>(2)
+        val listenJob = launch {
+            dataStore.executeFlow(TestMarykModel.scan(limit = 2u)).collect {
+                responses.send(it)
+            }
+        }
+
+        try {
+            suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5000.milliseconds) { responses.receive() }
+            }
+
+            assertIs<InitialValuesUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(listOf(testKeys[0], testKeys[1]), values.map { it.key })
+            }
+
+            val newDataObject = TestMarykModel.create {
+                string with "ha after window"
+                int with 6
+                uint with 999999u
+                bool with true
+                double with 10.0
+                dateTime with LocalDateTime(2026, 5, 12, 0, 0)
+            }
+
+            dataStore.execute(TestMarykModel.add(newDataObject)).also {
+                testKeys.add(assertStatusIs<AddSuccess<TestMarykModel>>(it.statuses.first()).key)
+            }
+
+            val unexpectedResponse = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeoutOrNull(250.milliseconds) { responses.receive() }
+            }
+            assertNull(unexpectedResponse)
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
         }
     }
 

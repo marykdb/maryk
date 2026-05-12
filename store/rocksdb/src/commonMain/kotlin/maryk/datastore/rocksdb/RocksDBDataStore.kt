@@ -166,8 +166,6 @@ class RocksDBDataStore private constructor(
 
     internal val db: RocksDB
 
-    internal val updateDispatcher = Dispatchers.IO
-
     private val storePath: String = relativePath
 
     private val modelMetas: MutableMap<UInt, ModelMeta> = readMetaFile(storePath).toMutableMap()
@@ -622,18 +620,14 @@ class RocksDBDataStore private constructor(
         }
     }
 
-    internal fun emitUpdate(updateToEmit: Update<*>?) {
+    internal suspend fun emitUpdate(updateToEmit: Update<*>?) {
         if (updateToEmit != null) {
-            launch(this.updateDispatcher) {
-                updateSharedFlow.emit(updateToEmit)
-            }
+            updateSharedFlow.emit(updateToEmit)
         }
     }
 
-    internal fun emitUpdates(updatesToEmit: List<Update<*>>) {
-        launch(this.updateDispatcher) {
-            updateSharedFlow.emitAll(updatesToEmit.asFlow())
-        }
+    internal suspend fun emitUpdates(updatesToEmit: List<Update<*>>) {
+        updateSharedFlow.emitAll(updatesToEmit.asFlow())
     }
 
     internal fun encryptValueIfSensitive(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {

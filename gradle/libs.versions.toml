@@ -1,6 +1,9 @@
 ## Version catalog for the Maryk build.
 [versions]
 android = "9.2.0"
+androidDesugarJdkLibs = "2.1.5"
+androidxTestCore = "1.6.1"
+androidxTestRunner = "1.6.2"
 atomicfu = "0.32.1"
 benManesVersions = "0.54.0"
 compose = "1.10.3"
@@ -23,6 +26,9 @@ vico = "2.4.4"
 
 [libraries]
 android-gradle-plugin = { module = "com.android.tools.build:gradle", version.ref = "android" }
+android-desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "androidDesugarJdkLibs" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidxTestRunner" }
 atomicfu = { module = "org.jetbrains.kotlinx:atomicfu", version.ref = "atomicfu" }
 compose-material-icons-core = { module = "org.jetbrains.compose.material:material-icons-core", version.ref = "composeMaterialIcons" }
 compose-material-icons-extended = { module = "org.jetbrains.compose.material:material-icons-extended", version.ref = "composeMaterialIcons" }

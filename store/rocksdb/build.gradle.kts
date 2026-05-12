@@ -11,7 +11,20 @@ plugins {
 }
 
 kotlin {
+    androidLibrary {
+        enableCoreLibraryDesugaring = true
+    }
+
     sourceSets {
+        val commonTest by getting {
+            kotlin.srcDir("src/commonTestExpect/kotlin")
+            dependencies {
+                implementation(kotlin("test"))
+                implementation(projects.testmodels)
+                implementation(projects.store.test)
+            }
+        }
+
         commonMain {
             dependencies {
                 api(libs.maryk.rocksdb.multiplatform)
@@ -22,14 +35,24 @@ kotlin {
                 api(projects.file)
             }
         }
-        commonTest {
+        androidHostTest {
+            kotlin.srcDir("src/androidUnitTest/kotlin")
+        }
+        androidDeviceTest {
+            kotlin.srcDir("src/commonTest/kotlin")
             dependencies {
+                implementation(libs.androidx.test.core)
+                implementation(libs.androidx.test.runner)
                 implementation(kotlin("test"))
                 implementation(projects.testmodels)
                 implementation(projects.store.test)
             }
         }
     }
+}
+
+dependencies {
+    add("coreLibraryDesugaring", libs.android.desugar.jdk.libs)
 }
 
 fun Task.configureTestDatabase() {
@@ -48,6 +71,11 @@ fun Task.configureTestDatabase() {
 
 tasks.withType<Test>().configureEach {
     configureTestDatabase()
+}
+
+tasks.matching { it.name == "testAndroidHostTest" }.configureEach {
+    // RocksDB tests require platform native libraries; Android host tests run on the build host.
+    enabled = false
 }
 
 kotlin.targets.withType<KotlinNativeTarget>().configureEach {

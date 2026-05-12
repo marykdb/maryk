@@ -27,8 +27,8 @@ jobs:
             gradle_task: "macosX64Test"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest
-            gradle_task: linuxX64Test wasmJsTest jsTest jvmTest testAndroidHostTest
-            job_name: Linux all tests
+            gradle_task: linuxX64Test wasmJsTest jsTest jvmTest
+            job_name: Linux JVM/JS tests
           - os: windows-latest
             gradle_task: mingwX64Test :core:jvmTest
             job_name: Windows MinGW tests
@@ -99,5 +99,48 @@ jobs:
         with:
           name: final-build-report-${{ runner.os }}-${{ runner.arch }}
           path: build/reports/**
+          if-no-files-found: ignore
+          compression-level: 9
+
+  android:
+    name: Android tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 21
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-cleanup: on-success
+          cache-read-only: ${{ github.event_name == 'pull_request' }}
+
+      - name: Run Android tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: ./gradlew testAndroidHostTest connectedAndroidDeviceTest --stacktrace --build-cache --no-parallel
+
+      - name: Upload Android test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-test-report-${{ runner.os }}-${{ runner.arch }}
+          path: |
+            **/build/reports/androidTests/**
+            **/build/outputs/androidTest-results/**
           if-no-files-found: ignore
           compression-level: 9

@@ -12,5 +12,6 @@ kotlin {
         compileSdk = 36
         minSdk = 21
         withHostTest {}
+        withDeviceTest {}
     }
 }

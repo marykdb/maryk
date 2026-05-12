@@ -17,5 +17,10 @@ kotlin {
                 api(kotlin("test"))
             }
         }
+        commonTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
     }
 }

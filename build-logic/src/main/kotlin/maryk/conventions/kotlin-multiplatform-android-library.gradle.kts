@@ -11,5 +11,6 @@ kotlin {
         namespace = "io.maryk"
         compileSdk = 36
         minSdk = 21
+        withHostTest {}
     }
 }

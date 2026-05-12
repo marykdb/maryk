@@ -21,6 +21,6 @@ open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDat
     }
 
     final override fun hashCode(): Int {
-        return _bytes.hashCode()
+        return _bytes.contentHashCode()
     }
 }

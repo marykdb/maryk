@@ -26,7 +26,7 @@ fun DataModel<*>.generateKotlin(
     val reservedNames = Meta.reservedNames.let { names ->
         when {
             names.isNullOrEmpty() -> null
-            else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),"
+            else -> "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }}),"
         }
     }
 
@@ -50,7 +50,7 @@ internal fun List<KotlinForProperty>.generateDefinitionsForProperties(addImport:
         addImport("maryk.core.properties.definitions."+it.wrapName)
 
         val altNames = it.altNames?.let { altName ->
-            "\n            alternativeNames = setOf(${altName.joinToString(", ") { """"$it"""" }}),"
+            "\n            alternativeNames = setOf(${altName.joinToString(", ") { it.kotlinStringLiteral() }}),"
         } ?: ""
         val definitionProperties = "\n            " +it.definition.prependIndent().prependIndent().prependIndent().trimStart()
         val propertiesToBeAdded = if (definitionProperties.isBlank() && altNames.isEmpty()) "" else ",$altNames$definitionProperties"

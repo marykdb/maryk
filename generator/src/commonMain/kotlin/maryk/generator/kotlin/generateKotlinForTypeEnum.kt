@@ -33,7 +33,7 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
     val reservedNames = this.reservedNames.let { names ->
         when {
             names.isNullOrEmpty() -> ""
-            else -> "\n"+ "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),".prependIndent().prependIndent().prependIndent()
+            else -> "\n"+ "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }}),".prependIndent().prependIndent().prependIndent()
         }
     }
 
@@ -45,7 +45,7 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
     ) : IndexedEnumImpl<${this.name}<Any>>(index, alternativeNames), MultiTypeEnum<T> {
         ${@Suppress("UNCHECKED_CAST") (this.cases() as List<MultiTypeEnum<Any>>).joinToString("") { case ->
             val alternativeNames = case.alternativeNames?.let { altNames ->
-                ",\n    setOf(${altNames.joinToString(", ") { """"$it""""} })"
+                ",\n    setOf(${altNames.joinToString(", ") { it.kotlinStringLiteral() } })"
             } ?: ""
             val definition = case.definition
             require(definition is IsTransportablePropertyDefinitionType<*>) { "Property definition is not supported: ${this}" }

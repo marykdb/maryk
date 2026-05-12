@@ -20,15 +20,13 @@ open class Bytes(val bytes: ByteArray) : Comparable<Bytes> {
         }
     )
 
-    private val hashCode by lazy(bytes::contentHashCode)
-
     operator fun get(index: Int) = bytes[index]
 
     override fun toString() = Base64Maryk.encode(bytes).trimEnd('=')
 
     override infix fun compareTo(other: Bytes) = bytes compareTo other.bytes
 
-    override fun hashCode() = hashCode
+    override fun hashCode() = bytes.contentHashCode()
 
     override fun equals(other: Any?) = when {
         this === other -> true

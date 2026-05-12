@@ -9,6 +9,36 @@ import kotlin.test.assertTrue
 
 class MigrationStateTest {
     @Test
+    fun migrationStateEqualityUsesCursorContent() {
+        val left = MigrationState(
+            migrationId = "Person:1.0.0->2.0.0",
+            phase = MigrationPhase.Backfill,
+            status = MigrationStateStatus.Partial,
+            attempt = 3u,
+            fromVersion = "1.0.0",
+            toVersion = "2.0.0",
+            cursor = byteArrayOf(1, 2, 3),
+            message = "resume",
+        )
+        val right = left.copy(cursor = byteArrayOf(1, 2, 3))
+
+        assertEquals(left, right)
+        assertEquals(left.hashCode(), right.hashCode())
+    }
+
+    @Test
+    fun migrationOutcomeEqualityUsesCursorContent() {
+        assertEquals(
+            MigrationOutcome.Partial(byteArrayOf(1, 2, 3), "resume"),
+            MigrationOutcome.Partial(byteArrayOf(1, 2, 3), "resume"),
+        )
+        assertEquals(
+            MigrationOutcome.Retry(byteArrayOf(1, 2, 3), "retry", 10),
+            MigrationOutcome.Retry(byteArrayOf(1, 2, 3), "retry", 10),
+        )
+    }
+
+    @Test
     fun roundTripStateEncoding() {
         val state = MigrationState(
             migrationId = "Person:1.0.0->2.0.0",
@@ -22,15 +52,9 @@ class MigrationStateTest {
         )
 
         val decoded = MigrationState.fromPersistedBytes(state.toPersistedBytes())
+        assertEquals(state, decoded)
         assertNotNull(decoded)
-        assertEquals(state.migrationId, decoded.migrationId)
-        assertEquals(state.phase, decoded.phase)
-        assertEquals(state.status, decoded.status)
-        assertEquals(state.attempt, decoded.attempt)
-        assertEquals(state.fromVersion, decoded.fromVersion)
-        assertEquals(state.toVersion, decoded.toVersion)
         assertContentEquals(state.cursor, decoded.cursor)
-        assertEquals(state.message, decoded.message)
     }
 
     @Test

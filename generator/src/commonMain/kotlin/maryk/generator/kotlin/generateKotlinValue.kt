@@ -39,7 +39,7 @@ internal fun generateKotlinValue(
     addImport: (String) -> Unit,
     addGenerics: Boolean = false
 ): String = when (value) {
-    is String -> """"$value""""
+    is String -> value.kotlinStringLiteral()
     is TimePrecision -> {
         addImport("maryk.core.properties.types.TimePrecision")
         "TimePrecision.${value.name}"
@@ -72,7 +72,7 @@ internal fun generateKotlinValue(
     }
     is LocalDateTime -> {
         when {
-            value.nanosecond != 0 -> "LocalDate(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
+            value.nanosecond != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
             value.second != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute}, ${value.second})"
             value.minute != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour}, ${value.minute})"
             value.hour != 0 -> "LocalDateTime(${value.year}, ${value.month.number}, ${value.day}, ${value.hour})"

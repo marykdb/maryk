@@ -29,7 +29,7 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
     val reservedNames = this.reservedNames.let { names ->
         when {
             names.isNullOrEmpty() -> ""
-            else -> "\n"+ "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")}),".prependIndent().prependIndent().prependIndent()
+            else -> "\n"+ "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }}),".prependIndent().prependIndent().prependIndent()
         }
     }
 
@@ -40,7 +40,7 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
     ) : IndexedEnumImpl<${this.name}>(index, alternativeNames) {
         ${this.cases().joinToString("") { case ->
         val alternativeNames = case.alternativeNames?.let {
-                ", setOf(${it.joinToString(", ") { """"$it""""} })"
+                ", setOf(${it.joinToString(", ") { name -> name.kotlinStringLiteral() } })"
             } ?: ""
             "object ${case.name}: ${this.name}(${case.index}u$alternativeNames)\n"
         }.prependIndent().prependIndent().trimStart()}

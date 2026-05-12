@@ -62,7 +62,7 @@ fun IsRootDataModel.generateKotlin(
     val reservedNames = Meta.reservedNames.let { names ->
         when {
             names.isNullOrEmpty() -> null
-            else -> "reservedNames = listOf(${names.joinToString(", ", "\"", "\"")})"
+            else -> "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }})"
         }
     }
 

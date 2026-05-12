@@ -55,6 +55,34 @@ data class MigrationState(
     val cursor: ByteArray? = null,
     val message: String? = null,
 ) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is MigrationState) return false
+
+        if (migrationId != other.migrationId) return false
+        if (phase != other.phase) return false
+        if (status != other.status) return false
+        if (attempt != other.attempt) return false
+        if (fromVersion != other.fromVersion) return false
+        if (toVersion != other.toVersion) return false
+        if (!cursor.contentEquals(other.cursor)) return false
+        if (message != other.message) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = migrationId.hashCode()
+        result = 31 * result + phase.hashCode()
+        result = 31 * result + status.hashCode()
+        result = 31 * result + attempt.hashCode()
+        result = 31 * result + (fromVersion?.hashCode() ?: 0)
+        result = 31 * result + toVersion.hashCode()
+        result = 31 * result + (cursor?.contentHashCode() ?: 0)
+        result = 31 * result + (message?.hashCode() ?: 0)
+        return result
+    }
+
     fun toPersistedBytes(): ByteArray {
         val stateLines = buildList {
             add("v=1")

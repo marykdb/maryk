@@ -66,7 +66,7 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
                     } else {
                         def
                     }
-                    output.add("""${property.name} = ${generateKotlinValue(defToSend, value, addImport, addGenerics = true)}""")
+                    output.add("""$propertyName = ${generateKotlinValue(defToSend, value, addImport, addGenerics = true)}""")
                 }
             }
         }

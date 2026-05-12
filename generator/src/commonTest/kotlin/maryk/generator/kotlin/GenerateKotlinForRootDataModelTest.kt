@@ -1,5 +1,6 @@
 package maryk.generator.kotlin
 
+import kotlinx.datetime.LocalDateTime
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Measurement
@@ -366,6 +367,28 @@ class GenerateKotlinForRootDataModelTest {
         }
 
         assertEquals(generatedKotlinForSimpleDataModel, output)
+    }
+
+    @Test
+    fun escapeGeneratedStringValues() {
+        val value = "quote \" slash \\ newline \n dollar ${'$'}"
+
+        assertEquals(
+            "\"quote \\\" slash \\\\ newline \\n dollar \\$\"",
+            generateKotlinValue(SimpleMarykModel.value.definition, value, {})
+        )
+    }
+
+    @Test
+    fun generateDateTimeWithNanoseconds() {
+        assertEquals(
+            "LocalDateTime(2020, 1, 2, 3, 4, 5, 6)",
+            generateKotlinValue(
+                CompleteMarykModel.dateTime.definition,
+                LocalDateTime(2020, 1, 2, 3, 4, 5, 6),
+                {}
+            )
+        )
     }
 
     @Test

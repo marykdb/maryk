@@ -31,6 +31,16 @@ internal class BytesTest {
     }
 
     @Test
+    fun hashcodeReflectsMutation() {
+        val source = byteArrayOf(0)
+        val bytes = Bytes(source)
+        expect(31) { bytes.hashCode() }
+
+        source[0] = 1
+        expect(32) { bytes.hashCode() }
+    }
+
+    @Test
     fun testGet() {
         expect((-1).toByte()) { bytesToTest[0][0] }
         expect(0.toByte()) { bytesToTest[1][3] }

@@ -31,6 +31,7 @@ internal class ValueDataObjectTest {
         val new = TestValueObject.Serializer.readFromBytes(bytes.iterator()::nextByte)
 
         expect(0) { new compareTo value }
+        expect(value.hashCode()) { new.hashCode() }
     }
 
     @Test

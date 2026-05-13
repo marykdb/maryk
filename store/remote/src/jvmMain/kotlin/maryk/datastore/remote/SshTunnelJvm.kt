@@ -1,6 +1,7 @@
 package maryk.datastore.remote
 
 import java.io.InputStream
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.TimeUnit
@@ -10,6 +11,9 @@ actual fun defaultSshTunnelFactory(): SshTunnelFactory? = ProcessSshTunnelFactor
 private object ProcessSshTunnelFactory : SshTunnelFactory {
     override fun open(config: RemoteSshConfig, target: SshTarget): SshTunnel {
         val localPort = config.localPort?.takeIf { it > 0 } ?: allocateLocalPort()
+        if (config.localPort != null && !isLocalPortAvailable(localPort)) {
+            throw IllegalStateException("SSH local port $localPort is already in use")
+        }
         val command = buildCommand(config, target, localPort)
         val process = ProcessBuilder(command)
             .redirectErrorStream(true)
@@ -27,6 +31,12 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
     }
 
     private fun allocateLocalPort(): Int = ServerSocket(0).use { it.localPort }
+
+    private fun isLocalPortAvailable(port: Int): Boolean = runCatching {
+        ServerSocket().use { socket ->
+            socket.bind(InetSocketAddress("127.0.0.1", port))
+        }
+    }.isSuccess
 
     private fun buildCommand(config: RemoteSshConfig, target: SshTarget, localPort: Int): List<String> {
         val command = mutableListOf(
@@ -73,11 +83,21 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
                 throw IllegalStateException("SSH tunnel process exited with code ${process.exitValue()}")
             }
             if (runCatching { Socket("127.0.0.1", localPort).use {} }.isSuccess) {
+                waitForStableProcess(process, localPort)
                 return
             }
             Thread.sleep(50)
         }
         throw IllegalStateException("SSH tunnel did not open local port $localPort within timeout")
+    }
+
+    private fun waitForStableProcess(process: Process, localPort: Int) {
+        repeat(5) {
+            Thread.sleep(50)
+            if (!process.isAlive) {
+                throw IllegalStateException("SSH tunnel process exited after opening local port $localPort with code ${process.exitValue()}")
+            }
+        }
     }
 }
 

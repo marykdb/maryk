@@ -13,6 +13,7 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
+import java.net.InetSocketAddress
 import java.net.ServerSocket
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -218,6 +219,22 @@ class RemoteDataStoreTest {
             )
         }
         assertTrue(exception.message?.contains("local port") == true)
+    }
+
+    @Test
+    fun sshTunnelRejectsOccupiedLocalPort() {
+        ServerSocket().use { server ->
+            server.bind(InetSocketAddress("127.0.0.1", 0))
+
+            val exception = assertFailsWith<IllegalStateException> {
+                defaultSshTunnelFactory()!!.open(
+                    RemoteSshConfig(host = "localhost", localPort = server.localPort),
+                    SshTarget(host = "127.0.0.1", port = 1)
+                )
+            }
+
+            assertTrue(exception.message?.contains("already in use") == true)
+        }
     }
 
     @Test

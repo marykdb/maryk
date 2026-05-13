@@ -44,6 +44,9 @@ actual fun defaultSshTunnelFactory(): SshTunnelFactory? = PosixSshTunnelFactory
 private object PosixSshTunnelFactory : SshTunnelFactory {
     override fun open(config: RemoteSshConfig, target: SshTarget): SshTunnel {
         val localPort = config.localPort?.takeIf { it > 0 } ?: allocateLocalPort()
+        if (config.localPort != null && !isLocalPortAvailable(localPort)) {
+            throw IllegalStateException("SSH local port $localPort is already in use")
+        }
         val command = buildCommand(config, target, localPort)
         val pid = spawnProcess(command)
         try {
@@ -137,6 +140,7 @@ private fun waitForLocalPort(pid: Int, localPort: Int) {
             throw IllegalStateException("SSH tunnel process exited before opening local port $localPort")
         }
         if (canConnectToLocalPort(localPort)) {
+            waitForStableProcess(pid, localPort)
             return
         }
         usleep(50_000u)
@@ -147,6 +151,21 @@ private fun waitForLocalPort(pid: Int, localPort: Int) {
 private fun hasExited(pid: Int): Boolean = memScoped {
     val status = alloc<IntVar>()
     waitpid(pid, status.ptr, WNOHANG) == pid
+}
+
+@OptIn(UnsafeNumber::class)
+private fun isLocalPortAvailable(localPort: Int): Boolean = memScoped {
+    val fd = socket(AF_INET, SOCK_STREAM, 0)
+    if (fd < 0) return@memScoped false
+    try {
+        val addr = alloc<sockaddr_in>()
+        addr.sin_family = AF_INET.convert()
+        addr.sin_port = portToNetwork(localPort)
+        addr.sin_addr.s_addr = INADDR_ANY
+        bind(fd, addr.ptr.reinterpret(), sizeOf<sockaddr_in>().toUInt()) == 0
+    } finally {
+        close(fd)
+    }
 }
 
 @OptIn(UnsafeNumber::class)
@@ -161,6 +180,16 @@ private fun canConnectToLocalPort(localPort: Int): Boolean = memScoped {
         connect(fd, addr.ptr.reinterpret(), sizeOf<sockaddr_in>().toUInt()) == 0
     } finally {
         close(fd)
+    }
+}
+
+@OptIn(UnsafeNumber::class)
+private fun waitForStableProcess(pid: Int, localPort: Int) {
+    repeat(5) {
+        usleep(50_000u)
+        if (hasExited(pid)) {
+            throw IllegalStateException("SSH tunnel process exited after opening local port $localPort")
+        }
     }
 }
 

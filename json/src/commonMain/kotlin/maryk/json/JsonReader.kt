@@ -30,9 +30,9 @@ internal enum class JsonComplexType {
     OBJECT, ARRAY
 }
 
-/** Reads JSON from the supplied [reader] */
+/** Reads JSON from the supplied [reader]. Return null to signal end of input. */
 class JsonReader(
-    private val reader: () -> Char
+    private val reader: () -> Char?
 ) : IsJsonLikeReader {
     override var currentToken: JsonToken = StartDocument
 
@@ -148,7 +148,7 @@ class JsonReader(
     }
 
     private fun read() = try {
-        lastChar = reader()
+        lastChar = reader() ?: throw ExceptionWhileReadingJson()
         if (lastChar.isLineBreak()) {
             lineNumber += 1
             columnNumber = 0

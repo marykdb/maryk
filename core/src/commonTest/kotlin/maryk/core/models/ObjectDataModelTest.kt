@@ -320,7 +320,7 @@ internal class ObjectDataModelTest {
     fun convertJSONToDataObject() {
         var input = ""
         var index = 0
-        val reader = { input[index++] }
+        val reader = { input.getOrNull(index++) }
         val jsonReader = { JsonReader(reader = reader) }
 
         listOf(
@@ -345,7 +345,7 @@ internal class ObjectDataModelTest {
             TestMarykObject.Serializer.writeObjectAsJson(testExtendedObject, generator)
 
             var index = 0
-            val reader = { JsonReader(reader = { output[index++] }) }
+            val reader = { JsonReader(reader = { output.getOrNull(index++) }) }
             expect(testExtendedObject) { TestMarykObject.Serializer.readJson(reader = reader()).toDataObject() }
 
             output = ""

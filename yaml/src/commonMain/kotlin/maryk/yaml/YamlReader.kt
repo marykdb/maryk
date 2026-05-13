@@ -24,11 +24,12 @@ import maryk.lib.extensions.isLineBreak
 class UnknownYamlTag(val name: String) : MapType, ValueType<Nothing>, ArrayType
 
 @Suppress("FunctionName")
+/** Reads YAML from the supplied [reader]. Return null to signal end of input. */
 fun YamlReader(
     defaultTag: String? = null,
     tagMap: Map<String, Map<String, TokenType>>? = null,
     allowUnknownTags: Boolean = false,
-    reader: () -> Char
+    reader: () -> Char?
 ): IsYamlReader =
     YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, reader)
 
@@ -82,7 +83,7 @@ internal class YamlReaderImpl(
     private val defaultTag: String?,
     tagMap: Map<String, Map<String, TokenType>>?,
     private val allowUnknownTags: Boolean,
-    private val reader: () -> Char
+    private val reader: () -> Char?
 ) : IsJsonLikeReader, IsInternalYamlReader, IsYamlReader {
     var version: String? = null
 
@@ -251,7 +252,7 @@ internal class YamlReaderImpl(
         } else {
             columnNumber += 1
         }
-        lastChar = reader()
+        lastChar = reader() ?: throw ExceptionWhileReadingJson()
     } catch (_: ExceptionWhileReadingJson) {
         throw ExceptionWhileReadingJson()
     }

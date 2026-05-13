@@ -1,7 +1,6 @@
 package maryk.datastore.rocksdb.metadata
 
 import maryk.file.File
-import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonToken
 import maryk.yaml.YamlReader
 import maryk.yaml.YamlWriter
@@ -62,8 +61,7 @@ private fun parseMeta(text: String): Map<UInt, ModelMeta> {
 
     var idx = 0
     val reader = YamlReader(reader = {
-        text.getOrNull(idx)?.also { idx++ }
-            ?: throw ExceptionWhileReadingJson()
+        text.getOrNull(idx++)
     })
 
     var currentToken = reader.currentToken

@@ -121,7 +121,7 @@ To construct a YamlReader, you can use following parameters:
   Example: `tag:maryk.io,2018:`. This parameter is optional.
 - `tagMap` - A map that maps tag namespaces to a map with tag names and TokenTypes to return if encountered.
 - `allowUnknownTags` - A boolean value that determines if the reader should return tags that are not present in the `tagMap` as an `UnknownTag`. The default value is false.
-- `reader` - a function which only takes one `Char` at a time. Implement it with fitting input stream for platform.
+- `reader` - a function which returns one `Char` at a time, or `null` at end of input. Implement it with fitting input stream for platform.
 
 Here's an example of constructing a YamlReader to read YAML from a simple string:
 ```kotlin
@@ -129,7 +129,7 @@ val yaml = ... // Yaml String
 var index = 0
 
 val reader = YamlReader {
-  json.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+  yaml.getOrNull(index++)
 }
 ```
 
@@ -182,7 +182,7 @@ age: 32
 var index = 0
 
 YamlReader { 
-  input.getOrNull(index).also { index++ } ?: throw Throwable("0 char encountered")
+  input.getOrNull(index++)
 }.apply {
     println(currentToken)
     

@@ -115,7 +115,7 @@ Example:
 val input = """{"name": "John Smith", "age": 32}"""
 var index = 0
 
-JsonReader { input[index++] }.apply {
+JsonReader { input.getOrNull(index++) }.apply {
     println(currentToken)
     
     while (currentToken !is JsonToken.Stopped) {

@@ -123,8 +123,8 @@ internal class SetDefinitionTest {
 
         expect("""["T","T2","T3","T4"]""") { totalString }
 
-        val iterator = totalString.iterator()
-        val reader = JsonReader { iterator.nextChar() }
+        var index = 0
+        val reader = JsonReader { totalString.getOrNull(index++) }
         reader.nextToken()
         val converted = def.readJson(reader)
 

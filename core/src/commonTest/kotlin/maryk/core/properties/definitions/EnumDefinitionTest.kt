@@ -10,7 +10,6 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.MarykYamlReader
-import maryk.json.ExceptionWhileReadingJson
 import maryk.test.ByteCollector
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykEnumEmbedded.E2
@@ -161,7 +160,7 @@ internal class EnumDefinitionTest {
 
         var index = 0
         val reader = MarykYamlReader {
-            chars.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
+            chars.getOrNull(index++)
         }
         @Suppress("UNCHECKED_CAST")
         val context = EnumDefinition.Model.Serializer.transformContext(

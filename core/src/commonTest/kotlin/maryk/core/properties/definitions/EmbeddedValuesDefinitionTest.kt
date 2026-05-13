@@ -66,7 +66,7 @@ internal class EmbeddedValuesDefinitionTest {
 
         var index = 0
         val reader = JsonReader {
-            output[index++]
+            output.getOrNull(index++)
         }
 
         expect(value) { def.readJson(reader) }

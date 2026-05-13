@@ -63,7 +63,7 @@ internal fun readRecordValuesInput(
         SaveFormat.JSON -> {
             val content = readTextInput(path)
             val iterator = content.iterator()
-            val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
+            val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
             val token = if (reader.currentToken == JsonToken.StartDocument) reader.nextToken() else reader.currentToken
             when (token) {
                 is JsonToken.StartArray -> ParsedRecordValues.Multi(readValuesList(reader, serializer))
@@ -96,7 +96,7 @@ private fun readRecordDataValues(
         SaveFormat.JSON -> {
             val content = readTextInput(path)
             val iterator = content.iterator()
-            val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
+            val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
             serializer.readJson(reader, null)
         }
         SaveFormat.PROTO -> {
@@ -171,7 +171,7 @@ private fun readRecordMetaValues(
         SaveFormat.JSON -> {
             val content = readTextInput(path)
             val iterator = content.iterator()
-            val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
+            val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
             ValuesWithMetaData.Serializer.readJson(reader, requestContext)
         }
         SaveFormat.PROTO -> {

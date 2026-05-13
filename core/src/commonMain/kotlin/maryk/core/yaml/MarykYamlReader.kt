@@ -4,21 +4,20 @@ package maryk.core.yaml
 
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.index.IndexKeyPartType
-import maryk.json.ExceptionWhileReadingJson
 import maryk.json.IsJsonLikeReader
 import maryk.json.TokenType
 import maryk.yaml.YamlReader
 
 const val MARYK_2018 = "tag:maryk.io,2018:"
 
-private fun createReader(yaml: String): () -> Char {
+private fun createReader(yaml: String): () -> Char? {
     var index = 0
     return {
-        yaml.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
+        yaml.getOrNull(index++)
     }
 }
 
-private fun createYamlReader(reader: () -> Char, allowUnknownTags: Boolean): IsJsonLikeReader =
+private fun createYamlReader(reader: () -> Char?, allowUnknownTags: Boolean): IsJsonLikeReader =
     YamlReader(
         defaultTag = MARYK_2018,
         tagMap = mapOf(MARYK_2018 to MARYK_TYPE_MAP),
@@ -29,13 +28,13 @@ private fun createYamlReader(reader: () -> Char, allowUnknownTags: Boolean): IsJ
 fun MarykYamlModelReader(yaml: String): IsJsonLikeReader =
     createYamlReader(createReader(yaml), false)
 
-fun MarykYamlModelReader(reader: () -> Char): IsJsonLikeReader =
+fun MarykYamlModelReader(reader: () -> Char?): IsJsonLikeReader =
     createYamlReader(reader, false)
 
 fun MarykYamlReader(yaml: String): IsJsonLikeReader =
     createYamlReader(createReader(yaml), true)
 
-fun MarykYamlReader(reader: () -> Char): IsJsonLikeReader =
+fun MarykYamlReader(reader: () -> Char?): IsJsonLikeReader =
     createYamlReader(reader, true)
 
 val MARYK_TYPE_MAP: Map<String, TokenType> = buildMap {

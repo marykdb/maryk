@@ -139,7 +139,7 @@ internal class SimpleDataModelTest {
             SimpleMarykModel.Serializer.writeJson(testValues, generator)
 
             var index = 0
-            val reader = { JsonReader(reader = { output[index++] }) }
+            val reader = { JsonReader(reader = { output.getOrNull(index++) }) }
             expect(testValues) { SimpleMarykModel.Serializer.readJson(reader = reader()) }
 
             output = ""

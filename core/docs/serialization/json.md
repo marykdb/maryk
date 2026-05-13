@@ -46,7 +46,7 @@ User.writeJson(userValues, JsonWriter(pretty = true) { out.append(it) })
 ## Deserialize Values from JSON
 ```kotlin
 val it = jsonString.iterator()
-val reader = JsonReader { if (it.hasNext()) it.nextChar() else Char.MIN_VALUE }
+val reader = JsonReader { if (it.hasNext()) it.nextChar() else null }
 val values = User.readJson(reader)
 ```
 
@@ -85,7 +85,7 @@ Requests.writeJson(req, JsonWriter(pretty = true) { out.append(it) }, ctx)
 ### Example: Read a ValuesResponse from JSON
 ```kotlin
 val it = jsonString.iterator()
-val reader = JsonReader { if (it.hasNext()) it.nextChar() else Char.MIN_VALUE }
+val reader = JsonReader { if (it.hasNext()) it.nextChar() else null }
 val ctx = RequestContext(DefinitionsContext(mutableMapOf("User" to DataModelReference(User))))
 
 // Parse a typed response

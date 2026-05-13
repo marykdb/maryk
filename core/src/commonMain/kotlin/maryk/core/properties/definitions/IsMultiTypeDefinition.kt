@@ -174,8 +174,10 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     }
 
     override fun fromString(string: String, context: CX?): TypedValue<E, T> {
-        val stringIterator = string.iterator()
-        return this.readJson(JsonReader { stringIterator.nextChar() }, context)
+        var index = 0
+        return this.readJson(JsonReader {
+            string.getOrNull(index++)
+        }, context)
     }
 
     override fun validateWithRef(

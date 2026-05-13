@@ -72,8 +72,8 @@ class ContextualMapDefinitionTest {
 
         expect("""{"01:55:33":"hello","14:22:23":"goodBye"}""") { totalString }
 
-        val iterator = totalString.iterator()
-        val reader = JsonReader { iterator.nextChar() }
+        var index = 0
+        val reader = JsonReader { totalString.getOrNull(index++) }
         reader.nextToken()
         val converted = def.readJson(reader, this.context)
 

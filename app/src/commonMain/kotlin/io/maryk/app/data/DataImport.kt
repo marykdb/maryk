@@ -193,7 +193,7 @@ private suspend fun readJsonRecords(
 ) {
     val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
     val iterator = content.iterator()
-    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
+    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
     when (scope) {
         DataImportScope.SINGLE -> {
             val values = ValuesWithMetaData.Serializer.readJson(reader, requestContext)
@@ -286,7 +286,7 @@ private suspend fun readVersionedJsonRecords(
 ) {
     val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
     val iterator = content.iterator()
-    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
+    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
     when (scope) {
         DataImportScope.SINGLE -> {
             val values = DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
@@ -375,7 +375,7 @@ private suspend fun readVersionedProtoRecords(
 private fun detectVersionedJson(path: String, requestContext: RequestContext): Boolean {
     val content = File.readText(path) ?: return false
     val iterator = content.iterator()
-    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else Char.MIN_VALUE }
+    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
     val token = reader.nextToken()
     return when (token) {
         is JsonToken.StartArray -> {

@@ -52,8 +52,10 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
     }
 
     override fun fromString(string: String, context: CXI?): DO {
-        val stringIterator = string.iterator()
-        return this.readJson(JsonReader { stringIterator.nextChar() }, context)
+        var index = 0
+        return this.readJson(JsonReader {
+            string.getOrNull(index++)
+        }, context)
     }
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel[name]

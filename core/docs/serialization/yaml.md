@@ -46,7 +46,7 @@ User.writeYaml(userValues, YamlWriter { out.append(it) })
 ## Deserialize Values from YAML
 ```kotlin
 val it = yamlString.iterator()
-val reader = MarykYamlReader { if (it.hasNext()) it.nextChar() else Char.MIN_VALUE }
+val reader = MarykYamlReader { if (it.hasNext()) it.nextChar() else null }
 val values = User.readYaml(reader)
 ```
 
@@ -87,7 +87,7 @@ Requests.writeYaml(req, YamlWriter { out.append(it) }, ctx)
 ### Example: Read a ValuesResponse from YAML
 ```kotlin
 val it = yamlString.iterator()
-val reader = MarykYamlReader { if (it.hasNext()) it.nextChar() else Char.MIN_VALUE }
+val reader = MarykYamlReader { if (it.hasNext()) it.nextChar() else null }
 val ctx = RequestContext(DefinitionsContext(mutableMapOf("User" to DataModelReference(User))))
 
 // Parse a typed response

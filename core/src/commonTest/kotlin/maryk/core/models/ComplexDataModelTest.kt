@@ -65,7 +65,7 @@ internal class ComplexDataModelMapTest {
         )
 
         var index = 0
-        val reader = { JsonReader(reader = { output[index++] }) }
+        val reader = { JsonReader(reader = { output.getOrNull(index++) }) }
         expect(testComplexMap) { ComplexModel.Serializer.readJson(reader = reader()) }
     }
 

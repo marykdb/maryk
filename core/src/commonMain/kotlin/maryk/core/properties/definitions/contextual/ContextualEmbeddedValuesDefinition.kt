@@ -30,8 +30,10 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     override val wireType = LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?): ValuesImpl {
-        val stringIterator = string.iterator()
-        return this.readJson(JsonReader { stringIterator.nextChar() }, context)
+        var index = 0
+        return this.readJson(JsonReader {
+            string.getOrNull(index++)
+        }, context)
     }
 
     override fun asString(value: ValuesImpl, context: CX?): String {

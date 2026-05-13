@@ -362,7 +362,7 @@ internal class DataModelTest {
     fun convertFromJSON() {
         var input = ""
         var index = 0
-        val reader = { input[index++] }
+        val reader = { input.getOrNull(index++) }
         val jsonReader = { JsonReader(reader = reader) }
 
         listOf(
@@ -388,7 +388,7 @@ internal class DataModelTest {
             TestMarykModel.Serializer.writeJson(testExtendedMarykModelObject, generator)
 
             var index = 0
-            val reader = { JsonReader(reader = { output[index++] }) }
+            val reader = { JsonReader(reader = { output.getOrNull(index++) }) }
             expect(testExtendedMarykModelObject) {
                 TestMarykModel.Serializer.readJson(reader = reader())
             }

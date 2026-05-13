@@ -59,8 +59,10 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
     }
 
     override fun fromString(string: String, context: IsPropertyContext?): Values<DM> {
-        val stringIterator = string.iterator()
-        return this.readJson(JsonReader { stringIterator.nextChar() }, context)
+        var index = 0
+        return this.readJson(JsonReader {
+            string.getOrNull(index++)
+        }, context)
     }
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel[name]

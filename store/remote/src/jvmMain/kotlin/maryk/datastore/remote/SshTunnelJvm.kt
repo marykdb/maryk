@@ -2,6 +2,7 @@ package maryk.datastore.remote
 
 import java.io.InputStream
 import java.net.ServerSocket
+import java.net.Socket
 import java.util.concurrent.TimeUnit
 
 actual fun defaultSshTunnelFactory(): SshTunnelFactory? = ProcessSshTunnelFactory
@@ -14,15 +15,13 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
             .redirectErrorStream(true)
             .start()
 
-        if (process.waitFor(200, TimeUnit.MILLISECONDS)) {
-            val output = runCatching { process.inputStream.bufferedReader().readText().trim() }
-                .getOrNull()
-                ?.takeIf { it.isNotEmpty() }
-            val suffix = output?.let { ": $it" } ?: ""
-            throw IllegalStateException("SSH tunnel process exited immediately with code ${process.exitValue()}$suffix")
-        }
-
         drainOutput(process.inputStream)
+        try {
+            waitForLocalPort(process, localPort)
+        } catch (error: Throwable) {
+            process.destroy()
+            throw error
+        }
 
         return ProcessSshTunnel(process, localPort)
     }
@@ -65,6 +64,20 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
             isDaemon = true
             start()
         }
+    }
+
+    private fun waitForLocalPort(process: Process, localPort: Int) {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+        while (System.nanoTime() < deadline) {
+            if (!process.isAlive) {
+                throw IllegalStateException("SSH tunnel process exited with code ${process.exitValue()}")
+            }
+            if (runCatching { Socket("127.0.0.1", localPort).use {} }.isSuccess) {
+                return
+            }
+            Thread.sleep(50)
+        }
+        throw IllegalStateException("SSH tunnel did not open local port $localPort within timeout")
     }
 }
 

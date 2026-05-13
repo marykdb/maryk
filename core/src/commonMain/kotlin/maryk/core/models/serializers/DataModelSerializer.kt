@@ -21,6 +21,7 @@ import maryk.core.values.IsValues
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
 import maryk.core.values.Values
+import maryk.json.ExceptionWhileReadingJson
 import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -97,7 +98,9 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
      */
     override fun readJson(json: String, context: CX?): V {
         var i = 0
-        val reader = JsonReader { json[i++] }
+        val reader = JsonReader {
+            json.getOrNull(i)?.also { i++ } ?: throw ExceptionWhileReadingJson()
+        }
         return this.readJson(reader, context)
     }
 

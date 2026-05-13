@@ -4,6 +4,7 @@ package maryk.core.yaml
 
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.index.IndexKeyPartType
+import maryk.json.ExceptionWhileReadingJson
 import maryk.json.IsJsonLikeReader
 import maryk.json.TokenType
 import maryk.yaml.YamlReader
@@ -13,7 +14,7 @@ const val MARYK_2018 = "tag:maryk.io,2018:"
 private fun createReader(yaml: String): () -> Char {
     var index = 0
     return {
-        yaml.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+        yaml.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
     }
 }
 

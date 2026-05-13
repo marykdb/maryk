@@ -155,7 +155,7 @@ class JsonReader(
         } else {
             columnNumber += 1
         }
-    } catch (_: Throwable) { // Reached end or something bad happened
+    } catch (_: ExceptionWhileReadingJson) {
         throw ExceptionWhileReadingJson()
     }
 

@@ -26,6 +26,7 @@ import platform.posix.WNOHANG
 import platform.posix._exit
 import platform.posix.bind
 import platform.posix.close
+import platform.posix.connect
 import platform.posix.errno
 import platform.posix.execvp
 import platform.posix.fork
@@ -45,6 +46,13 @@ private object PosixSshTunnelFactory : SshTunnelFactory {
         val localPort = config.localPort?.takeIf { it > 0 } ?: allocateLocalPort()
         val command = buildCommand(config, target, localPort)
         val pid = spawnProcess(command)
+        try {
+            waitForLocalPort(pid, localPort)
+        } catch (error: Throwable) {
+            kill(pid, SIGTERM)
+            waitForExit(pid, 20, 50_000u)
+            throw error
+        }
         return PosixSshTunnel(pid, localPort)
     }
 
@@ -122,6 +130,40 @@ private object PosixSshTunnelFactory : SshTunnelFactory {
     }
 }
 
+@OptIn(UnsafeNumber::class)
+private fun waitForLocalPort(pid: Int, localPort: Int) {
+    repeat(200) {
+        if (hasExited(pid)) {
+            throw IllegalStateException("SSH tunnel process exited before opening local port $localPort")
+        }
+        if (canConnectToLocalPort(localPort)) {
+            return
+        }
+        usleep(50_000u)
+    }
+    throw IllegalStateException("SSH tunnel did not open local port $localPort within timeout")
+}
+
+private fun hasExited(pid: Int): Boolean = memScoped {
+    val status = alloc<IntVar>()
+    waitpid(pid, status.ptr, WNOHANG) == pid
+}
+
+@OptIn(UnsafeNumber::class)
+private fun canConnectToLocalPort(localPort: Int): Boolean = memScoped {
+    val fd = socket(AF_INET, SOCK_STREAM, 0)
+    if (fd < 0) return@memScoped false
+    try {
+        val addr = alloc<sockaddr_in>()
+        addr.sin_family = AF_INET.convert()
+        addr.sin_port = portToNetwork(localPort)
+        addr.sin_addr.s_addr = LOOPBACK_NETWORK_ORDER
+        connect(fd, addr.ptr.reinterpret(), sizeOf<sockaddr_in>().toUInt()) == 0
+    } finally {
+        close(fd)
+    }
+}
+
 private class PosixSshTunnel(
     private val pid: Int,
     override val localPort: Int,
@@ -150,7 +192,14 @@ private fun waitForExit(pid: Int, attempts: Int, sleepMicros: UInt): Boolean {
 
 private fun errnoMessage(): String = strerror(errno)?.toKString() ?: "errno $errno"
 
+private const val LOOPBACK_NETWORK_ORDER: UInt = 0x0100007Fu
+
 private fun portFromNetwork(port: UShort): Int {
     val value = port.toInt() and 0xFFFF
     return ((value and 0xFF) shl 8) or ((value ushr 8) and 0xFF)
+}
+
+private fun portToNetwork(port: Int): UShort {
+    val value = port and 0xFFFF
+    return (((value and 0xFF) shl 8) or ((value ushr 8) and 0xFF)).toUShort()
 }

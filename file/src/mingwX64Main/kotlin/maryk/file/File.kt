@@ -127,7 +127,7 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun writeText(path: String, contents: String) {
-        if (!createParentDirectories(path)) return
+        if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
         val handle: HANDLE? = CreateFileW(
             path,
             GENERIC_WRITE.toUInt(),
@@ -137,7 +137,9 @@ actual object File {
             FILE_ATTRIBUTE_NORMAL.toUInt(),
             null
         )
-        if (handle == null || handle == INVALID_HANDLE_VALUE) return
+        if (handle == null || handle == INVALID_HANDLE_VALUE) {
+            throw IllegalStateException("Could not open file for writing: $path (${GetLastError()})")
+        }
         try {
             val bytes = contents.encodeToByteArray()
             writeAll(handle, bytes)
@@ -148,7 +150,7 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun writeBytes(path: String, contents: ByteArray) {
-        if (!createParentDirectories(path)) return
+        if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
         val handle: HANDLE? = CreateFileW(
             path,
             GENERIC_WRITE.toUInt(),
@@ -158,7 +160,9 @@ actual object File {
             FILE_ATTRIBUTE_NORMAL.toUInt(),
             null
         )
-        if (handle == null || handle == INVALID_HANDLE_VALUE) return
+        if (handle == null || handle == INVALID_HANDLE_VALUE) {
+            throw IllegalStateException("Could not open file for writing: $path (${GetLastError()})")
+        }
         try {
             writeAll(handle, contents)
         } finally {
@@ -168,7 +172,7 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun appendText(path: String, contents: String) {
-        if (!createParentDirectories(path)) return
+        if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
         val handle: HANDLE? = CreateFileW(
             path,
             GENERIC_WRITE.toUInt(),
@@ -178,7 +182,9 @@ actual object File {
             FILE_ATTRIBUTE_NORMAL.toUInt(),
             null
         )
-        if (handle == null || handle == INVALID_HANDLE_VALUE) return
+        if (handle == null || handle == INVALID_HANDLE_VALUE) {
+            throw IllegalStateException("Could not open file for appending: $path (${GetLastError()})")
+        }
         try {
             // Move to end
             SetFilePointer(handle, 0, null, FILE_END.toUInt())

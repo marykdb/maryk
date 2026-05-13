@@ -221,7 +221,7 @@ internal class JsonReaderTest {
         var index = 0
 
         JsonReader {
-            input.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+            input.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
         }.apply {
             do {
                 nextToken()
@@ -240,7 +240,7 @@ internal class JsonReaderTest {
         var index = 0
 
         return JsonReader {
-            input.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+            input.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
         }
     }
 

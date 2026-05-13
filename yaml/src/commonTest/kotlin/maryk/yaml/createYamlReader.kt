@@ -1,6 +1,7 @@
 package maryk.yaml
 
 import maryk.json.IsJsonLikeReader
+import maryk.json.ExceptionWhileReadingJson
 import maryk.json.MapType
 import maryk.json.ValueType
 import maryk.yaml.TestType.Bar
@@ -29,7 +30,7 @@ fun createSimpleYamlReader(yaml: String): IsJsonLikeReader {
         yaml.getOrNull(index)?.also {
             alreadyRead += it
             index++
-        } ?: throw Throwable("0 char encountered")
+        } ?: throw ExceptionWhileReadingJson()
     }
 }
 
@@ -53,6 +54,6 @@ fun createYamlReader(yaml: String): IsJsonLikeReader {
         yaml.getOrNull(index)?.also {
             alreadyRead += it
             index++
-        } ?: throw Throwable("0 char encountered")
+        } ?: throw ExceptionWhileReadingJson()
     }
 }

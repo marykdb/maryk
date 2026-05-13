@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.Exists
 import maryk.core.yaml.MarykYamlReader
+import maryk.json.ExceptionWhileReadingJson
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.getMaxRequest
 import maryk.test.requests.getRequest
@@ -110,7 +111,7 @@ class GetRequestTest {
         var index = 0
 
         val reader = MarykYamlReader {
-            simpleYaml.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+            simpleYaml.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
         }
 
         GetRequest.Serializer.readJson(reader, this.context)

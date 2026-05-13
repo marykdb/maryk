@@ -252,7 +252,7 @@ internal class YamlReaderImpl(
             columnNumber += 1
         }
         lastChar = reader()
-    } catch (_: Throwable) { // Reached end or something bad happened
+    } catch (_: ExceptionWhileReadingJson) {
         throw ExceptionWhileReadingJson()
     }
 

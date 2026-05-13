@@ -5,6 +5,7 @@ import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.values.ObjectValues
 import maryk.core.yaml.MarykYamlReader
+import maryk.json.ExceptionWhileReadingJson
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.yaml.YamlWriter
@@ -33,7 +34,7 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
 
     var index = 0
     val reader = JsonReader {
-        output.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+        output.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
     }
     val converted = dataModel.Serializer.readJson(reader, newContext).toDataObject()
 
@@ -65,7 +66,7 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
 
     var index = 0
     val reader = MarykYamlReader {
-        output.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+        output.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
     }
     val converted = dataModel.Serializer.readJson(reader, newContext).toDataObject()
 
@@ -97,7 +98,7 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
 
     var index = 0
     val reader = MarykYamlReader {
-        output.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+        output.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
     }
     val converted = dataModel.Serializer.readJson(reader, newContext)
 
@@ -130,7 +131,7 @@ fun <T : Any, P : IsObjectDataModel<T>, CXI : IsPropertyContext, CX : IsProperty
 
     var index = 0
     val reader = JsonReader {
-        output.getOrNull(index)?.also { index++ } ?: throw Throwable("0 char encountered")
+        output.getOrNull(index)?.also { index++ } ?: throw ExceptionWhileReadingJson()
     }
     val converted = dataModel.Serializer.readJson(reader, newContext)
 

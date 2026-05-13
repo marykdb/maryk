@@ -95,9 +95,9 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun writeText(path: String, contents: String) {
-        if (!createParentDirectories(path)) return
+        if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
         val fd = open(path, O_WRONLY or O_CREAT or O_TRUNC, 0x1A4) // 0644
-        if (fd < 0) return
+        if (fd < 0) throw IllegalStateException("Could not open file for writing: $path")
         try {
             val bytes = contents.encodeToByteArray()
             writeAll(fd, bytes)
@@ -108,9 +108,9 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun writeBytes(path: String, contents: ByteArray) {
-        if (!createParentDirectories(path)) return
+        if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
         val fd = open(path, O_WRONLY or O_CREAT or O_TRUNC, 0x1A4) // 0644
-        if (fd < 0) return
+        if (fd < 0) throw IllegalStateException("Could not open file for writing: $path")
         try {
             writeAll(fd, contents)
         } finally {
@@ -120,9 +120,9 @@ actual object File {
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun appendText(path: String, contents: String) {
-        if (!createParentDirectories(path)) return
+        if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
         val fd = open(path, O_WRONLY or O_CREAT or O_APPEND, 0x1A4)
-        if (fd < 0) return
+        if (fd < 0) throw IllegalStateException("Could not open file for appending: $path")
         try {
             val bytes = contents.encodeToByteArray()
             writeAll(fd, bytes)

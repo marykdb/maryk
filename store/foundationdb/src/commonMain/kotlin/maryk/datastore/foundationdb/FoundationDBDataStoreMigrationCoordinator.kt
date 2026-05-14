@@ -134,6 +134,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
     fun launchBackgroundMigration(leaseAlreadyAcquired: Boolean) {
         launch {
             var hasLease = leaseAlreadyAcquired
+            var completeAfterLeaseRelease = false
             try {
                 while (!hasLease) {
                     canceledMigrationReasons.value[index]?.let { cancelReason ->
@@ -207,7 +208,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                             pendingMigrationReasons.update { it - index }
                             pausedMigrationModelIds.update { it - index }
                             canceledMigrationReasons.update { it - index }
-                            completePendingMigration(index)
+                            completeAfterLeaseRelease = true
                             break
                         }
                         is MigrationOutcome.Partial -> {
@@ -267,6 +268,9 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
             } finally {
                 if (hasLease) {
                     effectiveMigrationLease.release(index, migrationId)
+                }
+                if (completeAfterLeaseRelease) {
+                    completePendingMigration(index)
                 }
             }
         }

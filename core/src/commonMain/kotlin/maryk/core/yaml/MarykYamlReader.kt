@@ -10,13 +10,6 @@ import maryk.yaml.YamlReader
 
 const val MARYK_2018 = "tag:maryk.io,2018:"
 
-private fun createReader(yaml: String): () -> Char? {
-    var index = 0
-    return {
-        yaml.getOrNull(index++)
-    }
-}
-
 private fun createYamlReader(reader: () -> Char?, allowUnknownTags: Boolean): IsJsonLikeReader =
     YamlReader(
         defaultTag = MARYK_2018,
@@ -25,14 +18,22 @@ private fun createYamlReader(reader: () -> Char?, allowUnknownTags: Boolean): Is
         reader = reader
     )
 
+private fun createYamlReader(yaml: String, allowUnknownTags: Boolean): IsJsonLikeReader =
+    YamlReader(
+        yaml = yaml,
+        defaultTag = MARYK_2018,
+        tagMap = mapOf(MARYK_2018 to MARYK_TYPE_MAP),
+        allowUnknownTags = allowUnknownTags
+    )
+
 fun MarykYamlModelReader(yaml: String): IsJsonLikeReader =
-    createYamlReader(createReader(yaml), false)
+    createYamlReader(yaml, false)
 
 fun MarykYamlModelReader(reader: () -> Char?): IsJsonLikeReader =
     createYamlReader(reader, false)
 
 fun MarykYamlReader(yaml: String): IsJsonLikeReader =
-    createYamlReader(createReader(yaml), true)
+    createYamlReader(yaml, true)
 
 fun MarykYamlReader(reader: () -> Char?): IsJsonLikeReader =
     createYamlReader(reader, true)

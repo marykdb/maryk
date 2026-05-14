@@ -59,10 +59,7 @@ fun readModelKeySizes(storePath: String): Map<UInt, Int> =
 private fun parseMeta(text: String): Map<UInt, ModelMeta> {
     val models = mutableMapOf<UInt, ModelMeta>()
 
-    var idx = 0
-    val reader = YamlReader(reader = {
-        text.getOrNull(idx++)
-    })
+    val reader = YamlReader(text)
 
     var currentToken = reader.currentToken
     if (currentToken == JsonToken.StartDocument) {

@@ -23,6 +23,29 @@ import maryk.lib.extensions.isLineBreak
 /** Unknown tag name to reader, pass allowUnknownTags true in YamlReader to get them */
 class UnknownYamlTag(val name: String) : MapType, ValueType<Nothing>, ArrayType
 
+internal interface YamlCharSource {
+    fun read(): Char
+}
+
+private class LambdaYamlCharSource(
+    private val reader: () -> Char?
+) : YamlCharSource {
+    override fun read(): Char = reader() ?: throw ExceptionWhileReadingJson()
+}
+
+private class StringYamlCharSource(
+    private val value: String
+) : YamlCharSource {
+    private var index = 0
+
+    override fun read(): Char {
+        if (index >= value.length) {
+            throw ExceptionWhileReadingJson()
+        }
+        return value[index++]
+    }
+}
+
 @Suppress("FunctionName")
 /** Reads YAML from the supplied [reader]. Return null to signal end of input. */
 fun YamlReader(
@@ -32,6 +55,16 @@ fun YamlReader(
     reader: () -> Char?
 ): IsYamlReader =
     YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, reader)
+
+@Suppress("FunctionName")
+/** Reads YAML from the supplied [yaml]. */
+fun YamlReader(
+    yaml: String,
+    defaultTag: String? = null,
+    tagMap: Map<String, Map<String, TokenType>>? = null,
+    allowUnknownTags: Boolean = false
+): IsYamlReader =
+    YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, StringYamlCharSource(yaml))
 
 /** Interface to determine object is a yaml reader */
 interface IsYamlReader : IsJsonLikeReader {
@@ -83,8 +116,15 @@ internal class YamlReaderImpl(
     private val defaultTag: String?,
     tagMap: Map<String, Map<String, TokenType>>?,
     private val allowUnknownTags: Boolean,
-    private val reader: () -> Char?
+    private val reader: YamlCharSource
 ) : IsJsonLikeReader, IsInternalYamlReader, IsYamlReader {
+    constructor(
+        defaultTag: String?,
+        tagMap: Map<String, Map<String, TokenType>>?,
+        allowUnknownTags: Boolean,
+        reader: () -> Char?
+    ) : this(defaultTag, tagMap, allowUnknownTags, LambdaYamlCharSource(reader))
+
     var version: String? = null
 
     override var currentToken: JsonToken = StartDocument
@@ -252,7 +292,7 @@ internal class YamlReaderImpl(
         } else {
             columnNumber += 1
         }
-        lastChar = reader() ?: throw ExceptionWhileReadingJson()
+        lastChar = reader.read()
     } catch (_: ExceptionWhileReadingJson) {
         throw ExceptionWhileReadingJson()
     }

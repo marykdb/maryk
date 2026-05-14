@@ -96,11 +96,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
      * Optionally pass a [context] when needed to read more complex property types
      */
     override fun readJson(json: String, context: CX?): V {
-        var i = 0
-        val reader = JsonReader {
-            json.getOrNull(i++)
-        }
-        return this.readJson(reader, context)
+        return this.readJson(JsonReader(json), context)
     }
 
     /**

@@ -25,15 +25,42 @@ import maryk.lib.extensions.isLowerHexChar
 
 private val skipArray = setOf(ObjectSeparator, ArraySeparator, StartDocument)
 
+private interface JsonCharReader {
+    fun read(): Char
+}
+
+private class LambdaJsonCharReader(
+    private val reader: () -> Char?
+) : JsonCharReader {
+    override fun read(): Char = reader() ?: throw ExceptionWhileReadingJson()
+}
+
+private class StringJsonCharReader(
+    private val value: String
+) : JsonCharReader {
+    private var index = 0
+
+    override fun read(): Char {
+        if (index >= value.length) {
+            throw ExceptionWhileReadingJson()
+        }
+        return value[index++]
+    }
+}
+
 /** Describes JSON complex types */
 internal enum class JsonComplexType {
     OBJECT, ARRAY
 }
 
 /** Reads JSON from the supplied [reader]. Return null to signal end of input. */
-class JsonReader(
-    private val reader: () -> Char?
+class JsonReader private constructor(
+    private val reader: JsonCharReader
 ) : IsJsonLikeReader {
+    constructor(reader: () -> Char?) : this(LambdaJsonCharReader(reader))
+
+    constructor(json: String) : this(StringJsonCharReader(json))
+
     override var currentToken: JsonToken = StartDocument
 
     override var columnNumber = 0
@@ -148,7 +175,7 @@ class JsonReader(
     }
 
     private fun read() = try {
-        lastChar = reader() ?: throw ExceptionWhileReadingJson()
+        lastChar = reader.read()
         if (lastChar.isLineBreak()) {
             lineNumber += 1
             columnNumber = 0

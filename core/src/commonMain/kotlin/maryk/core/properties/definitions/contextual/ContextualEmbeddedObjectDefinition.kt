@@ -21,10 +21,7 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     override val wireType = LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?): Any {
-        var index = 0
-        return this.readJson(JsonReader {
-            string.getOrNull(index++)
-        }, context)
+        return this.readJson(JsonReader(string), context)
     }
 
     override fun asString(value: Any, context: CX?): String {

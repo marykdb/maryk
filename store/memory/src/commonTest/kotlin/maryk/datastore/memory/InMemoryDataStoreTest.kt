@@ -4,10 +4,11 @@ import kotlinx.coroutines.test.runTest
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
 import kotlin.test.Test
+import kotlin.time.Duration.Companion.minutes
 
 class InMemoryDataStoreTest {
     @Test
-    fun testDataStore() = runTest {
+    fun testDataStore() = runTest(timeout = 3.minutes) {
         val dataStore = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
         try {
             runDataStoreTests(dataStore)
@@ -17,7 +18,7 @@ class InMemoryDataStoreTest {
     }
 
     @Test
-    fun testDataStoreWithKeepAllVersions() = runTest {
+    fun testDataStoreWithKeepAllVersions() = runTest(timeout = 3.minutes) {
         val dataStore = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = dataModelsForTests)
         try {
             runDataStoreTests(dataStore)
@@ -27,7 +28,7 @@ class InMemoryDataStoreTest {
     }
 
     @Test
-    fun testDataStoreWithUpdateHistoryIndex() = runTest {
+    fun testDataStoreWithUpdateHistoryIndex() = runTest(timeout = 3.minutes) {
         val dataStore = InMemoryDataStore.open(
             keepAllVersions = true,
             keepUpdateHistoryIndex = true,

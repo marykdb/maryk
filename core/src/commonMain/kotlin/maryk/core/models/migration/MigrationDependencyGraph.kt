@@ -2,9 +2,6 @@ package maryk.core.models.migration
 
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.IsValuesDataModel
-import maryk.core.properties.definitions.IsDefinitionWithDataModel
-import maryk.core.properties.definitions.IsReferenceDefinition
 
 private data class ModelSortContext(
     val idsByName: Map<String, UInt>,
@@ -27,31 +24,10 @@ private fun collectMigrationDependenciesByModelId(
             dependencyNames.add(dependency.Meta.name)
         }
 
-        collectRootReferenceDependencyNames(dataModel, dependencyNames)
-
         dependencyNames.mapNotNullTo(linkedSetOf()) { dependencyName ->
             context.idsByName[dependencyName]
         }.filterTo(linkedSetOf()) { dependencyId ->
             dependencyId != modelId
-        }
-    }
-}
-
-private fun collectRootReferenceDependencyNames(
-    model: IsValuesDataModel,
-    dependencyNames: MutableSet<String>,
-    visitedModelNames: MutableSet<String> = mutableSetOf(),
-) {
-    if (!visitedModelNames.add(model.Meta.name)) return
-
-    model.forEach { property ->
-        when (val definition = property.definition) {
-            is IsReferenceDefinition<*, *> -> dependencyNames.add(definition.dataModel.Meta.name)
-        }
-
-        val nestedModel = (property.definition as? IsDefinitionWithDataModel<*>)?.dataModel
-        if (nestedModel is IsValuesDataModel) {
-            collectRootReferenceDependencyNames(nestedModel, dependencyNames, visitedModelNames)
         }
     }
 }

@@ -15,6 +15,7 @@ const map = [
   // Core concepts
   ['src/content/docs/data-modeling/datamodels.mdx', 'datamodel.md'],
   ['src/content/docs/data-modeling/data-design.mdx', 'data-design.md'],
+  ['src/content/docs/data-modeling/index-design.mdx', 'index-design.md'],
   ['src/content/docs/data-modeling/index.mdx', 'README.md'],
   ['src/content/docs/data-modeling/keys.mdx', 'key.md'],
   ['src/content/docs/data-modeling/versioning.mdx', 'versioning.md'],
@@ -85,11 +86,19 @@ const map = [
     ['(filters.md)', withPrefix('querying/filters/')],
     ['(aggregations.md)', withPrefix('querying/aggregations/')],
     ['(collectAndInject.md)', withPrefix('querying/collect-inject/')],
+    ['(query.md#get)', withPrefix('querying/#get')],
+    ['(query.md#scan)', withPrefix('querying/#scan')],
+    ['(query.md#getscan-changes)', withPrefix('querying/#getscan-changes')],
+    ['(query.md#getscan-updates)', withPrefix('querying/#getscan-updates')],
+    ['(index-design.md)', withPrefix('data-modeling/index-design/')],
+    ['(README.md)', withPrefix('serialization/')],
     ['(serialization.md)', withPrefix('serialization/')],
     ['(protobuf.md)', withPrefix('serialization/protobuf/')],
+    ['(serialization/protobuf.md)', withPrefix('serialization/protobuf/')],
     ['(yaml.md)', withPrefix('serialization/yaml/')],
     ['(json.md)', withPrefix('serialization/json/')],
     ['(serialization/README.md)', withPrefix('serialization/')],
+    ['(../serialization/README.md)', withPrefix('serialization/')],
     ['(serialization/yaml.md)', withPrefix('serialization/yaml/')],
     ['(serialization/json.md)', withPrefix('serialization/json/')],
     ['(serialization/yaml.md)', withPrefix('serialization/yaml/')],
@@ -99,7 +108,13 @@ const map = [
     ['(types/fixedBytes.md)', withPrefix('data-modeling/properties/types/fixedbytes/')],
     ['(types/flexBytes.md)', withPrefix('data-modeling/properties/types/flexbytes/')],
     ['(types/incrementingMap.md)', withPrefix('data-modeling/properties/types/incrementing-map/')],
+    ['(types/embeddedValues.md)', withPrefix('data-modeling/properties/types/embedded-values/')],
     ['(types/valueObject.md)', withPrefix('data-modeling/properties/types/value-object/')],
+    ['(types/map.md#operations)', '(../types/map/#operations)'],
+    ['(types/list.md#operations)', '(../types/list/#operations)'],
+    ['(types/set.md#operations)', '(../types/set/#operations)'],
+    ['(../../../yaml/README.md)', '(https://github.com/marykdb/maryk/blob/main/yaml/README.md)'],
+    ['(../../../json/README.md)', '(https://github.com/marykdb/maryk/blob/main/json/README.md)'],
     ['(../../yaml/README.md)', '(https://github.com/marykdb/maryk/blob/main/yaml/README.md)'],
     ['(../../json/README.md)', '(https://github.com/marykdb/maryk/blob/main/json/README.md)'],
     ['(../yaml/README.md)', '(https://github.com/marykdb/maryk/blob/main/yaml/README.md)'],
@@ -117,9 +132,13 @@ const map = [
     ['(documentation/storage.md)', withPrefix('stores/rocksdb/storage/')],
     ['(documentation/architecture.md)', withPrefix('stores/rocksdb/architecture/')],
     ['(documentation/migrations.md)', withPrefix('stores/rocksdb/migrations/')],
+    ['(./migrations.md)', '(../migrations/)'],
     ['(../remote/README.md)', '(../remote/)'],
     ['(./remote/README.md)', '(./remote/)'],
     // Map code links to GitHub full URLs (main branch)
+    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)'],
+    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/processors/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/)'],
+    ['(src/commonMain/kotlin/maryk/datastore/foundationdb/', '(https://github.com/marykdb/maryk/blob/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/'],
     ['(../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(../../src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
     ['(../../core/src/', '(https://github.com/marykdb/maryk/blob/main/core/src/'],
@@ -176,7 +195,7 @@ for (const [targetRel, srcRel] of map) {
     const docsRelative = targetRel.replace(/^src\/content\/docs\//, '');
     const docsDir = dirname(docsRelative);
     const depth = docsDir === '.' ? 0 : docsDir.split('/').length;
-    const prefix = '../'.repeat(Math.max(1, depth));
+    const prefix = '../'.repeat(depth + 1);
     let md = rewriteLinks(srcMd, prefix);
     // Escape raw angle brackets outside code fences to keep MDX happy.
     const lines = md.split(/\r?\n/);

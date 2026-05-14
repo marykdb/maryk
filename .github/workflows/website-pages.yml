@@ -61,8 +61,10 @@ jobs:
         working-directory: ${{ env.BUILD_PATH }}
       - name: Build with Astro
         run: |
+          ORIGIN="${{ steps.pages.outputs.origin }}"
+          ORIGIN="${ORIGIN/http:/https:}"
           ${{ steps.detect-package-manager.outputs.runner }} astro build \
-            --site "${{ steps.pages.outputs.origin }}" \
+            --site "$ORIGIN" \
             --base "${{ steps.pages.outputs.base_path }}"
         working-directory: ${{ env.BUILD_PATH }}
       - name: Upload artifact

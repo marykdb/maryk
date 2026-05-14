@@ -79,7 +79,7 @@ object Person : RootDataModel<Person>() {
 ```kotlin
 val jane = Person.create { firstName with "Jane"; lastName with "Doe" }
 Person.validate(jane)
-val json = person.toJson(pretty = true)
+val json = jane.toJson(pretty = true)
 ```
 
 ## Learn more

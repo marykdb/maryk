@@ -7,7 +7,7 @@ import {resolve} from 'node:path';
 // https://astro.build/config
 export default defineConfig({
     site: 'https://marykdb.github.io/',
-    base: '/marykdb/',
+    base: '/maryk/',
     vite: {
         resolve: {
             alias: {

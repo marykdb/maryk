@@ -232,5 +232,5 @@ changes Client AbCdEf123 --include-deleted --limit 100
 ```
 
 Notes:
-- Results are fetched in pages (default 100) and the viewer auto-loads more as you scroll.
-- Use `--from-version`/`--to-version` to narrow the history and `--limit` to cap each fetched page.
+- `--limit` caps the number of versions returned for this key (default 1000).
+- Use `--from-version`/`--to-version` to narrow the history.

@@ -14,7 +14,6 @@ import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.IsDataStore
-import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 
 /** Test helper for listening to update changes for [request] on [dataStore] */
@@ -43,27 +42,26 @@ suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
 
     listenerSetupComplete.await()
 
-    val successfullyDone = CompletableDeferred<Boolean>()
+    val testFailure = CompletableDeferred<Throwable?>()
 
     val changeJob = GlobalScope.launch {
         try {
             changeBlock(responses)
-            successfullyDone.complete(true)
+            testFailure.complete(null)
         } catch (e: Throwable) {
-            e.printStackTrace()
-            successfullyDone.complete(false)
+            testFailure.complete(e)
         }
     }
 
     val timeoutJob = GlobalScope.launch {
         // Timeout
         delay(15000.milliseconds)
-        println("  TIMEOUT LISTENING TO UPDATES, likely some updates were not retrieved from the store")
-
-        successfullyDone.complete(false)
+        testFailure.complete(
+            AssertionError("Timed out after 15000ms listening to updates, likely some updates were not retrieved from the store")
+        )
     }
 
-    val result = successfullyDone.await()
+    val failure = testFailure.await()
 
     dataStore.closeAllListeners()
 
@@ -71,5 +69,7 @@ suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
     changeJob.cancelAndJoin()
     timeoutJob.cancelAndJoin()
 
-    assertTrue(result, message = "Expected tests to succeed")
+    if (failure != null) {
+        throw failure
+    }
 }

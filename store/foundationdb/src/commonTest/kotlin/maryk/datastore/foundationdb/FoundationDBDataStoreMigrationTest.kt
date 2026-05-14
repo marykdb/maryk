@@ -21,6 +21,7 @@ import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.NoopMigrationLease
+import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.string
@@ -1097,7 +1098,7 @@ private object Phase6OrderDependentV1 : RootDataModel<Phase6OrderDependentV1>(
     name = "Phase6OrderDependent",
     version = Version(1),
 ) {
-    val baseRef by reference(index = 1u, required = false, dataModel = { Phase6OrderBaseV1 })
+    val base by embed(index = 1u, required = false, dataModel = { Phase6OrderBaseV1 })
     val value by string(index = 2u)
 }
 
@@ -1105,7 +1106,7 @@ private object Phase6OrderDependentV2 : RootDataModel<Phase6OrderDependentV2>(
     name = "Phase6OrderDependent",
     version = Version(2),
 ) {
-    val baseRef by reference(index = 1u, required = false, dataModel = { Phase6OrderBaseV2 })
+    val base by embed(index = 1u, required = false, dataModel = { Phase6OrderBaseV2 })
     val value by number(index = 2u, type = SInt32, required = true)
 }
 
@@ -1113,12 +1114,12 @@ private object Phase6CycleLeftModel : RootDataModel<Phase6CycleLeftModel>(
     name = "Phase6CycleLeftModel",
     version = Version(1),
 ) {
-    val rightRef by reference(index = 1u, required = false, dataModel = { Phase6CycleRightModel })
+    val right by embed(index = 1u, required = false, dataModel = { Phase6CycleRightModel })
 }
 
 private object Phase6CycleRightModel : RootDataModel<Phase6CycleRightModel>(
     name = "Phase6CycleRightModel",
     version = Version(1),
 ) {
-    val leftRef by reference(index = 1u, required = false, dataModel = { Phase6CycleLeftModel })
+    val left by embed(index = 1u, required = false, dataModel = { Phase6CycleLeftModel })
 }

@@ -233,4 +233,4 @@ changes Client AbCdEf123 --include-deleted --limit 100
 
 Notes:
 - Results are fetched in pages (default 100) and the viewer auto-loads more as you scroll.
-- Large datasets should prefer `--order` on an indexed property for faster scans.
+- Use `--from-version`/`--to-version` to narrow the history and `--limit` to cap each fetched page.

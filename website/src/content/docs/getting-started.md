@@ -19,13 +19,13 @@ For stores, add one engine:
 
 ```kotlin
 // In-memory (tests/dev)
-implementation("io.maryk:store-memory:<version>")
+implementation("io.maryk:maryk-memory:<version>")
 
 // Embedded RocksDB (apps/servers)
-implementation("io.maryk:store-rocksdb:<version>")
+implementation("io.maryk:maryk-rocksdb:<version>")
 
 // FoundationDB (JVM server)
-implementation("io.maryk:store-foundationdb:<version>")
+implementation("io.maryk:maryk-foundationdb:<version>")
 ```
 
 ## Define a model

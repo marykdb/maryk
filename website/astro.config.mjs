@@ -40,6 +40,7 @@ export default defineConfig({
                         {label: 'Data Design', slug: 'data-modeling/data-design'},
                         {label: 'Data Models', slug: 'data-modeling/datamodels'},
                         {label: 'Keys', slug: 'data-modeling/keys'},
+                        {label: 'Index Design', slug: 'data-modeling/index-design'},
                         {label: 'Versioning', slug: 'data-modeling/versioning'},
                         {label: 'Properties', slug: 'data-modeling/properties'},
                         {label: 'Property References', slug: 'data-modeling/properties/references'},

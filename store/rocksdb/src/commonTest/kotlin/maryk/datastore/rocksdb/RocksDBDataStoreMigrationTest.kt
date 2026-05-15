@@ -663,6 +663,29 @@ class RocksDBDataStoreMigrationTest {
     }
 
     @Test
+    fun reopensStoredModelWithReferenceToLaterSortedModel() = runTest {
+        val path = createTestDBFolder("migrationReferenceToLaterSortedModel")
+        val models = mapOf(
+            1u to Phase6ReferenceOwnerModel,
+            2u to Phase6ReferenceTargetModel,
+        )
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = models,
+        ).close()
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = models,
+        ).close()
+
+        deleteFolder(path)
+    }
+
+    @Test
     fun migrationCycleInModelsIsRejected() = runTest {
         val path = createTestDBFolder("migrationDependencyCycle")
 
@@ -1136,4 +1159,18 @@ private object Phase6CycleRightModel : RootDataModel<Phase6CycleRightModel>(
     version = Version(1),
 ) {
     val left by embed(index = 1u, required = false, dataModel = { Phase6CycleLeftModel })
+}
+
+private object Phase6ReferenceOwnerModel : RootDataModel<Phase6ReferenceOwnerModel>(
+    name = "Phase6ReferenceOwner",
+    version = Version(1),
+) {
+    val target by reference(index = 1u, required = false, dataModel = { Phase6ReferenceTargetModel })
+}
+
+private object Phase6ReferenceTargetModel : RootDataModel<Phase6ReferenceTargetModel>(
+    name = "Phase6ReferenceTarget",
+    version = Version(1),
+) {
+    val value by string(index = 1u)
 }

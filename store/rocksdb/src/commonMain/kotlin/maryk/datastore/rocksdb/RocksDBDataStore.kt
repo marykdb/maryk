@@ -44,6 +44,7 @@ import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.query.addDataModelReferences
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
@@ -247,7 +248,9 @@ class RocksDBDataStore private constructor(
             )
         }
 
-        val conversionContext = DefinitionsConversionContext()
+        val conversionContext = DefinitionsConversionContext().apply {
+            addDataModelReferences(dataModelsById.values)
+        }
         val startupStarted = TimeSource.Monotonic.markNow()
         val effectiveMigrationLease = migrationConfiguration.migrationLease ?: RocksDBLocalMigrationLease(storePath)
         val migrationStateStore = RocksDBMigrationStateStore(
@@ -311,7 +314,9 @@ class RocksDBDataStore private constructor(
                                 modelColumnFamily = tableColumnFamilies.model,
                                 dataModel = dataModel,
                                 onlyCheckVersion = onlyCheckModelVersion,
-                                conversionContext = DefinitionsConversionContext(),
+                                conversionContext = DefinitionsConversionContext().apply {
+                                    addDataModelReferences(dataModelsById.values)
+                                },
                             )
                         },
                         finalizeInBackground = { storedModel ->

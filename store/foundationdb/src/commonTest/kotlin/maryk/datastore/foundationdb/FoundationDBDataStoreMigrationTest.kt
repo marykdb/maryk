@@ -699,6 +699,29 @@ class FoundationDBDataStoreMigrationTest {
     }
 
     @Test
+    fun reopensStoredModelWithReferenceToLaterSortedModel() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-reference-later-model", Uuid.random().toString())
+        val models = mapOf(
+            1u to Phase6ReferenceOwnerModel,
+            2u to Phase6ReferenceTargetModel,
+        )
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = models,
+        ).close()
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = models,
+        ).close()
+    }
+
+    @Test
     fun migrationCycleInModelsIsRejected() = runTest(timeout = 3.minutes) {
         val dirPath = listOf("maryk", "test", "fdb-migration-dependency-cycle", Uuid.random().toString())
 
@@ -1122,4 +1145,18 @@ private object Phase6CycleRightModel : RootDataModel<Phase6CycleRightModel>(
     version = Version(1),
 ) {
     val left by embed(index = 1u, required = false, dataModel = { Phase6CycleLeftModel })
+}
+
+private object Phase6ReferenceOwnerModel : RootDataModel<Phase6ReferenceOwnerModel>(
+    name = "Phase6ReferenceOwner",
+    version = Version(1),
+) {
+    val target by reference(index = 1u, required = false, dataModel = { Phase6ReferenceTargetModel })
+}
+
+private object Phase6ReferenceTargetModel : RootDataModel<Phase6ReferenceTargetModel>(
+    name = "Phase6ReferenceTarget",
+    version = Version(1),
+) {
+    val value by string(index = 1u)
 }

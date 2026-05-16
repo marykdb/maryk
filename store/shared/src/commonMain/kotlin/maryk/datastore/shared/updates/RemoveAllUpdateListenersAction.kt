@@ -1,4 +1,8 @@
 package maryk.datastore.shared.updates
 
+import kotlinx.coroutines.CompletableDeferred
+
 /** Clears all listeners for updates */
-object RemoveAllUpdateListenersAction : IsUpdateAction
+class RemoveAllUpdateListenersAction(
+    val completion: CompletableDeferred<Unit>? = null
+) : IsUpdateAction

@@ -54,6 +54,7 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
                 is RemoveAllUpdateListenersAction -> {
                     updateListeners.values.forEach { it.forEach(UpdateListener<*, *>::close) }
                     updateListeners.clear()
+                    update.completion?.complete(Unit)
                 }
                 else -> throw RuntimeException("Unknown update listener action: $update")
             }

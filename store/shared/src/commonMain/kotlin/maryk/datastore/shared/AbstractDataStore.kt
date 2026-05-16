@@ -154,7 +154,9 @@ abstract class AbstractDataStore(
     }
 
     override suspend fun closeAllListeners() {
-        updateSharedFlow.emit(RemoveAllUpdateListenersAction)
+        val listenersRemoved = CompletableDeferred<Unit>()
+        updateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
+        listenersRemoved.await()
         onAllUpdateListenersRemoved()
     }
 

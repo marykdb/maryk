@@ -3,7 +3,7 @@ package maryk.datastore.shared.updates
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.onSubscription
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsFlowRequest
@@ -81,7 +81,7 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     abstract suspend fun changeOrder(change: Change<DM>, changedHandler: suspend (Int?, Boolean) -> Unit)
 
     /** Get flow with update responses */
-    fun getFlow() = sendFlow.onStart {
+    fun getFlow() = sendFlow.onSubscription {
         when (response) {
             is UpdatesResponse<DM> -> {
                 for (update in response.updates) {

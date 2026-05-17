@@ -13,10 +13,10 @@ InMemoryDataStore.open(
         1u to Account,
         2u to Course
     )
-).use { store ->
+).use {
     // Run operations on the store
     
-    store.execute(
+    execute(
         Account.add(
             Account(
                 username="test1",

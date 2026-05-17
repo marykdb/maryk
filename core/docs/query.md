@@ -2,6 +2,42 @@
 
 Maryk stores support a range of query actions. Requests can run locally or be serialized and sent to a remote store.
 
+## Mental model
+
+A Maryk query is a typed request object created from a `RootDataModel`.
+
+```kotlin
+val request = Person.get(key)
+val response = store.execute(request)
+```
+
+The same request shape works against every store engine. That is why the CLI, App, Remote Store and embedded stores can share behavior.
+
+Use:
+
+- `Add`, `Change`, `Delete` for writes.
+- `Get` when you know keys.
+- `Scan` when you need a range, filter, index order or page.
+- `GetChanges` / `ScanChanges` for object history.
+- `GetUpdates` / `ScanUpdates` for chronological sync.
+- `executeFlow(...)` for live views.
+
+Use reference graphs with reads to fetch only the fields you need.
+
+## Common tasks
+
+| Task | Request to start with |
+| --- | --- |
+| Insert a new object | `Model.add(...)` |
+| Update known objects | `Model.change(key.change(...))` |
+| Fetch by key | `Model.get(key)` |
+| Browse a range or page | `Model.scan(...)` |
+| Fetch only a few fields | Add `select` with a reference graph |
+| Build a live view | `executeFlow(Model.scanUpdates(...))` |
+| Inspect history | `Model.getChanges(...)` or `Model.scanChanges(...)` |
+
+Start with `add`, `get`, and `scan`. Add filters, ordering, reference graphs, and update streams when the access pattern needs them.
+
 ## Basic Query Actions
 
 Maryk exposes CRUD-style actions and query variants:

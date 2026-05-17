@@ -4,7 +4,7 @@ Starlight docs site for Maryk.
 
 ## Important
 
-Part of this site is generated from repository docs before every build.
+Part of this site is generated from repository docs before every build. Other pages are hand-authored in `src/content/docs`.
 
 - Source of truth:
   - `core/docs/**`
@@ -15,6 +15,8 @@ Part of this site is generated from repository docs before every build.
 - Generated targets: `src/content/docs/**`
 
 Do not hand-edit generated pages unless you also update their source files.
+
+Hand-authored pages include the landing page, introduction pages, tutorials and tradeoff guidance. Edit those directly.
 
 ## Local development
 

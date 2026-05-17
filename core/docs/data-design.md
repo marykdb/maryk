@@ -9,16 +9,31 @@ What you’ll learn
 - How keys shape query performance.
 - How graphs keep payloads small.
 
+## Start with these choices
+
+Most designs begin with four decisions:
+
+| Question | Default answer |
+| --- | --- |
+| Is this a top-level thing users search, sync, or edit on its own? | Make it a `RootDataModel`. |
+| Is this data always read with its parent and bounded in size? | Embed it. |
+| Is this collection unbounded or independently updated? | Split it into its own root and reference it. |
+| Do screens only need a few fields? | Use reference graphs instead of reshaping the model. |
+
+Keep the first model boring. Add references, secondary indexes, and MultiType only when the access pattern needs them.
+
 ## 1) The mental model
 
-- DataModel: the schema for a record, with named properties that each have a stable `UInt` index for fast, reflection‑free serialization. See [Data Models](datamodel.md).
-- RootDataModel: a top‑level model that can be stored and queried. Roots define keys and indexes. See [Keys](key.md).
+- DataModel: the schema for a record, with named properties that each have a stable `UInt` property index for fast, reflection‑free serialization. See [Data Models](datamodel.md).
+- RootDataModel: a top‑level model that can be stored and queried. Roots define keys and optional secondary ordered/search indexes. See [Keys](key.md).
 - Secondary indexes: ordered tuple indexes and search indexes built from composable index operators. See [Index Design](index-design.md).
 - Properties: rich types including embedded objects, lists/sets/maps, references, and [MultiType](properties/types/multiType.md).
 - Queries: filter using property references and select fields with reference graphs. See [Property References](properties/references.md) and [Reference Graphs](reference-graphs.md).
 - Versioning: evolve safely with built‑in schema/data versioning. See [Versioning](versioning.md).
 
 Maryk rewards colocating related data, then using graphs to fetch only what you need.
+
+If you are new to Maryk, read sections 2, 3, 7, and 8 first. The MultiType and ValueDataModel sections are useful once your model has variant shapes or compact value objects.
 
 ## 2) Query only what you need (graphs)
 

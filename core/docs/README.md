@@ -1,9 +1,20 @@
 # Core Documentation
 
-Maryk's core module provides the building blocks for defining data models and interacting with them. The guides in this folder walk you through those features step by step. Start with **Data Models** to describe your domain, explore **Properties** to learn which types are available, and then move on to querying and serialization. Each page is linked below for easy navigation.
+Maryk's core module defines the data contract: models, properties, keys, queries, serialization and version-aware behavior.
+
+Recommended order for new users:
+
+1. [Data Design](data-design.md)
+2. [Data Models](datamodel.md)
+3. [Properties](properties/README.md)
+4. [Keys](key.md)
+5. [Querying Data](query.md)
+6. [Versioning](versioning.md)
+7. [Serialization](serialization/README.md)
 
 ## Contents
 
+- [Data Design](data-design.md): choose embedding, references, keys, indexes and graphs.
 - [Data Models](datamodel.md): define model structures and property indexes.
   - [Properties](properties/README.md): overview of property types, validations, operations and references.
   - [Keys](key.md): design unique and efficient keys for data objects.

@@ -7,3 +7,18 @@ with JVM applications.
 Due to the limitations of the Protobuf Gradle plugin, which cannot be used in Kotlin multiplatform projects, this project was created as a separate entity to
 specifically test the Protobuf generation on JVM platforms. These tests provide a critical aspect of quality assurance
 and ensure that the generated code can be used in real-world applications.
+
+## When to run
+
+Run this module after changing:
+
+- ProtoBuf generation,
+- generated schema naming,
+- model serialization metadata,
+- Gradle wiring for generator output.
+
+Use:
+
+```bash
+./gradlew :generator:jvmTest:jvmTest
+```

@@ -18,7 +18,7 @@ This module can automatically install and run a local FoundationDB server for JV
 
 ### Configuration
 
-- **`FDB_VERSION`:** FDB version to install (default from scripts is `7.3.73`, matching the FoundationDB client dependency). Example: `FDB_VERSION=7.3.73 ./gradlew :store:foundationdb:jvmTest`.
+- **`FDB_VERSION`:** Optional FoundationDB release selector. If unset, scripts use the project default matching the client dependency.
 - **`FDB_CLEAN_MODE`:** Post‑test cleanup (default `data`). Options:
     - `data`: delete `build/testdatastore/data` (database wiped).
     - `all`: delete `build/testdatastore/data` and `build/testdatastore/logs`.
@@ -29,7 +29,7 @@ This module can automatically install and run a local FoundationDB server for JV
 ### Manual Usage
 
 - **Install (macOS/Linux):** `bash scripts/install-foundationdb.sh`.
-- **Install (Windows):** `powershell -ExecutionPolicy Bypass -File scripts/install-foundationdb.ps1 -Version 7.3.73`.
+- **Install (Windows):** `powershell -ExecutionPolicy Bypass -File scripts/install-foundationdb.ps1`.
 - **Start:** `bash scripts/run-fdb-for-tests.sh`.
 - **Stop and clean:** `bash scripts/stop-fdb-for-tests.sh` (respects `FDB_CLEAN_MODE`).
 

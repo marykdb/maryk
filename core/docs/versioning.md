@@ -1,26 +1,130 @@
 # Versioning in Maryk
 
-Every value stored within an object is given a unique version number. This makes it possible to request only changed data and, if configured, to retain historical versions for tracking changes over time.
+Maryk assigns every stored value change a monotonically ordered version. Versions make four workflows possible:
 
-## Querying for Specific Versions
+- read a record as it looked at an earlier version,
+- fetch the changes for one record or a scan range,
+- stream live additions, changes and removals,
+- synchronize another store or client by replaying update responses.
 
-Two queries work with versions: [`GetChanges`/`ScanChanges`](query.md#getscan-changes) and [`GetUpdates`/`ScanUpdates`](query.md#getscan-updates).
+Versioning is store-backed behavior. To retain historic values, open the store with `keepAllVersions = true`. To scan updates newest-first efficiently, also enable `keepUpdateHistoryIndex = true` where supported.
 
-- **GetChanges/ScanChanges** – returns all changes ordered by object and then by version. Useful for tracking modifications per object.
-- **GetUpdates/ScanUpdates** – returns changes ordered by time and includes hard deletes, providing a chronological view of updates.
+## Versions vs model versions
 
-## Representation of a Version
+Maryk uses two different ideas that are easy to confuse:
 
-A version in Maryk is represented as an unsigned 64‑bit integer that encodes a Hybrid Logical Clock (HLC) combining:
+- Data versions: generated per write by the store. Used by `toVersion`, changes, updates and history.
+- Model versions: schema definition changes. Used by store migration logic and compatibility checks.
 
-1. **Physical Clock** – a UNIX millisecond timestamp.
-2. **Logical Clock** – a counter ensuring uniqueness when multiple updates occur in the same millisecond.
+This page is about data versions.
 
-The structure of the version is as follows:
-- The upper 44 bits represent the physical clock.
-- The lower 20 bits represent the logical clock.
+## Reading a previous state
 
-The logical clock has millisecond precision and supports up to 1,048,575 events per millisecond, giving a maximum timestamp of June 23rd, 2527 at 08:20:44.
+Most read requests can include `toVersion`.
 
-For a deeper understanding of Hybrid Logical Clocks, you can refer to the original paper introducing the concept: 
-[Hybrid Logical Clocks](https://cse.buffalo.edu/tech-reports/2014-04.pdf).
+```kotlin
+val historic = store.execute(
+    Person.get(
+        key,
+        toVersion = previousVersion
+    )
+)
+```
+
+If the store was opened without historic retention, only current values are available.
+
+## Changes: history grouped per object
+
+Use `GetChanges` when you know the keys. Use `ScanChanges` when you want changes for a range or query.
+
+```kotlin
+val changes = store.execute(
+    Person.getChanges(
+        key,
+        fromVersion = lastSeenVersion,
+        maxVersions = 100u
+    )
+)
+```
+
+`GetChanges` and `ScanChanges` return changes grouped by object and version. They are useful for audit views, object history screens and targeted sync.
+
+See [`GetChanges`/`ScanChanges`](query.md#getscan-changes).
+
+## Updates: chronological stream
+
+Use `GetUpdates` or `ScanUpdates` when chronological order matters. Updates include additions, changes and removals, including hard deletes.
+
+```kotlin
+val updates = store.execute(
+    Person.scanUpdates(
+        fromVersion = lastSyncedVersion,
+        maxVersions = 100u
+    )
+)
+```
+
+`ScanUpdates(order = null)` can use the update-history index when the engine was opened with `keepUpdateHistoryIndex = true`.
+
+See [`GetUpdates`/`ScanUpdates`](query.md#getscan-updates).
+
+## Live update flows
+
+For live views, use `executeFlow` with a `Get`, `Scan`, `GetUpdates` or `ScanUpdates` style request supported by the store. The flow first emits the initial state and then emits additions, changes and removals.
+
+```kotlin
+val updates = store.executeFlow(Person.scan())
+
+updates.collect { update ->
+    // apply update to UI, cache or another store
+}
+```
+
+Use this for desktop screens, local caches, and sync loops that should keep running after the first fetch.
+
+## Sync pattern
+
+A typical sync client stores the latest processed version locally.
+
+1. Fetch current data with `Scan` or `Get`.
+2. Store the highest returned version.
+3. Later call `ScanUpdates(fromVersion = lastSeenVersion)`.
+4. Apply returned updates.
+5. Persist the highest processed version.
+6. Repeat or switch to `executeFlow` for live updates.
+
+If the client can miss long periods, keep enough history on the server to cover the expected offline window. If history was compacted or disabled, fall back to a fresh full scan.
+
+## Concurrency checks
+
+Change operations can include checks. Use them to guard against stale writes:
+
+```kotlin
+Person.change(
+    key.change(
+        Check(Person { lastName::ref } with "Doe"),
+        Change(Person { lastName::ref } with "Roe")
+    )
+)
+```
+
+This is useful when a UI edits a value that may have changed since it was loaded.
+
+## Version representation
+
+A version is an unsigned 64-bit integer containing a Hybrid Logical Clock:
+
+- upper 44 bits: physical UNIX millisecond timestamp,
+- lower 20 bits: logical counter for multiple events in the same millisecond.
+
+The logical part supports high write density within a single millisecond while preserving total ordering for generated store versions.
+
+For background, see the [Hybrid Logical Clocks paper](https://cse.buffalo.edu/tech-reports/2014-04.pdf).
+
+## Operational notes
+
+- Enable `keepAllVersions` before you need history. It cannot reconstruct changes that were never retained.
+- Keep model IDs stable in `dataModelsById`; IDs are part of store identity.
+- Prefer `GetChanges` for one-object history and `ScanUpdates` for synchronization.
+- Use reference graphs with history requests to limit returned fields.
+- Test migration plans with representative stored data before changing keys, indexes or property definitions.

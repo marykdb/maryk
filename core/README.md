@@ -1,9 +1,12 @@
 # Maryk Core
 
-Core module for Maryk data modeling, querying, and serialization.
+Core data modeling, validation, serialization, querying and versioning APIs.
+
+Start here when you want to understand the data contract. Stores and tools build on these APIs.
 
 ## Start Here
 
+- [Data Design](docs/data-design.md): choose embedding, references, keys, indexes and graphs.
 - [Data Model Definition](docs/datamodel.md): define typed model structures.
 - [Index Design](docs/index-design.md): compose ordered and search-oriented indexes.
 - [Property Types](docs/properties/README.md): supported property definitions and validation.

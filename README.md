@@ -1,89 +1,88 @@
 [![GitHub license](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg?style=flat)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Download](https://img.shields.io/maven-central/v/io.maryk/maryk-core)](https://central.sonatype.com/artifact/io.maryk/maryk-core)
 
-# Maryk: Cross-Platform Data Modeling and Storage
+# Maryk: Kotlin Multiplatform Data Modeling and Storage
 
-Maryk is a **Kotlin Multiplatform** framework for defining, validating, serializing, and storing data models consistently across multiple platforms, including **iOS**, **macOS**, **watchOS**, **tvOS**, **Linux**, **Windows**, **Android**, **JVM**, **JavaScript** and **Wasm**. With a fully version-aware data store and flexible querying, Maryk makes it easy to maintain complex data structures while ensuring backward compatibility and efficient data handling.
+Maryk lets you define a strongly typed data model once, then use that same model for validation, serialization, querying, storage, tooling, and sync across Kotlin Multiplatform targets.
 
-The [RocksDB](/store/rocksdb/README.md) persistence layer is available for the **JVM**, **iOS**, **macOS**, **tvOS**, **watchOS**, **Android**, **Android Native**, **Windows** and **Linux**.
-The [FoundationDB](/store/foundationdb/README.md) persistence layer is available on supported platforms that have the FoundationDB client library (`libfdb_c`) present (JVM, macOS, linux).
+Use Maryk when you want:
 
-Check the [Website](http://marykdb.github.io/maryk/) for more context and documentation. It is maintained in the `website` folder.
+- One schema shared by clients, servers, tools, and tests.
+- Stable binary-compatible property indexes instead of reflection-heavy runtime mapping.
+- Version-aware storage: historic reads, change queries, update streams, and efficient sync.
+- One request API across in-memory, embedded RocksDB, distributed FoundationDB, and remote stores.
+- Portable JSON, YAML, and ProtoBuf serialization built from the same model definitions.
 
-## Key Features
+Maryk is a good fit for local-first apps, cross-platform products, Kotlin-heavy backends, tools that need typed data files, and systems where schema evolution and incremental sync matter.
 
-- **Unified Data Modeling**: Define your [data models](core/docs/datamodel.md) once and use them everywhere, ensuring a single source of truth across platforms.
+Start with the [website](https://marykdb.github.io/maryk/) for the best reading path. Source docs live in this repository and the website is maintained in `website/`.
 
-- **Flexible Property Types and Inheritance**: Create models with a variety of [property types](core/docs/properties/README.md), and reuse model structures to build complex data hierarchies.
+## Platform Support
 
-- **Built-in Validation**: Enforce data quality with [validations](core/docs/properties/README.md#validation) such as required fields, uniqueness, min/max constraints, and regex checks.
+Maryk is Kotlin Multiplatform. Platform support depends on the module:
 
-- **Cross-Platform Serialization**: Seamlessly [serialize and deserialize](core/docs/serialization/README.md) data as JSON, YAML, or Protocol Buffers, facilitating easy communication between clients and services.
-
-- **Model Serialization & Compatibility**: Serialize your schemas themselves and run compatibility checks across different clients, ensuring smooth upgrades and migrations.
-
-- **Version-Aware Storage and Queries**: Store data in [NoSQL data stores](store/memory/README.md) (in-memory/[RocksDB](store/rocksdb/README.md)/[FoundationDB](store/foundationdb/README.md)) and leverage [versioning](core/docs/versioning.md) to request historical states, compare past values, and minimize bandwidth by fetching only changed fields.
-
-- **Sensitive Field Protection**: Mark simple value properties with `sensitive = true` to encrypt stored payloads (sensitive+`unique` supported with token provider; sensitive+indexed not supported).
-
-- **Data Aggregations & Insights**: Perform [aggregations](core/docs/aggregations.md) (count, sum, average, min/max, grouped by time intervals or enums) for richer analytics and decision-making.
-
-- **CLI tooling**: Browse and edit records in a terminal via the [Maryk CLI](cli/README.md).
-
-- **Desktop App**: Browse models and edit records in a desktop UI with the [Maryk App](app/README.md).
+- Core modeling, validation, querying, JSON/YAML serialization, generator support, Memory Store, shared store logic, test models, and test helpers target JVM, Android, JS, WasmJS, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
+- File IO targets JVM, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
+- RocksDB Store targets JVM, Android, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native through the `rocksdb-multiplatform` bindings.
+- FoundationDB Store targets JVM, Linux, and macOS where the FoundationDB client library (`libfdb_c`) is available.
+- Remote Store targets JVM, Linux, and macOS.
+- CLI native binaries target Linux and macOS, with JVM execution also available.
+- The desktop App runs on the JVM.
 
 ## Getting Started
 
-1. **Add Maryk Core Dependency**:  
-In your `build.gradle.kts`:
+Add the core dependency:
+
 ```kotlin
-implementation("io.maryk:maryk-core:<version>")
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("io.maryk:maryk-core:<maryk-version>")
+}
 ```
 
-2. **Define Your Data Models**:  
-Create a Kotlin data model:
+Define a model:
+
 ```kotlin
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.date
+import maryk.core.properties.definitions.string
+import maryk.lib.time.LocalDate
+
 object Person : RootDataModel<Person>() {
-   val firstName by string(index = 1u)
-   val lastName by string(index = 2u)
-   val dateOfBirth by date(index = 3u)
+    val firstName by string(index = 1u)
+    val lastName by string(index = 2u)
+    val dateOfBirth by date(index = 3u)
 }
-```
 
-3. **Create and Validate Instances**:  
-```kotlin
 val johnSmith = Person.create {
-   firstName with "John"
-   lastName with "Smith"
-   dateOfBirth with LocalDate(2017, 12, 5)
+    firstName with "John"
+    lastName with "Smith"
+    dateOfBirth with LocalDate(2017, 12, 5)
 }
 
-// Validate the object
 Person.validate(johnSmith)
+
+val json = Person.Serializer.writeJson(johnSmith, pretty = true)
+val fromJson = Person.Serializer.readJson(json)
 ```
 
-4. **Serialize Your Data Objects**:  
-```kotlin
-// Serialize to JSON
-val json = Person.writeJson(johnSmith)
+For a complete model → store → query flow, read [Getting Started](website/src/content/docs/getting-started.mdx) or [First Store Tutorial](website/src/content/docs/tutorials/first-store.mdx).
 
-// Deserialize from JSON
-val personFromJson = Person.readJson(json)
-```
+## Storage Engines
 
-5. **Choose a Data Store**:
-  - [Memory](store/memory/README.md) — in‑memory, non‑persistent, fastest feedback for dev/tests.
-  - [RocksDB](store/rocksdb/README.md) — embedded, persistent, high performance on a single node across desktop/mobile/server.
-  - [FoundationDB](store/foundationdb/README.md) — distributed, transactional persistence with strong consistency and time‑travel support (JVM bundled; native targets require `libfdb_c`).
-  - [Remote Store](store/remote/README.md) — expose a local store over HTTP/SSH and connect with `RemoteDataStore`.
-  
-  See the overview and guidance in [store/README.md](store/README.md) for when to pick each engine.
+- [Memory](store/memory/README.md): in-memory, non-persistent, best for tests and fast local feedback.
+- [RocksDB](store/rocksdb/README.md): embedded persistent storage for desktop, mobile, and single-node server use.
+- [FoundationDB](store/foundationdb/README.md): distributed transactional storage on supported platforms with `libfdb_c`.
+- [Remote Store](store/remote/README.md): expose a local Maryk store over HTTP and optionally SSH-tunnel it.
 
-## Documentation
+See [store/README.md](store/README.md) for the decision guide.
 
-For detailed information, check out:
+## Documentation Map
 
-- [Core](core/README.md) – Data models, queries, parsers, readers.
+- [Core](core/README.md) – Data models, property types, keys, queries, versioning, serialization.
 - [Library](lib/README.md) – Shared utilities for things like Strings and ByteArrays.
 - [File](file/README.md) – Minimal cross-platform file IO layer used by tooling and stores.
 - [JSON](json/README.md) & [YAML](yaml/README.md) – Streaming parsers and writers.
@@ -100,8 +99,19 @@ For detailed information, check out:
   - [Remote](store/remote/README.md) – HTTP/SSH gateway and client for remote access.
   - [Tests](store/test/README.md) – Common tests to ensure store reliability.
 
+## Repository Development
+
+Useful commands:
+
+```bash
+./gradlew jvmTest
+./gradlew :store:memory:jvmTest
+./gradlew :cli:jvmTest
+cd website && yarn build
+```
+
+When editing website pages generated from repository docs, update the source file listed in [website/README.md](website/README.md).
+
 ## Contributing
 
-We welcome contributions through feature requests, issue reports, and pull requests.
-
-**Your involvement helps Maryk grow and improve!**
+Issues, discussions, docs fixes, examples, store improvements, and PRs are welcome. Good first contributions usually live in docs, examples, tests, CLI/App workflows, or store-specific edge cases.

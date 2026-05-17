@@ -1,16 +1,16 @@
 ---
 title: Maryk
-description: One model, many platforms. Version‑aware storage and efficient queries.
+description: Kotlin Multiplatform data models with validation, serialization, version-aware storage, and one query API.
 template: splash
 hero:
-  tagline: Strongly‑typed Kotlin models with built‑in versioning, compact serialization, and a single query API across stores.
+  tagline: Define data once in Kotlin. Validate it, serialize it, store it, query it, inspect it, and sync changes across platforms.
   image:
     file: ../../assets/maryk-logo-optimized.webp
   actions:
     - text: Get Started
       link: getting-started/
-    - text: What & Why
-      link: what/
+    - text: First Tutorial
+      link: tutorials/first-store/
       variant: secondary
     - text: View on GitHub
       link: https://github.com/marykdb/maryk/
@@ -22,20 +22,17 @@ hero:
 
 import { Card, CardGrid } from '@astrojs/starlight/components';
 
-## What is Maryk?
+## Build Typed Data Once
 
-Maryk is a Kotlin Multiplatform toolkit for data. You describe your data once — with types and validation — and use that same model across clients and servers.
+Maryk is a Kotlin Multiplatform data toolkit. The same model definition drives validation, JSON/YAML/ProtoBuf serialization, request building, storage, history, live updates, the CLI, and the desktop App.
 
-- **Strong types, one schema** for JVM, Android/Android Native, iOS, macOS, watchOS, tvOS, Linux, Windows, and JS.
-- **Version‑aware storage** with historic reads, change streams, and efficient sync.
-- **Portable serialization** (YAML/JSON streaming, compact ProtoBuf).
-- **Pluggable stores** with the same API (In‑Memory, RocksDB, FoundationDB, Remote).
+Use it when stable data contracts matter more than ad-hoc runtime shape. It gives Kotlin teams a single source of truth for operational data across clients, servers, tools, and tests.
 
 ## Highlights
 
 <CardGrid>
 	<Card title="One Model" icon="seti:csv">
-		Define your schema once in Kotlin and reuse it everywhere — fewer mismatches, better autocomplete.
+		Define your schema once in Kotlin and reuse it across storage, transport, tools, and tests.
 	</Card>
 	<Card title="Versioned Storage" icon="seti:clock">
 		Ask for “only changes” or “as of time T”. Stream live updates without extra infrastructure.
@@ -62,12 +59,15 @@ Maryk is a Kotlin Multiplatform toolkit for data. You describe your data once �
 1) **Add the dependency**
 
 ```kotlin
-implementation("io.maryk:maryk-core:<version>")
+implementation("io.maryk:maryk-core:<maryk-version>")
 ```
 
 2) **Define a model**
 
 ```kotlin
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.string
+
 object Person : RootDataModel<Person>() {
   val firstName by string(index = 1u)
   val lastName by string(index = 2u)
@@ -79,16 +79,19 @@ object Person : RootDataModel<Person>() {
 ```kotlin
 val jane = Person.create { firstName with "Jane"; lastName with "Doe" }
 Person.validate(jane)
-val json = jane.toJson(pretty = true)
+val json = Person.Serializer.writeJson(jane, pretty = true)
 ```
 
 ## Learn more
 
-Start with the overview in [What is Maryk?](what/) and the short case for [Why Maryk?](why/).
+Start with [Getting Started](getting-started/), then run the complete [First Store Tutorial](tutorials/first-store/).
 
 When you’re ready to dig in:
 
+- [What is Maryk?](what/) and [Tradeoffs](tradeoffs/) for fit and positioning
+- [In Practice](in-practice/) for CLI, App, and workflow examples
 - [Data Models](data-modeling/datamodels/) and [Properties](data-modeling/properties/) (types, operations, references)
+- [Changing Models Safely](guides/change-models-safely/) once real data exists behind a model
 - [Querying](querying/) with filters, [reference graphs](querying/reference-graphs/), ordering, and [aggregations](querying/aggregations/)
 - [Serialization](serialization/) (YAML/JSON/ProtoBuf)
 - [Versioning](data-modeling/versioning/) for historic views and change/update streams

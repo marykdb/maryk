@@ -1,0 +1,171 @@
+---
+title: Changing Models Safely
+description: Add, rename, retire, and backfill model fields without breaking stored data, clients, or tools.
+---
+
+This guide is for a model that already has data behind it. Read it after the first store tutorial and the data modeling overview.
+
+The core rule: property indexes are the contract. A property index is the `index = 1u` number on a field. Names help humans; property indexes keep stored data readable.
+
+Do not confuse property indexes with query indexes:
+
+- **Property index**: the stable field number in a model, for example `val name by string(index = 1u)`.
+- **Secondary ordered index**: an `indexes = { ... }` entry used for sorting, range scans, and exact secondary lookups.
+- **Search index**: a named token/search surface used for matching text-like values.
+
+## Safe change path
+
+1. Add new fields with new property indexes.
+2. Put retired property indexes in `reservedIndices`.
+3. Put retired names in `reservedNames`.
+4. Make new fields optional while old data still exists.
+5. Deploy readers before writers depend on the new field.
+6. Backfill existing records with store requests.
+7. Add secondary ordered indexes or search indexes only for access patterns you actually need.
+8. Test the same request flow against Memory Store and one persistent store.
+
+## Start model
+
+```kotlin
+object Customer : RootDataModel<Customer>() {
+    val name by string(index = 1u)
+    val email by string(index = 2u, required = false)
+}
+```
+
+Data has already been written. Property indexes `1u` and `2u` are now owned by those meanings.
+
+## Add a field
+
+Add a new optional field with a new property index:
+
+```kotlin
+object Customer : RootDataModel<Customer>() {
+    val name by string(index = 1u)
+    val email by string(index = 2u, required = false)
+    val displayName by string(index = 3u, required = false)
+}
+```
+
+Old records do not have `displayName`, so the field starts optional. New code can read old and new records.
+
+## Backfill records
+
+Use a scan to find records that need the new value. Then write changes through normal Maryk requests.
+
+```kotlin
+val scan = store.execute(
+    Customer.scan(
+        select = Customer.graph {
+            listOf(name, displayName)
+        }
+    )
+)
+
+scan.values
+    .filter { record -> record.values { displayName } == null }
+    .forEach { record ->
+        val values = record.values
+
+        store.execute(
+            Customer.change(
+                record.key.change(
+                    Change(Customer { displayName::ref } with values { name })
+                )
+            )
+        )
+    }
+```
+
+This keeps the migration observable: every changed record goes through the same request/status path as app writes.
+
+## Add a secondary ordered index later
+
+Do not add a query index just because a property exists. Add a secondary ordered index when you have a real sorting, range-scan, or exact lookup path.
+
+```kotlin
+object Customer : RootDataModel<Customer>(
+    indexes = {
+        listOf(
+            Multiple(displayName.ref())
+        )
+    }
+) {
+    val name by string(index = 1u)
+    val email by string(index = 2u, required = false)
+    val displayName by string(index = 3u, required = false)
+}
+```
+
+For persistent stores, treat secondary ordered index additions as store migrations. Run the store migration path for the engine you use, then verify the scan that needs the index.
+
+## Rename carefully
+
+Renaming a Kotlin property is safe for binary storage only when the property index and meaning stay the same. If YAML/JSON, CLI/App workflows, or remote clients may still use the old name, keep it as an `alternativeNames` entry.
+
+```kotlin
+object Customer : RootDataModel<Customer>() {
+    val fullName by string(
+        index = 1u,
+        alternativeNames = setOf("name")
+    )
+    val email by string(index = 2u, required = false)
+    val displayName by string(index = 3u, required = false)
+}
+```
+
+Before renaming, check your boundaries:
+
+- Binary and store data read by property index.
+- Human-edited YAML/JSON may use names.
+- CLI/App users may recognize old names.
+- Remote clients may need a compatibility window.
+
+If names are part of your external contract, prefer adding the new property and backfilling instead of renaming in place.
+
+## Retire a field
+
+Do not reuse its property index or old names. Mark both as reserved on the model so startup/migration checks fail if someone accidentally reuses them.
+
+```kotlin
+object Customer : RootDataModel<Customer>(
+    reservedIndices = listOf(2u),
+    reservedNames = listOf("email")
+) {
+    val fullName by string(index = 1u)
+    val displayName by string(index = 3u, required = false)
+}
+```
+
+Keeping the reservation is intentional. It prevents old data from being interpreted as something else, and it documents why the gap exists.
+
+If the retired property had alternative names, reserve those names too:
+
+```kotlin
+object Customer : RootDataModel<Customer>(
+    reservedIndices = listOf(2u),
+    reservedNames = listOf("email", "primaryEmail")
+) {
+    val fullName by string(index = 1u)
+    val displayName by string(index = 3u, required = false)
+}
+```
+
+## Deployment checklist
+
+- New code can read old records.
+- New fields are optional until backfill is complete.
+- Old property indexes are listed in `reservedIndices`.
+- Old names are listed in `reservedNames`.
+- Compatibility names are listed in `alternativeNames`.
+- Backfill runs through normal store requests.
+- Persistent stores run their engine migration path before relying on new physical layout.
+- CLI/App can inspect the changed model and sample records.
+- Tests cover add, read, scan, and history for the changed model.
+
+## Store-specific next steps
+
+- Use [Memory Store](../../stores/memory/) for a fast request-level test.
+- Use [RocksDB migrations](../../stores/rocksdb/migrations/) when embedded persistence changes.
+- Use [FoundationDB migrations](../../stores/foundationdb/migrations/) when server-side storage changes.
+- Use [Versioning](../../data-modeling/versioning/) for deeper history and compatibility rules.

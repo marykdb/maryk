@@ -1,0 +1,186 @@
+---
+title: First Store Tutorial
+description: Build one model, store records in memory, query them, and inspect versioned changes.
+---
+
+This tutorial gives you the smallest useful Maryk loop:
+
+1. define a model,
+2. create and validate data,
+3. serialize it,
+4. store it,
+5. query it,
+6. read versioned changes.
+
+## Gradle setup
+
+Add the dependencies to your target source set:
+
+```kotlin
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation("io.maryk:maryk-core:<maryk-version>")
+    implementation("io.maryk:maryk-memory:<maryk-version>")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:<coroutines-version>")
+}
+```
+
+## Model
+
+Every stored model extends `RootDataModel`. Property indexes are the field numbers in the wire/storage contract. Add new property indexes over time; do not reuse old property indexes for different meanings. Query indexes are separate and only needed for extra access paths.
+
+```kotlin
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.date
+import maryk.core.properties.definitions.string
+import maryk.lib.time.LocalDate
+
+object Person : RootDataModel<Person>() {
+    val firstName by string(index = 1u)
+    val lastName by string(index = 2u)
+    val dateOfBirth by date(index = 3u)
+}
+```
+
+## Create and serialize
+
+```kotlin
+val jane = Person.create {
+    firstName with "Jane"
+    lastName with "Doe"
+    dateOfBirth with LocalDate(1990, 1, 15)
+}
+
+Person.validate(jane)
+
+val json = Person.Serializer.writeJson(jane, pretty = true)
+val sameJane = Person.Serializer.readJson(json)
+```
+
+Use the model serializer for JSON directly. The same serializer can also write through JSON-like writers, including YAML. Use ProtoBuf for compact binary transport once both sides already know the model.
+
+## Store and query
+
+```kotlin
+import kotlinx.coroutines.runBlocking
+import maryk.core.query.requests.add
+import maryk.core.query.requests.get
+import maryk.core.query.requests.getChanges
+import maryk.datastore.memory.InMemoryDataStore
+
+fun main() = runBlocking {
+    InMemoryDataStore.open(
+        keepAllVersions = true,
+        keepUpdateHistoryIndex = true,
+        dataModelsById = mapOf(1u to Person)
+    ).use {
+        val key = Person.key(jane)
+        execute(Person.add(key to jane))
+
+        val current = execute(Person.get(key))
+        val values = current.values.single().values
+
+        println(values { firstName }) // Jane
+    }
+}
+```
+
+`dataModelsById` is the store registry. Keep IDs stable for persistent stores. ID `0u` is reserved.
+
+Passing a known key keeps examples and tests easy to read. You can also let the store create keys and inspect add statuses when that better matches your app.
+
+## Read history
+
+With `keepAllVersions = true`, Maryk can answer “what changed?” and “what did this look like at version T?”
+
+Inside the same `.use` block:
+
+```kotlin
+val changes = execute(Person.getChanges(key))
+val firstVersion = changes.changes.first().changes.first().version
+
+val historic = execute(
+    Person.get(
+        key,
+        toVersion = firstVersion
+    )
+)
+```
+
+Use this for sync, audit views, debugging, and conflict-aware clients.
+
+## Complete file
+
+```kotlin
+import kotlinx.coroutines.runBlocking
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.date
+import maryk.core.properties.definitions.string
+import maryk.core.query.requests.add
+import maryk.core.query.requests.get
+import maryk.core.query.requests.getChanges
+import maryk.datastore.memory.InMemoryDataStore
+import maryk.lib.time.LocalDate
+
+object Person : RootDataModel<Person>() {
+    val firstName by string(index = 1u)
+    val lastName by string(index = 2u)
+    val dateOfBirth by date(index = 3u)
+}
+
+fun main() = runBlocking {
+    val jane = Person.create {
+        firstName with "Jane"
+        lastName with "Doe"
+        dateOfBirth with LocalDate(1990, 1, 15)
+    }
+
+    Person.validate(jane)
+
+    val json = Person.Serializer.writeJson(jane, pretty = true)
+    val sameJane = Person.Serializer.readJson(json)
+
+    InMemoryDataStore.open(
+        keepAllVersions = true,
+        keepUpdateHistoryIndex = true,
+        dataModelsById = mapOf(1u to Person)
+    ).use {
+        val key = Person.key(sameJane)
+        execute(Person.add(key to sameJane))
+
+        val current = execute(Person.get(key))
+        val values = current.values.single().values
+        println(values { firstName })
+
+        val changes = execute(Person.getChanges(key))
+        val firstStoredChange = changes.changes.first().changes.first()
+
+        val historic = execute(
+            Person.get(
+                key,
+                toVersion = firstStoredChange.version
+            )
+        )
+
+        println(historic.values.single().values { lastName })
+    }
+}
+```
+
+## Next choices
+
+- Keep using [Memory Store](../../stores/memory/) for tests and examples.
+- Use [RocksDB](../../stores/rocksdb/) when your app needs embedded persistence.
+- Use [FoundationDB](../../stores/foundationdb/) when a server deployment needs distributed ACID storage.
+- Use [Remote Store](../../stores/remote/) when tools, the CLI, or the App need to connect over a network boundary.
+
+## What to learn next
+
+- [Data Design](../../data-modeling/data-design/) for embed/reference/key choices.
+- [Querying](../../querying/) for add/change/delete/get/scan/update APIs.
+- [Versioning](../../data-modeling/versioning/) for history and sync behavior.
+- [Changing Models Safely](../../guides/change-models-safely/) before changing models with existing data.
+- [Property types](../../data-modeling/properties/) for validation and modeling options.

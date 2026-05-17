@@ -1,0 +1,42 @@
+---
+title: Tradeoffs
+description: When Maryk is a strong fit, when it is not, and how to compare it with common alternatives.
+---
+
+Maryk is not “a database” in the SQL sense and not only a serializer. It is a data model plus request protocol plus storage abstraction. The model is the contract. Stores execute the same typed requests against different engines.
+
+## Choose Maryk when
+
+- You want one Kotlin model shared by server, client, tooling, tests, and storage.
+- You need efficient sync, historic reads, or live update streams.
+- You want compact serialization without maintaining separate `.proto` files.
+- Your access patterns can be expressed as keys, indexes, filters, scans, and reference graphs.
+- You prefer local-first or embedded storage, but want a path to server-side distributed storage.
+- You need tools that can inspect, edit, export, and import the same typed records.
+
+## Be careful when
+
+- Your main workload is ad-hoc relational joins across many unrelated tables.
+- Your primary use case is analytical OLAP over huge fact tables.
+- You need full-text search as a core query path.
+- Your schema changes are unplanned and dynamic per tenant.
+- Your team does not want Kotlin models to be the source of truth.
+
+Maryk can still participate in those systems, but pair it with the right tool: SQL/OLAP/search for those query classes, Maryk for typed operational data, sync, and storage.
+
+## Compared with common choices
+
+| Alternative | Maryk difference |
+| --- | --- |
+| SQL ORM | Maryk models are storage/transport/query contracts. Querying is key/index/scan oriented, not join oriented. |
+| Kotlin serialization | Maryk adds property indexes, validation, typed references, requests, stores, and version-aware history. |
+| Protocol Buffers | Maryk avoids separate `.proto` files and derives JSON/YAML/ProtoBuf from the Kotlin model. |
+| Document stores | Maryk keeps strong property definitions, stable indexes, typed queries, and schema compatibility checks. |
+| Local key-value stores | Maryk adds model-aware encoding, indexes, history, update streams, and tooling. |
+| Firebase/Firestore-style systems | Maryk is Kotlin-first and store-pluggable; you own the storage engine and request protocol. |
+
+## Design principle
+
+Maryk rewards explicit data design. Pick stable property indexes, choose keys for your dominant access path, add indexes for secondary scans, and use reference graphs to fetch only needed fields.
+
+That extra upfront structure pays back when the same model has to run on multiple platforms, serialize consistently, migrate safely, and sync efficiently.

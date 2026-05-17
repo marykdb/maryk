@@ -1,0 +1,52 @@
+---
+title: What is Maryk?
+description: A conceptual tour of Maryk's model, request, storage, serialization, and tooling layers.
+---
+
+Maryk is a Kotlin Multiplatform data toolkit built around one idea: the data model should be the contract.
+
+You define the model once in Kotlin. Maryk uses it to validate values, serialize values, build typed requests, execute those requests against stores, retain history, stream updates, and drive tooling.
+
+## The pieces
+
+- **Data models** define properties, indexes, validations, keys, and references.
+- **Values** are typed records created and validated through those models.
+- **Requests** describe add/change/delete/get/scan/history/update operations.
+- **Stores** execute requests through one API: Memory, RocksDB, FoundationDB, Remote.
+- **Serialization** writes the same values and requests as YAML, JSON, or ProtoBuf.
+- **Tools** let you inspect and edit records through the [CLI](../cli/) and [App](../app/).
+
+## A tiny taste
+
+```kotlin
+object Person : RootDataModel<Person>() {
+  val firstName by string(index = 1u)
+  val lastName by string(index = 2u)
+  val dateOfBirth by date(index = 3u)
+}
+
+val john = Person.create { firstName with "John"; lastName with "Smith" }
+Person.validate(john) // throws if invalid
+```
+
+## Why the model matters
+
+Maryk uses stable property indexes. This makes serialization compact and lets readers skip unknown fields. That is the basis for safe evolution, cross-platform compatibility, and history-aware storage.
+
+Maryk also treats queries as typed request objects. Those requests can run locally, be serialized, be sent to a remote store, or be watched as update streams.
+
+## When Maryk fits
+
+- Multi-client apps that need one shared data contract.
+- Local-first apps that need embedded persistence and sync.
+- Kotlin backends that want typed operational storage and compact transport.
+- Tools that need to read, validate, export, import, or edit structured records.
+- Systems that benefit from historic reads, update streams, or incremental sync.
+
+## Next steps
+
+- Quick setup: [Getting Started](../getting-started/)
+- Complete tutorial: [First Store Tutorial](../tutorials/first-store/)
+- Model design: [Data Design](../data-modeling/data-design/)
+- Existing data: [Changing Models Safely](../guides/change-models-safely/)
+- Fit and comparisons: [Tradeoffs](../tradeoffs/)

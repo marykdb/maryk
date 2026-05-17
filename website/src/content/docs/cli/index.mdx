@@ -13,7 +13,7 @@ From the repo root:
 ./gradlew :cli:runJvm
 ```
 
-Release binary (macOS example):
+Release binary for your platform:
 
 ```bash
 ./gradlew :cli:runReleaseExecutableMacosArm64
@@ -35,8 +35,9 @@ serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
 serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
 ```
 
-You can also pass `--config` with key/value config (see CLI commands doc for details).
-Warning: no auth or TLS; bind to localhost or use SSH tunneling.
+You can also pass `--config` with key/value config. See [CLI commands](./commands/) for details.
+
+Remote serving has no built-in auth or TLS. Bind to localhost or use SSH tunneling.
 
 ## Browse
 
@@ -52,8 +53,6 @@ connect rocksdb --dir ./data
 list
 scan Client --show info.name.firstNames,info.name.familyName --order -info.name.familyName
 ```
-
-Command reference: [CLI commands](./commands/).
 
 ## Edit
 
@@ -75,3 +74,7 @@ Inline values are parsed as Maryk YAML scalars; quote strings with spaces or YAM
 - `--max-chars <n>`
 
 For large datasets, prefer `--order` on an indexed property or add filters to keep scans efficient.
+
+## Reference
+
+- [CLI commands](./commands/)

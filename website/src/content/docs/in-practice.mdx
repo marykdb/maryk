@@ -1,0 +1,85 @@
+---
+title: In Practice
+description: What using Maryk looks like through code, CLI, App, and deployment workflows.
+---
+
+Maryk is useful when the same model needs to move through code, storage, tools, and debugging without losing type information.
+
+## Developer loop
+
+1. Define a `RootDataModel`.
+2. Use Memory Store in tests.
+3. Move to RocksDB for embedded persistence or FoundationDB for server-side storage.
+4. Inspect records with the CLI or App.
+5. Use history/update requests for sync and audit views.
+
+## CLI workflow
+
+```text
+maryk --connect rocksdb --dir ./data --exec "list"
+maryk --connect rocksdb --dir ./data --exec "model Client"
+maryk --connect rocksdb --dir ./data --exec "scan Client --show info.name.firstNames,info.name.familyName"
+maryk --connect rocksdb --dir ./data --exec "get Client AbCdEf123 save ./client.yaml"
+```
+
+Typical output is intentionally plain: model names, schema fields, keys, selected values, and command status. That makes it useful in terminals, scripts, and CI diagnostics.
+
+Example output:
+
+```text
+$ maryk --connect rocksdb --dir ./data --exec "list"
+Client
+Course
+Enrollment
+
+$ maryk --connect rocksdb --dir ./data --exec "scan Client --show info.name.firstNames,info.name.familyName"
+KEY        info.name.firstNames  info.name.familyName
+AbCdEf123  Jane                  Doe
+BcDeFg234  Sam                   Taylor
+
+$ maryk --connect rocksdb --dir ./data --exec "get Client AbCdEf123 save ./client.yaml"
+Saved Client AbCdEf123 to ./client.yaml
+```
+
+## App workflow
+
+Use the desktop App when you need a visual inspection loop:
+
+1. Add a RocksDB, FoundationDB, or Remote store.
+2. Open the store.
+3. Select a model from the catalog.
+4. Scan records and pin useful fields as columns.
+5. Open a record in the inspector.
+6. Edit via form controls or raw YAML.
+7. Review the history tab before and after changes.
+8. Export selected records or full model data when debugging.
+
+This is the easiest way to understand an unfamiliar store because it exposes model structure, values, filters, edits, and history in one place.
+
+The working screen is organized around the same loop:
+
+```text
+Stores      Catalog       Results grid              Inspector
+rocksdb     Client        key, firstNames, family   Data | Raw YAML | History
+remote      Course        key, name, updatedAt      Edit | Save | Export
+```
+
+## Local-first app path
+
+- Use the shared model in common Kotlin code.
+- Persist user data with RocksDB.
+- Keep history enabled for sync and conflict-aware screens.
+- Use reference graphs to fetch only UI-visible fields.
+- Expose a Remote Store endpoint when a desktop tool needs to inspect a device/server store.
+
+## Server path
+
+- Use the same models in backend code.
+- Choose FoundationDB when you need distributed transactions and ordered key-range scans.
+- Keep Memory Store tests around so request behavior stays fast to verify.
+- Use CLI one-shot commands for operational inspection.
+- Add migration hooks before changing persistent model layout.
+
+## Good adoption pattern
+
+Start small: one model, one Memory Store test, one CLI scan. Once that loop is clear, add keys and indexes for real access patterns, then choose the persistent engine.

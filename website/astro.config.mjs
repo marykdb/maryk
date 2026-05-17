@@ -31,7 +31,16 @@ export default defineConfig({
                     items: [
                         {label: 'What is Maryk?', slug: 'what'},
                         {label: 'Getting Started', slug: 'getting-started'},
+                        {label: 'First Store Tutorial', slug: 'tutorials/first-store'},
+                        {label: 'In Practice', slug: 'in-practice'},
                         {label: 'Why choose Maryk?', slug: 'why'},
+                        {label: 'Tradeoffs', slug: 'tradeoffs'},
+                    ],
+                },
+                {
+                    label: 'Guides',
+                    items: [
+                        {label: 'Changing Models Safely', slug: 'guides/change-models-safely'},
                     ],
                 },
                 {

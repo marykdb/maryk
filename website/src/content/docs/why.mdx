@@ -1,0 +1,33 @@
+---
+title: Why choose Maryk?
+description: Reasons to pick Maryk when you need Kotlin-first typed data, version-aware storage, and portable queries.
+---
+
+Choose Maryk when your data model is important enough to be the source of truth.
+
+## Reasons to pick Maryk
+
+1. **One model, everywhere**: Define the schema once in Kotlin. Reuse it on mobile, desktop, server, tools, tests, and storage.
+
+2. **Version-aware by design**: Ask for “only changes since X” or “what did this look like at time T?” Stream live additions, changes, and removals from the same store API.
+
+3. **Smaller, focused payloads**: Fetch only the fields you need with reference graphs (field selection). Compose filters and aggregations to move less data over the wire.
+
+4. **Storage freedom without rewrites**: Start with the in‑memory store for tests. Embed RocksDB for apps and single‑node servers. Move to FoundationDB for ACID and scale. Same query API across engines via a shared store layer.
+
+5. **Safer evolution**: Stable property indexes let old readers skip new fields and new readers handle missing old fields. Persistent stores add migration hooks when physical layout changes.
+
+6. **Operational tooling included**: Use the CLI and App to inspect models, scan records, edit values, import/export data, and debug stores without writing one-off scripts.
+
+## When not to use Maryk
+
+- You need ad‑hoc SQL joins across many unrelated tables at query time.
+- You’re doing heavy OLAP or full‑text search (pair Maryk with analytics/search tools).
+- Your team does not want Kotlin models to be the contract.
+
+## If that sounds good
+
+- Run the [First Store Tutorial](../tutorials/first-store/).
+- Read [Data Design](../data-modeling/data-design/) to understand the building blocks.
+- Choose an engine in [Stores](../stores/) to match your deployment.
+- Check [Tradeoffs](../tradeoffs/) before committing a larger system.

@@ -40,7 +40,12 @@ export default defineConfig({
                 {
                     label: 'Guides',
                     items: [
+                        {label: 'Overview', slug: 'guides'},
+                        {label: 'Model a Local-First App', slug: 'guides/model-a-local-first-app'},
+                        {label: 'Design Sync-Friendly Keys', slug: 'guides/design-sync-friendly-keys'},
+                        {label: 'Build a Searchable Catalog', slug: 'guides/build-searchable-catalog'},
                         {label: 'Changing Models Safely', slug: 'guides/change-models-safely'},
+                        {label: 'Expose a Remote Store and Inspect It', slug: 'guides/expose-remote-store-and-inspect-it'},
                     ],
                 },
                 {

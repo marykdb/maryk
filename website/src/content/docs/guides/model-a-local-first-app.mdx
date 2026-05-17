@@ -1,0 +1,181 @@
+---
+title: Model a Local-First App
+description: Shape Maryk models, stores, queries, and inspection workflows for an app that owns local data first.
+---
+
+This guide is for an app that writes locally, needs fast reads, and may sync or inspect data later.
+
+The short version:
+
+1. Model stable domain objects as `RootDataModel`s.
+2. Embed small data that shares the parent lifecycle.
+3. Split large or independently edited data into separate roots.
+4. Pick keys for the primary local access path.
+5. Use Memory Store in tests, then RocksDB for durable embedded data.
+6. Use the App or CLI to inspect real records early.
+
+## Start with roots
+
+Use a root for anything users search, open, sync, or edit independently.
+
+```kotlin
+object Project : RootDataModel<Project>() {
+    val title by string(index = 1u)
+    val archived by boolean(index = 2u, default = false)
+}
+```
+
+Property indexes are the stored contract. Keep them stable forever once data exists.
+
+## Embed bounded details
+
+Embed data when it is always read with the parent and stays bounded in size.
+
+```kotlin
+object Profile : DataModel<Profile>() {
+    val displayName by string(index = 1u)
+    val timezone by string(index = 2u, required = false)
+}
+
+object Account : RootDataModel<Account>() {
+    val email by string(index = 1u)
+    val profile by embed(index = 2u, dataModel = { Profile })
+}
+```
+
+This keeps common reads cheap and updates atomic at the record level.
+
+Use graphs when a screen only needs part of the embedded data:
+
+```kotlin
+val listScreen = Account.graph {
+    listOf(
+        email,
+        graph(profile) {
+            listOf(displayName)
+        }
+    )
+}
+```
+
+## Split growing data
+
+Split when a child collection can grow, has separate permissions, or changes independently.
+
+```kotlin
+object Task : RootDataModel<Task>(
+    keyDefinition = {
+        Multiple(
+            project.ref(),
+            Reversed(updatedAt.ref()),
+            UUIDv7Key,
+        )
+    }
+) {
+    val project by reference(index = 1u, dataModel = { Project }, final = true)
+    val updatedAt by dateTime(index = 2u, final = true)
+    val title by string(index = 3u)
+    val done by boolean(index = 4u, default = false)
+}
+```
+
+The key starts with the project reference, so scans for one project can stay near one key range. `Reversed(updatedAt.ref())` puts recent tasks first. The trailing `UUIDv7Key` keeps keys unique when multiple tasks share the same timestamp.
+
+Key parts should be stable. If a property participates in a key, treat it as identity and mark it `final` where possible.
+
+## Add only the indexes screens need
+
+Add secondary indexes for access paths that are not covered by the key.
+
+```kotlin
+object Task : RootDataModel<Task>(
+    keyDefinition = {
+        Multiple(project.ref(), Reversed(updatedAt.ref()), UUIDv7Key)
+    },
+    indexes = {
+        listOf(
+            Multiple(project.ref(), done.ref(), Reversed(updatedAt.ref()))
+        )
+    }
+) {
+    val project by reference(index = 1u, dataModel = { Project }, final = true)
+    val updatedAt by dateTime(index = 2u, final = true)
+    val title by string(index = 3u)
+    val done by boolean(index = 4u, default = false)
+}
+```
+
+Use that index for a project task list filtered by `done` and ordered newest first.
+
+Do not add indexes for every property. Persistent stores treat index additions as model/storage changes.
+
+## Test with Memory Store
+
+Memory Store runs the same request API without persistence:
+
+```kotlin
+InMemoryDataStore.open(
+    keepAllVersions = true,
+    keepUpdateHistoryIndex = true,
+    dataModelsById = mapOf(
+        1u to Project,
+        2u to Task,
+    )
+).use {
+    val add = execute(Project.add(Project.create { title with "Docs" }))
+    val projectKey = add.statuses.first().key
+
+    execute(
+        Task.scan(
+            where = Equals(Task { project::ref } with projectKey),
+            limit = 50u,
+        )
+    )
+}
+```
+
+Keep model IDs stable before moving to a persistent store. ID `0u` is reserved.
+
+## Persist with RocksDB
+
+Use RocksDB for local-first durable storage:
+
+```kotlin
+RocksDBDataStore.open(
+    keepAllVersions = true,
+    keepUpdateHistoryIndex = true,
+    relativePath = "data/maryk",
+    dataModelsById = mapOf(
+        1u to Project,
+        2u to Task,
+    )
+).use {
+    // Same execute(...) calls as Memory Store.
+}
+```
+
+The request code stays the same across Memory and RocksDB.
+
+## Inspect early
+
+Use the CLI for fast checks:
+
+```text
+maryk --connect rocksdb --dir ./data/maryk --exec "list"
+maryk --connect rocksdb --dir ./data/maryk --exec "scan Task --limit 20"
+```
+
+Use the desktop App when you need a visual loop: models, records, filters, raw YAML edits, and history in one place.
+
+## Checklist
+
+- One root per independently edited object.
+- Embedded objects are bounded and share the parent lifecycle.
+- Key matches the primary scan.
+- Key properties are stable.
+- Secondary indexes match real screens or workflows.
+- `dataModelsById` is stable before persistence.
+- Memory Store tests cover add, scan, change, and history.
+- RocksDB is inspected through CLI/App with sample data.
+
+Next: [Design Sync-Friendly Keys](../design-sync-friendly-keys/) and [Changing Models Safely](../change-models-safely/).

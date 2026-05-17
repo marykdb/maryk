@@ -1,0 +1,169 @@
+---
+title: Build a Searchable Catalog
+description: Combine ordered indexes, named search indexes, filters, and reference graphs for catalog-style lookup.
+---
+
+A catalog usually needs two different access paths:
+
+- stable list order, filtering, and pagination
+- search-box matching across several fields
+
+Use ordered indexes for the first path. Use named search indexes for the second.
+
+## Model the searchable fields
+
+```kotlin
+object Product : RootDataModel<Product>(
+    indexes = {
+        listOf(
+            Multiple(Normalize(name.ref()), sku.ref()),
+            AnyOf(
+                "catalog",
+                name.ref(),
+                sku.ref(),
+                brand.ref(),
+            ).normalize().split(WordBoundary),
+        )
+    }
+) {
+    val name by string(index = 1u)
+    val sku by string(index = 2u)
+    val brand by string(index = 3u, required = false)
+    val description by string(index = 4u, required = false)
+}
+```
+
+The first index is ordered. It supports normalized sort, equality, prefix, and range scans by name.
+
+The second index is a named search surface. `Matches("catalog" with "...")` searches tokens from name, SKU, and brand.
+
+This pattern is used by Maryk’s own test models: an ordered `Multiple(Normalize(...), ...)` index and an `AnyOf(...).normalize().split(WordBoundary)` named search index.
+
+## Build the list view
+
+Use the ordered index for stable list order:
+
+```kotlin
+val page = store.execute(
+    Product.scan(
+        order = Orders(
+            Product { name::ref }.ascending(),
+            Product { sku::ref }.ascending(),
+        ),
+        select = Product.graph {
+            listOf(name, sku, brand)
+        },
+        limit = 50u,
+    )
+)
+```
+
+Select only the fields needed for the list. Fetch detail fields when a row opens.
+
+## Add prefix lookup
+
+For “jump to names starting with …”, use a property filter with the same ordered path:
+
+```kotlin
+val matchesPrefix = store.execute(
+    Product.scan(
+        where = Prefix(Product { name::ref } with "gar"),
+        order = Orders(
+            Product { name::ref }.ascending(),
+            Product { sku::ref }.ascending(),
+        ),
+        select = Product.graph {
+            listOf(name, sku, brand)
+        },
+    )
+)
+```
+
+Because the ordered index normalizes `name`, case and diacritics are normalized for the indexed name part.
+
+## Add search-box matching
+
+For a search box across fields, target the named search surface:
+
+```kotlin
+val search = store.execute(
+    Product.scan(
+        where = Matches("catalog" with "garcia"),
+        select = Product.graph {
+            listOf(name, sku, brand)
+        },
+        limit = 25u,
+    )
+)
+```
+
+Use `MatchesPrefix` for autocomplete-style token prefixes:
+
+```kotlin
+val suggestions = store.execute(
+    Product.scan(
+        where = MatchesPrefix("catalog" with "gar"),
+        select = Product.graph {
+            listOf(name, sku)
+        },
+        limit = 10u,
+    )
+)
+```
+
+Named search filters are for matching. Do not use them as a replacement for stable sort order.
+
+## Add exact filters carefully
+
+If users filter by exact brand and then sort by name often, add an ordered compound index for that path:
+
+```kotlin
+indexes = {
+    listOf(
+        Multiple(Normalize(name.ref()), sku.ref()),
+        Multiple(Normalize(brand.ref()), Normalize(name.ref()), sku.ref()),
+        AnyOf("catalog", name.ref(), sku.ref(), brand.ref()).normalize().split(WordBoundary),
+    )
+}
+```
+
+Then scan with a matching filter and order:
+
+```kotlin
+Product.scan(
+    where = Equals(Product { brand::ref } with "acme"),
+    order = Orders(
+        Product { brand::ref }.ascending(),
+        Product { name::ref }.ascending(),
+        Product { sku::ref }.ascending(),
+    ),
+)
+```
+
+Add this only when the path is real. Every persistent index has storage and migration cost.
+
+## Know what this is not
+
+Maryk search indexes are for typed operational lookup and token matching. They are not a full-text ranking engine.
+
+Use a dedicated search system next to Maryk when you need:
+
+- ranking and scoring
+- language analyzers
+- stemming
+- typo tolerance
+- faceted analytics at search-engine scale
+
+Keep Maryk as the typed source of truth and operational store.
+
+## Checklist
+
+- Ordered list path has a `Multiple(...)` index.
+- Search-box path has a named `AnyOf(...).normalize().split(...)` index.
+- List queries use `order`.
+- Search queries use `Matches` or `MatchesPrefix`.
+- List screens use `select` graphs.
+- Exact filters match real index prefixes.
+- Table scans are not part of the normal catalog path.
+
+Next: [Index Design](../../data-modeling/index-design/) and [Filters](../../querying/filters/).

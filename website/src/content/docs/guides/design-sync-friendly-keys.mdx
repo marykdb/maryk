@@ -1,0 +1,151 @@
+---
+title: Design Sync-Friendly Keys
+description: Choose Maryk keys that support local writes, ordered scans, and incremental sync.
+---
+
+Keys are identity and scan shape. Choose them before persistent data exists.
+
+A good sync-friendly key:
+
+- is stable for the lifetime of the record
+- has fixed-size parts
+- supports the dominant scan without a table scan
+- avoids avoidable distributed write hotspots
+- leaves secondary access paths to indexes
+
+## Know the default
+
+If no key is configured, Maryk uses UUIDv4 keys. UUIDv4 spreads writes well, especially in distributed stores, but it does not give natural time order.
+
+Use the default when:
+
+- records are fetched by known key
+- write distribution matters more than ordered key scans
+- ordering can be handled by a secondary index
+
+## Use UUIDv7 for local time order
+
+UUIDv7 is time ordered. It is useful when local scans commonly need creation order.
+
+```kotlin
+object Note : RootDataModel<Note>(
+    keyDefinition = { UUIDv7Key }
+) {
+    val title by string(index = 1u)
+    val body by string(index = 2u, required = false)
+}
+```
+
+This is a good fit for embedded/local stores. On high-write distributed backends, UUIDv7 can concentrate fresh writes near the same key range. Prefer UUIDv4 or a wider key prefix when write spread matters.
+
+## Put owner first for per-owner sync
+
+When data belongs to another root, put that owner reference first.
+
+```kotlin
+object DeviceEvent : RootDataModel<DeviceEvent>(
+    keyDefinition = {
+        Multiple(
+            device.ref(),
+            Reversed(recordedAt.ref()),
+            UUIDv7Key,
+        )
+    }
+) {
+    val device by reference(index = 1u, dataModel = { Device }, final = true)
+    val recordedAt by dateTime(index = 2u, final = true)
+    val message by string(index = 3u)
+}
+```
+
+This makes “events for one device, newest first” the natural key scan. The trailing UUID keeps the key unique for equal timestamps.
+
+## Keep key parts fixed size
+
+Key parts must have predictable byte length. Good key parts include:
+
+- references
+- numbers
+- dates and datetimes
+- booleans
+- enums
+- fixed bytes
+- multi-type type IDs
+- small value objects with fixed storage size
+- UUIDv4 or UUIDv7 key parts
+
+Do not use strings, flexible bytes, collections, or embedded models as key parts.
+
+## Treat key fields as immutable
+
+If a property participates in the key, changing it means changing identity. Model that explicitly:
+
+```kotlin
+val device by reference(index = 1u, dataModel = { Device }, final = true)
+val recordedAt by dateTime(index = 2u, final = true)
+```
+
+If a value may change, do not put it in the key. Use a secondary index instead.
+
+## Use indexes for secondary sync views
+
+The primary key cannot serve every sync or screen path. Add indexes for secondary scans.
+
+```kotlin
+object DeviceEvent : RootDataModel<DeviceEvent>(
+    keyDefinition = {
+        Multiple(device.ref(), Reversed(recordedAt.ref()), UUIDv7Key)
+    },
+    indexes = {
+        listOf(
+            Multiple(severity.ref(), Reversed(recordedAt.ref()))
+        )
+    }
+) {
+    val device by reference(index = 1u, dataModel = { Device }, final = true)
+    val recordedAt by dateTime(index = 2u, final = true)
+    val message by string(index = 3u)
+    val severity by enum(index = 4u, enum = Severity, final = true)
+}
+```
+
+Use the key for per-device sync. Use the index for severity views.
+
+## Plan for update history
+
+For stores that need newest-first update scans, enable `keepUpdateHistoryIndex` when opening Memory, RocksDB, or FoundationDB.
+
+```kotlin
+RocksDBDataStore.open(
+    keepAllVersions = true,
+    keepUpdateHistoryIndex = true,
+    relativePath = "data/maryk",
+    dataModelsById = mapOf(1u to DeviceEvent),
+)
+```
+
+`keepAllVersions` preserves historic data for versioned reads and changes. `keepUpdateHistoryIndex` keeps an engine-level latest-update index so `scanUpdates(order = null)` can use newest-first update order efficiently.
+
+## Avoid table scans by design
+
+A sync loop should know which range it is scanning:
+
+- one owner: owner reference first in key
+- latest first: `Reversed(timestamp.ref())`
+- all changes: update history enabled
+- alternate grouping: secondary ordered index
+
+Use `allowTableScan = true` only as an explicit escape hatch for small data, admin tools, or tests.
+
+## Checklist
+
+- Key parts are fixed size.
+- Key parts are stable and usually `final`.
+- Owner-scoped data starts with the owner reference.
+- Newest-first reads use `Reversed(...)`.
+- UUIDv4 is used when distributed write spread matters.
+- UUIDv7 is used when time-ordered locality matters.
+- Secondary indexes cover non-primary access paths.
+- `keepAllVersions` and `keepUpdateHistoryIndex` are decided before relying on history behavior.
+
+Next: [Model a Local-First App](../model-a-local-first-app/) and [Versioning](../../data-modeling/versioning/).

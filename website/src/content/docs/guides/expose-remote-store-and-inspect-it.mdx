@@ -1,0 +1,134 @@
+---
+title: Expose a Remote Store and Inspect It
+description: Serve a local Maryk store over HTTP, connect with the App or RemoteDataStore, and inspect records safely.
+---
+
+Remote Store exposes a RocksDB or FoundationDB store over HTTP. The client still uses Maryk requests; the storage stays where it is.
+
+Use this when:
+
+- the desktop App needs to inspect a server or device store
+- code using `RemoteDataStore` needs access over a network boundary
+- you want a thin operational endpoint without rewriting store logic
+
+## Start with local-only serving
+
+For RocksDB:
+
+```text
+maryk --exec "serve rocksdb --dir ./data --host 127.0.0.1 --port 8210"
+```
+
+For FoundationDB:
+
+```text
+maryk --exec "serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --host 127.0.0.1 --port 8210"
+```
+
+`serve` does not need `--connect` in one-shot mode. It blocks until stopped.
+
+Remote serving has no built-in auth or TLS. Bind to `127.0.0.1` unless you are behind SSH tunneling or another trusted boundary.
+
+## Use a config file
+
+```text
+store: rocksdb
+dir: ./data
+host: 127.0.0.1
+port: 8210
+```
+
+```text
+maryk --exec "serve --config ./serve.conf"
+```
+
+Supported store types are `rocksdb` and `foundationdb`.
+
+## Connect with the App
+
+In the desktop App:
+
+1. Open Stores.
+2. Add store type `Remote`.
+3. Set URL to `http://127.0.0.1:8210` or the tunnel URL.
+4. Enable SSH tunnel when the server is bound to loopback on another host.
+5. Open the store.
+6. Pick a model, scan records, inspect history, and edit only when intended.
+
+The App stores saved configs in `~/.maryk/app/stores.conf`.
+
+## Connect programmatically
+
+```kotlin
+val remote = RemoteDataStore.connect(
+    RemoteStoreConfig(baseUrl = "http://127.0.0.1:8210")
+)
+
+val records = remote.execute(
+    Task.scan(limit = 20u)
+)
+```
+
+`RemoteDataStore.connect` is `suspend`. The remote client implements `IsDataStore`, so normal `execute(...)` code works.
+
+## Use SSH when crossing machines
+
+If the server is on another host, keep the Maryk server bound to loopback and tunnel to it:
+
+```kotlin
+val remote = RemoteDataStore.connect(
+    RemoteStoreConfig(
+        baseUrl = "http://remote-host:8210",
+        ssh = RemoteSshConfig(
+            host = "remote-host",
+            user = "maryk",
+            remotePort = 8210,
+            localPort = 9821,
+            identityFile = "~/.ssh/id_ed25519",
+        )
+    )
+)
+```
+
+The tunnel uses the system `ssh` binary with local port forwarding. `localPort` can be omitted to auto-select a free port.
+
+## Inspect local data with the CLI
+
+The CLI can inspect the local store that you are serving:
+
+```text
+maryk --connect rocksdb --dir ./data --exec "list"
+maryk --connect rocksdb --dir ./data --exec "scan Task --limit 20"
+```
+
+For a served endpoint, use the App Remote store flow or a programmatic `RemoteDataStore` client.
+
+## Operational checks
+
+Before editing remote data:
+
+- confirm the URL points to the intended environment
+- verify the model list
+- scan with a small `--limit`
+- inspect one record and its history
+- keep exports before bulk changes
+- use `--if-version` or App stale-state checks for guarded edits
+
+## Troubleshooting
+
+- Cannot connect: verify `serve` is still running and the port matches.
+- Empty scan: check selected model and filters.
+- SSH tunnel fails: verify SSH user, identity file, host, and remote port.
+- RocksDB open fails: another process may already hold the local store lock.
+- FoundationDB fails: check `libfdb_c` and cluster file.
+
+## Checklist
+
+- Server binds to loopback unless protected.
+- No raw HTTP endpoint is exposed publicly.
+- App Remote URL matches the served endpoint or tunnel.
+- Store model IDs match the expected app/server build.
+- First scan uses a small limit.
+- Edits are guarded and verified in history.
+
+Next: [Remote Store](../../stores/remote/), [App](../../app/), and [CLI](../../cli/).

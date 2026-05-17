@@ -17,6 +17,12 @@ object WrongModelName : RootDataModel<WrongModelName>(
     val value by string (1u)
 }
 
+object WrongModelAlternativeName : RootDataModel<WrongModelAlternativeName>(
+    reservedNames = listOf("oldValue"),
+) {
+    val value by string(1u, alternativeNames = setOf("oldValue"))
+}
+
 internal class WrongRootDataModelTest {
     @Test
     fun checkDataModel() {
@@ -28,6 +34,10 @@ internal class WrongRootDataModelTest {
 
         assertFailsWith<IllegalArgumentException> {
             WrongModelName.checkModel()
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            WrongModelAlternativeName.checkModel()
         }
     }
 }

@@ -22,9 +22,12 @@ interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel<Any> {
             }
         }
         this.Meta.reservedNames?.let { reservedNames ->
-            this.forEach { case ->
-                require(!reservedNames.contains(case.name)) {
-                    "Model ${Meta.name} has a reserved name defined ${case.name}"
+            this.forEach { property ->
+                val names = property.alternativeNames?.let { it + property.name } ?: setOf(property.name)
+                val reservedName = names.firstOrNull { reservedNames.contains(it) }
+
+                require(reservedName == null) {
+                    "Model ${Meta.name} has a reserved name defined $reservedName"
                 }
             }
         }

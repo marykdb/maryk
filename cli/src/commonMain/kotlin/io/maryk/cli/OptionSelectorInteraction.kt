@@ -44,8 +44,8 @@ class OptionSelectorInteraction<T>(
     override fun onKeyPressed(key: Key): InteractionKeyResult? {
         val previous = selectedIndex
         when (key) {
-            Keys.UP -> if (selectedIndex > 0) selectedIndex -= 1
-            Keys.DOWN -> if (selectedIndex < options.lastIndex) selectedIndex += 1
+            Keys.Up -> if (selectedIndex > 0) selectedIndex -= 1
+            Keys.Down -> if (selectedIndex < options.lastIndex) selectedIndex += 1
             else -> return null
         }
         return if (previous != selectedIndex) InteractionKeyResult.Rerender else null

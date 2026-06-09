@@ -226,15 +226,15 @@ class ScanViewerInteraction(
         val viewHeight = max(1, terminalHeight - FOOTER_AND_PROMPT_LINES - buildHeaderLines().size)
         val previousIndex = selectedIndex
         when (key) {
-            Keys.UP -> moveSelection(-1, viewHeight)
-            Keys.DOWN -> moveSelection(1, viewHeight)
-            Keys.PAGE_UP -> moveSelection(-viewHeight, viewHeight)
-            Keys.PAGE_DOWN -> moveSelection(viewHeight, viewHeight)
-            Keys.HOME -> {
+            Keys.Up -> moveSelection(-1, viewHeight)
+            Keys.Down -> moveSelection(1, viewHeight)
+            Keys.PageUp -> moveSelection(-viewHeight, viewHeight)
+            Keys.PageDown -> moveSelection(viewHeight, viewHeight)
+            Keys.Home -> {
                 selectedIndex = 0
                 offset = 0
             }
-            Keys.END -> {
+            Keys.End -> {
                 selectedIndex = rows.size - 1
                 offset = max(0, rows.size - viewHeight)
             }

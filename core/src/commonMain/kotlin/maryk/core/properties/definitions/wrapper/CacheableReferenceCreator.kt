@@ -2,6 +2,7 @@ package maryk.core.properties.definitions.wrapper
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.collections.immutable.PersistentList
+import kotlinx.collections.immutable.mutate
 import kotlinx.collections.immutable.persistentListOf
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
@@ -46,7 +47,7 @@ interface CacheableReferenceCreator {
             // If not in cache, create new reference
             val newRef = creator()
             val newEntry = RefCacheEntry(parentRef, discriminator, newRef)
-            val newCache = currentCache?.add(newEntry) ?: persistentListOf(newEntry)
+            val newCache = currentCache?.mutate { it.add(newEntry) } ?: persistentListOf(newEntry)
 
             if (refCache.compareAndSet(currentCache, newCache)) {
                 return newRef

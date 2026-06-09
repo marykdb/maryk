@@ -468,12 +468,12 @@ class OutputViewerInteraction(
         val previous = offset
         val maxOffset = max(0, lines.size - viewHeight)
         when (key) {
-            Keys.UP -> offset = max(0, offset - 1)
-            Keys.DOWN -> offset = min(maxOffset, offset + 1)
-            Keys.PAGE_UP -> offset = max(0, offset - viewHeight)
-            Keys.PAGE_DOWN -> offset = min(maxOffset, offset + viewHeight)
-            Keys.HOME -> offset = 0
-            Keys.END -> offset = maxOffset
+            Keys.Up -> offset = max(0, offset - 1)
+            Keys.Down -> offset = min(maxOffset, offset + 1)
+            Keys.PageUp -> offset = max(0, offset - viewHeight)
+            Keys.PageDown -> offset = min(maxOffset, offset + viewHeight)
+            Keys.Home -> offset = 0
+            Keys.End -> offset = maxOffset
             else -> return null
         }
         return if (offset != previous) InteractionKeyResult.Rerender else null

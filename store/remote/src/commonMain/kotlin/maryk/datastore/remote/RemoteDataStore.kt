@@ -1,13 +1,13 @@
 package maryk.datastore.remote
 
 import io.ktor.client.request.get
+import io.ktor.client.HttpClient
 import io.ktor.client.request.headers
 import io.ktor.client.request.post
 import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
-import io.ktor.client.call.body
-import io.ktor.client.HttpClient
-import io.ktor.client.statement.bodyAsText
+import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpHeaders
 import io.ktor.http.URLProtocol
 import io.ktor.http.URLBuilder
@@ -16,7 +16,7 @@ import io.ktor.http.URLParserException
 import io.ktor.utils.io.ByteReadChannel
 import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.readFully
-import io.ktor.client.statement.bodyAsChannel
+import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.cancel
@@ -25,7 +25,11 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.io.readByteArray
+import maryk.core.definitions.Definitions
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
@@ -34,17 +38,14 @@ import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.requests.Requests
 import maryk.core.query.responses.IsDataResponse
+import maryk.core.query.responses.IsDataModelResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
-import maryk.core.query.responses.IsDataModelResponse
-import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.datastore.shared.IsDataStore
-import maryk.core.definitions.Definitions
-import maryk.core.definitions.MarykPrimitive
-import io.ktor.client.statement.HttpResponse
+import maryk.datastore.shared.rethrowIfFatal
 
 class RemoteDataStore private constructor(
     private val httpClient: HttpClient,
@@ -67,8 +68,6 @@ class RemoteDataStore private constructor(
 
     companion object {
         suspend fun connect(config: RemoteStoreConfig): RemoteDataStore {
-            val client = config.httpClient ?: createDefaultHttpClient()
-            val ownsClient = config.httpClient == null
             if (config.baseUrl != config.baseUrl.trim()) {
                 throw IllegalArgumentException("Remote store base URL cannot contain leading or trailing whitespace.")
             }
@@ -88,24 +87,25 @@ class RemoteDataStore private constructor(
             if (baseUrl.port !in 1..65535) {
                 throw IllegalArgumentException("Remote store base URL port must be between 1 and 65535.")
             }
-            val effectiveUrl: Url
-            val tunnel: SshTunnel?
-            if (config.ssh != null) {
-                validateSshConfig(config.ssh)
-                val target = resolveSshTarget(baseUrl, config.ssh)
-                val factory = config.sshTunnelFactory
-                    ?: throw IllegalArgumentException("SSH tunnel factory is not available on this platform")
-                tunnel = factory.open(config.ssh, target)
-                effectiveUrl = URLBuilder(baseUrl).apply {
-                    host = "127.0.0.1"
-                    port = tunnel.localPort
-                }.build()
-            } else {
-                effectiveUrl = baseUrl
-                tunnel = null
-            }
 
+            val client = config.httpClient ?: createDefaultHttpClient()
+            val ownsClient = config.httpClient == null
+            var tunnel: SshTunnel? = null
             return try {
+                val effectiveUrl = if (config.ssh != null) {
+                    validateSshConfig(config.ssh)
+                    val target = resolveSshTarget(baseUrl, config.ssh)
+                    val factory = config.sshTunnelFactory
+                        ?: throw IllegalArgumentException("SSH tunnel factory is not available on this platform")
+                    tunnel = factory.open(config.ssh, target)
+                    URLBuilder(baseUrl).apply {
+                        host = "127.0.0.1"
+                        port = tunnel.localPort
+                    }.build()
+                } else {
+                    baseUrl
+                }
+
                 val infoResult = fetchInfo(client, effectiveUrl)
                 val modelMap = buildModelMap(infoResult.info, infoResult.definitionsContext)
 
@@ -124,9 +124,17 @@ class RemoteDataStore private constructor(
                 )
             } catch (error: Throwable) {
                 if (ownsClient) {
-                    client.close()
+                    try {
+                        client.close()
+                    } catch (cleanupError: Throwable) {
+                        cleanupError.rethrowIfFatal()
+                    }
                 }
-                tunnel?.close()
+                try {
+                    tunnel?.close()
+                } catch (cleanupError: Throwable) {
+                    cleanupError.rethrowIfFatal()
+                }
                 throw error
             }
         }
@@ -178,7 +186,7 @@ class RemoteDataStore private constructor(
             }
             requireSuccess(response, "info")
             requireContentType(response, RemoteStoreProtocol.contentType, "info")
-            val bytes = response.body<ByteArray>()
+            val bytes = readResponseBytes(response, "info")
             if (bytes.isEmpty()) {
                 throw IllegalStateException("Remote store info returned an empty payload")
             }
@@ -254,7 +262,7 @@ class RemoteDataStore private constructor(
         val transportable = request as? IsTransportableRequest<*>
             ?: throw IllegalArgumentException("Request ${request::class.simpleName} is not transportable")
         val context = RequestContext(definitionsContext, dataModel = request.dataModel)
-        val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(transportable), context)
+        val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(transportable), context, MAX_REQUEST_BODY_BYTES)
         val response = httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
             headers {
                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -264,7 +272,7 @@ class RemoteDataStore private constructor(
         }
         requireSuccess(response, "execute")
         requireContentType(response, RemoteStoreProtocol.contentType, "execute")
-        val responseBytes = response.body<ByteArray>()
+        val responseBytes = readResponseBytes(response, "execute", MAX_RESPONSE_BODY_BYTES)
         if (responseBytes.isEmpty()) {
             throw IllegalStateException("Remote store execute returned an empty payload")
         }
@@ -300,7 +308,7 @@ class RemoteDataStore private constructor(
         val transportable = request as? IsTransportableRequest<*>
             ?: throw IllegalArgumentException("Request ${request::class.simpleName} is not transportable")
         val context = RequestContext(definitionsContext, dataModel = request.dataModel)
-        val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(transportable), context)
+        val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(transportable), context, MAX_REQUEST_BODY_BYTES)
 
         return callbackFlow {
             val statement = httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.flowPath)) {
@@ -374,7 +382,7 @@ class RemoteDataStore private constructor(
     ): ProcessResponse<DM> {
         ensureDataModelReference(updateResponse.dataModel)
         val context = RequestContext(definitionsContext, dataModel = updateResponse.dataModel)
-        val payload = RemoteStoreCodec.encode(UpdateResponse.Serializer, updateResponse, context)
+        val payload = RemoteStoreCodec.encode(UpdateResponse.Serializer, updateResponse, context, MAX_REQUEST_BODY_BYTES)
         val response = httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.processUpdatePath)) {
             headers {
                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -384,7 +392,7 @@ class RemoteDataStore private constructor(
         }
         requireSuccess(response, "process-update")
         requireContentType(response, RemoteStoreProtocol.contentType, "process-update")
-        val responseBytes = response.body<ByteArray>()
+        val responseBytes = readResponseBytes(response, "process-update")
         if (responseBytes.isEmpty()) {
             throw IllegalStateException("Remote store process-update returned an empty payload")
         }
@@ -452,7 +460,8 @@ private data class InfoResult(
 
 private suspend fun requireSuccess(response: HttpResponse, operation: String) {
     if (response.status.value !in 200..299) {
-        val bodyPreview = runCatching { response.bodyAsText() }
+        val bodyPreview = runCatching { readErrorPreview(response) }
+            .onFailure { it.rethrowIfFatal() }
             .getOrNull()
             ?.replace(Regex("\\s+"), " ")
             ?.take(200)
@@ -461,6 +470,14 @@ private suspend fun requireSuccess(response: HttpResponse, operation: String) {
             "Remote store $operation failed with HTTP ${response.status.value} ${response.status.description}$suffix"
         )
     }
+}
+
+private suspend fun readErrorPreview(response: HttpResponse): String {
+    val bytes = response.bodyAsChannel()
+        .readRemaining(MAX_ERROR_PREVIEW_BYTES.toLong() + 1L)
+        .readByteArray()
+    response.call.cancel()
+    return bytes.copyOf(minOf(bytes.size, MAX_ERROR_PREVIEW_BYTES)).decodeToString()
 }
 
 private fun requireContentType(response: HttpResponse, expected: String, operation: String) {
@@ -473,7 +490,37 @@ private fun requireContentType(response: HttpResponse, expected: String, operati
     }
 }
 
+private suspend fun readResponseBytes(
+    response: HttpResponse,
+    operation: String,
+    maxBytes: Int = MAX_FRAME_SIZE_BYTES,
+): ByteArray {
+    val rawContentLength = response.headers[HttpHeaders.ContentLength]
+    val contentLength = rawContentLength?.toLongOrNull()
+    if (rawContentLength != null) {
+        if (contentLength == null || contentLength < 0L) {
+            response.call.cancel()
+            throw IllegalStateException("Remote store $operation response has invalid Content-Length header")
+        }
+        if (contentLength > maxBytes.toLong()) {
+            response.call.cancel()
+            throw IllegalStateException("Remote store $operation response exceeds max size: $contentLength > $maxBytes")
+        }
+    }
+    val bytes = response.bodyAsChannel()
+        .readRemaining(maxBytes.toLong() + 1L)
+        .readByteArray()
+    if (bytes.size > maxBytes) {
+        response.call.cancel()
+        throw IllegalStateException("Remote store $operation response exceeds max size: ${bytes.size} > $maxBytes")
+    }
+    return bytes
+}
+
 private const val MAX_FRAME_SIZE_BYTES = 16 * 1024 * 1024
+private const val MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024
+private const val MAX_RESPONSE_BODY_BYTES = MAX_FRAME_SIZE_BYTES + 4
+private const val MAX_ERROR_PREVIEW_BYTES = 4096
 
 private suspend fun readFrameLength(
     channel: ByteReadChannel,
@@ -485,6 +532,7 @@ private suspend fun readFrameLength(
         runCatching {
             channel.readFully(lengthBuffer, read, lengthBuffer.size - read)
         }.getOrElse {
+            it.rethrowIfFatal()
             throw IllegalStateException("Stream ended while reading frame length prefix", it)
         }
     }
@@ -498,6 +546,7 @@ private suspend fun readFramePayload(
     runCatching {
         channel.readFully(payload, 0, payload.size)
     }.getOrElse {
+        it.rethrowIfFatal()
         throw IllegalStateException("Stream ended while reading frame payload", it)
     }
 }

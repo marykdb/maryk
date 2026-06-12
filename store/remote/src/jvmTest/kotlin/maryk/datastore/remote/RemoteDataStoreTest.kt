@@ -15,6 +15,7 @@ import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -325,6 +326,85 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun connectClosesSshTunnelWhenInfoValidationFails() = runBlocking {
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            duplicateInfoModule(
+                modelIds = listOf(
+                    RemoteStoreModelId(1u, SimpleMarykModel.Meta.name),
+                    RemoteStoreModelId(1u, SimpleMarykModel.Meta.name),
+                ),
+            )
+        }.start(wait = false)
+        val tunnelClosed = AtomicBoolean(false)
+
+        try {
+            val exception = assertFailsWith<IllegalStateException> {
+                RemoteDataStore.connect(
+                    RemoteStoreConfig(
+                        baseUrl = "http://remote.example:1234",
+                        ssh = RemoteSshConfig(host = "ssh.example"),
+                        sshTunnelFactory = SshTunnelFactory { _, _ ->
+                            object : SshTunnel {
+                                override val localPort = port
+
+                                override fun close() {
+                                    tunnelClosed.set(true)
+                                }
+                            }
+                        },
+                    )
+                )
+            }
+
+            assertTrue(exception.message?.contains("Duplicate model id") == true)
+            assertTrue(tunnelClosed.get())
+        } finally {
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun connectKeepsOriginalFailureWhenSshTunnelCloseFails() = runBlocking {
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            duplicateInfoModule(
+                modelIds = listOf(
+                    RemoteStoreModelId(1u, SimpleMarykModel.Meta.name),
+                    RemoteStoreModelId(1u, SimpleMarykModel.Meta.name),
+                ),
+            )
+        }.start(wait = false)
+        val tunnelClosed = AtomicBoolean(false)
+
+        try {
+            val exception = assertFailsWith<IllegalStateException> {
+                RemoteDataStore.connect(
+                    RemoteStoreConfig(
+                        baseUrl = "http://remote.example:1234",
+                        ssh = RemoteSshConfig(host = "ssh.example"),
+                        sshTunnelFactory = SshTunnelFactory { _, _ ->
+                            object : SshTunnel {
+                                override val localPort = port
+
+                                override fun close() {
+                                    tunnelClosed.set(true)
+                                    throw IllegalStateException("close failed")
+                                }
+                            }
+                        },
+                    )
+                )
+            }
+
+            assertTrue(exception.message?.contains("Duplicate model id") == true)
+            assertTrue(tunnelClosed.get())
+        } finally {
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
     fun connectRejectsDuplicateModelNames() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -485,6 +565,33 @@ class RemoteDataStoreTest {
         } finally {
             remote.close()
             server.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun executeRejectsInvalidResponseContentLength() = runBlocking {
+        val server = RawRemoteServer(
+            infoBody = defaultInfoBytes(),
+            secondResponseHeaders = listOf(
+                "Content-Type: ${RemoteStoreProtocol.contentType}",
+                "Content-Length: invalid",
+            ),
+            secondResponseBody = RemoteStoreCodec.lengthPrefix(1) + byteArrayOf(0x01),
+        )
+
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:${server.port}"))
+
+        try {
+            val values = SimpleMarykModel.create {
+                value with "hello"
+            }
+            val exception = assertFailsWith<IllegalStateException> {
+                remote.execute(SimpleMarykModel.add(values))
+            }
+            assertTrue(exception.message?.contains("invalid Content-Length") == true)
+        } finally {
+            remote.close()
+            server.close()
         }
     }
 
@@ -1023,6 +1130,56 @@ private fun Application.mismatchedFlowDataModelModule() {
                 flush()
             }
         }
+    }
+}
+
+private class RawRemoteServer(
+    infoBody: ByteArray,
+    secondResponseHeaders: List<String>,
+    secondResponseBody: ByteArray,
+) : AutoCloseable {
+    private val serverSocket = ServerSocket(0)
+    val port: Int = serverSocket.localPort
+    private val thread = Thread {
+        runCatching {
+            acceptAndRespond(
+                headers = listOf(
+                    "Content-Type: ${RemoteStoreProtocol.contentType}",
+                    "Content-Length: ${infoBody.size}",
+                ),
+                body = infoBody,
+            )
+            acceptAndRespond(
+                headers = secondResponseHeaders,
+                body = secondResponseBody,
+            )
+        }
+    }.apply {
+        isDaemon = true
+        start()
+    }
+
+    private fun acceptAndRespond(headers: List<String>, body: ByteArray) {
+        serverSocket.accept().use { socket ->
+            val reader = socket.getInputStream().bufferedReader()
+            while (reader.readLine()?.isNotEmpty() == true) {
+                // Drain request headers.
+            }
+            val response = buildString {
+                append("HTTP/1.1 200 OK\r\n")
+                headers.forEach { append("$it\r\n") }
+                append("Connection: close\r\n")
+                append("\r\n")
+            }.encodeToByteArray()
+            socket.getOutputStream().write(response)
+            socket.getOutputStream().write(body)
+            socket.getOutputStream().flush()
+        }
+    }
+
+    override fun close() {
+        serverSocket.close()
+        thread.join(1_000)
     }
 }
 

@@ -52,8 +52,7 @@ private object PosixSshTunnelFactory : SshTunnelFactory {
         try {
             waitForLocalPort(pid, localPort)
         } catch (error: Throwable) {
-            kill(pid, SIGTERM)
-            waitForExit(pid, 20, 50_000u)
+            terminateProcess(pid)
             throw error
         }
         return PosixSshTunnel(pid, localPort)
@@ -198,12 +197,17 @@ private class PosixSshTunnel(
     override val localPort: Int,
 ) : SshTunnel {
     override fun close() {
-        if (pid <= 0) return
-        kill(pid, SIGTERM)
-        if (!waitForExit(pid, 20, 50_000u)) {
-            kill(pid, SIGKILL)
-            waitForExit(pid, 5, 50_000u)
-        }
+        terminateProcess(pid)
+    }
+}
+
+private fun terminateProcess(pid: Int) {
+    if (pid <= 0) return
+    if (waitForExit(pid, 1, 0u)) return
+    kill(pid, SIGTERM)
+    if (!waitForExit(pid, 20, 50_000u)) {
+        kill(pid, SIGKILL)
+        waitForExit(pid, 5, 50_000u)
     }
 }
 

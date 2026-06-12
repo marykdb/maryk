@@ -3,18 +3,32 @@ package maryk.datastore.remote
 import maryk.core.models.serializers.IsObjectDataModelSerializer
 import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WriteCache
+import maryk.datastore.shared.rethrowIfFatal
 
 internal object RemoteStoreCodec {
     fun <DO : Any, CX : IsPropertyContext> encode(
         serializer: IsObjectDataModelSerializer<DO, *, CX, CX>,
         value: DO,
         context: CX?,
+        maxBytes: Int? = null,
     ): ByteArray {
         val cache = WriteCache()
         val length = serializer.calculateObjectProtoBufLength(value, cache, context)
+        if (length < 0) {
+            throw IllegalStateException("Proto payload length is negative: $length")
+        }
+        if (maxBytes != null && length > maxBytes) {
+            throw IllegalStateException("Proto payload exceeds max size: $length > $maxBytes")
+        }
         val bytes = ByteArray(length)
         var index = 0
-        serializer.writeObjectProtoBuf(value, cache, { byte -> bytes[index++] = byte }, context)
+        serializer.writeObjectProtoBuf(value, cache, { byte ->
+            if (index >= bytes.size) {
+                throw IllegalStateException("Proto length mismatch: attempted to write past ${bytes.size} bytes.")
+            }
+            bytes[index++] = byte
+        }, context)
+        check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
         return bytes
     }
 
@@ -24,11 +38,21 @@ internal object RemoteStoreCodec {
         context: CX?,
     ): DO {
         var index = 0
-        val values = serializer.readProtoBuf(bytes.size, { bytes[index++] }, context)
+        val values = try {
+            serializer.readProtoBuf(bytes.size, { bytes[index++] }, context)
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            throw IllegalStateException("Invalid proto payload or trailing bytes", error)
+        }
         if (index != bytes.size) {
             throw IllegalStateException("Proto payload has trailing bytes: consumed=$index total=${bytes.size}")
         }
-        return values.toDataObject()
+        return try {
+            values.toDataObject()
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            throw IllegalStateException("Invalid proto payload or trailing bytes", error)
+        }
     }
 
     fun lengthPrefix(length: Int): ByteArray {

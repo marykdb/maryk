@@ -5,6 +5,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.TimeUnit
+import maryk.datastore.shared.rethrowIfFatal
 
 actual fun defaultSshTunnelFactory(): SshTunnelFactory? = ProcessSshTunnelFactory
 
@@ -23,7 +24,7 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
         try {
             waitForLocalPort(process, localPort)
         } catch (error: Throwable) {
-            process.destroy()
+            destroyProcess(process)
             throw error
         }
 
@@ -36,6 +37,8 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
         ServerSocket().use { socket ->
             socket.bind(InetSocketAddress("127.0.0.1", port))
         }
+    }.onFailure {
+        it.rethrowIfFatal()
     }.isSuccess
 
     private fun buildCommand(config: RemoteSshConfig, target: SshTarget, localPort: Int): List<String> {
@@ -69,7 +72,12 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
 
     private fun drainOutput(stream: InputStream) {
         Thread {
-            runCatching { stream.readBytes() }
+            runCatching {
+                val buffer = ByteArray(4096)
+                while (stream.read(buffer) >= 0) {
+                    // Discard ssh output while keeping pipe drained.
+                }
+            }.onFailure { it.rethrowIfFatal() }
         }.apply {
             isDaemon = true
             start()
@@ -82,7 +90,11 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
             if (!process.isAlive) {
                 throw IllegalStateException("SSH tunnel process exited with code ${process.exitValue()}")
             }
-            if (runCatching { Socket("127.0.0.1", localPort).use {} }.isSuccess) {
+            if (runCatching {
+                Socket("127.0.0.1", localPort).use {}
+            }.onFailure {
+                it.rethrowIfFatal()
+            }.isSuccess) {
                 waitForStableProcess(process, localPort)
                 return
             }
@@ -106,14 +118,23 @@ private class ProcessSshTunnel(
     override val localPort: Int,
 ) : SshTunnel {
     override fun close() {
-        process.destroy()
+        destroyProcess(process)
+    }
+}
+
+private fun destroyProcess(process: Process) {
+    process.destroy()
+    try {
+        process.waitFor(3, TimeUnit.SECONDS)
+    } catch (_: InterruptedException) {
+        Thread.currentThread().interrupt()
+    }
+    if (process.isAlive) {
+        process.destroyForcibly()
         try {
             process.waitFor(3, TimeUnit.SECONDS)
         } catch (_: InterruptedException) {
             Thread.currentThread().interrupt()
-        }
-        if (process.isAlive) {
-            process.destroyForcibly()
         }
     }
 }

@@ -34,6 +34,7 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.values.ObjectValues
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 
 class RemoteStoreServer(
     private val dataStore: IsDataStore,
@@ -69,6 +70,7 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
                     RemoteStoreInfo.Serializer,
                     info,
                     DefinitionsConversionContext(),
+                    MAX_FRAME_SIZE_BYTES,
                 )
                 call.respondBytes(bytes, ContentType.parse(RemoteStoreProtocol.contentType))
             }
@@ -107,6 +109,7 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
                         request.responseModel.Serializer as IsObjectDataModelSerializer<Any, *, RequestContext, RequestContext>,
                         response as Any,
                         responseContext,
+                        MAX_FRAME_SIZE_BYTES,
                     )
                     if (responseBytes.isEmpty()) {
                         throw IllegalStateException("Remote execute response cannot be empty")
@@ -117,9 +120,16 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
                         )
                     }
                     val lengthPrefix = RemoteStoreCodec.lengthPrefix(responseBytes.size)
+                    val chunkSize = lengthPrefix.size + responseBytes.size
+                    if (totalSize > MAX_RESPONSE_BODY_BYTES - chunkSize) {
+                        throw RequestValidationException(
+                            HttpStatusCode.PayloadTooLarge,
+                            "Remote execute response exceeds max size: ${totalSize + chunkSize} > $MAX_RESPONSE_BODY_BYTES"
+                        )
+                    }
                     responseChunks.add(lengthPrefix)
                     responseChunks.add(responseBytes)
-                    totalSize += lengthPrefix.size + responseBytes.size
+                    totalSize += chunkSize
                 }
                 val responseBytes = ByteArray(totalSize)
                 var offset = 0
@@ -153,12 +163,7 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
                     updates.collect { update ->
                         val response = UpdatesResponse(fetchRequest.dataModel, listOf(update))
                         val responseContext = RequestContext(requestContext.definitionsContext, dataModel = fetchRequest.dataModel)
-                        val responseBytes = RemoteStoreCodec.encode(UpdatesResponse.Serializer, response, responseContext)
-                        if (responseBytes.size > MAX_FRAME_SIZE_BYTES) {
-                            throw IllegalStateException(
-                                "Remote flow response frame exceeds max size: ${responseBytes.size} > $MAX_FRAME_SIZE_BYTES"
-                            )
-                        }
+                        val responseBytes = RemoteStoreCodec.encode(UpdatesResponse.Serializer, response, responseContext, MAX_FRAME_SIZE_BYTES)
                         writeFully(RemoteStoreCodec.lengthPrefix(responseBytes.size))
                         writeFully(responseBytes)
                         flush()
@@ -179,9 +184,14 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
                 val response = dataStore.processUpdate(updateRequest)
                 val responseContext = RequestContext(requestContext.definitionsContext, dataModel = updateRequest.dataModel)
                 val remoteResponse = RemoteProcessResponse(response.version, response.result)
-                val responseBytes = RemoteStoreCodec.encode(RemoteProcessResponse.Serializer, remoteResponse, responseContext)
+                val responseBytes = RemoteStoreCodec.encode(RemoteProcessResponse.Serializer, remoteResponse, responseContext, MAX_FRAME_SIZE_BYTES)
                 if (responseBytes.isEmpty()) {
                     throw IllegalStateException("Remote process-update response cannot be empty")
+                }
+                if (responseBytes.size > MAX_FRAME_SIZE_BYTES) {
+                    throw IllegalStateException(
+                        "Remote process-update response exceeds max size: ${responseBytes.size} > $MAX_FRAME_SIZE_BYTES"
+                    )
                 }
                 call.respondBytes(responseBytes, ContentType.parse(RemoteStoreProtocol.contentType))
             }
@@ -191,13 +201,15 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
 
 private fun resolveRequest(rawRequest: Any, operation: String): IsTransportableRequest<*> = when (rawRequest) {
     is IsTransportableRequest<*> -> rawRequest
-    is ObjectValues<*, *> -> runCatching { rawRequest.toDataObject() as IsTransportableRequest<*> }
-        .getOrElse {
-            throw RequestValidationException(
-                HttpStatusCode.BadRequest,
-                "Remote $operation request contains invalid transportable payload"
-            )
-        }
+    is ObjectValues<*, *> -> try {
+        rawRequest.toDataObject() as IsTransportableRequest<*>
+    } catch (error: Throwable) {
+        error.rethrowIfFatal()
+        throw RequestValidationException(
+            HttpStatusCode.BadRequest,
+            "Remote $operation request contains invalid transportable payload"
+        )
+    }
     else -> throw RequestValidationException(
         HttpStatusCode.BadRequest,
         "Remote $operation request contains unsupported payload type `${rawRequest::class.simpleName}`"
@@ -280,7 +292,10 @@ private fun requireRequestContentType(call: ApplicationCall, expected: String) {
 }
 
 private inline fun <T> decodeRequest(operation: String, decode: () -> T): T {
-    return runCatching(decode).getOrElse {
+    return try {
+        decode()
+    } catch (error: Throwable) {
+        error.rethrowIfFatal()
         throw RequestValidationException(HttpStatusCode.BadRequest, "Remote $operation payload is invalid")
     }
 }
@@ -292,6 +307,7 @@ private class RequestValidationException(
 
 private const val MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024
 private const val MAX_FRAME_SIZE_BYTES = 16 * 1024 * 1024
+private const val MAX_RESPONSE_BODY_BYTES = MAX_FRAME_SIZE_BYTES + 4
 
 private suspend inline fun ApplicationCall.respondValidationErrors(
     crossinline block: suspend () -> Unit,

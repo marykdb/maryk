@@ -9,6 +9,9 @@ private const val MAX_CODE_POINT = 0x10FFFF
 
 fun fromCodePoint(value: Int): String {
     require(value in 0..MAX_CODE_POINT) { "Invalid Unicode code point: $value" }
+    require(value !in Char.MIN_SURROGATE.code..Char.MAX_SURROGATE.code) {
+        "Invalid Unicode surrogate code point: $value"
+    }
 
     return if (value < MIN_SUPPLEMENTARY_CODE_POINT) {
         charArrayOf(value.toChar()).concatToString()
@@ -20,17 +23,31 @@ fun fromCodePoint(value: Int): String {
     }
 }
 
-fun initString(length: Int, reader: () -> Byte): String =
-    if (length > recyclableByteArray.size) {
-        ByteArray(length) {
-            reader()
-        }.decodeToString()
+fun initString(length: Int, reader: () -> Byte): String {
+    require(length >= 0) { "String byte length cannot be negative: $length" }
+
+    return if (length > recyclableByteArray.size) {
+        initLargeString(length, reader)
     } else {
         for (index in 0 until length) {
             recyclableByteArray[index] = reader()
         }
         recyclableByteArray.decodeToString(0, length)
     }
+}
+
+private fun initLargeString(length: Int, reader: () -> Byte): String {
+    var bytes = ByteArray(recyclableByteArray.size)
+    var index = 0
+    while (index < length) {
+        if (index == bytes.size) {
+            val remaining = length - bytes.size
+            bytes = bytes.copyOf(bytes.size + minOf(bytes.size, remaining))
+        }
+        bytes[index++] = reader()
+    }
+    return bytes.decodeToString(0, length)
+}
 
 /**
  * Calculates the length of a String in UTF8 bytes in an optimized way

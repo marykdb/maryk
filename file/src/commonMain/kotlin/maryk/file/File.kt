@@ -6,6 +6,7 @@ package maryk.file
  * Only implemented on platforms that support local file system access (JVM, Android, Native).
  */
 expect object File {
+    fun size(path: String): Long?
     fun readText(path: String): String?
     fun readBytes(path: String): ByteArray?
     fun writeText(path: String, contents: String)

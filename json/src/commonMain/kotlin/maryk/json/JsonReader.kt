@@ -25,6 +25,10 @@ import maryk.lib.extensions.isLowerHexChar
 
 private val skipArray = setOf(ObjectSeparator, ArraySeparator, StartDocument)
 
+private enum class ReadMode {
+    STRING,
+}
+
 private interface JsonCharReader {
     fun read(): Char
 }
@@ -69,9 +73,16 @@ class JsonReader private constructor(
     private var storedValue: String? = ""
     private val typeStack: MutableList<JsonComplexType> = mutableListOf()
     private var lastChar: Char = ' '
+    private var resumedFromSuspension = false
+    private var suspendedReadMode: ReadMode? = null
+    private var suspendedStringSkipChar: SkipCharType = SkipCharType.None
 
     override fun nextToken(): JsonToken {
-        storedValue = ""
+        if (resumedFromSuspension) {
+            resumedFromSuspension = false
+        } else {
+            storedValue = ""
+        }
         try {
             when (currentToken) {
                 StartDocument -> {
@@ -129,7 +140,21 @@ class JsonReader private constructor(
                         currentToken = it.lastToken
                         storedValue = it.storedValue
                     }
+                    resumedFromSuspension = true
                     readSkipWhitespace()
+                    if (suspendedReadMode == ReadMode.STRING) {
+                        suspendedReadMode = null
+                        when (currentToken) {
+                            StartDocument, is FieldName, is StartArray, ArraySeparator -> {
+                                readStringValue(this::constructJsonValueToken, skipInitialRead = true)
+                            }
+                            is StartObject, ObjectSeparator -> {
+                                readFieldName(skipInitialRead = true)
+                            }
+                            else -> throwJsonException()
+                        }
+                        return if (currentToken in skipArray) nextToken() else currentToken
+                    }
                     return nextToken()
                 }
                 is Stopped -> {
@@ -313,7 +338,9 @@ class JsonReader private constructor(
 
         currentToken = try {
             if (isExponent || isFraction) {
-                currentTokenCreator(storedValue!!.toDouble())
+                val double = storedValue!!.toDouble()
+                if (!double.isFinite()) throwJsonException()
+                currentTokenCreator(double)
             } else {
                 currentTokenCreator(storedValue!!.toLong())
             }
@@ -362,8 +389,8 @@ class JsonReader private constructor(
         readSkipWhitespace()
     }
 
-    private fun readFieldName() {
-        readStringValue { FieldName(this.storedValue) }
+    private fun readFieldName(skipInitialRead: Boolean = false) {
+        readStringValue({ FieldName(this.storedValue) }, skipInitialRead)
         if (lastChar != ':') {
             throwJsonException()
         }
@@ -391,56 +418,74 @@ class JsonReader private constructor(
         }
     }
 
-    private fun readStringValue(currentTokenCreator: (value: String?) -> JsonToken) {
-        read()
-        var skipChar: SkipCharType = SkipCharType.None
-        loop@ while (lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
-            if (lastChar.isLineBreak()) {
-                throwJsonException()
-            }
-            if (skipChar == SkipCharType.None && lastChar < ' ') {
-                throwJsonException()
-            }
-
-            fun addCharAndResetSkipChar(value: String): SkipCharType {
-                storedValue += value
-                return SkipCharType.None
-            }
-
-            skipChar = when (skipChar) {
-                SkipCharType.None -> when (lastChar) {
-                    '\\' -> SkipCharType.StartNewEscaped
-                    else -> addCharAndResetSkipChar("$lastChar")
+    private fun readStringValue(
+        currentTokenCreator: (value: String?) -> JsonToken,
+        skipInitialRead: Boolean = false,
+    ) {
+        suspendedReadMode = ReadMode.STRING
+        var skipChar = if (skipInitialRead) suspendedStringSkipChar else SkipCharType.None
+        val valueBuilder = StringBuilder(storedValue.orEmpty())
+        try {
+            if (!skipInitialRead) read()
+            loop@ while (lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
+                if (lastChar.isLineBreak()) {
+                    throwJsonException()
                 }
-                SkipCharType.StartNewEscaped -> when (lastChar) {
-                    'b' -> addCharAndResetSkipChar("\b")
-                    '"' -> addCharAndResetSkipChar("\"")
-                    '\\' -> addCharAndResetSkipChar("\\")
-                    '/' -> addCharAndResetSkipChar("/")
-                    'f' -> addCharAndResetSkipChar("\u000C")
-                    'n' -> addCharAndResetSkipChar("\n")
-                    'r' -> addCharAndResetSkipChar("\r")
-                    't' -> addCharAndResetSkipChar("\t")
-                    'u' -> SkipCharType.UtfChar('u', 4)
-                    else -> addCharAndResetSkipChar("\\$lastChar")
+                if (skipChar == SkipCharType.None && lastChar < ' ') {
+                    throwJsonException()
                 }
-                is SkipCharType.UtfChar -> if (lastChar.lowercaseChar().isLowerHexChar()) {
-                    if (skipChar.addCharAndHasReachedEnd(lastChar)) {
-                        addCharAndResetSkipChar(skipChar.toCharString())
-                    } else {
-                        skipChar
+
+                fun addCharAndResetSkipChar(value: String): SkipCharType {
+                    valueBuilder.append(value)
+                    return SkipCharType.None
+                }
+
+                skipChar = when (skipChar) {
+                    SkipCharType.None -> when (lastChar) {
+                        '\\' -> SkipCharType.StartNewEscaped
+                        else -> addCharAndResetSkipChar("$lastChar")
                     }
-                } else {
-                    addCharAndResetSkipChar("\\${skipChar.charType}${skipChar.toOriginalChars()}$lastChar")
+                    SkipCharType.StartNewEscaped -> when (lastChar) {
+                        'b' -> addCharAndResetSkipChar("\b")
+                        '"' -> addCharAndResetSkipChar("\"")
+                        '\\' -> addCharAndResetSkipChar("\\")
+                        '/' -> addCharAndResetSkipChar("/")
+                        'f' -> addCharAndResetSkipChar("\u000C")
+                        'n' -> addCharAndResetSkipChar("\n")
+                        'r' -> addCharAndResetSkipChar("\r")
+                        't' -> addCharAndResetSkipChar("\t")
+                        'u' -> SkipCharType.UtfChar('u', 4)
+                        else -> throwJsonException()
+                    }
+                    is SkipCharType.UtfChar -> if (lastChar.lowercaseChar().isLowerHexChar()) {
+                        if (skipChar.addCharAndHasReachedEnd(lastChar)) {
+                            addCharAndResetSkipChar(skipChar.toCharString())
+                        } else {
+                            skipChar
+                        }
+                    } else {
+                        throwJsonException()
+                    }
                 }
+                read()
             }
-            read()
+        } catch (error: ExceptionWhileReadingJson) {
+            storedValue = valueBuilder.toString()
+            suspendedStringSkipChar = skipChar
+            throw error
+        }
+        storedValue = valueBuilder.toString()
+        if (storedValue!!.hasUnpairedSurrogates()) {
+            throwJsonException()
         }
         currentToken = currentTokenCreator(storedValue)
+        storedValue = ""
+        suspendedStringSkipChar = SkipCharType.None
 
         if (typeStack.isNotEmpty()) {
             readSkipWhitespace()
         }
+        suspendedReadMode = null
     }
 
     private fun startObject() {
@@ -472,4 +517,22 @@ class JsonReader private constructor(
     private fun throwJsonException(): Nothing {
         throw InvalidJsonContent("Invalid character '$lastChar' after $currentToken")
     }
+}
+
+private fun String.hasUnpairedSurrogates(): Boolean {
+    var index = 0
+    while (index < length) {
+        val char = this[index]
+        when {
+            char.isHighSurrogate() -> {
+                if (index + 1 >= length || !this[index + 1].isLowSurrogate()) {
+                    return true
+                }
+                index++
+            }
+            char.isLowSurrogate() -> return true
+        }
+        index++
+    }
+    return false
 }

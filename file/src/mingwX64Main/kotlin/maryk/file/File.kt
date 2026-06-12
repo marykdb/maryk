@@ -14,10 +14,12 @@ import platform.windows.CreateFileW
 import platform.windows.DWORDVar
 import platform.windows.DeleteFileW
 import platform.windows.ERROR_ALREADY_EXISTS
+import platform.windows.FILE_ATTRIBUTE_DIRECTORY
 import platform.windows.FILE_ATTRIBUTE_NORMAL
 import platform.windows.FILE_END
 import platform.windows.GENERIC_READ
 import platform.windows.GENERIC_WRITE
+import platform.windows.GetFileAttributesW
 import platform.windows.GetLastError
 import platform.windows.GetFileSizeEx
 import platform.windows.HANDLE
@@ -30,6 +32,8 @@ import platform.windows.SetFilePointer
 import platform.windows.WriteFile
 
 private const val maxFileSize = Int.MAX_VALUE.toLong()
+private const val invalidFileAttributes = UInt.MAX_VALUE
+private const val invalidSetFilePointer = UInt.MAX_VALUE
 
 private fun createParentDirectories(path: String): Boolean {
     val separatorIndex = path.lastIndexOfAny(charArrayOf('\\', '/'))
@@ -71,6 +75,11 @@ private fun createParentDirectories(path: String): Boolean {
     return true
 }
 
+private fun isRegularFile(path: String): Boolean {
+    val attributes = GetFileAttributesW(path)
+    return attributes != invalidFileAttributes && (attributes and FILE_ATTRIBUTE_DIRECTORY.toUInt()) == 0u
+}
+
 @OptIn(ExperimentalForeignApi::class)
 private fun fileSize(handle: HANDLE?): Long? {
     return memScoped {
@@ -81,12 +90,33 @@ private fun fileSize(handle: HANDLE?): Long? {
 
 actual object File {
     @OptIn(ExperimentalForeignApi::class)
+    actual fun size(path: String): Long? {
+        if (!isRegularFile(path)) return null
+        val handle: HANDLE? = CreateFileW(
+            path,
+            GENERIC_READ,
+            0u,
+            null,
+            OPEN_EXISTING.toUInt(),
+            FILE_ATTRIBUTE_NORMAL.toUInt(),
+            null
+        )
+        if (handle == null || handle == INVALID_HANDLE_VALUE) return null
+        try {
+            return fileSize(handle)
+        } finally {
+            CloseHandle(handle)
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun readText(path: String): String? {
         return readBytes(path)?.decodeToString()
     }
 
     @OptIn(ExperimentalForeignApi::class)
     actual fun readBytes(path: String): ByteArray? {
+        if (!isRegularFile(path)) return null
         val handle: HANDLE? = CreateFileW(
             path,
             GENERIC_READ,
@@ -186,8 +216,9 @@ actual object File {
             throw IllegalStateException("Could not open file for appending: $path (${GetLastError()})")
         }
         try {
-            // Move to end
-            SetFilePointer(handle, 0, null, FILE_END.toUInt())
+            if (SetFilePointer(handle, 0, null, FILE_END.toUInt()) == invalidSetFilePointer) {
+                throw IllegalStateException("Could not seek to end of file for appending: $path (${GetLastError()})")
+            }
             val bytes = contents.encodeToByteArray()
             writeAll(handle, bytes)
         } finally {

@@ -10,6 +10,7 @@ import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.usePinned
+import platform.posix.EINTR
 import platform.posix.F_OK
 import platform.posix.O_APPEND
 import platform.posix.O_CREAT
@@ -18,6 +19,7 @@ import platform.posix.O_TRUNC
 import platform.posix.O_WRONLY
 import platform.posix.access
 import platform.posix.close
+import platform.posix.errno
 import platform.posix.mkdir
 import platform.posix.open
 import platform.posix.read
@@ -26,6 +28,8 @@ import platform.posix.write
 
 private fun fileExists(path: String): Boolean = access(path, F_OK) == 0
 private const val maxFileSize = Int.MAX_VALUE.toLong()
+private const val posixFileTypeMask = 0xF000
+private const val posixRegularFile = 0x8000
 
 private fun createParentDirectories(path: String): Boolean {
     val parentPath = path.substringBeforeLast('/', "")
@@ -54,15 +58,18 @@ private fun createParentDirectories(path: String): Boolean {
 }
 
 @OptIn(ExperimentalForeignApi::class)
-private fun fileSize(path: String): Long {
+private fun fileSize(path: String): Long? {
     return memScoped {
         val st = alloc<stat>()
         val res = stat(path, st.ptr)
-        if (res == 0) st.st_size else 0L
+        if (res == 0 && (st.st_mode.toInt() and posixFileTypeMask) == posixRegularFile) st.st_size else null
     }
 }
 
 actual object File {
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun size(path: String): Long? = fileSize(path)
+
     @OptIn(ExperimentalForeignApi::class)
     actual fun readText(path: String): String? {
         return readBytes(path)?.decodeToString()
@@ -71,7 +78,7 @@ actual object File {
     @OptIn(ExperimentalForeignApi::class)
     actual fun readBytes(path: String): ByteArray? {
         if (!fileExists(path)) return null
-        val size = fileSize(path)
+        val size = fileSize(path) ?: return null
         if (size <= 0) return ByteArray(0)
         if (size > maxFileSize) return null
         val fd = open(path, O_RDONLY, 0)
@@ -82,6 +89,7 @@ actual object File {
                 var offset = 0
                 while (offset < buffer.size) {
                     val readBytes = read(fd, pinned.addressOf(offset), (buffer.size - offset).convert())
+                    if (readBytes < 0 && errno == EINTR) continue
                     if (readBytes < 0) return null
                     if (readBytes.toLong() == 0L) break
                     offset += readBytes.toInt()
@@ -141,6 +149,7 @@ private fun writeAll(fd: Int, bytes: ByteArray) {
         var offset = 0
         while (offset < bytes.size) {
             val written = write(fd, pinned.addressOf(offset), (bytes.size - offset).convert())
+            if (written < 0 && errno == EINTR) continue
             if (written <= 0) {
                 throw IllegalStateException("Could not write file contents")
             }

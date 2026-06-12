@@ -195,7 +195,7 @@ fun ByteArray.prevByteInSameLength(maxLengthToRead: Int? = null): ByteArray {
 
 private fun validateRange(offset: Int, length: Int, arraySize: Int) {
     if (offset < 0 || length < 0 || offset > arraySize || length > arraySize - offset) {
-        throw IndexOutOfBoundsException("Range [$offset, ${offset + length}) out of bounds for size $arraySize")
+        throw IndexOutOfBoundsException("Range [$offset, ${offset.toLong() + length}) out of bounds for size $arraySize")
     }
 }
 

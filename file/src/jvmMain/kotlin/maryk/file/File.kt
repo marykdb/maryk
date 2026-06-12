@@ -2,15 +2,23 @@ package maryk.file
 
 import java.io.File
 
+private const val maxFileSize = Int.MAX_VALUE.toLong()
+
 actual object File {
-    actual fun readText(path: String): String? {
+    actual fun size(path: String): Long? {
         val file = File(path)
-        return if (file.exists()) file.readText() else null
+        return if (file.isFile) file.length() else null
+    }
+
+    actual fun readText(path: String): String? {
+        return readBytes(path)?.decodeToString()
     }
 
     actual fun readBytes(path: String): ByteArray? {
         val file = File(path)
-        return if (file.exists()) file.readBytes() else null
+        if (!file.isFile) return null
+        if ((size(path) ?: return null) > maxFileSize) return null
+        return file.readBytes()
     }
 
     actual fun writeText(path: String, contents: String) {

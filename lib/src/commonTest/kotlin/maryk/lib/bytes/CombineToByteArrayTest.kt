@@ -45,4 +45,18 @@ class CombineToByteArrayTest {
             combineToByteArray(byteArrayOf(1, 2), "unsupported")
         }
     }
+
+    @Test
+    fun checkedByteArraySizeRejectsOverflow() {
+        assertFailsWith<IllegalArgumentException> {
+            Int.MAX_VALUE.checkedByteArraySizePlus(1)
+        }
+    }
+
+    @Test
+    fun checkedByteArraySizeRejectsNegativeAddend() {
+        assertFailsWith<IllegalArgumentException> {
+            0.checkedByteArraySizePlus(-1)
+        }
+    }
 }

@@ -26,6 +26,15 @@ class ByteArrayKtTest {
     }
 
     @Test
+    fun rangeErrorMessageDoesNotOverflow() {
+        val exception = assertFailsWith<IndexOutOfBoundsException> {
+            byteArrayOf(1).compareToRange(byteArrayOf(1), 1, Int.MAX_VALUE)
+        }
+
+        assertTrue { exception.message?.contains("2147483648") == true }
+    }
+
+    @Test
     fun compareDefinedRange() {
         expect(0) { byteArrayOf(1, 2, 3).compareDefinedRange(byteArrayOf(1, 2, 3, 4), 0, 3) }
         assertTrue { byteArrayOf(1, 2, 3, 4).compareDefinedRange(byteArrayOf(1, 2, 3), 0, 3) > 0 }

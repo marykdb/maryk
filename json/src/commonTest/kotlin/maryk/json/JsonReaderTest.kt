@@ -204,6 +204,12 @@ internal class JsonReaderTest {
             """.trimIndent()
         )
         checkFaultyJSON("[\"tab\tchar\"]")
+        checkFaultyJSON("""["bad\xescape"]""")
+        checkFaultyJSON("""["bad\uwrong"]""")
+        checkFaultyJSON("""["bad\u0w00"]""")
+        checkFaultyJSON("""["bad\uD83D"]""")
+        checkFaultyJSON("""["bad\uDE0D"]""")
+        checkFaultyJSON("""["bad\uD83Dx"]""")
 
         // Invalid Numbers
         checkFaultyJSON("[007]")
@@ -213,6 +219,7 @@ internal class JsonReaderTest {
         checkFaultyJSON("[5.5E]")
         checkFaultyJSON("[5-3]")
         checkFaultyJSON("[34234.]")
+        checkFaultyJSON("[1e9999]")
     }
 
     @Test
@@ -232,6 +239,73 @@ internal class JsonReaderTest {
             input += "]"
 
             assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun testSuspendedStringValue() {
+        var input = """["hel"""
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            do {
+                nextToken()
+            } while (currentToken !is Stopped)
+
+            assertTrue { currentToken is Suspended }
+
+            input += """lo"]"""
+
+            assertValue("hello")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun testSuspendedStringUtfEscape() {
+        var input = """["\uD83"""
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            do {
+                nextToken()
+            } while (currentToken !is Stopped)
+
+            assertTrue { currentToken is Suspended }
+
+            input += """D\uDE0D"]"""
+
+            assertValue("😍")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun testSuspendedStringFieldName() {
+        var input = """{"hel"""
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            do {
+                nextToken()
+            } while (currentToken !is Stopped)
+
+            assertTrue { currentToken is Suspended }
+
+            input += """lo": 1}"""
+
+            assertFieldName("hello")
+            assertValue(1L, ValueType.Int)
+            assertEndObject()
             assertEndDocument()
         }
     }
@@ -264,9 +338,9 @@ internal class JsonReaderTest {
 
     @Test
     fun readDoubleQuoteWithSpecialChars() {
-        createJsonReader("""["te\"\b\f\n\t\\\/\r'\x"]""").apply {
+        createJsonReader("""["te\"\b\f\n\t\\\/\r'"]""").apply {
             assertStartArray()
-            assertValue("te\"\b\u000C\n\t\\/\r'\\x")
+            assertValue("te\"\b\u000C\n\t\\/\r'")
             assertEndArray()
             assertEndDocument()
         }
@@ -274,23 +348,15 @@ internal class JsonReaderTest {
 
     @Test
     fun readDoubleQuoteWithUtfChars() {
-        val invalidUtfEscapes = buildString {
+        val utfEscapes = buildString {
             append("\\")
             append("uD83D")
             append("\\")
             append("uDE0D")
-            append("\\")
-            append("uwrong")
-            append("\\")
-            append("u0w")
-            append("\\")
-            append("u00w")
-            append("\\")
-            append("u000w")
         }
-        createJsonReader("""["$invalidUtfEscapes"]""").apply {
+        createJsonReader("""["$utfEscapes"]""").apply {
             assertStartArray()
-            assertValue("😍\\uwrong\\u0w\\u00w\\u000w")
+            assertValue("😍")
             assertEndArray()
             assertEndDocument()
         }

@@ -19,10 +19,10 @@ internal fun IsYamlCharReader.doubleQuoteString(
     indentAtStart: Int,
     jsonTokenCreator: JsonTokenCreator
 ): JsonToken {
-    var foundValue: String? = ""
+    val foundValue = StringBuilder()
 
     fun addCharAndResetSkipChar(value: String): SkipCharType {
-        foundValue += value
+        foundValue.append(value)
         return None
     }
 
@@ -58,7 +58,7 @@ internal fun IsYamlCharReader.doubleQuoteString(
                     'u' -> UtfChar('u', 4)
                     'U' -> SkipCharType.Utf32Char()
                     '\n', '\r' -> None
-                    else -> addCharAndResetSkipChar("\\$lastChar")
+                    else -> throw InvalidYamlContent("Unknown escaped character \\$lastChar")
                 }
                 is UtfChar -> if (lastChar.lowercaseChar().isLowerHexChar()) {
                     if (skipChar.addCharAndHasReachedEnd(lastChar)) {
@@ -67,7 +67,7 @@ internal fun IsYamlCharReader.doubleQuoteString(
                         skipChar
                     }
                 } else {
-                    addCharAndResetSkipChar("\\${skipChar.charType}${skipChar.toOriginalChars()}$lastChar")
+                    throw InvalidYamlContent("Invalid escaped ${skipChar.charType} sequence")
                 }
             }
             read()
@@ -79,10 +79,33 @@ internal fun IsYamlCharReader.doubleQuoteString(
             this.yamlReader.hasException = true
         }
 
-        return jsonTokenCreator(foundValue, false, tag, indentAtStart)
+        val value = foundValue.toString()
+        if (value.hasUnpairedSurrogates()) {
+            throw InvalidYamlContent("Double quoted string contains invalid Unicode surrogate")
+        }
+
+        return jsonTokenCreator(value, false, tag, indentAtStart)
     } catch (_: ExceptionWhileReadingJson) {
         throw InvalidYamlContent("Double quoted string was never closed")
     }
+}
+
+private fun String.hasUnpairedSurrogates(): Boolean {
+    var index = 0
+    while (index < length) {
+        val char = this[index]
+        when {
+            char.isHighSurrogate() -> {
+                if (index + 1 >= length || !this[index + 1].isLowSurrogate()) {
+                    return true
+                }
+                index++
+            }
+            char.isLowSurrogate() -> return true
+        }
+        index++
+    }
+    return false
 }
 
 
@@ -113,6 +136,10 @@ private sealed class SkipCharType {
     /** UTF 32 char skip found */
     class Utf32Char : UtfChar(charType = 'U', charCount = 8) {
         override fun toCharString() =
-            fromCodePoint(chars.joinToString(separator = "").toInt(16))
+            try {
+                fromCodePoint(chars.joinToString(separator = "").toInt(16))
+            } catch (error: IllegalArgumentException) {
+                throw InvalidYamlContent(error.message ?: "Invalid Unicode code point")
+            }
     }
 }

@@ -11,15 +11,19 @@ class FileTest {
         val path = "fileStoreTest-${Random.nextInt()}.txt"
 
         assertNull(File.readText(path))
+        assertNull(File.size(path))
 
         File.writeText(path, "hello")
         assertEquals("hello", File.readText(path))
+        assertEquals(5L, File.size(path))
 
         File.writeText(path, "bye")
         assertEquals("bye", File.readText(path))
+        assertEquals(3L, File.size(path))
 
         assertEquals(true, File.delete(path))
         assertNull(File.readText(path))
+        assertNull(File.size(path))
     }
 
     @Test
@@ -33,5 +37,12 @@ class FileTest {
         assertEquals("abc", File.readText(path))
 
         File.delete(path)
+    }
+
+    @Test
+    fun directoryIsNotReadableFile() {
+        assertNull(File.size("."))
+        assertNull(File.readText("."))
+        assertNull(File.readBytes("."))
     }
 }

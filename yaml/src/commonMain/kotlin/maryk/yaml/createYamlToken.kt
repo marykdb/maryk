@@ -157,29 +157,35 @@ private fun findInt(value: String): Value<Long>? {
         1
     }
     base2RegEx.find(value)?.let {
-        val result = it.groupValues[1].replace("_", "").toLong(2)
+        val result = it.groupValues[1].replace("_", "").toLongOrNull(2)
+            ?: throw InvalidYamlContent("Integer value is out of range: $value")
 
         return Value(
-            result * minus,
+            result.checkedMultiplySign(minus, value),
             ValueType.Int
         )
     }
     base8RegEx.find(value)?.let {
+        val result = value.replace("_", "").toLongOrNull(8)
+            ?: throw InvalidYamlContent("Integer value is out of range: $value")
         return Value(
-            value.replace("_", "").toLong(8),
+            result,
             ValueType.Int
         )
     }
     base10RegEx.find(value)?.let {
+        val result = value.replace("_", "").toLongOrNull(10)
+            ?: throw InvalidYamlContent("Integer value is out of range: $value")
         return Value(
-            value.replace("_", "").toLong(10),
+            result,
             ValueType.Int
         )
     }
     base16RegEx.find(value)?.let {
-        val result = it.groupValues[1].replace("_", "").toLong(16)
+        val result = it.groupValues[1].replace("_", "").toLongOrNull(16)
+            ?: throw InvalidYamlContent("Integer value is out of range: $value")
         return Value(
-            result * minus,
+            result.checkedMultiplySign(minus, value),
             ValueType.Int
         )
     }
@@ -188,17 +194,36 @@ private fun findInt(value: String): Value<Long>? {
         var result = 0L
         val power = segments.size - 1
         segments.forEachIndexed { index, segment ->
-            result += (segment.toInt() * 60.0.pow(power - index)).toLong()
+            val component = (segment.toInt() * 60.0.pow(power - index)).toLong()
+            result = result.checkedAdd(component, value)
         }
         return Value(result, ValueType.Int)
     }
     return null
 }
 
+private fun Long.checkedMultiplySign(sign: Int, source: String): Long {
+    if (sign == 1) return this
+    if (this == Long.MIN_VALUE) {
+        throw InvalidYamlContent("Integer value is out of range: $source")
+    }
+    return -this
+}
+
+private fun Long.checkedAdd(other: Long, source: String): Long =
+    when {
+        other > 0 && this > Long.MAX_VALUE - other -> throw InvalidYamlContent("Integer value is out of range: $source")
+        other < 0 && this < Long.MIN_VALUE - other -> throw InvalidYamlContent("Integer value is out of range: $source")
+        else -> this + other
+    }
+
 /** Tries to find float value in [value] and returns a Double if found */
 private fun findFloat(value: String): Value<Double>? {
     floatRegEx.find(value)?.let {
         return value.replace("_", "").toDoubleOrNull()?.let { double ->
+            if (!double.isFinite()) {
+                throw InvalidYamlContent("Float value is out of range: $value")
+            }
             Value(
                 double,
                 ValueType.Float

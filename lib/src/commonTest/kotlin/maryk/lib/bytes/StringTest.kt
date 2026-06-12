@@ -25,6 +25,28 @@ class StringTest {
     }
 
     @Test
+    fun testNegativeLengthFails() {
+        assertFailsWith<IllegalArgumentException> {
+            initString(-1) { 0 }
+        }
+    }
+
+    @Test
+    fun testLargeLengthReadsBeforeGrowingToDeclaredSize() {
+        var reads = 0
+        assertFailsWith<IllegalStateException> {
+            initString(Int.MAX_VALUE) {
+                reads++
+                if (reads > 1) {
+                    throw IllegalStateException("eof")
+                }
+                0x41
+            }
+        }
+        expect(2) { reads }
+    }
+
+    @Test
     fun testStringToBytes() {
         for ((hex, value) in stringsAndBytes) {
             val size = value.calculateUTF8ByteLength()
@@ -37,6 +59,28 @@ class StringTest {
             }
 
             expect(hex) { b.toHexString() }
+        }
+    }
+
+    @Test
+    fun testCodePointToString() {
+        expect("A") { fromCodePoint(0x41) }
+        expect("😃") { fromCodePoint(0x1F603) }
+    }
+
+    @Test
+    fun testCodePointRejectsInvalidScalars() {
+        assertFailsWith<IllegalArgumentException> {
+            fromCodePoint(-1)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            fromCodePoint(0xD800)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            fromCodePoint(0xDFFF)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            fromCodePoint(0x110000)
         }
     }
 

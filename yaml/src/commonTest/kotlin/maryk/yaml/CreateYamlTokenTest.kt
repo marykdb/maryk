@@ -26,4 +26,18 @@ class CreateYamlTokenTest {
             createYamlValueToken("1.5", ValueType.Int, true)
         }
     }
+
+    @Test
+    fun failOnOverflowingInt() {
+        assertFailsWith<InvalidYamlContent> {
+            createYamlValueToken("9223372036854775808", ValueType.Int, true)
+        }
+    }
+
+    @Test
+    fun failOnOverflowingFloat() {
+        assertFailsWith<InvalidYamlContent> {
+            createYamlValueToken("1e9999", ValueType.Float, true)
+        }
+    }
 }

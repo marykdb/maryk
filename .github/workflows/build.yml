@@ -23,7 +23,7 @@ jobs:
           - os: macos-latest
             gradle_task: "macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test iosSimulatorArm64Test jvmTest"
             job_name: macOS Apple Arm tests
-          - os: macos-15-intel
+          - os: macos-26-intel
             gradle_task: "macosX64Test"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest

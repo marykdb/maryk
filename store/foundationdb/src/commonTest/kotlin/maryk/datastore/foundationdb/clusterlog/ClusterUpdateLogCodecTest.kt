@@ -7,7 +7,9 @@ import maryk.core.query.pairs.with
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
 class ClusterUpdateLogCodecTest {
     private val modelId = 2u
@@ -71,5 +73,88 @@ class ClusterUpdateLogCodecTest {
 
         assertNotNull(decoded)
         assertEquals(update, decoded.update)
+    }
+
+    @Test
+    fun corruptPayloadLengthDoesNotOverflowBoundsCheck() {
+        val encoded = byteArrayOf(
+            0, 0, // origin length
+            0, 0, 0, modelId.toByte(),
+            ClusterLogUpdate.TYPE_DELETION,
+            0, 0, 0, 0, 0, 0, 0, 1, // version
+            0, 0, // key length
+            0x7f, -1, -1, -1 // payload length
+        )
+
+        assertNull(newLog().decodeValue(encoded))
+    }
+
+    @Test
+    fun trailingBytesAfterPayloadAreRejected() {
+        val update = ClusterLogDeletion(Bytes(ByteArray(16) { 1 }), HLC().timestamp, hardDelete = false)
+        val encoded = newLog().encodeValue(modelId, update, SimpleMarykModel)
+
+        assertNull(newLog().decodeValue(encoded + byteArrayOf(0)))
+    }
+
+    @Test
+    fun oversizedKeyDoesNotEncodeWithTruncatedLength() {
+        val update = ClusterLogDeletion(Bytes(ByteArray(0x1_0000)), HLC().timestamp, hardDelete = false)
+
+        assertFailsWith<IllegalArgumentException> {
+            newLog().encodeValue(modelId, update, SimpleMarykModel)
+        }
+    }
+
+    @Test
+    fun clusterLogByteLengthRejectsOverflow() {
+        assertFailsWith<IllegalArgumentException> {
+            Int.MAX_VALUE.checkedClusterLogByteLengthPlus(1)
+        }
+    }
+
+    @Test
+    fun versionstampOffsetRejectsNegativeTrailer() {
+        assertFailsWith<IllegalArgumentException> {
+            packWithAdjustedVersionstampOffset(
+                prefix = byteArrayOf(1),
+                packedWithVersionstamp = byteArrayOf(0, 0, 0, 0, -1, -1, -1, -1)
+            )
+        }
+    }
+
+    @Test
+    fun invalidClusterLogConfigurationFailsEarly() {
+        assertFailsWith<IllegalArgumentException> {
+            ClusterUpdateLog(
+                logPrefix = byteArrayOf(1, 2, 3),
+                consumerPrefix = byteArrayOf(4, 5, 6),
+                headPrefix = byteArrayOf(7, 8, 9),
+                headGroupCount = 2,
+                hlcPrefix = byteArrayOf(10, 11, 12),
+                hlcMaxPrefix = byteArrayOf(13, 14, 15),
+                shardCount = 0,
+                originId = "node-a",
+                dataModelsById = models,
+                consumerId = "consumer-a",
+                retention = ClusterUpdateLog.retentionDefault(),
+            )
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            ClusterUpdateLog(
+                logPrefix = byteArrayOf(1, 2, 3),
+                consumerPrefix = byteArrayOf(4, 5, 6),
+                headPrefix = byteArrayOf(7, 8, 9),
+                headGroupCount = 2,
+                hlcPrefix = byteArrayOf(10, 11, 12),
+                hlcMaxPrefix = byteArrayOf(13, 14, 15),
+                shardCount = 4,
+                originId = "a".repeat(0x1_0000),
+                dataModelsById = models,
+                consumerId = "consumer-a",
+                retention = ClusterUpdateLog.retentionDefault(),
+            )
+        }
     }
 }

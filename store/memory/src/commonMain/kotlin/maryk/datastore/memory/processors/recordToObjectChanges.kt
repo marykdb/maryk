@@ -59,7 +59,8 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
                         }
 
                         if(lastIndex != -1) {
-                            for (count in 0 until maxVersions.toInt()) {
+                            val maxCount = minOf(maxVersions, (lastIndex + 1).toUInt()).toInt()
+                            for (count in 0 until maxCount) {
                                 val currentValue = node.history.getOrNull(lastIndex - count)
                                     ?: break // No values left so break the loop
 

@@ -41,7 +41,7 @@ internal fun FDBIterator.historicQualifierRetriever(
             if (toVersionBytes.compareToRange(key, versionOffset) <= 0) {
                 // Decode qualifier slice before returning it
                 val encodedQualifier = key.copyOfRange(offset, sepIndex)
-                val decodedQualifier = decodeZeroFreeUsing01(encodedQualifier)
+                val decodedQualifier = decodeZeroFreeUsing01OrNull(encodedQualifier) ?: continue
                 lastQualifier = key
                 lastQualifierLength = sepIndex - offset
                 handleVersion(key.readReversedVersionBytes(versionOffset))

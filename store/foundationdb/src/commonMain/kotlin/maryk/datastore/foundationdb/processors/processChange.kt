@@ -40,6 +40,7 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -82,6 +83,7 @@ import maryk.datastore.foundationdb.processors.helpers.handleMapAdditionCount
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
 import maryk.datastore.foundationdb.processors.helpers.readSetByReference
+import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.setListValue
@@ -96,6 +98,7 @@ import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.lib.bytes.combineToByteArray
 
@@ -270,6 +273,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 if (packed == null) {
                                     addValidation(InvalidValueException(reference, expected.toString()))
                                 } else {
+                                    requireVersionedValue(packed)
                                     val stored = decryptValueIfNeeded(packed.copyOfRange(VERSION_BYTE_SIZE, packed.size))
                                     try {
                                         val storable = Value.castDefinition(reference.propertyDefinition)
@@ -499,7 +503,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 val originalCount = list.size
 
                                 listChange.deleteValues?.forEach { list.remove(it) }
-                                listChange.addValuesAtIndex?.forEach { (idx, v) -> list.add(idx.toInt(), v) }
+                                listChange.addValuesAtIndex?.forEach { (idx, v) -> list.add(idx.toListIndex(), v) }
                                 listChange.addValuesToEnd?.forEach { list.add(it) }
 
                                 if (list == originalList) {
@@ -707,6 +711,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
         @Suppress("UNCHECKED_CAST")
         e.status as IsChangeResponseStatus<DM>
     } catch (t: Throwable) {
+        t.rethrowIfFatal()
         val cause = t.unwrapFdb()
         if (cause is EarlyStatus) {
             @Suppress("UNCHECKED_CAST")

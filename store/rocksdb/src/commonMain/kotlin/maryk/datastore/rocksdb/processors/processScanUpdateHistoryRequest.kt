@@ -20,7 +20,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
-import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfPresent
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
@@ -81,7 +81,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
                 }
             }
 
-        val historyIterator = dbAccessor.getIterator(defaultReadOptions, columnFamilies.updateHistory)
+        dbAccessor.getIterator(defaultReadOptions, columnFamilies.updateHistory).use { historyIterator ->
         when (val toVersion = scanRequest.toVersion) {
             null -> historyIterator.seekToFirst()
             else -> historyIterator.seek(toVersion.toReversedVersionBytes())
@@ -89,6 +89,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
 
         while (historyIterator.isValid() && updates.size.toUInt() < scanRequest.limit) {
             val historyKey = historyIterator.key()
+            if (historyKey.size < VERSION_BYTE_SIZE + keySize) {
+                historyIterator.next()
+                continue
+            }
             val version = historyKey.readReversedVersionBytes(0)
             if (version < scanRequest.fromVersion) break
 
@@ -107,7 +111,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
                 continue
             }
 
-            val creationVersion = recyclableByteArray.readVersionBytes()
+            val creationVersion = recyclableByteArray.readVersionBytesIfPresent(createdVersionLength) ?: run {
+                historyIterator.next()
+                continue
+            }
             if (scanRequest.shouldBeFiltered(
                     dbAccessor,
                     historicColumnFamilies,
@@ -181,7 +188,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
             historyIterator.next()
         }
 
-        historyIterator.close()
+        }
     }
 
     storeAction.response.complete(

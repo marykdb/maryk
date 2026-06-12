@@ -6,6 +6,7 @@ import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.SetAnyValueReference
@@ -17,7 +18,9 @@ import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.lib.exceptions.ParseException
 
 /**
  * Historical index values walker for the FoundationDB store.
@@ -60,7 +63,12 @@ internal class HistoricStoreIndexValuesWalker(
                 valuesAndKeys.forEach { valueAndKeyBytes ->
                     handleIndex(valueAndKeyBytes, version)
                 }
-            } catch (_: Throwable) {
+            } catch (_: ValidationException) {
+                // Skip historical values no longer valid for the current index
+            } catch (_: ParseException) {
+                // Skip malformed historical values
+            } catch (e: Exception) {
+                e.rethrowIfFatal()
                 // Skip failing index reference generation and keep walking
             }
         } while (getter.gotoNextVersion())
@@ -101,7 +109,12 @@ internal class HistoricStoreIndexValuesWalker(
                 key.copyInto(valueAndKey, writeIndex)
 
                 handleIndex(valueAndKey, historicKey.readReversedVersionBytes(versionOffset))
-            } catch (_: Throwable) {
+            } catch (_: ValidationException) {
+                // Skip historical values no longer valid for the current index
+            } catch (_: ParseException) {
+                // Skip malformed historical values
+            } catch (e: Exception) {
+                e.rethrowIfFatal()
                 // Skip malformed entries and keep walking
             }
         }
@@ -142,7 +155,12 @@ internal class HistoricStoreIndexValuesWalker(
                 key.copyInto(valueAndKey, writeIndex)
 
                 handleIndex(valueAndKey, historicKey.readReversedVersionBytes(versionOffset))
-            } catch (_: Throwable) {
+            } catch (_: ValidationException) {
+                // Skip historical values no longer valid for the current index
+            } catch (_: ParseException) {
+                // Skip malformed historical values
+            } catch (e: Exception) {
+                e.rethrowIfFatal()
                 // Skip malformed entries and keep walking
             }
         }

@@ -33,8 +33,10 @@ internal fun <R : Any> Transaction.iterateValues(
             val kv = it.next()
             val referenceBytes = kv.key
             val value = kv.value
+            requireVersionedValue(value)
             val refOffset = tablePrefix.size + keyLength
             val refLength = referenceBytes.size - refOffset
+            if (refLength < 0) continue
             if (decryptValue == null) {
                 handleValue(
                     referenceBytes,
@@ -82,7 +84,7 @@ internal fun <R : Any> Transaction.iterateValues(
             val sepIndex = versionOffset - 1
             // Validate separator and ranges
             if (versionOffset <= 0 || sepIndex < refOffset || keyBytes[sepIndex] != 0.toByte()) {
-                throw RequestException("Invalid qualifier for versioned iterateValues")
+                continue
             }
             val encRefLength = sepIndex - refOffset
 
@@ -91,7 +93,7 @@ internal fun <R : Any> Transaction.iterateValues(
                 // Decode qualifier before handing to caller
                 val decodedQualifier = if (encRefLength > 0) {
                     val encQual = keyBytes.copyOfRange(refOffset, sepIndex)
-                    decodeZeroFreeUsing01(encQual)
+                    decodeZeroFreeUsing01OrNull(encQual) ?: continue
                 } else ByteArray(0)
                 val refBytesForCaller = if (decodedQualifier.isNotEmpty()) combineToByteArray(
                     baseRefBytes,

@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.SetAnyValueReference
@@ -17,7 +18,9 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.lib.extensions.compare.matchesRangePart
+import maryk.lib.exceptions.ParseException
 import maryk.rocksdb.ReadOptions
 
 /**
@@ -27,7 +30,7 @@ import maryk.rocksdb.ReadOptions
 internal class HistoricStoreIndexValuesWalker(
     val columnFamilies: HistoricTableColumnFamilies,
     private val readOptions: ReadOptions
-) {
+) : AutoCloseable {
     private val getter = HistoricStoreIndexValuesGetter(columnFamilies, readOptions)
 
     /**
@@ -72,7 +75,12 @@ internal class HistoricStoreIndexValuesWalker(
                     bytes.invert(versionIndex)
                 }
                 handleIndexReference(historicIndexReference)
-            } catch (_: Throwable) {
+            } catch (_: ValidationException) {
+                // skip historical values no longer valid for the current index
+            } catch (_: ParseException) {
+                // skip malformed historical values
+            } catch (e: Exception) {
+                e.rethrowIfFatal()
                 // skip failing index reference generation
             }
         } while (getter.gotoNextVersion())
@@ -123,12 +131,21 @@ internal class HistoricStoreIndexValuesWalker(
                     reversedVersion.copyInto(historicIndexReference, writeIndex)
 
                     handleIndexReference(historicIndexReference)
-                } catch (_: Throwable) {
+                } catch (_: ValidationException) {
+                    // skip historical values no longer valid for the current index
+                } catch (_: ParseException) {
+                    // skip malformed historical values
+                } catch (e: Exception) {
+                    e.rethrowIfFatal()
                     // skip malformed references
                 }
                 iterator.next()
             }
         }
+    }
+
+    override fun close() {
+        getter.close()
     }
 
     private fun walkSetAnyValueHistory(
@@ -176,7 +193,12 @@ internal class HistoricStoreIndexValuesWalker(
                     reversedVersion.copyInto(historicIndexReference, writeIndex)
 
                     handleIndexReference(historicIndexReference)
-                } catch (_: Throwable) {
+                } catch (_: ValidationException) {
+                    // skip historical values no longer valid for the current index
+                } catch (_: ParseException) {
+                    // skip malformed historical values
+                } catch (e: Exception) {
+                    e.rethrowIfFatal()
                     // skip malformed references
                 }
                 iterator.next()

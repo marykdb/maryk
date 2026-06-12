@@ -37,21 +37,24 @@ internal fun <T : Any> setListValue(
     val toDeleteCount = originalCount - newList.size
     if (toDeleteCount > 0) {
         changed = true
-        for (i in 0..toDeleteCount) {
+        for (i in 0 until toDeleteCount) {
+            var byteIndex = referenceToCompareTo.size
+            val refToDelete = referenceToCompareTo.copyOf(byteIndex + 4)
+            (i + newList.size).toUInt().writeBytes({
+                refToDelete[byteIndex++] = it
+            })
+            val indexToDelete = values.binarySearch {
+                it.reference compareTo refToDelete
+            }
             deleteByIndex<T>(
                 values,
-                valueIndex + i,
-                getValueAtIndex<T>(values, valueIndex + i)!!.reference,
+                indexToDelete,
+                refToDelete,
                 version,
                 keepAllVersions
             )
         }
     }
-
-    // Where is last addition
-    val lastAdditionIndex = if (valueIndex > 0 && toDeleteCount < 0) {
-        valueIndex + originalCount
-    } else 0
 
     // Walk all new values to store
     newList.forEachIndexed { index, item ->
@@ -62,14 +65,9 @@ internal fun <T : Any> setListValue(
             newRef[byteIndex++] = it
         })
 
-        if (valueIndex < 0) {
-            valueIndex--
-        } else {
-            if (lastAdditionIndex <= valueIndex) {
-                valueIndex = valueIndex * -1 - 2
-            } else valueIndex++
+        valueIndex = values.binarySearch {
+            it.reference compareTo newRef
         }
-
         setValueAtIndex(values, valueIndex, newRef, item, version, keepAllVersions)?.also {
             changed = true
         }

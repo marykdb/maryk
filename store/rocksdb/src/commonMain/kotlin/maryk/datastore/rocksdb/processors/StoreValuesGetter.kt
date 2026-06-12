@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
@@ -10,7 +11,9 @@ import maryk.core.values.IsValuesGetter
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.requireVersionedValue
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.rocksdb.ReadOptions
@@ -95,12 +98,14 @@ internal class StoreValuesGetter(
                         continue
                     }
                     keyValue
-                } catch (_: Throwable) {
+                } catch (error: Throwable) {
+                    error.rethrowIfFatal()
                     iterator.next()
                     continue
                 }
 
                 val storedValue = iterator.value()
+                requireVersionedValue(storedValue)
                 val valueBytes = storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size)
                 var valueReadIndex = 0
                 val value = readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
@@ -135,14 +140,15 @@ internal class StoreValuesGetter(
                     var readIndex = setPrefix.size
                     val setItemLength = initIntByVar { qualifier[readIndex++] }
                     @Suppress("UNCHECKED_CAST")
-                    val valueDefinition = setDefinition.valueDefinition as maryk.core.properties.definitions.IsStorageBytesEncodable<Any>
+                    val valueDefinition = setDefinition.valueDefinition as IsStorageBytesEncodable<Any>
                     val itemValue = valueDefinition.readStorageBytes(setItemLength) { qualifier[readIndex++] }
                     if (readIndex != qualifier.size) {
                         iterator.next()
                         continue
                     }
                     itemValue
-                } catch (_: Throwable) {
+                } catch (error: Throwable) {
+                    error.rethrowIfFatal()
                     iterator.next()
                     continue
                 }

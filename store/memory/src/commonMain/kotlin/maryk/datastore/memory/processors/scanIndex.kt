@@ -35,6 +35,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
     var overallStartKey: ByteArray?
     var overallStopKey: ByteArray?
+    var currentSize = 0u
 
     val startKey = scanRequest.startKey?.let { startKey ->
         recordFetcher(scanRequest.dataModel, scanRequest.startKey as Key<*>)?.let { startRecord ->
@@ -68,8 +69,6 @@ internal fun <DM : IsRootDataModel> scanIndex(
                     }
                 }
 
-                var currentSize = 0u
-
                 for (i in startIndex until index.indexValues.size) {
                     val indexRecord = index.indexValues[i]
                     val dataRecord = indexRecord.record ?: continue
@@ -95,6 +94,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break
                 }
+                if (currentSize == scanRequest.limit) break
             }
         }
         DESC -> {
@@ -118,8 +118,6 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         }
                     }
                 } ?: index.indexValues.lastIndex
-
-                var currentSize = 0u
 
                 for (i in min(startIndex, index.indexValues.lastIndex) downTo 0) {
                     val indexRecord = index.indexValues[i]
@@ -146,6 +144,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break
                 }
+                if (currentSize == scanRequest.limit) break
             }
         }
     }

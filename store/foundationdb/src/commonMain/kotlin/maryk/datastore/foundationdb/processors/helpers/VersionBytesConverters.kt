@@ -17,13 +17,20 @@ internal fun ULong.toReversedVersionBytes() =
 /**
  * Read version bytes from byte array
  */
-internal fun ByteArray.readVersionBytes(offset: Int = 0) =
-    this.toULong(offset, VERSION_BYTE_SIZE)
+internal fun ByteArray.readVersionBytes(offset: Int = 0): ULong {
+    require(offset >= 0 && size - offset >= VERSION_BYTE_SIZE) {
+        "Not enough bytes to read version at offset $offset from ${size} bytes"
+    }
+    return this.toULong(offset, VERSION_BYTE_SIZE)
+}
 
 /**
  * Read reversed version bytes from byte array
  */
 internal fun ByteArray.readReversedVersionBytes(offset: Int = 0): ULong {
+    require(offset >= 0 && size - offset >= VERSION_BYTE_SIZE) {
+        "Not enough bytes to read reversed version at offset $offset from ${size} bytes"
+    }
     var readIndex = offset
     return initULong({
         // invert value before reading because is stored inverted

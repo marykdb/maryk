@@ -2,10 +2,12 @@ package maryk.datastore.rocksdb.metadata
 
 import maryk.createTestDBFolder
 import maryk.deleteFolder
+import maryk.file.File
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class MetaFileTest {
@@ -43,7 +45,7 @@ class MetaFileTest {
             |
         """.trimMargin()
 
-        val stored = maryk.file.File.readText("$path/MARYK_META.yml")
+        val stored = File.readText("$path/MARYK_META.yml")
         assertEquals(expected, stored)
 
         val readBack = readMetaFile(path)
@@ -74,5 +76,66 @@ class MetaFileTest {
         assertTrue(readBack.isEmpty())
         assertTrue(readModelNames(path).isEmpty())
         assertTrue(readModelKeySizes(path).isEmpty())
+    }
+
+    @Test
+    fun rejectsInvalidKeySizes() {
+        File.writeText(
+            "$path/MARYK_META.yml",
+            """
+                |version: 1
+                |models:
+                |  1:
+                |    name: Broken
+                |    keySize: 0
+                |
+            """.trimMargin()
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            readMetaFile(path)
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            ModelMeta("Broken", -1)
+        }
+    }
+
+    @Test
+    fun rejectsOverflowingKeySizes() {
+        File.writeText(
+            "$path/MARYK_META.yml",
+            """
+                |version: 1
+                |models:
+                |  1:
+                |    name: Broken
+                |    keySize: 4294967297
+                |
+            """.trimMargin()
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            readMetaFile(path)
+        }
+    }
+
+    @Test
+    fun rejectsNonIntegerKeySizes() {
+        File.writeText(
+            "$path/MARYK_META.yml",
+            """
+                |version: 1
+                |models:
+                |  1:
+                |    name: Broken
+                |    keySize: 1.5
+                |
+            """.trimMargin()
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            readMetaFile(path)
+        }
     }
 }

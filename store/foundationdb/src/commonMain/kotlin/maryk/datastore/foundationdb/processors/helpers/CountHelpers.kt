@@ -16,6 +16,7 @@ internal fun getContainerCount(
 ): Int {
     val packed = tr.get(packKey(tableDirs.tablePrefix, key.bytes, parentRef.toStorageByteArray())).awaitResult()
     return packed?.let { arr ->
+        requireVersionedValue(arr)
         var ri = VERSION_BYTE_SIZE
         initIntByVar { arr[ri++] }
     } ?: 0

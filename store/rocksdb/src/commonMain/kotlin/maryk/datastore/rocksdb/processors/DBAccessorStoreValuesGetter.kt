@@ -13,7 +13,9 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.requireVersionedValue
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.rocksdb.ReadOptions
@@ -98,12 +100,14 @@ internal class DBAccessorStoreValuesGetter(
                         continue
                     }
                     keyValue
-                } catch (_: Throwable) {
+                } catch (error: Throwable) {
+                    error.rethrowIfFatal()
                     iterator.next()
                     continue
                 }
 
                 val storedValue = iterator.value()
+                requireVersionedValue(storedValue)
                 val valueBytes = dbAccessor.dataStore.decryptValueIfNeeded(storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size))
                 var valueReadIndex = 0
                 val value = readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
@@ -144,7 +148,8 @@ internal class DBAccessorStoreValuesGetter(
                         continue
                     }
                     itemValue
-                } catch (_: Throwable) {
+                } catch (error: Throwable) {
+                    error.rethrowIfFatal()
                     iterator.next()
                     continue
                 }

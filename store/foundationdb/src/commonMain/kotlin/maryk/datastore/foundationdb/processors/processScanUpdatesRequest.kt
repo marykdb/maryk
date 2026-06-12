@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import maryk.core.clock.HLC
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -36,6 +35,7 @@ import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
 import maryk.datastore.foundationdb.processors.helpers.readSetByReference
@@ -48,7 +48,6 @@ import maryk.datastore.shared.helpers.convertToValue
 import maryk.foundationdb.ReadTransaction
 import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.nextByteInSameLength
-import maryk.lib.extensions.compare.compareTo
 import maryk.foundationdb.Range as FDBRange
 
 internal typealias ScanUpdatesStoreAction<DM> = StoreAction<DM, ScanUpdatesRequest<DM>, UpdatesResponse<DM>>
@@ -233,7 +232,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 for (addedKey in addedKeys) {
                     val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).awaitResult()
                     if (createdBytes != null) {
-                        val createdVersion = HLC.fromStorageBytes(createdBytes).timestamp
+                        val createdVersion = createdBytes.readHLCTimestampIfPresent() ?: continue
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                             cache.readValue(dbIndex, addedKey, reference, version, valueReader)
@@ -289,8 +288,6 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
             packKey(historyPrefix, scanRequest.fromVersion.toReversedVersionBytes().nextByteInSameLength())
         }
         val historyIterator = tr.getRange(FDBRange(historyStart, historyEnd), ReadTransaction.ROW_LIMIT_UNLIMITED, false).iterator()
-        val groupedEntries = mutableMapOf<Key<DM>, Boolean>()
-        var currentGroupVersion: ULong? = null
 
         fun processEntry(key: Key<DM>, version: ULong, isHardDelete: Boolean) {
             val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
@@ -308,7 +305,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                 }
                 return
             }
-            val creationVersion = HLC.fromStorageBytes(createdBytes).timestamp
+            val creationVersion = createdBytes.readHLCTimestampIfPresent() ?: return
 
             if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, this@processUpdateHistoryScanUpdates::decryptValueIfNeeded)
                 || scanRange.keyBeforeStart(key.bytes, 0)
@@ -407,44 +404,19 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
             }
         }
 
-        fun flushGroupedEntries(): Boolean {
-            if (currentGroupVersion == null) return false
-
-            for ((key, isHardDelete) in groupedEntries.entries.sortedWith { a, b ->
-                b.key.bytes compareTo a.key.bytes
-            }) {
-                seenKeys.add(key)
-                processEntry(key, currentGroupVersion!!, isHardDelete)
-                if (matchingKeys.size.toUInt() >= scanRequest.limit) {
-                    groupedEntries.clear()
-                    return true
-                }
-            }
-            groupedEntries.clear()
-            return false
-        }
-
-        while (historyIterator.hasNext()) {
+        while (historyIterator.hasNext() && matchingKeys.size.toUInt() < scanRequest.limit) {
             val historyEntry = historyIterator.nextBlocking()
             val historyKey = historyEntry.key
             val versionOffset = historyPrefix.size
+            if (historyKey.size < versionOffset + VERSION_BYTE_SIZE + keySize) continue
             val version = historyKey.readReversedVersionBytes(versionOffset)
             if (version < scanRequest.fromVersion) break
 
-            if (currentGroupVersion != null && version != currentGroupVersion) {
-                if (flushGroupedEntries()) break
-            }
-            currentGroupVersion = version
-
             val keyOffset = versionOffset + VERSION_BYTE_SIZE
             val key = scanRequest.dataModel.key(historyKey.copyOfRange(keyOffset, keyOffset + keySize))
-            if (key in seenKeys || key in groupedEntries) continue
+            if (!seenKeys.add(key)) continue
 
-            groupedEntries[key] = historyEntry.value.firstOrNull() == 1.toByte()
-        }
-
-        if (matchingKeys.size.toUInt() < scanRequest.limit) {
-            flushGroupedEntries()
+            processEntry(key, version, historyEntry.value.firstOrNull() == 1.toByte())
         }
 
         scanRequest.orderedKeys?.let { orderedKeys ->
@@ -464,7 +436,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
             matchingKeys.subtract(orderedKeys.toSet()).forEach { addedKey ->
                 val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).awaitResult()
                 if (createdBytes != null) {
-                    val creationVersion = HLC.fromStorageBytes(createdBytes).timestamp
+                    val creationVersion = createdBytes.readHLCTimestampIfPresent() ?: return@forEach
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
                         cache.readValue(dbIndex, addedKey, reference, readVersion, valueReader)
                     }

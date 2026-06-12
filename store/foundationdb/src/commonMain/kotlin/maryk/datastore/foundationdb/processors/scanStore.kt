@@ -4,7 +4,6 @@ import maryk.foundationdb.KeyValue
 import maryk.foundationdb.Range
 import maryk.foundationdb.ReadTransaction
 import maryk.foundationdb.Transaction
-import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -19,6 +18,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
 import maryk.lib.extensions.compare.compareDefinedRange
 import kotlin.math.min
 
@@ -99,7 +99,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                     }
 
                     val key = scanRequest.dataModel.key(modelKeyBytes)
-                    val creationVersion = HLC.fromStorageBytes(kv.value).timestamp
+                    val creationVersion = kv.value.readHLCTimestampIfPresent() ?: continue
                     if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) continue
 
                     processStoreValue(key, creationVersion, null)
@@ -169,7 +169,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                     if (!scanRange.matchesPartials(modelKeyBytes)) continue
 
                     val key = scanRequest.dataModel.key(modelKeyBytes)
-                    val creationVersion = HLC.fromStorageBytes(kv.value).timestamp
+                    val creationVersion = kv.value.readHLCTimestampIfPresent() ?: continue
                     if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) continue
 
                     processStoreValue(key, creationVersion, null)

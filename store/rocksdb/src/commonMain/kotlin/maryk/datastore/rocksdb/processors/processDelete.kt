@@ -15,10 +15,12 @@ import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
+import maryk.datastore.rocksdb.processors.helpers.requireVersionedValueSize
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.matchesRangePart
@@ -62,6 +64,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                     )
 
                     if (valueLength != rocksDBNotFound) {
+                        requireVersionedValueSize(valueLength)
                         val value = if (valueLength > recyclableByteArray.size) {
                             // Large value which did not fit in recyclableByteArray
                             transaction.get(columnFamilies.table, defaultReadOptions, referenceAndKey)!!
@@ -182,6 +185,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
         else -> DoesNotExist(key)
     }
 } catch (e: Throwable) {
+    e.rethrowIfFatal()
     ServerFail(e.toString(), e)
 }
 

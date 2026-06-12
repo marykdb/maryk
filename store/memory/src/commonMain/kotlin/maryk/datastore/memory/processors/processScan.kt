@@ -8,7 +8,9 @@ import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByKey
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.FetchByUniqueKey
+import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.ScanType
@@ -30,6 +32,10 @@ internal fun <DM : IsRootDataModel> processScan(
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
+
+    if (keyScanRange.ranges.isEmpty()) {
+        return FetchByTableScan(ASC, null, null)
+    }
 
     when {
         // If hard key match then quit with direct record
@@ -110,9 +116,10 @@ internal fun <DM: IsRootDataModel> shouldProcessRecord(
     scanRange: KeyScanRanges,
     recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?
 ): Boolean {
-    if (scanRange.keyBeforeStart(record.key.bytes, 0)
-        || !scanRange.keyWithinRanges(record.key.bytes, 0)
-        || !scanRange.matchesPartials(record.key.bytes)
+    val recordKey = record.key.bytes
+    if (scanRange.keyBeforeStart(recordKey, 0)
+        || !scanRange.keyWithinRanges(recordKey, 0)
+        || !scanRange.matchesPartials(recordKey)
     ) {
         return false
     }

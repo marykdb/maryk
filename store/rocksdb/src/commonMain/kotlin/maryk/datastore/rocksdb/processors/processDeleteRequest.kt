@@ -31,17 +31,21 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDeleteReques
             HistoricStoreIndexValuesWalker(columnFamilies, defaultReadOptions)
         } else null
 
-        for (key in deleteRequest.keys) {
-            statuses += processDelete(
-                deleteRequest.dataModel,
-                columnFamilies,
-                key,
-                version,
-                dbIndex,
-                deleteRequest.hardDelete,
-                historicStoreIndexValuesWalker,
-                cache,
-            )
+        try {
+            for (key in deleteRequest.keys) {
+                statuses += processDelete(
+                    deleteRequest.dataModel,
+                    columnFamilies,
+                    key,
+                    version,
+                    dbIndex,
+                    deleteRequest.hardDelete,
+                    historicStoreIndexValuesWalker,
+                    cache,
+                )
+            }
+        } finally {
+            historicStoreIndexValuesWalker?.close()
         }
     }
 

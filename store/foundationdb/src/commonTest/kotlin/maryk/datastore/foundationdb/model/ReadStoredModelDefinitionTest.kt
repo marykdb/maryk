@@ -3,6 +3,7 @@
 package maryk.datastore.foundationdb.model
 
 import kotlinx.coroutines.test.runTest
+import maryk.core.exceptions.StorageException
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.foundationdb.FoundationDBDataStore
@@ -11,6 +12,7 @@ import maryk.test.models.ModelWithDependents
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -104,6 +106,32 @@ class ReadStoredModelDefinitionTest {
         assertEquals(setOf(1u, 2u), storedModels.keys)
         assertEquals(ModelWithDependents.Meta.name, storedModels[1u]?.Meta?.name)
         assertEquals(SimpleMarykModel.Meta.name, storedModels[2u]?.Meta?.name)
+    }
+
+    @Test
+    fun rejectsInvalidStoredVersionMetadata() = runTest {
+        val dirPath = listOf("maryk", "test", "fdb-read-model-invalid-version", Uuid.random().toString())
+        val dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelWithDependents)
+        )
+
+        val modelPrefix = dataStore.getTableDirs(1u).modelPrefix
+        dataStore.tc.run { tr ->
+            tr.set(packKey(modelPrefix, modelVersionKey), byteArrayOf(1))
+        }
+        dataStore.close()
+
+        assertFailsWith<StorageException> {
+            FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelWithDependents)
+            )
+        }
     }
 
     @Test

@@ -18,6 +18,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
@@ -114,6 +115,7 @@ import maryk.datastore.shared.Cache
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.foundationdb.DatabaseOptions
 import maryk.foundationdb.FDB
@@ -432,12 +434,14 @@ class FoundationDBDataStore private constructor(
                                 headGroupCount = headGroupCount,
                                 timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                             )
-                        } catch (_: Throwable) {
+                        } catch (error: Throwable) {
+                            error.rethrowIfFatal()
                             delay(clusterUpdateLogConfiguration.clusterUpdateLogPollInterval)
                         }
                     } catch (e: CancellationException) {
                         throw e
-                    } catch (_: Throwable) {
+                    } catch (error: Throwable) {
+                        error.rethrowIfFatal()
                         clusterLogHlcSyncErrors.incrementAndGet()
                         clusterLogHlcCurrentBackoffMs.value = backoffMs
                         delay(backoffMs.milliseconds)
@@ -483,7 +487,8 @@ class FoundationDBDataStore private constructor(
                                         headGroupCount = headGroupCount,
                                         timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                                     )
-                                } catch (_: Throwable) {
+                                } catch (error: Throwable) {
+                                    error.rethrowIfFatal()
                                     delay(clusterUpdateLogConfiguration.clusterUpdateLogPollInterval)
                                 }
                             }
@@ -563,7 +568,8 @@ class FoundationDBDataStore private constructor(
                                         headGroupCount = headGroupCount,
                                         timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                                     )
-                                } catch (_: Throwable) {
+                                } catch (error: Throwable) {
+                                    error.rethrowIfFatal()
                                     delay(clusterUpdateLogConfiguration.clusterUpdateLogPollInterval)
                                 }
                             }
@@ -576,7 +582,8 @@ class FoundationDBDataStore private constructor(
                         clusterLogCurrentBackoffMs.value = backoffMs
                     } catch (e: CancellationException) {
                         throw e
-                    } catch (_: Throwable) {
+                    } catch (error: Throwable) {
+                        error.rethrowIfFatal()
                         // Conservative retry loop: transient FDB errors, decode errors, etc.
                         clusterLogTailErrors.incrementAndGet()
                         clusterLogCurrentBackoffMs.value = backoffMs
@@ -610,7 +617,8 @@ class FoundationDBDataStore private constructor(
                         delay(5.minutes)
                     } catch (e: CancellationException) {
                         throw e
-                    } catch (_: Throwable) {
+                    } catch (error: Throwable) {
+                        error.rethrowIfFatal()
                         clusterLogGcErrors.incrementAndGet()
                         delay(5_000L.milliseconds)
                     }
@@ -727,6 +735,7 @@ class FoundationDBDataStore private constructor(
                             throw e
                         }
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         storeAction.response.completeExceptionally(e.unwrapFdb())
                     }
                 }
@@ -807,39 +816,48 @@ class FoundationDBDataStore private constructor(
                 val key = Key<IsRootDataModel>(keyBytes)
 
                 if (keepAllVersions && tableDirectories is HistoricTableDirectories) {
-                    val creationVersion = HLC.fromStorageBytes(storedValue).timestamp
-                    val versions = runTransaction { tr ->
-                        buildSet {
-                            add(creationVersion)
+                    writeUpdateHistoryVersions(updateHistoryPrefix, key, listOf(HLC.fromStorageBytes(storedValue).timestamp))
 
-                            val historicIterator = tr.getRange(Range.startsWith(packKey(tableDirectories.historicTablePrefix, key.bytes))).iterator()
+                    val historicPrefix = packKey(tableDirectories.historicTablePrefix, key.bytes)
+                    val historicEnd = historicPrefix.nextByteInSameLength()
+                    var historicStart = historicPrefix
+                    while (true) {
+                        val (versions, nextHistoricStart) = runTransaction { tr ->
+                            val historicIterator = tr.getRange(
+                                Range(historicStart, historicEnd),
+                                UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE,
+                                false
+                            ).iterator()
+                            val versions = mutableListOf<ULong>()
+                            var lastKey: ByteArray? = null
                             while (historicIterator.hasNext()) {
                                 val historicEntry = historicIterator.nextBlocking()
                                 val historicKey = historicEntry.key
+                                lastKey = historicKey
                                 if (historicKey.size <= tableDirectories.historicTablePrefix.size + key.size + VERSION_BYTE_SIZE) continue
 
                                 val versionOffset = historicKey.size - VERSION_BYTE_SIZE
                                 val separatorIndex = versionOffset - 1
                                 if (separatorIndex < 0 || historicKey[separatorIndex] != 0.toByte()) continue
 
-                                add(historicKey.readReversedVersionBytes(versionOffset))
+                                versions += historicKey.readReversedVersionBytes(versionOffset)
                             }
-
-                            tr.get(packKey(tableDirectories.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR)).awaitResult()?.let { softDeleteValue ->
-                                add(HLC.fromStorageBytes(softDeleteValue).timestamp)
-                            }
+                            versions to lastKey?.let { it + byteArrayOf(0) }
                         }
-                    }.toList().sorted()
-
-                    versions.chunked(UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE).forEach { versionChunk ->
-                        runTransaction { tr ->
-                            versionChunk.forEach { version ->
-                                tr.set(
-                                    packKey(updateHistoryPrefix, version.toReversedVersionBytes(), key.bytes),
-                                    EMPTY_BYTEARRAY
-                                )
-                            }
+                        if (versions.isNotEmpty()) {
+                            writeUpdateHistoryVersions(updateHistoryPrefix, key, versions)
                         }
+                        historicStart = nextHistoricStart ?: break
+                    }
+
+                    val softDeleteVersion = runTransaction { tr ->
+                        tr.get(packKey(tableDirectories.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR))
+                            .awaitResult()
+                            ?.takeIf { it.size == ULong.SIZE_BYTES }
+                            ?.let { HLC.fromStorageBytes(it).timestamp }
+                    }
+                    softDeleteVersion?.let {
+                        writeUpdateHistoryVersions(updateHistoryPrefix, key, listOf(it))
                     }
                 } else {
                     val lastVersion = runTransaction { tr ->
@@ -854,6 +872,21 @@ class FoundationDBDataStore private constructor(
                 }
 
                 nextStart = packedKey + byteArrayOf(0)
+            }
+        }
+    }
+
+    private fun writeUpdateHistoryVersions(
+        updateHistoryPrefix: ByteArray,
+        key: Key<IsRootDataModel>,
+        versions: List<ULong>,
+    ) {
+        runTransaction { tr ->
+            versions.forEach { version ->
+                tr.set(
+                    packKey(updateHistoryPrefix, version.toReversedVersionBytes(), key.bytes),
+                    EMPTY_BYTEARRAY
+                )
             }
         }
     }
@@ -882,10 +915,14 @@ class FoundationDBDataStore private constructor(
     override suspend fun close() {
         if (!isClosing.compareAndSet(false, true)) return
 
+        cancelPendingMigrations("Datastore closing")
+
         // Stop new work first.
-        storeChannel.close()
+        val shouldCloseScope = startClosingDataStore()
         val job = this.coroutineContext[Job]
-        job?.cancel()
+        if (shouldCloseScope) {
+            job?.cancel()
+        }
 
         // Give cooperative coroutines a brief chance to finish before forcing native close.
         val stoppedBeforeNativeClose = withTimeoutOrNull(2_000.milliseconds) {
@@ -893,13 +930,19 @@ class FoundationDBDataStore private constructor(
             true
         } ?: false
 
-        runCatching { this.db.close() }
+        runCatching { this.db.close() }.onFailure { it.rethrowIfFatal() }
 
         if (!stoppedBeforeNativeClose) {
             withTimeoutOrNull(10_000.milliseconds) {
                 job?.join()
             }
         }
+    }
+
+    override suspend fun closeAllListeners() {
+        if (isClosing.value) return
+
+        super.closeAllListeners()
     }
 
     override fun onUpdateListenerAdded(dataModelId: UInt) {
@@ -1168,6 +1211,8 @@ class FoundationDBDataStore private constructor(
 
     internal fun failPendingMigration(modelId: UInt, reason: String) = failPendingMigrationInternal(modelId, reason)
 
+    internal fun cancelPendingMigrations(reason: String) = cancelPendingMigrationsInternal(reason)
+
     internal fun updateMigrationRuntimeDetails(modelId: UInt, state: MigrationState) = updateMigrationRuntimeDetailsInternal(modelId, state)
 
     internal suspend fun appendMigrationAuditEvent(
@@ -1179,7 +1224,12 @@ class FoundationDBDataStore private constructor(
         message: String? = null,
     ) = appendMigrationAuditEventInternal(modelId, migrationId, type, phase, attempt, message)
 
-    override fun assertModelReady(dataModelId: UInt) = assertModelReadyForMigrations(dataModelId)
+    override fun assertModelReady(dataModelId: UInt) {
+        if (isClosing.value) {
+            throw StorageException("DataStore is closed")
+        }
+        assertModelReadyForMigrations(dataModelId)
+    }
 
     companion object {
         /**

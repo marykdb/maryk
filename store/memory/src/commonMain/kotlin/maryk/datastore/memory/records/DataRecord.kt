@@ -71,7 +71,7 @@ internal data class DataRecord<DM : IsRootDataModel>(
                 val keyValue = mapDefinition.keyDefinition.readStorageBytes(mapKeyLength) { reference[readIndex++] }
                 if (readIndex != reference.size) continue
                 keyValue
-            } catch (_: Throwable) {
+            } catch (_: Exception) {
                 continue
             }
 
@@ -103,7 +103,7 @@ internal data class DataRecord<DM : IsRootDataModel>(
                 val itemValue = valueDefinition.readStorageBytes(setItemLength) { reference[readIndex++] }
                 if (readIndex != reference.size) continue
                 itemValue
-            } catch (_: Throwable) {
+            } catch (_: Exception) {
                 continue
             }
 

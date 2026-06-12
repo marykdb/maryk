@@ -21,6 +21,7 @@ import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.extensions.compare.compareTo
@@ -116,5 +117,6 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         )
     )
 } catch (e: Throwable) {
+    e.rethrowIfFatal()
     ServerFail(e.toString(), e)
 }

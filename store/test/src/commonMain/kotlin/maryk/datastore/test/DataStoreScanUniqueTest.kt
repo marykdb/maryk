@@ -32,7 +32,8 @@ class DataStoreScanUniqueTest(
 
     override val allTests = mapOf(
         "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
-        "executeSimpleScanFilterWithToVersionRequest" to ::executeSimpleScanFilterWithToVersionRequest
+        "executeSimpleScanFilterWithToVersionRequest" to ::executeSimpleScanFilterWithToVersionRequest,
+        "executeHistoricalUniqueDoesNotMatchPrefixCollision" to ::executeHistoricalUniqueDoesNotMatchPrefixCollision,
     )
 
     private val objects = arrayOf(
@@ -133,5 +134,22 @@ class DataStoreScanUniqueTest(
                 expect(keys[0]) { it.key }
             }
         }
+    }
+
+    private suspend fun executeHistoricalUniqueDoesNotMatchPrefixCollision() {
+        if (!dataStore.keepAllVersions) return
+
+        val scanResponse = dataStore.execute(
+            CompleteMarykModel.scan(
+                where = Equals(
+                    CompleteMarykModel.string.ref() with "haa"
+                ),
+                toVersion = lowestVersion
+            )
+        )
+
+        expect(0) { scanResponse.values.size }
+        assertTrue { scanResponse.dataFetchType is FetchByUniqueKey }
+        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
     }
 }

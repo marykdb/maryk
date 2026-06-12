@@ -14,12 +14,13 @@ internal fun getCurrentValues(
     val prefix = key.bytes + referenceAsBytes
     val currentValues = mutableListOf<Pair<ByteArray, ByteArray>>()
 
-    val iterator = transaction.getIterator(transaction.rocksDBDataStore.defaultReadOptions, columnFamilies.table)
-    iterator.seek(prefix)
+    transaction.getIterator(transaction.rocksDBDataStore.defaultReadOptions, columnFamilies.table).use { iterator ->
+        iterator.seek(prefix)
 
-    while (iterator.isValid() && prefix.compareDefinedRange(iterator.key()) == 0) {
-        currentValues.add(iterator.key() to iterator.value())
-        iterator.next()
+        while (iterator.isValid() && prefix.compareDefinedRange(iterator.key()) == 0) {
+            currentValues.add(iterator.key() to iterator.value())
+            iterator.next()
+        }
     }
 
     return currentValues

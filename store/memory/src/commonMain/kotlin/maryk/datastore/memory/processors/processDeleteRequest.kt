@@ -9,6 +9,7 @@ import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.IsUpdateAction
 
 internal typealias DeleteStoreAction<DM> = StoreAction<DM, DeleteRequest<DM>, DeleteResponse<DM>>
@@ -48,6 +49,7 @@ internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
                     )
                 )
             } catch (e: Throwable) {
+                e.rethrowIfFatal()
                 statuses.add(ServerFail(e.toString(), e))
             }
         }

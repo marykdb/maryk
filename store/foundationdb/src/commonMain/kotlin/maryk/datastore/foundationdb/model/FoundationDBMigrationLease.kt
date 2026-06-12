@@ -29,7 +29,7 @@ internal class FoundationDBMigrationLease(
     override suspend fun tryAcquire(modelId: UInt, migrationId: String): Boolean {
         val key = modelPrefixesById[modelId]?.let { packKey(it, modelMigrationLeaseKey) } ?: return false
         val nowMs = Clock.System.now().toEpochMilliseconds()
-        val expiresAtMs = nowMs + leaseTimeoutMs
+        val expiresAtMs = nowMs.plusSaturating(leaseTimeoutMs)
 
         val acquired = tc.run { tr ->
             val existing = tr.get(key).awaitResult()?.let(LeaseRecord::fromPersistedBytes)
@@ -66,7 +66,7 @@ internal class FoundationDBMigrationLease(
             while (true) {
                 delay(heartbeatIntervalMs.milliseconds)
                 val nowMs = Clock.System.now().toEpochMilliseconds()
-                val nextExpiry = nowMs + leaseTimeoutMs
+                val nextExpiry = nowMs.plusSaturating(leaseTimeoutMs)
                 val shouldContinue = tc.run { tr ->
                     val existing = tr.get(key).awaitResult()?.let(LeaseRecord::fromPersistedBytes)
                     if (existing?.ownerToken == ownerToken && existing.migrationId == migrationId) {
@@ -115,3 +115,6 @@ internal class FoundationDBMigrationLease(
         }
     }
 }
+
+private fun Long.plusSaturating(value: Long): Long =
+    if (this > Long.MAX_VALUE - value) Long.MAX_VALUE else this + value

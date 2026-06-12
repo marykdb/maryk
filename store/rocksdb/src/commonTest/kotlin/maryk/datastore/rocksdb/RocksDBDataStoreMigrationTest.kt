@@ -1070,6 +1070,7 @@ class RocksDBDataStoreMigrationTest {
             dataModelsById = mapOf(1u to ModelV2),
             migrationConfiguration = MigrationConfiguration(
                 persistMigrationAuditEvents = true,
+                migrationAuditLogMaxEntries = 3,
                 migrationExpandHandler = { _ ->
                     expandCalls += 1
                     if (expandCalls == 1) MigrationOutcome.Retry(retryAfterMs = 1) else MigrationOutcome.Success
@@ -1091,11 +1092,31 @@ class RocksDBDataStoreMigrationTest {
             assertEquals(1u, metrics.completed)
 
             val events = dataStore.migrationAuditEvents(1u, limit = 20)
-            assertTrue(events.any { it.type.name == "RetryScheduled" && it.phase == MigrationPhase.Expand })
-            assertTrue(events.any { it.type.name == "Partial" && it.phase == MigrationPhase.Verify })
+            assertEquals(3, events.size)
             assertTrue(events.any { it.type.name == "Completed" && it.phase == MigrationPhase.Contract })
         } finally {
             dataStore.close()
+            deleteFolder(path)
+        }
+    }
+
+    @Test
+    fun invalidAuditLogMaxEntriesFailsFast() = runTest {
+        val path = createTestDBFolder("migrationAuditInvalidMax")
+
+        try {
+            assertFailsWith<IllegalArgumentException> {
+                RocksDBDataStore.open(
+                    keepAllVersions = true,
+                    relativePath = path,
+                    dataModelsById = mapOf(1u to ModelV1_1),
+                    migrationConfiguration = MigrationConfiguration(
+                        persistMigrationAuditEvents = true,
+                        migrationAuditLogMaxEntries = 0,
+                    )
+                )
+            }
+        } finally {
             deleteFolder(path)
         }
     }

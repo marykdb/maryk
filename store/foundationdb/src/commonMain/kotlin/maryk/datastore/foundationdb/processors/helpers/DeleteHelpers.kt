@@ -9,6 +9,7 @@ import maryk.core.properties.types.invoke
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.rethrowIfFatal
 
 /** Delete all current values for [referencePrefix] and write historic tombstones where applicable. */
 internal fun deletePrefixWithTombstones(
@@ -36,7 +37,8 @@ internal fun decodePrevForDelete(
 ): Any? {
     return try {
         prevBytes.convertToValue(reference, offset, length)
-    } catch (_: Throwable) {
+    } catch (error: Throwable) {
+        error.rethrowIfFatal()
         // For multi-type cases, convert enum-only reads into TypedValue(enum, Unit)
         var ri = offset
         val read = maryk.datastore.shared.readValue(reference.comparablePropertyDefinition, { prevBytes[ri++] }) { offset + length - ri }

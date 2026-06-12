@@ -10,13 +10,15 @@ import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByKey
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.FetchByUniqueKey
+import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
-import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfPresent
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
@@ -27,7 +29,6 @@ import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.rocksDBNotFound
 
 /** Walk with [scanRequest] on [RocksDBDataStore] and do [processRecord] */
 internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
@@ -43,6 +44,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
 
     scanRequest.checkToVersion(keepAllVersions)
 
+    if (keyScanRange.ranges.isEmpty()) {
+        return FetchByTableScan(ASC, null, null)
+    }
+
     when {
         // If hard key match then quit with direct record
         keyScanRange.isSingleKey() -> {
@@ -51,8 +56,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
             if (mayExist) {
                 val valueLength = dbAccessor.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
                 // Only process it if it was created
-                if (valueLength != rocksDBNotFound) {
-                    val createdVersion = recyclableByteArray.readVersionBytes()
+                recyclableByteArray.readVersionBytesIfPresent(valueLength)?.let { createdVersion ->
                     if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, keyScanRange)) {
                         processRecord(key, createdVersion, null)
                     }

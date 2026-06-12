@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.model
 
 import kotlinx.coroutines.test.runTest
+import maryk.core.exceptions.StorageException
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.createTestDBFolder
@@ -14,6 +15,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -91,5 +93,26 @@ class ReadStoredModelDefinitionTest {
         assertEquals(setOf(1u, 2u), storedModels.keys)
         assertEquals(ModelWithDependents.Meta.name, storedModels[1u]?.Meta?.name)
         assertEquals(SimpleMarykModel.Meta.name, storedModels[2u]?.Meta?.name)
+    }
+
+    @Test
+    fun rejectsInvalidStoredVersionMetadata() = runTest {
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = dbPath,
+            dataModelsById = mapOf(1u to ModelWithDependents)
+        )
+
+        val columnFamilies = dataStore.getColumnFamilies(1u)
+        dataStore.db.put(columnFamilies.model, modelVersionKey, byteArrayOf(1))
+        dataStore.close()
+
+        assertFailsWith<StorageException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = dbPath,
+                dataModelsById = mapOf(1u to ModelWithDependents)
+            )
+        }
     }
 }

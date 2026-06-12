@@ -7,16 +7,43 @@ package maryk.datastore.foundationdb.processors.helpers
  * others unchanged.
  */
 internal fun encodeZeroFreeUsing01(src: ByteArray): ByteArray {
-    val out = ArrayList<Byte>(src.size + src.size / 4)
+    val encodedLength = src.zeroFreeEncodedLength()
+    val out = ByteArray(encodedLength)
+    var index = 0
     for (b in src) {
         val u = b.toInt() and 0xFF
         when (u) {
-            0x00 -> { out.add(0x01); out.add(0x01) }
-            0x01 -> { out.add(0x01); out.add(0x02) }
-            else -> out.add(u.toByte())
+            0x00 -> {
+                out[index++] = 0x01
+                out[index++] = 0x01
+            }
+            0x01 -> {
+                out[index++] = 0x01
+                out[index++] = 0x02
+            }
+            else -> out[index++] = u.toByte()
         }
     }
-    return out.toByteArray()
+    return out
+}
+
+internal fun ByteArray.zeroFreeEncodedLength(): Int {
+    var length = 0
+    for (b in this) {
+        length = length.checkedZeroFreeLengthPlus(
+            when ((b.toInt() and 0xFF)) {
+                0x00, 0x01 -> 2
+                else -> 1
+            }
+        )
+    }
+    return length
+}
+
+internal fun Int.checkedZeroFreeLengthPlus(addend: Int): Int {
+    require(addend >= 0) { "Zero-free encoded length cannot be negative: $addend" }
+    require(this <= Int.MAX_VALUE - addend) { "Zero-free encoded length exceeds Int range" }
+    return this + addend
 }
 
 /** Decode a stream encoded by [encodeZeroFreeUsing01]. */
@@ -42,4 +69,12 @@ internal fun decodeZeroFreeUsing01(encoded: ByteArray): ByteArray {
         }
     }
     return out.toByteArray()
+}
+
+internal fun decodeZeroFreeUsing01OrNull(encoded: ByteArray): ByteArray? = try {
+    decodeZeroFreeUsing01(encoded)
+} catch (_: IllegalArgumentException) {
+    null
+} catch (_: IllegalStateException) {
+    null
 }

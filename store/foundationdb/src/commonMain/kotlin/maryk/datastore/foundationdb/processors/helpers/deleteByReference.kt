@@ -18,6 +18,7 @@ import maryk.core.properties.references.MultiTypePropertyReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
@@ -79,7 +80,7 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
                 // Nothing to delete
                 return false
             }
-            val newList = original.toMutableList().apply { removeAt(reference.index.toInt()) }
+            val newList = original.toMutableList().apply { removeAt(reference.index.toListIndex()) }
             // Validate list size/content before writing
             @Suppress("UNCHECKED_CAST")
             listRef.propertyDefinition.validate(
@@ -139,6 +140,7 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
     if (def is IsComparableDefinition<*, *> && def.unique) {
         val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes)).awaitResult()
         if (currentTop != null) {
+            requireVersionedValue(currentTop)
             val storedValueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
             val valueBytes = decryptValueIfNeeded(storedValueBytes)
             val uniqueValue = mapUniqueValueBytes(dataModelId, referenceBytes, valueBytes)

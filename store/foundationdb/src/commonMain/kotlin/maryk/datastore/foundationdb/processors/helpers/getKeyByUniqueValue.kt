@@ -35,7 +35,8 @@ internal fun Transaction.getKeyByUniqueValue(
         val it = this.getRange(Range.startsWith(prefix)).iterator()
         while (it.hasNext()) {
             val kv = it.nextBlocking()
-            val versionOffset = kv.key.size - toVersionBytes.size
+            val versionOffset = prefix.size + 1
+            if (kv.key.size != versionOffset + VERSION_BYTE_SIZE || kv.key[prefix.size] != 0.toByte()) continue
             if (toVersionBytes.compareToRange(kv.key, versionOffset) <= 0) {
                 val version = kv.key.readReversedVersionBytes(versionOffset)
                 val keyBytes = kv.value

@@ -35,7 +35,7 @@ internal fun <T : Any> setListValue(
 
     val toDeleteCount = originalCount - newList.size
     if (toDeleteCount > 0) {
-        for (i in 0..toDeleteCount) {
+        for (i in 0 until toDeleteCount) {
             var byteIndex = keyAndReferenceAsBytes.size
             val refToDelete = keyAndReferenceAsBytes.copyOf(byteIndex + 4)
             (i + newList.size).toUInt().writeBytes({

@@ -37,6 +37,7 @@ import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.foundationdb.clusterlog.ClusterLogAddition
 import maryk.core.properties.types.Bytes
@@ -185,6 +186,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
         listOf(AlreadyExistsException(ref, ue.key))
     )
 } catch (t: Throwable) {
+    t.rethrowIfFatal()
     val cause = t.unwrapFdb()
     ServerFail(cause.toString(), cause)
 }

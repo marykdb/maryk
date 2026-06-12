@@ -47,7 +47,10 @@ class TransactionIterator(
         val index = changes.binarySearch { it.key compareTo target }
 
         changesIndex = if (index >= 0) index else -index - 2
-        fromChanges = (changes.isNotEmpty() && changesIndex < changes.size && rocksIterator.key() <= changes[changesIndex].key)
+        fromChanges = changes.isNotEmpty() &&
+            changesIndex >= 0 &&
+            changesIndex < changes.size &&
+            (!rocksIterator.isValid() || rocksIterator.key() <= changes[changesIndex].key)
         startPrefix = target.copyOfRange(0, transaction.rocksDBDataStore.getPrefixSize(columnFamilyHandle))
 
         // Skip to start if prefix does not match
@@ -61,11 +64,11 @@ class TransactionIterator(
         super.seekToLast()
 
         changesIndex = changes.lastIndex
-        fromChanges = changes.isNotEmpty() && rocksIterator.key() <= changes.last().key
+        fromChanges = changes.isNotEmpty() && (!rocksIterator.isValid() || rocksIterator.key() <= changes.last().key)
     }
 
     override fun isValid() =
-        super.isValid() && if (fromChanges) changes.getOrNull(changesIndex) != null else true
+        if (fromChanges) changes.getOrNull(changesIndex) != null else super.isValid()
 
     override fun next() {
         if (fromChanges) {
@@ -135,7 +138,9 @@ class TransactionIterator(
 
             super.prev()
         }
-        fromChanges = changes.isNotEmpty() && changesIndex > 0 && (!rocksIterator.isValid() || rocksIterator.key() <= changes[changesIndex].key)
+        fromChanges = changes.isNotEmpty() &&
+            changesIndex >= 0 &&
+            (!rocksIterator.isValid() || rocksIterator.key() <= changes[changesIndex].key)
 
         if (fromChanges) {
             changes.getOrNull(changesIndex)?.let {

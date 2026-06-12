@@ -29,6 +29,7 @@ import maryk.datastore.foundationdb.processors.helpers.historicQualifierRetrieve
 import maryk.datastore.foundationdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
+import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
 import maryk.datastore.shared.readValue
 import maryk.foundationdb.Range as FDBRange
 
@@ -79,15 +80,13 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                 when (storageType) {
                     ObjectDelete -> {
                         currentVersion = maxOf(value.readVersionBytes(), maxVersion)
-                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
-                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        val payload = value.currentPayload(decryptValue)
                         isDeleted = payload.isNotEmpty() && payload[0] == TRUE
                         true
                     }
                     Value -> {
                         currentVersion = value.readVersionBytes()
-                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
-                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        val payload = value.currentPayload(decryptValue)
                         index = 0
                         val reader = { payload[index++] }
 
@@ -102,8 +101,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     }
                     ListSize -> {
                         currentVersion = value.readVersionBytes()
-                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
-                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        val payload = value.currentPayload(decryptValue)
                         index = 0
 
                         cachedRead(reference, currentVersion) {
@@ -112,8 +110,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     }
                     SetSize -> {
                         currentVersion = value.readVersionBytes()
-                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
-                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        val payload = value.currentPayload(decryptValue)
                         index = 0
 
                         cachedRead(reference, currentVersion) {
@@ -122,8 +119,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     }
                     MapSize -> {
                         currentVersion = value.readVersionBytes()
-                        val payload = decryptValue?.invoke(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
-                            ?: value.copyOfRange(VERSION_BYTE_SIZE, value.size)
+                        val payload = value.currentPayload(decryptValue)
                         index = 0
                         cachedRead(reference, currentVersion) {
                             initIntByVar { payload[index++] }
@@ -223,4 +219,10 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         firstVersion = creationVersion,
         lastVersion = maxVersion
     )
+}
+
+private fun ByteArray.currentPayload(decryptValue: ((ByteArray) -> ByteArray)?): ByteArray {
+    requireVersionedValue(this)
+    return decryptValue?.invoke(this.copyOfRange(VERSION_BYTE_SIZE, this.size))
+        ?: this.copyOfRange(VERSION_BYTE_SIZE, this.size)
 }

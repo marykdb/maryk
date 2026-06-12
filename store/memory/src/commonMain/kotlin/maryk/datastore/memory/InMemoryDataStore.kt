@@ -53,6 +53,7 @@ import maryk.datastore.memory.processors.processScanUpdatesRequest
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
+import maryk.datastore.shared.rethrowIfFatal
 
 /**
  * DataProcessor that stores all data changes in local memory.
@@ -131,6 +132,7 @@ class InMemoryDataStore private constructor(
                         storeAction.response.cancel(e)
                         throw e // terminate the actor
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         storeAction.response.completeExceptionally(e)
                     }
                 }

@@ -27,6 +27,7 @@ internal fun <DM : IsRootDataModel> scanStore(
 
     var overallStartKey: ByteArray?
     var overallEndKey: ByteArray?
+    var currentSize = 0u
 
     when (direction) {
         ASC -> {
@@ -46,16 +47,15 @@ internal fun <DM : IsRootDataModel> scanStore(
                     }
                 }
 
-                var currentSize = 0u
-
                 for (index in startIndex until dataStore.records.size) {
                     val record = dataStore.records[index]
+                    val recordKey = record.key.bytes
 
-                    if (range.keyOutOfRange(record.key.bytes)) {
+                    if (range.keyOutOfRange(recordKey)) {
                         break
                     }
 
-                    if (!scanRange.matchesPartials(record.key.bytes)) {
+                    if (!scanRange.matchesPartials(recordKey)) {
                         continue
                     }
 
@@ -68,6 +68,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break
                 }
+                if (currentSize == scanRequest.limit) break
             }
         }
         DESC -> {
@@ -80,22 +81,21 @@ internal fun <DM : IsRootDataModel> scanStore(
                 val startIndex = lastKey?.let { endRange ->
                     dataStore.records.binarySearch { it.key.bytes compareTo endRange }.let { index ->
                         when {
-                            index < 0 -> index * -1 - 1 // If negative start at first entry point
+                            index < 0 -> index * -1 - 2 // If negative start before first entry point because it should be before match
                             else -> index
                         }
                     }
                 } ?: dataStore.records.lastIndex
 
-                var currentSize = 0u
-
                 for (index in min(startIndex, dataStore.records.lastIndex) downTo 0) {
                     val record = dataStore.records[index]
+                    val recordKey = record.key.bytes
 
-                    if (range.keyBeforeStart(record.key.bytes)) {
+                    if (range.keyBeforeStart(recordKey)) {
                         break
                     }
 
-                    if (!scanRange.matchesPartials(record.key.bytes)) {
+                    if (!scanRange.matchesPartials(recordKey)) {
                         continue
                     }
 
@@ -108,6 +108,7 @@ internal fun <DM : IsRootDataModel> scanStore(
                     // Break when limit is found
                     if (++currentSize == scanRequest.limit) break
                 }
+                if (currentSize == scanRequest.limit) break
             }
         }
     }

@@ -1,7 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
 import maryk.foundationdb.Transaction
-import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -12,12 +11,15 @@ import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByKey
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.FetchByUniqueKey
+import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
@@ -36,12 +38,17 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
 
     scanRequest.checkToVersion(keepAllVersions)
 
+    if (keyScanRange.ranges.isEmpty()) {
+        return FetchByTableScan(ASC, null, null)
+    }
+
     // If hard key match then quit with direct record
     if (keyScanRange.isSingleKey()) {
         val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start)
         val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
         if (exists != null) {
-            val createdVersion = HLC.fromStorageBytes(exists).timestamp
+            val createdVersion = exists.readHLCTimestampIfPresent()
+                ?: return FetchByKey
             if (shouldProcessRecord(tr, tableDirs, key, createdVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
                 processRecord(key, createdVersion, null)
             }
@@ -72,7 +79,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
             if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
                 // Ensure we have the creation version for processRecord callback
                 val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-                val createdVersion = createdBytes?.let { HLC.fromStorageBytes(it).timestamp }
+                val createdVersion = createdBytes?.readHLCTimestampIfPresent()
                 if (createdVersion != null) {
                     processRecord(key, createdVersion, null)
                 }

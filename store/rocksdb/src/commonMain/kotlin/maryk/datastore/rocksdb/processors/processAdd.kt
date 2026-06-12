@@ -35,6 +35,7 @@ import maryk.datastore.rocksdb.processors.helpers.setValue
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
@@ -176,6 +177,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
             )
         )
     } catch (e: Throwable) {
+        e.rethrowIfFatal()
         ServerFail(e.toString(), e)
     }
 }

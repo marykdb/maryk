@@ -29,6 +29,7 @@ import maryk.datastore.foundationdb.processors.helpers.historicQualifierRetrieve
 import maryk.datastore.foundationdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
+import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
 import maryk.datastore.shared.readValue
 import maryk.foundationdb.Range as FDBRange
 
@@ -75,8 +76,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         cachedRead(reference, currentVersion) {
                             if (currentVersion >= fromVersion && keyBytes[prefixWithKeyRange.size] == 0.toByte()) {
-                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
-                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                val payload = valueBytes.currentPayload(decryptValue)
                                 payload.lastOrNull() == TRUE
                             } else null
                         }
@@ -88,8 +88,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                     ?: reference.propertyDefinition
 
-                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
-                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                val payload = valueBytes.currentPayload(decryptValue)
                                 index = 0
                                 val reader = { payload[index++] }
 
@@ -103,8 +102,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
-                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                val payload = valueBytes.currentPayload(decryptValue)
                                 index = 0
                                 initIntByVar { payload[index++] }
                             }
@@ -114,8 +112,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
-                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                val payload = valueBytes.currentPayload(decryptValue)
                                 index = 0
                                 initIntByVar { payload[index++] }
                             }
@@ -125,8 +122,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                val payload = decryptValue?.invoke(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size))
-                                    ?: valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueBytes.size)
+                                val payload = valueBytes.currentPayload(decryptValue)
                                 index = 0
                                 initIntByVar { payload[index++] }
                             }
@@ -218,4 +214,10 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
         sortingKey = sortingKey?.let(::Bytes),
         changes = changes
     )
+}
+
+private fun ByteArray.currentPayload(decryptValue: ((ByteArray) -> ByteArray)?): ByteArray {
+    requireVersionedValue(this)
+    return decryptValue?.invoke(this.copyOfRange(VERSION_BYTE_SIZE, this.size))
+        ?: this.copyOfRange(VERSION_BYTE_SIZE, this.size)
 }

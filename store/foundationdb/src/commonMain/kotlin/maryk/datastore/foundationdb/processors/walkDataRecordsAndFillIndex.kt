@@ -21,6 +21,7 @@ import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.lib.bytes.combineToByteArray
 
 /**
@@ -63,7 +64,10 @@ internal fun walkDataRecordsAndFillIndex(
                 val indexRef = indexable.referenceStorageByteArray.bytes
                 val valuesAndKeys = try {
                     indexable.toStorageByteArraysForIndex(getter, keyBytes)
-                } catch (_: Throwable) { emptyList() }
+                } catch (error: Throwable) {
+                    error.rethrowIfFatal()
+                    emptyList()
+                }
 
                 if (latestVersion.size >= VERSION_BYTE_SIZE) {
                     valuesAndKeys.forEach { valueAndKey ->

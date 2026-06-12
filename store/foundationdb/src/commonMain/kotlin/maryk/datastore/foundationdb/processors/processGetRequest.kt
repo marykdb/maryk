@@ -1,10 +1,8 @@
 package maryk.datastore.foundationdb.processors
 
 import maryk.core.aggregations.Aggregator
-import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.ValuesWithMetaData
@@ -15,9 +13,11 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
+import maryk.datastore.shared.helpers.convertToValue
 
 internal typealias GetStoreAction<DM> = StoreAction<DM, GetRequest<DM>, ValuesResponse<DM>>
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
@@ -42,7 +42,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                 if (existing == null) {
                     null
                 } else {
-                    val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
+                    val creationVersion = existing.readHLCTimestampIfPresent() ?: return@run null
 
                     if (getRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, getRequest.toVersion, this@processGetRequest::decryptValueIfNeeded)) {
                         null
@@ -77,11 +77,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                             keyAndReference = it.toStorageByteArray(),
                             decryptValue = this@processGetRequest::decryptValueIfNeeded
                         ) { valueBytes, offset, length ->
-                            (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(
-                                valueBytes,
-                                offset,
-                                length
-                            )
+                            valueBytes.convertToValue(it, offset, length)
                         }
             }
         }

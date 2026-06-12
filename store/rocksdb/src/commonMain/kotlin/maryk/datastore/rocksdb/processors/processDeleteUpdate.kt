@@ -34,16 +34,20 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDeleteUpdate
             HistoricStoreIndexValuesWalker(columnFamilies, defaultReadOptions)
         } else null
 
-        processDelete(
-            dataModel,
-            columnFamilies,
-            update.key,
-            HLC(update.version),
-            dbIndex,
-            hardDelete,
-            historicStoreIndexValuesWalker,
-            cache,
-        )
+        try {
+            processDelete(
+                dataModel,
+                columnFamilies,
+                update.key,
+                HLC(update.version),
+                dbIndex,
+                hardDelete,
+                historicStoreIndexValuesWalker,
+                cache,
+            )
+        } finally {
+            historicStoreIndexValuesWalker?.close()
+        }
     } else {
         throw RequestException("NotInRange deletes are not allowed, don't do limits or filters on requests which need to be processed")
     }

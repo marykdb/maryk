@@ -9,14 +9,32 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBMigrationLeaseConfiguration
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 class FoundationDBMigrationLeaseTest {
+    @Test
+    fun leaseConfigurationRejectsInvalidTiming() {
+        assertFailsWith<IllegalArgumentException> {
+            FoundationDBMigrationLeaseConfiguration(migrationLeaseTimeoutMs = 0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            FoundationDBMigrationLeaseConfiguration(migrationLeaseHeartbeatMs = 0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            FoundationDBMigrationLeaseConfiguration(
+                migrationLeaseTimeoutMs = 100,
+                migrationLeaseHeartbeatMs = 100,
+            )
+        }
+    }
+
     @Test
     fun heartbeatRenewsLeaseAndPreventsTakeover() = runBlocking {
         val dirPath = listOf("maryk", "test", "fdb-lease-heartbeat", Uuid.random().toString())

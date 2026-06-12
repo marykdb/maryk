@@ -8,7 +8,11 @@ import maryk.yaml.YamlWriter
 data class ModelMeta(
     val name: String,
     val keySize: Int,
-)
+) {
+    init {
+        require(keySize > 0) { "Model keySize should be positive but was $keySize" }
+    }
+}
 
 private const val META_FILE_NAME = "MARYK_META.yml"
 private const val CURRENT_VERSION = 1
@@ -106,7 +110,7 @@ private fun parseMeta(text: String): Map<UInt, ModelMeta> {
                                 }
                                 "keySize" -> {
                                     val valueToken = reader.nextToken() as? JsonToken.Value<*>
-                                    keySize = (valueToken?.value as? Number)?.toInt()
+                                    keySize = (valueToken?.value as? Number)?.toIntExact()
                                 }
                                 else -> reader.skipUntilNextField()
                             }
@@ -128,3 +132,17 @@ private fun parseMeta(text: String): Map<UInt, ModelMeta> {
 
     return models
 }
+
+private fun Number.toIntExact(): Int =
+    when (this) {
+        is Byte -> toInt()
+        is Short -> toInt()
+        is Int -> this
+        is Long -> {
+            require(this in Int.MIN_VALUE..Int.MAX_VALUE) {
+                "Model keySize should fit in Int but was $this"
+            }
+            toInt()
+        }
+        else -> throw IllegalArgumentException("Model keySize should be an integer but was $this")
+    }

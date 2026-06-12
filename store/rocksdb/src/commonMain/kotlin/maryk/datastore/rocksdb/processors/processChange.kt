@@ -50,6 +50,7 @@ import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -97,6 +98,7 @@ import maryk.datastore.rocksdb.processors.helpers.unsetNonChangedValues
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.lib.bytes.combineToByteArray
 import maryk.core.extensions.bytes.invert
@@ -567,7 +569,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                             }
                             listChange.addValuesAtIndex?.let {
                                 for ((index, value) in it) {
-                                    list.add(index.toInt(), value)
+                                    list.add(index.toListIndex(), value)
                                 }
                             }
                             listChange.addValuesToEnd?.let {
@@ -804,6 +806,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)
     } catch (e: Throwable) {
+        e.rethrowIfFatal()
         return ServerFail(e.toString(), e)
     }
 }

@@ -3,13 +3,16 @@ package maryk.datastore.memory.processors
 import maryk.core.exceptions.StorageException
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.exceptions.ParseException
 
 /**
  * Historical index values walker for a Memory store.
@@ -37,7 +40,12 @@ internal object HistoricStoreIndexValuesWalker {
                         getter.latestOverallVersion ?: throw StorageException("Latest overall version not set")
                     )
                 }
-            } catch (_: Throwable) {
+            } catch (_: ValidationException) {
+                // skip historical values no longer valid for the current index
+            } catch (_: ParseException) {
+                // skip malformed historical values
+            } catch (e: Exception) {
+                e.rethrowIfFatal()
                 // skip failing index reference generation
             }
 

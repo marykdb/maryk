@@ -36,7 +36,7 @@ internal fun <T : Any> setListValue(
     // Delete tail items if list shrank
     val toDelete = originalCount - newList.size
     if (toDelete > 0) {
-        for (i in 0..toDelete) {
+        for (i in 0 until toDelete) {
             val refToDelete = keyAndRef.copyOf(keyAndRef.size + 4)
             writeUIntBE(refToDelete, keyAndRef.size, (i + newList.size).toUInt())
             tr.clear(refToDelete)

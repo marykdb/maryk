@@ -9,6 +9,7 @@ import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThanEquals
 import maryk.core.query.filters.LessThanEquals
+import maryk.core.query.filters.ValueIn
 import maryk.core.query.orders.Direction
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
@@ -43,6 +44,7 @@ class DataStoreScanOnIndexTest(
         "executeSimpleIndexScanWithStartKeyRequest" to ::executeSimpleIndexScanWithStartKeyRequest,
         "executeSimpleIndexScanRequestReverseOrder" to ::executeSimpleIndexScanRequestReverseOrder,
         "executeIndexScanRequestWithLimit" to ::executeIndexScanRequestWithLimit,
+        "executeIndexScanWithMultiRangeLimit" to ::executeIndexScanWithMultiRangeLimit,
         "executeIndexScanRequestWithToVersionAscending" to ::executeIndexScanRequestWithToVersionAscending,
         "executeIndexScanRequestWithToVersionDescending" to ::executeIndexScanRequestWithToVersionDescending,
         "executeIndexScanRequestWithSelect" to ::executeIndexScanRequestWithSelect,
@@ -185,6 +187,22 @@ class DataStoreScanOnIndexTest(
         )) { scanResponse.dataFetchType }
 
 
+        scanResponse.values[0].let {
+            expect(logs[2]) { it.values }
+            expect(keys[2]) { it.key }
+        }
+    }
+
+    private suspend fun executeIndexScanWithMultiRangeLimit() {
+        val scanResponse = dataStore.execute(
+            Log.scan(
+                limit = 1u,
+                order = severity.ref().ascending(),
+                where = ValueIn(severity.ref() with setOf(INFO, DEBUG, ERROR))
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
         scanResponse.values[0].let {
             expect(logs[2]) { it.values }
             expect(keys[2]) { it.key }

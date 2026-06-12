@@ -22,9 +22,11 @@ import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
 import maryk.datastore.foundationdb.processors.helpers.readSetByReference
+import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
@@ -34,6 +36,7 @@ import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.foundationdb.clusterlog.ClusterLogDeletion
 import maryk.lib.bytes.combineToByteArray
@@ -107,8 +110,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         run {
             val prefix = packKey(tableDirs.tablePrefix, key.bytes)
             val range = FDBRange.startsWith(prefix)
-            val kvs = tr.getRange(range).asList().awaitResult()
-            for (kv in kvs) {
+            val iterator = tr.getRange(range).iterator()
+            while (iterator.hasNext()) {
+                val kv = iterator.nextBlocking()
                 val fullKey = kv.key
                 // Skip meta latest-version entry
                 if (fullKey.size == prefix.size) continue
@@ -125,6 +129,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 if (def is IsComparableDefinition<*, *> && def.unique) {
                     val value = kv.value
                     // Stored as (version || value)
+                    requireVersionedValue(value)
                     val storedValueBytes = value.copyOfRange(VERSION_BYTE_SIZE, value.size)
                     val valueBytes = decryptValueIfNeeded(storedValueBytes)
                     val uniqueValue = mapUniqueValueBytes(dbIndex, reference, valueBytes)
@@ -218,6 +223,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         emitUpdate(updateToEmit)
     }
 } catch (e: Throwable) {
+    e.rethrowIfFatal()
     val cause = e.unwrapFdb()
     ServerFail(cause.toString(), cause)
 }

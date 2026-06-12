@@ -60,7 +60,7 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
         scanRequest.dataModel.recordToObjectChanges(
             scanRequest.select,
             entry.version,
-            entry.version + 1uL,
+            entry.version.nextVersionOrNull(),
             1u,
             null,
             record
@@ -103,3 +103,6 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
 
 private fun updateHistoryNotAvailable() =
     RequestException("scanUpdateHistory requires keepAllVersions and a ready update history index")
+
+private fun ULong.nextVersionOrNull(): ULong? =
+    if (this == ULong.MAX_VALUE) null else this + 1uL

@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -17,8 +16,10 @@ import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.Cache
@@ -58,10 +59,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
 
         while (historyIterator.hasNext() && updates.size.toUInt() < scanRequest.limit) {
             val historyEntry = historyIterator.nextBlocking()
+            if (historyEntry.key.size < historyPrefix.size + VERSION_BYTE_SIZE + keySize) continue
             val version = historyEntry.key.readReversedVersionBytes(historyPrefix.size)
             if (version < scanRequest.fromVersion) break
 
-            val keyOffset = historyPrefix.size + maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+            val keyOffset = historyPrefix.size + VERSION_BYTE_SIZE
             val key = scanRequest.dataModel.key(historyEntry.key.copyOfRange(keyOffset, keyOffset + keySize))
             val isHardDelete = historyEntry.value.firstOrNull() == 1.toByte()
             val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
@@ -76,7 +78,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                 continue
             }
 
-            val creationVersion = HLC.fromStorageBytes(createdBytes).timestamp
+            val creationVersion = createdBytes.readHLCTimestampIfPresent() ?: continue
             if (scanRequest.shouldBeFiltered(
                     transaction = tr,
                     tableDirs = tableDirs,

@@ -220,8 +220,9 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
         @Suppress("UNCHECKED_CAST")
         val record = recordFetcher(scanRequest.dataModel, key) as DataRecord<DM>?
         if (record == null) {
-            if (entry.isHardDelete && scanRequest.where == null && !scanRange.keyBeforeStart(key.bytes, 0) &&
-                scanRange.keyWithinRanges(key.bytes, 0) && scanRange.matchesPartials(key.bytes) &&
+            val keyBytes = key.bytes
+            if (entry.isHardDelete && scanRequest.where == null && !scanRange.keyBeforeStart(keyBytes, 0) &&
+                scanRange.keyWithinRanges(keyBytes, 0) && scanRange.matchesPartials(keyBytes) &&
                 entry.version >= scanRequest.fromVersion
             ) {
                 updates += RemovalUpdate(

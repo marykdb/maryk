@@ -6,6 +6,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IsMapReference
 import maryk.datastore.shared.readValue
+import maryk.datastore.shared.rethrowIfFatal
 
 /** Read direct map entries for [mapReference] at [keyBytes] from latest table rows. */
 internal fun ReadTransaction.readMapByReference(
@@ -30,11 +31,13 @@ internal fun ReadTransaction.readMapByReference(
             val keyValue = mapDefinition.keyDefinition.readStorageBytes(mapKeyLength) { qualifier[readIndex++] }
             if (readIndex != qualifier.size) continue
             keyValue
-        } catch (_: Throwable) {
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
             continue
         }
 
         val stored = kv.value
+        requireVersionedValue(stored)
         val plain = decryptValue?.invoke(stored.copyOfRange(VERSION_BYTE_SIZE, stored.size))
             ?: stored.copyOfRange(VERSION_BYTE_SIZE, stored.size)
         var valueReadIndex = 0

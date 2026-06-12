@@ -13,6 +13,7 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.withTransaction
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 
 /** Processes a UpdateResponse with Change in a [storeAction] into a [RocksDBDataStore] */
@@ -50,6 +51,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
 
                         response
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         ServerFail(e.message ?: e.toString(), e)
                     }
                 } else {
@@ -73,6 +75,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
 
                         response
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         ServerFail(e.message ?: e.toString(), e)
                     }
                 }

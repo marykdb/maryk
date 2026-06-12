@@ -25,6 +25,7 @@ internal fun <T : Any> Transaction.getValue(
     return if (toVersion == null) {
         val packedKey = packKey(tableDirs.tablePrefix, keyAndReference)
         val value = this.get(packedKey).awaitResult() ?: return null
+        requireVersionedValue(value)
         if (decryptValue == null) {
             handleResult(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
         } else {
@@ -50,13 +51,8 @@ internal fun <T : Any> Transaction.getValue(
         while (it.hasNext()) {
             val kv = it.nextBlocking()
             val key = kv.key
-            val versionOffset = key.size - toVersionBytes.size
-            if (versionOffset <= 0) {
-                throw RequestException("Invalid qualifier for versioned get value")
-            }
-            if (key[versionOffset - 1] != 0.toByte()) {
-                throw RequestException("Missing separator in qualifier for versioned get value")
-            }
+            val versionOffset = prefixForKey.size + 1
+            if (key.size != versionOffset + VERSION_BYTE_SIZE || key[prefixForKey.size] != 0.toByte()) continue
             if (toVersionBytes.compareToRange(key, versionOffset) <= 0) {
                 val result = kv.value
                 return if (decryptValue == null) {

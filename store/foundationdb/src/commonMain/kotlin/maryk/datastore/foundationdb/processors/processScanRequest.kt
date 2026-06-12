@@ -3,7 +3,6 @@ package maryk.datastore.foundationdb.processors
 import maryk.core.aggregations.Aggregator
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
-import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.ValuesWithMetaData
@@ -13,6 +12,7 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
+import maryk.datastore.shared.helpers.convertToValue
 
 internal typealias ScanStoreAction<DM> = StoreAction<DM, ScanRequest<DM>, ValuesResponse<DM>>
 internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel>
@@ -61,11 +61,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
                         keyAndReference = it.toStorageByteArray(),
                         decryptValue = this@processScanRequest::decryptValueIfNeeded
                     ) { valueBytes, offset, length ->
-                        (it.propertyDefinition as IsStorageBytesEncodable<Any>).fromStorageBytes(
-                            valueBytes,
-                            offset,
-                            length
-                        )
+                        valueBytes.convertToValue(it, offset, length)
                     }
             }
         }

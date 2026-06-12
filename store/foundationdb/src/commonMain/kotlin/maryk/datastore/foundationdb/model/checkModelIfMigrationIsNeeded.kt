@@ -52,7 +52,11 @@ fun checkModelIfMigrationIsNeeded(
         val versionBytes = versionFuture.awaitResult()
         val readVersion = versionBytes?.let { bytes ->
             var i = 0
-            Version.Serializer.readFromBytes { bytes[i++] }
+            try {
+                Version.Serializer.readFromBytes { bytes[i++] }
+            } catch (cause: Throwable) {
+                throw StorageException("Invalid stored version metadata for model id $modelId: ${cause.message}")
+            }
         }
 
         resolvedName to readVersion

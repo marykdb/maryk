@@ -30,6 +30,9 @@ internal fun DBIterator.historicQualifierRetriever(
                 // key range check is ensured with setPrefixSameAsStart
                 val qualifier: ByteArray = key()
                 val versionOffset = qualifier.size - toVersionBytes.size
+                if (versionOffset < offset) {
+                    continue@qualifierFinder
+                }
                 val currentLastQualifier = lastQualifier
                 if (currentLastQualifier != null && qualifier.matchesRange(offset, currentLastQualifier, versionOffset - offset, offset, lastQualifierLength)) {
                     if (counter >= maxVersions) {

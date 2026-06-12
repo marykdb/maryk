@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors
 
-import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.query.changes.DataObjectVersionedChange
@@ -11,6 +10,7 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
@@ -40,7 +40,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
                 if (existing == null) {
                     null
                 } else {
-                    val creationVersion = HLC.fromStorageBytes(existing, 0).timestamp
+                    val creationVersion = existing.readHLCTimestampIfPresent() ?: return@run null
 
                     if (getRequest.shouldBeFiltered(
                             transaction = tr,

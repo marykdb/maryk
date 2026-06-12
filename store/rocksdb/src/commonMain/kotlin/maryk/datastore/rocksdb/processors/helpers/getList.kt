@@ -1,5 +1,6 @@
 package maryk.datastore.rocksdb.processors.helpers
 
+import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
@@ -29,9 +30,7 @@ internal fun <T : Any> getList(
         val count = if (!iterator.isValid() || !ref.matchesRangePart(0, keyAndReference)) {
             return mutableListOf()
         } else {
-            var readIndex = VERSION_BYTE_SIZE
-            val countBytes = iterator.value()
-            initIntByVar { countBytes[readIndex++] }
+            readStoredListCount(iterator.value())
         }
 
         val list = ArrayList<T>(count)
@@ -42,6 +41,7 @@ internal fun <T : Any> getList(
 
             if (ref.matchesRangePart(0, keyAndReference)) {
                 val valueAsBytes = iterator.value()
+                requireVersionedValue(valueAsBytes)
                 var readIndex = VERSION_BYTE_SIZE // Skip version because reading from main table
                 val reader = { valueAsBytes[readIndex++] }
                 readValue(reference.comparablePropertyDefinition.valueDefinition, reader) {
@@ -56,7 +56,24 @@ internal fun <T : Any> getList(
             iterator.next()
         }
 
-        iterator.close()
         return list
+    }
+}
+
+internal fun readStoredListCount(countBytes: ByteArray): Int {
+    requireVersionedValue(countBytes)
+    var readIndex = VERSION_BYTE_SIZE
+    return try {
+        initIntByVar { countBytes[readIndex++] }
+    } catch (cause: IndexOutOfBoundsException) {
+        throw StorageException("Invalid stored list count: ${cause.message}")
+    }
+}
+
+internal fun requireVersionedValue(valueBytes: ByteArray) = requireVersionedValueSize(valueBytes.size)
+
+internal fun requireVersionedValueSize(valueSize: Int) {
+    if (valueSize < VERSION_BYTE_SIZE) {
+        throw StorageException("Stored value is missing version prefix: $valueSize bytes")
     }
 }

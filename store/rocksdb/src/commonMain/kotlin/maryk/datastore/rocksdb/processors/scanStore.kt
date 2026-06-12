@@ -23,105 +23,102 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
     scanRange: KeyScanRanges,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
-    val iterator = dbAccessor.getIterator(defaultReadOptions, columnFamilies.keys)
-
     var overallStartKey: ByteArray?
     var overallEndKey: ByteArray?
+    var currentSize = 0u
 
-    when (direction) {
-        ASC -> {
-            overallStartKey = scanRange.ranges.first().getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
-            overallEndKey = scanRange.ranges.last().getDescendingStartKey()
+    dbAccessor.getIterator(defaultReadOptions, columnFamilies.keys).use { iterator ->
+        when (direction) {
+            ASC -> {
+                overallStartKey = scanRange.ranges.first().getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
+                overallEndKey = scanRange.ranges.last().getDescendingStartKey()
 
-            for (range in scanRange.ranges) {
-                val startKey = range.getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
+                for (range in scanRange.ranges) {
+                    val startKey = range.getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
 
-                iterator.seek(startKey)
+                    iterator.seek(startKey)
 
-                // Skip if value should not be included
-                if (iterator.isValid() && !range.startInclusive && range.start.contentEquals(iterator.key())) {
-                    iterator.next()
-                }
-
-                var currentSize = 0u
-
-                while (iterator.isValid()) {
-                    val key = scanRequest.dataModel.key(iterator.key())
-
-                    if (range.keyOutOfRange(key.bytes)) {
-                        break
-                    }
-
-                    if (!scanRange.matchesPartials(key.bytes)) {
+                    // Skip if value should not be included
+                    if (iterator.isValid() && !range.startInclusive && range.start.contentEquals(iterator.key())) {
                         iterator.next()
-                        continue
                     }
 
-                    val creationVersion = iterator.value().readVersionBytes()
+                    while (iterator.isValid()) {
+                        val key = scanRequest.dataModel.key(iterator.key())
 
-                    if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                        if (range.keyOutOfRange(key.bytes)) {
+                            break
+                        }
+
+                        if (!scanRange.matchesPartials(key.bytes)) {
+                            iterator.next()
+                            continue
+                        }
+
+                        val creationVersion = iterator.value().readVersionBytes()
+
+                        if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                            iterator.next()
+                            continue
+                        }
+
+                        processStoreValue(key, creationVersion, null)
+
+                        // Break when limit is found
+                        if (++currentSize == scanRequest.limit) break
+
                         iterator.next()
-                        continue
                     }
-
-                    processStoreValue(key, creationVersion, null)
-
-                    // Break when limit is found
-                    if (++currentSize == scanRequest.limit) break
-
-                    iterator.next()
+                    if (currentSize == scanRequest.limit) break
                 }
             }
-        }
-        DESC -> {
-            overallStartKey = scanRange.ranges.first().getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
-            overallEndKey = scanRange.ranges.last().getAscendingStartKey()
+            DESC -> {
+                overallStartKey = scanRange.ranges.first().getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
+                overallEndKey = scanRange.ranges.last().getAscendingStartKey()
 
-            for (range in scanRange.ranges.reversed()) {
-                val lastKey = range.getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
+                for (range in scanRange.ranges.reversed()) {
+                    val lastKey = range.getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
 
-                lastKey?.let { last ->
-                    iterator.seekForPrev(last)
-                } ?: iterator.seekToLast()
+                    lastKey?.let { last ->
+                        iterator.seekForPrev(last)
+                    } ?: iterator.seekToLast()
 
-                // Skip if value should not be included
-                if (iterator.isValid() && !range.endInclusive && range.end?.contentEquals(iterator.key()) == true) {
-                    iterator.prev()
-                }
-
-                var currentSize = 0u
-
-                while (iterator.isValid()) {
-                    val key = scanRequest.dataModel.key(iterator.key())
-
-                    if (range.keyBeforeStart(key.bytes)) {
-                        break
-                    }
-
-                    if (!scanRange.matchesPartials(key.bytes)) {
+                    // Skip if value should not be included
+                    if (iterator.isValid() && !range.endInclusive && range.end?.contentEquals(iterator.key()) == true) {
                         iterator.prev()
-                        continue
                     }
 
-                    val creationVersion = iterator.value().readVersionBytes()
+                    while (iterator.isValid()) {
+                        val key = scanRequest.dataModel.key(iterator.key())
 
-                    if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                        if (range.keyBeforeStart(key.bytes)) {
+                            break
+                        }
+
+                        if (!scanRange.matchesPartials(key.bytes)) {
+                            iterator.prev()
+                            continue
+                        }
+
+                        val creationVersion = iterator.value().readVersionBytes()
+
+                        if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                            iterator.prev()
+                            continue
+                        }
+
+                        processStoreValue(key, creationVersion, null)
+
+                        // Break when limit is found
+                        if (++currentSize == scanRequest.limit) break
+
                         iterator.prev()
-                        continue
                     }
-
-                    processStoreValue(key, creationVersion, null)
-
-                    // Break when limit is found
-                    if (++currentSize == scanRequest.limit) break
-
-                    iterator.prev()
+                    if (currentSize == scanRequest.limit) break
                 }
             }
         }
     }
-
-    iterator.close()
 
     return FetchByTableScan(
         direction = direction,

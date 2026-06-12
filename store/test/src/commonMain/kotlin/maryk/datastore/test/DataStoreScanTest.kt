@@ -9,6 +9,7 @@ import maryk.core.aggregations.metric.Min
 import maryk.core.aggregations.metric.MinResponse
 import maryk.core.exceptions.RequestException
 import maryk.core.models.graph
+import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Direction
@@ -39,6 +40,7 @@ class DataStoreScanTest(
         "executeSimpleScanRequest" to ::executeSimpleScanRequest,
         "executeSimpleScanWithAggregationRequest" to ::executeSimpleScanWithAggregationRequest,
         "executeSimpleScanRequestReverseOrder" to ::executeSimpleScanRequestReverseOrder,
+        "executeSimpleScanReverseOrderFromAbsentStartKey" to ::executeSimpleScanReverseOrderFromAbsentStartKey,
         "executeScanRequestWithLimit" to ::executeScanRequestWithLimit,
         "executeScanRequestWithToVersion" to ::executeScanRequestWithToVersion,
         "executeScanRequestWithSelect" to ::executeScanRequestWithSelect,
@@ -154,6 +156,24 @@ class DataStoreScanTest(
         )) { scanResponse.dataFetchType }
 
         // Mind that Log is sorted in reverse, so it goes back in time going forward
+        scanResponse.values[0].let {
+            expect(logs[2]) { it.values }
+            expect(keys[2]) { it.key }
+        }
+        scanResponse.values[1].let {
+            expect(logs[3]) { it.values }
+            expect(keys[3]) { it.key }
+        }
+    }
+
+    private suspend fun executeSimpleScanReverseOrderFromAbsentStartKey() {
+        val absentStart = Log.key(keys[2].bytes.copyOf().also { it[it.lastIndex] = (it[it.lastIndex] + 1).toByte() })
+        val scanResponse = dataStore.execute(
+            Log.scan(startKey = absentStart, order = descending)
+        )
+
+        expect(2) { scanResponse.values.size }
+
         scanResponse.values[0].let {
             expect(logs[2]) { it.values }
             expect(keys[2]) { it.key }

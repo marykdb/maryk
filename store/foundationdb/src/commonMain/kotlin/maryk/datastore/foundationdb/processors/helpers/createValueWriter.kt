@@ -75,6 +75,7 @@ internal fun FoundationDBDataStore.createValueWriter(
                         // Remove old unique entry if present for this qualifier
                         val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, reference)).awaitResult()
                         if (currentTop != null) {
+                            requireVersionedValue(currentTop)
                             val prevStoredValueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
                             val prevValueBytes = decryptValueIfNeeded(prevStoredValueBytes)
                             val oldUniqueValue = mapUniqueValueBytes(dataModelId, reference, prevValueBytes)

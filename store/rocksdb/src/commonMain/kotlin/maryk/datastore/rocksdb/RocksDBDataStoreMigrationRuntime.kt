@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.update
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
@@ -17,6 +18,7 @@ import maryk.datastore.shared.migration.createMigrationAuditEvent
 import maryk.datastore.shared.migration.projectMigrationRuntimeStatus
 import maryk.datastore.shared.migration.updatedMigrationMetrics
 import maryk.datastore.shared.migration.updatedMigrationRuntimeDetails
+import maryk.datastore.shared.rethrowIfFatal
 
 internal fun RocksDBDataStore.pendingMigrationsInternal(): Map<UInt, String> = pendingMigrationReasons.value
 
@@ -153,6 +155,17 @@ internal fun RocksDBDataStore.failPendingMigrationInternal(modelId: UInt, reason
     waiter?.completeExceptionally(MigrationException(reason))
 }
 
+internal fun RocksDBDataStore.cancelPendingMigrationsInternal(reason: String) {
+    var waiters: Collection<CompletableDeferred<Unit>> = emptyList()
+    pendingMigrationWaiters.update { current ->
+        waiters = current.values
+        emptyMap()
+    }
+    waiters.forEach {
+        it.completeExceptionally(CancellationException(reason))
+    }
+}
+
 internal fun RocksDBDataStore.updateMigrationRuntimeDetailsInternal(modelId: UInt, state: MigrationState) {
     val nowMs = HLC().toPhysicalUnixTime().toLong()
     migrationRuntimeDetailsByModelId.update { current ->
@@ -178,6 +191,7 @@ internal suspend fun RocksDBDataStore.appendMigrationAuditEventInternal(
         message = message,
     )
     runCatching { migrationConfiguration.migrationAuditEventReporter(event) }
+        .onFailure { it.rethrowIfFatal() }
     migrationAuditLogStore?.append(modelId, event)
     incrementMigrationMetricInternal(modelId, type)
 }

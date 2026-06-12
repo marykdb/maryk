@@ -51,7 +51,7 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
         val change = getChangeOrNull(columnFamilyHandle, key, offset, len)
         return when (change) {
             is Put -> {
-                change.value.copyInto(value, vOffset)
+                change.value.copyInto(value, vOffset, 0, minOf(change.value.size, vLen, value.size - vOffset))
                 change.value.size
             }
             is Delete -> rocksDBNotFound

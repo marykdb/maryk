@@ -23,5 +23,6 @@ internal fun <DM: IsRootDataModel> getLastVersion(dbAccessor: DBAccessor, column
         throw StorageException("Can only retrieve last versions of existing objects")
     }
 
+    requireVersionedValueSize(valueLength)
     return recyclableByteArray.readVersionBytes(key.size + 2)
 }

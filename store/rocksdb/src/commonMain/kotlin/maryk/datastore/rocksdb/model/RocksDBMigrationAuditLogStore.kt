@@ -10,6 +10,10 @@ internal class RocksDBMigrationAuditLogStore(
     private val modelColumnFamiliesById: Map<UInt, ColumnFamilyHandle>,
     private val maxEntries: Int = 1000,
 ) : MigrationAuditLogStore {
+    init {
+        require(maxEntries > 0) { "maxEntries should be positive but was $maxEntries" }
+    }
+
     override suspend fun append(modelId: UInt, event: MigrationAuditEvent) {
         val handle = modelColumnFamiliesById[modelId] ?: return
         val current = rocksDB.get(handle, modelMigrationAuditLogKey)
@@ -18,11 +22,10 @@ internal class RocksDBMigrationAuditLogStore(
             ?.filter { it.isNotBlank() }
             ?.toMutableList()
             ?: mutableListOf()
-        current.add(event.toPersistedLine())
-        if (current.size > maxEntries) {
-            val removeCount = current.size - maxEntries
-            repeat(removeCount) { current.removeAt(0) }
+        if (current.size >= maxEntries) {
+            current.subList(0, current.size - maxEntries + 1).clear()
         }
+        current.add(event.toPersistedLine())
         rocksDB.put(handle, modelMigrationAuditLogKey, current.joinToString("\n").encodeToByteArray())
     }
 

@@ -8,7 +8,6 @@ import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.rocksDBNotFound
 
 /**
  * Get a unique record key by value
@@ -23,10 +22,15 @@ internal fun getKeyByUniqueValue(
 ) {
     if (toVersion == null) {
         val valueLength = dbAccessor.get(columnFamilies.unique, readOptions, reference, recyclableByteArray)
-        if (valueLength != rocksDBNotFound) {
-            val setAtVersion = recyclableByteArray.readVersionBytes()
+        if (valueLength >= VERSION_BYTE_SIZE) {
+            val value = if (valueLength > recyclableByteArray.size) {
+                dbAccessor.get(columnFamilies.unique, readOptions, reference) ?: return
+            } else {
+                recyclableByteArray
+            }
+            val setAtVersion = value.readVersionBytes()
             var readIndex = VERSION_BYTE_SIZE
-            processKey({ recyclableByteArray[readIndex++] }, setAtVersion)
+            processKey({ value[readIndex++] }, setAtVersion)
         }
     } else {
         if (columnFamilies !is HistoricTableColumnFamilies) {
@@ -44,6 +48,10 @@ internal fun getKeyByUniqueValue(
                 // Only continue if still same keyAndReference
                 if (key.matchesRangePart(0, reference)) {
                     val versionOffset = key.size - versionBytes.size
+                    if (versionOffset != reference.size) {
+                        iterator.next()
+                        continue
+                    }
                     // Only match if version is valid, else read next version
                     if (versionBytes.compareToRange(key, versionOffset) <= 0) {
                         val result = iterator.value()

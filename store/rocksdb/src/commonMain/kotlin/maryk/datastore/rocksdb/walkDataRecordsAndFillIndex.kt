@@ -27,52 +27,56 @@ internal fun walkDataRecordsAndFillIndex(
                 )
             } else null
 
-            // Go to the start of the column family
-            iterator.seek(byteArrayOf())
+            try {
+                // Go to the start of the column family
+                iterator.seek(byteArrayOf())
 
-            while (iterator.isValid()) {
-                val key = iterator.key()
+                while (iterator.isValid()) {
+                    val key = iterator.key()
 
-                storeGetter.moveToKey(key)
+                    storeGetter.moveToKey(key)
 
-                for (index in indexesToIndex) {
-                    storeGetter.lastVersion = null
-                    // Store non-historic value
-                    index.toStorageByteArraysForIndex(storeGetter, key).forEach { indexValue ->
-                        transaction.put(columnFamilies.index, index.referenceStorageByteArray.bytes + indexValue, storeGetter.lastVersion!!.toByteArray())
-                    }
+                    for (index in indexesToIndex) {
+                        storeGetter.lastVersion = null
+                        // Store non-historic value
+                        index.toStorageByteArraysForIndex(storeGetter, key).forEach { indexValue ->
+                            transaction.put(columnFamilies.index, index.referenceStorageByteArray.bytes + indexValue, storeGetter.lastVersion!!.toByteArray())
+                        }
 
-                    // Process historical values for historical index
-                    if (columnFamilies is HistoricTableColumnFamilies) {
-                        var futureHistoricReference: ByteArray? = null
+                        // Process historical values for historical index
+                        if (columnFamilies is HistoricTableColumnFamilies) {
+                            var futureHistoricReference: ByteArray? = null
 
-                        historicStoreIndexValuesWalker?.walkHistoricalValuesForIndexKeys(
-                            key,
-                            transaction,
-                            index
-                        ) { historicReference ->
-                            futureHistoricReference?.let {
-                                val newHistoricReference = historicReference.copyOf()
-                                it.copyInto(
-                                    destination = newHistoricReference,
-                                    destinationOffset = newHistoricReference.size - VERSION_BYTE_SIZE,
-                                    startIndex = historicReference.size - VERSION_BYTE_SIZE
+                            historicStoreIndexValuesWalker?.walkHistoricalValuesForIndexKeys(
+                                key,
+                                transaction,
+                                index
+                            ) { historicReference ->
+                                futureHistoricReference?.let {
+                                    val newHistoricReference = historicReference.copyOf()
+                                    it.copyInto(
+                                        destination = newHistoricReference,
+                                        destinationOffset = newHistoricReference.size - VERSION_BYTE_SIZE,
+                                        startIndex = historicReference.size - VERSION_BYTE_SIZE
+                                    )
+
+                                    transaction.put(columnFamilies.historic.index, newHistoricReference, FALSE_ARRAY)
+                                }
+
+                                transaction.put(
+                                    columnFamilies.historic.index,
+                                    historicReference,
+                                    EMPTY_ARRAY
                                 )
 
-                                transaction.put(columnFamilies.historic.index, newHistoricReference, FALSE_ARRAY)
+                                futureHistoricReference = historicReference
                             }
-
-                            transaction.put(
-                                columnFamilies.historic.index,
-                                historicReference,
-                                EMPTY_ARRAY
-                            )
-
-                            futureHistoricReference = historicReference
                         }
                     }
+                    iterator.next()
                 }
-                iterator.next()
+            } finally {
+                historicStoreIndexValuesWalker?.close()
             }
             transaction.commit()
         }

@@ -23,6 +23,8 @@ import maryk.lib.bytes.combineToByteArray
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
+private const val maxUShortLength = 0xFFFF
+
 internal class ClusterUpdateLog(
     private val logPrefix: ByteArray,
     private val consumerPrefix: ByteArray,
@@ -37,6 +39,11 @@ internal class ClusterUpdateLog(
     private val retention: Duration,
 ) {
     private val originBytes = originId.encodeToByteArray()
+
+    init {
+        require(shardCount > 0) { "shardCount should be positive" }
+        require(originBytes.size <= maxUShortLength) { "originId encoded length should fit in 16 bits" }
+    }
 
     private val definitionsContext = DefinitionsContext(
         dataModels = dataModelsById.values
@@ -201,6 +208,7 @@ internal class ClusterUpdateLog(
         val originLen = originBytes.size
         val keyBytes = update.keyBytes.bytes
         val keyLen = keyBytes.size
+        require(keyLen <= maxUShortLength) { "key encoded length should fit in 16 bits" }
 
         val payloadBytes = when (update) {
             is ClusterLogAddition -> encodeValuesBytes(dataModel, update.values)
@@ -300,7 +308,7 @@ internal class ClusterUpdateLog(
                 ((value[o++].toInt() and 0xFF) shl 8) or
                 (value[o++].toInt() and 0xFF)
             )
-        if (payloadLen < 0 || value.size < o + payloadLen) return null
+        if (payloadLen < 0 || payloadLen != value.size - o) return null
         val payload = value.copyOfRange(o, o + payloadLen)
 
         val decodedUpdate = when (type) {
@@ -364,7 +372,7 @@ internal class ClusterUpdateLog(
             serializer.readProtoBuf(bytes.size, { bytes[i++] }, ctx).also {
                 if (i != bytes.size) return null
             }
-        } catch (_: Throwable) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -388,7 +396,7 @@ internal class ClusterUpdateLog(
             val values = serializer.readProtoBuf(bytes.size, { bytes[i++] }, ctx).toDataObject()
             if (i != bytes.size) return null
             values.changes
-        } catch (_: Throwable) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -413,17 +421,28 @@ private fun versionstampedValuePlaceholder(): ByteArray {
     return out
 }
 
-private fun packWithAdjustedVersionstampOffset(prefix: ByteArray, packedWithVersionstamp: ByteArray): ByteArray {
+internal fun packWithAdjustedVersionstampOffset(prefix: ByteArray, packedWithVersionstamp: ByteArray): ByteArray {
     require(packedWithVersionstamp.size >= 4) { "Versionstamped tuple must include 4-byte offset trailer" }
     val payloadLen = packedWithVersionstamp.size - 4
     val offset = packedWithVersionstamp.readIntLittleEndian(payloadLen)
+    require(offset >= 0) { "Versionstamp offset cannot be negative: $offset" }
+    require(offset <= Int.MAX_VALUE - prefix.size) { "Versionstamp offset exceeds Int range" }
     val newOffset = offset + prefix.size
+    val outputSize = prefix.size
+        .checkedClusterLogByteLengthPlus(payloadLen)
+        .checkedClusterLogByteLengthPlus(4)
 
-    val out = ByteArray(prefix.size + payloadLen + 4)
+    val out = ByteArray(outputSize)
     prefix.copyInto(out, 0)
     packedWithVersionstamp.copyInto(out, prefix.size, 0, payloadLen)
     out.writeIntLittleEndian(prefix.size + payloadLen, newOffset)
     return out
+}
+
+internal fun Int.checkedClusterLogByteLengthPlus(addend: Int): Int {
+    require(addend >= 0) { "Cluster log byte length cannot be negative: $addend" }
+    require(this <= Int.MAX_VALUE - addend) { "Cluster log byte length exceeds Int range" }
+    return this + addend
 }
 
 private fun ULong.toBigEndianBytes(): ByteArray {

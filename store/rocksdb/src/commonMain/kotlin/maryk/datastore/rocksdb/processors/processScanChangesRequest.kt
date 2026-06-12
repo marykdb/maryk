@@ -30,58 +30,56 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
         val columnToScan = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        val iterator = dbAccessor.getIterator(defaultReadOptions, columnToScan)
+        dbAccessor.getIterator(defaultReadOptions, columnToScan).use { iterator ->
+            scanRequest.checkMaxVersions(keepAllVersions)
 
-        scanRequest.checkMaxVersions(keepAllVersions)
-
-        val dataFetchType = processScan(
-            scanRequest,
-            dbAccessor,
-            columnFamilies,
-            defaultReadOptions
-        ) { key, creationVersion, sortingKey ->
-            val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                runBlocking {
-                    cache.readValue(dbIndex, key, reference, version, valueReader)
-                }
-            }
-
-            scanRequest.dataModel.readTransactionIntoObjectChanges(
-                iterator,
-                creationVersion,
+            val dataFetchType = processScan(
+                scanRequest,
+                dbAccessor,
                 columnFamilies,
-                key,
-                scanRequest.select,
-                scanRequest.fromVersion,
-                scanRequest.toVersion,
-                scanRequest.maxVersions,
-                sortingKey,
-                cacheReader
-            )?.let { changes ->
-                val updated = if (scanRequest.toVersion == null && scanRequest.maxVersions > 1u && columnFamilies is HistoricTableColumnFamilies) {
-                    addSoftDeleteChangeIfMissing(
-                        dbAccessor = dbAccessor,
-                        columnFamilies = columnFamilies,
-                        readOptions = defaultReadOptions,
-                        key = key,
-                        fromVersion = scanRequest.fromVersion,
-                        objectChange = changes
-                    )
-                } else {
-                    changes
+                defaultReadOptions
+            ) { key, creationVersion, sortingKey ->
+                val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                    runBlocking {
+                        cache.readValue(dbIndex, key, reference, version, valueReader)
+                    }
                 }
-                objectChanges += updated
+
+                scanRequest.dataModel.readTransactionIntoObjectChanges(
+                    iterator,
+                    creationVersion,
+                    columnFamilies,
+                    key,
+                    scanRequest.select,
+                    scanRequest.fromVersion,
+                    scanRequest.toVersion,
+                    scanRequest.maxVersions,
+                    sortingKey,
+                    cacheReader
+                )?.let { changes ->
+                    val updated = if (scanRequest.toVersion == null && scanRequest.maxVersions > 1u && columnFamilies is HistoricTableColumnFamilies) {
+                        addSoftDeleteChangeIfMissing(
+                            dbAccessor = dbAccessor,
+                            columnFamilies = columnFamilies,
+                            readOptions = defaultReadOptions,
+                            key = key,
+                            fromVersion = scanRequest.fromVersion,
+                            objectChange = changes
+                        )
+                    } else {
+                        changes
+                    }
+                    objectChanges += updated
+                }
             }
-        }
 
-        iterator.close()
-
-        storeAction.response.complete(
-            ChangesResponse(
-                dataModel = scanRequest.dataModel,
-                changes = objectChanges,
-                dataFetchType = dataFetchType,
+            storeAction.response.complete(
+                ChangesResponse(
+                    dataModel = scanRequest.dataModel,
+                    changes = objectChanges,
+                    dataFetchType = dataFetchType,
+                )
             )
-        )
+        }
     }
 }

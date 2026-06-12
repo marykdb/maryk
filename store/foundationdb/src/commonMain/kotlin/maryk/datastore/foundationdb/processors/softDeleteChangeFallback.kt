@@ -1,13 +1,16 @@
 package maryk.datastore.foundationdb.processors
 
+import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
 import maryk.foundationdb.Transaction
 
@@ -26,6 +29,10 @@ internal fun <DM : IsRootDataModel> addSoftDeleteChangeIfMissing(
     val softDeleteQualifier = key.bytes + SOFT_DELETE_INDICATOR
     val packedKey = packKey(tableDirs.tablePrefix, softDeleteQualifier)
     val value = tr.get(packedKey).awaitResult() ?: return objectChange
+    requireVersionedValue(value)
+    if (value.size == VERSION_BYTE_SIZE) {
+        throw StorageException("Stored soft delete value is missing delete flag")
+    }
 
     val version = value.readVersionBytes()
     if (version < fromVersion) return objectChange

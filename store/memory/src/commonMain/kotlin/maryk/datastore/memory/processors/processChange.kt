@@ -42,6 +42,7 @@ import maryk.core.properties.references.MapReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
@@ -79,6 +80,7 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.DeletedValue
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
@@ -502,7 +504,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                             }
                             listChange.addValuesAtIndex?.let {
                                 for ((index, value) in it) {
-                                    list.add(index.toInt(), value)
+                                    list.add(index.toListIndex(), value)
                                 }
                             }
                             listChange.addValuesToEnd?.let {
@@ -727,6 +729,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         // Nothing skipped out so must be a success
         return ChangeSuccess(version.timestamp, outChanges)
     } catch (e: Throwable) {
+        e.rethrowIfFatal()
         return ServerFail(e.toString(), e)
     }
 }

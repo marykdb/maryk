@@ -19,6 +19,7 @@ import maryk.core.models.migration.StoredRootDataModelDefinition
 import maryk.core.models.migration.canTransitionTo
 import maryk.core.models.migration.nextRuntimePhaseOrNull
 import maryk.core.models.migration.normalizedRuntimePhase
+import maryk.datastore.shared.migration.nextMigrationAttemptOrNull
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -131,6 +132,15 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         return phase to outcome
     }
 
+    suspend fun executeNextStep(previousState: MigrationState?): Pair<UInt, Pair<MigrationPhase, MigrationOutcome>> {
+        val attempt = nextMigrationAttemptOrNull(previousState?.attempt)
+        if (attempt == null) {
+            val phase = previousState?.phase?.normalizedRuntimePhase() ?: MigrationPhase.Expand
+            return UInt.MAX_VALUE to (phase to MigrationOutcome.Fatal("Migration attempt counter overflow"))
+        }
+        return attempt to executeStep(previousState, attempt)
+    }
+
     fun launchBackgroundMigration(leaseAlreadyAcquired: Boolean) {
         launch {
             var hasLease = leaseAlreadyAcquired
@@ -176,8 +186,8 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                         continue
                     }
                     val previousState = migrationStateStore.read(index)
-                    val attempt = (previousState?.attempt ?: 0u) + 1u
-                    val (phase, outcome) = executeStep(previousState, attempt)
+                    val (attempt, step) = executeNextStep(previousState)
+                    val (phase, outcome) = step
 
                     when (outcome) {
                         MigrationOutcome.Success -> {
@@ -309,8 +319,8 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
             }
 
             val previousState = migrationStateStore.read(index)
-            val attempt = (previousState?.attempt ?: 0u) + 1u
-            val (phase, outcome) = executeStep(previousState, attempt)
+            val (attempt, step) = executeNextStep(previousState)
+            val (phase, outcome) = step
 
             when (outcome) {
                 MigrationOutcome.Success -> {

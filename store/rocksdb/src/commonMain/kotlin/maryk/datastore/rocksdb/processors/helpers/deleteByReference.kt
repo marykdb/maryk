@@ -84,7 +84,7 @@ internal fun <T : Any> deleteByReference(
 
                     when (val valueDefinition = mapReference.propertyDefinition.definition.valueDefinition) {
                         is IsStorageBytesEncodable<*> ->
-                            valueDefinition.fromStorageBytes(b, o, l) as T
+                            valueDefinition.fromStorageBytes(b, o + 1, l - 1) as T
                         is EmbeddedValuesDefinition<*> ->
                             valueDefinition.dataModel.emptyValues() as T
                         is IsMapDefinition<*, *, *> -> mapOf<Any, Any>() as T
@@ -120,7 +120,7 @@ internal fun <T : Any> deleteByReference(
                     referenceOfParent = listReference.toStorageByteArray(key.bytes)
                     // Map values can be set to null to be deleted.
                     shouldHandlePrevValue = false
-                    (listDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(b, o, l)
+                    (listDefinition.valueDefinition as IsStorageBytesEncodable<T>).fromStorageBytes(b, o + 1, l - 1)
                 }
                 is SetItemReference<*, *> -> {
                     val setReference = reference.parentReference as SetReference<Any, IsPropertyContext>
@@ -155,7 +155,7 @@ internal fun <T : Any> deleteByReference(
                         }
                     } as T
                 }
-                else -> (reference as IsStorageBytesEncodable<T>).fromStorageBytes(b, o, l)
+                else -> (reference as IsStorageBytesEncodable<T>).fromStorageBytes(b, o + 1, l - 1)
             }
         }
     } ?: return false
@@ -170,36 +170,37 @@ internal fun <T : Any> deleteByReference(
     val shouldNotDeleteCompletely = reference is IsPropertyReferenceWithParent<*, *, *, *> && reference.parentReference is IncMapReference<*, *, *>
 
     // Delete value and complex sub parts below same reference
-    val iterator = transaction.getIterator(readOptions, columnFamilies.table)
-    iterator.seek(referenceToCompareTo)
-    val refOfParent = referenceOfParent
-    while (iterator.isValid()) {
-        val ref = iterator.key()
+    transaction.getIterator(readOptions, columnFamilies.table).use { iterator ->
+        iterator.seek(referenceToCompareTo)
+        val refOfParent = referenceOfParent
+        while (iterator.isValid()) {
+            val ref = iterator.key()
 
-        if (ref.matchesRangePart(0, referenceToCompareTo)) {
-            // Delete if not a list or no further list items
-            if (toShiftListCount <= 0u) {
-                if (shouldNotDeleteCompletely) {
-                    setValue(transaction, columnFamilies, ref, version, TypeIndicator.DeletedIndicator.byteArray)
-                } else {
+            if (ref.matchesRangePart(0, referenceToCompareTo)) {
+                // Delete if not a list or no further list items
+                if (toShiftListCount <= 0u) {
+                    if (shouldNotDeleteCompletely) {
+                        setValue(transaction, columnFamilies, ref, version, TypeIndicator.DeletedIndicator.byteArray)
+                    } else {
+                        deleteValue(transaction, columnFamilies, ref, version)
+                    }
+                }
+            } else if (refOfParent != null && ref.matchesRangePart(0, refOfParent)) {
+                // To handle list shifting
+                if (toShiftListCount > 0u) {
+                    val value = iterator.value()
+                    setValue(transaction, columnFamilies, ref.prevByteInSameLength(), version, value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
+                    toShiftListCount--
+                }
+
+                if (toShiftListCount <= 0u) {
                     deleteValue(transaction, columnFamilies, ref, version)
                 }
+            } else {
+                break
             }
-        } else if (refOfParent != null && ref.matchesRangePart(0, refOfParent)) {
-            // To handle list shifting
-            if (toShiftListCount > 0u) {
-                val value = iterator.value()
-                setValue(transaction, columnFamilies, ref.prevByteInSameLength(), version, value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
-                toShiftListCount--
-            }
-
-            if (toShiftListCount <= 0u) {
-                deleteValue(transaction, columnFamilies, ref, version)
-            }
-        } else {
-            break
+            iterator.next()
         }
-        iterator.next()
     }
 
     return true

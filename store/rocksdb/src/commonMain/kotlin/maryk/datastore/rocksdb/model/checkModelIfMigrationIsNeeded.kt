@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.rocksdb.metadata.ModelMeta
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
 
@@ -25,7 +26,12 @@ fun checkModelIfMigrationIsNeeded(
     val storedNameFromModel = rocksDB.get(modelColumnFamily, modelNameKey)?.decodeToString()
     val storedVersion = rocksDB.get(modelColumnFamily, modelVersionKey)?.let {
         var readIndex = 0
-        Version.Serializer.readFromBytes { it[readIndex++] }
+        try {
+            Version.Serializer.readFromBytes { it[readIndex++] }
+        } catch (cause: Throwable) {
+            cause.rethrowIfFatal()
+            throw StorageException("Invalid stored version metadata for model id $modelId: ${cause.message}")
+        }
     }
 
     val storedNameFromMeta = modelMeta?.name

@@ -3,7 +3,6 @@ package maryk.datastore.foundationdb.processors
 import maryk.foundationdb.Range
 import maryk.foundationdb.ReadTransaction
 import maryk.foundationdb.Transaction
-import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.exceptions.StorageException
@@ -30,11 +29,12 @@ import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
-import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
+import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
 import maryk.datastore.foundationdb.processors.helpers.readSetByReference
@@ -171,7 +171,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
                         if (!hasAdditionalMatches(tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, null)) continue
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
-                        val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                        val createdVersion = createdPacked.readHLCTimestampIfPresent() ?: continue
                         if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) continue
 
                         if (startKeyFilter != null) {
@@ -242,7 +242,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
                         if (!hasAdditionalMatches(tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, null)) continue
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
-                        val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                        val createdVersion = createdPacked.readHLCTimestampIfPresent() ?: continue
                         if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) continue
 
                         val key = scanRequest.dataModel.key(keyBytes)
@@ -321,18 +321,20 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 val prevEnc = lastQualifierEncoded
                 if (prevEnc != null && prevEnc.contentEquals(encQualifier)) continue
                 lastQualifierEncoded = encQualifier
-                val qualifier = decodeZeroFreeUsing01(encQualifier)
+                val qualifier = decodeZeroFreeUsing01OrNull(encQualifier) ?: continue
                 if (qualifier.size <= indexReference.size) continue
                 val valueAndKey = qualifier.copyOfRange(indexReference.size, qualifier.size)
+                val valueSize = valueAndKey.size - keySize
+                if (valueSize < 0) continue
 
-                if (!indexScanRange.matchesPartials(valueAndKey, 0, valueAndKey.size - keySize)) continue
+                if (!indexScanRange.matchesPartials(valueAndKey, 0, valueSize)) continue
 
                 val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
                 if (!hasHistoricAdditionalMatches(tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, scanRequest.toVersion!!)) continue
                 if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion, decryptValue, indexScan.index)) continue
 
                 val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: continue
-                val createdVersion = HLC.fromStorageBytes(createdPacked).timestamp
+                val createdVersion = createdPacked.readHLCTimestampIfPresent() ?: continue
                 val version = k.readReversedVersionBytes(versionOffset)
                 val rec = Rec(valueAndKey, keyBytes, createdVersion)
                 val keyRef = keyBytes.asByteArrayKey()
@@ -471,7 +473,8 @@ private fun hasHistoricMatchingExactValue(
 
     while (iterator.hasNext()) {
         val kv = iterator.nextBlocking()
-        val versionOffset = kv.key.size - toVersionBytes.size
+        val versionOffset = prefix.size + 1
+        if (kv.key.size != versionOffset + VERSION_BYTE_SIZE || kv.key[prefix.size] != 0.toByte()) continue
         if (toVersionBytes.compareToRange(kv.key, versionOffset) <= 0) {
             return kv.value.isEmpty()
         }
@@ -522,7 +525,7 @@ private fun hasHistoricMatchingPrefixValue(
             continue
         }
 
-        val qualifier = decodeZeroFreeUsing01(encodedQualifier)
+        val qualifier = decodeZeroFreeUsing01OrNull(encodedQualifier) ?: continue
         if (qualifier.size <= indexReference.size + recordKey.size) {
             settledQualifier = encodedQualifier
             continue

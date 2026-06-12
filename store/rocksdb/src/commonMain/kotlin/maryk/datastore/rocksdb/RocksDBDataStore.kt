@@ -41,7 +41,6 @@ import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
-import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.addDataModelReferences
@@ -93,7 +92,6 @@ import maryk.datastore.rocksdb.processors.AnyScanUpdateHistoryStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
 import maryk.datastore.rocksdb.processors.VersionedComparator
-import maryk.datastore.rocksdb.processors.addSoftDeleteChangeIfMissing
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.rocksdb.processors.processAddRequest
 import maryk.datastore.rocksdb.processors.processAdditionUpdate
@@ -105,19 +103,21 @@ import maryk.datastore.rocksdb.processors.processGetChangesRequest
 import maryk.datastore.rocksdb.processors.processGetRequest
 import maryk.datastore.rocksdb.processors.processGetUpdatesRequest
 import maryk.datastore.rocksdb.processors.processInitialChangesUpdate
-import maryk.datastore.rocksdb.processors.readTransactionIntoObjectChanges
+import maryk.datastore.rocksdb.processors.SOFT_DELETE_INDICATOR
 import maryk.datastore.rocksdb.processors.processScanChangesRequest
 import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdateHistoryRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
@@ -129,6 +129,8 @@ import maryk.rocksdb.RocksDB
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.defaultColumnFamily
 import maryk.rocksdb.openRocksDB
+import maryk.lib.extensions.compare.matchesRangePart
+import maryk.lib.recyclableByteArray
 import kotlin.time.TimeSource
 
 private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
@@ -147,6 +149,7 @@ class RocksDBDataStore private constructor(
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
+    private val resourcesClosed = atomic(false)
     private val sensitiveReferencesByModelId: Map<UInt, SensitiveModelReferences> =
         dataModelsById.mapValues { (modelId, model) ->
             collectSensitiveReferences(modelId, model)
@@ -406,6 +409,7 @@ class RocksDBDataStore private constructor(
                         storeAction.response.cancel(e)
                         throw e
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         storeAction.response.completeExceptionally(e)
                     }
                 }
@@ -444,14 +448,12 @@ class RocksDBDataStore private constructor(
             return
         }
 
-        backfillUpdateHistoryIndex(dbIndex, dataModel, tableColumnFamilies)
+        backfillUpdateHistoryIndex(tableColumnFamilies)
         db.put(tableColumnFamilies.model, modelUpdateHistoryBackfillCompleteKey, byteArrayOf(1))
         updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
     }
 
     private fun backfillUpdateHistoryIndex(
-        dbIndex: UInt,
-        dataModel: IsRootDataModel,
         tableColumnFamilies: TableColumnFamilies,
     ) {
         if (tableColumnFamilies.updateHistory == null) return
@@ -461,41 +463,48 @@ class RocksDBDataStore private constructor(
                 keyIterator.seekToFirst()
 
                 if (keepAllVersions && tableColumnFamilies is HistoricTableColumnFamilies) {
-                    val cache = Cache()
-
                     while (keyIterator.isValid()) {
                         val key = Key<IsRootDataModel>(keyIterator.key().copyOf())
                         val creationVersion = keyIterator.value().readVersionBytes()
-                        val cachedRead = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                            cache.readValue(dbIndex, key, reference, version, valueReader)
+
+                        db.put(
+                            tableColumnFamilies.updateHistory,
+                            creationVersion.toReversedVersionBytes() + key.bytes,
+                            EMPTY_ARRAY
+                        )
+
+                        dbAccessor.getIterator(defaultReadOptions, tableColumnFamilies.historic.table).use { historicIterator ->
+                            historicIterator.seek(key.bytes)
+                            while (historicIterator.isValid()) {
+                                val historicKey = historicIterator.key()
+                                if (!historicKey.matchesRangePart(0, key.bytes)) break
+
+                                val versionOffset = historicKey.size - ULong.SIZE_BYTES
+                                if (versionOffset < key.bytes.size) {
+                                    historicIterator.next()
+                                    continue
+                                }
+
+                                db.put(
+                                    tableColumnFamilies.updateHistory,
+                                    historicKey.readReversedVersionBytes(versionOffset).toReversedVersionBytes() + key.bytes,
+                                    EMPTY_ARRAY
+                                )
+                                historicIterator.next()
+                            }
                         }
 
-                        dbAccessor.getIterator(defaultReadOptions, tableColumnFamilies.historic.table).use { objectIterator ->
-                            dataModel.readTransactionIntoObjectChanges(
-                                iterator = objectIterator,
-                                creationVersion = creationVersion,
-                                columnFamilies = tableColumnFamilies,
-                                key = key,
-                                select = null,
-                                fromVersion = 0uL,
-                                toVersion = null,
-                                maxVersions = UInt.MAX_VALUE,
-                                sortingKey = null,
-                                cachedRead = cachedRead
-                            )
-                        }?.let { changes ->
-                            addSoftDeleteChangeIfMissing(
-                                dbAccessor = dbAccessor,
-                                columnFamilies = tableColumnFamilies,
-                                readOptions = defaultReadOptions,
-                                key = key,
-                                fromVersion = 0uL,
-                                objectChange = changes
-                            )
-                        }?.changes?.forEach { versionedChange ->
+                        val softDeleteQualifier = key.bytes + SOFT_DELETE_INDICATOR
+                        val softDeleteValueLength = dbAccessor.get(
+                            tableColumnFamilies.table,
+                            defaultReadOptions,
+                            softDeleteQualifier,
+                            recyclableByteArray
+                        )
+                        if (softDeleteValueLength == ULong.SIZE_BYTES + 1) {
                             db.put(
                                 tableColumnFamilies.updateHistory,
-                                versionedChange.version.toReversedVersionBytes() + key.bytes,
+                                recyclableByteArray.readVersionBytes().toReversedVersionBytes() + key.bytes,
                                 EMPTY_ARRAY
                             )
                         }
@@ -559,12 +568,16 @@ class RocksDBDataStore private constructor(
         this.prefixSizesByColumnFamilyHandlesIndex.getOrElse(columnFamilyHandle.getID()) { 0 }
 
     override suspend fun close() {
+        cancelPendingMigrations("Datastore closing")
+
         super.close()
 
         closeResources()
     }
 
     fun closeResources() {
+        if (resourcesClosed.getAndSet(true)) return
+
         ownRocksDBOptions?.close()
         defaultWriteOptions.close()
         defaultReadOptions.close()
@@ -784,6 +797,8 @@ class RocksDBDataStore private constructor(
     internal fun completePendingMigration(modelId: UInt) = completePendingMigrationInternal(modelId)
 
     internal fun failPendingMigration(modelId: UInt, reason: String) = failPendingMigrationInternal(modelId, reason)
+
+    internal fun cancelPendingMigrations(reason: String) = cancelPendingMigrationsInternal(reason)
 
     internal fun updateMigrationRuntimeDetails(modelId: UInt, state: MigrationState) = updateMigrationRuntimeDetailsInternal(modelId, state)
 

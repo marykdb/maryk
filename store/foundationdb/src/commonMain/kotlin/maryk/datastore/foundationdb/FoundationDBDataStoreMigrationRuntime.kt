@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.atomicfu.update
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
@@ -151,6 +152,17 @@ internal fun FoundationDBDataStore.failPendingMigrationInternal(modelId: UInt, r
         current - modelId
     }
     waiter?.completeExceptionally(MigrationException(reason))
+}
+
+internal fun FoundationDBDataStore.cancelPendingMigrationsInternal(reason: String) {
+    var waiters: Collection<CompletableDeferred<Unit>> = emptyList()
+    pendingMigrationWaiters.update { current ->
+        waiters = current.values
+        emptyMap()
+    }
+    waiters.forEach {
+        it.completeExceptionally(CancellationException(reason))
+    }
 }
 
 internal fun FoundationDBDataStore.updateMigrationRuntimeDetailsInternal(modelId: UInt, state: MigrationState) {

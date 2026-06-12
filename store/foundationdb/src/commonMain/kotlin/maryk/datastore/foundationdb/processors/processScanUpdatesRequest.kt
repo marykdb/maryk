@@ -30,9 +30,9 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.getValue
-import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
@@ -45,7 +45,7 @@ import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.helpers.convertToValue
-import maryk.foundationdb.ReadTransaction
+import maryk.foundationdb.Transaction
 import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.foundationdb.Range as FDBRange
@@ -79,36 +79,35 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
     scanRequest.checkMaxVersions(keepAllVersions)
 
-    runTransaction { tr ->
-        fun getSingleValues(
-            key: Key<DM>,
-            creationVersion: ULong,
-            version: ULong?,
-            cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
-        ): ValuesWithMetaData<DM>? {
-            return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                tr = tr,
-                creationVersion = creationVersion,
-                tableDirs = tableDirs,
-                key = key,
-                select = scanRequest.select,
-                toVersion = version.takeIf { tableDirs is HistoricTableDirectories },
-                cachedRead = cacheReader,
-                decryptValue = this@processScanUpdatesRequest::decryptValueIfNeeded
-            )
-        }
-
-        val dataFetchType = this.processScan(
+    fun getSingleValues(
+        tr: Transaction,
+        key: Key<DM>,
+        creationVersion: ULong,
+        version: ULong?,
+        cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
+    ): ValuesWithMetaData<DM>? {
+        return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
             tr = tr,
-            scanRequest = scanRequest,
+            creationVersion = creationVersion,
             tableDirs = tableDirs,
-            scanSetup = {
-                (it as? IndexScan)?.let { indexScan ->
-                    sortingKeys = mutableListOf()
-                    sortingIndex = indexScan.index
-                }
-            },
-        ) { key, creationVersion, sortingKey ->
+            key = key,
+            select = scanRequest.select,
+            toVersion = version.takeIf { tableDirs is HistoricTableDirectories },
+            cachedRead = cacheReader,
+            decryptValue = this@processScanUpdatesRequest::decryptValueIfNeeded
+        )
+    }
+
+    val dataFetchType = this.processScan(
+        scanRequest = scanRequest,
+        tableDirs = tableDirs,
+        scanSetup = {
+            (it as? IndexScan)?.let { indexScan ->
+                sortingKeys = mutableListOf()
+                sortingIndex = indexScan.index
+            }
+        },
+    ) { tr, key, creationVersion, sortingKey ->
             insertionIndex++
 
             matchingKeys.add(key)
@@ -159,7 +158,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 for (versionedChange in oc.changes) {
                     val changes = versionedChange.changes
                     val update = if (changes.find { it is ObjectCreate } != null) {
-                        getSingleValues(key, creationVersion, versionedChange.version, cacheReader)?.let { valuesWithMeta ->
+                        getSingleValues(tr, key, creationVersion, versionedChange.version, cacheReader)?.let { valuesWithMeta ->
                             AdditionUpdate(
                                 key = oc.key,
                                 version = versionedChange.version,
@@ -178,7 +177,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                                 changes = changes
                             )
                         } else {
-                            getSingleValues(key, creationVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->
+                            getSingleValues(tr, key, creationVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->
                                 AdditionUpdate(
                                     key = oc.key,
                                     version = versionedChange.version,
@@ -209,6 +208,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
             )
         )
 
+    runTransaction { tr ->
         // orderedKeys reconciliation
         scanRequest.orderedKeys?.let { orderedKeys ->
             // Removals for keys no longer in range
@@ -238,7 +238,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                             cache.readValue(dbIndex, addedKey, reference, version, valueReader)
                         }
 
-                        getSingleValues(addedKey, createdVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->
+                        getSingleValues(tr, addedKey, createdVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->
                             updates += AdditionUpdate(
                                 key = addedKey,
                                 version = lastResponseVersion,
@@ -252,15 +252,15 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 }
             }
         }
-
-        storeAction.response.complete(
-            UpdatesResponse(
-                dataModel = scanRequest.dataModel,
-                updates = updates,
-                dataFetchType = dataFetchType,
-            )
-        )
     }
+
+    storeAction.response.complete(
+        UpdatesResponse(
+            dataModel = scanRequest.dataModel,
+            updates = updates,
+            dataFetchType = dataFetchType,
+        )
+    )
 }
 
 private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistoryScanUpdates(
@@ -278,18 +278,20 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
 
     scanRequest.checkMaxVersions(keepAllVersions)
 
-    runTransaction { tr ->
-        val seenKeys = mutableSetOf<Key<DM>>()
-        val historyPrefix = tableDirs.updateHistoryPrefix!!
-        val historyStart = scanRequest.toVersion?.let { packKey(historyPrefix, it.toReversedVersionBytes()) } ?: historyPrefix
-        val historyEnd = if (scanRequest.fromVersion == 0uL) {
-            historyPrefix.nextByteInSameLength()
-        } else {
-            packKey(historyPrefix, scanRequest.fromVersion.toReversedVersionBytes().nextByteInSameLength())
+    val seenKeys = mutableSetOf<Key<DM>>()
+    val historyPrefix = tableDirs.updateHistoryPrefix!!
+    val historyStart = scanRequest.toVersion?.let { packKey(historyPrefix, it.toReversedVersionBytes()) } ?: historyPrefix
+    val historyEnd = if (scanRequest.fromVersion == 0uL) {
+        historyPrefix.nextByteInSameLength()
+    } else {
+        packKey(historyPrefix, scanRequest.fromVersion.toReversedVersionBytes().nextByteInSameLength())
+    }
+    fun <T> runScanTransaction(block: (Transaction) -> T): T =
+        runTransaction { tr ->
+            block(tr)
         }
-        val historyIterator = tr.getRange(FDBRange(historyStart, historyEnd), ReadTransaction.ROW_LIMIT_UNLIMITED, false).iterator()
 
-        fun processEntry(key: Key<DM>, version: ULong, isHardDelete: Boolean) {
+    fun processEntry(tr: Transaction, key: Key<DM>, version: ULong, isHardDelete: Boolean) {
             val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
             if (createdBytes == null) {
                 if (isHardDelete && scanRequest.where == null &&
@@ -402,23 +404,33 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                     }
                 }
             }
+    }
+
+    var nextStart = historyStart
+    while (matchingKeys.size.toUInt() < scanRequest.limit) {
+        val result = runScanTransaction { tr ->
+            tr.forEachInRangeBatch(FDBRange(nextStart, historyEnd), false) { historyEntry ->
+                if (matchingKeys.size.toUInt() >= scanRequest.limit) return@forEachInRangeBatch false
+                val historyKey = historyEntry.key
+                val versionOffset = historyPrefix.size
+                if (historyKey.size < versionOffset + VERSION_BYTE_SIZE + keySize) return@forEachInRangeBatch true
+                val version = historyKey.readReversedVersionBytes(versionOffset)
+                if (version < scanRequest.fromVersion) return@forEachInRangeBatch false
+
+                val keyOffset = versionOffset + VERSION_BYTE_SIZE
+                val key = scanRequest.dataModel.key(historyKey.copyOfRange(keyOffset, keyOffset + keySize))
+                if (!seenKeys.add(key)) return@forEachInRangeBatch true
+
+                processEntry(tr, key, version, historyEntry.value.firstOrNull() == 1.toByte())
+                matchingKeys.size.toUInt() < scanRequest.limit
+            }
         }
 
-        while (historyIterator.hasNext() && matchingKeys.size.toUInt() < scanRequest.limit) {
-            val historyEntry = historyIterator.nextBlocking()
-            val historyKey = historyEntry.key
-            val versionOffset = historyPrefix.size
-            if (historyKey.size < versionOffset + VERSION_BYTE_SIZE + keySize) continue
-            val version = historyKey.readReversedVersionBytes(versionOffset)
-            if (version < scanRequest.fromVersion) break
+        if (result.completed || result.stoppedByCallback || matchingKeys.size.toUInt() >= scanRequest.limit) break
+        nextStart = result.lastKey?.let { it + byteArrayOf(0) } ?: break
+    }
 
-            val keyOffset = versionOffset + VERSION_BYTE_SIZE
-            val key = scanRequest.dataModel.key(historyKey.copyOfRange(keyOffset, keyOffset + keySize))
-            if (!seenKeys.add(key)) continue
-
-            processEntry(key, version, historyEntry.value.firstOrNull() == 1.toByte())
-        }
-
+    runTransaction { tr ->
         scanRequest.orderedKeys?.let { orderedKeys ->
             orderedKeys.subtract(matchingKeys.toSet()).forEach { removedKey ->
                 val exists = tr.get(packKey(tableDirs.keysPrefix, removedKey.bytes)).awaitResult()
@@ -492,7 +504,7 @@ private fun ScanUpdatesRequest<*>.needsSoftDeleteFallback() =
 
 /** Simple getter to compute index values for current key within a single transaction */
 private class StoreValuesGetter(
-    private val tr: maryk.foundationdb.Transaction,
+    private val tr: Transaction,
     private val tableDirs: IsTableDirectories,
     private val decryptValue: ((ByteArray) -> ByteArray)? = null
 ) : IsValuesGetter {

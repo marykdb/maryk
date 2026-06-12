@@ -29,13 +29,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
 
     val aggregator = scanRequest.aggregations?.let { Aggregator(it) }
 
-    val responseFetchType = runTransaction { tr ->
-        this@processScanRequest.processScan(
-            tr = tr,
-            scanRequest = scanRequest,
-            tableDirs = tableDirs,
-            scanSetup = { /* nothing */ }
-        ) { key, creationVersion, _ ->
+    val responseFetchType = this.processScan(
+        scanRequest = scanRequest,
+        tableDirs = tableDirs,
+        scanSetup = { /* nothing */ }
+    ) { tr, key, creationVersion, _ ->
             val cacheReader = { ref: IsPropertyReferenceForCache<*, *>, version: ULong, reader: () -> Any? ->
                 cache.readValue(dbIndex, key, ref, version, reader)
             }
@@ -64,7 +62,6 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
                         valueBytes.convertToValue(it, offset, length)
                     }
             }
-        }
     }
 
     storeAction.response.complete(

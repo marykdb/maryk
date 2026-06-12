@@ -20,6 +20,7 @@ import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.TransactionRunner
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
@@ -27,12 +28,17 @@ import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
 
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
-    tr: Transaction,
     scanRequest: IsScanRequest<DM, *>,
     tableDirs: IsTableDirectories,
     scanSetup: ((ScanType) -> Unit)? = null,
-    processRecord: (Key<DM>, ULong, ByteArray?) -> Unit
+    processRecord: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
+    val transactionRunner = object : TransactionRunner {
+        override fun <T> run(block: (Transaction) -> T): T =
+            runTransaction { tr ->
+                block(tr)
+            }
+    }
     val dataModelId = getDataModelId(scanRequest.dataModel)
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
@@ -45,12 +51,14 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
     // If hard key match then quit with direct record
     if (keyScanRange.isSingleKey()) {
         val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start)
-        val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-        if (exists != null) {
-            val createdVersion = exists.readHLCTimestampIfPresent()
-                ?: return FetchByKey
-            if (shouldProcessRecord(tr, tableDirs, key, createdVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
-                processRecord(key, createdVersion, null)
+        transactionRunner.run { tr ->
+            val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
+            if (exists != null) {
+                val createdVersion = exists.readHLCTimestampIfPresent()
+                    ?: return@run
+                if (shouldProcessRecord(tr, tableDirs, key, createdVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
+                    processRecord(tr, key, createdVersion, null)
+                }
             }
         }
         return FetchByKey
@@ -74,14 +82,16 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
             uniqueValue.copyInto(this, firstMatcher.reference.size)
         }
 
-        tr.getKeyByUniqueValue(tableDirs, reference, scanRequest.toVersion) { keyBytes, setAtVersion ->
-            val key = scanRequest.dataModel.key(keyBytes)
-            if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
-                // Ensure we have the creation version for processRecord callback
-                val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-                val createdVersion = createdBytes?.readHLCTimestampIfPresent()
-                if (createdVersion != null) {
-                    processRecord(key, createdVersion, null)
+        transactionRunner.run { tr ->
+            tr.getKeyByUniqueValue(tableDirs, reference, scanRequest.toVersion) { keyBytes, setAtVersion ->
+                val key = scanRequest.dataModel.key(keyBytes)
+                if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
+                    // Ensure we have the creation version for processRecord callback
+                    val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
+                    val createdVersion = createdBytes?.readHLCTimestampIfPresent()
+                    if (createdVersion != null) {
+                        processRecord(tr, key, createdVersion, null)
+                    }
                 }
             }
         }
@@ -104,7 +114,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
 
     return when (processedScanIndex) {
         is ScanType.TableScan -> scanStore(
-            tr = tr,
+            transactionRunner = transactionRunner,
             tableDirs = tableDirs,
             scanRequest = scanRequest,
             direction = processedScanIndex.direction,
@@ -114,7 +124,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
         )
         is ScanType.IndexScan ->
             scanIndex(
-                tr = tr,
+                transactionRunner = transactionRunner,
                 tableDirs = tableDirs,
                 scanRequest = scanRequest,
                 indexScan = processedScanIndex,

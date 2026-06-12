@@ -122,6 +122,7 @@ import maryk.foundationdb.FDB
 import maryk.foundationdb.FdbFuture
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
+import maryk.foundationdb.completedFdbFuture
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.lib.bytes.combineToByteArray
@@ -988,9 +989,14 @@ class FoundationDBDataStore private constructor(
         coroutineScope {
             val waiters = (0 until headGroupCount).map { group ->
                 async {
-                    runTransactionAsync { tr ->
-                        tr.watch(log.headKey(group))
+                    val watch = runTransactionAsync { tr ->
+                        completedFdbFuture(tr.watch(log.headKey(group)))
                     }.await()
+                    try {
+                        watch.await()
+                    } finally {
+                        watch.cancel()
+                    }
                 }
             }
             try {

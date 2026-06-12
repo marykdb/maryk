@@ -1,8 +1,6 @@
 package maryk.datastore.foundationdb.processors
 
-import maryk.foundationdb.KeyValue
 import maryk.foundationdb.Range
-import maryk.foundationdb.ReadTransaction
 import maryk.foundationdb.Transaction
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -15,21 +13,22 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.TransactionRunner
 import maryk.lib.extensions.compare.compareDefinedRange
 import kotlin.math.min
 
 internal fun <DM : IsRootDataModel> scanStore(
-    tr: Transaction,
+    transactionRunner: TransactionRunner,
     tableDirs: IsTableDirectories,
     scanRequest: IsScanRequest<DM, *>,
     direction: Direction,
     scanRange: KeyScanRanges,
     decryptValue: ((ByteArray) -> ByteArray)? = null,
-    processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
+    processStoreValue: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val prefix = tableDirs.keysPrefix
     val prefixSize = prefix.size
@@ -84,26 +83,36 @@ internal fun <DM : IsRootDataModel> scanStore(
                 }
                 if (beginGteEnd) continue
 
-                val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, false).iterator()
-                while (iterator.hasNext() && streamed < limit) {
-                    val kv: KeyValue = iterator.nextBlocking()
-                    val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
+                var nextBegin = begin
+                while (streamed < limit) {
+                    val result = transactionRunner.run { tr ->
+                        tr.forEachInRangeBatch(Range(nextBegin, end), false) { kv ->
+                            if (streamed >= limit) return@forEachInRangeBatch false
+                            val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
-                    if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) continue
-                    if (!scanRange.matchesPartials(modelKeyBytes)) continue
+                            if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) return@forEachInRangeBatch true
+                            if (!scanRange.matchesPartials(modelKeyBytes)) return@forEachInRangeBatch true
 
-                    if (effectiveStart != null) {
-                        val cmp = modelKeyBytes.compareDefinedRange(effectiveStart, 0, scanRange.keySize)
-                        if (cmp < 0) continue
-                        if (!effectiveInclude && cmp == 0) continue
+                            if (effectiveStart != null) {
+                                val cmp = modelKeyBytes.compareDefinedRange(effectiveStart, 0, scanRange.keySize)
+                                if (cmp < 0) return@forEachInRangeBatch true
+                                if (!effectiveInclude && cmp == 0) return@forEachInRangeBatch true
+                            }
+
+                            val key = scanRequest.dataModel.key(modelKeyBytes)
+                            val creationVersion = kv.value.readHLCTimestampIfPresent() ?: return@forEachInRangeBatch true
+                            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) {
+                                return@forEachInRangeBatch true
+                            }
+
+                            processStoreValue(tr, key, creationVersion, null)
+                            streamed++
+                            streamed < limit
+                        }
                     }
 
-                    val key = scanRequest.dataModel.key(modelKeyBytes)
-                    val creationVersion = kv.value.readHLCTimestampIfPresent() ?: continue
-                    if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) continue
-
-                    processStoreValue(key, creationVersion, null)
-                    streamed++
+                    if (result.completed || streamed >= limit) break
+                    nextBegin = result.lastKey?.let { it + byteArrayOf(0) } ?: break
                 }
 
                 if (startKeyFilter != null) {
@@ -154,26 +163,36 @@ internal fun <DM : IsRootDataModel> scanStore(
                 }
                 if (beginGteEnd) continue
 
-                val iterator = tr.getRange(Range(begin, end), ReadTransaction.ROW_LIMIT_UNLIMITED, true).iterator()
-                while (iterator.hasNext() && emitted < limit) {
-                    val kv: KeyValue = iterator.nextBlocking()
-                    val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
+                var nextEnd = end
+                while (emitted < limit) {
+                    val result = transactionRunner.run { tr ->
+                        tr.forEachInRangeBatch(Range(begin, nextEnd), true) { kv ->
+                            if (emitted >= limit) return@forEachInRangeBatch false
+                            val modelKeyBytes = kv.key.copyOfRange(prefixSize, kv.key.size)
 
-                    if (startKeyFilter != null) {
-                        val cmp = modelKeyBytes.compareDefinedRange(startKeyFilter, 0, scanRange.keySize)
-                        if (cmp > 0) continue
-                        if (!includeStartFilter && cmp == 0) continue
+                            if (startKeyFilter != null) {
+                                val cmp = modelKeyBytes.compareDefinedRange(startKeyFilter, 0, scanRange.keySize)
+                                if (cmp > 0) return@forEachInRangeBatch true
+                                if (!includeStartFilter && cmp == 0) return@forEachInRangeBatch true
+                            }
+
+                            if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) return@forEachInRangeBatch true
+                            if (!scanRange.matchesPartials(modelKeyBytes)) return@forEachInRangeBatch true
+
+                            val key = scanRequest.dataModel.key(modelKeyBytes)
+                            val creationVersion = kv.value.readHLCTimestampIfPresent() ?: return@forEachInRangeBatch true
+                            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) {
+                                return@forEachInRangeBatch true
+                            }
+
+                            processStoreValue(tr, key, creationVersion, null)
+                            emitted++
+                            emitted < limit
+                        }
                     }
 
-                    if (!scanRange.keyWithinRanges(modelKeyBytes, 0)) continue
-                    if (!scanRange.matchesPartials(modelKeyBytes)) continue
-
-                    val key = scanRequest.dataModel.key(modelKeyBytes)
-                    val creationVersion = kv.value.readHLCTimestampIfPresent() ?: continue
-                    if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) continue
-
-                    processStoreValue(key, creationVersion, null)
-                    emitted++
+                    if (result.completed || emitted >= limit) break
+                    nextEnd = result.lastKey ?: break
                 }
             }
         }

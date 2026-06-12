@@ -32,10 +32,10 @@ kotlin {
                 implementation(libs.compose.material.icons.extended)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.vico.multiplatform.m3)
-                implementation(compose.runtime)
-                implementation(compose.foundation)
-                implementation(compose.material3)
-                implementation(compose.ui)
+                implementation(libs.compose.runtime)
+                implementation(libs.compose.foundation)
+                implementation(libs.compose.material3)
+                implementation(libs.compose.ui)
             }
         }
         val commonTest by getting {

@@ -7,7 +7,7 @@ plugins {
 
 kotlin {
     jvmToolchain(21)
-    androidLibrary {
+    android {
         namespace = "io.maryk"
         compileSdk = 36
         minSdk = 21

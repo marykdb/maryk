@@ -11,7 +11,7 @@ plugins {
 }
 
 kotlin {
-    androidLibrary {
+    android {
         enableCoreLibraryDesugaring = true
     }
 

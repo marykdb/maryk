@@ -76,7 +76,7 @@ kotlin {
             fun isFoundationDbLibraryAvailable(): Boolean {
                 val availableFile = libFile?.exists() == true
                 if (!availableFile) return false
-                if (family != Family.OSX || libFile == null) return true
+                if (family != Family.OSX) return true
                 return isMacLibArchitectureCompatible(libFile)
             }
 

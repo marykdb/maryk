@@ -13,8 +13,10 @@ import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
 import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
+import java.io.BufferedInputStream
 import java.net.InetSocketAddress
 import java.net.ServerSocket
+import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -30,7 +32,6 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
-import maryk.core.query.changes.IsChange
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
 import maryk.core.query.responses.AddResponse
@@ -111,7 +112,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.execute(SimpleMarykModel.add(values))
             }
-            assertTrue(exception.message?.contains("trailing bytes") == true)
+            assertEquals(exception.message?.contains("trailing bytes"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -123,7 +124,7 @@ class RemoteDataStoreTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "https://127.0.0.1:8210"))
         }
-        assertTrue(exception.message?.contains("only supports http URLs") == true)
+        assertEquals(exception.message?.contains("only supports http URLs"), true)
     }
 
     @Test
@@ -131,7 +132,7 @@ class RemoteDataStoreTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:8210?x=1"))
         }
-        assertTrue(exception.message?.contains("query parameters") == true)
+        assertEquals(exception.message?.contains("query parameters"), true)
     }
 
     @Test
@@ -139,7 +140,7 @@ class RemoteDataStoreTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:8210#anchor"))
         }
-        assertTrue(exception.message?.contains("fragment") == true)
+        assertEquals(exception.message?.contains("fragment"), true)
     }
 
     @Test
@@ -147,7 +148,7 @@ class RemoteDataStoreTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://user:pass@127.0.0.1:8210"))
         }
-        assertTrue(exception.message?.contains("user info") == true)
+        assertEquals(exception.message?.contains("user info"), true)
     }
 
     @Test
@@ -155,7 +156,7 @@ class RemoteDataStoreTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:70000"))
         }
-        assertTrue(exception.message?.contains("70000") == true)
+        assertEquals(exception.message?.contains("70000"), true)
     }
 
     @Test
@@ -163,7 +164,7 @@ class RemoteDataStoreTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:abc"))
         }
-        assertTrue(exception.message?.contains("invalid") == true)
+        assertEquals(exception.message?.contains("invalid"), true)
     }
 
     @Test
@@ -180,7 +181,7 @@ class RemoteDataStoreTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = " http://127.0.0.1:8210"))
         }
-        assertTrue(exception.message?.contains("leading or trailing whitespace") == true)
+        assertEquals(exception.message?.contains("leading or trailing whitespace"), true)
     }
 
     @Test
@@ -193,7 +194,7 @@ class RemoteDataStoreTest {
                 )
             )
         }
-        assertTrue(exception.message?.contains("SSH host cannot be blank") == true)
+        assertEquals(exception.message?.contains("SSH host cannot be blank"), true)
     }
 
     @Test
@@ -206,7 +207,7 @@ class RemoteDataStoreTest {
                 )
             )
         }
-        assertTrue(exception.message?.contains("SSH port must be between") == true)
+        assertEquals(exception.message?.contains("SSH port must be between"), true)
     }
 
     @Test
@@ -219,7 +220,7 @@ class RemoteDataStoreTest {
                 )
             )
         }
-        assertTrue(exception.message?.contains("local port") == true)
+        assertEquals(exception.message?.contains("local port"), true)
     }
 
     @Test
@@ -234,7 +235,7 @@ class RemoteDataStoreTest {
                 )
             }
 
-            assertTrue(exception.message?.contains("already in use") == true)
+            assertEquals(exception.message?.contains("already in use"), true)
         }
     }
 
@@ -248,7 +249,7 @@ class RemoteDataStoreTest {
                 )
             )
         }
-        assertTrue(exception.message?.contains("remote port") == true)
+        assertEquals(exception.message?.contains("remote port"), true)
     }
 
     @Test
@@ -261,7 +262,7 @@ class RemoteDataStoreTest {
                 )
             )
         }
-        assertTrue(exception.message?.contains("SSH user cannot be blank") == true)
+        assertEquals(exception.message?.contains("SSH user cannot be blank"), true)
     }
 
     @Test
@@ -274,7 +275,7 @@ class RemoteDataStoreTest {
                 )
             )
         }
-        assertTrue(exception.message?.contains("remote host cannot be blank") == true)
+        assertEquals(exception.message?.contains("remote host cannot be blank"), true)
     }
 
     @Test
@@ -287,7 +288,7 @@ class RemoteDataStoreTest {
                 )
             )
         }
-        assertTrue(exception.message?.contains("identity file cannot be blank") == true)
+        assertEquals(exception.message?.contains("identity file cannot be blank"), true)
     }
 
     @Test
@@ -300,7 +301,7 @@ class RemoteDataStoreTest {
                 )
             )
         }
-        assertTrue(exception.message?.contains("extra arguments") == true)
+        assertEquals(exception.message?.contains("extra arguments"), true)
     }
 
     @Test
@@ -319,7 +320,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
             }
-            assertTrue(exception.message?.contains("Duplicate model id") == true)
+            assertEquals(exception.message?.contains("Duplicate model id"), true)
         } finally {
             server.stop(500, 500)
         }
@@ -344,7 +345,7 @@ class RemoteDataStoreTest {
                     RemoteStoreConfig(
                         baseUrl = "http://remote.example:1234",
                         ssh = RemoteSshConfig(host = "ssh.example"),
-                        sshTunnelFactory = SshTunnelFactory { _, _ ->
+                        sshTunnelFactory = { _, _ ->
                             object : SshTunnel {
                                 override val localPort = port
 
@@ -357,7 +358,7 @@ class RemoteDataStoreTest {
                 )
             }
 
-            assertTrue(exception.message?.contains("Duplicate model id") == true)
+            assertEquals(exception.message?.contains("Duplicate model id"), true)
             assertTrue(tunnelClosed.get())
         } finally {
             server.stop(500, 500)
@@ -383,7 +384,7 @@ class RemoteDataStoreTest {
                     RemoteStoreConfig(
                         baseUrl = "http://remote.example:1234",
                         ssh = RemoteSshConfig(host = "ssh.example"),
-                        sshTunnelFactory = SshTunnelFactory { _, _ ->
+                        sshTunnelFactory = { _, _ ->
                             object : SshTunnel {
                                 override val localPort = port
 
@@ -397,7 +398,7 @@ class RemoteDataStoreTest {
                 )
             }
 
-            assertTrue(exception.message?.contains("Duplicate model id") == true)
+            assertEquals(exception.message?.contains("Duplicate model id"), true)
             assertTrue(tunnelClosed.get())
         } finally {
             server.stop(500, 500)
@@ -420,7 +421,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
             }
-            assertTrue(exception.message?.contains("Duplicate model name") == true)
+            assertEquals(exception.message?.contains("Duplicate model name"), true)
         } finally {
             server.stop(500, 500)
         }
@@ -437,7 +438,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
             }
-            assertTrue(exception.message?.contains("unexpected Content-Type") == true)
+            assertEquals(exception.message?.contains("unexpected Content-Type"), true)
         } finally {
             server.stop(500, 500)
         }
@@ -454,7 +455,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
             }
-            assertTrue(exception.message?.contains("empty payload") == true)
+            assertEquals(exception.message?.contains("empty payload"), true)
         } finally {
             server.stop(500, 500)
         }
@@ -471,7 +472,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
             }
-            assertTrue(exception.message?.contains("boom-info") == true)
+            assertEquals(exception.message?.contains("boom-info"), true)
         } finally {
             server.stop(500, 500)
         }
@@ -495,7 +496,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.execute(SimpleMarykModel.add(values))
             }
-            assertTrue(exception.message?.contains("Invalid response length prefix") == true)
+            assertEquals(exception.message?.contains("Invalid response length prefix"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -517,7 +518,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.execute(SimpleMarykModel.add(values))
             }
-            assertTrue(exception.message?.contains("Invalid response length prefix: 0") == true)
+            assertEquals(exception.message?.contains("Invalid response length prefix: 0"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -539,7 +540,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.execute(SimpleMarykModel.add(values))
             }
-            assertTrue(exception.message?.contains("unexpected Content-Type") == true)
+            assertEquals(exception.message?.contains("unexpected Content-Type"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -561,7 +562,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.execute(SimpleMarykModel.add(values))
             }
-            assertTrue(exception.message?.contains("empty payload") == true)
+            assertEquals(exception.message?.contains("empty payload"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -588,7 +589,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.execute(SimpleMarykModel.add(values))
             }
-            assertTrue(exception.message?.contains("invalid Content-Length") == true)
+            assertEquals(exception.message?.contains("invalid Content-Length"), true)
         } finally {
             remote.close()
             server.close()
@@ -610,7 +611,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.execute(SimpleMarykModel.add(values))
             }
-            assertTrue(exception.message?.contains("frame exceeds max size") == true)
+            assertEquals(exception.message?.contains("frame exceeds max size"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -632,7 +633,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
             }
-            assertTrue(exception.message?.contains("Invalid streamed response length prefix") == true)
+            assertEquals(exception.message?.contains("Invalid streamed response length prefix"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -651,7 +652,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
             }
-            assertTrue(exception.message?.contains("unexpected Content-Type") == true)
+            assertEquals(exception.message?.contains("unexpected Content-Type"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -670,7 +671,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
             }
-            assertTrue(exception.message?.contains("Invalid streamed response length prefix: 0") == true)
+            assertEquals(exception.message?.contains("Invalid streamed response length prefix: 0"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -689,7 +690,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
             }
-            assertTrue(exception.message?.contains("frame exceeds max size") == true)
+            assertEquals(exception.message?.contains("frame exceeds max size"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -728,7 +729,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
             }
-            assertTrue(exception.message?.contains("empty update frame") == true)
+            assertEquals(exception.message?.contains("empty update frame"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -747,7 +748,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
             }
-            assertTrue(exception.message?.isNotBlank() == true)
+            assertEquals(exception.message?.isNotBlank(), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -766,7 +767,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
             }
-            assertTrue(exception.message?.isNotBlank() == true)
+            assertEquals(exception.message?.isNotBlank(), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -785,7 +786,7 @@ class RemoteDataStoreTest {
             val exception = assertFailsWith<IllegalStateException> {
                 remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
             }
-            assertTrue(exception.message?.contains("data model mismatch") == true)
+            assertEquals(exception.message?.contains("data model mismatch"), true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -808,7 +809,7 @@ private fun Application.malformedExecuteModule() {
             val key = SimpleMarykModel.key(values)
             val response = AddResponse(
                 dataModel = SimpleMarykModel,
-                statuses = listOf(AddSuccess(key = key, version = 1uL, changes = emptyList<IsChange>())),
+                statuses = listOf(AddSuccess(key = key, version = 1uL, changes = emptyList())),
             )
             val context = RequestContext(
                 definitionsContext = DefinitionsContext(
@@ -1140,46 +1141,129 @@ private class RawRemoteServer(
 ) : AutoCloseable {
     private val serverSocket = ServerSocket(0)
     val port: Int = serverSocket.localPort
+    private val responses = listOf(
+        RawResponse(
+            headers = listOf(
+                "Content-Type: ${RemoteStoreProtocol.contentType}",
+                "Content-Length: ${infoBody.size}",
+            ),
+            body = infoBody,
+        ),
+        RawResponse(
+            headers = secondResponseHeaders,
+            body = secondResponseBody,
+        ),
+    )
     private val thread = Thread {
         runCatching {
-            acceptAndRespond(
-                headers = listOf(
-                    "Content-Type: ${RemoteStoreProtocol.contentType}",
-                    "Content-Length: ${infoBody.size}",
-                ),
-                body = infoBody,
-            )
-            acceptAndRespond(
-                headers = secondResponseHeaders,
-                body = secondResponseBody,
-            )
+            respondAll()
         }
     }.apply {
         isDaemon = true
         start()
     }
 
-    private fun acceptAndRespond(headers: List<String>, body: ByteArray) {
-        serverSocket.accept().use { socket ->
-            val reader = socket.getInputStream().bufferedReader()
-            while (reader.readLine()?.isNotEmpty() == true) {
-                // Drain request headers.
+    private fun respondAll() {
+        var responseIndex = 0
+        while (responseIndex < responses.size) {
+            serverSocket.accept().use { socket ->
+                socket.soTimeout = 2_000
+                val input = BufferedInputStream(socket.getInputStream())
+                while (responseIndex < responses.size) {
+                    val headers = readHeaders(input) ?: break
+                    drainRequestBody(input, headers)
+                    socket.writeResponse(
+                        response = responses[responseIndex],
+                        close = responseIndex == responses.lastIndex,
+                    )
+                    responseIndex++
+                }
             }
-            val response = buildString {
-                append("HTTP/1.1 200 OK\r\n")
-                headers.forEach { append("$it\r\n") }
-                append("Connection: close\r\n")
-                append("\r\n")
-            }.encodeToByteArray()
-            socket.getOutputStream().write(response)
-            socket.getOutputStream().write(body)
-            socket.getOutputStream().flush()
         }
+    }
+
+    private fun readHeaders(input: BufferedInputStream): List<String>? {
+        val requestLine = readHeaderLine(input) ?: return null
+        if (requestLine.isEmpty()) return null
+        val headers = mutableListOf<String>()
+        while (true) {
+            val line = readHeaderLine(input) ?: return null
+            if (line.isEmpty()) return headers
+            headers += line
+        }
+    }
+
+    private fun readHeaderLine(input: BufferedInputStream): String? {
+        val bytes = mutableListOf<Byte>()
+        while (true) {
+            val value = input.read()
+            if (value == -1) return null
+            if (value == '\n'.code) {
+                if (bytes.lastOrNull() == '\r'.code.toByte()) {
+                    bytes.removeAt(bytes.lastIndex)
+                }
+                return bytes.toByteArray().decodeToString()
+            }
+            bytes += value.toByte()
+        }
+    }
+
+    private fun drainRequestBody(input: BufferedInputStream, headers: List<String>) {
+        val contentLength = headers.firstNotNullOfOrNull {
+            val parts = it.split(':', limit = 2)
+            parts.takeIf { partList ->
+                partList.size == 2 && partList[0].equals("Content-Length", ignoreCase = true)
+            }?.get(1)?.trim()?.toIntOrNull()
+        } ?: return
+        var remaining = contentLength
+        while (remaining > 0) {
+            val skipped = input.skip(remaining.toLong()).toInt()
+            if (skipped > 0) {
+                remaining -= skipped
+            } else if (input.read() == -1) {
+                return
+            } else {
+                remaining--
+            }
+        }
+    }
+
+    private fun Socket.writeResponse(response: RawResponse, close: Boolean) {
+        val headerBytes = buildString {
+            append("HTTP/1.1 200 OK\r\n")
+            response.headers.forEach { append("$it\r\n") }
+            append("Connection: ${if (close) "close" else "keep-alive"}\r\n")
+            append("\r\n")
+        }.encodeToByteArray()
+        getOutputStream().write(headerBytes)
+        getOutputStream().write(response.body)
+        getOutputStream().flush()
     }
 
     override fun close() {
         serverSocket.close()
         thread.join(1_000)
+    }
+
+    private data class RawResponse(
+        val headers: List<String>,
+        val body: ByteArray,
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is RawResponse) return false
+
+            if (headers != other.headers) return false
+            if (!body.contentEquals(other.body)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = headers.hashCode()
+            result = 31 * result + body.contentHashCode()
+            return result
+        }
     }
 }
 

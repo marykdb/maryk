@@ -7,13 +7,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.withTimeoutOrNull
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
@@ -122,7 +119,6 @@ import maryk.foundationdb.FDB
 import maryk.foundationdb.FdbFuture
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
-import maryk.foundationdb.completedFdbFuture
 import maryk.foundationdb.directory.DirectoryLayer
 import maryk.foundationdb.directory.DirectorySubspace
 import maryk.lib.bytes.combineToByteArray
@@ -431,7 +427,6 @@ class FoundationDBDataStore private constructor(
 
                         try {
                             waitForAnyClusterLogHeadChange(
-                                log = log,
                                 headGroupCount = headGroupCount,
                                 timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                             )
@@ -484,7 +479,6 @@ class FoundationDBDataStore private constructor(
                                 idle = 0
                                 try {
                                     waitForAnyClusterLogHeadChange(
-                                        log = log,
                                         headGroupCount = headGroupCount,
                                         timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                                     )
@@ -562,10 +556,8 @@ class FoundationDBDataStore private constructor(
                             idle++
                             if (idle >= pairCount) {
                                 idle = 0
-                                // Prefer watch-based wake-ups (one watch per group) and fall back to polling.
                                 try {
                                     waitForAnyClusterLogHeadChange(
-                                        log = log,
                                         headGroupCount = headGroupCount,
                                         timeoutMs = clusterUpdateLogConfiguration.clusterUpdateLogPollInterval.inWholeMilliseconds
                                     )
@@ -776,7 +768,7 @@ class FoundationDBDataStore private constructor(
             tr.get(markerKey).awaitResult()?.firstOrNull() == 1.toByte()
         }
         if (complete) {
-            updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
+            updateHistoryReadyModelIds.value += dbIndex
             return
         }
 
@@ -784,7 +776,7 @@ class FoundationDBDataStore private constructor(
         runTransaction { tr ->
             tr.set(markerKey, byteArrayOf(1))
         }
-        updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
+        updateHistoryReadyModelIds.value += dbIndex
     }
 
     private fun backfillUpdateHistoryIndex(
@@ -914,7 +906,7 @@ class FoundationDBDataStore private constructor(
     }
 
     override suspend fun close() {
-        if (!isClosing.compareAndSet(false, true)) return
+        if (!isClosing.compareAndSet(false, update = true)) return
 
         cancelPendingMigrations("Datastore closing")
 
@@ -984,41 +976,10 @@ class FoundationDBDataStore private constructor(
             )
         }
 
-    private suspend fun waitForAnyClusterLogHeadChange(log: ClusterUpdateLog, headGroupCount: Int, timeoutMs: Long) {
-        if (headGroupCount <= 0) return
-        coroutineScope {
-            val waiters = (0 until headGroupCount).map { group ->
-                async {
-                    val watch = runTransactionAsync { tr ->
-                        completedFdbFuture(tr.watch(log.headKey(group)))
-                    }.await()
-                    try {
-                        watch.await()
-                    } finally {
-                        watch.cancel()
-                    }
-                }
-            }
-            try {
-                if (timeoutMs > 0) {
-                    withTimeoutOrNull(timeoutMs.milliseconds) {
-                        select {
-                            for (w in waiters) {
-                                w.onAwait { }
-                            }
-                        }
-                    }
-                } else {
-                    select {
-                        for (w in waiters) {
-                            w.onAwait { }
-                        }
-                    }
-                }
-            } finally {
-                waiters.forEach { it.cancel() }
-            }
-        }
+    private suspend fun waitForAnyClusterLogHeadChange(headGroupCount: Int, timeoutMs: Long) {
+        if (headGroupCount <= 0 || timeoutMs <= 0) return
+        // Native FDB watch future cancellation can segfault through fdb_future_cancel.
+        delay(timeoutMs.milliseconds)
     }
 
     private fun readULongBigEndian(bytes: ByteArray): ULong {

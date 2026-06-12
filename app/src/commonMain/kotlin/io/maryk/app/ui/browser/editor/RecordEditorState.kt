@@ -23,6 +23,7 @@ import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.IsReferenceValueOrNullPair
 import maryk.core.values.Values
+import maryk.datastore.shared.rethrowIfFatal
 
 internal class RecordEditState(
     val dataModel: IsRootDataModel,
@@ -159,6 +160,7 @@ internal class RecordEditState(
             }
             null
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             formatValidationMessage(e)
         }
         if (error != null) {
@@ -200,6 +202,7 @@ internal class RecordEditState(
             (propertyDefinition as IsPropertyDefinition<Any>).validateWithRef(null, value) { null }
             null
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             formatValidationMessage(e)
         }
         if (error != null) {

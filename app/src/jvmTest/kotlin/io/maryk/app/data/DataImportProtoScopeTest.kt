@@ -11,8 +11,10 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.pairs.with
 import maryk.core.protobuf.WriteCache
 import java.nio.file.Files
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class DataImportProtoScopeTest {
     @Test
@@ -69,6 +71,79 @@ class DataImportProtoScopeTest {
             )
         } finally {
             Files.deleteIfExists(path)
+        }
+    }
+
+    @Test
+    fun malformedHugeProtoLengthFallsBackToSingleScope() {
+        val bytes = byteArrayOf(-1, -1, -1, -1, 7)
+        val path = Files.createTempFile("maryk-import-huge-length-", ".proto")
+        try {
+            Files.write(path, bytes)
+            assertEquals(
+                DataImportScope.SINGLE,
+                detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO),
+            )
+        } finally {
+            Files.deleteIfExists(path)
+        }
+    }
+
+    @Test
+    fun truncatedProtoFrameFallsBackToSingleScope() {
+        val bytes = byteArrayOf(10, 1, 2)
+        val path = Files.createTempFile("maryk-import-truncated-", ".proto")
+        try {
+            Files.write(path, bytes)
+            assertEquals(
+                DataImportScope.SINGLE,
+                detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO),
+            )
+        } finally {
+            Files.deleteIfExists(path)
+        }
+    }
+
+    @Test
+    fun protoPayloadReaderRejectsTrailingBytes() {
+        assertFailsWith<IllegalArgumentException> {
+            readProtoPayload(
+                bytes = byteArrayOf(1, 2),
+                start = 0,
+                length = 2,
+                label = "test",
+            ) { reader ->
+                reader()
+            }
+        }
+    }
+
+    @Test
+    fun protoPayloadReaderRejectsOverread() {
+        assertFailsWith<IllegalArgumentException> {
+            readProtoPayload(
+                bytes = byteArrayOf(1),
+                start = 0,
+                length = 1,
+                label = "test",
+            ) { reader ->
+                reader()
+                reader()
+            }
+        }
+    }
+
+    @Test
+    fun protoPayloadReaderRethrowsCancellation() {
+        assertFailsWith<CancellationException> {
+            readProtoPayload(
+                bytes = byteArrayOf(1),
+                start = 0,
+                length = 1,
+                label = "test",
+            ) {
+                throw CancellationException("cancelled")
+            }
         }
     }
 }

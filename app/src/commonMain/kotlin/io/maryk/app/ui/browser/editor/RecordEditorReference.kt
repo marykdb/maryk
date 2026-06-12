@@ -75,6 +75,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
+import maryk.datastore.shared.rethrowIfFatal
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -116,7 +117,7 @@ internal fun ReferenceEditor(
             tooltipPreview = null
             return@LaunchedEffect
         }
-        val key = runCatching { dataModel.key(text) }.getOrNull() ?: run {
+        val key = runCatching { dataModel.key(text) }.onFailure { it.rethrowIfFatal() }.getOrNull() ?: run {
             tooltipLoading = false
             tooltipError = "Invalid key."
             tooltipPreview = null
@@ -133,7 +134,7 @@ internal fun ReferenceEditor(
                     filterSoftDeleted = false,
                 )
             ).values.firstOrNull()?.let { serializeRecordToYaml(dataModel, it) }
-        }.getOrNull()
+        }.onFailure { it.rethrowIfFatal() }.getOrNull()
         tooltipLoading = false
         if (yaml == null) {
             tooltipPreview = null
@@ -152,7 +153,7 @@ internal fun ReferenceEditor(
             return@LaunchedEffect
         }
         val connection = state.activeConnection ?: return@LaunchedEffect
-        val key = runCatching { dataModel.key(text) }.getOrNull() ?: run {
+        val key = runCatching { dataModel.key(text) }.onFailure { it.rethrowIfFatal() }.getOrNull() ?: run {
             infoError = "Invalid key."
             infoDetails = null
             return@LaunchedEffect
@@ -168,13 +169,20 @@ internal fun ReferenceEditor(
                     filterSoftDeleted = false,
                 )
             ).values.firstOrNull()
-        }.getOrNull()
+        }.onFailure { it.rethrowIfFatal() }.getOrNull()
         infoLoading = false
         if (result == null) {
             infoDetails = null
             infoError = "Not found."
         } else {
-            val yaml = serializeRecordToYaml(dataModel, result)
+            val yaml = runCatching {
+                serializeRecordToYaml(dataModel, result)
+            }.getOrElse { error ->
+                error.rethrowIfFatal()
+                infoDetails = null
+                infoError = "Render failed: ${error.message ?: error::class.simpleName}"
+                return@LaunchedEffect
+            }
             infoDetails = RecordDetails(
                 model = dataModel,
                 key = key,
@@ -417,7 +425,7 @@ private fun ReferencePickerDialog(
             if (path == KEY_ORDER_TOKEN) return@mapNotNull null
             val reference = runCatching {
                 dataModel.getPropertyReferenceByName(path, requestContext)
-            }.getOrNull() ?: return@mapNotNull null
+            }.onFailure { it.rethrowIfFatal() }.getOrNull() ?: return@mapNotNull null
             if (reference.propertyDefinition is StringDefinition) reference else null
         }
     }
@@ -425,11 +433,11 @@ private fun ReferencePickerDialog(
     LaunchedEffect(dataModel, state.activeConnection, selectedSort, sortDescending) {
         val connection = state.activeConnection ?: return@LaunchedEffect
         loading = true
-        val orderTokens = selectedSort?.orderPaths?.map { path ->
-            if (sortDescending) "-$path" else path
-        }.orEmpty()
-        val order = if (orderTokens.isEmpty()) null else ScanQueryParser.parseOrder(dataModel, orderTokens)
         val result = runCatching {
+            val orderTokens = selectedSort?.orderPaths?.map { path ->
+                if (sortDescending) "-$path" else path
+            }.orEmpty()
+            val order = if (orderTokens.isEmpty()) null else ScanQueryParser.parseOrder(dataModel, orderTokens)
             val response = connection.dataStore.execute(
                 dataModel.scan(
                     limit = 50u,
@@ -454,7 +462,7 @@ private fun ReferencePickerDialog(
                     ),
                 )
             }
-        }.getOrDefault(emptyList())
+        }.onFailure { it.rethrowIfFatal() }.getOrDefault(emptyList())
         rows = result
         loading = false
     }

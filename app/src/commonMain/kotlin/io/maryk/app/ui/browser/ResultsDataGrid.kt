@@ -121,6 +121,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.Values
+import maryk.datastore.shared.rethrowIfFatal
 import kotlin.math.roundToInt
 import maryk.core.properties.types.Key as MarykKey
 
@@ -160,7 +161,7 @@ fun ResultsDataGrid(
                 runCatching {
                     val reference = dataModel.getPropertyReferenceByName(path, context)
                     PinnedColumn(path = path, label = path, reference = reference)
-                }.getOrNull()
+                }.onFailure { it.rethrowIfFatal() }.getOrNull()
             }
         }
     }

@@ -33,8 +33,8 @@ internal fun exportModelToFolder(
     allModels: Map<String, IsRootDataModel>,
 ) {
     val content = serializeModel(model, format, allModels)
-    val fileName = "${model.Meta.name}.${format.extension}"
-    val path = joinPath(folder, fileName)
+    val fileName = "${sanitizeFilePart(model.Meta.name)}.${format.extension}"
+    val path = joinExportPath(folder, fileName)
     File.writeText(path, content)
 }
 
@@ -102,12 +102,4 @@ private fun buildDefinitionsContext(
         map[name] = DataModelReference(dataModel)
     }
     return DefinitionsConversionContext(DefinitionsContext(dataModels = map))
-}
-
-private fun joinPath(folder: String, name: String): String {
-    return if (folder.endsWith("/") || folder.endsWith("\\")) {
-        folder + name
-    } else {
-        "$folder/$name"
-    }
 }

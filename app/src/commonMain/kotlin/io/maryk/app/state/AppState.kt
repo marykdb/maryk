@@ -67,6 +67,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 import kotlin.time.Instant
 
 @Stable
@@ -185,7 +186,13 @@ class BrowserState(
         lastActionMessage = null
         scanStatus = null
         scope.launch {
-            val result = withContext(Dispatchers.IO) { connector.connect(definition) }
+            val result = runCatching {
+                withContext(Dispatchers.IO) { connector.connect(definition) }
+            }.onFailure { it.rethrowIfFatal() }.getOrElse { error ->
+                lastActionMessage = error.message ?: error::class.simpleName ?: "Unknown error"
+                isWorking = false
+                return@launch
+            }
             when (result) {
                 is ConnectResult.Error -> {
                     lastActionMessage = result.message
@@ -327,6 +334,7 @@ class BrowserState(
             try {
                 ScanQueryParser.parseFilter(dataModel, raw)
             } catch (e: Throwable) {
+                e.rethrowIfFatal()
                 aggregationStatus = "Filter error: ${e.message ?: e::class.simpleName}"
                 return
             }
@@ -335,6 +343,7 @@ class BrowserState(
         val aggregations = try {
             buildAggregations(dataModel, requestContext, config.definitions)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             aggregationStatus = "Aggregation error: ${e.message ?: e::class.simpleName}"
             return
         }
@@ -353,7 +362,7 @@ class BrowserState(
                         aggregations = aggregations,
                         allowTableScan = true,
                     ).let { connection.dataStore.execute(it) }
-                }
+                }.onFailure { it.rethrowIfFatal() }
             }
             if (result.isSuccess) {
                 val response = result.getOrNull()
@@ -486,7 +495,7 @@ class BrowserState(
             val dateTime = kotlinx.datetime.LocalDateTime(year, month, day, hour, minute, second, 999_999_999)
             val instant = dateTime.toInstant(TimeZone.currentSystemDefault())
             HLC(instant.toEpochMilliseconds().toULong(), 0xFFFFFu).timestamp
-        }.getOrNull()
+        }.onFailure { it.rethrowIfFatal() }.getOrNull()
     }
 
     private fun normalizeTimeTravelTime(value: String): String {
@@ -565,7 +574,8 @@ class BrowserState(
                         )
                     )
                     response.values.firstOrNull()
-                } catch (_: Throwable) {
+                } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     null
                 }
             }
@@ -574,7 +584,14 @@ class BrowserState(
                 isWorking = false
                 return@launch
             }
-            val yaml = serializeRecordToYaml(dataModel, result)
+            val yaml = runCatching {
+                serializeRecordToYaml(dataModel, result)
+            }.getOrElse { error ->
+                error.rethrowIfFatal()
+                lastActionMessage = "Record render failed: ${error.message ?: error::class.simpleName}"
+                isWorking = false
+                return@launch
+            }
             recordDetails = RecordDetails(
                 model = dataModel,
                 key = row.key,
@@ -629,6 +646,7 @@ class BrowserState(
                         action = "Updated",
                     )
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     ApplyResult("Update failed: ${e.message ?: e::class.simpleName}", success = false)
                 }
             }
@@ -662,6 +680,7 @@ class BrowserState(
                         action = "Updated",
                     )
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     ApplyResult("Update failed: ${e.message ?: e::class.simpleName}", success = false)
                 }
             }
@@ -689,6 +708,7 @@ class BrowserState(
                     val response: AddResponse<IsRootDataModel> = connection.dataStore.execute(request)
                     formatAddStatus(dataModel, response.statuses.firstOrNull())
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     ApplyResult("Add failed: ${e.message ?: e::class.simpleName}", success = false)
                 }
             }
@@ -727,6 +747,7 @@ class BrowserState(
                         success = true,
                     )
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     ApplyResult("Delete failed: ${e.message ?: e::class.simpleName}", success = false)
                 }
             }
@@ -764,6 +785,7 @@ class BrowserState(
                         success = true,
                     )
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     ApplyResult("Delete failed: ${e.message ?: e::class.simpleName}", success = false)
                 }
             }
@@ -789,12 +811,19 @@ class BrowserState(
                         details.model.get(details.key, toVersion = toVersion, filterSoftDeleted = false)
                     )
                     response.values.firstOrNull()
-                } catch (_: Throwable) {
+                } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     null
                 }
             }
             if (refreshed != null) {
-                val yaml = serializeRecordToYaml(details.model, refreshed)
+                val yaml = runCatching {
+                    serializeRecordToYaml(details.model, refreshed)
+                }.getOrElse { error ->
+                    error.rethrowIfFatal()
+                    lastActionMessage = "Record render failed: ${error.message ?: error::class.simpleName}"
+                    return@launch
+                }
                 recordDetails = details.copy(
                     firstVersion = refreshed.firstVersion,
                     lastVersion = refreshed.lastVersion,
@@ -814,7 +843,9 @@ class BrowserState(
         val details = recordDetails ?: return
         scope.launch {
             val changes = withContext(Dispatchers.IO) {
-                loadAllChanges(connection.dataStore, details.model, details.key)
+                runCatching {
+                    loadAllChanges(connection.dataStore, details.model, details.key)
+                }.onFailure { it.rethrowIfFatal() }.getOrDefault(emptyList())
             }
             historyChanges = changes
         }
@@ -838,7 +869,7 @@ class BrowserState(
                         filterSoftDeleted = false,
                     )
                 )
-            }.getOrElse {
+            }.onFailure { it.rethrowIfFatal() }.getOrElse {
                 dataStore.execute(
                     model.getChanges(
                         key,
@@ -851,8 +882,10 @@ class BrowserState(
             val entry = response.changes.firstOrNull() ?: break
             if (entry.changes.isEmpty()) break
             result += entry.changes
-            if (entry.changes.size < maxVersions.toInt()) break
-            fromVersion = entry.changes.last().version + 1uL
+            if (entry.changes.size.toUInt() < maxVersions) break
+            val lastVersion = entry.changes.last().version
+            if (lastVersion == ULong.MAX_VALUE) break
+            fromVersion = lastVersion + 1uL
         }
         return result
     }
@@ -896,7 +929,8 @@ class BrowserState(
         val selectGraph = try {
             val merged = (showPaths + selectPaths).distinct()
             ScanQueryParser.parseSelectGraph(dataModel, merged)
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
             null
         }
 
@@ -904,6 +938,7 @@ class BrowserState(
             try {
                 ScanQueryParser.parseFilter(dataModel, raw)
             } catch (e: Throwable) {
+                e.rethrowIfFatal()
                 return ScanPageResult.Error("Filter error: ${e.message ?: e::class.simpleName}")
             }
         }
@@ -912,16 +947,18 @@ class BrowserState(
             try {
                 ScanQueryParser.parseOrder(dataModel, listOf(raw))
             } catch (e: Throwable) {
+                e.rethrowIfFatal()
                 return ScanPageResult.Error("Order error: ${e.message ?: e::class.simpleName}")
             }
         }
 
         val limit = scanConfig.limit.coerceIn(1, 500)
         val startKey = if (reset) {
-            scanConfig.startKey.takeIf { it.isNotBlank() }?.let { token ->
+            scanConfig.startKey.trim().takeIf { it.isNotBlank() }?.let { token ->
                 try {
                     dataModel.key(token)
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     return ScanPageResult.Error("Start key error: ${e.message ?: e::class.simpleName}")
                 }
             }
@@ -930,7 +967,12 @@ class BrowserState(
         }
 
         val includeStart = if (reset) scanConfig.includeStart else scanCursor.includeStart
-        val toVersion = scanConfig.toVersion.takeIf { it.isNotBlank() }?.toULongOrNull()
+        val toVersion = try {
+            parseScanToVersion(scanConfig.toVersion)
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            return ScanPageResult.Error(e.message ?: e::class.simpleName ?: "Invalid to version.")
+        }
 
         return try {
             val response = runBlocking {
@@ -979,6 +1021,7 @@ class BrowserState(
                 message = if (filteredRows.isEmpty()) "No results." else "Loaded ${filteredRows.size} rows.",
             )
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             ScanPageResult.Error("Scan failed: ${e.message ?: e::class.simpleName}")
         }
     }
@@ -1072,7 +1115,7 @@ class BrowserState(
             val result = withContext(Dispatchers.IO) {
                 runCatching {
                     exportModelToFolder(model, format, folder, allModels)
-                }
+                }.onFailure { it.rethrowIfFatal() }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${model.Meta.name} as ${format.label}."
@@ -1095,7 +1138,7 @@ class BrowserState(
                     allModels.values.forEach { model ->
                         exportModelToFolder(model, format, folder, allModels)
                     }
-                }
+                }.onFailure { it.rethrowIfFatal() }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${allModels.size} models as ${format.label}."
@@ -1130,7 +1173,7 @@ class BrowserState(
                         folder = folder,
                         includeVersionHistory = includeVersionHistory,
                     )
-                }
+                }.onFailure { it.rethrowIfFatal() }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${model.Meta.name} row as ${format.label}."
@@ -1162,7 +1205,7 @@ class BrowserState(
                         folder = exportFolder,
                         includeVersionHistory = includeVersionHistory,
                     )
-                }
+                }.onFailure { it.rethrowIfFatal() }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${model.Meta.name} data as ${format.label}."
@@ -1194,7 +1237,7 @@ class BrowserState(
                             includeVersionHistory = includeVersionHistory,
                         )
                     }
-                }
+                }.onFailure { it.rethrowIfFatal() }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported all data as ${format.label}."
@@ -1244,7 +1287,7 @@ class BrowserState(
                             path = filePath,
                         )
                     }
-                }
+                }.onFailure { it.rethrowIfFatal() }
             }
             if (result.isSuccess) {
                 val summary = result.getOrNull()
@@ -1278,9 +1321,15 @@ class BrowserState(
         exportToastMessage = null
         scope.launch {
             val detection = withContext(Dispatchers.IO) {
-                val format = detectImportFormatFromPath(cleanPath)
-                val scopeDetected = format?.let { detectImportScopeFromPath(cleanPath, it) }
-                format to scopeDetected
+                runCatching {
+                    val format = detectImportFormatFromPath(cleanPath)
+                    val scopeDetected = format?.let { detectImportScopeFromPath(cleanPath, it) }
+                    format to scopeDetected
+                }.onFailure { it.rethrowIfFatal() }
+            }.getOrElse { error ->
+                lastActionMessage = "Import failed: ${error.message ?: error::class.simpleName}"
+                isWorking = false
+                return@launch
             }
             val format = detection.first
             val scopeDetected = detection.second
@@ -1368,7 +1417,8 @@ class BrowserState(
             } else {
                 ModelRowCount(size, false)
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
             null
         }
     }
@@ -1437,6 +1487,13 @@ data class ScanConfig(
     val startKey: String = "",
     val includeStart: Boolean = true,
 )
+
+internal fun parseScanToVersion(value: String): ULong? {
+    val trimmed = value.trim()
+    if (trimmed.isBlank()) return null
+    return trimmed.toULongOrNull()
+        ?: throw IllegalArgumentException("To version error: invalid value `$trimmed`.")
+}
 
 data class ScanRow(
     val key: Key<IsRootDataModel>,

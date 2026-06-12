@@ -218,8 +218,8 @@ internal fun shouldUseMultilineTextEditor(
 ): Boolean {
     return (definition as? StringDefinition)?.let { stringDefinition ->
         val isKeyLabel = label.startsWith("Key", ignoreCase = true)
-        val maxSize = stringDefinition.maxSize?.toInt()
-        !isKeyLabel && maxSize != null && maxSize >= longStringMaxSizeThreshold
+        val maxSize = stringDefinition.maxSize
+        !isKeyLabel && maxSize != null && maxSize >= longStringMaxSizeThreshold.toUInt()
     } ?: false
 }
 

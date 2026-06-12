@@ -96,11 +96,11 @@ class StoreRepository(
         val directory = decode(parts[3])
         if (name.isBlank() || directory.isBlank()) return null
         val clusterFile = parts.getOrNull(4)?.let { decode(it) }?.ifBlank { null }
-        val sshHost = parts.getOrNull(6)?.let { decode(it) }?.ifBlank { null }
-        val sshUser = parts.getOrNull(7)?.let { decode(it) }?.ifBlank { null }
-        val sshPort = parts.getOrNull(8)?.let { decode(it) }?.ifBlank { null }?.toIntOrNull()
-        val sshLocalPort = parts.getOrNull(9)?.let { decode(it) }?.ifBlank { null }?.toIntOrNull()
-        val sshIdentityFile = parts.getOrNull(10)?.let { decode(it) }?.ifBlank { null }
+        val sshHost = parts.getOrNull(5)?.let { decode(it) }?.ifBlank { null }
+        val sshUser = parts.getOrNull(6)?.let { decode(it) }?.ifBlank { null }
+        val sshPort = (parsePort(parts.getOrNull(7)) ?: return null).value
+        val sshLocalPort = (parsePort(parts.getOrNull(8)) ?: return null).value
+        val sshIdentityFile = parts.getOrNull(9)?.let { decode(it) }?.ifBlank { null }
         return StoreDefinition(
             id = id,
             name = name,
@@ -169,6 +169,12 @@ class StoreRepository(
         return parts
     }
 
+    private fun parsePort(value: String?): ParsedPort? {
+        val decoded = value?.let { decode(it) }?.ifBlank { null } ?: return ParsedPort(null)
+        val port = decoded.toIntOrNull() ?: return null
+        return if (port in 1..65535) ParsedPort(port) else null
+    }
+
     private fun generateId(): String {
         val bytes = ByteArray(8)
         repeat(bytes.size) { idx ->
@@ -180,3 +186,5 @@ class StoreRepository(
         }
     }
 }
+
+private data class ParsedPort(val value: Int?)

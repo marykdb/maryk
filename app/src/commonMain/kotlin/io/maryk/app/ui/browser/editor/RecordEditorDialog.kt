@@ -41,6 +41,7 @@ import io.maryk.app.ui.handPointer
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.values.Values
+import maryk.datastore.shared.rethrowIfFatal
 
 internal enum class RecordEditorMode {
     ADD,
@@ -189,7 +190,9 @@ internal fun RecordEditorDialog(
                         }
                         if (mode == RecordEditorMode.ADD) {
                             val key = keyText.trim().takeIf { it.isNotBlank() }?.let {
-                                runCatching { dataModel.key(it) }.getOrNull()
+                                runCatching { dataModel.key(it) }
+                                    .onFailure { failure -> failure.rethrowIfFatal() }
+                                    .getOrNull()
                             }
                             if (keyText.isNotBlank() && key == null) {
                                 keyError = "Invalid key format."

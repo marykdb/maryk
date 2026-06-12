@@ -46,6 +46,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.toIntOrNull
 import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
@@ -59,6 +60,8 @@ import maryk.core.query.pairs.IsReferenceValueOrNullPair
 import maryk.core.values.ObjectValues
 import maryk.core.values.ValueItem
 import maryk.core.values.Values
+import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Instant
 
@@ -74,7 +77,8 @@ internal fun parseValue(definition: IsPropertyDefinition<*>, raw: String): Parse
                 @Suppress("UNCHECKED_CAST")
                 val def = definition as IsValueDefinition<Any, IsPropertyContext>
                 ParseResult.Value(def.fromString(raw))
-            } catch (_: Throwable) {
+            } catch (e: Throwable) {
+                e.rethrowIfFatal()
                 ParseResult.Error("Invalid format.")
             }
         }
@@ -87,7 +91,8 @@ internal fun parseSimpleValue(definition: IsSimpleValueDefinition<*, *>, raw: St
         @Suppress("UNCHECKED_CAST")
         val def = definition as IsSimpleValueDefinition<Any, IsPropertyContext>
         ParseResult.Value(def.fromString(raw))
-    } catch (_: Throwable) {
+    } catch (e: Throwable) {
+        e.rethrowIfFatal()
         ParseResult.Error("Invalid key.")
     }
 }
@@ -109,6 +114,7 @@ internal fun validateValue(definition: IsPropertyDefinition<*>, value: Any?, req
         (definition as IsPropertyDefinition<Any>).validateWithRef(null, value) { null }
         null
     } catch (e: Throwable) {
+        e.rethrowIfFatal()
         formatValidationMessage(e)
     }
 }
@@ -212,7 +218,8 @@ internal fun resolvePropertyValue(ref: AnyPropertyReference, values: Any): Any? 
     val typedRef = ref as IsPropertyReference<Any, IsPropertyDefinition<Any>, Any>
     return try {
         typedRef.resolve(values)
-    } catch (_: Throwable) {
+    } catch (e: Throwable) {
+        e.rethrowIfFatal()
         when {
             values is Values<*> && ref is IsPropertyReferenceForValues<*, *, *, *> -> values.original(ref.index)
             values is ObjectValues<*, *> && ref is IsPropertyReferenceForValues<*, *, *, *> -> values.original(ref.index)
@@ -360,7 +367,7 @@ internal fun defaultValueForDefinition(definition: IsSubDefinition<*, *>?): Any?
 internal fun defaultMapKey(definition: IsSimpleValueDefinition<Any, *>, existingKeys: Collection<Any>): Any? {
     return when (definition) {
         is StringDefinition -> {
-            val maxSize = definition.maxSize?.toInt()
+            val maxSize = definition.maxSize?.toIntOrNull()
             var index = 0
             while (index < MAX_STRING_CANDIDATE_ATTEMPTS) {
                 val candidate = nextStringCandidate(definition, index)
@@ -408,7 +415,7 @@ internal fun defaultMapKey(definition: IsSimpleValueDefinition<Any, *>, existing
 internal fun defaultSetItem(definition: IsSubDefinition<*, *>, existingValues: Set<Any>): Any? {
     val defaultValue = defaultValueForDefinition(definition)
     if (defaultValue != null && !existingValues.contains(defaultValue)) {
-        val isValid = runCatching {
+        val isValid = runCatchingNonFatal {
             @Suppress("UNCHECKED_CAST")
             (definition as? IsPropertyDefinition<Any>)?.validateWithRef(null, defaultValue) { null }
         }.isSuccess
@@ -423,7 +430,7 @@ internal fun defaultSetItem(definition: IsSubDefinition<*, *>, existingValues: S
             definition.enum.cases().firstOrNull { !existingValues.contains(it) }
         }
         is StringDefinition -> {
-            val maxSize = definition.maxSize?.toInt()
+            val maxSize = definition.maxSize?.toIntOrNull()
             var index = 0
             while (index < MAX_STRING_CANDIDATE_ATTEMPTS) {
                 val candidate = nextStringCandidate(definition, index)
@@ -586,9 +593,10 @@ private fun numberToLong(value: Any?): Long? = when (value) {
 private const val MAX_STRING_CANDIDATE_ATTEMPTS = 10_000
 private const val MAX_NUMBER_CANDIDATE_ATTEMPTS = 10_000
 private const val MAX_BINARY_CANDIDATE_ATTEMPTS = 10_000
+private const val MAX_GENERATED_SIZE = 10_000
 
 private fun nextStringCandidate(definition: StringDefinition, index: Int): String {
-    val minSize = definition.minSize?.toInt() ?: 0
+    val minSize = definition.minSize?.toGeneratedSize() ?: 0
     val base = stringTokenByIndex(index, minSize)
     return if (base.length < minSize) {
         base + "x".repeat(minSize - base.length)
@@ -628,7 +636,7 @@ private fun indexToAlphaToken(index: Int): String {
 }
 
 private fun isValidDefinitionValue(definition: IsSubDefinition<*, *>, value: Any): Boolean {
-    return runCatching {
+    return runCatchingNonFatal {
         @Suppress("UNCHECKED_CAST")
         (definition as? IsPropertyDefinition<Any>)?.validateWithRef(null, value) { null }
     }.isSuccess
@@ -643,12 +651,12 @@ private fun nextUniqueNumberCandidate(
 
     val preferredCandidates = listOfNotNull(
         definition.minValue,
-        runCatching { definition.fromString("0") }.getOrNull(),
+        runCatchingNonFatal { definition.fromString("0") }.getOrNull(),
         definition.maxValue,
     )
     for (candidate in preferredCandidates) {
         if (existingValues.contains(candidate)) continue
-        val valid = runCatching {
+        val valid = runCatchingNonFatal {
             propertyDefinition.validateWithRef(null, candidate) { null }
         }.isSuccess
         if (valid) return candidate
@@ -663,6 +671,7 @@ private fun nextUniqueNumberCandidate(
     val isFloatingNumber = definition.type == Float32 || definition.type == Float64
     val maxExisting = if (isFloatingNumber) null else existingValues.mapNotNull(::numberToLong).maxOrNull()
     val initial = when {
+        maxExisting == Long.MAX_VALUE -> minBound ?: 0L
         maxExisting != null && minBound != null -> maxOf(maxExisting + 1L, minBound)
         maxExisting != null -> maxExisting + 1L
         minBound != null -> minBound
@@ -671,8 +680,8 @@ private fun nextUniqueNumberCandidate(
     var number = initial
     var attempts = 0
     while (true) {
-        if (isFloatingNumber && attempts >= MAX_NUMBER_CANDIDATE_ATTEMPTS) {
-            return nextUniqueFractionalCandidate(definition, existingValues, propertyDefinition)
+        if (attempts >= MAX_NUMBER_CANDIDATE_ATTEMPTS) {
+            return if (isFloatingNumber) nextUniqueFractionalCandidate(definition, existingValues, propertyDefinition) else null
         }
         if (maxBound != null && number > maxBound) {
             return if (isFloatingNumber) {
@@ -681,12 +690,12 @@ private fun nextUniqueNumberCandidate(
                 null
             }
         }
-        val candidate = runCatching { definition.fromString(number.toString()) }.getOrNull() ?: return if (isFloatingNumber) {
+        val candidate = runCatchingNonFatal { definition.fromString(number.toString()) }.getOrNull() ?: return if (isFloatingNumber) {
             nextUniqueFractionalCandidate(definition, existingValues, propertyDefinition)
         } else {
             null
         }
-        val valid = runCatching {
+        val valid = runCatchingNonFatal {
             propertyDefinition.validateWithRef(null, candidate) { null }
         }.isSuccess
         if (valid && !existingValues.contains(candidate)) return candidate
@@ -709,9 +718,9 @@ private fun nextUniqueUInt64Candidate(
 
     while (true) {
         if (maxBound != null && candidate > maxBound) return null
-        val parsed = runCatching { definition.fromString(candidate.toString()) }.getOrNull()
+        val parsed = runCatchingNonFatal { definition.fromString(candidate.toString()) }.getOrNull()
         if (parsed != null && !existingValues.contains(parsed)) {
-            val valid = runCatching {
+            val valid = runCatchingNonFatal {
                 propertyDefinition.validateWithRef(null, parsed) { null }
             }.isSuccess
             if (valid) return parsed
@@ -744,14 +753,14 @@ private fun nextUniqueFlexBytesCandidate(
 ): Any? {
     val propertyDefinition = definition as IsPropertyDefinition<Any>
     val emptyCandidate = definition.fromString("")
-    val emptyValid = runCatching {
+    val emptyValid = runCatchingNonFatal {
         propertyDefinition.validateWithRef(null, emptyCandidate) { null }
     }.isSuccess
     if (emptyValid && !existingValues.contains(emptyCandidate)) return emptyCandidate
 
     val minValue = definition.minValue
-    val minSize = definition.minSize?.toInt() ?: 0
-    val maxSize = definition.maxSize?.toInt()
+    val minSize = definition.minSize?.toGeneratedSize() ?: 0
+    val maxSize = definition.maxSize?.toIntOrNull()
     val baseSize = minValue?.size ?: when {
         minSize > 0 -> minSize
         maxSize == 0 -> 0
@@ -792,7 +801,7 @@ private fun nextUniqueBinaryCandidate(
         val candidateBytes = addOffsetToBytes(baseBytes, offset) ?: break
         val candidate = toValue(candidateBytes) ?: continue
         if (existingValues.contains(candidate)) continue
-        val valid = runCatching {
+        val valid = runCatchingNonFatal {
             propertyDefinition.validateWithRef(null, candidate) { null }
         }.isSuccess
         if (valid) return candidate
@@ -814,6 +823,9 @@ private fun addOffsetToBytes(base: ByteArray, offset: Int): ByteArray? {
     return if (carry == 0) result else null
 }
 
+private fun UInt.toGeneratedSize(): Int? =
+    if (this > MAX_GENERATED_SIZE.toUInt()) null else toInt()
+
 private fun nextUniqueFractionalCandidate(
     definition: NumberDefinition<*>,
     existingValues: Collection<Any>,
@@ -825,9 +837,9 @@ private fun nextUniqueFractionalCandidate(
 
     fun tryCandidate(value: Double): Any? {
         if (!value.isFinite()) return null
-        val candidate = runCatching { definition.fromString(value.toString()) }.getOrNull() ?: return null
+        val candidate = runCatchingNonFatal { definition.fromString(value.toString()) }.getOrNull() ?: return null
         if (existingValues.contains(candidate)) return null
-        val valid = runCatching { propertyDefinition.validateWithRef(null, candidate) { null } }.isSuccess
+        val valid = runCatchingNonFatal { propertyDefinition.validateWithRef(null, candidate) { null } }.isSuccess
         return if (valid) candidate else null
     }
 

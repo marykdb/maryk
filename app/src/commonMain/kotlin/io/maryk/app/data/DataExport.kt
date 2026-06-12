@@ -4,23 +4,25 @@ import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.asValues
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.Bytes
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.DataObjectVersionedChange
-import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.SetChange
+import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.scan
 import maryk.core.protobuf.WriteCache
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.file.File
 import maryk.json.JsonWriter
-import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.properties.references.SetReference
+import maryk.core.query.pairs.ReferenceValuePair
 import maryk.yaml.YamlWriter
-import kotlin.math.min
 
 enum class DataExportFormat(
     val label: String,
@@ -50,7 +52,7 @@ internal suspend fun exportRowDataToFolder(
         val requestContext = buildRequestContext(model)
         val change = loadFullChangesForKey(dataStore, model, key) ?: return
         val fileName = buildRowFileName(model.Meta.name, keyText, format, "versions")
-        val path = joinPath(folder, fileName)
+        val path = joinExportPath(folder, fileName)
         when (format) {
             DataExportFormat.JSON -> File.writeText(path, serializeVersionedToJson(change, requestContext))
             DataExportFormat.YAML -> File.writeText(path, serializeVersionedToYaml(change, requestContext))
@@ -62,7 +64,7 @@ internal suspend fun exportRowDataToFolder(
         )
         val record = response.values.firstOrNull() ?: return
         val fileName = buildRowFileName(model.Meta.name, keyText, format)
-        val path = joinPath(folder, fileName)
+        val path = joinExportPath(folder, fileName)
         val requestContext = buildRequestContext(model)
         when (format) {
             DataExportFormat.JSON -> File.writeText(path, serializeRecordToJson(record, requestContext))
@@ -84,7 +86,7 @@ internal suspend fun exportModelDataToFolder(
     } else {
         val requestContext = buildRequestContext(model)
         val fileName = buildModelFileName(model.Meta.name, format)
-        val path = joinPath(folder, fileName)
+        val path = joinExportPath(folder, fileName)
         val batchSize = 250u
         var startKey: Key<IsRootDataModel>? = null
         var includeStart = true
@@ -130,7 +132,7 @@ internal suspend fun exportModelDataToFolder(
                 hasAny = true
             }
             val nextKey = response.values.last().key
-            if (response.values.size < batchSize.toInt()) break
+            if (response.values.size.toUInt() < batchSize) break
             startKey = nextKey
             includeStart = false
         }
@@ -181,11 +183,10 @@ private fun serializeRecordToProto(
     val bytes = ByteArray(length)
     var index = 0
     ValuesWithMetaData.Serializer.writeProtoBuf(metaValues, cache, { byte ->
-        if (index < bytes.size) {
-            bytes[index++] = byte
-        }
+        bytes[index++] = byte
     }, requestContext)
-    return if (index == bytes.size) bytes else bytes.copyOf(min(index, bytes.size))
+    check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
+    return bytes
 }
 
 private fun buildRowFileName(
@@ -218,7 +219,7 @@ private suspend fun exportModelVersionedDataToFolder(
 ) {
     val requestContext = buildRequestContext(model)
     val fileName = buildModelFileName(model.Meta.name, format, "versions")
-    val path = joinPath(folder, fileName)
+    val path = joinExportPath(folder, fileName)
     val batchSize = 250u
     var startKey: Key<IsRootDataModel>? = null
     var includeStart = true
@@ -265,7 +266,7 @@ private suspend fun exportModelVersionedDataToFolder(
             hasAny = true
         }
         val nextKey = response.values.last().key
-        if (response.values.size < batchSize.toInt()) break
+        if (response.values.size.toUInt() < batchSize) break
         startKey = nextKey
         includeStart = false
     }
@@ -290,7 +291,7 @@ private suspend fun loadFullChangesForKey(
 ): DataObjectVersionedChange<IsRootDataModel>? {
     val changes = mutableListOf<VersionedChanges>()
     var fromVersion = 0uL
-    var sortingKey: maryk.core.properties.types.Bytes? = null
+    var sortingKey: Bytes? = null
     val maxVersions = 1000u
 
     while (true) {
@@ -304,6 +305,7 @@ private suspend fun loadFullChangesForKey(
                 )
             )
         }.getOrElse {
+            it.rethrowIfFatal()
             dataStore.execute(
                 model.getChanges(
                     key,
@@ -317,8 +319,10 @@ private suspend fun loadFullChangesForKey(
         if (sortingKey == null) sortingKey = entry.sortingKey
         if (entry.changes.isEmpty()) break
         changes += entry.changes.mapNotNull(::sanitizeVersionedChanges)
-        if (entry.changes.size < maxVersions.toInt()) break
-        fromVersion = entry.changes.last().version + 1uL
+        if (entry.changes.size.toUInt() < maxVersions) break
+        val lastVersion = entry.changes.last().version
+        if (lastVersion == ULong.MAX_VALUE) break
+        fromVersion = lastVersion + 1uL
     }
 
     if (changes.isEmpty()) return null
@@ -335,7 +339,7 @@ private fun sanitizeVersionedChanges(versionedChanges: VersionedChanges): Versio
     return VersionedChanges(versionedChanges.version, sanitized)
 }
 
-private fun sanitizeChange(change: maryk.core.query.changes.IsChange): maryk.core.query.changes.IsChange? {
+private fun sanitizeChange(change: IsChange): IsChange? {
     return when (change) {
         is Change -> {
             val filtered = change.referenceValuePairs.filterNot { pair ->
@@ -383,22 +387,72 @@ private fun serializeVersionedToProto(
     val bytes = ByteArray(length)
     var index = 0
     DataObjectVersionedChange.Serializer.writeProtoBuf(values, cache, { byte ->
-        if (index < bytes.size) {
-            bytes[index++] = byte
-        }
+        bytes[index++] = byte
     }, requestContext)
-    return if (index == bytes.size) bytes else bytes.copyOf(min(index, bytes.size))
+    check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
+    return bytes
 }
 
-private fun sanitizeFilePart(value: String): String {
-    val trimmed = value.trim().ifBlank { "data" }
-    return trimmed.replace(Regex("[^A-Za-z0-9._-]"), "_")
-}
+private const val MAX_FILE_PART_LENGTH = 120
 
-private fun joinPath(folder: String, name: String): String {
-    return if (folder.endsWith("/") || folder.endsWith("\\")) {
-        folder + name
+private val windowsReservedFileNames = setOf(
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+)
+
+internal fun sanitizeFilePart(value: String): String {
+    val normalized = value
+        .trim()
+        .replace(Regex("[^A-Za-z0-9._-]"), "_")
+        .trim('.')
+        .ifBlank { "data" }
+
+    val reservedSafe = if (normalized.substringBefore('.').uppercase() in windowsReservedFileNames) {
+        "_$normalized"
     } else {
-        "$folder/$name"
+        normalized
+    }
+
+    return reservedSafe
+        .take(MAX_FILE_PART_LENGTH)
+        .trimEnd('.')
+        .ifBlank { "data" }
+}
+
+internal fun joinExportPath(folder: String, name: String): String {
+    if (folder.isEmpty()) return name
+
+    val normalized = folder.trimEnd('/', '\\')
+    val base = when {
+        normalized.isEmpty() -> folder.first().toString()
+        normalized.length == 2 && normalized[1] == ':' && folder.length > 2 &&
+            (folder[2] == '/' || folder[2] == '\\') -> "$normalized/"
+        else -> normalized
+    }
+
+    return if (base.endsWith("/") || base.endsWith("\\")) {
+        base + name
+    } else {
+        "$base/$name"
     }
 }

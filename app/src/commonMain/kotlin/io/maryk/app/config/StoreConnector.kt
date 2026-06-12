@@ -18,6 +18,7 @@ import maryk.foundationdb.runSuspend
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 import kotlin.time.Duration.Companion.milliseconds
 
 sealed class ConnectResult {
@@ -32,7 +33,9 @@ data class StoreConnection(
     fun close() {
         runBlocking {
             runCatching { dataStore.closeAllListeners() }
+                .onFailure { it.rethrowIfFatal() }
             runCatching { dataStore.close() }
+                .onFailure { it.rethrowIfFatal() }
         }
     }
 }
@@ -60,6 +63,7 @@ class StoreConnector {
                 )
             )
         } catch (e: Exception) {
+            e.rethrowIfFatal()
             val reason = if (e.isRocksDbLockError()) {
                 "RocksDB already open in another process. Close it or open a copy of the store directory."
             } else {
@@ -124,6 +128,7 @@ class StoreConnector {
                 )
             )
         } catch (e: Exception) {
+            e.rethrowIfFatal()
             ConnectResult.Error(e.message ?: e::class.simpleName ?: "Unknown error")
         } catch (t: Throwable) {
             val looksLikeMissingLib = t::class.simpleName == "UnsatisfiedLinkError" ||
@@ -131,6 +136,7 @@ class StoreConnector {
             val reason = if (looksLikeMissingLib) {
                 "FoundationDB native client (libfdb_c) is missing. Install via store/foundationdb/scripts/install-foundationdb.sh or install system-wide."
             } else {
+                t.rethrowIfFatal()
                 t.message ?: t::class.simpleName ?: "Unknown error"
             }
             ConnectResult.Error(reason)
@@ -164,6 +170,7 @@ class StoreConnector {
                 )
             )
         } catch (e: Exception) {
+            e.rethrowIfFatal()
             ConnectResult.Error(e.message ?: e::class.simpleName ?: "Unknown error")
         }
     }
@@ -199,7 +206,8 @@ private suspend fun detectKeepAllVersions(
                     DirectoryLayer.getDefault().open(tr, directoryPath).await()
                 }
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return null
         }
 
@@ -211,6 +219,7 @@ private suspend fun detectKeepAllVersions(
             }
             true
         } catch (t: Throwable) {
+            t.rethrowIfFatal()
             if (t.isNoSuchDirectory()) false else null
         }
     } finally {

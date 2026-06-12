@@ -1,6 +1,5 @@
 package io.maryk.app.data
 
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.emptyValues
@@ -21,21 +20,25 @@ import maryk.core.properties.references.ListItemReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.references.toListIndex
+import maryk.core.properties.types.Key
 import maryk.core.properties.types.MutableTypedValue
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
-import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.SetChange
+import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.add
-import maryk.core.query.responses.statuses.AddSuccess
-import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.AddOrChangeResponse
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.IsAddOrChangeResponseStatus
+import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.pairs.IsReferenceValueOrNullPair
 import maryk.core.query.pairs.ReferenceNullPair
@@ -44,6 +47,7 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.MutableValueItems
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.file.File
 import maryk.json.JsonReader
 import maryk.json.JsonToken
@@ -72,7 +76,7 @@ internal suspend fun importDataFromFile(
     )
     var imported = 0
     var failed = 0
-    val batch = ArrayList<Pair<maryk.core.properties.types.Key<IsRootDataModel>, Values<IsRootDataModel>>>(100)
+    val batch = ArrayList<Pair<Key<IsRootDataModel>, Values<IsRootDataModel>>>(100)
 
     suspend fun flushBatch() {
         if (batch.isEmpty()) return
@@ -146,6 +150,8 @@ internal fun detectVersionedImport(
             DataExportFormat.YAML -> detectVersionedYaml(path, requestContext)
             DataExportFormat.PROTO -> detectVersionedProto(path, requestContext)
         }
+    }.onFailure {
+        it.rethrowIfFatal()
     }.getOrDefault(false)
 }
 
@@ -159,7 +165,7 @@ internal fun detectImportFormatFromPath(path: String): DataExportFormat? {
             else -> null
         }
     }
-    val bytes = File.readBytes(path) ?: return null
+    val bytes = readImportBytesOrNull(path) ?: return null
     if (bytes.any { it == 0.toByte() }) return DataExportFormat.PROTO
     val text = bytes.decodeToString()
     val first = text.firstNonWhitespaceChar() ?: return null
@@ -169,17 +175,17 @@ internal fun detectImportFormatFromPath(path: String): DataExportFormat? {
 internal fun detectImportScopeFromPath(path: String, format: DataExportFormat): DataImportScope {
     return when (format) {
         DataExportFormat.JSON -> {
-            val content = File.readText(path) ?: return DataImportScope.SINGLE
+            val content = readImportTextOrNull(path) ?: return DataImportScope.SINGLE
             val first = content.firstNonWhitespaceChar()
             if (first == '[') DataImportScope.MULTIPLE else DataImportScope.SINGLE
         }
         DataExportFormat.YAML -> {
-            val content = File.readText(path) ?: return DataImportScope.SINGLE
+            val content = readImportTextOrNull(path) ?: return DataImportScope.SINGLE
             val docs = splitYamlDocuments(content)
             if (docs.size > 1) DataImportScope.MULTIPLE else DataImportScope.SINGLE
         }
         DataExportFormat.PROTO -> {
-            val bytes = File.readBytes(path) ?: return DataImportScope.SINGLE
+            val bytes = readImportBytesOrNull(path) ?: return DataImportScope.SINGLE
             detectProtoScope(bytes)
         }
     }
@@ -191,12 +197,13 @@ private suspend fun readJsonRecords(
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
 ) {
-    val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
+    val content = readImportText(path)
     val iterator = content.iterator()
     val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
     when (scope) {
         DataImportScope.SINGLE -> {
             val values = ValuesWithMetaData.Serializer.readJson(reader, requestContext)
+            ensureJsonDocumentEnded(reader)
             onRecord(values)
         }
         DataImportScope.MULTIPLE -> {
@@ -206,7 +213,10 @@ private suspend fun readJsonRecords(
             }
             while (true) {
                 when (val next = reader.nextToken()) {
-                    is JsonToken.EndArray -> return
+                    is JsonToken.EndArray -> {
+                        ensureJsonDocumentEnded(reader)
+                        return
+                    }
                     is JsonToken.ArraySeparator -> continue
                     is JsonToken.StartObject -> {
                         val values = ValuesWithMetaData.Serializer.readJson(reader, requestContext)
@@ -225,7 +235,7 @@ private suspend fun readYamlRecords(
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
 ) {
-    val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
+    val content = readImportText(path)
     val documents = splitYamlDocuments(content)
     when (scope) {
         DataImportScope.SINGLE -> {
@@ -249,30 +259,69 @@ private fun splitYamlDocuments(content: String): List<String> {
     return raw.map { it.trim() }.filter { it.isNotEmpty() }
 }
 
+private const val MAX_IMPORT_FILE_BYTES = 64L * 1024L * 1024L
+
+private fun readImportText(path: String): String =
+    readImportTextOrNull(path) ?: throw IllegalArgumentException("File not found: $path")
+
+private fun readImportTextOrNull(path: String): String? {
+    return readImportBytesOrNull(path)?.decodeToString()
+}
+
+private fun readImportBytes(path: String): ByteArray =
+    readImportBytesOrNull(path) ?: throw IllegalArgumentException("File not found: $path")
+
+private fun readImportBytesOrNull(path: String): ByteArray? {
+    ensureImportFileSize(path) ?: return null
+    val bytes = File.readBytes(path) ?: return null
+    if (bytes.size.toLong() > MAX_IMPORT_FILE_BYTES) {
+        throw IllegalArgumentException("Import file exceeds max size: ${bytes.size} > $MAX_IMPORT_FILE_BYTES bytes")
+    }
+    return bytes
+}
+
+private fun ensureImportFileSize(path: String): Long? {
+    val size = File.size(path) ?: return null
+    if (size > MAX_IMPORT_FILE_BYTES) {
+        throw IllegalArgumentException("Import file exceeds max size: $size > $MAX_IMPORT_FILE_BYTES bytes")
+    }
+    return size
+}
+
 private suspend fun readProtoRecords(
     path: String,
     requestContext: RequestContext,
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
 ) {
-    val bytes = File.readBytes(path) ?: throw IllegalArgumentException("File not found: $path")
+    val bytes = readImportBytes(path)
     when (scope) {
         DataImportScope.SINGLE -> {
-            var index = 0
-            val values = ValuesWithMetaData.Serializer.readProtoBuf(bytes.size, reader = { bytes[index++] }, context = requestContext)
+            val values = readProtoPayload(
+                bytes = bytes,
+                start = 0,
+                length = bytes.size,
+                label = "record",
+            ) { reader ->
+                ValuesWithMetaData.Serializer.readProtoBuf(bytes.size, reader = reader, context = requestContext)
+            }
             onRecord(values)
         }
         DataImportScope.MULTIPLE -> {
             var index = 0
             while (index < bytes.size) {
-                val length = initIntByVar { bytes[index++] }
-                val end = index + length
-                if (end > bytes.size) {
-                    throw IllegalArgumentException("Invalid proto length at byte $index.")
+                val frame = readLengthPrefixedFrame(bytes, index)
+                index = frame.start
+                val values = readProtoPayload(
+                    bytes = bytes,
+                    start = frame.start,
+                    length = frame.length,
+                    label = "record at byte ${frame.start}",
+                ) { reader ->
+                    ValuesWithMetaData.Serializer.readProtoBuf(frame.length, reader = reader, context = requestContext)
                 }
-                val values = ValuesWithMetaData.Serializer.readProtoBuf(length, reader = { bytes[index++] }, context = requestContext)
                 onRecord(values)
-                index = end
+                index = frame.end
             }
         }
     }
@@ -284,12 +333,13 @@ private suspend fun readVersionedJsonRecords(
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
 ) {
-    val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
+    val content = readImportText(path)
     val iterator = content.iterator()
     val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
     when (scope) {
         DataImportScope.SINGLE -> {
             val values = DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
+            ensureJsonDocumentEnded(reader)
             onRecord(values)
         }
         DataImportScope.MULTIPLE -> {
@@ -299,7 +349,10 @@ private suspend fun readVersionedJsonRecords(
             }
             while (true) {
                 when (val next = reader.nextToken()) {
-                    is JsonToken.EndArray -> return
+                    is JsonToken.EndArray -> {
+                        ensureJsonDocumentEnded(reader)
+                        return
+                    }
                     is JsonToken.ArraySeparator -> continue
                     is JsonToken.StartObject -> {
                         val values = DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
@@ -318,7 +371,7 @@ private suspend fun readVersionedYamlRecords(
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
 ) {
-    val content = File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
+    val content = readImportText(path)
     val documents = splitYamlDocuments(content)
     when (scope) {
         DataImportScope.SINGLE -> {
@@ -341,39 +394,56 @@ private suspend fun readVersionedProtoRecords(
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
 ) {
-    val bytes = File.readBytes(path) ?: throw IllegalArgumentException("File not found: $path")
+    val bytes = readImportBytes(path)
     when (scope) {
         DataImportScope.SINGLE -> {
-            var index = 0
-            val values = DataObjectVersionedChange.Serializer.readProtoBuf(
-                bytes.size,
-                reader = { bytes[index++] },
-                context = requestContext
-            )
+            val values = readProtoPayload(
+                bytes = bytes,
+                start = 0,
+                length = bytes.size,
+                label = "versioned record",
+            ) { reader ->
+                DataObjectVersionedChange.Serializer.readProtoBuf(
+                    bytes.size,
+                    reader = reader,
+                    context = requestContext
+                )
+            }
             onRecord(values)
         }
         DataImportScope.MULTIPLE -> {
             var index = 0
             while (index < bytes.size) {
-                val length = initIntByVar { bytes[index++] }
-                val end = index + length
-                if (end > bytes.size) {
-                    throw IllegalArgumentException("Invalid proto length at byte $index.")
+                val frame = readLengthPrefixedFrame(bytes, index)
+                index = frame.start
+                val values = readProtoPayload(
+                    bytes = bytes,
+                    start = frame.start,
+                    length = frame.length,
+                    label = "versioned record at byte ${frame.start}",
+                ) { reader ->
+                    DataObjectVersionedChange.Serializer.readProtoBuf(
+                        frame.length,
+                        reader = reader,
+                        context = requestContext
+                    )
                 }
-                val values = DataObjectVersionedChange.Serializer.readProtoBuf(
-                    length,
-                    reader = { bytes[index++] },
-                    context = requestContext
-                )
                 onRecord(values)
-                index = end
+                index = frame.end
             }
         }
     }
 }
 
+internal fun ensureJsonDocumentEnded(reader: JsonReader) {
+    when (val token = reader.nextToken()) {
+        is JsonToken.EndDocument -> Unit
+        else -> throw IllegalArgumentException("Unexpected JSON token after records: $token")
+    }
+}
+
 private fun detectVersionedJson(path: String, requestContext: RequestContext): Boolean {
-    val content = File.readText(path) ?: return false
+    val content = readImportTextOrNull(path) ?: return false
     val iterator = content.iterator()
     val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
     val token = reader.nextToken()
@@ -384,6 +454,8 @@ private fun detectVersionedJson(path: String, requestContext: RequestContext): B
                 is JsonToken.StartObject -> runCatching {
                     DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
                     true
+                }.onFailure {
+                    it.rethrowIfFatal()
                 }.getOrDefault(false)
                 is JsonToken.ArraySeparator -> false
                 else -> false
@@ -392,32 +464,44 @@ private fun detectVersionedJson(path: String, requestContext: RequestContext): B
         is JsonToken.StartObject -> runCatching {
             DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
             true
+        }.onFailure {
+            it.rethrowIfFatal()
         }.getOrDefault(false)
         else -> false
     }
 }
 
 private fun detectVersionedYaml(path: String, requestContext: RequestContext): Boolean {
-    val content = File.readText(path) ?: return false
+    val content = readImportTextOrNull(path) ?: return false
     val doc = splitYamlDocuments(content).firstOrNull() ?: return false
     return runCatching {
         DataObjectVersionedChange.Serializer.readJson(MarykYamlReader(doc), requestContext)
         true
+    }.onFailure {
+        it.rethrowIfFatal()
     }.getOrDefault(false)
 }
 
 private fun detectVersionedProto(path: String, requestContext: RequestContext): Boolean {
-    val bytes = File.readBytes(path) ?: return false
+    val bytes = readImportBytesOrNull(path) ?: return false
     val read = readVarInt(bytes, 0)
-    val (length, offset) = if (read != null && read.bytesRead + read.value <= bytes.size) {
+    val (length, offset) = if (read != null && read.value > 0 && read.value <= bytes.size - read.bytesRead) {
         read.value to read.bytesRead
     } else {
         bytes.size to 0
     }
-    var index = offset
     return runCatching {
-        DataObjectVersionedChange.Serializer.readProtoBuf(length, reader = { bytes[index++] }, context = requestContext)
+        readProtoPayload(
+            bytes = bytes,
+            start = offset,
+            length = length,
+            label = "versioned record",
+        ) { reader ->
+            DataObjectVersionedChange.Serializer.readProtoBuf(length, reader = reader, context = requestContext)
+        }
         true
+    }.onFailure {
+        it.rethrowIfFatal()
     }.getOrDefault(false)
 }
 
@@ -446,7 +530,7 @@ private fun normalizeVersionedRecord(
     val firstChange = valuesToTopLevelChange(model, materialized)
     val normalizedChanges = buildList {
         add(
-            maryk.core.query.changes.VersionedChanges(
+            VersionedChanges(
                 first.version,
                 buildList {
                     add(ObjectCreate)
@@ -515,16 +599,18 @@ private fun applyReferenceValue(
             is ListItemReference<*, *> -> {
                 @Suppress("UNCHECKED_CAST")
                 val list = current as? MutableList<Any?> ?: return
-                val listIndex = ref.index.toInt()
-                ensureListSize(list, listIndex)
+                val listIndex = ref.index.toListIndex()
                 if (isLast) {
                     if (delete) {
+                        if (listIndex >= list.size) return
                         list.removeAt(listIndex)
                     } else {
+                        ensureListSize(list, listIndex, ref.listDefinition.maxSize)
                         list[listIndex] = value
                     }
                     return
                 }
+                ensureListSize(list, listIndex, ref.listDefinition.maxSize)
                 val existing = list[listIndex]
                 if (existing == null) {
                     val created = createContainerForDefinition(ref.listDefinition.valueDefinition, nextRef) ?: return
@@ -619,7 +705,18 @@ private fun createContainerForDefinition(
     }
 }
 
-private fun ensureListSize(list: MutableList<Any?>, index: Int) {
+private const val MAX_MATERIALIZED_IMPORT_LIST_ITEMS = 100_000
+
+private fun ensureListSize(list: MutableList<Any?>, index: Int, maxSize: UInt?) {
+    if (index < 0) {
+        throw IllegalArgumentException("Invalid list index in imported data.")
+    }
+    val limit = maxSize?.let {
+        minOf(it.toLong(), MAX_MATERIALIZED_IMPORT_LIST_ITEMS.toLong())
+    } ?: MAX_MATERIALIZED_IMPORT_LIST_ITEMS.toLong()
+    if (index.toLong() >= limit) {
+        throw IllegalArgumentException("List index $index exceeds import materialization limit $limit.")
+    }
     while (list.size <= index) {
         list.add(null)
     }
@@ -707,7 +804,7 @@ private fun countStatuses(statuses: List<IsAddResponseStatus<IsRootDataModel>>):
 }
 
 private fun IsAddOrChangeResponseStatus<IsRootDataModel>.isSuccessStatus(): Boolean {
-    return this is AddSuccess || this is maryk.core.query.responses.statuses.ChangeSuccess
+    return this is AddSuccess || this is ChangeSuccess
 }
 
 private data class VarIntRead(
@@ -715,12 +812,19 @@ private data class VarIntRead(
     val bytesRead: Int,
 )
 
+private data class ProtoFrame(
+    val length: Int,
+    val start: Int,
+    val end: Int,
+)
+
 private fun readVarInt(bytes: ByteArray, startIndex: Int): VarIntRead? {
     var shift = 0
     var result = 0
     var index = startIndex
     while (index < bytes.size && shift < 32) {
-        val b = bytes[index].toInt()
+        val b = bytes[index].toInt() and 0xFF
+        if (shift == 28 && (b and 0xF0) != 0) return null
         result = result or ((b and 0x7F) shl shift)
         index += 1
         if (b and 0x80 == 0) {
@@ -729,6 +833,53 @@ private fun readVarInt(bytes: ByteArray, startIndex: Int): VarIntRead? {
         shift += 7
     }
     return null
+}
+
+private fun readLengthPrefixedFrame(bytes: ByteArray, index: Int): ProtoFrame {
+    val read = readVarInt(bytes, index)
+        ?: throw IllegalArgumentException("Invalid proto length at byte $index.")
+    if (read.value <= 0) {
+        throw IllegalArgumentException("Invalid proto length at byte $index.")
+    }
+
+    val frameStart = index + read.bytesRead
+    if (read.value > bytes.size - frameStart) {
+        throw IllegalArgumentException("Invalid proto length at byte $index.")
+    }
+
+    return ProtoFrame(
+        length = read.value,
+        start = frameStart,
+        end = frameStart + read.value,
+    )
+}
+
+internal inline fun <T> readProtoPayload(
+    bytes: ByteArray,
+    start: Int,
+    length: Int,
+    label: String,
+    read: (() -> Byte) -> T,
+): T {
+    require(start >= 0 && start <= bytes.size) { "Invalid proto $label start." }
+    require(length >= 0 && length <= bytes.size - start) { "Invalid proto $label length." }
+    var index = start
+    val end = start + length
+    val value = try {
+        read {
+            if (index >= end) {
+                throw IllegalArgumentException("Invalid proto $label: attempted to read past $length bytes.")
+            }
+            bytes[index++]
+        }
+    } catch (error: Throwable) {
+        error.rethrowIfFatal()
+        throw IllegalArgumentException("Invalid proto $label.", error)
+    }
+    if (index != end) {
+        throw IllegalArgumentException("Invalid proto $label: consumed ${index - start} of $length bytes.")
+    }
+    return value
 }
 
 private fun String.firstNonWhitespaceChar(): Char? = firstOrNull { !it.isWhitespace() }
@@ -746,15 +897,14 @@ private fun countLengthPrefixedFrames(bytes: ByteArray): Int? {
     var index = 0
     var frameCount = 0
     while (index < bytes.size) {
-        val read = readVarInt(bytes, index) ?: return null
-        if (read.value <= 0) return null
-
-        val frameStart = index + read.bytesRead
-        val frameEnd = frameStart + read.value
-        if (frameEnd > bytes.size) return null
+        val frame = runCatching {
+            readLengthPrefixedFrame(bytes, index)
+        }.onFailure {
+            it.rethrowIfFatal()
+        }.getOrNull() ?: return null
 
         frameCount += 1
-        index = frameEnd
+        index = frame.end
     }
     return if (index == bytes.size) frameCount else null
 }

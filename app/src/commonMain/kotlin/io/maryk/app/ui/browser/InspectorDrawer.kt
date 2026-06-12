@@ -88,6 +88,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.query.requests.get
 import maryk.core.values.AbstractValues
+import maryk.datastore.shared.rethrowIfFatal
 
 @Composable
 fun InspectorDrawer(
@@ -538,7 +539,7 @@ private fun ReferenceValue(
                     dataModel.get(reference.key, toVersion = toVersion, filterSoftDeleted = false)
                 )
                 response.values.firstOrNull()?.let { serializeRecordToYaml(dataModel, it) }
-            }.getOrNull()
+            }.onFailure { it.rethrowIfFatal() }.getOrNull()
         }
         loading = false
         preview = yaml?.let { buildPreviewYaml(it) } ?: "Not found."
@@ -878,7 +879,7 @@ private fun buildReferenceMeta(
     val resolvedKey = when (value) {
         is Key<*> -> value
         null -> null
-        else -> runCatching { dataModel.key(value.toString()) }.getOrNull()
+        else -> runCatching { dataModel.key(value.toString()) }.onFailure { it.rethrowIfFatal() }.getOrNull()
     } ?: return null
     @Suppress("UNCHECKED_CAST")
     val castKey = resolvedKey as Key<IsRootDataModel>

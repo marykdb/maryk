@@ -30,6 +30,7 @@ import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float64
+import maryk.core.properties.types.numeric.SInt64
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.properties.types.Bytes
@@ -199,6 +200,21 @@ class RecordEditorUtilsTest {
         assertEquals(5u, defaultSetItem(definition, emptySet()))
         assertEquals(6u, defaultSetItem(definition, setOf(5u)))
         assertNull(defaultSetItem(definition, setOf(5u, 6u)))
+    }
+
+    @Test
+    @Suppress("UNCHECKED_CAST")
+    fun defaultMapKeyFindsSparseSignedLongCandidateInsteadOfWrappingMax() {
+        val definition = NumberDefinition(type = SInt64) as IsSimpleValueDefinition<Any, *>
+
+        assertEquals(1L, defaultMapKey(definition, setOf(0L, Long.MAX_VALUE)))
+    }
+
+    @Test
+    fun defaultSetItemFindsSparseSignedLongCandidateInsteadOfWrappingMax() {
+        val definition = NumberDefinition(type = SInt64)
+
+        assertEquals(1L, defaultSetItem(definition, setOf(0L, Long.MAX_VALUE)))
     }
 
     @Test

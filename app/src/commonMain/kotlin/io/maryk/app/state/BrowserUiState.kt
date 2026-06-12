@@ -169,10 +169,17 @@ class BrowserUiState {
 
     private fun readResultsTab(): ResultsTab {
         val raw = AppPreferences.getString(keyResultsTab, ResultsTab.DATA.name)
-        return runCatching { ResultsTab.valueOf(raw) }.getOrDefault(ResultsTab.DATA)
+        return enumValueOrDefault(raw, ResultsTab.DATA)
     }
 
     private fun parseDensity(value: String): GridDensity {
-        return runCatching { GridDensity.valueOf(value) }.getOrDefault(GridDensity.STANDARD)
+        return enumValueOrDefault(value, GridDensity.STANDARD)
     }
+
+    private inline fun <reified T : Enum<T>> enumValueOrDefault(value: String, default: T): T =
+        try {
+            enumValueOf<T>(value)
+        } catch (_: IllegalArgumentException) {
+            default
+        }
 }

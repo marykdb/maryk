@@ -111,6 +111,7 @@ import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
 import maryk.core.yaml.MarykYamlReader
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.lib.exceptions.ParseException
 
 internal enum class FilterGroupType(val label: String) {
@@ -413,7 +414,9 @@ internal fun FilterDialog(
                                 onApply("")
                                 return@ModalPrimaryButton
                             }
-                            val parsed = runCatching { ScanQueryParser.parseFilter(dataModel, raw) }.getOrNull()
+                            val parsed = runCatching { ScanQueryParser.parseFilter(dataModel, raw) }
+                                .onFailure { it.rethrowIfFatal() }
+                                .getOrNull()
                             if (parsed == null) {
                                 errorMessage = "Invalid YAML filter."
                                 return@ModalPrimaryButton
@@ -902,7 +905,9 @@ private fun CompactDatePickerField(
     definition: DateDefinition,
     modifier: Modifier = Modifier,
 ) {
-    val parsedDate = runCatching { definition.fromString(value.trim()) }.getOrNull()
+    val parsedDate = runCatching { definition.fromString(value.trim()) }
+        .onFailure { it.rethrowIfFatal() }
+        .getOrNull()
     val initialMillis = parsedDate
         ?.atStartOfDayIn(TimeZone.UTC)
         ?.toEpochMilliseconds()
@@ -1067,7 +1072,9 @@ private fun validateCondition(
 ): ConditionValidation {
     val path = condition.path.trim()
     if (path.isBlank()) return ConditionValidation("Select a field.", null)
-    val reference = runCatching { dataModel.getPropertyReferenceByName(path, context) }.getOrNull()
+    val reference = runCatching { dataModel.getPropertyReferenceByName(path, context) }
+        .onFailure { it.rethrowIfFatal() }
+        .getOrNull()
         ?: return ConditionValidation("Unknown field.", null)
 
     if (condition.operator.requiresComparable) {
@@ -1145,7 +1152,7 @@ private fun validateCondition(
                 } else {
                     if (condition.operator == FilterOperator.REGEX) {
                         val pattern = parsed.value?.toString().orEmpty()
-                        runCatching { Regex(pattern) }.getOrElse {
+                        runCatching { Regex(pattern) }.onFailure { it.rethrowIfFatal() }.getOrElse {
                             return ConditionValidation("Invalid regex pattern.", null)
                         }
                     }
@@ -1369,7 +1376,9 @@ private fun parseFilterRoot(
 ): FilterGroupState? {
     val trimmed = raw.trim()
     if (trimmed.isBlank()) return null
-    val filter = runCatching { ScanQueryParser.parseFilter(dataModel, trimmed) }.getOrNull() ?: return null
+    val filter = runCatching { ScanQueryParser.parseFilter(dataModel, trimmed) }
+        .onFailure { it.rethrowIfFatal() }
+        .getOrNull() ?: return null
     val node = buildNodeFromFilter(filter, newId) ?: return null
     return when (node) {
         is FilterGroupState -> node

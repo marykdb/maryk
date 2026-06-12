@@ -467,7 +467,11 @@ private fun parseTimeTravelDate(value: String): LocalDate? {
     val month = parts[1].toIntOrNull() ?: return null
     val day = parts[2].toIntOrNull() ?: return null
     if (month !in 1..12 || day !in 1..31) return null
-    return runCatching { LocalDate(year, month, day) }.getOrNull()
+    return try {
+        LocalDate(year, month, day)
+    } catch (_: IllegalArgumentException) {
+        null
+    }
 }
 
 private fun parseTimeTravelTime(value: String): LocalTime? {
@@ -477,7 +481,11 @@ private fun parseTimeTravelTime(value: String): LocalTime? {
     val minute = parts[1].toIntOrNull() ?: return null
     val second = parts.getOrNull(2)?.toIntOrNull() ?: 0
     if (hour !in 0..23 || minute !in 0..59 || second !in 0..59) return null
-    return runCatching { LocalTime(hour, minute, second) }.getOrNull()
+    return try {
+        LocalTime(hour, minute, second)
+    } catch (_: IllegalArgumentException) {
+        null
+    }
 }
 
 private fun formatTimeTravelDate(date: LocalDate): String {

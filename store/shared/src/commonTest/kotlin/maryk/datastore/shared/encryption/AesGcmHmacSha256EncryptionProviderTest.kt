@@ -92,4 +92,80 @@ class AesGcmHmacSha256EncryptionProviderTest {
             provider.decrypt(encrypted)
         }
     }
+
+    @Test
+    fun rejectsPayloadWithoutAuthenticationTag() = runTest {
+        val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
+        val provider = AesGcmHmacSha256EncryptionProvider(
+            encryptionKey = keyMaterial.encryptionKey,
+            tokenKey = keyMaterial.tokenKey
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            provider.decrypt(ByteArray(14).also { it[0] = 1 })
+        }
+    }
+
+    @Test
+    fun rejectsInvalidKeyConfiguration() {
+        assertFailsWith<IllegalArgumentException> {
+            AesGcmHmacSha256EncryptionProvider(
+                encryptionKey = ByteArray(15),
+                tokenKey = ByteArray(32)
+            )
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            AesGcmHmacSha256EncryptionProvider(
+                encryptionKey = ByteArray(32),
+                tokenKey = ByteArray(0)
+            )
+        }
+    }
+
+    @Test
+    fun associatedDataIsDefensivelyCopied() = runTest {
+        val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
+        val associatedData = byteArrayOf(1, 2, 3)
+        val provider = AesGcmHmacSha256EncryptionProvider(
+            encryptionKey = keyMaterial.encryptionKey,
+            tokenKey = keyMaterial.tokenKey,
+            associatedData = associatedData
+        )
+
+        val encrypted = provider.encrypt("secret".encodeToByteArray())
+        associatedData.fill(9)
+
+        assertContentEquals("secret".encodeToByteArray(), provider.decrypt(encrypted))
+    }
+
+    @Test
+    fun keyMaterialDefensivelyCopiesKeys() {
+        val encryptionKey = ByteArray(32) { it.toByte() }
+        val tokenKey = ByteArray(32) { (it + 64).toByte() }
+
+        val keyMaterial = AesGcmHmacSha256EncryptionProvider.KeyMaterial(encryptionKey, tokenKey)
+        encryptionKey.fill(0)
+        tokenKey.fill(0)
+
+        val exposedEncryptionKey = keyMaterial.encryptionKey
+        val exposedTokenKey = keyMaterial.tokenKey
+        exposedEncryptionKey.fill(1)
+        exposedTokenKey.fill(1)
+
+        assertContentEquals(ByteArray(32) { it.toByte() }, keyMaterial.encryptionKey)
+        assertContentEquals(ByteArray(32) { (it + 64).toByte() }, keyMaterial.tokenKey)
+
+        val (componentEncryptionKey, componentTokenKey) = keyMaterial
+        componentEncryptionKey.fill(2)
+        componentTokenKey.fill(2)
+
+        val copy = keyMaterial.copy()
+        copy.encryptionKey.fill(3)
+        copy.tokenKey.fill(3)
+
+        assertEquals(keyMaterial, copy)
+        assertContentEquals(ByteArray(32) { it.toByte() }, keyMaterial.encryptionKey)
+        assertContentEquals(ByteArray(32) { (it + 64).toByte() }, keyMaterial.tokenKey)
+    }
 }

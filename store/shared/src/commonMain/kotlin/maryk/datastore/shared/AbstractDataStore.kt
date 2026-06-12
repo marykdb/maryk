@@ -11,8 +11,11 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
@@ -56,6 +59,9 @@ abstract class AbstractDataStore(
     }.toMap()
 
     private val initIsDone: AtomicBoolean = atomic(false)
+    private val isClosed: AtomicBoolean = atomic(false)
+    private val pendingResponsesMutex = Mutex()
+    private val pendingResponses = mutableSetOf<CompletableDeferred<*>>()
 
     protected val storeActorHasStarted = CompletableDeferred<Unit>()
     /** StoreActor to send actions to.*/
@@ -71,10 +77,19 @@ abstract class AbstractDataStore(
     }
 
     private suspend fun waitForInit() {
+        ensureOpen()
         if (!initIsDone.value) {
             storeActorHasStarted.await()
             updateSharedFlowHasStarted.await()
+            updateSharedFlow.subscriptionCount.first { it > 0 }
             initIsDone.value = true
+        }
+        ensureOpen()
+    }
+
+    private fun ensureOpen() {
+        if (isClosed.value) {
+            throw StorageException("DataStore is closed")
         }
     }
 
@@ -86,11 +101,18 @@ abstract class AbstractDataStore(
 
         val response = CompletableDeferred<RP>()
 
-        storeChannel.send(
-            StoreAction(request, response)
-        )
-
-        return response.await()
+        trackPendingResponse(response)
+        try {
+            storeChannel.send(
+                StoreAction(request, response)
+            )
+            return response.await()
+        } catch (error: Throwable) {
+            response.completeExceptionally(error)
+            throw error
+        } finally {
+            untrackPendingResponse(response)
+        }
     }
 
     override suspend fun <DM : IsRootDataModel> processUpdate(
@@ -101,11 +123,18 @@ abstract class AbstractDataStore(
 
         val response = CompletableDeferred<ProcessResponse<DM>>()
 
-        storeChannel.send(
-            StoreAction(updateResponse, response)
-        )
-
-        return response.await()
+        trackPendingResponse(response)
+        try {
+            storeChannel.send(
+                StoreAction(updateResponse, response)
+            )
+            return response.await()
+        } catch (error: Throwable) {
+            response.completeExceptionally(error)
+            throw error
+        } finally {
+            untrackPendingResponse(response)
+        }
     }
 
     override suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, RP>, RP: IsDataResponse<DM>> executeFlow(
@@ -125,14 +154,18 @@ abstract class AbstractDataStore(
         val listener = request.createUpdateListener(response)
         val listenerAdded = CompletableDeferred<Unit>()
 
-        updateSharedFlow.emit(AddUpdateListenerAction(dataModelId, listener, listenerAdded))
-        listenerAdded.await()
+        awaitPendingResponse(listenerAdded) {
+            updateSharedFlow.emit(AddUpdateListenerAction(dataModelId, listener, listenerAdded))
+        }
         onUpdateListenerAdded(dataModelId)
 
         return listener.getFlow().onCompletion {
+            if (isClosed.value) return@onCompletion
+
             val listenerRemoved = CompletableDeferred<Unit>()
-            updateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
-            listenerRemoved.await()
+            awaitPendingResponse(listenerRemoved) {
+                updateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
+            }
             onUpdateListenerRemoved(dataModelId)
         }
     }
@@ -148,15 +181,21 @@ abstract class AbstractDataStore(
         throw DefNotFoundException("DataStore not found ${dataModel.Meta.name}")
 
     override suspend fun close() {
-        val job = this@AbstractDataStore.coroutineContext[Job]
-        storeChannel.close()
-        job?.cancelAndJoin()
+        if (!startClosingDataStore()) return
+        cancelAndJoinDataStoreScope()
     }
 
     override suspend fun closeAllListeners() {
+        if (isClosed.value) return
+
+        waitForInit()
+
+        if (isClosed.value) return
+
         val listenersRemoved = CompletableDeferred<Unit>()
-        updateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
-        listenersRemoved.await()
+        awaitPendingResponse(listenersRemoved) {
+            updateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
+        }
         onAllUpdateListenersRemoved()
     }
 
@@ -165,6 +204,58 @@ abstract class AbstractDataStore(
             block()
         } finally {
             close()
+        }
+    }
+
+    private suspend fun trackPendingResponse(response: CompletableDeferred<*>) {
+        pendingResponsesMutex.withLock {
+            ensureOpen()
+            pendingResponses += response
+        }
+    }
+
+    private suspend fun untrackPendingResponse(response: CompletableDeferred<*>) {
+        pendingResponsesMutex.withLock {
+            pendingResponses -= response
+        }
+    }
+
+    private suspend fun failPendingResponses(error: Throwable) {
+        val responses = pendingResponsesMutex.withLock {
+            pendingResponses.toList().also { pendingResponses.clear() }
+        }
+        responses.forEach { it.completeExceptionally(error) }
+    }
+
+    protected suspend fun startClosingDataStore(): Boolean {
+        if (isClosed.getAndSet(true)) return false
+
+        val closeError = StorageException("DataStore is closed")
+        storeChannel.close()
+        storeActorHasStarted.completeExceptionally(closeError)
+        updateSharedFlowHasStarted.completeExceptionally(closeError)
+        failPendingResponses(closeError)
+
+        return true
+    }
+
+    protected suspend fun cancelAndJoinDataStoreScope() {
+        this@AbstractDataStore.coroutineContext[Job]?.cancelAndJoin()
+    }
+
+    private suspend fun awaitPendingResponse(
+        response: CompletableDeferred<Unit>,
+        sendAction: suspend () -> Unit,
+    ) {
+        trackPendingResponse(response)
+        try {
+            sendAction()
+            response.await()
+        } catch (error: Throwable) {
+            response.completeExceptionally(error)
+            throw error
+        } finally {
+            untrackPendingResponse(response)
         }
     }
 }

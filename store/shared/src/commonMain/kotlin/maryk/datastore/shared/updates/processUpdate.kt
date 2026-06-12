@@ -56,7 +56,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                         )
 
                         // Remove any values after the limit
-                        if (updateListener is UpdateListenerForScan<DM, *> && updateListener.matchingKeys.value.size > updateListener.request.limit.toInt()) {
+                        if (updateListener is UpdateListenerForScan<DM, *> && updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit) {
                             val keyToRemove = updateListener.getLast()
                             updateListener.removeKey(keyToRemove)
 
@@ -116,8 +116,13 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                             }
                         }
                     }
-                } else if (!shouldDelete && updateListener is UpdateListenerForScan<DM, *> && (updateListener.indexScanRange != null || updateListener.usesUpdateHistoryIndex)) {
-                    val lastSortedKey = updateListener.sortedValues?.value?.lastOrNull()
+                } else if (
+                    !shouldDelete &&
+                    updateListener is UpdateListenerForScan<DM, *> &&
+                    updateListener.request.limit > 0u &&
+                    (updateListener.indexScanRange != null || updateListener.usesUpdateHistoryIndex)
+                ) {
+                    val currentSortedValues = updateListener.sortedValues?.value
 
                     // Only process further if order has changed to move this value into range
                     updateListener.changeOrder(this@process) { newIndex, _ ->
@@ -144,8 +149,8 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                                     }
                                 }
 
-                                if (currentKeys.size.toUInt() >= updateListener.request.limit) {
-                                    val lastKey = currentKeys.last()
+                                if (updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit) {
+                                    val lastKey = updateListener.getLast()
                                     updateListener.removeKey(lastKey)
 
                                     sharedFlow.emit(
@@ -171,7 +176,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                             } else {
                                 // Add back removed values since filter does not match
                                 updateListener.matchingKeys.value = currentKeys
-                                lastSortedKey?.let { updateListener.sortedValues.value = updateListener.sortedValues.value + it }
+                                currentSortedValues?.let { updateListener.sortedValues.value = it }
                             }
                         }
                     }
@@ -234,7 +239,11 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
         )
     }
 
-    if (updateListener is UpdateListenerForScan<DM, *> && updateListener.request.limit - 1u == updateListener.matchingKeys.value.size.toUInt()) {
+    if (
+        updateListener is UpdateListenerForScan<DM, *> &&
+        updateListener.request.limit > 0u &&
+        updateListener.request.limit - 1u == updateListener.matchingKeys.value.size.toUInt()
+    ) {
         val nextValue = dataStore.requestNextValues(
             updateListener.request,
             updateListener.matchingKeys.value,

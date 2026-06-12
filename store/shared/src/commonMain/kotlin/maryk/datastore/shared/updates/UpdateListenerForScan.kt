@@ -73,23 +73,24 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         update: Update<DM>,
         dataStore: IsDataStore
     ) {
+        val updateKey = update.key.bytes
         val shouldProcess: Boolean = when (scanType) {
             is TableScan -> when (scanType.direction) {
-                ASC -> !scanRange.keyBeforeStart(update.key.bytes, 0)
-                DESC -> !scanRange.keyAfterStart(update.key.bytes, 0)
+                ASC -> !scanRange.keyBeforeStart(updateKey, 0)
+                DESC -> !scanRange.keyAfterStart(updateKey, 0)
             }
-            is UpdateHistoryScan -> !scanRange.keyBeforeStart(update.key.bytes, 0)
+            is UpdateHistoryScan -> !scanRange.keyBeforeStart(updateKey, 0)
             is IndexScan -> true
         }
 
         when (scanType) {
             is UpdateHistoryScan -> {
-                if (shouldProcess && scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
+                if (shouldProcess && scanRange.keyWithinRanges(updateKey, 0) && scanRange.matchesPartials(updateKey)) {
                     update.process(this, dataStore, sendFlow)
                 }
             }
             else -> {
-                if (shouldProcess && scanRange.keyWithinRanges(update.key.bytes, 0) && scanRange.matchesPartials(update.key.bytes)) {
+                if (shouldProcess && scanRange.keyWithinRanges(updateKey, 0) && scanRange.matchesPartials(updateKey)) {
                     update.process(this, dataStore, sendFlow)
                 }
             }
@@ -373,8 +374,11 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     }
 
     /** Get last key depending on scan direction */
-    fun getLast() = when (scanType.direction) {
-        ASC -> matchingKeys.value.last()
-        DESC -> matchingKeys.value.first()
+    fun getLast() = when (scanType) {
+        is UpdateHistoryScan -> matchingKeys.value.last()
+        else -> when (scanType.direction) {
+            ASC -> matchingKeys.value.last()
+            DESC -> matchingKeys.value.first()
+        }
     }
 }

@@ -24,6 +24,16 @@ data class MigrationRuntimeDetails(
     val etaMs: Long? = null,
 )
 
+fun incrementMigrationCounter(value: UInt): UInt =
+    if (value == UInt.MAX_VALUE) UInt.MAX_VALUE else value + 1u
+
+fun nextMigrationAttemptOrNull(previousAttempt: UInt?): UInt? =
+    when (previousAttempt) {
+        UInt.MAX_VALUE -> null
+        null -> 1u
+        else -> previousAttempt + 1u
+    }
+
 fun projectMigrationRuntimeStatus(
     modelId: UInt,
     reason: String,
@@ -70,7 +80,11 @@ fun updatedMigrationRuntimeDetails(
             attempt = state.attempt,
             lastError = if (state.status == MigrationStateStatus.Failed) state.message else null,
             hasCursor = state.cursor != null,
-            retryCount = if (state.status == MigrationStateStatus.Retry) (previous?.retryCount ?: 0u) + 1u else previous?.retryCount ?: 0u,
+            retryCount = if (state.status == MigrationStateStatus.Retry) {
+                incrementMigrationCounter(previous?.retryCount ?: 0u)
+            } else {
+                previous?.retryCount ?: 0u
+            },
             startedAtMs = previous?.startedAtMs ?: nowMs,
             lastUpdateAtMs = nowMs,
             averageStepMs = averageStepMs,
@@ -105,14 +119,14 @@ fun updatedMigrationMetrics(
 ): Map<UInt, MigrationMetrics> {
     val previous = current[modelId] ?: MigrationMetrics()
     val updated = when (type) {
-        MigrationAuditEventType.PhaseStarted -> previous.copy(started = previous.started + 1u, lastEventAtMs = nowMs)
-        MigrationAuditEventType.Completed -> previous.copy(completed = previous.completed + 1u, lastEventAtMs = nowMs)
-        MigrationAuditEventType.Failed -> previous.copy(failed = previous.failed + 1u, lastEventAtMs = nowMs)
-        MigrationAuditEventType.RetryScheduled -> previous.copy(retries = previous.retries + 1u, lastEventAtMs = nowMs)
-        MigrationAuditEventType.Partial -> previous.copy(partials = previous.partials + 1u, lastEventAtMs = nowMs)
-        MigrationAuditEventType.Paused -> previous.copy(paused = previous.paused + 1u, lastEventAtMs = nowMs)
-        MigrationAuditEventType.Resumed -> previous.copy(resumed = previous.resumed + 1u, lastEventAtMs = nowMs)
-        MigrationAuditEventType.Canceled -> previous.copy(canceled = previous.canceled + 1u, lastEventAtMs = nowMs)
+        MigrationAuditEventType.PhaseStarted -> previous.copy(started = incrementMigrationCounter(previous.started), lastEventAtMs = nowMs)
+        MigrationAuditEventType.Completed -> previous.copy(completed = incrementMigrationCounter(previous.completed), lastEventAtMs = nowMs)
+        MigrationAuditEventType.Failed -> previous.copy(failed = incrementMigrationCounter(previous.failed), lastEventAtMs = nowMs)
+        MigrationAuditEventType.RetryScheduled -> previous.copy(retries = incrementMigrationCounter(previous.retries), lastEventAtMs = nowMs)
+        MigrationAuditEventType.Partial -> previous.copy(partials = incrementMigrationCounter(previous.partials), lastEventAtMs = nowMs)
+        MigrationAuditEventType.Paused -> previous.copy(paused = incrementMigrationCounter(previous.paused), lastEventAtMs = nowMs)
+        MigrationAuditEventType.Resumed -> previous.copy(resumed = incrementMigrationCounter(previous.resumed), lastEventAtMs = nowMs)
+        MigrationAuditEventType.Canceled -> previous.copy(canceled = incrementMigrationCounter(previous.canceled), lastEventAtMs = nowMs)
         else -> previous.copy(lastEventAtMs = nowMs)
     }
     return current + (modelId to updated)

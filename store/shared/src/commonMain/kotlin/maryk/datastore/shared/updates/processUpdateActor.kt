@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onStart
 import maryk.core.models.IsRootDataModel
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 
 internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<IsUpdateAction>, updateSendChannelHasStarted: CompletableDeferred<Unit>) {
     val updateListeners = mutableMapOf<UInt, MutableList<UpdateListener<*, *>>>()
@@ -33,6 +34,7 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
                             }
                         }
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         throw RuntimeException(e)
                     }
                 }
@@ -44,11 +46,16 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(updateSendChannel: Flow<
                     update.completion?.complete(Unit)
                 }
                 is RemoveUpdateListenerAction -> {
-                    val dataModelListeners =
-                        updateListeners.getOrPut(update.dataModelId) { mutableListOf() }
-
-                    update.listener.close()
-                    dataModelListeners -= update.listener
+                    val dataModelListeners = updateListeners[update.dataModelId]
+                    if (dataModelListeners != null) {
+                        update.listener.close()
+                        dataModelListeners -= update.listener
+                        if (dataModelListeners.isEmpty()) {
+                            updateListeners -= update.dataModelId
+                        }
+                    } else {
+                        update.listener.close()
+                    }
                     update.completion?.complete(Unit)
                 }
                 is RemoveAllUpdateListenersAction -> {

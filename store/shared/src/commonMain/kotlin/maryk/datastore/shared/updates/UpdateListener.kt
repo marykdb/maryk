@@ -2,8 +2,11 @@ package maryk.datastore.shared.updates
 
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.launch
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsFlowRequest
@@ -25,6 +28,7 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     val response: IsDataResponse<DM>
 ) {
     protected val sendFlow = MutableSharedFlow<IsUpdateResponse<DM>>(extraBufferCapacity = 64)
+    private val closed = CompletableDeferred<Unit>()
 
     val matchingKeys: AtomicRef<List<Key<DM>>>
     private val lastResponseVersion: ULong
@@ -81,20 +85,20 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     abstract suspend fun changeOrder(change: Change<DM>, changedHandler: suspend (Int?, Boolean) -> Unit)
 
     /** Get flow with update responses */
-    fun getFlow() = sendFlow.onSubscription {
+    fun getFlow() = channelFlow {
         when (response) {
             is UpdatesResponse<DM> -> {
                 for (update in response.updates) {
-                    emit(update)
+                    send(update)
                 }
             }
-            is ValuesResponse<DM> -> emit(
+            is ValuesResponse<DM> -> send(
                 InitialValuesUpdate(
                     version = lastResponseVersion,
                     values = response.values
                 )
             )
-            is ChangesResponse<DM> -> emit(
+            is ChangesResponse<DM> -> send(
                 InitialChangesUpdate(
                     version = lastResponseVersion,
                     changes = response.changes
@@ -102,8 +106,15 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
             )
             else -> throw IllegalArgumentException("Unknown response type $response. Cannot process its values")
         }
+
+        val updateJob = launch {
+            sendFlow.collect(::send)
+        }
+        closed.invokeOnCompletion { close() }
+        awaitClose { updateJob.cancel() }
     }
 
     fun close() {
+        closed.complete(Unit)
     }
 }

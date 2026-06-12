@@ -21,7 +21,7 @@ import dev.whyoleg.cryptography.algorithms.SHA256
 class AesGcmHmacSha256EncryptionProvider(
     encryptionKey: ByteArray,
     tokenKey: ByteArray,
-    private val associatedData: ByteArray? = null,
+    associatedData: ByteArray? = null,
     private val tokenSizeBytes: Int = 16,
 ) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
     private val provider = CryptographyProvider.Default
@@ -30,8 +30,13 @@ class AesGcmHmacSha256EncryptionProvider(
     private val nonceKeyGenerator = aesGcm.keyGenerator(AES.Key.Size.B128)
     private val encryptionKeyBytes = encryptionKey.copyOf()
     private val tokenKeyBytes = tokenKey.copyOf()
+    private val associatedData = associatedData?.copyOf()
 
     init {
+        require(encryptionKeyBytes.size in AES_KEY_SIZE_BYTES) {
+            "encryptionKey must be 16, 24, or 32 bytes"
+        }
+        require(tokenKeyBytes.isNotEmpty()) { "tokenKey cannot be empty" }
         require(tokenSizeBytes in 8..32) { "tokenSizeBytes must be in range 8..32" }
     }
 
@@ -44,7 +49,7 @@ class AesGcmHmacSha256EncryptionProvider(
     }
 
     override suspend fun decrypt(value: ByteArray): ByteArray {
-        require(value.size > 1 + GCM_NONCE_SIZE_BYTES) {
+        require(value.size >= 1 + GCM_NONCE_SIZE_BYTES + GCM_TAG_SIZE_BYTES) {
             "Encrypted payload too short"
         }
         require(value[0] == V1_PAYLOAD_HEADER) {
@@ -80,14 +85,49 @@ class AesGcmHmacSha256EncryptionProvider(
         return random.copyOf(GCM_NONCE_SIZE_BYTES)
     }
 
-    data class KeyMaterial(
-        val encryptionKey: ByteArray,
-        val tokenKey: ByteArray,
-    )
+    class KeyMaterial(
+        encryptionKey: ByteArray,
+        tokenKey: ByteArray,
+    ) {
+        private val _encryptionKey = encryptionKey.copyOf()
+        private val _tokenKey = tokenKey.copyOf()
+
+        val encryptionKey: ByteArray
+            get() = _encryptionKey.copyOf()
+
+        val tokenKey: ByteArray
+            get() = _tokenKey.copyOf()
+
+        operator fun component1(): ByteArray = encryptionKey
+
+        operator fun component2(): ByteArray = tokenKey
+
+        fun copy(
+            encryptionKey: ByteArray = this.encryptionKey,
+            tokenKey: ByteArray = this.tokenKey,
+        ) = KeyMaterial(encryptionKey, tokenKey)
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is KeyMaterial) return false
+            return _encryptionKey.contentEquals(other._encryptionKey) &&
+                _tokenKey.contentEquals(other._tokenKey)
+        }
+
+        override fun hashCode(): Int {
+            var result = _encryptionKey.contentHashCode()
+            result = 31 * result + _tokenKey.contentHashCode()
+            return result
+        }
+
+        override fun toString() = "KeyMaterial(encryptionKey=***, tokenKey=***)"
+    }
 
     companion object {
         private const val V1_PAYLOAD_HEADER: Byte = 1
         private const val GCM_NONCE_SIZE_BYTES = 12
+        private const val GCM_TAG_SIZE_BYTES = 16
+        private val AES_KEY_SIZE_BYTES = setOf(16, 24, 32)
 
         suspend fun generateKeyMaterial(
             encryptionKeySize: BinarySize = AES.Key.Size.B256,

@@ -21,6 +21,7 @@ import io.maryk.cli.LoadContext
 import io.maryk.cli.RecordSubcommandResult
 import io.maryk.cli.SaveContext
 import io.maryk.cli.runRecordSubcommand
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.yaml.YamlWriter
 import maryk.core.query.requests.delete
 
@@ -61,6 +62,7 @@ class GetCommand : Command {
         val key = try {
             dataModel.key(keyToken)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return CommandResult(
                 lines = listOf("Invalid key: ${e.message ?: e::class.simpleName}"),
                 isError = true,
@@ -69,8 +71,16 @@ class GetCommand : Command {
 
         val (includeDeleted, subcommandTokens) = parseOptions(arguments.drop(2))
         val request: GetRequest<IsRootDataModel> = dataModel.get(key, filterSoftDeleted = !includeDeleted)
-        val response = runBlocking {
-            dataStore.execute(request)
+        val response = try {
+            runBlocking {
+                dataStore.execute(request)
+            }
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            return CommandResult(
+                lines = listOf("Get failed: ${e.message ?: e::class.simpleName}"),
+                isError = true,
+            )
         }
 
         val valuesWithMetaData = response.values.firstOrNull()
@@ -251,6 +261,7 @@ class GetCommand : Command {
         val bytes = ByteArray(length)
         var index = 0
         serializer.writeProtoBuf(values, cache, { bytes[index++] = it }, null)
+        check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
         return bytes
     }
 
@@ -263,6 +274,7 @@ class GetCommand : Command {
         val bytes = ByteArray(length)
         var index = 0
         ValuesWithMetaData.Serializer.writeProtoBuf(valuesWithMetaData, cache, { bytes[index++] = it }, context)
+        check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
         return bytes
     }
 

@@ -9,6 +9,7 @@ import maryk.core.query.RequestContext
 import maryk.core.query.requests.getChanges
 import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.yaml.YamlWriter
 
 class ChangesCommand : Command {
@@ -48,6 +49,7 @@ class ChangesCommand : Command {
         val key = try {
             dataModel.key(keyToken)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return CommandResult(
                 lines = listOf("Invalid key: ${e.message ?: e::class.simpleName}"),
                 isError = true,
@@ -70,7 +72,15 @@ class ChangesCommand : Command {
             filterSoftDeleted = !options.includeDeleted,
         )
 
-        val response: ChangesResponse<IsRootDataModel> = runBlocking { dataStore.execute(request) }
+        val response: ChangesResponse<IsRootDataModel> = try {
+            runBlocking { dataStore.execute(request) }
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            return CommandResult(
+                lines = listOf("Changes failed: ${e.message ?: e::class.simpleName}"),
+                isError = true,
+            )
+        }
 
         val requestContext = RequestContext(
             DefinitionsContext(mutableMapOf(dataModel.Meta.name to DataModelReference(dataModel))),

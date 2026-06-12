@@ -38,6 +38,7 @@ data class SaveContext(
         noDeps: Boolean = false,
     ): String {
         val basePath = directory.trimEnd('/', '\\')
+        val safeKey = sanitizeSaveFileName(key)
         if (format == SaveFormat.KOTLIN) {
             val generator = if (noDeps) kotlinNoDepsGenerator else kotlinGenerator
             generator ?: return if (noDeps) {
@@ -47,10 +48,18 @@ data class SaveContext(
             }
             val packageValue = packageName ?: return "Kotlin save requires --package <name>."
             val outputs = generator(packageValue)
+            val safeFiles = linkedMapOf<String, String>()
             outputs.files.forEach { (fileName, content) ->
-                File.writeText("$basePath/$fileName", content)
+                val safeFileName = sanitizeSaveFileName(fileName)
+                if (safeFileName in safeFiles) {
+                    return "Kotlin save failed: duplicate output file name `$safeFileName` after sanitizing."
+                }
+                safeFiles[safeFileName] = content
             }
-            val names = outputs.files.keys.sorted()
+            safeFiles.forEach { (fileName, content) ->
+                File.writeText(joinSavePath(basePath, fileName), content)
+            }
+            val names = safeFiles.keys.sorted()
             val summary = names.joinToString(", ")
             return "Saved Kotlin files to $basePath (${names.size}): $summary"
         }
@@ -62,7 +71,7 @@ data class SaveContext(
         val metaJsonToSave = if (noDeps) noDepsJson ?: return "No-deps output not available for this data." else metaJson
         val metaProtoToSave = if (noDeps) noDepsProto ?: return "No-deps output not available for this data." else metaProto
 
-        val dataPath = "$basePath/$key.${format.extension}"
+        val dataPath = joinSavePath(basePath, "$safeKey.${format.extension}")
         when (format) {
             SaveFormat.YAML -> File.writeText(dataPath, dataYamlToSave)
             SaveFormat.JSON -> File.writeText(dataPath, dataJsonToSave)
@@ -71,7 +80,7 @@ data class SaveContext(
         }
 
         if (includeMeta) {
-            val metaPath = "$basePath/$key.meta.${format.extension}"
+            val metaPath = joinSavePath(basePath, "$safeKey.meta.${format.extension}")
             when (format) {
                 SaveFormat.YAML -> File.writeText(metaPath, metaYamlToSave)
                 SaveFormat.JSON -> File.writeText(metaPath, metaJsonToSave)
@@ -125,4 +134,55 @@ data class SaveContext(
         if (this == null || other == null) return false
         return this.contentEquals(other)
     }
+}
+
+private const val MAX_SAVE_FILE_NAME_LENGTH = 120
+
+private val windowsReservedSaveFileNames = setOf(
+    "CON",
+    "PRN",
+    "AUX",
+    "NUL",
+    "COM1",
+    "COM2",
+    "COM3",
+    "COM4",
+    "COM5",
+    "COM6",
+    "COM7",
+    "COM8",
+    "COM9",
+    "LPT1",
+    "LPT2",
+    "LPT3",
+    "LPT4",
+    "LPT5",
+    "LPT6",
+    "LPT7",
+    "LPT8",
+    "LPT9",
+)
+
+internal fun sanitizeSaveFileName(value: String): String {
+    val normalized = value
+        .trim()
+        .replace(Regex("[^A-Za-z0-9._-]"), "_")
+        .trim('.')
+        .ifBlank { "data" }
+
+    val reservedSafe = if (normalized.substringBefore('.').uppercase() in windowsReservedSaveFileNames) {
+        "_$normalized"
+    } else {
+        normalized
+    }
+
+    return reservedSafe
+        .take(MAX_SAVE_FILE_NAME_LENGTH)
+        .trimEnd('.')
+        .ifBlank { "data" }
+}
+
+internal fun joinSavePath(directory: String, fileName: String): String {
+    val normalized = directory.trimEnd('/', '\\')
+    return if (normalized.isEmpty()) fileName else "$normalized/$fileName"
 }

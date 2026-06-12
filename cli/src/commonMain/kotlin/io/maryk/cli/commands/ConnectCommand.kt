@@ -14,6 +14,7 @@ import kotlinx.coroutines.withTimeout
 import maryk.core.models.RootDataModel
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.model.readStoredModelDefinitionsFromDirectory
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.model.readStoredModelDefinitionsFromPath
 import maryk.foundationdb.FDB
@@ -111,7 +112,7 @@ class ConnectCommand(
             )
             is ParseFoundationOptionsResult.Success -> {
                 val outcome = runCatching { connectToFoundationDb(context, parseResult.options) }
-                    .onFailure { println("ConnectToFoundationDb threw ${it::class.simpleName}: ${it.message}") }
+                    .onFailure { it.rethrowIfFatal() }
                     .getOrElse {
                         return CommandResult(
                             lines = listOf(
@@ -473,6 +474,7 @@ object DefaultRocksDbConnector : RocksDbConnector {
                 ),
             )
         } catch (e: Exception) {
+            e.rethrowIfFatal()
             ConnectCommand.RocksDbConnectionOutcome.Error(
                 reason = e.message ?: e::class.simpleName ?: "Unknown error",
             )
@@ -534,6 +536,7 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
                 ),
             )
         } catch (e: Exception) {
+            e.rethrowIfFatal()
             ConnectCommand.FoundationDbConnectionOutcome.Error(
                 reason = e.message ?: e::class.simpleName ?: "Unknown error",
             )
@@ -543,10 +546,9 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
             val reason = if (looksLikeMissingLib) {
                 "FoundationDB native client (libfdb_c) is missing. Install with store/foundationdb/scripts/install-foundationdb.sh or install FoundationDB system-wide."
             } else {
+                t.rethrowIfFatal()
                 t.message ?: t::class.simpleName ?: "Unknown error"
             }
-            println("FDB connect debug (Throwable): ${t::class.simpleName}: ${t.message}")
-            t.printStackTrace()
             ConnectCommand.FoundationDbConnectionOutcome.Error(
                 reason = reason,
             )
@@ -572,7 +574,8 @@ private suspend fun detectKeepAllVersions(
                     DirectoryLayer.getDefault().open(tr, directoryPath).await()
                 }
             }
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return null
         }
 
@@ -584,6 +587,7 @@ private suspend fun detectKeepAllVersions(
             }
             true
         } catch (t: Throwable) {
+            t.rethrowIfFatal()
             if (t.isNoSuchDirectory()) false else null
         }
     } finally {

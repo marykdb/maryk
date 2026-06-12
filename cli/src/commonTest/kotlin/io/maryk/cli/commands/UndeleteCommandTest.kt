@@ -24,6 +24,32 @@ class UndeleteCommandTest {
     }
 
     @Test
+    fun reportsDataStoreFailure() {
+        val values = SimpleMarykModel.create { value with "hello" }
+        val key = SimpleMarykModel.key(values)
+        val store = object : FakeDataStore(
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        ) {
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP {
+                throw IllegalStateException("boom")
+            }
+        }
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+
+        val result = UndeleteCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel", key.toString()),
+        )
+
+        assertTrue(result.isError)
+        assertEquals(listOf("Undelete failed: boom"), result.lines)
+    }
+
+    @Test
     fun sendsUndeleteChange() {
         val values = SimpleMarykModel.create { value with "hello" }
         val key = SimpleMarykModel.key(values)

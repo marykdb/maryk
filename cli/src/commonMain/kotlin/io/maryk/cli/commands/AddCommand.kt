@@ -18,6 +18,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 
 class AddCommand : Command {
     override val name: String = "add"
@@ -64,6 +65,7 @@ class AddCommand : Command {
         val parsed = try {
             parseAddInput(dataModel, options)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return CommandResult(
                 lines = listOf("Add failed: ${e.message ?: e::class.simpleName}"),
                 isError = true,
@@ -76,6 +78,7 @@ class AddCommand : Command {
                     try {
                         dataModel.key(token)
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         return CommandResult(
                             lines = listOf("Add failed: invalid key: ${e.message ?: e::class.simpleName}"),
                             isError = true,
@@ -109,7 +112,15 @@ class AddCommand : Command {
             }
         }
 
-        val response: AddResponse<IsRootDataModel> = runBlocking { dataStore.execute(request) }
+        val response: AddResponse<IsRootDataModel> = try {
+            runBlocking { dataStore.execute(request) }
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            return CommandResult(
+                lines = listOf("Add failed: ${e.message ?: e::class.simpleName}"),
+                isError = true,
+            )
+        }
         val formatted = formatStatuses(dataModel, response.statuses)
 
         return CommandResult(

@@ -88,6 +88,34 @@ class GetCommandTest {
     }
 
     @Test
+    fun reportsDataStoreFailure() {
+        val values = SimpleMarykModel.create {
+            value with "hello"
+        }
+        val keyString = SimpleMarykModel.key(values).toString()
+        val store = object : FakeDataStore(
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        ) {
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP {
+                throw IllegalStateException("boom")
+            }
+        }
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+
+        val result = GetCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel", keyString),
+        )
+
+        assertTrue(result.isError)
+        assertEquals(listOf("Get failed: boom"), result.lines)
+    }
+
+    @Test
     fun retrievesDataAndPrintsYaml() {
         val values = SimpleMarykModel.create {
             value with "hello"

@@ -498,5 +498,6 @@ private fun serializeDefinitionsToProto(definitions: Definitions): ByteArray {
     val bytes = ByteArray(length)
     var index = 0
     Definitions.Serializer.writeObjectProtoBuf(definitions, cache, { bytes[index++] = it }, conversionContext)
+    check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
     return bytes
 }

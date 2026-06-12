@@ -17,12 +17,41 @@ import maryk.core.query.responses.IsResponse
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class ChangesCommandTest {
     private val environment = object : CliEnvironment {
         override fun resolveDirectory(path: String): DirectoryResolution = DirectoryResolution.Success(path)
+    }
+
+    @Test
+    fun reportsDataStoreFailure() {
+        val values = SimpleMarykModel.create {
+            value with "hello"
+        }
+        val key = SimpleMarykModel.key(values)
+        val store = object : FakeDataStore(
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        ) {
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP {
+                throw IllegalStateException("boom")
+            }
+        }
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+
+        val result = ChangesCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel", key.toString()),
+        )
+
+        assertTrue(result.isError)
+        assertEquals(listOf("Changes failed: boom"), result.lines)
     }
 
     @Test
@@ -71,6 +100,7 @@ class ChangesCommandTest {
 
         val request = assertNotNull(captured)
         assertEquals(key, request.keys.single())
+        assertFalse(result.isError)
         assertTrue(result.lines.any { it.contains("----- Changes -----") })
         assertTrue(result.lines.any { it.contains("changes:") })
     }

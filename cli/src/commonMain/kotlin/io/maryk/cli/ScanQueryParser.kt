@@ -28,8 +28,9 @@ internal object ScanQueryParser {
         dataModel: IsRootDataModel,
         paths: List<String>,
     ): RootPropRefGraph<IsRootDataModel>? {
-        if (paths.isEmpty()) return null
-        val yaml = buildSelectGraphYaml(paths)
+        val normalizedPaths = paths.map { it.trim() }.filter { it.isNotEmpty() }
+        if (normalizedPaths.isEmpty()) return null
+        val yaml = buildSelectGraphYaml(normalizedPaths)
         val reader = MarykYamlReader(yaml)
         val context = GraphContext(dataModel)
         val values = RootPropRefGraph.Serializer.readJson(reader, context)
@@ -118,11 +119,58 @@ internal object ScanQueryParser {
         paths.forEach { raw ->
             val trimmed = raw.trim()
             if (trimmed.isEmpty()) return@forEach
-            val segments = trimmed.split('.').filter { it.isNotBlank() }
+            val segments = splitSelectPath(trimmed)
             root.addPath(segments)
         }
         return root.toYamlLines(indent = 0).joinToString(separator = "\n")
     }
+
+    private fun splitSelectPath(path: String): List<String> {
+        val segments = mutableListOf<String>()
+        val segment = StringBuilder()
+        var bracketDepth = 0
+
+        fun addSegment() {
+            val value = segment.toString().trim()
+            if (value.isEmpty()) {
+                throw IllegalArgumentException("Invalid empty segment in select path `$path`.")
+            }
+            segments.add(value)
+            segment.clear()
+        }
+
+        path.forEach { char ->
+            when (char) {
+                '[' -> {
+                    bracketDepth += 1
+                    segment.append(char)
+                }
+                ']' -> {
+                    if (bracketDepth == 0) {
+                        throw IllegalArgumentException("Unmatched closing bracket in select path `$path`.")
+                    }
+                    bracketDepth -= 1
+                    segment.append(char)
+                }
+                '.' -> {
+                    if (bracketDepth == 0) {
+                        addSegment()
+                    } else {
+                        segment.append(char)
+                    }
+                }
+                else -> segment.append(char)
+            }
+        }
+
+        if (bracketDepth != 0) {
+            throw IllegalArgumentException("Unmatched opening bracket in select path `$path`.")
+        }
+        addSegment()
+        return segments
+    }
+
+    private fun String.toYamlSingleQuoted() = "'${replace("'", "''")}'"
 
     private class SelectNode {
         private val children: LinkedHashMap<String, SelectNode> = linkedMapOf()
@@ -142,10 +190,11 @@ internal object ScanQueryParser {
             val lines = mutableListOf<String>()
             children.forEach { (name, child) ->
                 val prefix = " ".repeat(indent)
+                val safeName = name.toYamlSingleQuoted()
                 if (child.children.isEmpty()) {
-                    lines.add("$prefix- $name")
+                    lines.add("$prefix- $safeName")
                 } else {
-                    lines.add("$prefix- $name:")
+                    lines.add("$prefix- $safeName:")
                     lines.addAll(child.toYamlLines(indent + 2))
                 }
             }

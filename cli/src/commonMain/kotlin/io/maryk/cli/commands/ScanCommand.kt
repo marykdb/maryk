@@ -8,7 +8,9 @@ import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.query.requests.MAX_SCAN_LIMIT
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 
 class ScanCommand : Command {
     override val name: String = "scan"
@@ -67,6 +69,7 @@ class ScanCommand : Command {
             try {
                 dataModel.key(keyToken)
             } catch (e: Throwable) {
+                e.rethrowIfFatal()
                 return CommandResult(
                     lines = listOf("Invalid start key: ${e.message ?: e::class.simpleName}"),
                     isError = true,
@@ -78,6 +81,7 @@ class ScanCommand : Command {
             try {
                 ScanQueryParser.parseFilter(dataModel, it)
             } catch (e: Throwable) {
+                e.rethrowIfFatal()
                 return CommandResult(
                     lines = listOf("Invalid filter: ${e.message ?: e::class.simpleName}"),
                     isError = true,
@@ -88,6 +92,7 @@ class ScanCommand : Command {
         val order = try {
             ScanQueryParser.parseOrder(dataModel, options.orderTokens)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return CommandResult(
                 lines = listOf("Invalid order: ${e.message ?: e::class.simpleName}"),
                 isError = true,
@@ -100,6 +105,7 @@ class ScanCommand : Command {
         val selectGraph = try {
             ScanQueryParser.parseSelectGraph(dataModel, (selectPaths + displayPaths).distinct())
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return CommandResult(
                 lines = listOf("Invalid select: ${e.message ?: e::class.simpleName}"),
                 isError = true,
@@ -273,6 +279,9 @@ class ScanCommand : Command {
 
         if (limit == 0u) {
             return ParsedOptions(errorMessage = "`--limit` must be greater than 0.")
+        }
+        if (limit > MAX_SCAN_LIMIT) {
+            return ParsedOptions(errorMessage = "`--limit` must be at most $MAX_SCAN_LIMIT.")
         }
         if (maxChars < 20) {
             return ParsedOptions(errorMessage = "`--max-chars` must be at least 20.")

@@ -1,5 +1,7 @@
 package io.maryk.cli
 
+import maryk.datastore.shared.rethrowIfFatal
+
 internal sealed class RecordSubcommandResult {
     data class Success(val lines: List<String>) : RecordSubcommandResult()
     data class Error(val message: String) : RecordSubcommandResult()
@@ -78,6 +80,7 @@ internal fun runRecordSubcommand(
                             else -> applyRemove(resolvedLoadContext, inlineOptions)
                         }
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         ApplyResult(
                             "${command.replaceFirstChar { it.uppercase() }} failed: ${e.message ?: e::class.simpleName}",
                             success = false,
@@ -102,6 +105,7 @@ internal fun runRecordSubcommand(
                     val result = try {
                         applyUndelete(resolvedLoadContext, parseResult.options)
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         ApplyResult(
                             "Undelete failed: ${e.message ?: e::class.simpleName}",
                             success = false,
@@ -125,6 +129,7 @@ internal fun runRecordSubcommand(
                     val lines = try {
                         resolvedDeleteContext.onDelete(deleteOptions.hardDelete)
                     } catch (e: Throwable) {
+                        e.rethrowIfFatal()
                         listOf("Delete failed: ${e.message ?: e::class.simpleName}")
                     }
                     RecordSubcommandResult.Success(lines)

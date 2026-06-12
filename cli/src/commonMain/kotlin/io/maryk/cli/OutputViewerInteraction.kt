@@ -3,6 +3,7 @@ package io.maryk.cli
 import com.varabyte.kotter.foundation.input.InputCompleter
 import com.varabyte.kotter.foundation.input.Key
 import com.varabyte.kotter.foundation.input.Keys
+import maryk.datastore.shared.rethrowIfFatal
 import kotlin.math.max
 import kotlin.math.min
 
@@ -261,6 +262,7 @@ class OutputViewerInteraction(
                         noDeps = saveOptions.noDeps,
                     )
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     statusMessage = "Save failed: ${e.message ?: e::class.simpleName}"
                 }
                 return InteractionResult.Stay(lines = statusLines())
@@ -298,6 +300,7 @@ class OutputViewerInteraction(
                         useMeta = loadOptions.useMeta,
                     )
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     ApplyResult("Load failed: ${e.message ?: e::class.simpleName}", success = false)
                 }
                 val refreshError = if (loadResult.success) refreshView() else null
@@ -364,6 +367,7 @@ class OutputViewerInteraction(
                 val result = try {
                     applyUndelete(resolvedLoadContext, options)
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     ApplyResult(
                         "Undelete failed: ${e.message ?: e::class.simpleName}",
                         success = false,
@@ -412,6 +416,7 @@ class OutputViewerInteraction(
                 else -> ApplyResult("Unknown command: $command", success = false)
             }
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             ApplyResult(
                 "${command.replaceFirstChar { it.uppercase() }} failed: ${e.message ?: e::class.simpleName}",
                 success = false,
@@ -449,6 +454,7 @@ class OutputViewerInteraction(
                 val lines = try {
                     resolvedDeleteContext.onDelete(pendingHardDelete)
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     listOf("Delete failed: ${e.message ?: e::class.simpleName}")
                 }
                 pendingHardDelete = false

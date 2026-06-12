@@ -12,6 +12,7 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 
 class UndeleteCommand : Command {
     override val name: String = "undelete"
@@ -50,6 +51,7 @@ class UndeleteCommand : Command {
         val key = try {
             dataModel.key(keyToken)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return CommandResult(
                 lines = listOf("Invalid key: ${e.message ?: e::class.simpleName}"),
                 isError = true,
@@ -68,7 +70,15 @@ class UndeleteCommand : Command {
             key.change(ObjectSoftDeleteChange(false), lastVersion = options.ifVersion)
         )
 
-        val response: ChangeResponse<IsRootDataModel> = runBlocking { dataStore.execute(request) }
+        val response: ChangeResponse<IsRootDataModel> = try {
+            runBlocking { dataStore.execute(request) }
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            return CommandResult(
+                lines = listOf("Undelete failed: ${e.message ?: e::class.simpleName}"),
+                isError = true,
+            )
+        }
         val status = response.statuses.firstOrNull()
             ?: return CommandResult(
                 lines = listOf("Undelete failed: no response status for ${dataModel.Meta.name}."),

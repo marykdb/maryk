@@ -29,6 +29,7 @@ import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.yaml.YamlWriter
 import kotlin.math.max
 import kotlin.math.min
@@ -335,6 +336,7 @@ class ScanViewerInteraction(
                         noDeps = saveOptions.noDeps,
                     )
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     "Save failed: ${e.message ?: e::class.simpleName}"
                 }
                 statusMessage = message
@@ -367,6 +369,7 @@ class ScanViewerInteraction(
                 useMeta = loadOptions.useMeta,
             )
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             ApplyResult("Load failed: ${e.message ?: e::class.simpleName}", success = false)
         }
         if (result.success) {
@@ -403,7 +406,13 @@ class ScanViewerInteraction(
         val options = (parseResult as VersionGuardOptionsResult.Success).options
         val label = "${dataModel.Meta.name} ${row.key}"
         val request = dataModel.change(row.key.change(ObjectSoftDeleteChange(false), lastVersion = options.ifVersion))
-        val response: ChangeResponse<IsRootDataModel> = runBlocking { dataStore.execute(request) }
+        val response: ChangeResponse<IsRootDataModel> = try {
+            runBlocking { dataStore.execute(request) }
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            statusMessage = "Restore failed: ${e.message ?: e::class.simpleName}"
+            return InteractionResult.Stay(lines = statusLines())
+        }
         val status = response.statuses.firstOrNull()
         statusMessage = when (status) {
             is ChangeSuccess -> "Restored $label (version ${status.version})."
@@ -428,6 +437,7 @@ class ScanViewerInteraction(
         val filter = try {
             ScanQueryParser.parseFilter(dataModel, raw)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             statusMessage = "Filter failed: ${e.message ?: e::class.simpleName}"
             return InteractionResult.Stay(lines = statusLines())
         }
@@ -448,8 +458,14 @@ class ScanViewerInteraction(
             return InteractionResult.Stay(lines = statusLines())
         }
         displayPaths = ScanQueryParser.parseReferencePaths(arguments)
-        resolveDisplayFields()
-        updateSelectGraph()
+        try {
+            resolveDisplayFields()
+            updateSelectGraph()
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            statusMessage = "Show failed: ${e.message ?: e::class.simpleName}"
+            return InteractionResult.Stay(lines = statusLines())
+        }
         reloadFromStart()
         statusMessage = "Display fields updated."
         return InteractionResult.Stay(lines = statusLines())
@@ -484,7 +500,15 @@ class ScanViewerInteraction(
             filterSoftDeleted = filterSoftDeleted,
             allowTableScan = true,
         )
-        val response = runBlocking { dataStore.execute(request) }
+        val response = try {
+            runBlocking { dataStore.execute(request) }
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            endReached = true
+            statusMessage = "Scan failed: ${e.message ?: e::class.simpleName}"
+            statusInPrompt = true
+            return false
+        }
         if (response.values.isEmpty()) {
             endReached = true
             return false
@@ -503,7 +527,7 @@ class ScanViewerInteraction(
         nextStartKey = response.values.last().key
         nextIncludeStart = false
 
-        if (response.values.size < limit.toInt()) {
+        if (response.values.size.toUInt() < limit) {
             endReached = true
         }
         return true
@@ -524,7 +548,8 @@ class ScanViewerInteraction(
         val merged = (selectPaths + displayPaths).distinct()
         selectGraph = try {
             ScanQueryParser.parseSelectGraph(dataModel, merged)
-        } catch (_: Throwable) {
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
             selectGraph
         }
     }
@@ -666,6 +691,7 @@ class ScanViewerInteraction(
                         "Deleted $label."
                     }
                 } catch (e: Throwable) {
+                    e.rethrowIfFatal()
                     "Delete failed: ${e.message ?: e::class.simpleName}"
                 }
                 pendingHardDelete = false

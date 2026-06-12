@@ -29,6 +29,7 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import maryk.core.yaml.MarykYamlReader
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.yaml.YamlWriter
 
 data class ApplyResult(
@@ -76,6 +77,7 @@ data class LoadContext(
         val loaded = try {
             readRecordValues(dataModel, path, format, useMeta)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             return ApplyResult(
                 "Load failed: ${e.message ?: e::class.simpleName}",
                 success = false,
@@ -146,6 +148,7 @@ data class LoadContext(
             val reader = MarykYamlReader(rawValue)
             serializable.readJson(reader, context)
         } catch (e: Throwable) {
+            e.rethrowIfFatal()
             if (allowSimpleFallback) {
                 @Suppress("UNCHECKED_CAST")
                 val simple = baseDefinition as IsSimpleValueDefinition<Any, IsPropertyContext>
@@ -318,6 +321,7 @@ data class LoadContext(
         val bytes = ByteArray(length)
         var index = 0
         serializer.writeProtoBuf(values, cache, { bytes[index++] = it }, null)
+        check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
         return bytes
     }
 
@@ -330,6 +334,7 @@ data class LoadContext(
         val bytes = ByteArray(length)
         var index = 0
         ValuesWithMetaData.Serializer.writeProtoBuf(valuesWithMetaData, cache, { bytes[index++] = it }, context)
+        check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
         return bytes
     }
 

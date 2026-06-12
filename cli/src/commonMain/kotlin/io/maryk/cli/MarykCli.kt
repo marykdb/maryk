@@ -50,6 +50,7 @@ fun main(args: Array<String>) {
     }.onFailure { t ->
         println("CLI fatal error: ${t::class.simpleName}: ${t.message ?: "no message"}")
         t.printStackTrace()
+        exitWithCode(1)
     }
 }
 

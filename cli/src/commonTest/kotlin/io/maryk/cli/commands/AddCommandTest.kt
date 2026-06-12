@@ -46,6 +46,39 @@ class AddCommandTest {
     }
 
     @Test
+    fun reportsDataStoreFailure() {
+        val values = SimpleMarykModel.create {
+            value with "hello"
+        }
+        val yaml = buildString {
+            val writer = YamlWriter { append(it) }
+            SimpleMarykModel.Serializer.writeJson(values, writer)
+        }
+        val path = "build/tmp/add-command-failing.yaml"
+        File.writeText(path, yaml)
+        val store = object : FakeDataStore(
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        ) {
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP {
+                throw IllegalStateException("boom")
+            }
+        }
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+
+        val result = AddCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel", path),
+        )
+
+        assertTrue(result.isError)
+        assertEquals(listOf("Add failed: boom"), result.lines)
+    }
+
+    @Test
     fun addsRecordWithExplicitKey() {
         val values = SimpleMarykModel.create {
             value with "hello"

@@ -13,6 +13,7 @@ import maryk.file.File
 import maryk.json.IsJsonLikeReader
 import maryk.json.JsonToken
 import maryk.json.JsonReader
+import maryk.datastore.shared.rethrowIfFatal
 
 internal data class LoadedRecordValues(
     val values: Values<IsRootDataModel>,
@@ -56,7 +57,9 @@ internal fun readRecordValuesInput(
             val token = if (reader.currentToken == JsonToken.StartDocument) reader.nextToken() else reader.currentToken
             when (token) {
                 is JsonToken.StartArray -> ParsedRecordValues.Multi(readValuesList(reader, serializer))
-                is JsonToken.StartObject -> ParsedRecordValues.Single(serializer.readJson(reader, null))
+                is JsonToken.StartObject -> ParsedRecordValues.Single(
+                    serializer.readJson(reader, null).also { ensureJsonInputEnded(reader) }
+                )
                 else -> throw IllegalArgumentException("Expected object or list at top level.")
             }
         }
@@ -67,7 +70,9 @@ internal fun readRecordValuesInput(
             val token = if (reader.currentToken == JsonToken.StartDocument) reader.nextToken() else reader.currentToken
             when (token) {
                 is JsonToken.StartArray -> ParsedRecordValues.Multi(readValuesList(reader, serializer))
-                is JsonToken.StartObject -> ParsedRecordValues.Single(serializer.readJson(reader, null))
+                is JsonToken.StartObject -> ParsedRecordValues.Single(
+                    serializer.readJson(reader, null).also { ensureJsonInputEnded(reader) }
+                )
                 else -> throw IllegalArgumentException("Expected object or list at top level.")
             }
         }
@@ -97,12 +102,13 @@ private fun readRecordDataValues(
             val content = readTextInput(path)
             val iterator = content.iterator()
             val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
-            serializer.readJson(reader, null)
+            serializer.readJson(reader, null).also { ensureJsonInputEnded(reader) }
         }
         SaveFormat.PROTO -> {
             val bytes = readBytesInput(path)
-            var index = 0
-            serializer.readProtoBuf(bytes.size, reader = { bytes[index++] }, context = null)
+            readProtoInputPayload(bytes, "record") { reader ->
+                serializer.readProtoBuf(bytes.size, reader = reader, context = null)
+            }
         }
         SaveFormat.KOTLIN -> throw IllegalArgumentException("Kotlin input is not supported.")
     }
@@ -130,7 +136,7 @@ private fun readValuesList(
     while (true) {
         when (val token = reader.currentToken) {
             is JsonToken.EndArray -> {
-                reader.nextToken()
+                ensureJsonInputEnded(reader)
                 break
             }
             is JsonToken.StartObject -> {
@@ -143,7 +149,7 @@ private fun readValuesList(
             is JsonToken.Value<*> -> {
                 throw IllegalArgumentException("Expected object in list, found value.")
             }
-            is JsonToken.EndDocument -> break
+            is JsonToken.EndDocument -> throw IllegalArgumentException("Unexpected end of input in list.")
             else -> {
                 throw IllegalArgumentException("Expected object or end of list, found ${token::class.simpleName}.")
             }
@@ -151,6 +157,13 @@ private fun readValuesList(
     }
 
     return values
+}
+
+internal fun ensureJsonInputEnded(reader: IsJsonLikeReader) {
+    when (val token = reader.nextToken()) {
+        is JsonToken.EndDocument -> Unit
+        else -> throw IllegalArgumentException("Unexpected JSON token after input: $token")
+    }
 }
 
 private fun readRecordMetaValues(
@@ -172,12 +185,13 @@ private fun readRecordMetaValues(
             val content = readTextInput(path)
             val iterator = content.iterator()
             val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
-            ValuesWithMetaData.Serializer.readJson(reader, requestContext)
+            ValuesWithMetaData.Serializer.readJson(reader, requestContext).also { ensureJsonInputEnded(reader) }
         }
         SaveFormat.PROTO -> {
             val bytes = readBytesInput(path)
-            var index = 0
-            ValuesWithMetaData.Serializer.readProtoBuf(bytes.size, reader = { bytes[index++] }, context = requestContext)
+            readProtoInputPayload(bytes, "record metadata") { reader ->
+                ValuesWithMetaData.Serializer.readProtoBuf(bytes.size, reader = reader, context = requestContext)
+            }
         }
         SaveFormat.KOTLIN -> throw IllegalArgumentException("Kotlin input is not supported.")
     }
@@ -190,7 +204,7 @@ private fun readTextInput(path: String): String {
     return if (path == "-") {
         readStdinText()
     } else {
-        File.readText(path) ?: throw IllegalArgumentException("File not found: $path")
+        readBytesInput(path).decodeToString()
     }
 }
 
@@ -198,6 +212,41 @@ private fun readBytesInput(path: String): ByteArray {
     return if (path == "-") {
         readStdinBytes()
     } else {
-        File.readBytes(path) ?: throw IllegalArgumentException("File not found: $path")
+        ensureInputFileSize(path)
+        val bytes = File.readBytes(path) ?: throw IllegalArgumentException("File not found: $path")
+        if (bytes.size > MAX_STDIN_BYTES) {
+            throw IllegalArgumentException("input file exceeds max size: ${bytes.size} > $MAX_STDIN_BYTES bytes")
+        }
+        bytes
     }
+}
+
+private fun ensureInputFileSize(path: String) {
+    val size = File.size(path) ?: return
+    if (size > MAX_STDIN_BYTES) {
+        throw IllegalArgumentException("input file exceeds max size: $size > $MAX_STDIN_BYTES bytes")
+    }
+}
+
+internal inline fun <T> readProtoInputPayload(
+    bytes: ByteArray,
+    label: String,
+    read: (() -> Byte) -> T,
+): T {
+    var index = 0
+    val value = try {
+        read {
+            if (index >= bytes.size) {
+                throw IllegalArgumentException("Invalid proto $label: attempted to read past ${bytes.size} bytes.")
+            }
+            bytes[index++]
+        }
+    } catch (error: Throwable) {
+        error.rethrowIfFatal()
+        throw IllegalArgumentException("Invalid proto $label.", error)
+    }
+    if (index != bytes.size) {
+        throw IllegalArgumentException("Invalid proto $label: consumed $index of ${bytes.size} bytes.")
+    }
+    return value
 }

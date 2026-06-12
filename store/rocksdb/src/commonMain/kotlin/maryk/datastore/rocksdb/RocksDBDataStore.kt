@@ -326,7 +326,7 @@ class RocksDBDataStore private constructor(
                             migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
                             versionUpdateHandler?.invoke(this, storedModel, dataModel)
                             storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
-                            ensureUpdateHistoryIndexReady(index, dataModel, tableColumnFamilies)
+                            ensureUpdateHistoryIndexReady(index, tableColumnFamilies)
                             writeMetaFile(storePath, modelMetas)
                         },
                         finalizeInStartup = {
@@ -334,7 +334,7 @@ class RocksDBDataStore private constructor(
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                                 storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
-                                ensureUpdateHistoryIndexReady(index, dataModel, tableColumnFamilies)
+                                ensureUpdateHistoryIndexReady(index, tableColumnFamilies)
                             }
                         }
                     )
@@ -343,9 +343,9 @@ class RocksDBDataStore private constructor(
         }
 
         if (keepUpdateHistoryIndex) {
-            for ((index, dataModel) in dataModelsById) {
+            for ((index, _) in dataModelsById) {
                 if (index !in pendingMigrationModelIds.value) {
-                    ensureUpdateHistoryIndexReady(index, dataModel, getColumnFamilies(index))
+                    ensureUpdateHistoryIndexReady(index, getColumnFamilies(index))
                 }
             }
         }
@@ -442,18 +442,17 @@ class RocksDBDataStore private constructor(
 
     private fun ensureUpdateHistoryIndexReady(
         dbIndex: UInt,
-        dataModel: IsRootDataModel,
         tableColumnFamilies: TableColumnFamilies,
     ) {
         if (!keepUpdateHistoryIndex || tableColumnFamilies.updateHistory == null || canUseUpdateHistoryIndex(dbIndex)) return
         if (db.get(tableColumnFamilies.model, modelUpdateHistoryBackfillCompleteKey)?.firstOrNull() == 1.toByte()) {
-            updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
+            updateHistoryReadyModelIds.value += dbIndex
             return
         }
 
         backfillUpdateHistoryIndex(tableColumnFamilies)
         db.put(tableColumnFamilies.model, modelUpdateHistoryBackfillCompleteKey, byteArrayOf(1))
-        updateHistoryReadyModelIds.value = updateHistoryReadyModelIds.value + dbIndex
+        updateHistoryReadyModelIds.value += dbIndex
     }
 
     private fun backfillUpdateHistoryIndex(
@@ -548,27 +547,25 @@ class RocksDBDataStore private constructor(
         }
 
         if (keepAllVersions) {
-            val comparatorOptions = ComparatorOptions()
-            val comparator = VersionedComparator(comparatorOptions, db.Meta.keyByteSize)
             // Prefix set to key size for more optimal search.
             val tableOptionsHistoric = ColumnFamilyOptions().apply {
                 useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
-                setComparator(comparator)
+                setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
             }
 
-            // Prefix set to key size for more optimal search.
             val indexOptionsHistoric = ColumnFamilyOptions().apply {
-                setComparator(comparator)
+                setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
+            }
+
+            val uniqueOptionsHistoric = ColumnFamilyOptions().apply {
+                setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
             }
 
             descriptors += HistoricTable.getDescriptor(tableIndex, nameSize, tableOptionsHistoric)
             descriptors += HistoricIndex.getDescriptor(tableIndex, nameSize, indexOptionsHistoric)
-            descriptors += HistoricUnique.getDescriptor(tableIndex, nameSize, indexOptionsHistoric)
+            descriptors += HistoricUnique.getDescriptor(tableIndex, nameSize, uniqueOptionsHistoric)
         }
     }
-
-    internal fun getPrefixSize(columnFamilyHandle: ColumnFamilyHandle) =
-        this.prefixSizesByColumnFamilyHandlesIndex.getOrElse(columnFamilyHandle.getID()) { 0 }
 
     override suspend fun close() {
         cancelPendingMigrations("Datastore closing")
@@ -607,7 +604,7 @@ class RocksDBDataStore private constructor(
         uniqueIndicesByDataModelIndex.value[dbIndex] ?: searchExistingUniqueIndices(uniqueHandle)
 
     /**
-     * Checks if unique index exists and creates it if not otherwise.
+     * Checks if a unique index exists and creates it if not otherwise.
      * This is needed so delete knows which indexes to scan for values to delete.
      */
     internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, uniqueName: ByteArray) {
@@ -626,7 +623,7 @@ class RocksDBDataStore private constructor(
         }
     }
 
-    /** Search for existing unique indexes in data store by [uniqueHandle] */
+    /** Search for existing unique indexes in the data store by [uniqueHandle] */
     private fun searchExistingUniqueIndices(
         uniqueHandle: ColumnFamilyHandle
     ) = buildList {

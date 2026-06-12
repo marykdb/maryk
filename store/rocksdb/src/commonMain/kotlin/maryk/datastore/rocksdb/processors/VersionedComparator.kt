@@ -4,6 +4,7 @@ import maryk.ByteBuffer
 import maryk.datastore.rocksdb.compareToWithOffsetAndLength
 import maryk.datastore.rocksdb.compareWith
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.rocksdb.AbstractComparator
 import maryk.rocksdb.ComparatorOptions
 
 /**
@@ -13,7 +14,7 @@ import maryk.rocksdb.ComparatorOptions
 internal class VersionedComparator(
     comparatorOptions: ComparatorOptions,
     private val keySize: Int
-) : maryk.rocksdb.AbstractComparator(comparatorOptions) {
+) : AbstractComparator(comparatorOptions) {
     override fun name() = "maryk.VersionedComparator"
     override fun compare(a: ByteBuffer, b: ByteBuffer): Int {
         val aRemaining = a.remaining()

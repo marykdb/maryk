@@ -134,16 +134,14 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                 }
 
                 if (hardDelete) {
-                    cache.delete(dbIndex, key)
-
-                    db.delete(columnFamilies.keys, key.bytes)
-                    db.deleteRange(
+                    transaction.delete(columnFamilies.keys, key.bytes)
+                    transaction.deleteRange(
                         columnFamilies.table,
                         key.bytes,
                         key.bytes.nextByteInSameLength()
                     )
                     if (columnFamilies is HistoricTableColumnFamilies) {
-                        db.deleteRange(
+                        transaction.deleteRange(
                             columnFamilies.historic.table,
                             key.bytes,
                             key.bytes.nextByteInSameLength()
@@ -176,6 +174,10 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                     transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, if (hardDelete) byteArrayOf(1) else EMPTY_ARRAY)
                 }
                 transaction.commit()
+            }
+
+            if (hardDelete) {
+                cache.delete(dbIndex, key)
             }
 
             emitUpdate(Deletion(dataModel, key, version.timestamp, hardDelete))

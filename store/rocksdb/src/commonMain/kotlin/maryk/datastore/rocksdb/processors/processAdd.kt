@@ -51,6 +51,14 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     objectToAdd: Values<DM>,
     updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsAddResponseStatus<DM> {
+    var savePointSet = false
+    fun rollbackToAddSavePoint() {
+        if (savePointSet) {
+            transaction.rollbackToSavePoint()
+            savePointSet = false
+        }
+    }
+
     return try {
         objectToAdd.validate()
 
@@ -66,6 +74,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
 
             // Create version bytes and last version ref
             val versionBytes = HLC.toStorageBytes(version)
+
+            transaction.setSavePoint()
+            savePointSet = true
 
             // Store first and last version
             setCreatedVersion(transaction, columnFamilies, key, versionBytes)
@@ -161,10 +172,13 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
             AlreadyExists(key)
         }
     } catch (ve: ValidationUmbrellaException) {
+        rollbackToAddSavePoint()
         ValidationFail(ve)
     } catch (ve: ValidationException) {
+        rollbackToAddSavePoint()
         ValidationFail(listOf(ve))
     } catch (ue: UniqueException) {
+        rollbackToAddSavePoint()
         var index = 0
         val ref = dataModel.getPropertyReferenceByStorageBytes(
             ue.reference.size,
@@ -178,6 +192,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
         )
     } catch (e: Throwable) {
         e.rethrowIfFatal()
+        rollbackToAddSavePoint()
         ServerFail(e.toString(), e)
     }
 }

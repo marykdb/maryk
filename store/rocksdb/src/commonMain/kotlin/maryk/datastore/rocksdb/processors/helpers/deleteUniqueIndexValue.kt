@@ -29,7 +29,7 @@ internal fun deleteUniqueIndexValue(
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(reference.size)
 
-        transaction.put(columnFamilies.unique, historicReference, EMPTY_ARRAY)
+        transaction.put(columnFamilies.historic.unique, historicReference, EMPTY_ARRAY)
     }
 }
 

@@ -3,24 +3,24 @@ package maryk.datastore.rocksdb.processors
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.Transaction
 import maryk.lib.extensions.compare.nextByteInSameLength
-import maryk.rocksdb.RocksDB
 
 /**
- * Deletes all index values in [rocksDB] at [tableColumnFamilies] for [indexable]
+ * Deletes all index values in [transaction] at [tableColumnFamilies] for [indexable]
  */
-internal fun deleteCompleteIndexContents(rocksDB: RocksDB, tableColumnFamilies: TableColumnFamilies, indexable: IsIndexable) {
+internal fun deleteCompleteIndexContents(transaction: Transaction, tableColumnFamilies: TableColumnFamilies, indexable: IsIndexable) {
     val indexEndStorageReference = indexable.referenceStorageByteArray.bytes.nextByteInSameLength()
 
-    rocksDB.deleteRange(
+    transaction.deleteRange(
         tableColumnFamilies.index,
         indexable.referenceStorageByteArray.bytes,
         indexEndStorageReference
     )
 
     if (tableColumnFamilies is HistoricTableColumnFamilies) {
-        rocksDB.deleteRange(
-            tableColumnFamilies.index,
+        transaction.deleteRange(
+            tableColumnFamilies.historic.index,
             indexable.referenceStorageByteArray.bytes,
             indexEndStorageReference
         )

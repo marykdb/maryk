@@ -172,6 +172,14 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
     version: HLC,
     updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsChangeResponseStatus<DM> {
+    var savePointSet = false
+    fun rollbackToChangeSavePoint() {
+        if (savePointSet) {
+            transaction.rollbackToSavePoint()
+            savePointSet = false
+        }
+    }
+
     try {
         var validationExceptions: MutableList<ValidationException>? = null
 
@@ -190,6 +198,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
         val versionBytes = HLC.toStorageBytes(version)
 
         transaction.setSavePoint()
+        savePointSet = true
 
         for (change in changes) {
             try {
@@ -714,7 +723,10 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                             }
                         }
                     }
-                    else -> return ServerFail("Unsupported operation $change")
+                    else -> {
+                        rollbackToChangeSavePoint()
+                        return ServerFail("Unsupported operation $change")
+                    }
                 }
             } catch (e: ValidationUmbrellaException) {
                 for (it in e.exceptions) {
@@ -738,7 +750,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
         // Return fail if any validationExceptions were caught
         validationExceptions?.let {
             // Undo snapshot because of validation exceptions
-            transaction.rollbackToSavePoint()
+            rollbackToChangeSavePoint()
             return when (it.size) {
                 1 -> ValidationFail(it.first())
                 else -> ValidationFail(it)
@@ -807,6 +819,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
         return ChangeSuccess(version.timestamp, outChanges)
     } catch (e: Throwable) {
         e.rethrowIfFatal()
+        rollbackToChangeSavePoint()
         return ServerFail(e.toString(), e)
     }
 }

@@ -92,13 +92,14 @@ Common read helpers:
 
 ## Transactions and Concurrency
 
-Writes are buffered in an in-process `Transaction` (not a RocksDB transaction). It records puts/deletes per column family and performs optimistic checks at commit time (`getForUpdate` + compare on commit) to detect conflicting changes.
+The store opens RocksDB as an `OptimisticTransactionDB`. Maryk keeps a small `Transaction` adapter around the native RocksDB transaction API so processors can use the same request-local access pattern while commits are handled by RocksDB atomically.
 
-- `Transaction.put/delete` enqueue changes.
-- `commit()` performs pre-commit reads to ensure rows were not modified concurrently, then applies changes in column family order.
-- Point reads during a transaction are resolved from staged changes first, falling back to RocksDB.
+- `Transaction.put/delete` write into the native transaction batch.
+- `getForUpdate()` delegates to RocksDB optimistic conflict tracking.
+- `commit()` commits the native transaction atomically and starts a fresh native transaction for callers that process multiple objects in one request.
+- Point reads and iterators during a transaction are provided by RocksDB and include pending writes.
 
-This local transaction keeps the implementation portable across JVM and Native targets while providing a simple “read-your-writes” view within a single request.
+This keeps the implementation portable across JVM and Native targets while relying on RocksDB for atomic commit, rollback/savepoints, read-your-writes, and optimistic conflict detection.
 
 ## Migrations and Version Updates
 
@@ -147,7 +148,7 @@ Notes:
 - `keepAllVersions` controls whether historic families are created and maintained.
 - `relativePath` points to a directory where the store manages all column families.
 - `dataModelsById` determines the model ids used in column family names and writes.
-- Pass custom `DBOptions` and `ColumnFamilyOptions` via `openRocksDB` if you need to tune cache, compaction, bloom filters, etc.
+- Pass custom `DBOptions` and `ColumnFamilyOptions` via the datastore open path if you need to tune cache, compaction, bloom filters, etc.
 
 ## Testing
 

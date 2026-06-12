@@ -125,10 +125,10 @@ import maryk.rocksdb.ColumnFamilyOptions
 import maryk.rocksdb.ComparatorOptions
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.ReadOptions
-import maryk.rocksdb.RocksDB
+import maryk.rocksdb.OptimisticTransactionDB
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.defaultColumnFamily
-import maryk.rocksdb.openRocksDB
+import maryk.rocksdb.openOptimisticTransactionDB
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.recyclableByteArray
 import kotlin.time.TimeSource
@@ -168,13 +168,13 @@ class RocksDBDataStore private constructor(
             DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true)
         } else null
 
-    internal val db: RocksDB
+    internal val db: OptimisticTransactionDB
 
     private val storePath: String = relativePath
 
     private val modelMetas: MutableMap<UInt, ModelMeta> = readMetaFile(storePath).toMutableMap()
 
-    private val defaultWriteOptions = WriteOptions()
+    internal val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {
         setPrefixSameAsStart(true)
     }
@@ -198,7 +198,7 @@ class RocksDBDataStore private constructor(
         }
 
         val handles = mutableListOf<ColumnFamilyHandle>()
-        this.db = openRocksDB(rocksDBOptions ?: ownRocksDBOptions!!, storePath, descriptors, handles)
+        this.db = openOptimisticTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, storePath, descriptors, handles)
 
         try {
             var handleIndex = 1
@@ -427,8 +427,11 @@ class RocksDBDataStore private constructor(
         indexesToIndex: List<IsIndexable>,
         tableColumnFamilies: TableColumnFamilies
     ) {
-        for (indexable in indexesToIndex) {
-            deleteCompleteIndexContents(this.db, tableColumnFamilies, indexable)
+        Transaction(this).use { transaction ->
+            for (indexable in indexesToIndex) {
+                deleteCompleteIndexContents(transaction, tableColumnFamilies, indexable)
+            }
+            transaction.commit()
         }
 
         walkDataRecordsAndFillIndex(this, tableColumnFamilies, indexesToIndex)
@@ -628,12 +631,14 @@ class RocksDBDataStore private constructor(
         uniqueHandle: ColumnFamilyHandle
     ) = buildList {
         this@RocksDBDataStore.db.newIterator(uniqueHandle).use { iterator ->
+            iterator.seekToFirst()
             while (iterator.isValid()) {
                 val key = iterator.key()
-                if (key[0] != 0.toByte()) {
+                if (key.isEmpty() || key[0] != 0.toByte()) {
                     break // break because it is not describing an index
                 }
                 this += key.copyOfRange(1, key.size)
+                iterator.next()
             }
         }
     }

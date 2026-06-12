@@ -182,7 +182,7 @@ class ProcessUpdateActorTest {
         ) = Unit
     }
 
-    private object TestDataStore : IsDataStore {
+    internal object TestDataStore : IsDataStore {
         override val dataModelsById = mapOf(1u to SimpleMarykModel)
         override val dataModelIdsByString = mapOf(SimpleMarykModel.Meta.name to 1u)
         override val keepAllVersions = false

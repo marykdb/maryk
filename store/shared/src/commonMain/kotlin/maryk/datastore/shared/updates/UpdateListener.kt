@@ -3,9 +3,10 @@ package maryk.datastore.shared.updates
 import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
@@ -27,7 +28,7 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     val request: RQ,
     val response: IsDataResponse<DM>
 ) {
-    protected val sendFlow = MutableSharedFlow<IsUpdateResponse<DM>>(extraBufferCapacity = 64)
+    protected val sendFlow = Channel<IsUpdateResponse<DM>>(capacity = 64)
     private val closed = CompletableDeferred<Unit>()
 
     val matchingKeys: AtomicRef<List<Key<DM>>>
@@ -108,13 +109,14 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
         }
 
         val updateJob = launch {
-            sendFlow.collect(::send)
+            sendFlow.receiveAsFlow().collect(::send)
         }
         closed.invokeOnCompletion { close() }
         awaitClose { updateJob.cancel() }
     }
 
     fun close() {
+        sendFlow.close()
         closed.complete(Unit)
     }
 }

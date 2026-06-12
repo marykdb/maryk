@@ -13,7 +13,6 @@ import platform.windows.CreateDirectoryW
 import platform.windows.CreateFileW
 import platform.windows.DWORDVar
 import platform.windows.DeleteFileW
-import platform.windows.ERROR_ALREADY_EXISTS
 import platform.windows.FILE_ATTRIBUTE_DIRECTORY
 import platform.windows.FILE_ATTRIBUTE_NORMAL
 import platform.windows.FILE_END
@@ -34,6 +33,11 @@ import platform.windows.WriteFile
 private const val maxFileSize = Int.MAX_VALUE.toLong()
 private const val invalidFileAttributes = UInt.MAX_VALUE
 private const val invalidSetFilePointer = UInt.MAX_VALUE
+
+private fun isDirectory(path: String): Boolean {
+    val attributes = GetFileAttributesW(path)
+    return attributes != invalidFileAttributes && (attributes and FILE_ATTRIBUTE_DIRECTORY.toUInt()) != 0u
+}
 
 private fun createParentDirectories(path: String): Boolean {
     val separatorIndex = path.lastIndexOfAny(charArrayOf('\\', '/'))
@@ -67,7 +71,7 @@ private fun createParentDirectories(path: String): Boolean {
         }
 
         val created = CreateDirectoryW(current, null)
-        if (created == 0 && GetLastError() != ERROR_ALREADY_EXISTS.toUInt()) {
+        if (created == 0 && !isDirectory(current)) {
             return false
         }
     }

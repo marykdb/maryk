@@ -1,6 +1,6 @@
 package maryk.datastore.shared.updates
 
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.yield
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.graph
@@ -33,7 +33,7 @@ import maryk.datastore.shared.updates.Update.Deletion
 internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>.process(
     updateListener: UpdateListener<DM, RQ>,
     dataStore: IsDataStore,
-    sharedFlow: MutableSharedFlow<IsUpdateResponse<DM>>
+    sharedFlow: SendChannel<IsUpdateResponse<DM>>
 ) {
     val request = updateListener.request
     val currentKeys = updateListener.matchingKeys.value
@@ -44,7 +44,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                 if (values.matches(request.where)) {
                     val insertIndex = updateListener.addValues(key, values)
                     if (insertIndex != null) {
-                        sharedFlow.emit(
+                        sharedFlow.send(
                             AdditionUpdate(
                                 key = key,
                                 version = version,
@@ -60,7 +60,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                             val keyToRemove = updateListener.getLast()
                             updateListener.removeKey(keyToRemove)
 
-                            sharedFlow.emit(
+                            sharedFlow.send(
                                 RemovalUpdate(
                                     key = keyToRemove,
                                     version = version,
@@ -111,7 +111,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                                         changeUpdate
                                     }
 
-                                    sharedFlow.emit(update)
+                                    sharedFlow.send(update)
                                 }
                             }
                         }
@@ -153,7 +153,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                                     val lastKey = updateListener.getLast()
                                     updateListener.removeKey(lastKey)
 
-                                    sharedFlow.emit(
+                                    sharedFlow.send(
                                         RemovalUpdate(
                                             key = lastKey,
                                             version = this.version,
@@ -163,7 +163,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                                 }
 
                                 val addition = response.values.first()
-                                sharedFlow.emit(
+                                sharedFlow.send(
                                     AdditionUpdate(
                                         key = addition.key,
                                         values = addition.values,
@@ -225,12 +225,12 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
     change: Update<DM>,
     reason: RemovalReason,
     updateListener: UpdateListener<DM, RQ>,
-    sharedFlow: MutableSharedFlow<IsUpdateResponse<DM>>
+    sharedFlow: SendChannel<IsUpdateResponse<DM>>
 ) {
     val originalIndex = updateListener.removeKey(change.key)
 
     suspend fun sendRemoval() {
-        sharedFlow.emit(
+        sharedFlow.send(
             RemovalUpdate(
                 key = change.key,
                 version = change.version,
@@ -256,18 +256,18 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
             if (change is Change<DM>) {
                 if (additionUpdate.key != change.key) { // if not same key, remove old & add new
                     sendRemoval()
-                    sharedFlow.emit(additionUpdate)
+                    sharedFlow.send(additionUpdate)
                 } else if (originalIndex != additionUpdate.insertionIndex) {
                     // If same key send an order change
                     change.createChangeUpdate(
                         updateListener.request.select,
                         orderChanged = true,
                         newIndex = additionUpdate.insertionIndex
-                    )?.also { sharedFlow.emit(it) }
+                    )?.also { sharedFlow.send(it) }
                 } // else no change because still the last
             } else {
                 sendRemoval()
-                sharedFlow.emit(additionUpdate)
+                sharedFlow.send(additionUpdate)
             }
         } ?: sendRemoval()
     } else {

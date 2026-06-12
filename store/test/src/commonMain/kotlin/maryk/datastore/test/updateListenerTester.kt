@@ -14,7 +14,7 @@ import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.IsDataStore
-import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 /** Test helper for listening to update changes for [request] on [dataStore] */
 suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
@@ -55,9 +55,9 @@ suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
 
     val timeoutJob = GlobalScope.launch {
         // Timeout
-        delay(15000.milliseconds)
+        delay(5.seconds)
         testFailure.complete(
-            AssertionError("Timed out after 15000ms listening to updates, likely some updates were not retrieved from the store")
+            AssertionError("Timed out after 5s listening to updates, likely some updates were not retrieved from the store")
         )
     }
 

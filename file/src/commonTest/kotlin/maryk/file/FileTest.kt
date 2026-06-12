@@ -40,6 +40,17 @@ class FileTest {
     }
 
     @Test
+    fun writeCreatesParentDirectories() {
+        val path = "build/fileStoreNested-${Random.nextInt()}/nested/value.txt"
+
+        File.writeText(path, "hello")
+
+        assertEquals("hello", File.readText(path))
+
+        File.delete(path)
+    }
+
+    @Test
     fun directoryIsNotReadableFile() {
         assertNull(File.size("."))
         assertNull(File.readText("."))

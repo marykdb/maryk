@@ -16,6 +16,7 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -170,6 +171,16 @@ internal class ListDefinitionTest {
         val asHex = "1a2026626d33e5300c40fc8310642ab23443a2ab845a8a202d3fb3417d814068c043"
 
         this.testPackedTransportConversion(def64Int, value, asHex, 3u)
+    }
+
+    @Test
+    fun rejectsMalformedPackedTransportLength() {
+        val bytes = byteArrayOf(0x80.toByte())
+        var index = 0
+
+        assertFailsWith<ParseException> {
+            defVarInt.readTransportBytes(bytes.size, { bytes[index++] })
+        }
     }
 
     private fun <T : Any> testPackedTransportConversion(

@@ -296,6 +296,45 @@ class IndexableScanRangesTest {
     }
 
     @Test
+    fun convertMultipleValueInFiltersToScanRange() {
+        val numbers = setOf(3u, 5u)
+        val times = setOf(
+            LocalTime(11, 10, 9),
+            LocalTime(12, 11, 10)
+        )
+        val filter = And(
+            ValueIn(CompleteMarykModel { number::ref } with numbers),
+            ValueIn(CompleteMarykModel { time::ref } with times)
+        )
+
+        val scanRange = indexable.createScanRange(filter, keyScanRange)
+
+        assertEquals(4, scanRange.ranges.size)
+
+        for (numberValue in numbers) {
+            for (timeValue in times) {
+                val values = CompleteMarykModel.create {
+                    string with "Jannes"
+                    number with numberValue
+                    time with timeValue
+                    booleanForKey with true
+                    dateForKey with LocalDate(2019, 3, 3)
+                    multiForKey with S1("test")
+                    enumEmbedded with E1
+                }
+                val key = CompleteMarykModel.key(values)
+                val indexValue = indexable.toStorageByteArrayForIndex(values, key.bytes)!!
+
+                assertTrue(
+                    scanRange.ranges.any { range ->
+                        !range.keyBeforeStart(indexValue) && !range.keyOutOfRange(indexValue)
+                    }
+                )
+            }
+        }
+    }
+
+    @Test
     fun convertEmptyValueInFilterToScanRange() {
         val filter = ValueIn(
             CompleteMarykModel { number::ref } with emptySet()

@@ -116,11 +116,39 @@ class ProtoBufTest {
     }
 
     @Test
+    fun skipMalformedVarIntShouldFail() {
+        val bytes = ByteArray(11) { -1 }
+        var index = 0
+        assertFailsWith<ParseException> {
+            ProtoBuf.skipField(VAR_INT) { bytes[index++] }
+        }
+        expect(10) { index }
+    }
+
+    @Test
     fun getLengthDelimitedNegativeLengthShouldFail() {
         val bytes = ("ffffffff0f").hexToByteArray()
         var index = 0
         assertFailsWith<ParseException> {
             ProtoBuf.getLength(LENGTH_DELIMITED) { bytes[index++] }
+        }
+    }
+
+    @Test
+    fun calculateLengthRejectsOverflow() {
+        assertFailsWith<IllegalArgumentException> {
+            calculateKeyAndContentLength(LENGTH_DELIMITED, 1u, WriteCache()) {
+                Int.MAX_VALUE
+            }
+        }
+    }
+
+    @Test
+    fun calculateLengthRejectsNegativeContentLength() {
+        assertFailsWith<IllegalArgumentException> {
+            calculateKeyAndContentLength(LENGTH_DELIMITED, 1u, WriteCache()) {
+                -1
+            }
         }
     }
 }

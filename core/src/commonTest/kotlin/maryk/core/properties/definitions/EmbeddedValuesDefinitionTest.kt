@@ -73,6 +73,23 @@ internal class EmbeddedValuesDefinitionTest {
     }
 
     @Test
+    fun fromStringRejectsTrailingContent() {
+        assertFailsWith<Throwable> {
+            def.fromString("""{"string":"jur"}{}""")
+        }
+        assertFailsWith<Throwable> {
+            def.fromString("""{"string":"jur"} trailing""")
+        }
+    }
+
+    @Test
+    fun fromStringAllowsTrailingWhitespace() {
+        expect(MarykModel.create {}) {
+            def.fromString("{\"string\":\"jur\"} \n")
+        }
+    }
+
+    @Test
     fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()

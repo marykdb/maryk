@@ -106,6 +106,15 @@ data class ScanChangesRequest<DM : IsRootDataModel> internal constructor(
     // Aggregations are not allowed on a scan changes request
     override val aggregations: Aggregations? = null
 
+    init {
+        if (limit == 0u) {
+            throw RequestException("Scan changes limit should be at least 1")
+        }
+        if (limit > MAX_SCAN_LIMIT) {
+            throw RequestException("Scan changes limit $limit exceeds maximum $MAX_SCAN_LIMIT")
+        }
+    }
+
     companion object : QueryModel<ScanChangesRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val startKey by addStartKey(ScanChangesRequest<*>::startKey)
@@ -114,7 +123,7 @@ data class ScanChangesRequest<DM : IsRootDataModel> internal constructor(
         val toVersion by number(5u, ScanChangesRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted  by boolean(6u, ScanChangesRequest<*>::filterSoftDeleted, default = true)
         val order by addOrder(ScanChangesRequest<*>::order)
-        val limit by number(9u, ScanChangesRequest<*>::limit, type = UInt32, default = 100u)
+        val limit by number(9u, ScanChangesRequest<*>::limit, type = UInt32, minValue = 1u, maxValue = MAX_SCAN_LIMIT, default = 100u)
         val includeStart by boolean(10u, ScanChangesRequest<*>::includeStart, default = true)
         val fromVersion by number(11u, ScanChangesRequest<*>::fromVersion, UInt64)
         val maxVersions by number(12u, ScanChangesRequest<*>::maxVersions, UInt32, maxValue = 1u)

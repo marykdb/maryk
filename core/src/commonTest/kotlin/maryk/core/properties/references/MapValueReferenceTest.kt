@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -71,6 +72,16 @@ class MapValueReferenceTest {
             expect(valReference) { TestMarykModel.getPropertyReferenceByStorageBytes(size, ::read) }
         }
 
+    }
+
+    @Test
+    fun rejectsTruncatedStorageBytes() {
+        val bytes = "5403".hexToByteArray()
+        var index = 0
+
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByStorageBytes(bytes.size, { bytes[index++] })
+        }
     }
 
     @Test

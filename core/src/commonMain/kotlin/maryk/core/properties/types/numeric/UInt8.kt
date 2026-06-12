@@ -18,7 +18,10 @@ object UInt8 : UnsignedNumberDescriptor<UByte>(
 ) {
     override fun sum(value1: UByte, value2: UByte) = (value1 + value2).toUByte()
     override fun divide(value1: UByte, value2: UByte) = (value1 / value2).toUByte()
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte) = (initByte(reader) + Byte.MIN_VALUE).toUByte()
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte): UByte {
+        checkStorageByteLength(length)
+        return (initByte(reader) + Byte.MIN_VALUE).toUByte()
+    }
     override fun writeStorageBytes(value: UByte, writer: (byte: Byte) -> Unit) =
         (value.toByte() - Byte.MIN_VALUE).toByte().writeBytes(writer)
 

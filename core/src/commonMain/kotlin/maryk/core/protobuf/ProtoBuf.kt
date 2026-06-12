@@ -32,10 +32,13 @@ internal object ProtoBuf {
     internal fun skipField(wireType: Any, reader: () -> Byte) {
         when (wireType) {
             VAR_INT -> {
-                var currentByte: Byte
-                do {
-                    currentByte = reader()
-                } while (currentByte and SIGN_BYTE != ZERO_BYTE)
+                repeat(10) {
+                    val currentByte = reader()
+                    if (currentByte and SIGN_BYTE == ZERO_BYTE) {
+                        return
+                    }
+                }
+                throw ParseException("Malformed varInt")
             }
             BIT_64 -> repeat(8) { reader() }
             LENGTH_DELIMITED -> {

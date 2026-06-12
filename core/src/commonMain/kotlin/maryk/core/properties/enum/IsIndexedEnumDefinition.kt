@@ -89,6 +89,10 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     fun resolve(name: String): E?
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): E {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for Enum $name: $length != $byteSize")
+        }
+
         val index = initUInt(reader, 2)
         return resolve(index)
             ?: throw DefNotFoundException("Unknown index $index for $name")

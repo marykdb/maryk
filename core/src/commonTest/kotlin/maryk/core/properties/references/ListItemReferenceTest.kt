@@ -34,6 +34,17 @@ class ListItemReferenceTest {
     }
 
     @Test
+    fun oversizedIndexDoesNotWrapWhenResolvingList() {
+        val highReference = TestMarykModel { listOfString refAt UInt.MAX_VALUE }
+        val list = listOf("a")
+
+        assertFailsWith<UnexpectedValueException> {
+            highReference.resolveFromAny(list)
+        }
+        expect(null) { highReference.resolve(list) }
+    }
+
+    @Test
     fun convertToProtoBufAndBack() {
         ByteCollector().apply {
             reserve(

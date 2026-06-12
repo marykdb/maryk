@@ -15,7 +15,7 @@ internal fun calculateKeyAndContentLength(
     contentLengthCalculator: () -> Int
 ): Int {
     var totalByteLength = 0
-    totalByteLength += ProtoBuf.calculateKeyLength(index)
+    totalByteLength = totalByteLength.addProtoByteLength(ProtoBuf.calculateKeyLength(index))
 
     if (wireType == LENGTH_DELIMITED) {
         // Take care length container is first cached before value is calculated
@@ -27,12 +27,18 @@ internal fun calculateKeyAndContentLength(
         // calculate field length
         contentLengthCalculator().let {
             container.length = it
-            totalByteLength += it
-            totalByteLength += it.calculateVarByteLength()
+            totalByteLength = totalByteLength.addProtoByteLength(it)
+            totalByteLength = totalByteLength.addProtoByteLength(it.calculateVarByteLength())
         }
     } else {
         // calculate field length
-        totalByteLength += contentLengthCalculator()
+        totalByteLength = totalByteLength.addProtoByteLength(contentLengthCalculator())
     }
     return totalByteLength
+}
+
+internal fun Int.addProtoByteLength(addend: Int): Int {
+    require(addend >= 0) { "Proto length cannot be negative: $addend" }
+    require(this <= Int.MAX_VALUE - addend) { "Proto length exceeds Int range" }
+    return this + addend
 }

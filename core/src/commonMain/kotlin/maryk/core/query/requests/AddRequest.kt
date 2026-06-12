@@ -1,6 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryModel
@@ -31,12 +32,22 @@ data class AddRequest<DM : IsRootDataModel> internal constructor(
     override val requestType = Add
     override val responseModel = AddResponse
 
+    init {
+        if (objects.size.toUInt() > MAX_REQUEST_BATCH_SIZE) {
+            throw RequestException("Add object count ${objects.size} exceeds maximum $MAX_REQUEST_BATCH_SIZE")
+        }
+        if (keysForObjects != null && keysForObjects.size != objects.size) {
+            throw RequestException("Add key count ${keysForObjects.size} should equal object count ${objects.size}")
+        }
+    }
+
     companion object : QueryModel<AddRequest<*>, Companion>() {
         val to by addDataModel { it.dataModel }
 
         val objects by list(
             index = 2u,
             getter = AddRequest<*>::objects,
+            maxSize = MAX_REQUEST_BATCH_SIZE,
             valueDefinition = ContextualEmbeddedValuesDefinition<RequestContext>(
                 contextualResolver = {
                     @Suppress("UNCHECKED_CAST")

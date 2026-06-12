@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.wrapper.FlexBytesDefinitionWrapper
 import maryk.core.properties.references.Model.test
 import maryk.core.properties.references.dsl.any
 import maryk.core.protobuf.WriteCache
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.TestMarykModel
@@ -111,6 +112,42 @@ internal class PropertyReferenceTest {
         expect("1609") { bc.bytes!!.toHexString() }
 
         expect(subRef) { Model.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
+    }
+
+    @Test
+    fun toStorageByteArrayWithPrefixRejectsInvalidRangeBeforeAllocation() {
+        assertFailsWith<IndexOutOfBoundsException> {
+            ref.toStorageByteArray(byteArrayOf(1), offset = 0, length = Int.MAX_VALUE)
+        }
+
+        assertFailsWith<IndexOutOfBoundsException> {
+            ref.toStorageByteArray(byteArrayOf(1), offset = -1, length = 1)
+        }
+    }
+
+    @Test
+    fun rejectsTruncatedPropertyReferenceBytes() {
+        val transportBytes = byteArrayOf(0x82.toByte())
+        var transportIndex = 0
+        assertFailsWith<ParseException> {
+            Model.getPropertyReferenceByBytes(1, { transportBytes[transportIndex++] })
+        }
+
+        val storageBytes = byteArrayOf(0x96.toByte())
+        var storageIndex = 0
+        assertFailsWith<ParseException> {
+            Model.getPropertyReferenceByStorageBytes(1, { storageBytes[storageIndex++] })
+        }
+    }
+
+    @Test
+    fun rejectsTruncatedIncMapStorageReferenceBytes() {
+        val storageBytes = "940104".hexToByteArray()
+        var storageIndex = 0
+
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByStorageBytes(storageBytes.size, { storageBytes[storageIndex++] })
+        }
     }
 
     @Test

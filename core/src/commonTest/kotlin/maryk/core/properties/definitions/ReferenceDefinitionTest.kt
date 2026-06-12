@@ -72,6 +72,17 @@ internal class ReferenceDefinitionTest {
     }
 
     @Test
+    fun invalidStorageByteLengthShouldThrowException() {
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(6) { ZERO_BYTE }
+        }
+
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(8) { ZERO_BYTE }
+        }
+    }
+
+    @Test
     fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         for (it in refToTest) {

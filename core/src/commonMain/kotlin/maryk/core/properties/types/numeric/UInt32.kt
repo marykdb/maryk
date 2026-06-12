@@ -19,7 +19,10 @@ object UInt32 : UnsignedNumberDescriptor<UInt>(
 ) {
     override fun sum(value1: UInt, value2: UInt) = value1 + value2
     override fun divide(value1: UInt, value2: UInt) = value1 / value2
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte) = initUInt(reader)
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte): UInt {
+        checkStorageByteLength(length)
+        return initUInt(reader)
+    }
     override fun writeStorageBytes(value: UInt, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initUIntByVar(reader)
     override fun calculateTransportByteLength(value: UInt) = value.calculateVarByteLength()

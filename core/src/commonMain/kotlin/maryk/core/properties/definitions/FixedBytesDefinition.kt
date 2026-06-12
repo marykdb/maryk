@@ -12,6 +12,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.values.SimpleObjectValues
+import maryk.lib.exceptions.ParseException
 import kotlin.random.Random
 
 /** Definition for a byte array with fixed length */
@@ -33,7 +34,13 @@ data class FixedBytesDefinition(
 
     override fun createRandom() = Bytes(Random.nextBytes(this.byteSize))
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = Bytes.fromByteReader(byteSize, reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte): Bytes {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for FixedBytes: $length != $byteSize")
+        }
+
+        return Bytes.fromByteReader(byteSize, reader)
+    }
 
     override fun calculateStorageByteLength(value: Bytes) = this.byteSize
 

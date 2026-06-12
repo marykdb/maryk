@@ -6,10 +6,12 @@ import maryk.core.extensions.bytes.ZERO_BYTE
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class ContextualReferenceDefinitionTest {
@@ -36,6 +38,17 @@ class ContextualReferenceDefinitionTest {
         val bc = ByteCollector()
         for (value in refsToTest) {
             checkProtoBufConversion(bc, value, this.def, this.context)
+        }
+    }
+
+    @Test
+    fun invalidTransportByteLengthShouldThrowException() {
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(6, { ZERO_BYTE }, context, null)
+        }
+
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(8, { ZERO_BYTE }, context, null)
         }
     }
 

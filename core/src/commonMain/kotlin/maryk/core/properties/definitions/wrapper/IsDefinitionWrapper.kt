@@ -80,7 +80,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                 } else {
                     value
                 }
-            } catch (_: Throwable) {
+            } catch (_: Exception) {
                 value
             }
 
@@ -96,6 +96,13 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     /** Get a reference to this definition inside [parentRef] */
     fun ref(parentRef: AnyPropertyReference? = null): IsPropertyReference<T, IsPropertyDefinition<T>, *>
 
+    private fun transportIndex(): Int {
+        require(this.index <= Short.MAX_VALUE.toUInt()) {
+            "${this.index} for $name is outside range $(0..Short.MAX_VALUE)"
+        }
+        return this.index.toInt()
+    }
+
     /**
      * Validates [newValue] against [previousValue] on propertyDefinition and if fails creates
      * reference with [parentRefFactory]
@@ -107,7 +114,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
 
     /** Calculates the needed byte size to transport [value] within optional [context] and caches it with [cacher] */
     fun calculateTransportByteLengthWithKey(value: T, cacher: WriteCacheWriter, context: CX? = null) =
-        this.calculateTransportByteLengthWithKey(this.index.toInt(), value, cacher, context)
+        this.calculateTransportByteLengthWithKey(this.transportIndex(), value, cacher, context)
 
     /**
      * Writes [value] to bytes with [writer] for transportation and adds the key with tag and wire type.
@@ -120,7 +127,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         writer: (byte: Byte) -> Unit,
         context: CX? = null
     ) =
-        this.writeTransportBytesWithKey(this.index.toInt(), value, cacheGetter, writer, context)
+        this.writeTransportBytesWithKey(this.transportIndex(), value, cacheGetter, writer, context)
 
     /** Get the property from the [dataObject] and serialize it for transportation */
     fun getPropertyAndSerialize(dataObject: DO, context: CX?): T? {

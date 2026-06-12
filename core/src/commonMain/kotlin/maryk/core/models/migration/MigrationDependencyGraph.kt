@@ -102,11 +102,11 @@ fun orderMigrationModelIds(dataModelsById: Map<UInt, IsRootDataModel>): List<UIn
         .filter { it.value == 0 }
         .map { it.key }
         .sortedWith(comparator)
-        .toMutableList()
+        .toCollection(ArrayDeque())
 
     val orderedIds = mutableListOf<UInt>()
     while (queue.isNotEmpty()) {
-        val nodeId = queue.removeAt(0)
+        val nodeId = queue.removeFirst()
         orderedIds.add(nodeId)
         dependentIdsByModelId[nodeId].orEmpty()
             .sortedWith(comparator)

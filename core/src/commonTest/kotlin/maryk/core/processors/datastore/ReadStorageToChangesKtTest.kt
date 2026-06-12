@@ -10,11 +10,13 @@ import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
+import maryk.lib.exceptions.ParseException
 import maryk.test.models.Option.V0
 import maryk.test.models.Option.V2
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 private val valuesAsStorablesWithVersion = arrayOf(
     "09" to arrayOf(HLC(1234uL) to "hello world", HLC(1235uL) to "hello universe"),
@@ -154,5 +156,49 @@ class ReadStorageToChangesKtTest {
             ),
             values
         )
+    }
+
+    @Test
+    fun rejectsTruncatedSetQualifier() {
+        var done = false
+        assertFailsWith<ParseException> {
+            TestMarykModel.readStorageToChanges(
+                getQualifier = { resultHandler ->
+                    if (done) {
+                        false
+                    } else {
+                        done = true
+                        val qualifier = "4b04".hexToByteArray()
+                        resultHandler({ qualifier[it] }, qualifier.size)
+                        true
+                    }
+                },
+                select = null,
+                creationVersion = null,
+                processValue = { _, _, _ -> }
+            )
+        }
+    }
+
+    @Test
+    fun rejectsTruncatedMapQualifier() {
+        var done = false
+        assertFailsWith<ParseException> {
+            TestMarykModel.readStorageToChanges(
+                getQualifier = { resultHandler ->
+                    if (done) {
+                        false
+                    } else {
+                        done = true
+                        val qualifier = "5403".hexToByteArray()
+                        resultHandler({ qualifier[it] }, qualifier.size)
+                        true
+                    }
+                },
+                select = null,
+                creationVersion = null,
+                processValue = { _, _, _ -> }
+            )
+        }
     }
 }

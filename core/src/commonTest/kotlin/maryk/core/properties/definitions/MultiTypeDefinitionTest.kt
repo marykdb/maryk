@@ -6,6 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
+import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.core.properties.exceptions.AlreadySetException
 import maryk.core.properties.exceptions.InvalidValueException
@@ -15,9 +16,12 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum
@@ -163,6 +167,44 @@ internal class MultiTypeDefinitionTest {
     fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         multisToTest.forEach { checkProtoBufConversion(bc, it, this.def, context = context) }
+    }
+
+    @Test
+    fun rejectsMalformedTransportLength() {
+        val bc = ByteCollector()
+        bc.reserve(2)
+        ProtoBuf.writeKey(T1.index, LENGTH_DELIMITED, bc::write)
+        bc.write(7)
+
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(bc.size, bc::read, context, null)
+        }
+    }
+
+    @Test
+    fun rejectsMultiTypeIndexesOutsideTransportTagRange() {
+        val type = MultiTypeEnum.invoke(
+            Int.MAX_VALUE.toUInt() + 1u,
+            "Huge",
+            StringDefinition()
+        )
+        val definition = MultiTypeDefinition(
+            typeEnum = MultiTypeEnumDefinition("HugeEnum", { listOf(type) })
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            definition.calculateTransportByteLength(TypedValue(type, "value"), WriteCache(), context)
+        }
+    }
+
+    @Test
+    fun fromStringRejectsTrailingContent() {
+        assertFailsWith<Throwable> {
+            def.fromString("""!T1 "#test" {}""", context)
+        }
+        assertFailsWith<Throwable> {
+            def.fromString("""!T1 "#test" trailing""", context)
+        }
     }
 
     @Test

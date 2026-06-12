@@ -2,6 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
@@ -66,11 +67,18 @@ data class GetUpdatesRequest<DM : IsRootDataModel> internal constructor(
     // Aggregations are not allowed on a get changes request
     override val aggregations: Aggregations? = null
 
+    init {
+        if (keys.size.toUInt() > MAX_REQUEST_BATCH_SIZE) {
+            throw RequestException("Get updates key count ${keys.size} exceeds maximum $MAX_REQUEST_BATCH_SIZE")
+        }
+    }
+
     companion object : QueryModel<GetUpdatesRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val keys by list(
             index = 2u,
             getter = GetUpdatesRequest<*>::keys,
+            maxSize = MAX_REQUEST_BATCH_SIZE,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()

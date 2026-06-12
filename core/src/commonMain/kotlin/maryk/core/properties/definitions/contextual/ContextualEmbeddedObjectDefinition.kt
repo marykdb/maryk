@@ -9,7 +9,6 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for an embedded DataObject from a context resolved from [contextualResolver] */
@@ -21,7 +20,7 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     override val wireType = LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?): Any {
-        return this.readJson(JsonReader(string), context)
+        return contextualResolver(context).Serializer.readJson(string, context).toDataObject()
     }
 
     override fun asString(value: Any, context: CX?): String {

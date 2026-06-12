@@ -7,8 +7,10 @@ import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.definitions.string
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -19,6 +21,17 @@ internal class UUIDv7KeyTest {
         keyDefinition = { UUIDv7Key },
     ) {
         val value by string(1u)
+    }
+
+    @Test
+    fun invalidStorageByteLengthShouldThrowException() {
+        assertFailsWith<ParseException> {
+            UUIDv7Key.readStorageBytes(15) { 0 }
+        }
+
+        assertFailsWith<ParseException> {
+            UUIDv7Key.readStorageBytes(17) { 0 }
+        }
     }
 
     @Test

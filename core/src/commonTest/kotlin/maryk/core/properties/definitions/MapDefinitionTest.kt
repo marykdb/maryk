@@ -15,6 +15,7 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -155,6 +156,23 @@ internal class MapDefinitionTest {
             readKey()
             readValue(mutableMap)
             expect(it.value) { mutableMap[it.key] }
+        }
+    }
+
+    @Test
+    fun rejectsMalformedTransportLength() {
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(0, { 0 }, null, null)
+        }
+
+        val bytes = byteArrayOf(
+            0x08, 0x18, // key = 12
+            0x12, 0x07  // value length claims 7 bytes, but entry ends
+        )
+        var index = 0
+
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(bytes.size, { bytes[index++] }, null, null)
         }
     }
 

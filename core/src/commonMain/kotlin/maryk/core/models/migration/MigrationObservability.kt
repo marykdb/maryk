@@ -63,11 +63,26 @@ data class MigrationAuditEvent(
             if (entries["v"] != "1") return null
             val timestampMs = entries["ts"]?.toLongOrNull() ?: return null
             val modelId = entries["model"]?.toUIntOrNull() ?: return null
-            val migrationId = entries["migration"]?.let(Base64Maryk::decode)?.decodeToString() ?: return null
-            val type = entries["type"]?.let(MigrationAuditEventType::valueOf) ?: return null
-            val phase = entries["phase"]?.ifBlank { null }?.let(MigrationPhase::valueOf)
-            val attempt = entries["attempt"]?.ifBlank { null }?.toUIntOrNull()
-            val message = entries["message"]?.ifBlank { null }?.let { Base64Maryk.decode(it).decodeToString() }
+            val migrationId = entries["migration"]?.decodeBase64StringOrNull() ?: return null
+            val type = entries["type"]?.let { enumValueOrNull<MigrationAuditEventType>(it) } ?: return null
+            val phaseEntry = entries["phase"]?.ifBlank { null }
+            val phase = if (phaseEntry == null) {
+                null
+            } else {
+                enumValueOrNull<MigrationPhase>(phaseEntry) ?: return null
+            }
+            val attemptEntry = entries["attempt"]?.ifBlank { null }
+            val attempt = if (attemptEntry == null) {
+                null
+            } else {
+                attemptEntry.toUIntOrNull() ?: return null
+            }
+            val messageEntry = entries["message"]?.ifBlank { null }
+            val message = if (messageEntry == null) {
+                null
+            } else {
+                messageEntry.decodeBase64StringOrNull() ?: return null
+            }
             return MigrationAuditEvent(
                 timestampMs = timestampMs,
                 modelId = modelId,
@@ -78,6 +93,20 @@ data class MigrationAuditEvent(
                 message = message,
             )
         }
+
+        private inline fun <reified T : Enum<T>> enumValueOrNull(name: String): T? =
+            try {
+                enumValueOf<T>(name)
+            } catch (_: IllegalArgumentException) {
+                null
+            }
+
+        private fun String.decodeBase64StringOrNull(): String? =
+            try {
+                Base64Maryk.decode(this).decodeToString()
+            } catch (_: IllegalArgumentException) {
+                null
+            }
     }
 }
 

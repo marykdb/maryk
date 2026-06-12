@@ -4,12 +4,14 @@ import maryk.core.base64.Base64Maryk
 import maryk.lib.extensions.compare.compareTo
 
 /** Value Data Objects which can be used to represent as fixed length bytes */
-open class ValueDataObject(internal val _bytes: ByteArray) : Comparable<ValueDataObject> {
+open class ValueDataObject(bytes: ByteArray) : Comparable<ValueDataObject> {
+    internal val _bytes: ByteArray = bytes.copyOf()
+
     override infix fun compareTo(other: ValueDataObject) = _bytes compareTo other._bytes
 
     fun toBase64(): String = Base64Maryk.encode(this._bytes).trimEnd('=')
 
-    fun toByteArray() = this._bytes
+    fun toByteArray() = this._bytes.copyOf()
 
     final override fun equals(other: Any?): Boolean {
         if (this === other) return true

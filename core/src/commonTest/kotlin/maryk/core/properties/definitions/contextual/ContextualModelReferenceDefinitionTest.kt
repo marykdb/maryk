@@ -8,8 +8,10 @@ import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.EmbeddedMarykObject
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestMarykObject
+import maryk.lib.exceptions.ParseException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class ContextualModelReferenceDefinitionTest {
@@ -56,6 +58,23 @@ class ContextualModelReferenceDefinitionTest {
         for (namedDataModel in modelsToTest) {
             val b = def.asString(DataModelReference(namedDataModel), this.context)
             expect(namedDataModel) { def.fromString(b, this.context).get.invoke() }
+        }
+    }
+
+    @Test
+    fun rejectMalformedKeyLength() {
+        listOf(
+            "TestMarykModel(",
+            "TestMarykModel(abc)",
+            "TestMarykModel(1",
+            "TestMarykModel)",
+            "(1)",
+            "TestMarykModel(0)",
+            "TestMarykModel(-1)",
+        ).forEach { name ->
+            assertFailsWith<ParseException> {
+                def.fromString(name, this.context)
+            }
         }
     }
 }

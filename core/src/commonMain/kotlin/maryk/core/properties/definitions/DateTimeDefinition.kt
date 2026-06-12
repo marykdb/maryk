@@ -54,7 +54,12 @@ data class DateTimeDefinition(
     override val wireType = VAR_INT
     override val byteSize = DateTimeDefinition.byteSize(precision)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = LocalDateTime.fromByteReader(length, reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte): LocalDateTime {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for DateTime: $length != $byteSize")
+        }
+        return LocalDateTime.fromByteReader(length, reader)
+    }
 
     override fun writeStorageBytes(value: LocalDateTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 

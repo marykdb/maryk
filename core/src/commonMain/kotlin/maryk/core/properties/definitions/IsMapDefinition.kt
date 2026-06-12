@@ -20,6 +20,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.protobuf.addProtoByteLength
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonToken.EndObject
@@ -140,19 +141,23 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
     ): Int {
         var totalByteLength = 0
         for ((key, item) in value) {
-            totalByteLength += ProtoBuf.calculateKeyLength(index.toUInt())
+            totalByteLength = totalByteLength.addProtoByteLength(ProtoBuf.calculateKeyLength(index.toUInt()))
 
             // Cache length for length delimiter
             val container = ByteLengthContainer()
             cacher.addLengthToCache(container)
 
             var fieldLength = 0
-            fieldLength += keyDefinition.calculateTransportByteLengthWithKey(1, key, cacher, context)
-            fieldLength += valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
+            fieldLength = fieldLength.addProtoByteLength(
+                keyDefinition.calculateTransportByteLengthWithKey(1, key, cacher, context)
+            )
+            fieldLength = fieldLength.addProtoByteLength(
+                valueDefinition.calculateTransportByteLengthWithKey(2, item, cacher, context)
+            )
             container.length = fieldLength // set length for value
-            fieldLength += fieldLength.calculateVarByteLength() // Add field length for length delimiter
+            fieldLength = fieldLength.addProtoByteLength(fieldLength.calculateVarByteLength()) // Add field length for length delimiter
 
-            totalByteLength += fieldLength
+            totalByteLength = totalByteLength.addProtoByteLength(fieldLength)
         }
         return totalByteLength
     }
@@ -180,15 +185,26 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
     ): Map<K, V> {
         var lengthToGo = length
         val countingReader = {
+            if (lengthToGo <= 0) {
+                throw ParseException("Map entry exceeds declared length")
+            }
             lengthToGo--
             reader()
+        }
+
+        if (length <= 0) {
+            throw ParseException("Map entry should not be empty")
         }
 
         val map = earlierValue as MutableMap<K, V>? ?: mutableMapOf()
 
         val keyOfMapKey = ProtoBuf.readKey(countingReader)
+        val keyLength = ProtoBuf.getLength(keyOfMapKey.wireType, countingReader)
+        if (keyLength > lengthToGo) {
+            throw ParseException("Map key exceeds declared length")
+        }
         val key = keyDefinition.readTransportBytes(
-            ProtoBuf.getLength(keyOfMapKey.wireType, countingReader),
+            keyLength,
             countingReader,
             context
         )
@@ -196,13 +212,21 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         // Read values until length is exhausted
         do {
             val keyOfMapValue = ProtoBuf.readKey(countingReader)
+            val valueLength = ProtoBuf.getLength(keyOfMapValue.wireType, countingReader)
+            if (valueLength > lengthToGo) {
+                throw ParseException("Map value exceeds declared length")
+            }
             map[key] = valueDefinition.readTransportBytes(
-                ProtoBuf.getLength(keyOfMapValue.wireType, countingReader),
+                valueLength,
                 countingReader,
                 context,
                 map[key]
             )
         } while (lengthToGo > 0)
+
+        if (lengthToGo != 0) {
+            throw ParseException("Map entry did not match declared length")
+        }
 
         return map
     }

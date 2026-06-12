@@ -17,6 +17,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.RequestContext
 import maryk.core.exceptions.TypeException
+import maryk.core.exceptions.RequestException
 import maryk.core.values.IsValueItems
 import maryk.core.values.ObjectValues
 
@@ -31,6 +32,12 @@ data class Requests internal constructor(
 
     constructor(requests: List<IsTransportableRequest<*>>) : this(requests, null)
 
+    init {
+        if (requests.size.toUInt() > MAX_REQUEST_BATCH_SIZE) {
+            throw RequestException("Request count ${requests.size} exceeds maximum $MAX_REQUEST_BATCH_SIZE")
+        }
+    }
+
     /**
      * From the context of JSON/YAML this object only contains a single property.
      * This is however not true for Protobuf. There this object contains a list of injectables.
@@ -44,6 +51,7 @@ data class Requests internal constructor(
         val requests by list(
             index = 1u,
             getter = Requests::requests,
+            maxSize = MAX_REQUEST_BATCH_SIZE,
             valueDefinition = InternalMultiTypeDefinition(
                 typeEnum = RequestType,
                 definitionMap = mapOfRequestTypeEmbeddedObjectDefinitions,

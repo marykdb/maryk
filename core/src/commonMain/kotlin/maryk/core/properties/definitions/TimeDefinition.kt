@@ -48,8 +48,12 @@ data class TimeDefinition(
     override val wireType = VAR_INT
     override val byteSize = TimeDefinition.byteSize(precision)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) =
-        LocalTime.fromByteReader(length, reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte): LocalTime {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for Time: $length != $byteSize")
+        }
+        return LocalTime.fromByteReader(length, reader)
+    }
 
     override fun writeStorageBytes(value: LocalTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
 

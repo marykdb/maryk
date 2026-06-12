@@ -116,13 +116,13 @@ private fun <DM : IsRootDataModel> DM.createScanRangeFromParts(
                     oneOfBytes.forEach { oneOfByte ->
                         if (startShouldContinue) {
                             for (copiesIndex in (0 until startSizeBefore)) {
-                                start[copiesIndex + oneOfIndex].add(oneOfByte)
+                                start[oneOfIndex * startSizeBefore + copiesIndex].add(oneOfByte)
                             }
                         }
 
                         if (endShouldContinue) {
                             for (copiesIndex in (0 until endSizeBefore)) {
-                                end[copiesIndex + oneOfIndex].add(oneOfByte)
+                                end[oneOfIndex * endSizeBefore + copiesIndex].add(oneOfByte)
                             }
                         }
                     }

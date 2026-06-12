@@ -52,6 +52,17 @@ internal class FixedBytesDefinitionTest {
     }
 
     @Test
+    fun invalidStorageByteLengthShouldThrowException() {
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(4) { 0 }
+        }
+
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(6) { 0 }
+        }
+    }
+
+    @Test
     fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         for (it in fixedBytesToTest) {

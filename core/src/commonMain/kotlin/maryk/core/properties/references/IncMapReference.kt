@@ -125,9 +125,22 @@ open class IncMapReference<K : Comparable<K>, V : Any, CX : IsPropertyContext> i
     ): AnyPropertyReference {
         return when (referenceType) {
             MAP -> {
-                val mapKeyLength = initIntByVar(reader)
+                val mapKeyLength = initIntByVar {
+                    if (isDoneReading()) {
+                        throw ParseException("Missing map key length in storage reference")
+                    }
+                    reader()
+                }
+                if (mapKeyLength < 0) {
+                    throw ParseException("Negative map key length in storage reference")
+                }
                 MapValueReference(
-                    this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength, reader),
+                    this.propertyDefinition.keyDefinition.readStorageBytes(mapKeyLength) {
+                        if (isDoneReading()) {
+                            throw ParseException("Map key length exceeds storage reference")
+                        }
+                        reader()
+                    },
                     this.propertyDefinition.definition,
                     this
                 )

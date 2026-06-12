@@ -2,6 +2,7 @@ package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
 import maryk.core.exceptions.ContextNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
@@ -80,6 +81,18 @@ data class ScanUpdatesRequest<DM : IsRootDataModel> internal constructor(
     // Aggregations are not allowed on a scan changes request
     override val aggregations: Aggregations? = null
 
+    init {
+        if (limit == 0u) {
+            throw RequestException("Scan updates limit should be at least 1")
+        }
+        if (limit > MAX_SCAN_LIMIT) {
+            throw RequestException("Scan updates limit $limit exceeds maximum $MAX_SCAN_LIMIT")
+        }
+        if (orderedKeys != null && orderedKeys.size.toUInt() > MAX_SCAN_LIMIT) {
+            throw RequestException("Scan updates ordered key count ${orderedKeys.size} exceeds maximum $MAX_SCAN_LIMIT")
+        }
+    }
+
     companion object : QueryModel<ScanUpdatesRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val startKey by addStartKey(ScanUpdatesRequest<*>::startKey)
@@ -88,12 +101,13 @@ data class ScanUpdatesRequest<DM : IsRootDataModel> internal constructor(
         val toVersion by number(5u, ScanUpdatesRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted  by boolean(6u, ScanUpdatesRequest<*>::filterSoftDeleted, default = true)
         val order by addOrder(ScanUpdatesRequest<*>::order)
-        val limit by number(9u, ScanUpdatesRequest<*>::limit, type = UInt32, default = 100u)
+        val limit by number(9u, ScanUpdatesRequest<*>::limit, type = UInt32, minValue = 1u, maxValue = MAX_SCAN_LIMIT, default = 100u)
         val includeStart by boolean(10u, ScanUpdatesRequest<*>::includeStart, default = true)
         val fromVersion by number(11u, ScanUpdatesRequest<*>::fromVersion, UInt64)
         val maxVersions by number(12u, ScanUpdatesRequest<*>::maxVersions, UInt32, maxValue = 1u)
         val orderedKeys by list(
             index = 13u, getter = ScanUpdatesRequest<*>::orderedKeys,
+            maxSize = MAX_SCAN_LIMIT,
             valueDefinition = ContextualReferenceDefinition<RequestContext>(
                 contextualResolver = {
                     it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()

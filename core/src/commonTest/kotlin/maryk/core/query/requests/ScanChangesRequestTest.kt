@@ -27,6 +27,20 @@ class ScanChangesRequestTest {
     ))
 
     @Test
+    fun rejectLimitAboveMaximum() {
+        assertFailsWith<RequestException> {
+            TestMarykModel.scanChanges(limit = MAX_SCAN_LIMIT + 1u)
+        }
+    }
+
+    @Test
+    fun rejectZeroLimit() {
+        assertFailsWith<RequestException> {
+            TestMarykModel.scanChanges(limit = 0u)
+        }
+    }
+
+    @Test
     fun checkOrders() {
         // Does not fail
         TestMarykModel.scanChanges(

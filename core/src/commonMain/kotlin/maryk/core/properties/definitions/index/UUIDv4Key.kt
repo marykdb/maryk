@@ -19,6 +19,7 @@ import maryk.core.values.IsValuesGetter
 import maryk.core.values.ObjectValues
 import maryk.core.values.SimpleObjectValues
 import maryk.json.IsJsonLikeReader
+import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -31,10 +32,16 @@ object UUIDv4Key : IsFixedBytesPropertyReference<Uuid> {
 
     override fun getValue(values: IsValuesGetter) = Uuid.generateV4()
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = Uuid.fromLongs(
-        initLong(reader),
-        initLong(reader)
-    )
+    override fun readStorageBytes(length: Int, reader: () -> Byte): Uuid {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for UUIDv4Key: $length != $byteSize")
+        }
+
+        return Uuid.fromLongs(
+            initLong(reader),
+            initLong(reader)
+        )
+    }
 
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) = false
     override fun toQualifierStorageByteArray() = null

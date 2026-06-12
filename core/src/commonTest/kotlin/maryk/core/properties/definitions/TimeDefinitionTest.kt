@@ -106,6 +106,16 @@ internal class TimeDefinitionTest {
     }
 
     @Test
+    fun rejectsStorageByteLengthOutsideDefinitionPrecision() {
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(defMilli.byteSize) { 0 }
+        }
+        assertFailsWith<ParseException> {
+            defMilli.readStorageBytes(defNano.byteSize) { 0 }
+        }
+    }
+
+    @Test
     fun convertSecondsPrecisionValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()

@@ -29,7 +29,6 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for embedded object to [dataModel] of type [DM] */
@@ -59,7 +58,7 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
     }
 
     override fun fromString(string: String, context: IsPropertyContext?): Values<DM> {
-        return this.readJson(JsonReader(string), context)
+        return this.typedDataModel.Serializer.readJson(string, context)
     }
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel[name]

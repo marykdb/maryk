@@ -4,12 +4,14 @@ import kotlinx.datetime.LocalDateTime
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.values.div
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class ListChangeTest {
@@ -106,5 +108,22 @@ class ListChangeTest {
 
         assertEquals(listOf(44, 9999, 55, 88), deepChanged { embeddedValues } / { marykModel } / { list })
         assertEquals(listOf(33, 44, 55), original { embeddedValues } / { marykModel } / { list })
+    }
+
+    @Test
+    fun oversizedAddIndexDoesNotWrap() {
+        val original = TestMarykModel.create {
+            list with listOf(3, 4, 5)
+        }
+
+        assertFailsWith<RequestException> {
+            original.change(
+                ListChange(
+                    TestMarykModel { list::ref }.change(
+                        addValuesAtIndex = mapOf(UInt.MAX_VALUE to 999)
+                    )
+                )
+            )
+        }
     }
 }

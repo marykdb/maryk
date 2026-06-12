@@ -1,6 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
@@ -54,13 +55,22 @@ data class ScanUpdateHistoryRequest<DM : IsRootDataModel> internal constructor(
     override val responseModel = UpdatesResponse
     override val aggregations: Aggregations? = null
 
+    init {
+        if (limit == 0u) {
+            throw RequestException("Scan update history limit should be at least 1")
+        }
+        if (limit > MAX_SCAN_LIMIT) {
+            throw RequestException("Scan update history limit $limit exceeds maximum $MAX_SCAN_LIMIT")
+        }
+    }
+
     companion object : QueryModel<ScanUpdateHistoryRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val select by embedObject(3u, ScanUpdateHistoryRequest<*>::select, dataModel = { RootPropRefGraph })
         val where by addFilter(ScanUpdateHistoryRequest<*>::where)
         val toVersion by number(5u, ScanUpdateHistoryRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted by boolean(6u, ScanUpdateHistoryRequest<*>::filterSoftDeleted, default = true)
-        val limit by number(9u, ScanUpdateHistoryRequest<*>::limit, type = UInt32, default = 100u)
+        val limit by number(9u, ScanUpdateHistoryRequest<*>::limit, type = UInt32, minValue = 1u, maxValue = MAX_SCAN_LIMIT, default = 100u)
         val fromVersion by number(11u, ScanUpdateHistoryRequest<*>::fromVersion, UInt64)
 
         override fun invoke(values: ObjectValues<ScanUpdateHistoryRequest<*>, Companion>) =

@@ -60,13 +60,19 @@ class ReferenceDefinition<DM : IsRootDataModel>(
 
     override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = dataModel.key(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte): Key<DM> {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for Reference: $length != $byteSize")
+        }
+
+        return dataModel.key(reader)
+    }
 
     override fun calculateTransportByteLength(value: Key<DM>) = this.byteSize
 
     override fun fromString(string: String) = try {
         dataModel.key(string)
-    } catch (e: Throwable) {
+    } catch (e: Exception) {
         throw ParseException(string, e)
     }
 

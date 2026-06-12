@@ -43,6 +43,17 @@ internal class GeoPointDefinitionTest {
     }
 
     @Test
+    fun invalidStorageByteLengthShouldThrowException() {
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(7) { 0 }
+        }
+
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(9) { 0 }
+        }
+    }
+
+    @Test
     fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()

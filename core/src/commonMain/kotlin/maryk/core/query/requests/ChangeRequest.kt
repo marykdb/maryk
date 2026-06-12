@@ -1,5 +1,6 @@
 package maryk.core.query.requests
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
@@ -23,11 +24,18 @@ data class ChangeRequest<DM : IsRootDataModel> internal constructor(
     override val requestType = Change
     override val responseModel = ChangeResponse
 
+    init {
+        if (objects.size.toUInt() > MAX_REQUEST_BATCH_SIZE) {
+            throw RequestException("Change object count ${objects.size} exceeds maximum $MAX_REQUEST_BATCH_SIZE")
+        }
+    }
+
     companion object : QueryModel<ChangeRequest<*>, Companion>() {
         val to by addDataModel { it.dataModel }
         val objects by list(
             index = 2u,
             getter = ChangeRequest<*>::objects,
+            maxSize = MAX_REQUEST_BATCH_SIZE,
             valueDefinition = EmbeddedObjectDefinition(
                 dataModel = { DataObjectChange }
             )

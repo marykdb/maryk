@@ -3,18 +3,34 @@ package maryk.core.query.requests
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.scanUpdatesMaxRequest
 import maryk.test.requests.scanUpdatesRequest
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class ScanUpdatesRequestTest {
     private val context = RequestContext(mapOf(
         SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))
+
+    @Test
+    fun rejectLimitAboveMaximum() {
+        assertFailsWith<RequestException> {
+            SimpleMarykModel.scanUpdates(limit = MAX_SCAN_LIMIT + 1u)
+        }
+    }
+
+    @Test
+    fun rejectZeroLimit() {
+        assertFailsWith<RequestException> {
+            SimpleMarykModel.scanUpdates(limit = 0u)
+        }
+    }
 
     @Test
     fun convertToProtoBufAndBack() {

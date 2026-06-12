@@ -28,6 +28,9 @@ import maryk.json.JsonToken.Value
 import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 
+const val MAX_SCAN_LIMIT = 100_000u
+const val MAX_REQUEST_BATCH_SIZE = 100_000u
+
 /** Defines a Scan from key request. */
 interface IsScanRequest<DM : IsRootDataModel, RP : IsDataResponse<DM>> : IsFlowRequest<DM, RP> {
     val startKey: Key<DM>?

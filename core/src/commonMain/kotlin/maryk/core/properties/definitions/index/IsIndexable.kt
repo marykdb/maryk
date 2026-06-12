@@ -3,10 +3,11 @@ package maryk.core.properties.definitions.index
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
-import maryk.core.properties.exceptions.RequiredException
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.types.Bytes
 import maryk.core.values.IsValuesGetter
 import maryk.lib.bytes.combineToByteArray
+import maryk.lib.exceptions.ParseException
 
 /**
  * Defines this item is usable to describe an Index Key
@@ -32,7 +33,9 @@ interface IsIndexable {
                 key ?: ByteArray(0)
             )
         }
-    } catch (_: RequiredException) {
+    } catch (_: ValidationException) {
+        emptyList()
+    } catch (_: ParseException) {
         emptyList()
     }
 
@@ -41,7 +44,9 @@ interface IsIndexable {
         val bytes = mutableListOf<Byte>()
         this.writeStorageBytes(values) { bytes += it }
         listOf(bytes.toByteArray())
-    } catch (_: RequiredException) {
+    } catch (_: ValidationException) {
+        emptyList()
+    } catch (_: ParseException) {
         emptyList()
     }
 

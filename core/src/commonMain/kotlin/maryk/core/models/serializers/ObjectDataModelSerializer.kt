@@ -7,6 +7,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.protobuf.addProtoByteLength
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -43,7 +44,9 @@ open class ObjectDataModelSerializer<DO: Any, DM: IsObjectDataModel<DO>, CXI:IsP
         for (definition in this.model) {
             val value = getValueWithDefinition(definition, dataObject, context)
 
-            totalByteLength += protoBufLengthToAddForField(value, definition, cacher, context)
+            totalByteLength = totalByteLength.addProtoByteLength(
+                protoBufLengthToAddForField(value, definition, cacher, context)
+            )
         }
 
         if (context is RequestContext && this.model.isNotEmpty()) {

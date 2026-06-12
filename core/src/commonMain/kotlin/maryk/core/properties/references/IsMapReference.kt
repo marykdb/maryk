@@ -70,8 +70,13 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
                 if (name.length == 1) {
                     throw ParseException("Map add index reference requires an index")
                 }
+                val addIndex = name.substring(1).toIntOrNull()
+                    ?: throw ParseException("Map add index reference has to be an integer: $name")
+                if (addIndex < 0) {
+                    throw ParseException("Map add index reference cannot be negative: $name")
+                }
                 IncMapAddIndexReference(
-                    name.substring(1).toInt(),
+                    addIndex,
                     propertyDefinition.definition,
                     this
                 )
@@ -128,9 +133,22 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
     ): AnyPropertyReference {
         return when (referenceType) {
             MAP -> {
-                val mapKeyLength = initIntByVar(reader)
+                val mapKeyLength = initIntByVar {
+                    if (isDoneReading()) {
+                        throw ParseException("Missing map key length in storage reference")
+                    }
+                    reader()
+                }
+                if (mapKeyLength < 0) {
+                    throw ParseException("Negative map key length in storage reference")
+                }
                 MapValueReference(
-                    this.propertyDefinition.definition.keyDefinition.readStorageBytes(mapKeyLength, reader),
+                    this.propertyDefinition.definition.keyDefinition.readStorageBytes(mapKeyLength) {
+                        if (isDoneReading()) {
+                            throw ParseException("Map key length exceeds storage reference")
+                        }
+                        reader()
+                    },
                     this.propertyDefinition.definition,
                     this
                 )

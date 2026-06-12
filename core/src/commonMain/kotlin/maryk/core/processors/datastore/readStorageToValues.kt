@@ -3,7 +3,6 @@ package maryk.core.processors.datastore
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsRootDataModel
@@ -41,6 +40,7 @@ import maryk.core.properties.references.ReferenceType.LIST
 import maryk.core.properties.references.ReferenceType.MAP
 import maryk.core.properties.references.ReferenceType.SET
 import maryk.core.properties.references.ReferenceType.TYPE
+import maryk.core.properties.references.toIntOrNull
 import maryk.core.properties.references.ReferenceType.VALUE
 import maryk.core.properties.references.TypedValueReference
 import maryk.core.properties.references.referenceStorageTypeOf
@@ -232,7 +232,11 @@ private fun readQualifierOfType(
                 if (listSize != null) {
                     // If not null we can create an empty list of listSize
                     val list = ArrayList<Any>(listSize)
-                    val listValueAdder: AddToValues = { i, value -> list.add(i.toInt(), value) }
+                    val listValueAdder: AddToValues = { i, value ->
+                        val listIndex = i.toIntOrNull()
+                            ?: throw StorageException("List index $i is outside supported range")
+                        list.add(listIndex, value)
+                    }
 
                     // Add value processor to cache starting after list item
                     addToCache(currentOffset - 1) { qr, l ->
@@ -294,7 +298,13 @@ private fun readQualifierOfType(
                 // Read set contents. It is always a simple value for set since it is in the qualifier.
                 val valueDefinition =
                     ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-                val setItemLength = initIntByVar { qualifierReader(offset++) }
+                val setItemLength = readQualifierLength(
+                    qualifierReader,
+                    qualifierLength,
+                    { offset },
+                    { offset = it },
+                    "set item"
+                )
                 val key = valueDefinition.readStorageBytes(setItemLength) { qualifierReader(offset++) }
 
                 val setItemReference = setDefinition.itemRef(key, setReference)
@@ -339,7 +349,13 @@ private fun readQualifierOfType(
                 val mapReference = reference as CanContainMapItemReference<*, *, *>
                 val keyDefinition = mapDefinition.keyDefinition
 
-                val keySize = initIntByVar { qualifierReader(offset++) }
+                val keySize = readQualifierLength(
+                    qualifierReader,
+                    qualifierLength,
+                    { offset },
+                    { offset = it },
+                    "map key"
+                )
                 val key = keyDefinition.readStorageBytes(keySize) { qualifierReader(offset++) }
 
                 // Create map Item adder

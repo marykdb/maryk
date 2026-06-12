@@ -16,7 +16,10 @@ object Float64 : NumberDescriptor<Double>(
 ) {
     override fun sum(value1: Double, value2: Double) = value1 + value2
     override fun divide(value1: Double, value2: Double) = value1 / value2
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte): Double = initDouble(reader)
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte): Double {
+        checkStorageByteLength(length)
+        return initDouble(reader)
+    }
     override fun writeStorageBytes(value: Double, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initDoubleFromTransport(reader)
     override fun calculateTransportByteLength(value: Double) = this.size

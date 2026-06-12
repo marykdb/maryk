@@ -10,6 +10,7 @@ import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.MapValueReference
 import maryk.core.properties.references.SetItemReference
 import maryk.core.properties.references.TypedValueReference
+import maryk.core.properties.references.toListIndex
 import maryk.core.properties.types.MutableTypedValue
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.MutableValueItems
@@ -28,17 +29,18 @@ internal fun deepValueChanger(originalValue: Any?, newValue: Any?, reference: An
         )
         is MutableList<*> -> when (reference) {
             is ListItemReference<*, *> -> {
+                val listIndex = reference.index.toListIndex()
                 @Suppress("UNCHECKED_CAST")
                 val changedValue = valueChanger(
-                    (originalValue as List<Any>).getOrNull(reference.index.toInt()),
-                    newValue[reference.index.toInt()]
+                    (originalValue as List<Any>).getOrNull(listIndex),
+                    newValue[listIndex]
                 )
 
                 @Suppress("UNCHECKED_CAST")
                 when(changedValue) {
-                    Unit -> newValue.removeAt(reference.index.toInt())
+                    Unit -> newValue.removeAt(listIndex)
                     null -> {} // Do nothing
-                    else -> (newValue as MutableList<Any>)[reference.index.toInt()] = changedValue
+                    else -> (newValue as MutableList<Any>)[listIndex] = changedValue
                 }
             }
             is ListAnyItemReference<*, *> -> {

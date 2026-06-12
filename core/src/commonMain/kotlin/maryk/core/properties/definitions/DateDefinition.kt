@@ -44,7 +44,12 @@ data class DateDefinition(
     override val wireType = VAR_INT
     override val byteSize = 4
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte): LocalDate = localDateFromByteReader(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte): LocalDate {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for Date: $length != $byteSize")
+        }
+        return localDateFromByteReader(reader)
+    }
 
     override fun calculateStorageByteLength(value: LocalDate) = this.byteSize
 

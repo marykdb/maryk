@@ -112,6 +112,19 @@ internal class UIntKtTest {
     }
 
     @Test
+    fun decodeVarUIntReturnsNullOnTruncatedOrMalformedInput() {
+        expect(null) { byteArrayOf(-128).decodeVarUInt() }
+        expect(null) { byteArrayOf(-1, -1, -1, -1, 16).decodeVarUInt() }
+    }
+
+    @Test
+    fun initUIntByVarDoesNotWrapFatalErrors() {
+        assertFailsWith<Error> {
+            initUIntByVar { throw Error("fatal") }
+        }
+    }
+
+    @Test
     fun testWrongVarUIntWithExtraInfoTooLong() {
         val bytes = byteArrayOf(-128, -128, -128, -128, -128, 1)
         var index = 0

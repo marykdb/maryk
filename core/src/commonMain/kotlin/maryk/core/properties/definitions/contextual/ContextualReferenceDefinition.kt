@@ -59,6 +59,12 @@ class ContextualReferenceDefinition<in CX : IsPropertyContext>(
         reader: () -> Byte,
         context: CX?,
         earlierValue: Key<*>?
-    ) =
-        contextualResolver(context).key(reader)
+    ): Key<*> {
+        val dataModel = contextualResolver(context)
+        if (length != dataModel.Meta.keyByteSize) {
+            throw ParseException("Invalid transport byte length for Reference: $length != ${dataModel.Meta.keyByteSize}")
+        }
+
+        return dataModel.key(reader)
+    }
 }

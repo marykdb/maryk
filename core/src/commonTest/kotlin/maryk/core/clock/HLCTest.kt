@@ -1,7 +1,9 @@
 package maryk.core.clock
 
+import maryk.lib.exceptions.ParseException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class HLCTest {
@@ -30,6 +32,34 @@ class HLCTest {
         assertEquals(12945381655763uL, newHCL.timestamp)
 
         assertEquals(1235u, newHCL.toLogicalTime())
+    }
+
+    @Test
+    fun incrementFailsAtTimestampMaximum() {
+        assertFailsWith<IllegalStateException> {
+            HLC(ULong.MAX_VALUE).increment()
+        }
+    }
+
+    @Test
+    fun structuredConstructorRejectsOutOfRangeParts() {
+        assertFailsWith<IllegalArgumentException> {
+            HLC(0x1_0000_0000_0000uL, 0u)
+        }
+
+        assertFailsWith<IllegalArgumentException> {
+            HLC(0uL, 0x10_0000u)
+        }
+    }
+
+    @Test
+    fun rejectsInvalidStorageByteLength() {
+        assertFailsWith<ParseException> {
+            HLC.readStorageBytes(7) { 0 }
+        }
+        assertFailsWith<ParseException> {
+            HLC.readStorageBytes(9) { 0 }
+        }
     }
 
     @Test

@@ -58,7 +58,10 @@ interface IsValueItemsImpl : IsValueItems {
 
 internal fun List<ValueItem>.searchItemByIndex(index: UInt) =
     // Index can never be at a higher spot in list than index itself
-    binarySearch(toIndex = minOf(index.toInt(), size)) { it.index compareTo index }
+    binarySearch(toIndex = minOf(index.toIntOrListSize(size), size)) { it.index compareTo index }
+
+private fun UInt.toIntOrListSize(size: Int): Int =
+    if (this > Int.MAX_VALUE.toUInt()) size else toInt()
 
 val EmptyValueItems: IsValueItems = MutableValueItems()
 @Suppress("FunctionName")

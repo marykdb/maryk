@@ -1,13 +1,17 @@
 package maryk.core.models
 
 import maryk.core.protobuf.WriteCache
+import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykModel
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 private val testValues = SimpleMarykModel.create {
@@ -128,6 +132,27 @@ internal class SimpleDataModelTest {
     }
 
     @Test
+    fun rejectsMalformedProtoBufFieldLength() {
+        val knownField = ByteCollector()
+        knownField.reserve(2)
+        ProtoBuf.writeKey(1u, LENGTH_DELIMITED, knownField::write)
+        knownField.write(7)
+
+        assertFailsWith<ParseException> {
+            SimpleMarykModel.Serializer.readProtoBuf(knownField.size, knownField::read)
+        }
+
+        val unknownField = ByteCollector()
+        unknownField.reserve(3)
+        ProtoBuf.writeKey(99u, LENGTH_DELIMITED, unknownField::write)
+        unknownField.write(7)
+
+        assertFailsWith<ParseException> {
+            SimpleMarykModel.Serializer.readProtoBuf(unknownField.size, unknownField::read)
+        }
+    }
+
+    @Test
     fun convertMapToJSONAndBackToMap() {
         var output = ""
         val writer = { string: String -> output += string }
@@ -143,6 +168,23 @@ internal class SimpleDataModelTest {
             expect(testValues) { SimpleMarykModel.Serializer.readJson(reader = reader()) }
 
             output = ""
+        }
+    }
+
+    @Test
+    fun readJsonStringRejectsTrailingContent() {
+        assertFailsWith<Throwable> {
+            SimpleMarykModel.Serializer.readJson("""{"value":"haas"}{}""")
+        }
+        assertFailsWith<Throwable> {
+            SimpleMarykModel.Serializer.readJson("""{"value":"haas"} trailing""")
+        }
+    }
+
+    @Test
+    fun readJsonStringAllowsTrailingWhitespace() {
+        expect(testValues) {
+            SimpleMarykModel.Serializer.readJson("{\"value\":\"haas\"} \n")
         }
     }
 }

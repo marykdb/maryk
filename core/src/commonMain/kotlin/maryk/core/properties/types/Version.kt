@@ -79,7 +79,7 @@ data class Version(
                                 items += ValueItem(Version.minor.index, realMinor)
                                 val realPatch = if (patch.isNotBlank()) patch.toUShort() else 0.toUShort()
                                 items += ValueItem(Version.patch.index, realPatch)
-                            } catch (e: Throwable) {
+                            } catch (e: Exception) {
                                 throw ParseException("Invalid version: $value", e)
                             }
                         }

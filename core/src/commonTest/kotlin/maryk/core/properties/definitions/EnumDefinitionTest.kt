@@ -10,6 +10,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.query.DefinitionsContext
 import maryk.core.yaml.MarykYamlReader
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykEnumEmbedded.E2
@@ -20,6 +21,7 @@ import maryk.test.models.Option.V2
 import maryk.test.models.Option.V3
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
@@ -55,6 +57,17 @@ internal class EnumDefinitionTest {
             def.writeStorageBytes(enum, bc::write)
             expect(enum) { def.readStorageBytes(bc.size, bc::read) }
             bc.reset()
+        }
+    }
+
+    @Test
+    fun invalidStorageByteLengthShouldThrowException() {
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(1) { 0 }
+        }
+
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(3) { 0 }
         }
     }
 
@@ -107,6 +120,23 @@ internal class EnumDefinitionTest {
     fun invalidStringValueShouldReturnUnknown() {
         expect(UnknownOption(0u, "wrong")) {
             def.fromString("wrong")
+        }
+    }
+
+    @Test
+    fun malformedIndexedStringValuesShouldBeRejected() {
+        listOf(
+            "V1()",
+            "V1(abc)",
+            "V1(-1)",
+            "V1(1)(2)",
+            "V1(1)extra",
+            "V1)",
+            "(1)",
+        ).forEach { value ->
+            assertFailsWith<ParseException> {
+                def.fromString(value)
+            }
         }
     }
 

@@ -19,7 +19,10 @@ object SInt16 : NumberDescriptor<Short>(
 ) {
     override fun sum(value1: Short, value2: Short) = (value1 + value2).toShort()
     override fun divide(value1: Short, value2: Short) = (value1 / value2).toShort()
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte): Short = initShort(reader)
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte): Short {
+        checkStorageByteLength(length)
+        return initShort(reader)
+    }
     override fun writeStorageBytes(value: Short, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initShortByVar(reader).decodeZigZag()
     override fun calculateTransportByteLength(value: Short) = value.encodeZigZag().calculateVarByteLength()

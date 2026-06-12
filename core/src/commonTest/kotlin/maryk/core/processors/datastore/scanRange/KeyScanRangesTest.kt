@@ -323,6 +323,35 @@ class KeyScanRangesTest {
     }
 
     @Test
+    fun convertMultipleValueInFiltersToScanRange() {
+        val timestamps = setOf(
+            LocalDateTime(2018, 12, 8, 12, 1, 1, 1000000),
+            LocalDateTime(2018, 12, 8, 12, 2, 2, 2000000)
+        )
+        val severities = setOf(DEBUG, ERROR)
+        val filter = And(
+            ValueIn(Log { timestamp::ref } with timestamps),
+            ValueIn(Log { severity::ref } with severities)
+        )
+
+        val scanRange = Log.createScanRange(filter, null)
+
+        assertEquals(4, scanRange.ranges.size)
+
+        for (timestamp in timestamps) {
+            for (severity in severities) {
+                val key = Log.key(Log("message", severity, timestamp))
+                assertTrue(scanRange.matchesPartials(key.bytes))
+                assertTrue(
+                    scanRange.ranges.any { range ->
+                        !range.keyBeforeStart(key.bytes) && !range.keyOutOfRange(key.bytes)
+                    }
+                )
+            }
+        }
+    }
+
+    @Test
     fun convertEmptyValueInFilterToScanRange() {
         val filter = ValueIn(
             Log { timestamp::ref } with emptySet<LocalDateTime>()

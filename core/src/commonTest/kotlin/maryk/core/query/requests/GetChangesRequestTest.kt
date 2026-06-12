@@ -3,18 +3,30 @@ package maryk.core.query.requests
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.exceptions.RequestException
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.getChangesMaxRequest
 import maryk.test.requests.getChangesRequest
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class GetChangesRequestTest {
     private val context = RequestContext(mapOf(
         SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))
+
+    @Test
+    fun rejectTooManyKeys() {
+        assertFailsWith<RequestException> {
+            GetChangesRequest(
+                dataModel = SimpleMarykModel,
+                keys = List((MAX_REQUEST_BATCH_SIZE + 1u).toInt()) { getChangesRequest.keys.first() }
+            )
+        }
+    }
 
     @Test
     fun convertToProtoBufAndBack() {

@@ -15,7 +15,6 @@ import maryk.core.values.Values
 import maryk.core.values.ValuesImpl
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for an embedded Values from a context resolved from [contextualResolver] */
@@ -30,7 +29,7 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     override val wireType = LENGTH_DELIMITED
 
     override fun fromString(string: String, context: CX?): ValuesImpl {
-        return this.readJson(JsonReader(string), context)
+        return contextualResolver(context).Serializer.readJson(string, context)
     }
 
     override fun asString(value: ValuesImpl, context: CX?): String {
@@ -48,7 +47,7 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
         contextualResolver(context).Serializer.readJson(reader, context)
 
     override fun calculateTransportByteLength(value: ValuesImpl, cacher: WriteCacheWriter, context: CX?) =
-        contextualResolver(context).Serializer.calculateProtoBufLength(value, cacher, null)
+        contextualResolver(context).Serializer.calculateProtoBufLength(value, cacher, context)
 
     override fun writeTransportBytes(
         value: ValuesImpl,

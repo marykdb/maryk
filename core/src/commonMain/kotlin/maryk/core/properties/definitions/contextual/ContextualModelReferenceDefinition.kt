@@ -84,14 +84,28 @@ data class ContextualModelReferenceDefinition<DM : IsDataModel, in CX : IsProper
         resolveContext(contextTransformer(context), initString(length, reader))
 
     private fun resolveContext(context: CXI?, name: String): IsDataModelReference<DM> {
-        // read and remove keyLength from name
-        val value = name.split("(")
-        val keyLength = if (value.size > 1) {
-            value[1].removeSuffix(")").toInt()
-        } else {
+        val openIndex = name.indexOf('(')
+        val keyLength = if (openIndex == -1) {
+            if (')' in name) {
+                throw ParseException("Model reference has closing key length without opening parenthesis: $name")
+            }
             null
+        } else {
+            if (!name.endsWith(")") || name.indexOf('(', openIndex + 1) != -1) {
+                throw ParseException("Malformed model reference key length: $name")
+            }
+            val rawKeyLength = name.substring(openIndex + 1, name.lastIndex)
+            val parsedKeyLength = rawKeyLength.toIntOrNull()
+                ?: throw ParseException("Model reference key length has to be an integer: $name")
+            if (parsedKeyLength <= 0) {
+                throw ParseException("Model reference key length has to be positive: $name")
+            }
+            parsedKeyLength
         }
-        val onlyName = value[0]
+        val onlyName = if (openIndex == -1) name else name.substring(0, openIndex)
+        if (onlyName.isEmpty()) {
+            throw ParseException("Model reference name cannot be empty")
+        }
         return try {
             this.contextualResolver(context, onlyName)
         } catch (_: DefNotFoundException) {

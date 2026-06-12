@@ -9,6 +9,7 @@ import maryk.core.properties.exceptions.ValidationUmbrellaException
 import maryk.core.properties.types.DateUnit
 import maryk.core.properties.types.roundToDateUnit
 import maryk.core.query.DefinitionsContext
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
 import maryk.test.models.TestValueObject2
@@ -66,6 +67,17 @@ internal class ValueObjectDefinitionTest {
         val new = def.readStorageBytes(bc.size, bc::read)
 
         assertEquals(value, new)
+    }
+
+    @Test
+    fun invalidStorageByteLengthShouldThrowException() {
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(def.byteSize - 1) { 0 }
+        }
+
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(def.byteSize + 1) { 0 }
+        }
     }
 
     @Test

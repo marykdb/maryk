@@ -16,6 +16,7 @@ import maryk.core.properties.types.toGeoPoint
 import maryk.core.protobuf.WireType.BIT_64
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.values.SimpleObjectValues
+import maryk.lib.exceptions.ParseException
 
 /** Definition for Geographic coordinate properties */
 data class GeoPointDefinition(
@@ -31,11 +32,16 @@ data class GeoPointDefinition(
     override val wireType = BIT_64
     override val byteSize = 8
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) =
-        GeoPoint(
+    override fun readStorageBytes(length: Int, reader: () -> Byte): GeoPoint {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for GeoPoint: $length != $byteSize")
+        }
+
+        return GeoPoint(
             latitude = initInt(reader),
             longitude = initInt(reader)
         )
+    }
 
     override fun calculateStorageByteLength(value: GeoPoint) = this.byteSize
 

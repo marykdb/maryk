@@ -28,11 +28,24 @@ data class BooleanDefinition(
     override val wireType = VAR_INT
     override val byteSize = 1
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) = initBoolean(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte): Boolean {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for Boolean: $length != $byteSize")
+        }
+
+        return initBoolean(reader)
+    }
 
     override fun calculateStorageByteLength(value: Boolean) = this.byteSize
 
     override fun writeStorageBytes(value: Boolean, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
+
+    override fun readTransportBytes(
+        length: Int,
+        reader: () -> Byte,
+        context: IsPropertyContext?,
+        earlierValue: Boolean?
+    ) = initBoolean(reader)
 
     override fun calculateTransportByteLength(value: Boolean) = this.byteSize
 

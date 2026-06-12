@@ -23,7 +23,7 @@ class IncMapAddIndexReference<K : Any, V : Any, CX : IsPropertyContext> internal
     IsPropertyReferenceWithParent<V, IsPropertyDefinition<V>, CanContainMapItemReference<*, *, *>, Map<K, V>> {
     override val completeName by lazy {
         this.parentReference?.let {
-            "${it.completeName}.#$index"
+            "${it.completeName}.^$index"
         } ?: "^$index"
     }
 

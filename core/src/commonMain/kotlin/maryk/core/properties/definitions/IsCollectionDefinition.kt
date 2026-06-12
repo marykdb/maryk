@@ -23,6 +23,7 @@ import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.protobuf.addProtoByteLength
 import maryk.core.query.RequestContext
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -159,19 +160,23 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
                     if (context is RequestContext) {
                         context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                     }
-                    totalByteSize += valueDefinition.calculateTransportByteLength(item, cacher, context)
+                    totalByteSize = totalByteSize.addProtoByteLength(
+                        valueDefinition.calculateTransportByteLength(item, cacher, context)
+                    )
                 }
                 container.length = totalByteSize
 
-                totalByteSize += ProtoBuf.calculateKeyLength(index.toUInt())
-                totalByteSize += container.length.calculateVarByteLength()
+                totalByteSize = totalByteSize.addProtoByteLength(ProtoBuf.calculateKeyLength(index.toUInt()))
+                totalByteSize = totalByteSize.addProtoByteLength(container.length.calculateVarByteLength())
             }
             else -> value.forEachIndexed { position, item ->
                 if (context is RequestContext) {
                     context.collectInjectLevel(this, this.getItemPropertyRefCreator(position.toUInt(), item))
                 }
 
-                totalByteSize += valueDefinition.calculateTransportByteLengthWithKey(index, item, cacher, context)
+                totalByteSize = totalByteSize.addProtoByteLength(
+                    valueDefinition.calculateTransportByteLengthWithKey(index, item, cacher, context)
+                )
             }
         }
 
@@ -258,6 +263,9 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     private fun readPackedCollectionTransportBytes(length: Int, reader: () -> Byte, context: CX?): C {
         var byteCounter = 0
         val byteReader = {
+            if (byteCounter >= length) {
+                throw ParseException("Collection value exceeds declared length")
+            }
             byteCounter++
             reader()
         }

@@ -27,7 +27,6 @@ import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
-import maryk.json.JsonReader
 import maryk.json.JsonWriter
 
 /** Definition for embedded object properties to [dataModel] of type [DM] returning dataObject of [DO] */
@@ -52,7 +51,10 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
     }
 
     override fun fromString(string: String, context: CXI?): DO {
-        return this.readJson(JsonReader(string), context)
+        return this.dataModel.Serializer.readJson(
+            string,
+            this.dataModel.Serializer.transformContext(context)
+        ).toDataObject()
     }
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = dataModel[name]

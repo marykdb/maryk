@@ -80,6 +80,23 @@ internal class EmbeddedObjectDefinitionTest {
     }
 
     @Test
+    fun fromStringRejectsTrailingContent() {
+        assertFailsWith<Throwable> {
+            def.fromString("""{"string":"jur"}{}""")
+        }
+        assertFailsWith<Throwable> {
+            def.fromString("""{"string":"jur"} trailing""")
+        }
+    }
+
+    @Test
+    fun fromStringAllowsTrailingWhitespace() {
+        expect(MarykObject()) {
+            def.fromString("{\"string\":\"jur\"} \n")
+        }
+    }
+
+    @Test
     fun convertToProtoBufAndBack() {
         val bc = ByteCollector()
         val cache = WriteCache()

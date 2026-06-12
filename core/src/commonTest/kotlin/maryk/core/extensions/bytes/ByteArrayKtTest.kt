@@ -1,9 +1,11 @@
 package maryk.core.extensions.bytes
 
 import maryk.core.base64.Base64Maryk
+import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.compare.compareTo
 import maryk.test.ByteCollector
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -24,6 +26,13 @@ internal class ByteArrayKtTest {
 
             expect(0) { initByteArray(it.size, bc::read) compareTo it }
             bc.reset()
+        }
+    }
+
+    @Test
+    fun initByteArrayRejectsNegativeLength() {
+        assertFailsWith<ParseException> {
+            initByteArray(-1) { 0 }
         }
     }
 

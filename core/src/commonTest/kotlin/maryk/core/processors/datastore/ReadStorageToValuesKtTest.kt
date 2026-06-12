@@ -7,8 +7,10 @@ import maryk.core.properties.types.invoke
 import maryk.test.models.ComplexModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
+import maryk.lib.exceptions.ParseException
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class ReadStorageToValuesKtTest {
     @Test
@@ -137,5 +139,47 @@ class ReadStorageToValuesKtTest {
             },
             values
         )
+    }
+
+    @Test
+    fun rejectsTruncatedSetQualifier() {
+        var done = false
+        assertFailsWith<ParseException> {
+            TestMarykModel.readStorageToValues(
+                getQualifier = { resultHandler ->
+                    if (done) {
+                        false
+                    } else {
+                        done = true
+                        val qualifier = "4b04".hexToByteArray()
+                        resultHandler({ qualifier[it] }, qualifier.size)
+                        true
+                    }
+                },
+                select = null,
+                processValue = { _, _ -> null }
+            )
+        }
+    }
+
+    @Test
+    fun rejectsTruncatedMapQualifier() {
+        var done = false
+        assertFailsWith<ParseException> {
+            TestMarykModel.readStorageToValues(
+                getQualifier = { resultHandler ->
+                    if (done) {
+                        false
+                    } else {
+                        done = true
+                        val qualifier = "5403".hexToByteArray()
+                        resultHandler({ qualifier[it] }, qualifier.size)
+                        true
+                    }
+                },
+                select = null,
+                processValue = { _, _ -> null }
+            )
+        }
     }
 }

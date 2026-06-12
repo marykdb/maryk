@@ -118,10 +118,10 @@ private fun createScanRangeFromParts(
                 keyPart.toBeOneOf.forEachIndexed { oneOfIndex, oneOfBytes ->
                     oneOfBytes.forEach { oneOfByte ->
                         if (startShouldContinue) {
-                            repeat(startSizeBefore) { start[it + oneOfIndex] += oneOfByte }
+                            repeat(startSizeBefore) { start[oneOfIndex * startSizeBefore + it] += oneOfByte }
                         }
                         if (endShouldContinue) {
-                            repeat(endSizeBefore) { end[it + oneOfIndex] += oneOfByte }
+                            repeat(endSizeBefore) { end[oneOfIndex * endSizeBefore + it] += oneOfByte }
                         }
                     }
                 }

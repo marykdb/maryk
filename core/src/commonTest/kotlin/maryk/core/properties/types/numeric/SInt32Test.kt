@@ -1,8 +1,10 @@
 package maryk.core.properties.types.numeric
 
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertFalse
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -38,6 +40,26 @@ internal class SInt32Test {
             SInt32.writeStorageBytes(int, bc::write)
             expect(int) { SInt32.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
+        }
+    }
+
+    @Test
+    fun rejectsInvalidStorageByteLength() {
+        var read = false
+
+        assertFailsWith<ParseException> {
+            SInt32.fromStorageByteReader(3) {
+                read = true
+                0
+            }
+        }
+        assertFalse(read)
+
+        assertFailsWith<ParseException> {
+            SInt32.fromStorageByteReader(5) {
+                read = true
+                0
+            }
         }
     }
 

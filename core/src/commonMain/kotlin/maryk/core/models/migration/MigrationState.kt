@@ -115,15 +115,23 @@ data class MigrationState(
             if (entries["v"] != "1") return null
 
             val migrationId = entries["migrationId"] ?: return null
-            val phase = entries["phase"]?.let(MigrationPhase::valueOf) ?: return null
-            val status = entries["status"]?.let(MigrationStateStatus::valueOf) ?: return null
+            val phase = entries["phase"]?.let { enumValueOrNull<MigrationPhase>(it) } ?: return null
+            val status = entries["status"]?.let { enumValueOrNull<MigrationStateStatus>(it) } ?: return null
             val attempt = entries["attempt"]?.toUIntOrNull() ?: return null
             val toVersion = entries["to"] ?: return null
 
             val fromVersion = entries["from"]?.ifBlank { null }
-            val cursor = entries["cursor"]?.ifBlank { null }?.let(Base64Maryk::decode)
-            val message = entries["message"]?.ifBlank { null }?.let {
-                Base64Maryk.decode(it).decodeToString()
+            val cursorEntry = entries["cursor"]?.ifBlank { null }
+            val cursor = if (cursorEntry == null) {
+                null
+            } else {
+                cursorEntry.decodeBase64OrNull() ?: return null
+            }
+            val messageEntry = entries["message"]?.ifBlank { null }
+            val message = if (messageEntry == null) {
+                null
+            } else {
+                messageEntry.decodeBase64OrNull()?.decodeToString() ?: return null
             }
 
             return MigrationState(
@@ -137,5 +145,19 @@ data class MigrationState(
                 message = message,
             )
         }
+
+        private inline fun <reified T : Enum<T>> enumValueOrNull(name: String): T? =
+            try {
+                enumValueOf<T>(name)
+            } catch (_: IllegalArgumentException) {
+                null
+            }
+
+        private fun String.decodeBase64OrNull(): ByteArray? =
+            try {
+                Base64Maryk.decode(this)
+            } catch (_: IllegalArgumentException) {
+                null
+            }
     }
 }

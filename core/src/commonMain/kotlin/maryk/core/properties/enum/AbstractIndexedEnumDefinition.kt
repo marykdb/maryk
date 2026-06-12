@@ -41,21 +41,28 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
 
     /** Get Enum value by [name] */
     override fun resolve(name: String): E? =
-        if (name.endsWith(')')) {
-            val found = name.split('(', ')')
-            try {
-                val index = found[1].toUInt()
-                val valueName = found[0]
-
-                val typeByName = valueByString[valueName]
-                if (typeByName != null && typeByName.index != index) {
-                    throw ParseException("Non matching name $valueName with index $index, expected ${typeByName.index}")
-                }
-
-                typeByName ?: unknownCreator?.invoke(index, valueName)
-            } catch (_: NumberFormatException) {
-                throw ParseException("Not a correct number between brackets in type $name")
+        if (name.contains('(') || name.contains(')')) {
+            val openIndex = name.indexOf('(')
+            val closeIndex = name.lastIndexOf(')')
+            if (
+                openIndex <= 0 ||
+                openIndex != name.lastIndexOf('(') ||
+                closeIndex != name.lastIndex ||
+                closeIndex <= openIndex + 1
+            ) {
+                throw ParseException("Malformed enum value with index: $name")
             }
+
+            val index = name.substring(openIndex + 1, closeIndex).toUIntOrNull()
+                ?: throw ParseException("Not a correct number between brackets in type $name")
+            val valueName = name.substring(0, openIndex)
+
+            val typeByName = valueByString[valueName]
+            if (typeByName != null && typeByName.index != index) {
+                throw ParseException("Non matching name $valueName with index $index, expected ${typeByName.index}")
+            }
+
+            typeByName ?: unknownCreator?.invoke(index, valueName)
         } else {
             valueByString[name] ?: unknownCreator?.invoke(0u, name)
         }

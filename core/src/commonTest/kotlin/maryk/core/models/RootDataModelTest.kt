@@ -85,7 +85,19 @@ internal class RootDataModelTest {
             TestMarykModel.getPropertyReferenceByName("listOfString.@")
         }
         assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("listOfString.@abc")
+        }
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("listOfString.@-1")
+        }
+        assertFailsWith<ParseException> {
             TestMarykModel.getPropertyReferenceByName("map.^")
+        }
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("map.^abc")
+        }
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByName("map.^-1")
         }
         assertFailsWith<ParseException> {
             TestMarykModel.getPropertyReferenceByName("listOfString.*abc")
@@ -96,6 +108,14 @@ internal class RootDataModelTest {
         assertFailsWith<ParseException> {
             TestMarykModel.getPropertyReferenceByName("incMap.*abc")
         }
+    }
+
+    @Test
+    fun testMapAddIndexReferenceNameRoundTrip() {
+        val reference = TestMarykModel.getPropertyReferenceByName("map.^2")
+
+        expect("map.^2") { reference.completeName }
+        expect(reference) { TestMarykModel.getPropertyReferenceByName(reference.completeName) }
     }
 
     @Test

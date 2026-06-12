@@ -1,7 +1,9 @@
 package maryk.core.properties.types.numeric
 
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 internal class UInt8Test {
@@ -44,6 +46,16 @@ internal class UInt8Test {
 
             expect(value) { UInt8.fromStorageByteReader(bc.size, bc::read) }
             bc.reset()
+        }
+    }
+
+    @Test
+    fun rejectsInvalidStorageByteLength() {
+        assertFailsWith<ParseException> {
+            UInt8.fromStorageByteReader(0) { 0 }
+        }
+        assertFailsWith<ParseException> {
+            UInt8.fromStorageByteReader(2) { 0 }
         }
     }
 

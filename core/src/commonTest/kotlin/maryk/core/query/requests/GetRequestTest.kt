@@ -5,6 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
+import maryk.core.exceptions.RequestException
 import maryk.core.models.graph
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
@@ -14,12 +15,26 @@ import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.getMaxRequest
 import maryk.test.requests.getRequest
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class GetRequestTest {
     private val context = RequestContext(mapOf(
         SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))
+
+    @Test
+    fun rejectTooManyKeys() {
+        assertFailsWith<RequestException> {
+            GetRequest(
+                dataModel = SimpleMarykModel,
+                keys = List((MAX_REQUEST_BATCH_SIZE + 1u).toInt()) { getRequest.keys.first() },
+                where = null,
+                toVersion = null,
+                filterSoftDeleted = true
+            )
+        }
+    }
 
     @Test
     fun createAsMap() {

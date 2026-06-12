@@ -70,7 +70,7 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
         @Suppress("UNCHECKED_CAST")
         _allProperties.add(propertyDefinitionWrapper as IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
 
-        require(propertyDefinitionWrapper.index.toInt() in (0..Short.MAX_VALUE)) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
+        require(propertyDefinitionWrapper.index <= Short.MAX_VALUE.toUInt()) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
         require(indexToDefinition[propertyDefinitionWrapper.index] == null) { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" }
         indexToDefinition[propertyDefinitionWrapper.index] = propertyDefinitionWrapper
 
@@ -118,6 +118,9 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
         var readLength = 0
 
         val lengthReader = {
+            if (readLength >= length) {
+                throw ParseException("Property reference exceeds declared length")
+            }
             readLength++
             reader()
         }
@@ -147,6 +150,9 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
         var readLength = 0
         val lengthReader = {
+            if (readLength >= length) {
+                throw ParseException("Property reference exceeds declared length")
+            }
             readLength++
             reader()
         }

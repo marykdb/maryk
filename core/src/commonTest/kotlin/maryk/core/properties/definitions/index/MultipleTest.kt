@@ -6,6 +6,7 @@ import maryk.checkYamlConversion
 import maryk.core.query.DefinitionsConversionContext
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class MultipleTest {
@@ -66,5 +67,19 @@ class MultipleTest {
     @Test
     fun toReferenceStorageBytes() {
         expect("040101020b31020a69020a09020b09020a11") { multiple.toReferenceStorageByteArray().toHexString() }
+    }
+
+    @Test
+    fun checkedIndexByteLengthRejectsOverflow() {
+        assertFailsWith<IllegalArgumentException> {
+            Int.MAX_VALUE.checkedIndexByteLengthPlus(1)
+        }
+    }
+
+    @Test
+    fun checkedIndexByteLengthRejectsNegativeAddend() {
+        assertFailsWith<IllegalArgumentException> {
+            0.checkedIndexByteLengthPlus(-1)
+        }
     }
 }

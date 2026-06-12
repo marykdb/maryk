@@ -89,11 +89,23 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
                 val setValueDefinition =
                     (this.propertyDefinition.definition.valueDefinition as IsSimpleValueDefinition<T, *>)
 
-                val setItemLength = initIntByVar(reader)
+                val setItemLength = initIntByVar {
+                    if (isDoneReading()) {
+                        throw ParseException("Missing set item length in storage reference")
+                    }
+                    reader()
+                }
+                if (setItemLength < 0) {
+                    throw ParseException("Negative set item length in storage reference")
+                }
                 val setItem = setValueDefinition.readStorageBytes(
                     setItemLength,
-                    reader
-                )
+                ) {
+                    if (isDoneReading()) {
+                        throw ParseException("Set item length exceeds storage reference")
+                    }
+                    reader()
+                }
                 SetItemReference(setItem, propertyDefinition.definition, this)
             }
             else -> throw TypeException("Unknown reference type below Set: $referenceType")

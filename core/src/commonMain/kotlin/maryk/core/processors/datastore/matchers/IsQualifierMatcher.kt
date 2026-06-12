@@ -45,9 +45,12 @@ class QualifierFuzzyMatcher(
         offset: Int,
         length: Int = qualifier.size - offset
     ): FuzzyMatchResult {
+        if (offset < 0 || length < 0 || offset > qualifier.size) {
+            return NO_MATCH
+        }
         var index = offset
         // Clamp end to the physical array end
-        val endExclusive = (offset + length).coerceAtMost(qualifier.size)
+        val endExclusive = if (length > qualifier.size - offset) qualifier.size else offset + length
 
         qualifierParts.forEachIndexed { qIndex, qPart ->
             if (!qPart.all { byte ->

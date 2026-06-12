@@ -3,6 +3,7 @@ package maryk.core.clock
 import maryk.core.extensions.bytes.initULong
 import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.definitions.IsStorageBytesEncodable
+import maryk.lib.exceptions.ParseException
 import kotlin.jvm.JvmInline
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -10,6 +11,19 @@ import kotlin.time.ExperimentalTime
 private const val LOGICAL_BYTE_SIZE = 20
 
 private const val LOGICAL_MASK = 0xFFFFFuL
+private val maxPhysicalTime = ULong.MAX_VALUE.shr(LOGICAL_BYTE_SIZE)
+
+private fun createTimestamp(physical: ULong, logical: UInt): ULong {
+    require(physical <= maxPhysicalTime) { "Physical time does not fit in 44 bits" }
+    require(logical.toULong() <= LOGICAL_MASK) { "Logical time does not fit in 20 bits" }
+
+    return physical.shl(LOGICAL_BYTE_SIZE) or logical.toULong()
+}
+
+private fun incrementTimestamp(timestamp: ULong): ULong {
+    check(timestamp != ULong.MAX_VALUE) { "HLC timestamp overflow" }
+    return timestamp + 1uL
+}
 
 /**
  * Hybrid Logical Clock value.
@@ -30,7 +44,7 @@ value class HLC(
         physical: ULong,
         logical: UInt
     ) : this(
-        physical.shl(LOGICAL_BYTE_SIZE) + logical
+        createTimestamp(physical, logical)
     )
 
     /** Create HLC for the current time */
@@ -42,7 +56,7 @@ value class HLC(
 
     /** Increment the logical clock by 1 */
     fun increment() =
-        HLC(this.timestamp + 1u)
+        HLC(incrementTimestamp(this.timestamp))
 
     /**
      * Calculate the current most recent timestamp. If it was a given timestamp higher logical clock by 1.
@@ -52,8 +66,8 @@ value class HLC(
     fun calculateMaxTimeStamp(other: HLC? = null, newTimeCreator: () -> HLC = ::HLC) = HLC(
         maxOf(
             other?.let {
-                maxOf(this.timestamp, other.timestamp) + 1u
-            } ?: (this.timestamp + 1u),
+                incrementTimestamp(maxOf(this.timestamp, other.timestamp))
+            } ?: incrementTimestamp(this.timestamp),
             newTimeCreator().timestamp
         )
     )
@@ -75,8 +89,12 @@ value class HLC(
         this.timestamp compareTo other
 
     companion object: IsStorageBytesEncodable<HLC> {
-        override fun readStorageBytes(length: Int, reader: () -> Byte) =
-            HLC(initULong(reader))
+        override fun readStorageBytes(length: Int, reader: () -> Byte): HLC {
+            if (length != ULong.SIZE_BYTES) {
+                throw ParseException("Invalid storage byte length for HLC: $length != ${ULong.SIZE_BYTES}")
+            }
+            return HLC(initULong(reader))
+        }
 
         override fun calculateStorageByteLength(value: HLC) =
             ULong.SIZE_BYTES

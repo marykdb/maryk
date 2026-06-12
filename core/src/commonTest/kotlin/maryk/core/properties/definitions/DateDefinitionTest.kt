@@ -42,6 +42,16 @@ internal class DateDefinitionTest {
     }
 
     @Test
+    fun rejectsInvalidStorageByteLength() {
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(3) { 0 }
+        }
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(5) { 0 }
+        }
+    }
+
+    @Test
     fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()

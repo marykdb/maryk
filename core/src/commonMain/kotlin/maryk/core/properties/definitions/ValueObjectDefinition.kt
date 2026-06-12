@@ -28,6 +28,7 @@ import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
+import maryk.lib.exceptions.ParseException
 
 private typealias GenericValueModelDefinition = ValueObjectDefinition<*, *>
 
@@ -55,8 +56,13 @@ data class ValueObjectDefinition<DO : ValueDataObject, DM : IsValueDataModel<DO,
 
     override fun writeStorageBytes(value: DO, writer: (byte: Byte) -> Unit) = value._bytes.writeBytes(writer)
 
-    override fun readStorageBytes(length: Int, reader: () -> Byte) =
-        this.dataModel.Serializer.readFromBytes(reader)
+    override fun readStorageBytes(length: Int, reader: () -> Byte): DO {
+        if (length != byteSize) {
+            throw ParseException("Invalid storage byte length for ValueObject: $length != $byteSize")
+        }
+
+        return this.dataModel.Serializer.readFromBytes(reader)
+    }
 
     override fun calculateTransportByteLength(value: DO) = this.dataModel.Serializer.byteSize
 

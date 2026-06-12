@@ -3,7 +3,6 @@ package maryk.core.processors.datastore
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.initUInt
 import maryk.core.extensions.bytes.initUIntByVarWithExtraInfo
 import maryk.core.models.IsDataModel
@@ -383,7 +382,13 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
                 // Read set contents. It is always a simple value for set since it is in the qualifier.
                 val valueDefinition =
                     ((definition as IsSetDefinition<*, *>).valueDefinition as IsSimpleValueDefinition<*, *>)
-                val setItemLength = initIntByVar { qualifierReader(offset++) }
+                val setItemLength = readQualifierLength(
+                    qualifierReader,
+                    qualifierLength,
+                    { offset },
+                    { offset = it },
+                    "set item"
+                )
                 val key = valueDefinition.readStorageBytes(setItemLength) { qualifierReader(offset++) }
 
                 val setItemReference = setDefinition.itemRef(key, setReference)
@@ -414,7 +419,13 @@ private fun <DM : IsValuesDataModel> readQualifierOfType(
                 // Read set contents. It is always a simple value for set since it is in the qualifier.
                 val keyDefinition = (definition as IsMapDefinition<*, *, *>).keyDefinition
                 val valueDefinition = (definition as IsMapDefinition<*, *, *>).valueDefinition
-                val keySize = initIntByVar { qualifierReader(offset++) }
+                val keySize = readQualifierLength(
+                    qualifierReader,
+                    qualifierLength,
+                    { offset },
+                    { offset = it },
+                    "map key"
+                )
                 val key = keyDefinition.readStorageBytes(keySize) { qualifierReader(offset++) }
 
                 val valueReference = mapDefinition.valueRef(key, mapReference)

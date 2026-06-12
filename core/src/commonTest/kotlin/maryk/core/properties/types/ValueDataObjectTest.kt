@@ -4,6 +4,7 @@ import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
 import kotlin.test.expect
+import kotlin.test.assertContentEquals
 
 internal class ValueDataObjectTest {
     private val value = TestValueObject(
@@ -32,6 +33,16 @@ internal class ValueDataObjectTest {
 
         expect(0) { new compareTo value }
         expect(value.hashCode()) { new.hashCode() }
+    }
+
+    @Test
+    fun byteArrayConversionIsDefensive() {
+        val bytes = value.toByteArray()
+        val originalBytes = bytes.copyOf()
+
+        bytes[0] = (bytes[0].toInt() xor 0xFF).toByte()
+
+        assertContentEquals(originalBytes, value.toByteArray())
     }
 
     @Test

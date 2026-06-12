@@ -18,8 +18,10 @@ object UInt16 : UnsignedNumberDescriptor<UShort>(
 ) {
     override fun sum(value1: UShort, value2: UShort) = (value1 + value2).toUShort()
     override fun divide(value1: UShort, value2: UShort) = (value1 / value2).toUShort()
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte) =
-        (initShort(reader) + Short.MIN_VALUE).toUShort()
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte): UShort {
+        checkStorageByteLength(length)
+        return (initShort(reader) + Short.MIN_VALUE).toUShort()
+    }
 
     override fun writeStorageBytes(value: UShort, writer: (byte: Byte) -> Unit) =
         (value.toShort() - Short.MIN_VALUE).toShort().writeBytes(writer)

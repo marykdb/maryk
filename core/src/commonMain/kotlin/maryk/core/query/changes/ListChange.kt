@@ -11,6 +11,7 @@ import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
+import maryk.core.properties.references.toListIndex
 import maryk.core.query.RequestContext
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeWriter
@@ -56,7 +57,7 @@ data class ListChange internal constructor(
                             listValueChanges.addValuesAtIndex?.let {
                                 for ((index, value) in it) {
                                     @Suppress("UNCHECKED_CAST")
-                                    (newValue as MutableList<Any>).add(index.toInt(), value)
+                                    (newValue as MutableList<Any>).add(index.toListIndex(), value)
                                 }
                             }
                             listValueChanges.addValuesToEnd?.let {

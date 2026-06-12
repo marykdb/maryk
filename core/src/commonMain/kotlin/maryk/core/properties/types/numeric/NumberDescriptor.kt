@@ -1,6 +1,7 @@
 package maryk.core.properties.types.numeric
 
 import maryk.core.protobuf.WireType
+import maryk.lib.exceptions.ParseException
 
 abstract class NumberDescriptor<T : Comparable<T>> internal constructor(
     internal val size: Int,
@@ -19,6 +20,13 @@ abstract class NumberDescriptor<T : Comparable<T>> internal constructor(
 
     /** Read number with [reader] from storage of [length] */
     internal abstract fun fromStorageByteReader(length: Int, reader: () -> Byte): T
+
+    /** Validate storage byte length before reading fixed-width number bytes */
+    protected fun checkStorageByteLength(length: Int) {
+        if (length != size) {
+            throw ParseException("Invalid storage byte length for ${type.name}: $length != $size")
+        }
+    }
 
     /** Create number by string [value] */
     internal abstract fun ofString(value: String): T

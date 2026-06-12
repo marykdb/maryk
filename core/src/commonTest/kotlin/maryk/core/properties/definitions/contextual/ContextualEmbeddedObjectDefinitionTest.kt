@@ -5,6 +5,7 @@ import maryk.core.models.IsTypedObjectDataModel
 import maryk.test.ByteCollector
 import maryk.test.models.SimpleMarykObject
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class ContextualEmbeddedObjectDefinitionTest {
@@ -36,6 +37,16 @@ class ContextualEmbeddedObjectDefinitionTest {
         for (subModel in subModelsToTest) {
             val b = def.asString(subModel, this.context)
             expect(subModel) { def.fromString(b, this.context) }
+        }
+    }
+
+    @Test
+    fun fromStringRejectsTrailingContent() {
+        assertFailsWith<Throwable> {
+            def.fromString("""{"value":"test1"}{}""", this.context)
+        }
+        assertFailsWith<Throwable> {
+            def.fromString("""{"value":"test1"} trailing""", this.context)
         }
     }
 }

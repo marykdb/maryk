@@ -3,6 +3,7 @@ package maryk.core.properties.references
 import kotlinx.datetime.LocalDate
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
+import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
@@ -82,6 +83,16 @@ class SetReferenceTest {
         expect("4b0480002c96") { bc.bytes!!.toHexString() }
 
         expect(reference) { TestMarykModel.getPropertyReferenceByStorageBytes(bc.size, bc::read) }
+    }
+
+    @Test
+    fun rejectsTruncatedStorageBytes() {
+        val bytes = "4b04".hexToByteArray()
+        var index = 0
+
+        assertFailsWith<ParseException> {
+            TestMarykModel.getPropertyReferenceByStorageBytes(bytes.size, { bytes[index++] })
+        }
     }
 
     @Test

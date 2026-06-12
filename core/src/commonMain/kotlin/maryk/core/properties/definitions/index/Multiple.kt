@@ -43,9 +43,9 @@ data class Multiple(
         }
 
         return combinations.map { combination ->
-            val totalLength = combination.bytes.size +
-                combination.partLengths.sumOf { it.calculateVarByteLength() } +
-                (key?.size ?: 0)
+            val totalLength = combination.bytes.size
+                .checkedIndexByteLengthPlus(combination.partLengths.sumOf { it.calculateVarByteLength() })
+                .checkedIndexByteLengthPlus(key?.size ?: 0)
 
             ByteArray(totalLength).also { output ->
                 var writeIndex = 0
@@ -133,4 +133,10 @@ data class Multiple(
         val bytes: ByteArray = ByteArray(0),
         val partLengths: IntArray = IntArray(0)
     )
+}
+
+internal fun Int.checkedIndexByteLengthPlus(addend: Int): Int {
+    require(addend >= 0) { "Index byte length cannot be negative: $addend" }
+    require(this <= Int.MAX_VALUE - addend) { "Index byte length exceeds Int range" }
+    return this + addend
 }

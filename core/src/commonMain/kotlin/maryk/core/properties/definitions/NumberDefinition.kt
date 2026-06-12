@@ -83,7 +83,7 @@ data class NumberDefinition<T : Comparable<T>>(
 
     override fun fromString(string: String) = try {
         type.ofString(string)
-    } catch (e: Throwable) {
+    } catch (e: Exception) {
         throw ParseException(string, e)
     }
 

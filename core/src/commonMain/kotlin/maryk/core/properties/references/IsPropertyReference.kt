@@ -93,7 +93,14 @@ interface IsPropertyReference<T : Any, out D : IsPropertyDefinition<T>, V : Any>
 
     /** Convert property reference to a ByteArray with [prefixBytes] as start */
     fun toStorageByteArray(prefixBytes: ByteArray, offset: Int = 0, length: Int = prefixBytes.size): ByteArray {
-        val referenceToCompareTo = ByteArray(length + this.calculateStorageByteLength())
+        if (offset < 0 || length < 0 || offset > prefixBytes.size || length > prefixBytes.size - offset) {
+            throw IndexOutOfBoundsException("Range [$offset, ${offset.toLong() + length}) out of bounds for size ${prefixBytes.size}")
+        }
+        val referenceLength = this.calculateStorageByteLength()
+        require(referenceLength >= 0) { "Reference storage length cannot be negative: $referenceLength" }
+        require(length <= Int.MAX_VALUE - referenceLength) { "Combined reference storage length exceeds Int range" }
+
+        val referenceToCompareTo = ByteArray(length + referenceLength)
         prefixBytes.copyInto(referenceToCompareTo, 0, offset, offset + length)
         var index = length
         this.writeStorageBytes { referenceToCompareTo[index++] = it }

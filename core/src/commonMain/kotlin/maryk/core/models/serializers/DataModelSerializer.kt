@@ -15,6 +15,7 @@ import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.protobuf.addProtoByteLength
 import maryk.core.query.RequestContext
 import maryk.core.values.IsValueItems
 import maryk.core.values.IsValues
@@ -32,6 +33,13 @@ import maryk.lib.exceptions.ParseException
 import maryk.yaml.IsYamlReader
 import maryk.yaml.UnknownYamlTag
 import maryk.yaml.YamlWriter
+
+private fun IsDefinitionWrapper<*, *, *, *>.transportIndex(): Int {
+    require(this.index <= Short.MAX_VALUE.toUInt()) {
+        "${this.index} for $name is outside range $(0..Short.MAX_VALUE)"
+    }
+    return this.index.toInt()
+}
 
 /** Serializer for DataModels */
 open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO>, CX: IsPropertyContext>(
@@ -96,7 +104,10 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
      * Optionally pass a [context] when needed to read more complex property types
      */
     override fun readJson(json: String, context: CX?): V {
-        return this.readJson(JsonReader(json), context)
+        val reader = JsonReader(json)
+        return this.readJson(reader, context).also {
+            reader.requireEndDocument()
+        }
     }
 
     /**
@@ -105,6 +116,13 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
      */
     override fun readJson(reader: IsJsonLikeReader, context: CX?): V =
         createValues(context, readJsonToMap(reader, context))
+
+    private fun JsonReader.requireEndDocument() {
+        when (val token = nextToken()) {
+            is JsonToken.EndDocument -> Unit
+            else -> throw IllegalJsonOperation("Unexpected JSON token after document: $token")
+        }
+    }
 
     /**
      * Read JSON from [reader] to a Map
@@ -208,7 +226,9 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         for (definition in this.model) {
             val originalValue = values.original(definition.index)
 
-            totalByteLength += this.protoBufLengthToAddForField(originalValue, definition, cacher, context)
+            totalByteLength = totalByteLength.addProtoByteLength(
+                this.protoBufLengthToAddForField(originalValue, definition, cacher, context)
+            )
         }
 
         if (context is RequestContext) {
@@ -249,7 +269,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         }
 
         definition.capture(context, value)
-        return definition.definition.calculateTransportByteLengthWithKey(definition.index.toInt(), value, cacher, context)
+        return definition.definition.calculateTransportByteLengthWithKey(definition.transportIndex(), value, cacher, context)
     }
 
     override fun writeProtoBuf(values: V, cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit, context: CX?) {
@@ -280,7 +300,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
 
         definition.capture(context, value)
 
-        definition.definition.writeTransportBytesWithKey(definition.index.toInt(), value, cacheGetter, writer, context)
+        definition.definition.writeTransportBytesWithKey(definition.transportIndex(), value, cacheGetter, writer, context)
     }
 
     /**
@@ -308,9 +328,12 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
      */
     internal fun readProtoBufToMap(length: Int, reader: () -> Byte, context: CX? = null): IsValueItems {
         val valueMap = MutableValueItems()
-        var byteCounter = 1
+        var byteCounter = 0
 
         val byteReader = {
+            if (byteCounter >= length) {
+                throw ParseException("ProtoBuf field exceeds declared length")
+            }
             byteCounter++
             reader()
         }
@@ -321,34 +344,67 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                 ProtoBuf.readKey(byteReader),
                 byteReader,
                 context
-            )
+            ) {
+                length - byteCounter
+            }
+        }
+
+        if (byteCounter != length) {
+            throw ParseException("ProtoBuf content did not match declared length")
         }
 
         return valueMap
+    }
+
+    private fun readProtoBufValueLength(
+        key: ProtoBufKey,
+        byteReader: () -> Byte,
+        remainingLength: () -> Int
+    ): Int {
+        val valueLength = ProtoBuf.getLength(key.wireType, byteReader)
+        if (valueLength > remainingLength()) {
+            throw ParseException("ProtoBuf field exceeds declared length")
+        }
+        return valueLength
+    }
+
+    private fun skipUnknownField(key: ProtoBufKey, byteReader: () -> Byte, remainingLength: () -> Int) {
+        val valueLength = readProtoBufValueLength(key, byteReader, remainingLength)
+        when {
+            valueLength >= 0 -> repeat(valueLength) { byteReader() }
+            else -> ProtoBuf.skipField(key.wireType, byteReader)
+        }
     }
 
     /**
      * Read a single field of [key] from [byteReader] into [values]
      * Optionally pass a [context] to read more complex properties which depend on other properties
      */
-    private fun readProtoBufField(values: MutableValueItems, key: ProtoBufKey, byteReader: () -> Byte, context: CX?) {
+    private fun readProtoBufField(
+        values: MutableValueItems,
+        key: ProtoBufKey,
+        byteReader: () -> Byte,
+        context: CX?,
+        remainingLength: () -> Int
+    ) {
         val dataObjectPropertyDefinition = model[key.tag]
         val propertyDefinition = dataObjectPropertyDefinition?.definition
 
         if (propertyDefinition == null) {
-            ProtoBuf.skipField(key.wireType, byteReader)
+            skipUnknownField(key, byteReader, remainingLength)
         } else {
+            val valueLength = readProtoBufValueLength(key, byteReader, remainingLength)
             values[key.tag] =
                 when (propertyDefinition) {
                     is IsEmbeddedObjectDefinition<Any, *, CX, *> ->
                         propertyDefinition.readTransportBytesToValues(
-                            ProtoBuf.getLength(key.wireType, byteReader),
+                            valueLength,
                             byteReader,
                             context
                         )
                     else ->
                         propertyDefinition.readTransportBytes(
-                            ProtoBuf.getLength(key.wireType, byteReader),
+                            valueLength,
                             byteReader,
                             context,
                             values[key.tag]

@@ -1,6 +1,7 @@
 package maryk.core.properties.references
 
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeBytes
@@ -107,8 +108,20 @@ class ListItemReference<T : Any, CX : IsPropertyContext> internal constructor(
         index.writeBytes(writer)
     }
 
-    override fun resolve(values: List<T>): T? = values.getOrNull(index.toInt())
+    override fun resolve(values: List<T>): T? = index.toIntOrNull()?.let(values::getOrNull)
 
-    override fun resolveFromAny(value: Any) = (value as? List<*>)?.get(this.index.toInt())
-        ?: throw UnexpectedValueException("Expected List to get value by reference")
+    override fun resolveFromAny(value: Any): Any {
+        val list = value as? List<*>
+            ?: throw UnexpectedValueException("Expected List to get value by reference")
+        val listIndex = index.toIntOrNull()
+            ?: throw UnexpectedValueException("List index $index is outside supported range")
+        return list.getOrNull(listIndex)
+            ?: throw UnexpectedValueException("Expected List to get value by reference")
+    }
 }
+
+fun UInt.toIntOrNull(): Int? =
+    if (this > Int.MAX_VALUE.toUInt()) null else toInt()
+
+fun UInt.toListIndex(): Int =
+    toIntOrNull() ?: throw RequestException("List index $this is outside supported range")

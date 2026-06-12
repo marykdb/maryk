@@ -69,7 +69,7 @@ fun ByteArray.decodeVarUInt(startIndex: Int = 0): UInt? {
     var index = startIndex
     return try {
         initUIntByVar { this.getOrNull(index++) ?: throw ParseException("EOF") }
-    } catch (_: Throwable) {
+    } catch (_: ParseException) {
         null
     }
 }

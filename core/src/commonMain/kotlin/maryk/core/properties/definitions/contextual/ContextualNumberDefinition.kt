@@ -13,6 +13,7 @@ import maryk.core.properties.types.numeric.UInt64
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.protobuf.addProtoByteLength
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.yaml.YamlWriter
@@ -37,8 +38,9 @@ class ContextualNumberDefinition<in CX : IsPropertyContext>(
         value: Comparable<Any>,
         cacher: WriteCacheWriter,
         context: CX?
-    ) =
-        ProtoBuf.calculateKeyLength(index.toUInt()) + contextualResolver(context).calculateTransportByteLength(value)
+    ) = ProtoBuf.calculateKeyLength(index.toUInt()).addProtoByteLength(
+        contextualResolver(context).calculateTransportByteLength(value)
+    )
 
     override fun writeTransportBytesWithKey(
         index: Int,

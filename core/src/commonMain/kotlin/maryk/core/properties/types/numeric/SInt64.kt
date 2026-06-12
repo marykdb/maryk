@@ -19,7 +19,10 @@ object SInt64 : NumberDescriptor<Long>(
 ) {
     override fun sum(value1: Long, value2: Long) = value1 + value2
     override fun divide(value1: Long, value2: Long) = value1 / value2
-    override fun fromStorageByteReader(length: Int, reader: () -> Byte): Long = initLong(reader)
+    override fun fromStorageByteReader(length: Int, reader: () -> Byte): Long {
+        checkStorageByteLength(length)
+        return initLong(reader)
+    }
     override fun writeStorageBytes(value: Long, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
     override fun readTransportBytes(reader: () -> Byte) = initLongByVar(reader).decodeZigZag()
     override fun calculateTransportByteLength(value: Long) = value.encodeZigZag().calculateVarByteLength()

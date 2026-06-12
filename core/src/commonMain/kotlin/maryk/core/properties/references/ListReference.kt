@@ -31,7 +31,9 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
                 if (name.length == 1) {
                     throw ParseException("List item reference requires an index")
                 }
-                ListItemReference(name.substring(1).toUInt(), propertyDefinition.definition, this)
+                val itemIndex = name.substring(1).toUIntOrNull()
+                    ?: throw ParseException("List item reference has to be an unsigned integer: $name")
+                ListItemReference(itemIndex, propertyDefinition.definition, this)
             }
             '*' -> {
                 if (name.length != 1) {

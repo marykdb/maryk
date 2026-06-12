@@ -25,12 +25,15 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.protobuf.addProtoByteLength
 import maryk.core.query.RequestContext
 import maryk.core.values.EmptyValueItems
 import maryk.core.values.Values
+import maryk.json.IllegalJsonOperation
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
 import maryk.json.JsonReader
+import maryk.json.JsonToken
 import maryk.json.JsonToken.Value
 import maryk.json.JsonWriter
 import maryk.json.TokenWithType
@@ -80,6 +83,13 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             this,
             parentReference as CanHaveComplexChildReference<TypedValue<E, T>, IsMultiTypeDefinition<E, T, *>, *, *>?
         )
+
+    private fun E.transportIndex(): Int {
+        require(this.index <= Int.MAX_VALUE.toUInt()) {
+            "Multi type index ${this.index} exceeds supported transport range"
+        }
+        return this.index.toInt()
+    }
 
     /** Resolve a reference from [reader] found on a [parentReference] */
     fun resolveReference(
@@ -174,7 +184,13 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     }
 
     override fun fromString(string: String, context: CX?): TypedValue<E, T> {
-        return this.readJson(JsonReader(string), context)
+        val reader = JsonReader(string)
+        return this.readJson(reader, context).also {
+            when (val token = reader.nextToken()) {
+                is JsonToken.EndDocument -> Unit
+                else -> throw IllegalJsonOperation("Unexpected JSON token after multi type value: $token")
+            }
+        }
     }
 
     override fun validateWithRef(
@@ -309,6 +325,9 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         var value: T? = earlierValue?.value
 
         val wrappedReader = {
+            if (lengthToGo <= 0) {
+                throw ParseException("Multi type value exceeds declared length")
+            }
             lengthToGo--
             reader()
         }
@@ -330,16 +349,20 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
             val def = this.definition(type)
                 ?: throw ParseException("Unknown multi type ${key.tag}")
 
+            val valueLength = ProtoBuf.getLength(key.wireType, wrappedReader)
+            if (valueLength > lengthToGo) {
+                throw ParseException("Multi type value exceeds declared length")
+            }
             value = if (def is IsEmbeddedObjectDefinition<*, *, CX, *> && this.keepAsValues()) {
                 @Suppress("UNCHECKED_CAST")
                 def.readTransportBytesToValues(
-                    ProtoBuf.getLength(key.wireType, wrappedReader),
+                    valueLength,
                     wrappedReader,
                     context
                 ) as T
             } else {
                 def.readTransportBytes(
-                    ProtoBuf.getLength(key.wireType, wrappedReader),
+                    valueLength,
                     wrappedReader,
                     context,
                     value
@@ -366,11 +389,14 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         // stored as value below an index of the type id
         val def = this.definition(value.type)
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        totalByteLength += def.calculateTransportByteLengthWithKey(
-            value.type.index.toInt(),
-            value.value,
-            cacher,
-            context
+        val typeIndex = value.type.transportIndex()
+        totalByteLength = totalByteLength.addProtoByteLength(
+            def.calculateTransportByteLengthWithKey(
+                typeIndex,
+                value.value,
+                cacher,
+                context
+            )
         )
 
         if (context is RequestContext) {
@@ -388,7 +414,7 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     ) {
         val def = this.definition(value.type)
             ?: throw DefNotFoundException("Definition ${value.type} not found on Multi type")
-        def.writeTransportBytesWithKey(value.type.index.toInt(), value.value, cacheGetter, writer, context)
+        def.writeTransportBytesWithKey(value.type.transportIndex(), value.value, cacheGetter, writer, context)
     }
 
     override fun getEmbeddedByName(name: String): IsDefinitionWrapper<*, *, *, *>? = null

@@ -1,6 +1,7 @@
 package maryk.core.processors.datastore.matchers
 
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.lib.exceptions.ParseException
 
 /** Describes a fuzzy match where any byte will be matched */
 sealed class IsFuzzyMatcher {
@@ -22,6 +23,9 @@ class FuzzyExactLengthMatch(
 object FuzzyDynamicLengthMatch : IsFuzzyMatcher() {
     override fun skip(reader: () -> Byte) {
         val length = initIntByVar(reader)
+        if (length < 0) {
+            throw ParseException("Negative fuzzy match length")
+        }
 
         repeat(length) {
             reader()

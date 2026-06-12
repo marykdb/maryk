@@ -34,6 +34,17 @@ internal class BooleanDefinitionTest {
     }
 
     @Test
+    fun invalidStorageByteLengthShouldThrowException() {
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(0) { 1 }
+        }
+
+        assertFailsWith<ParseException> {
+            def.readStorageBytes(2) { 1 }
+        }
+    }
+
+    @Test
     fun convertValuesToTransportBytesAndBack() {
         val bc = ByteCollector()
         val cacheFailer = WriteCacheFailer()

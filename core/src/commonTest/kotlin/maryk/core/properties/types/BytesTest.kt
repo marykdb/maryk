@@ -31,13 +31,23 @@ internal class BytesTest {
     }
 
     @Test
-    fun hashcodeReflectsMutation() {
+    fun hashcodeDoesNotReflectSourceMutation() {
         val source = byteArrayOf(0)
         val bytes = Bytes(source)
         expect(31) { bytes.hashCode() }
 
         source[0] = 1
-        expect(32) { bytes.hashCode() }
+        expect(31) { bytes.hashCode() }
+    }
+
+    @Test
+    fun hashcodeDoesNotReflectExportedBytesMutation() {
+        val bytes = Bytes(byteArrayOf(0))
+        val exported = bytes.bytes
+        exported[0] = 1
+
+        expect(31) { bytes.hashCode() }
+        expect(0.toByte()) { bytes[0] }
     }
 
     @Test
@@ -79,6 +89,20 @@ internal class BytesTest {
     fun testStringConversionExceptions() {
         assertFailsWith<ParseException> {
             Bytes("wrong±")
+        }
+    }
+
+    @Test
+    fun base64ParserWrapsInvalidInput() {
+        assertFailsWith<ParseException> {
+            parseBase64Bytes("wrong") { throw IllegalArgumentException("invalid") }
+        }
+    }
+
+    @Test
+    fun base64ParserDoesNotWrapFatalErrors() {
+        assertFailsWith<Error> {
+            parseBase64Bytes("wrong") { throw Error("fatal") }
         }
     }
 }

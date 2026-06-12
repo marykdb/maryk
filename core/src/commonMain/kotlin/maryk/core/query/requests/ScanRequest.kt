@@ -1,6 +1,7 @@
 package maryk.core.query.requests
 
 import maryk.core.aggregations.Aggregations
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.boolean
@@ -71,6 +72,15 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
     override val requestType = Scan
     override val responseModel = ValuesResponse
 
+    init {
+        if (limit == 0u) {
+            throw RequestException("Scan limit should be at least 1")
+        }
+        if (limit > MAX_SCAN_LIMIT) {
+            throw RequestException("Scan limit $limit exceeds maximum $MAX_SCAN_LIMIT")
+        }
+    }
+
     companion object : QueryModel<ScanRequest<*>, Companion>() {
         val from by addDataModel { it.dataModel }
         val startKey by addStartKey(ScanRequest<*>::startKey)
@@ -80,7 +90,7 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
         val filterSoftDeleted  by boolean(6u, ScanRequest<*>::filterSoftDeleted, default = true)
         val aggregations by embedObject(7u, ScanRequest<*>::aggregations, dataModel = { Aggregations }, alternativeNames = setOf("aggs"))
         val order by addOrder(ScanRequest<*>::order)
-        val limit by number(9u, ScanRequest<*>::limit, type = UInt32, default = 100u)
+        val limit by number(9u, ScanRequest<*>::limit, type = UInt32, minValue = 1u, maxValue = MAX_SCAN_LIMIT, default = 100u)
         val includeStart by boolean(10u, ScanRequest<*>::includeStart, default = true)
 
         override fun invoke(values: ObjectValues<ScanRequest<*>, Companion>) = ScanRequest(

@@ -24,9 +24,14 @@ internal fun createRanges(
         
         val startArray = start[min(startIndex, start.lastIndex)].toByteArray()
         val endArray = end[min(endIndex, end.lastIndex)].toByteArray()
+        val effectiveStart = if (startKey != null && startArray < startKey) startKey else startArray
+
+        if (endArray.isNotEmpty() && endArray < effectiveStart) {
+            continue
+        }
 
         ranges += ScanRange(
-            start = if (startKey != null && startArray < startKey) startKey else startArray,
+            start = effectiveStart,
             startInclusive = startInclusive,
             end = endArray,
             endInclusive = endInclusive

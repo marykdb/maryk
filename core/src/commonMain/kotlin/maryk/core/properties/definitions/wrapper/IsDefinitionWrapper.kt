@@ -18,7 +18,6 @@ import maryk.core.properties.definitions.mapOfPropertyDefWrappers
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
-import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
@@ -80,7 +79,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                 } else {
                     value
                 }
-            } catch (_: Exception) {
+            } catch (_: ClassCastException) {
                 value
             }
 
@@ -106,7 +105,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     /**
      * Validates [newValue] against [previousValue] on propertyDefinition and if fails creates
      * reference with [parentRefFactory]
-     * @throws ValidationException when encountering invalid new value
+     * @throws maryk.core.properties.exceptions.ValidationException when encountering invalid new value
      */
     fun validate(previousValue: T? = null, newValue: T?, parentRefFactory: () -> AnyPropertyReference? = { null }) {
         this.validateWithRef(previousValue, newValue) { this.ref(parentRefFactory()) }

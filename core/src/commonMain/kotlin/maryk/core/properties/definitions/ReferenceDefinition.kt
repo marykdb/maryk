@@ -72,7 +72,7 @@ class ReferenceDefinition<DM : IsRootDataModel>(
 
     override fun fromString(string: String) = try {
         dataModel.key(string)
-    } catch (e: Exception) {
+    } catch (e: IllegalArgumentException) {
         throw ParseException(string, e)
     }
 

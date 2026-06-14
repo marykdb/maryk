@@ -59,6 +59,6 @@ internal fun parseBase64Bytes(
     decoder: (String) -> ByteArray = Base64Maryk::decode
 ) = try {
     decoder(base64)
-} catch (e: Exception) {
+} catch (e: IllegalArgumentException) {
     throw ParseException(base64, e)
 }

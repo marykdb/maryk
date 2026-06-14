@@ -23,7 +23,7 @@ import maryk.core.query.RequestContext
 /** Validation Exception with newMessage for properties */
 abstract class ValidationException internal constructor(
     newMessage: String
-) : Error(
+) : Exception(
     newMessage
 ) {
     internal constructor(

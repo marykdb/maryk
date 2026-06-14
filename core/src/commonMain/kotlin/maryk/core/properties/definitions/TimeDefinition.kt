@@ -90,7 +90,7 @@ data class TimeDefinition(
 
     override fun fromString(string: String) = try {
         LocalTime.parse(string)
-    } catch (e: Exception) {
+    } catch (e: IllegalArgumentException) {
         throw ParseException(e.message ?: "Issue with parsing time: $string")
     }
 

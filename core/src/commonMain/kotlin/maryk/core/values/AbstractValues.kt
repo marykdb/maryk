@@ -282,7 +282,7 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
         value is ObjectValues<*, *> -> value.toDataObject() as TO?
         else -> try {
             this.fromSerializable?.invoke(value as? T?) ?: value as? TO?
-        } catch (e: Exception) {
+        } catch (e: ClassCastException) {
             e.printStackTrace()
             value as? TO?
         }

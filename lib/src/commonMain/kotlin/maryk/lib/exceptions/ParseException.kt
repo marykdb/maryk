@@ -4,7 +4,7 @@ package maryk.lib.exceptions
 class ParseException(
     value: String,
     cause: Throwable? = null
-) : Error(
+) : Exception(
     "Property value could not be parsed: $value",
     cause
 )

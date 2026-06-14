@@ -2,7 +2,7 @@
 
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
 import maryk.core.exceptions.StorageException
 import maryk.core.models.key
@@ -17,73 +17,77 @@ import kotlin.uuid.Uuid
 
 class SoftDeleteValueTest {
     @Test
-    fun currentIsSoftDeletedRejectsValueWithoutDeleteFlag() = runTest {
-        val store = FoundationDBDataStore.open(
-            directoryPath = listOf("maryk", "test", "soft-delete-current-missing-flag", Uuid.random().toString()),
-            dataModelsById = dataModelsForTests,
-            keepAllVersions = true,
-        )
-
-        try {
-            val tableDirs = store.getTableDirs(SimpleMarykModel)
-            val key = SimpleMarykModel.key(
-                SimpleMarykModel.create {
-                    value with "haha"
-                }
+    fun currentIsSoftDeletedRejectsValueWithoutDeleteFlag() {
+        runBlocking {
+            val store = FoundationDBDataStore.open(
+                directoryPath = listOf("maryk", "test", "soft-delete-current-missing-flag", Uuid.random().toString()),
+                dataModelsById = dataModelsForTests,
+                keepAllVersions = true,
             )
-            store.runTransaction { tr ->
-                tr.set(
-                    packKey(tableDirs.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR),
-                    HLC.toStorageBytes(HLC(5uL))
-                )
-            }
 
-            assertFailsWith<StorageException> {
+            try {
+                val tableDirs = store.getTableDirs(SimpleMarykModel)
+                val key = SimpleMarykModel.key(
+                    SimpleMarykModel.create {
+                        value with "haha"
+                    }
+                )
                 store.runTransaction { tr ->
-                    isSoftDeleted(tr, tableDirs, null, key.bytes)
+                    tr.set(
+                        packKey(tableDirs.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR),
+                        HLC.toStorageBytes(HLC(5uL))
+                    )
                 }
+
+                assertFailsWith<StorageException> {
+                    store.runTransaction { tr ->
+                        isSoftDeleted(tr, tableDirs, null, key.bytes)
+                    }
+                }
+            } finally {
+                store.close()
             }
-        } finally {
-            store.close()
         }
     }
 
     @Test
-    fun softDeleteFallbackRejectsValueWithoutDeleteFlag() = runTest {
-        val store = FoundationDBDataStore.open(
-            directoryPath = listOf("maryk", "test", "soft-delete-fallback-missing-flag", Uuid.random().toString()),
-            dataModelsById = dataModelsForTests,
-            keepAllVersions = true,
-        )
-
-        try {
-            val tableDirs = store.getTableDirs(SimpleMarykModel)
-            val key = SimpleMarykModel.key(
-                SimpleMarykModel.create {
-                    value with "haha"
-                }
+    fun softDeleteFallbackRejectsValueWithoutDeleteFlag() {
+        runBlocking {
+            val store = FoundationDBDataStore.open(
+                directoryPath = listOf("maryk", "test", "soft-delete-fallback-missing-flag", Uuid.random().toString()),
+                dataModelsById = dataModelsForTests,
+                keepAllVersions = true,
             )
-            val version = 5uL
-            store.runTransaction { tr ->
-                tr.set(
-                    packKey(tableDirs.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR),
-                    HLC.toStorageBytes(HLC(version))
-                )
-            }
 
-            assertFailsWith<StorageException> {
+            try {
+                val tableDirs = store.getTableDirs(SimpleMarykModel)
+                val key = SimpleMarykModel.key(
+                    SimpleMarykModel.create {
+                        value with "haha"
+                    }
+                )
+                val version = 5uL
                 store.runTransaction { tr ->
-                    addSoftDeleteChangeIfMissing(
-                        tr = tr,
-                        tableDirs = tableDirs,
-                        key = key,
-                        fromVersion = version,
-                        objectChange = DataObjectVersionedChange(key, changes = emptyList()),
+                    tr.set(
+                        packKey(tableDirs.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR),
+                        HLC.toStorageBytes(HLC(version))
                     )
                 }
+
+                assertFailsWith<StorageException> {
+                    store.runTransaction { tr ->
+                        addSoftDeleteChangeIfMissing(
+                            tr = tr,
+                            tableDirs = tableDirs,
+                            key = key,
+                            fromVersion = version,
+                            objectChange = DataObjectVersionedChange(key, changes = emptyList()),
+                        )
+                    }
+                }
+            } finally {
+                store.close()
             }
-        } finally {
-            store.close()
         }
     }
 }

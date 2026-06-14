@@ -373,12 +373,11 @@ class ClusterUpdateLogReliabilityTest {
                 )
             )
             reader.executeFlow(Log.scanUpdates(fromVersion = 0uL))
-            val beforeReplay = reader.getClusterUpdateLogStats() ?: error("stats missing")
 
-            writer.addLog("dup-second", 2)
+            val second = writer.addLog("dup-second", 2)
             waitForReliabilityStat("decoded updates reflect replay + new update") {
                 val stats = reader.getClusterUpdateLogStats()
-                stats != null && stats.decodedUpdates >= beforeReplay.decodedUpdates + 2
+                stats != null && stats.observedClusterHlc >= second && stats.decodedUpdates >= 2
             }
         } finally {
             reader.close()

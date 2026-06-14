@@ -4,8 +4,8 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.serializers.IsDataModelSerializer
 import maryk.core.properties.definitions.contextual.DataModelReference
-import maryk.core.properties.types.Key
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.Key
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
@@ -18,8 +18,9 @@ import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.tuple.Tuple
 import maryk.foundationdb.tuple.Versionstamp
-import maryk.lib.extensions.compare.compareTo
 import maryk.lib.bytes.combineToByteArray
+import maryk.lib.extensions.compare.compareTo
+import maryk.lib.exceptions.ParseException
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -372,7 +373,7 @@ internal class ClusterUpdateLog(
             serializer.readProtoBuf(bytes.size, { bytes[i++] }, ctx).also {
                 if (i != bytes.size) return null
             }
-        } catch (_: Exception) {
+        } catch (_: ParseException) {
             null
         }
     }
@@ -396,7 +397,7 @@ internal class ClusterUpdateLog(
             val values = serializer.readProtoBuf(bytes.size, { bytes[i++] }, ctx).toDataObject()
             if (i != bytes.size) return null
             values.changes
-        } catch (_: Exception) {
+        } catch (_: ParseException) {
             null
         }
     }

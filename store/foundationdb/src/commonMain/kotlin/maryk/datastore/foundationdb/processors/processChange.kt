@@ -154,26 +154,37 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         return cache[propertyReference] as T?
                     }
 
-                    val value = if (propertyReference is IsMapReference<*, *, *, *>) {
-                        @Suppress("UNCHECKED_CAST")
-                        tr.readMapByReference(
-                            tableDirs.tablePrefix,
-                            key.bytes,
-                            propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
-                            this@processChange::decryptValueIfNeeded
-                        ) as T?
-                    } else if (propertyReference is SetReference<*, *>) {
-                        @Suppress("UNCHECKED_CAST")
-                        tr.readSetByReference(
-                            tableDirs.tablePrefix,
-                            key.bytes,
-                            propertyReference as SetReference<Any, IsPropertyContext>
-                        ) as T?
-                    } else {
-                        val keyAndRef = combineToByteArray(key.bytes, propertyReference.toStorageByteArray())
-                        @Suppress("UNCHECKED_CAST")
-                        tr.getValue(tableDirs, null, keyAndRef, decryptValue = this@processChange::decryptValueIfNeeded) { valueBytes, offset, length ->
-                            valueBytes.convertToValue(propertyReference, offset, length) as T?
+                    val value = when (propertyReference) {
+                        is IsMapReference<*, *, *, *> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            tr.readMapByReference(
+                                tableDirs.tablePrefix,
+                                key.bytes,
+                                propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
+                                this@processChange::decryptValueIfNeeded
+                            ) as T?
+                        }
+
+                        is SetReference<*, *> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            tr.readSetByReference(
+                                tableDirs.tablePrefix,
+                                key.bytes,
+                                propertyReference as SetReference<Any, IsPropertyContext>
+                            ) as T?
+                        }
+
+                        else -> {
+                            val keyAndRef = combineToByteArray(key.bytes, propertyReference.toStorageByteArray())
+                            @Suppress("UNCHECKED_CAST")
+                            tr.getValue(
+                                tableDirs,
+                                null,
+                                keyAndRef,
+                                decryptValue = this@processChange::decryptValueIfNeeded
+                            ) { valueBytes, offset, length ->
+                                valueBytes.convertToValue(propertyReference, offset, length) as T?
+                            }
                         }
                     }
 
@@ -282,7 +293,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         if (!stored.contentEquals(expectedBytes)) {
                                             addValidation(InvalidValueException(reference, expected.toString()))
                                         }
-                                    } catch (_: Throwable) {
+                                    } catch (error: Throwable) {
+                                        error.rethrowIfFatal()
                                         // Fallback to decoded compare if not a simple value definition
                                         var readIndex = 0
                                         val actual = readValue(reference.comparablePropertyDefinition, { stored[readIndex++] }) { stored.size - readIndex }
@@ -482,7 +494,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes)
 
                                             // Unique handling if applicable is covered by writer for TypeValue; handle comparable uniques here
-                                            val storableDef = try { Value.castDefinition(reference.comparablePropertyDefinition) } catch (_: Throwable) { null }
+                                            val storableDef = try {
+                                                Value.castDefinition(reference.comparablePropertyDefinition)
+                                            } catch (error: Throwable) {
+                                                error.rethrowIfFatal()
+                                                null
+                                            }
                                                 ?: throw TypeException("Expected a simple value for change on $reference")
                                             @Suppress("UNCHECKED_CAST")
                                             writer(Value, referenceBytes, storableDef as IsPropertyDefinition<*>, value)

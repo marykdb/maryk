@@ -12,6 +12,7 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.foundationdb.metadata.toMetadataBytes
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.shared.rethrowIfFatal
 import kotlin.text.encodeToByteArray
 
 fun checkModelIfMigrationIsNeeded(
@@ -55,6 +56,7 @@ fun checkModelIfMigrationIsNeeded(
             try {
                 Version.Serializer.readFromBytes { bytes[i++] }
             } catch (cause: Throwable) {
+                cause.rethrowIfFatal()
                 throw StorageException("Invalid stored version metadata for model id $modelId: ${cause.message}")
             }
         }

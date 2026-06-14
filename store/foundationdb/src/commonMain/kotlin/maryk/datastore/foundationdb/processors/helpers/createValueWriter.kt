@@ -54,10 +54,7 @@ internal fun FoundationDBDataStore.createValueWriter(
             if (!shouldSkip(reference, valueBytes)) {
                 onWrite?.invoke()
                 // Handle unique indexes for comparable unique values on change/writes
-                val isComparableUnique = try {
-                    val comp = (definition as? IsComparableDefinition<*, *>)
-                    comp?.unique == true
-                } catch (_: Throwable) { false }
+                val isComparableUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
 
                 if (isComparableUnique) {
                     val uniqueValue = mapUniqueValueBytes(dataModelId, reference, valueBytes)

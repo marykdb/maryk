@@ -3,6 +3,7 @@ package maryk.datastore.foundationdb.processors
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
 import maryk.core.exceptions.StorageException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -18,8 +19,7 @@ import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
-import maryk.datastore.shared.rethrowIfFatal
-import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.helpers.convertToValueOrNull
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -67,9 +67,12 @@ internal class HistoricStoreIndexValuesWalker(
                 // Skip historical values no longer valid for the current index
             } catch (_: ParseException) {
                 // Skip malformed historical values
-            } catch (e: Exception) {
-                e.rethrowIfFatal()
-                // Skip failing index reference generation and keep walking
+            } catch (_: StorageException) {
+                // Skip obsolete historical values which cannot be reconstructed anymore
+            } catch (e: DefNotFoundException) {
+                throw e
+            } catch (_: IndexOutOfBoundsException) {
+                // Skip malformed historical values
             }
         } while (getter.gotoNextVersion())
     }
@@ -113,8 +116,11 @@ internal class HistoricStoreIndexValuesWalker(
                 // Skip historical values no longer valid for the current index
             } catch (_: ParseException) {
                 // Skip malformed historical values
-            } catch (e: Exception) {
-                e.rethrowIfFatal()
+            } catch (_: StorageException) {
+                // Skip obsolete historical values which cannot be reconstructed anymore
+            } catch (e: DefNotFoundException) {
+                throw e
+            } catch (_: IndexOutOfBoundsException) {
                 // Skip malformed entries and keep walking
             }
         }
@@ -159,8 +165,11 @@ internal class HistoricStoreIndexValuesWalker(
                 // Skip historical values no longer valid for the current index
             } catch (_: ParseException) {
                 // Skip malformed historical values
-            } catch (e: Exception) {
-                e.rethrowIfFatal()
+            } catch (_: StorageException) {
+                // Skip obsolete historical values which cannot be reconstructed anymore
+            } catch (e: DefNotFoundException) {
+                throw e
+            } catch (_: IndexOutOfBoundsException) {
                 // Skip malformed entries and keep walking
             }
         }
@@ -180,7 +189,29 @@ private class HistoricStoreIndexValuesGetter(
         var lastVersion: ULong? = null,
         var lastValue: ByteArray? = null,
         var isPastBeginning: Boolean = false
-    )
+    ) {
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            if (other !is IterableReference) return false
+
+            if (isPastBeginning != other.isPastBeginning) return false
+            if (!referenceAsBytes.contentEquals(other.referenceAsBytes)) return false
+            if (iterator != other.iterator) return false
+            if (lastVersion != other.lastVersion) return false
+            if (!lastValue.contentEquals(other.lastValue)) return false
+
+            return true
+        }
+
+        override fun hashCode(): Int {
+            var result = isPastBeginning.hashCode()
+            result = 31 * result + referenceAsBytes.contentHashCode()
+            result = 31 * result + iterator.hashCode()
+            result = 31 * result + (lastVersion?.hashCode() ?: 0)
+            result = 31 * result + (lastValue?.contentHashCode() ?: 0)
+            return result
+        }
+    }
 
     private val iterableReferenceMap = mutableMapOf<IsPropertyReference<*, *, *>, IterableReference>()
 
@@ -269,6 +300,6 @@ private class HistoricStoreIndexValuesGetter(
         if (iterableReference.isPastBeginning) return null
 
         val lastValue = iterableReference.lastValue ?: return null
-        return lastValue.convertToValue(propertyReference, 0, lastValue.size)
+        return lastValue.convertToValueOrNull(propertyReference, 0, lastValue.size)
     }
 }

@@ -18,6 +18,7 @@ import maryk.datastore.shared.migration.createMigrationAuditEvent
 import maryk.datastore.shared.migration.projectMigrationRuntimeStatus
 import maryk.datastore.shared.migration.updatedMigrationMetrics
 import maryk.datastore.shared.migration.updatedMigrationRuntimeDetails
+import maryk.datastore.shared.runCatchingNonFatal
 
 internal fun FoundationDBDataStore.pendingMigrationsInternal(): Map<UInt, String> = pendingMigrationReasons.value
 
@@ -189,7 +190,7 @@ internal suspend fun FoundationDBDataStore.appendMigrationAuditEventInternal(
         attempt = attempt,
         message = message,
     )
-    runCatching { migrationConfiguration.migrationAuditEventReporter(event) }
+    runCatchingNonFatal { migrationConfiguration.migrationAuditEventReporter(event) }
     migrationAuditLogStore?.append(modelId, event)
     incrementMigrationMetricInternal(modelId, type)
 }

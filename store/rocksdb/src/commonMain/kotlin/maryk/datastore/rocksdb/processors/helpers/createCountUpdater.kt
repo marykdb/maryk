@@ -1,11 +1,13 @@
 package maryk.datastore.rocksdb.processors.helpers
 
+import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.properties.references.TypedPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
+import maryk.lib.exceptions.ParseException
 import maryk.rocksdb.ReadOptions
 
 /**
@@ -25,7 +27,13 @@ internal fun <T : Any> createCountUpdater(
 
     val previousCount = transaction.getValue(columnFamilies, readOptions, null, key.bytes + referenceToCompareTo) { b, o, _ ->
         var readIndex = o
-        initIntByVar { b[readIndex++] }
+        try {
+            initIntByVar { b[readIndex++] }
+        } catch (cause: ParseException) {
+            throw StorageException("Invalid stored count: ${cause.message}")
+        } catch (cause: IndexOutOfBoundsException) {
+            throw StorageException("Invalid stored count: ${cause.message}")
+        }
     } ?: 0
 
     val newCount = maxOf(0, previousCount + countChange)

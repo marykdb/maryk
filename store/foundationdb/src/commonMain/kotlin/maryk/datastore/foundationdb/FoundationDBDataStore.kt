@@ -6,12 +6,10 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
@@ -113,6 +111,7 @@ import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 import maryk.datastore.shared.updates.Update
 import maryk.foundationdb.DatabaseOptions
 import maryk.foundationdb.FDB
@@ -910,26 +909,13 @@ class FoundationDBDataStore private constructor(
 
         cancelPendingMigrations("Datastore closing")
 
-        // Stop new work first.
-        val shouldCloseScope = startClosingDataStore()
-        val job = this.coroutineContext[Job]
-        if (shouldCloseScope) {
-            job?.cancel()
-        }
+        if (!startClosingDataStore()) return
 
-        // Give cooperative coroutines a brief chance to finish before forcing native close.
-        val stoppedBeforeNativeClose = withTimeoutOrNull(2_000.milliseconds) {
-            job?.join()
-            true
-        } ?: false
+        runCatchingNonFatal { this.db.close() }
 
-        runCatching { this.db.close() }.onFailure { it.rethrowIfFatal() }
+        cancelAndJoinDataStoreScope()
 
-        if (!stoppedBeforeNativeClose) {
-            withTimeoutOrNull(10_000.milliseconds) {
-                job?.join()
-            }
-        }
+        runCatchingNonFatal { this.db.close() }
     }
 
     override suspend fun closeAllListeners() {
@@ -1231,28 +1217,31 @@ class FoundationDBDataStore private constructor(
             versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
             clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
-        ) = FoundationDBDataStore(
-            keepAllVersions = keepAllVersions,
-            keepUpdateHistoryIndex = keepUpdateHistoryIndex,
-            fdbClusterFilePath = fdbClusterFilePath,
-            directoryRootPath = directoryPath,
-            dataModelsById = dataModelsById,
-            onlyCheckModelVersion = onlyCheckModelVersion,
-            databaseOptionsSetter = databaseOptionsSetter,
-            migrationConfiguration = migrationConfiguration,
-            migrationLeaseConfiguration = migrationLeaseConfiguration,
-            versionUpdateHandler = versionUpdateHandler,
-            clusterUpdateLogConfiguration = clusterUpdateLogConfiguration,
-            fieldEncryptionProvider = fieldEncryptionProvider,
-        ).apply {
-            try {
-                initAsync()
-            } catch (e: Throwable) {
-                this.close()
-                throw e.unwrapFdb()
+        ): FoundationDBDataStore {
+            orderMigrationModelIds(dataModelsById)
+
+            return FoundationDBDataStore(
+                keepAllVersions = keepAllVersions,
+                keepUpdateHistoryIndex = keepUpdateHistoryIndex,
+                fdbClusterFilePath = fdbClusterFilePath,
+                directoryRootPath = directoryPath,
+                dataModelsById = dataModelsById,
+                onlyCheckModelVersion = onlyCheckModelVersion,
+                databaseOptionsSetter = databaseOptionsSetter,
+                migrationConfiguration = migrationConfiguration,
+                migrationLeaseConfiguration = migrationLeaseConfiguration,
+                versionUpdateHandler = versionUpdateHandler,
+                clusterUpdateLogConfiguration = clusterUpdateLogConfiguration,
+                fieldEncryptionProvider = fieldEncryptionProvider,
+            ).apply {
+                try {
+                    initAsync()
+                } catch (e: Throwable) {
+                    close()
+                    throw e.unwrapFdb()
+                }
             }
         }
-
     }
 }
 

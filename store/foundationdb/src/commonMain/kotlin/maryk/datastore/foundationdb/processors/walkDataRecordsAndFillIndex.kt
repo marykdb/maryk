@@ -1,8 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
-import maryk.foundationdb.Range
-import maryk.foundationdb.TransactionContext
 import maryk.core.clock.HLC
+import maryk.core.exceptions.StorageException
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
@@ -13,15 +12,16 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
-import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.getValue
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
-import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.foundationdb.Range
+import maryk.foundationdb.TransactionContext
 import maryk.lib.bytes.combineToByteArray
 
 /**
@@ -66,7 +66,10 @@ internal fun walkDataRecordsAndFillIndex(
                     indexable.toStorageByteArraysForIndex(getter, keyBytes)
                 } catch (error: Throwable) {
                     error.rethrowIfFatal()
-                    emptyList()
+                    throw StorageException(
+                        "Failed to build index for key ${keyBytes.contentToString()}: ${error.message ?: error::class.simpleName}",
+                        error
+                    )
                 }
 
                 if (latestVersion.size >= VERSION_BYTE_SIZE) {

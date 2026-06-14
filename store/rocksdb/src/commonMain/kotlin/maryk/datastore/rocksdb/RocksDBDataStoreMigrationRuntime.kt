@@ -18,7 +18,7 @@ import maryk.datastore.shared.migration.createMigrationAuditEvent
 import maryk.datastore.shared.migration.projectMigrationRuntimeStatus
 import maryk.datastore.shared.migration.updatedMigrationMetrics
 import maryk.datastore.shared.migration.updatedMigrationRuntimeDetails
-import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 
 internal fun RocksDBDataStore.pendingMigrationsInternal(): Map<UInt, String> = pendingMigrationReasons.value
 
@@ -190,8 +190,7 @@ internal suspend fun RocksDBDataStore.appendMigrationAuditEventInternal(
         attempt = attempt,
         message = message,
     )
-    runCatching { migrationConfiguration.migrationAuditEventReporter(event) }
-        .onFailure { it.rethrowIfFatal() }
+    runCatchingNonFatal { migrationConfiguration.migrationAuditEventReporter(event) }
     migrationAuditLogStore?.append(modelId, event)
     incrementMigrationMetricInternal(modelId, type)
 }

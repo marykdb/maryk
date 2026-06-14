@@ -98,6 +98,21 @@ class ClusterUpdateLogCodecTest {
     }
 
     @Test
+    fun truncatedAdditionPayloadIsRejectedWithoutThrowing() {
+        val encoded = byteArrayOf(
+            0, 0, // origin length
+            0, 0, 0, modelId.toByte(),
+            ClusterLogUpdate.TYPE_ADDITION,
+            0, 0, 0, 0, 0, 0, 0, 1, // version
+            0, 0, // key length
+            0, 0, 0, 2, // payload length
+            10, -128 // string field tag with truncated varint length
+        )
+
+        assertNull(newLog().decodeValue(encoded))
+    }
+
+    @Test
     fun oversizedKeyDoesNotEncodeWithTruncatedLength() {
         val update = ClusterLogDeletion(Bytes(ByteArray(0x1_0000)), HLC().timestamp, hardDelete = false)
 

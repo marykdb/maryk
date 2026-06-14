@@ -46,6 +46,7 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 
 class RemoteDataStore private constructor(
     private val httpClient: HttpClient,
@@ -460,8 +461,7 @@ private data class InfoResult(
 
 private suspend fun requireSuccess(response: HttpResponse, operation: String) {
     if (response.status.value !in 200..299) {
-        val bodyPreview = runCatching { readErrorPreview(response) }
-            .onFailure { it.rethrowIfFatal() }
+        val bodyPreview = runCatchingNonFatal { readErrorPreview(response) }
             .getOrNull()
             ?.replace(Regex("\\s+"), " ")
             ?.take(200)

@@ -14,7 +14,9 @@ import kotlinx.coroutines.withTimeout
 import maryk.core.models.RootDataModel
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.model.readStoredModelDefinitionsFromDirectory
+import maryk.datastore.shared.recoverNonFatal
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.model.readStoredModelDefinitionsFromPath
 import maryk.foundationdb.FDB
@@ -111,8 +113,7 @@ class ConnectCommand(
                 isError = true,
             )
             is ParseFoundationOptionsResult.Success -> {
-                val outcome = runCatching { connectToFoundationDb(context, parseResult.options) }
-                    .onFailure { it.rethrowIfFatal() }
+                val outcome = runCatchingNonFatal { connectToFoundationDb(context, parseResult.options) }
                     .getOrElse {
                         return CommandResult(
                             lines = listOf(
@@ -458,27 +459,29 @@ fun interface RocksDbConnector {
 
 object DefaultRocksDbConnector : RocksDbConnector {
     override fun connect(path: String): ConnectCommand.RocksDbConnectionOutcome {
-        return try {
-            val modelsById = loadStoredModels(path)
-            val dataStore = runBlocking {
-                RocksDBDataStore.open(
-                    relativePath = path,
-                    dataModelsById = modelsById,
+        return recoverNonFatal(
+            block = {
+                val modelsById = loadStoredModels(path)
+                val dataStore = runBlocking {
+                    RocksDBDataStore.open(
+                        relativePath = path,
+                        dataModelsById = modelsById,
+                    )
+                }
+
+                ConnectCommand.RocksDbConnectionOutcome.Success(
+                    RocksDbStoreConnection(
+                        directory = path,
+                        dataStore = dataStore,
+                    ),
+                )
+            },
+            recover = { e ->
+                ConnectCommand.RocksDbConnectionOutcome.Error(
+                    reason = e.message ?: e::class.simpleName ?: "Unknown error",
                 )
             }
-
-            ConnectCommand.RocksDbConnectionOutcome.Success(
-                RocksDbStoreConnection(
-                    directory = path,
-                    dataStore = dataStore,
-                ),
-            )
-        } catch (e: Exception) {
-            e.rethrowIfFatal()
-            ConnectCommand.RocksDbConnectionOutcome.Error(
-                reason = e.message ?: e::class.simpleName ?: "Unknown error",
-            )
-        }
+        )
     }
 
     private fun loadStoredModels(path: String): Map<UInt, RootDataModel<*>> =
@@ -516,8 +519,8 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
                     clusterFilePath = options.clusterFile,
                     directoryPath = options.directoryPath,
                     modelNames = effectiveModels.values.map { it.Meta.name },
-                ) ?: true
-            }
+                )
+            } ?: true
 
             val dataStore = runBlocking {
                 FoundationDBDataStore.open(
@@ -534,11 +537,6 @@ object DefaultFoundationDbConnector : FoundationDbConnector {
                     clusterFilePath = options.clusterFile,
                     dataStore = dataStore,
                 ),
-            )
-        } catch (e: Exception) {
-            e.rethrowIfFatal()
-            ConnectCommand.FoundationDbConnectionOutcome.Error(
-                reason = e.message ?: e::class.simpleName ?: "Unknown error",
             )
         } catch (t: Throwable) {
             val looksLikeMissingLib = t::class.simpleName == "UnsatisfiedLinkError" ||

@@ -18,7 +18,9 @@ import maryk.foundationdb.runSuspend
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.recoverNonFatal
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 import kotlin.time.Duration.Companion.milliseconds
 
 sealed class ConnectResult {
@@ -32,10 +34,8 @@ data class StoreConnection(
 ) {
     fun close() {
         runBlocking {
-            runCatching { dataStore.closeAllListeners() }
-                .onFailure { it.rethrowIfFatal() }
-            runCatching { dataStore.close() }
-                .onFailure { it.rethrowIfFatal() }
+            runCatchingNonFatal { dataStore.closeAllListeners() }
+            runCatchingNonFatal { dataStore.close() }
         }
     }
 }
@@ -48,29 +48,31 @@ class StoreConnector {
     }
 
     private fun connectRocksDb(definition: StoreDefinition): ConnectResult {
-        return try {
-            val modelsById = loadStoredModels(definition.directory)
-            val dataStore = runBlocking {
-                RocksDBDataStore.open(
-                    relativePath = definition.directory,
-                    dataModelsById = modelsById,
+        return recoverNonFatal(
+            block = {
+                val modelsById = loadStoredModels(definition.directory)
+                val dataStore = runBlocking {
+                    RocksDBDataStore.open(
+                        relativePath = definition.directory,
+                        dataModelsById = modelsById,
+                    )
+                }
+                ConnectResult.Success(
+                    StoreConnection(
+                        definition = definition,
+                        dataStore = dataStore,
+                    )
                 )
+            },
+            recover = { e ->
+                val reason = if (e.isRocksDbLockError()) {
+                    "RocksDB already open in another process. Close it or open a copy of the store directory."
+                } else {
+                    e.message ?: e::class.simpleName ?: "Unknown error"
+                }
+                ConnectResult.Error(reason)
             }
-            ConnectResult.Success(
-                StoreConnection(
-                    definition = definition,
-                    dataStore = dataStore,
-                )
-            )
-        } catch (e: Exception) {
-            e.rethrowIfFatal()
-            val reason = if (e.isRocksDbLockError()) {
-                "RocksDB already open in another process. Close it or open a copy of the store directory."
-            } else {
-                e.message ?: e::class.simpleName ?: "Unknown error"
-            }
-            ConnectResult.Error(reason)
-        }
+        )
     }
 
     private fun loadStoredModels(path: String): Map<UInt, RootDataModel<*>> =
@@ -109,8 +111,8 @@ class StoreConnector {
                     clusterFilePath = definition.clusterFile,
                     directoryPath = directoryPath,
                     modelNames = effectiveModels.values.map { it.Meta.name },
-                ) ?: true
-            }
+                )
+            } ?: true
 
             val dataStore = runBlocking {
                 FoundationDBDataStore.open(
@@ -127,9 +129,6 @@ class StoreConnector {
                     dataStore = dataStore,
                 )
             )
-        } catch (e: Exception) {
-            e.rethrowIfFatal()
-            ConnectResult.Error(e.message ?: e::class.simpleName ?: "Unknown error")
         } catch (t: Throwable) {
             val looksLikeMissingLib = t::class.simpleName == "UnsatisfiedLinkError" ||
                 (t.message?.contains("fdb_c", ignoreCase = true) == true)
@@ -159,20 +158,22 @@ class StoreConnector {
             )
         }
 
-        return try {
-            val dataStore = runBlocking {
-                RemoteDataStore.connect(RemoteStoreConfig(baseUrl = url, ssh = sshConfig))
-            }
-            ConnectResult.Success(
-                StoreConnection(
-                    definition = definition,
-                    dataStore = dataStore,
+        return recoverNonFatal(
+            block = {
+                val dataStore = runBlocking {
+                    RemoteDataStore.connect(RemoteStoreConfig(baseUrl = url, ssh = sshConfig))
+                }
+                ConnectResult.Success(
+                    StoreConnection(
+                        definition = definition,
+                        dataStore = dataStore,
+                    )
                 )
-            )
-        } catch (e: Exception) {
-            e.rethrowIfFatal()
-            ConnectResult.Error(e.message ?: e::class.simpleName ?: "Unknown error")
-        }
+            },
+            recover = { e ->
+                ConnectResult.Error(e.message ?: e::class.simpleName ?: "Unknown error")
+            }
+        )
     }
 }
 

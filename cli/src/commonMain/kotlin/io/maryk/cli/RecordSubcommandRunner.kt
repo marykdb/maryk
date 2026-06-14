@@ -30,13 +30,18 @@ internal fun runRecordSubcommand(
                 is SaveOptionsResult.Error -> RecordSubcommandResult.Error("Save failed: ${parseResult.message}")
                 is SaveOptionsResult.Success -> {
                     val saveOptions = parseResult.options
-                    val message = resolvedSaveContext.save(
-                        directory = saveOptions.directory,
-                        format = saveOptions.format,
-                        includeMeta = saveOptions.includeMeta,
-                        packageName = saveOptions.packageName,
-                        noDeps = saveOptions.noDeps,
-                    )
+                    val message = try {
+                        resolvedSaveContext.save(
+                            directory = saveOptions.directory,
+                            format = saveOptions.format,
+                            includeMeta = saveOptions.includeMeta,
+                            packageName = saveOptions.packageName,
+                            noDeps = saveOptions.noDeps,
+                        )
+                    } catch (e: Throwable) {
+                        e.rethrowIfFatal()
+                        return RecordSubcommandResult.Error("Save failed: ${e.message ?: e::class.simpleName}")
+                    }
                     RecordSubcommandResult.Success(listOf(message))
                 }
             }
@@ -48,12 +53,17 @@ internal fun runRecordSubcommand(
                 is LoadOptionsResult.Error -> RecordSubcommandResult.Error("Load failed: ${parseResult.message}")
                 is LoadOptionsResult.Success -> {
                     val loadOptions = parseResult.options
-                    val result = resolvedLoadContext.loadResult(
-                        path = loadOptions.path,
-                        format = loadOptions.format,
-                        ifVersion = loadOptions.ifVersion,
-                        useMeta = loadOptions.useMeta,
-                    )
+                    val result = try {
+                        resolvedLoadContext.loadResult(
+                            path = loadOptions.path,
+                            format = loadOptions.format,
+                            ifVersion = loadOptions.ifVersion,
+                            useMeta = loadOptions.useMeta,
+                        )
+                    } catch (e: Throwable) {
+                        e.rethrowIfFatal()
+                        return RecordSubcommandResult.Error("Load failed: ${e.message ?: e::class.simpleName}")
+                    }
                     if (result.success) {
                         RecordSubcommandResult.Success(listOf(result.message))
                     } else {

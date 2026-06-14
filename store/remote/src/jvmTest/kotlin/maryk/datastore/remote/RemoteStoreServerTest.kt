@@ -9,8 +9,8 @@ import io.ktor.client.request.setBody
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.cio.CIO as ServerCIO
+import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
-import java.net.ServerSocket
 import java.net.Socket
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -624,10 +624,9 @@ class RemoteStoreServerTest {
 
 private suspend fun withServer(block: suspend (String, HttpClient) -> Unit) {
     val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
-    val port = ServerSocket(0).use { it.localPort }
-    val server = embeddedServer(ServerCIO, host = "127.0.0.1", port = port) {
+    val (server, port) = startTestServer {
         remoteStoreModule(store)
-    }.start(wait = false)
+    }
     val client = HttpClient(CIO) { expectSuccess = false }
     try {
         block("http://127.0.0.1:$port", client)
@@ -636,6 +635,14 @@ private suspend fun withServer(block: suspend (String, HttpClient) -> Unit) {
         server.stop(500, 500)
         store.close()
     }
+}
+
+private suspend fun startTestServer(
+    module: suspend io.ktor.server.application.Application.() -> Unit
+): Pair<EmbeddedServer<*, *>, Int> {
+    val server = embeddedServer(ServerCIO, host = "127.0.0.1", port = 0, module = module).start(wait = false)
+    val port = server.engine.resolvedConnectors().single().port
+    return server to port
 }
 
 private fun emptyRequestsPayload(): ByteArray =

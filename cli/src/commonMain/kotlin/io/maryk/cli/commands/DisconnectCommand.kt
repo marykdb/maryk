@@ -3,6 +3,7 @@ package io.maryk.cli.commands
 import io.maryk.cli.FoundationDbStoreConnection
 import io.maryk.cli.RocksDbStoreConnection
 import io.maryk.cli.StoreConnection
+import maryk.datastore.shared.recoverNonFatal
 
 class DisconnectCommand : Command {
     override val name: String = "disconnect"
@@ -17,19 +18,22 @@ class DisconnectCommand : Command {
 
         context.state.clearConnection()
 
-        return try {
-            connection.close()
-            CommandResult(
-                lines = listOf("Disconnected from ${describe(connection)}."),
-            )
-        } catch (e: Exception) {
-            CommandResult(
-                lines = listOf(
-                    "Disconnected from ${describe(connection)} with errors: ${e.message ?: e::class.simpleName}",
-                ),
-                isError = true,
-            )
-        }
+        return recoverNonFatal(
+            block = {
+                connection.close()
+                CommandResult(
+                    lines = listOf("Disconnected from ${describe(connection)}."),
+                )
+            },
+            recover = { e ->
+                CommandResult(
+                    lines = listOf(
+                        "Disconnected from ${describe(connection)} with errors: ${e.message ?: e::class.simpleName}",
+                    ),
+                    isError = true,
+                )
+            }
+        )
     }
 
     private fun describe(connection: StoreConnection): String = when (connection) {

@@ -1,11 +1,11 @@
 package maryk.datastore.remote
 
+import maryk.datastore.shared.runCatchingNonFatal
 import java.io.InputStream
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.TimeUnit
-import maryk.datastore.shared.rethrowIfFatal
 
 actual fun defaultSshTunnelFactory(): SshTunnelFactory? = ProcessSshTunnelFactory
 
@@ -33,12 +33,10 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
 
     private fun allocateLocalPort(): Int = ServerSocket(0).use { it.localPort }
 
-    private fun isLocalPortAvailable(port: Int): Boolean = runCatching {
+    private fun isLocalPortAvailable(port: Int): Boolean = runCatchingNonFatal {
         ServerSocket().use { socket ->
             socket.bind(InetSocketAddress("127.0.0.1", port))
         }
-    }.onFailure {
-        it.rethrowIfFatal()
     }.isSuccess
 
     private fun buildCommand(config: RemoteSshConfig, target: SshTarget, localPort: Int): List<String> {
@@ -72,12 +70,12 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
 
     private fun drainOutput(stream: InputStream) {
         Thread {
-            runCatching {
+            runCatchingNonFatal {
                 val buffer = ByteArray(4096)
                 while (stream.read(buffer) >= 0) {
                     // Discard ssh output while keeping pipe drained.
                 }
-            }.onFailure { it.rethrowIfFatal() }
+            }
         }.apply {
             isDaemon = true
             start()
@@ -90,10 +88,8 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
             if (!process.isAlive) {
                 throw IllegalStateException("SSH tunnel process exited with code ${process.exitValue()}")
             }
-            if (runCatching {
+            if (runCatchingNonFatal {
                 Socket("127.0.0.1", localPort).use {}
-            }.onFailure {
-                it.rethrowIfFatal()
             }.isSuccess) {
                 waitForStableProcess(process, localPort)
                 return

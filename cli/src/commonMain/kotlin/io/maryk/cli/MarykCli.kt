@@ -23,9 +23,10 @@ import io.maryk.cli.commands.ChangesCommand
 import io.maryk.cli.commands.UndeleteCommand
 import io.maryk.cli.commands.registerAll
 import io.maryk.cli.commands.platformCommands
+import maryk.datastore.shared.rethrowIfFatal
 
 fun main(args: Array<String>) {
-    runCatching {
+    try {
         val state = CliState()
         val environment = BasicCliEnvironment
         val registry = defaultRegistry(state, environment)
@@ -47,7 +48,8 @@ fun main(args: Array<String>) {
                 MarykCli(registry).run()
             }
         }
-    }.onFailure { t ->
+    } catch (t: Throwable) {
+        t.rethrowIfFatal()
         println("CLI fatal error: ${t::class.simpleName}: ${t.message ?: "no message"}")
         t.printStackTrace()
         exitWithCode(1)

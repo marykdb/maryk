@@ -2,7 +2,7 @@ package io.maryk.cli
 
 import kotlinx.coroutines.runBlocking
 import maryk.datastore.shared.IsDataStore
-import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 
 /**
  * Shared mutable state for the CLI session.
@@ -100,10 +100,8 @@ data class RocksDbStoreConnection(
 
     override fun close() {
         runBlocking {
-            runCatching { dataStore.closeAllListeners() }
-                .onFailure { it.rethrowIfFatal() }
-            runCatching { dataStore.close() }
-                .onFailure { it.rethrowIfFatal() }
+            runCatchingNonFatal { dataStore.closeAllListeners() }
+            runCatchingNonFatal { dataStore.close() }
         }
     }
 }
@@ -117,10 +115,8 @@ data class FoundationDbStoreConnection(
 
     override fun close() {
         runBlocking {
-            runCatching { dataStore.closeAllListeners() }
-                .onFailure { it.rethrowIfFatal() }
-            runCatching { dataStore.close() }
-                .onFailure { it.rethrowIfFatal() }
+            runCatchingNonFatal { dataStore.closeAllListeners() }
+            runCatchingNonFatal { dataStore.close() }
         }
     }
 }

@@ -68,7 +68,7 @@ kotlin {
                         setIgnoreExitValue(true)
                     }.result.get()
                     result.exitValue == 0 && output.toString().trim().split(Regex("\\s+")).contains(expectedArch)
-                } catch (_: Exception) {
+                } catch (_: RuntimeException) {
                     false
                 }
             }

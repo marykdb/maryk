@@ -188,7 +188,7 @@ fun Browser(
                         Column(
                             modifier = Modifier
                                 .weight(1f)
-                                .background(MaterialTheme.colorScheme.surface)
+                                .background(MaterialTheme.colorScheme.background)
                                 .padding(0.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                         ) {

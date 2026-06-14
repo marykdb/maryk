@@ -159,11 +159,13 @@ private fun StoreRow(
     onEdit: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val connectedColor = Color(0xFF2DBE6C)
+    val connectedColor = MaterialTheme.colorScheme.tertiary
     Surface(
-        tonalElevation = 1.dp,
-        shape = RoundedCornerShape(10.dp),
-        modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.25f), RoundedCornerShape(10.dp)),
+        color = MaterialTheme.colorScheme.surface,
+        tonalElevation = 2.dp,
+        shadowElevation = 1.dp,
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth().border(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.18f), RoundedCornerShape(8.dp)),
     ) {
         ContextMenuArea(
             items = {
@@ -180,18 +182,23 @@ private fun StoreRow(
                         onClick = {},
                         onDoubleClick = { if (!isOpen) onOpen() },
                     )
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                    .padding(horizontal = 14.dp, vertical = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Icon(
-                    imageVector = Icons.Default.Storage,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier.size(20.dp),
-                )
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(6.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Storage,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.padding(6.dp).size(18.dp),
+                    )
+                }
                 Column(modifier = Modifier.weight(1f)) {
-                Text(store.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                    Text(store.name, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                     Text(
                         "${store.type.label} • ${store.displayLocation()}",
                         style = MaterialTheme.typography.labelSmall,
@@ -652,35 +659,58 @@ fun MarykTheme(
     content: @Composable () -> Unit,
 ) {
     val darkScheme = darkColorScheme(
-        primary = Color(0xFFA7C2FF),
-        secondary = Color(0xFF5A7BFF),
-        tertiary = Color(0xFF8A7DFF),
-        surface = Color(0xFF171F23),
-        surfaceVariant = Color(0xFF232C31),
-        background = Color(0xFF12181B),
-        error = Color(0xFFFF7A7A),
+        primary = Color(0xFF8FB7FF),
+        onPrimary = Color(0xFF081A33),
+        primaryContainer = Color(0xFF173B65),
+        onPrimaryContainer = Color(0xFFD7E7FF),
+        secondary = Color(0xFF7DA7AD),
+        onSecondary = Color(0xFF082023),
+        secondaryContainer = Color(0xFF14383D),
+        onSecondaryContainer = Color(0xFFD5F2F5),
+        tertiary = Color(0xFFFFB454),
+        onTertiary = Color(0xFF2A1700),
+        tertiaryContainer = Color(0xFF593900),
+        onTertiaryContainer = Color(0xFFFFDDA6),
+        surface = Color(0xFF151B1F),
+        onSurface = Color(0xFFE8EDF1),
+        surfaceVariant = Color(0xFF222C31),
+        onSurfaceVariant = Color(0xFFB7C4CA),
+        background = Color(0xFF101619),
+        outline = Color(0xFF62727A),
+        error = Color(0xFFFF8A80),
     )
     val lightScheme = lightColorScheme(
-        primary = Color(0xFF2E62FF),
-        secondary = Color(0xFF4660F5),
-        tertiary = Color(0xFF6C5CFF),
-        surfaceVariant = Color(0xFFE7EDF2),
+        primary = Color(0xFF1E5B7A),
+        onPrimary = Color(0xFFFFFFFF),
+        primaryContainer = Color(0xFFD3ECF8),
+        onPrimaryContainer = Color(0xFF093246),
+        secondary = Color(0xFF49666C),
+        onSecondary = Color(0xFFFFFFFF),
+        secondaryContainer = Color(0xFFD4E7EB),
+        onSecondaryContainer = Color(0xFF18353A),
+        tertiary = Color(0xFFB56A00),
+        onTertiary = Color(0xFFFFFFFF),
+        tertiaryContainer = Color(0xFFFFD9A3),
+        onTertiaryContainer = Color(0xFF482900),
+        surfaceVariant = Color(0xFFE5EEF2),
+        onSurfaceVariant = Color(0xFF4E5F66),
         surface = Color(0xFFFFFFFF),
-        background = Color(0xFFF7FAFC),
-        error = Color(0xFFD64545),
+        background = Color(0xFFF5F8FA),
+        outline = Color(0xFF75868D),
+        error = Color(0xFFC63D32),
     )
     val colorScheme = if (useDark) darkScheme else lightScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = MaterialTheme.typography.copy(
-            bodySmall = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif),
-            bodyMedium = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif),
-            labelSmall = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.SansSerif),
-            labelMedium = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif),
-            titleSmall = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.Serif),
-            titleMedium = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.Serif),
-            titleLarge = MaterialTheme.typography.titleLarge.copy(fontFamily = FontFamily.Serif),
+            bodySmall = MaterialTheme.typography.bodySmall.copy(fontFamily = FontFamily.SansSerif, lineHeight = 17.sp),
+            bodyMedium = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.SansSerif, lineHeight = 20.sp),
+            labelSmall = MaterialTheme.typography.labelSmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.Medium),
+            labelMedium = MaterialTheme.typography.labelMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold),
+            titleSmall = MaterialTheme.typography.titleSmall.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold),
+            titleMedium = MaterialTheme.typography.titleMedium.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold),
+            titleLarge = MaterialTheme.typography.titleLarge.copy(fontFamily = FontFamily.SansSerif, fontWeight = FontWeight.SemiBold),
         ),
         content = content,
     )

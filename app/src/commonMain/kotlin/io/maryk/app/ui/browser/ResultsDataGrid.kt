@@ -282,123 +282,129 @@ fun ResultsDataGrid(
             }
 
             if (uiState.resultsTab == ResultsTab.DATA && sortOptions.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Start,
+                Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 1.dp,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f)),
                 ) {
-                    val countSuffix = if (state.hasMoreScanResults()) "+" else ""
-                    Text(
-                        "${rows.size}$countSuffix records",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Spacer(modifier = Modifier.weight(1f))
                     Row(
+                        modifier = Modifier.fillMaxWidth().padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .handPointer()
-                            .clickable { state.updateIncludeDeleted(!state.scanConfig.includeDeleted) },
+                        horizontalArrangement = Arrangement.Start,
                     ) {
-                        Checkbox(
-                            checked = state.scanConfig.includeDeleted,
-                            onCheckedChange = null,
-                            modifier = Modifier.size(12.dp).handPointer(),
+                        val countSuffix = if (state.hasMoreScanResults()) "+" else ""
+                        Text(
+                            "${rows.size}$countSuffix records",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Show deleted", style = MaterialTheme.typography.labelSmall)
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    val hasFilter = state.scanConfig.filterText.isNotBlank()
-                    OutlinedButton(
-                        onClick = { showFilterDialog = true },
-                        enabled = dataModel != null,
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
-                        shape = RoundedCornerShape(4.dp),
-                        border = BorderStroke(
-                            1.dp,
-                            if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
-                        ),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = if (hasFilter) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
-                        modifier = Modifier.height(28.dp).handPointer(),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.FilterAlt, contentDescription = "Filter records", modifier = Modifier.size(12.dp))
-                            Text(
-                                if (hasFilter) "Filter" else "Filter",
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.offset(y = (-1).dp),
+                        Spacer(modifier = Modifier.weight(1f))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .handPointer()
+                                .clickable { state.updateIncludeDeleted(!state.scanConfig.includeDeleted) },
+                        ) {
+                            Checkbox(
+                                checked = state.scanConfig.includeDeleted,
+                                onCheckedChange = null,
+                                modifier = Modifier.size(12.dp).handPointer(),
                             )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Show deleted", style = MaterialTheme.typography.labelSmall)
                         }
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Sort by", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                        Spacer(modifier = Modifier.width(6.dp))
+                        val hasFilter = state.scanConfig.filterText.isNotBlank()
                         OutlinedButton(
-                            onClick = { sortExpanded = true },
-                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary),
-                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                            onClick = { showFilterDialog = true },
+                            enabled = dataModel != null,
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
                             shape = RoundedCornerShape(4.dp),
-                            modifier = Modifier.height(24.dp).handPointer(),
+                            border = BorderStroke(
+                                1.dp,
+                                if (hasFilter) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.outline.copy(alpha = 0.45f),
+                            ),
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = if (hasFilter) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.onSurfaceVariant,
+                            ),
+                            modifier = Modifier.height(28.dp).handPointer(),
                         ) {
-                            Text(selectedSort?.label ?: "Key", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(Icons.Default.ArrowDropDown, contentDescription = "Open sort options", modifier = Modifier.size(14.dp))
-                        }
-                        DropdownMenu(
-                            expanded = sortExpanded,
-                            onDismissRequest = { sortExpanded = false },
-                            offset = DpOffset(0.dp, 4.dp),
-                        ) {
-                            sortOptions.forEach { option ->
-                                DropdownMenuItem(
-                                    text = { Text(option.label, style = MaterialTheme.typography.labelSmall) },
-                                    onClick = {
-                                        sortExpanded = false
-                                        selectedSort = option
-                                        applySortSelection(state, option, sortDescending)
-                                    },
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.FilterAlt, contentDescription = "Filter records", modifier = Modifier.size(12.dp))
+                                Text(
+                                    if (hasFilter) "Filter" else "Filter",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.offset(y = (-1).dp),
                                 )
                             }
                         }
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    IconButton(
-                        onClick = {
-                            val next = !sortDescending
-                            sortDescending = next
-                            selectedSort?.let { applySortSelection(state, it, next) }
-                        },
-                        enabled = selectedSort != null,
-                        modifier = Modifier.size(28.dp).handPointer(),
-                    ) {
-                        Icon(
-                            if (sortDescending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
-                            contentDescription = if (sortDescending) "Descending" else "Ascending",
-                            modifier = Modifier.size(14.dp),
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    OutlinedButton(
-                        onClick = { showAddDialog = true },
-                        enabled = dataModel != null && !state.timeTravelEnabled,
-                        contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
-                        shape = RoundedCornerShape(4.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
-                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
-                        modifier = Modifier.height(28.dp).handPointer(),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.Add, contentDescription = "Add record", modifier = Modifier.size(12.dp))
-                            Text(
-                                "Add",
-                                style = MaterialTheme.typography.labelSmall,
-                                modifier = Modifier.offset(y = (-1).dp),
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Sort by", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Box(modifier = Modifier.wrapContentSize(Alignment.TopStart)) {
+                            OutlinedButton(
+                                onClick = { sortExpanded = true },
+                                contentPadding = PaddingValues(horizontal = 6.dp, vertical = 2.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)),
+                                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+                                shape = RoundedCornerShape(4.dp),
+                                modifier = Modifier.height(24.dp).handPointer(),
+                            ) {
+                                Text(selectedSort?.label ?: "Key", style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = "Open sort options", modifier = Modifier.size(14.dp))
+                            }
+                            DropdownMenu(
+                                expanded = sortExpanded,
+                                onDismissRequest = { sortExpanded = false },
+                                offset = DpOffset(0.dp, 4.dp),
+                            ) {
+                                sortOptions.forEach { option ->
+                                    DropdownMenuItem(
+                                        text = { Text(option.label, style = MaterialTheme.typography.labelSmall) },
+                                        onClick = {
+                                            sortExpanded = false
+                                            selectedSort = option
+                                            applySortSelection(state, option, sortDescending)
+                                        },
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        IconButton(
+                            onClick = {
+                                val next = !sortDescending
+                                sortDescending = next
+                                selectedSort?.let { applySortSelection(state, it, next) }
+                            },
+                            enabled = selectedSort != null,
+                            modifier = Modifier.size(28.dp).handPointer(),
+                        ) {
+                            Icon(
+                                if (sortDescending) Icons.Default.ArrowUpward else Icons.Default.ArrowDownward,
+                                contentDescription = if (sortDescending) "Descending" else "Ascending",
+                                modifier = Modifier.size(14.dp),
                             )
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        OutlinedButton(
+                            onClick = { showAddDialog = true },
+                            enabled = dataModel != null && !state.timeTravelEnabled,
+                            contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                            shape = RoundedCornerShape(4.dp),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.45f)),
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurfaceVariant),
+                            modifier = Modifier.height(28.dp).handPointer(),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                Icon(Icons.Default.Add, contentDescription = "Add record", modifier = Modifier.size(12.dp))
+                                Text(
+                                    "Add",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.offset(y = (-1).dp),
+                                )
+                            }
                         }
                     }
                 }
@@ -567,9 +573,10 @@ fun ResultsDataGrid(
                                         .heightIn(min = densityHeight)
                                         .background(
                                             when {
-                                                selected -> MaterialTheme.colorScheme.primaryContainer
-                                                hovered -> MaterialTheme.colorScheme.primaryContainer
+                                                selected -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.75f)
+                                                hovered -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.42f)
                                                 row.isDeleted -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f)
+                                                index % 2 == 1 -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.18f)
                                                 else -> Color.Transparent
                                             },
                                         )

@@ -2,6 +2,7 @@
 
 package io.maryk.app.ui.browser
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.TooltipArea
 import androidx.compose.foundation.TooltipPlacement
@@ -110,7 +111,7 @@ fun InspectorDrawer(
     Box(
         modifier = modifier
             .fillMaxHeight()
-            .background(MaterialTheme.colorScheme.background),
+            .background(MaterialTheme.colorScheme.surface),
     ) {
         Column(
             modifier = Modifier.fillMaxHeight(),
@@ -174,43 +175,53 @@ private fun ModelDetailsHeader(
     state: BrowserState,
 ) {
     val dataModel = state.currentDataModel()
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Text(
-            dataModel?.Meta?.name ?: "No model",
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Text(
+                dataModel?.Meta?.name ?: "No model",
+                style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
 @Composable
 private fun InspectorHeader(details: RecordDetails) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Box(modifier = Modifier.weight(1f)) {
-                SelectionContainer(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        details.keyText,
-                        style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+    Surface(
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f)),
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Box(modifier = Modifier.weight(1f)) {
+                    SelectionContainer(modifier = Modifier.fillMaxWidth()) {
+                        Text(
+                            details.keyText,
+                            style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                 }
+                SmallCopyButton(onClick = { copyToClipboard(details.keyText) })
             }
-            SmallCopyButton(onClick = { copyToClipboard(details.keyText) })
-        }
-        Spacer(modifier = Modifier.height(6.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            TimestampRow("Created", details.firstVersion)
-            TimestampRow("Updated", details.lastVersion)
-            if (details.isDeleted) {
-                InfoChip("Deleted", tone = MaterialTheme.colorScheme.error)
+            Spacer(modifier = Modifier.height(6.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                TimestampRow("Created", details.firstVersion)
+                TimestampRow("Updated", details.lastVersion)
+                if (details.isDeleted) {
+                    InfoChip("Deleted", tone = MaterialTheme.colorScheme.error)
+                }
             }
         }
     }

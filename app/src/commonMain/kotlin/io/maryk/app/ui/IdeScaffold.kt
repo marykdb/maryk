@@ -78,10 +78,20 @@ fun AppScaffold(
     bottomBar: @Composable () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        Surface(color = MaterialTheme.colorScheme.surface) {
+        Surface(
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 2.dp,
+            shadowElevation = 1.dp,
+        ) {
             Column {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(3.dp)
+                        .background(MaterialTheme.colorScheme.tertiary),
+                )
                 Row(
-                    modifier = Modifier.fillMaxWidth().height(topBarHeight).padding(horizontal = 12.dp, vertical = 4.dp),
+                    modifier = Modifier.fillMaxWidth().height(topBarHeight).padding(horizontal = 14.dp, vertical = 6.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
@@ -94,7 +104,7 @@ fun AppScaffold(
                         Icon(
                             icon,
                             contentDescription = "Toggle catalog",
-                            tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.scale(scaleX = -1f, scaleY = 1f),
                         )
                     }
@@ -116,11 +126,11 @@ fun AppScaffold(
                         Icon(
                             icon,
                             contentDescription = "Toggle inspector",
-                            tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f),
+                            tint = MaterialTheme.colorScheme.primary,
                         )
                     }
                 }
-                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.16f))
                 if (state.timeTravelEnabled) {
                     TimeTravelBar(
                         dateValue = state.timeTravelDate,
@@ -191,13 +201,13 @@ private fun StoreChrome(
         )
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Surface(
-                color = MaterialTheme.colorScheme.secondary,
-                shape = RoundedCornerShape(6.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = RoundedCornerShape(5.dp),
             ) {
                 Text(
                     envLabel,
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSecondary,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
                 )
             }

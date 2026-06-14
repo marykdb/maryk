@@ -5,10 +5,13 @@ package maryk.datastore.test
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.responses.IsDataResponse
@@ -31,16 +34,28 @@ suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
     val listenerSetupComplete = CompletableDeferred<Boolean>()
 
     val listenJob = GlobalScope.launch {
-        dataStore.executeFlow(
-            request
-        ).also {
-            listenerSetupComplete.complete(true)
-        }.collect {
-            responses[counter++].complete(it)
+        try {
+            dataStore.executeFlow(
+                request
+            ).also {
+                listenerSetupComplete.complete(true)
+            }.collect {
+                responses[counter++].complete(it)
+            }
+        } catch (throwable: Throwable) {
+            if (!listenerSetupComplete.isCompleted) {
+                listenerSetupComplete.completeExceptionally(throwable)
+            } else {
+                throw throwable
+            }
         }
     }
 
-    listenerSetupComplete.await()
+    withContext(Dispatchers.Default.limitedParallelism(1)) {
+        withTimeout(5.seconds) {
+            listenerSetupComplete.await()
+        }
+    }
 
     val testFailure = CompletableDeferred<Throwable?>()
 

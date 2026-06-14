@@ -10,7 +10,15 @@ fun <T : Any> ByteArray.convertToValue(
     reference: IsPropertyReference<T, *, *>,
     offset: Int = 0,
     length: Int = this.size - offset
-): T {
+): T = convertToValueOrNull(reference, offset, length)
+    ?: throw NullPointerException("Could not decode non-null value for ${reference.completeName}")
+
+/** Convert a byte array from [offset] until [length] with [reference] to a nullable value of [T] */
+fun <T : Any> ByteArray.convertToValueOrNull(
+    reference: IsPropertyReference<T, *, *>,
+    offset: Int = 0,
+    length: Int = this.size - offset
+): T? {
     var readIndex = offset
     val reader = {
         this[readIndex++]
@@ -23,14 +31,16 @@ fun <T : Any> ByteArray.convertToValue(
 
         @Suppress("UNCHECKED_CAST")
         (return if (typedValue.type != reference.type) {
-            Unit as T
+            null
         } else {
-            typedValue.value as T
+            typedValue.value as T?
         })
     }
 
-    @Suppress("UNCHECKED_CAST")
-    return readValue(reference.comparablePropertyDefinition, reader) {
+    val value = readValue(reference.comparablePropertyDefinition, reader) {
         length - readIndex + offset
-    } as T
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    return if (value == Unit) null else value as T?
 }

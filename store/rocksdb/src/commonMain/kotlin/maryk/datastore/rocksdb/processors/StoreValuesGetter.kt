@@ -12,6 +12,7 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.requireVersionedValue
+import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.helpers.convertToValue
@@ -47,24 +48,30 @@ internal class StoreValuesGetter(
             return cache[propertyReference] as T?
         }
 
-        val value = if (propertyReference is IsMapReference<*, *, *, *>) {
-            @Suppress("UNCHECKED_CAST")
-            readMapValue(currentKey, propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>?) as T?
-        } else if (propertyReference is SetReference<*, *>) {
-            @Suppress("UNCHECKED_CAST")
-            readSetValue(currentKey, propertyReference as SetReference<Any, IsPropertyContext>?) as T?
-        } else {
-            val reference = currentKey + propertyReference.toStorageByteArray()
-            val valueAsBytes = db.get(columnFamilies.table, readOptions, reference)
-            valueAsBytes?.convertToValue(
-                propertyReference,
-                VERSION_BYTE_SIZE, valueAsBytes.size - VERSION_BYTE_SIZE
-            )?.also {
-                if (captureVersion) {
-                    val version = valueAsBytes.readVersionBytes()
-                    this.lastVersion = this.lastVersion?.let {
-                        max(it, version)
-                    } ?: version
+        val value = when (propertyReference) {
+            is IsMapReference<*, *, *, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                readMapValue(currentKey, propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>?) as T?
+            }
+
+            is SetReference<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                readSetValue(currentKey, propertyReference as SetReference<Any, IsPropertyContext>?) as T?
+            }
+
+            else -> {
+                val reference = currentKey + propertyReference.toStorageByteArray()
+                val valueAsBytes = db.get(columnFamilies.table, readOptions, reference)
+                valueAsBytes?.convertToValue(
+                    propertyReference,
+                    VERSION_BYTE_SIZE, valueAsBytes.size - VERSION_BYTE_SIZE
+                )?.also {
+                    if (captureVersion) {
+                        val version = valueAsBytes.readVersionBytes()
+                        this.lastVersion = this.lastVersion?.let {
+                            max(it, version)
+                        } ?: version
+                    }
                 }
             }
         }
@@ -100,20 +107,32 @@ internal class StoreValuesGetter(
                     keyValue
                 } catch (error: Throwable) {
                     error.rethrowIfFatal()
+                    if (!error.isSkippableDataError()) {
+                        throw error
+                    }
                     iterator.next()
                     continue
                 }
 
-                val storedValue = iterator.value()
-                requireVersionedValue(storedValue)
-                val valueBytes = storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size)
-                var valueReadIndex = 0
-                val value = readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
-                    ?: run {
-                        iterator.next()
-                        continue
+                try {
+                    val storedValue = iterator.value()
+                    requireVersionedValue(storedValue)
+                    val valueBytes = storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size)
+                    var valueReadIndex = 0
+                    val value = readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
+                        ?: run {
+                            iterator.next()
+                            continue
+                        }
+                    map[mapKey] = value
+                } catch (error: Throwable) {
+                    error.rethrowIfFatal()
+                    if (!error.isSkippableDataError()) {
+                        throw error
                     }
-                map[mapKey] = value
+                    iterator.next()
+                    continue
+                }
                 iterator.next()
             }
         }
@@ -149,6 +168,9 @@ internal class StoreValuesGetter(
                     itemValue
                 } catch (error: Throwable) {
                     error.rethrowIfFatal()
+                    if (!error.isSkippableDataError()) {
+                        throw error
+                    }
                     iterator.next()
                     continue
                 }

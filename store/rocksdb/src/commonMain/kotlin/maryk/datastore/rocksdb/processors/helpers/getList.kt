@@ -7,6 +7,7 @@ import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.shared.readValue
+import maryk.lib.exceptions.ParseException
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.rocksdb.ReadOptions
 
@@ -65,6 +66,8 @@ internal fun readStoredListCount(countBytes: ByteArray): Int {
     var readIndex = VERSION_BYTE_SIZE
     return try {
         initIntByVar { countBytes[readIndex++] }
+    } catch (cause: ParseException) {
+        throw StorageException("Invalid stored list count: ${cause.message}")
     } catch (cause: IndexOutOfBoundsException) {
         throw StorageException("Invalid stored list count: ${cause.message}")
     }

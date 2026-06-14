@@ -1,6 +1,7 @@
 package maryk.datastore.memory.records
 
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
@@ -8,23 +9,24 @@ import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
 import maryk.core.processors.datastore.matchers.IsQualifierMatcher
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
-import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.IsPropertyContext
-import maryk.core.properties.references.IsMapReference
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyKeyReference
-import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.SetAnyValueReference
+import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.SimpleTypedValueReference
-import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TypedValue
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.processors.changers.getValueAtIndex
 import maryk.datastore.memory.processors.objectSoftDeleteQualifier
+import maryk.datastore.shared.isSkippableDataError
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.exceptions.ParseException
 
 /**
  * A DataRecord stored at [key] with [values]
@@ -67,12 +69,21 @@ internal data class DataRecord<DM : IsRootDataModel>(
 
             val key = try {
                 var readIndex = mapPrefix.size
-                val mapKeyLength = initIntByVar { reference[readIndex++] }
+                val mapKeyLength = readQualifierLength(
+                    qualifierLength = reference.size,
+                    offsetGetter = { readIndex },
+                    offsetSetter = { readIndex = it },
+                    qualifierReader = { reference[it] },
+                    subject = "map key"
+                )
                 val keyValue = mapDefinition.keyDefinition.readStorageBytes(mapKeyLength) { reference[readIndex++] }
                 if (readIndex != reference.size) continue
                 keyValue
-            } catch (_: Exception) {
-                continue
+            } catch (error: Exception) {
+                if (error.isSkippableDataError()) {
+                    continue
+                }
+                throw error
             }
 
             map[key] = node.value
@@ -97,14 +108,23 @@ internal data class DataRecord<DM : IsRootDataModel>(
 
             val setItem = try {
                 var readIndex = setPrefix.size
-                val setItemLength = initIntByVar { reference[readIndex++] }
+                val setItemLength = readQualifierLength(
+                    qualifierLength = reference.size,
+                    offsetGetter = { readIndex },
+                    offsetSetter = { readIndex = it },
+                    qualifierReader = { reference[it] },
+                    subject = "set item"
+                )
                 @Suppress("UNCHECKED_CAST")
                 val valueDefinition = setDefinition.valueDefinition as maryk.core.properties.definitions.IsStorageBytesEncodable<Any>
                 val itemValue = valueDefinition.readStorageBytes(setItemLength) { reference[readIndex++] }
                 if (readIndex != reference.size) continue
                 itemValue
-            } catch (_: Exception) {
-                continue
+            } catch (error: Exception) {
+                if (error.isSkippableDataError()) {
+                    continue
+                }
+                throw error
             }
 
             set += setItem
@@ -198,31 +218,76 @@ internal data class DataRecord<DM : IsRootDataModel>(
         reference: IsPropertyReference<*, *, *>,
         qualifierBytes: ByteArray
     ): Any? {
-        return when (reference) {
-            is MapAnyKeyReference<*, *, *> -> {
-                val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
-                var readIndex = parentLength
-                if (readIndex >= qualifierBytes.size) return null
+        return try {
+            when (reference) {
+                is MapAnyKeyReference<*, *, *> -> {
+                    val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
+                    var readIndex = parentLength
+                    if (readIndex >= qualifierBytes.size) return null
 
-                val keyLength = initIntByVar { qualifierBytes[readIndex++] }
-                if (readIndex + keyLength > qualifierBytes.size) return null
+                    val keyLength = readQualifierLength(
+                        qualifierLength = qualifierBytes.size,
+                        offsetGetter = { readIndex },
+                        offsetSetter = { readIndex = it },
+                        qualifierReader = { qualifierBytes[it] },
+                        subject = "map key",
+                    )
 
-                @Suppress("UNCHECKED_CAST")
-                (reference as MapAnyKeyReference<Any, Any, *>).readStorageBytes(keyLength) { qualifierBytes[readIndex++] }
+                    @Suppress("UNCHECKED_CAST")
+                    (reference as MapAnyKeyReference<Any, Any, *>).readStorageBytes(keyLength) { qualifierBytes[readIndex++] }
+                }
+                is SetAnyValueReference<*, *> -> {
+                    val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
+                    var readIndex = parentLength
+                    if (readIndex >= qualifierBytes.size) return null
+
+                    val valueLength = readQualifierLength(
+                        qualifierLength = qualifierBytes.size,
+                        offsetGetter = { readIndex },
+                        offsetSetter = { readIndex = it },
+                        qualifierReader = { qualifierBytes[it] },
+                        subject = "set item",
+                    )
+
+                    @Suppress("UNCHECKED_CAST")
+                    (reference as SetAnyValueReference<Any, *>).readStorageBytes(valueLength) { qualifierBytes[readIndex++] }
+                }
+                else -> null
             }
-            is SetAnyValueReference<*, *> -> {
-                val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
-                var readIndex = parentLength
-                if (readIndex >= qualifierBytes.size) return null
-
-                val valueLength = initIntByVar { qualifierBytes[readIndex++] }
-                if (readIndex + valueLength > qualifierBytes.size) return null
-
-                @Suppress("UNCHECKED_CAST")
-                (reference as SetAnyValueReference<Any, *>).readStorageBytes(valueLength) { qualifierBytes[readIndex++] }
+        } catch (error: Exception) {
+            if (error.isSkippableDataError()) {
+                null
+            } else {
+                throw error
             }
-            else -> null
         }
+    }
+
+    private fun readQualifierLength(
+        qualifierReader: (Int) -> Byte,
+        qualifierLength: Int,
+        offsetGetter: () -> Int,
+        offsetSetter: (Int) -> Unit,
+        subject: String
+    ): Int {
+        val length = initIntByVar {
+            val offset = offsetGetter()
+            if (offset >= qualifierLength) {
+                throw ParseException("Missing $subject length in storage qualifier")
+            }
+            offsetSetter(offset + 1)
+            qualifierReader(offset)
+        }
+
+        if (length < 0) {
+            throw ParseException("Negative $subject length in storage qualifier")
+        }
+
+        val offset = offsetGetter()
+        if (length > qualifierLength - offset) {
+            throw ParseException("$subject length exceeds storage qualifier")
+        }
+        return length
     }
 
     /** Get value by [reference] */

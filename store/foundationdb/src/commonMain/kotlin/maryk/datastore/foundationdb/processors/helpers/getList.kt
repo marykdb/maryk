@@ -8,6 +8,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.shared.readValue
 import maryk.foundationdb.Range
 import maryk.foundationdb.Transaction
+import maryk.lib.exceptions.ParseException
 
 /**
  * Read a list for [reference] from FoundationDB by scanning the qualifiers under the reference prefix.
@@ -47,6 +48,8 @@ internal fun readStoredListCount(countValue: ByteArray): Int {
     var readIndex = VERSION_BYTE_SIZE
     return try {
         initIntByVar { countValue[readIndex++] }
+    } catch (cause: ParseException) {
+        throw StorageException("Invalid stored list count: ${cause.message}")
     } catch (cause: IndexOutOfBoundsException) {
         throw StorageException("Invalid stored list count: ${cause.message}")
     }

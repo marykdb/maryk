@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.references.SetReference
+import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.foundationdb.Range
 import maryk.foundationdb.ReadTransaction
@@ -33,6 +34,9 @@ internal fun <T : Any> ReadTransaction.readSetByReference(
             itemValue
         } catch (error: Throwable) {
             error.rethrowIfFatal()
+            if (!error.isSkippableDataError()) {
+                throw error
+            }
             continue
         }
 

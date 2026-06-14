@@ -1,6 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.exceptions.StorageException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.exceptions.ValidationException
@@ -10,7 +11,6 @@ import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
 import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
-import maryk.datastore.shared.rethrowIfFatal
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.exceptions.ParseException
 
@@ -44,9 +44,12 @@ internal object HistoricStoreIndexValuesWalker {
                 // skip historical values no longer valid for the current index
             } catch (_: ParseException) {
                 // skip malformed historical values
-            } catch (e: Exception) {
-                e.rethrowIfFatal()
-                // skip failing index reference generation
+            } catch (_: StorageException) {
+                // skip obsolete historical values which cannot be reconstructed anymore
+            } catch (e: DefNotFoundException) {
+                throw e
+            } catch (_: IndexOutOfBoundsException) {
+                // skip malformed historical values
             }
 
             lastVersion = getter.versionToSkip
@@ -98,7 +101,7 @@ private class HistoricStoreIndexValuesGetter(
                     }
                 }
                 is DataRecordHistoricValues<*> -> {
-                    node.history.getOrNull(iterableReference.nextHistoryIndex++) as DataRecordValue<T>
+                    node.history.getOrNull(iterableReference.nextHistoryIndex++) as? DataRecordValue<T>
                 }
                 else -> throw StorageException("Unknown storage type: $node")
             }

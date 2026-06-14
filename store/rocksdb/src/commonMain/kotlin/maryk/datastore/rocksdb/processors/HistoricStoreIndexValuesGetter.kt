@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
+import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.invert
 import maryk.core.extensions.bytes.writeBytes
@@ -17,8 +18,7 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
-import maryk.datastore.shared.helpers.convertToValue
-import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.helpers.convertToValueOrNull
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.exceptions.ParseException
 import maryk.rocksdb.ReadOptions
@@ -59,8 +59,8 @@ internal class HistoricStoreIndexValuesWalker(
 
         val keyAndVersionSize = key.size + VERSION_BYTE_SIZE
         do {
-            var index = 0
             try {
+                var index = 0
                 val historicIndexReference = ByteArray(
                     indexableBytes.size + indexable.calculateStorageByteLengthForIndex(
                         getter, keyAndVersionSize
@@ -79,9 +79,12 @@ internal class HistoricStoreIndexValuesWalker(
                 // skip historical values no longer valid for the current index
             } catch (_: ParseException) {
                 // skip malformed historical values
-            } catch (e: Exception) {
-                e.rethrowIfFatal()
-                // skip failing index reference generation
+            } catch (_: StorageException) {
+                // skip obsolete historical values which cannot be reconstructed anymore
+            } catch (e: DefNotFoundException) {
+                throw e
+            } catch (_: IndexOutOfBoundsException) {
+                // skip malformed historical values
             }
         } while (getter.gotoNextVersion())
     }
@@ -135,8 +138,11 @@ internal class HistoricStoreIndexValuesWalker(
                     // skip historical values no longer valid for the current index
                 } catch (_: ParseException) {
                     // skip malformed historical values
-                } catch (e: Exception) {
-                    e.rethrowIfFatal()
+                } catch (_: StorageException) {
+                    // skip obsolete historical values which cannot be reconstructed anymore
+                } catch (e: DefNotFoundException) {
+                    throw e
+                } catch (_: IndexOutOfBoundsException) {
                     // skip malformed references
                 }
                 iterator.next()
@@ -197,8 +203,11 @@ internal class HistoricStoreIndexValuesWalker(
                     // skip historical values no longer valid for the current index
                 } catch (_: ParseException) {
                     // skip malformed historical values
-                } catch (e: Exception) {
-                    e.rethrowIfFatal()
+                } catch (_: StorageException) {
+                    // skip obsolete historical values which cannot be reconstructed anymore
+                } catch (e: DefNotFoundException) {
+                    throw e
+                } catch (_: IndexOutOfBoundsException) {
                     // skip malformed references
                 }
                 iterator.next()
@@ -335,7 +344,7 @@ private class HistoricStoreIndexValuesGetter(
         }
 
         return iterableReference.lastValue?.let { lastValue ->
-            lastValue.convertToValue(propertyReference, 0, lastValue.size)
+            lastValue.convertToValueOrNull(propertyReference, 0, lastValue.size)
         }
     }
 

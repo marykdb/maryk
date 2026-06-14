@@ -14,6 +14,8 @@ import maryk.core.properties.references.SetAnyValueReference
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.shared.helpers.convertToValue
+import maryk.datastore.shared.isSkippableDataError
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.rocksdb.ReadOptions
 
 /**
@@ -103,30 +105,35 @@ private fun <T : Any> readFuzzyValue(
 ): T? {
     val refEnd = refOffset + refLength
 
-    return when (reference) {
-        is MapAnyKeyReference<*, *, *> -> {
-            val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
-            var readIndex = refOffset + parentLength
-            if (readIndex >= refEnd) return null
+    return try {
+        when (reference) {
+            is MapAnyKeyReference<*, *, *> -> {
+                val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
+                var readIndex = refOffset + parentLength
+                if (readIndex >= refEnd) return null
 
-            val keyLength = initIntByVar { referenceBytes[readIndex++] }
-            if (readIndex + keyLength > refEnd) return null
+                val keyLength = initIntByVar { referenceBytes[readIndex++] }
+                if (readIndex + keyLength > refEnd) return null
 
-            @Suppress("UNCHECKED_CAST")
-            (reference as MapAnyKeyReference<Any, Any, *>).readStorageBytes(keyLength) { referenceBytes[readIndex++] } as T
+                @Suppress("UNCHECKED_CAST")
+                (reference as MapAnyKeyReference<Any, Any, *>).readStorageBytes(keyLength) { referenceBytes[readIndex++] } as T
+            }
+            is SetAnyValueReference<*, *> -> {
+                val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
+                var readIndex = refOffset + parentLength
+                if (readIndex >= refEnd) return null
+
+                val valueLength = initIntByVar { referenceBytes[readIndex++] }
+                if (readIndex + valueLength > refEnd) return null
+
+                @Suppress("UNCHECKED_CAST")
+                (reference as SetAnyValueReference<Any, *>).readStorageBytes(valueLength) { referenceBytes[readIndex++] } as T
+            }
+            else -> null
         }
-        is SetAnyValueReference<*, *> -> {
-            val parentLength = reference.toQualifierStorageByteArray()?.size ?: 0
-            var readIndex = refOffset + parentLength
-            if (readIndex >= refEnd) return null
-
-            val valueLength = initIntByVar { referenceBytes[readIndex++] }
-            if (readIndex + valueLength > refEnd) return null
-
-            @Suppress("UNCHECKED_CAST")
-            (reference as SetAnyValueReference<Any, *>).readStorageBytes(valueLength) { referenceBytes[readIndex++] } as T
-        }
-        else -> null
+    } catch (error: Throwable) {
+        error.rethrowIfFatal()
+        if (error.isSkippableDataError()) null else throw error
     }
 }
 

@@ -5,6 +5,7 @@ import maryk.core.processors.datastore.matchers.FuzzyMatchResult.NO_MATCH
 import maryk.core.processors.datastore.matchers.FuzzyMatchResult.OUT_OF_RANGE
 import maryk.core.properties.references.IsPropertyReference
 import maryk.lib.extensions.compare.compareToRange
+import maryk.lib.exceptions.ParseException
 
 /** Defines a matcher for a qualifier. */
 sealed class IsQualifierMatcher
@@ -70,6 +71,8 @@ class QualifierFuzzyMatcher(
                         qualifier[index++]
                     }
                 } catch (_: IndexOutOfBoundsException) {
+                    return NO_MATCH
+                } catch (_: ParseException) {
                     return NO_MATCH
                 }
             }

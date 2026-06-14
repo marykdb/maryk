@@ -74,4 +74,15 @@ class QualifierMatcherTest {
             FuzzyDynamicLengthMatch.skip { bytes[index++] }
         }
     }
+
+    @Test
+    fun fuzzyMatchTreatsMalformedDynamicLengthAsNoMatch() {
+        val qualifierMatcher = QualifierFuzzyMatcher(
+            reference = null,
+            listOf("bbbb".hexToByteArray(), "cccc".hexToByteArray()),
+            listOf(FuzzyDynamicLengthMatch)
+        )
+
+        expect(NO_MATCH) { qualifierMatcher.isMatch("bbbb".hexToByteArray(), 0) }
+    }
 }

@@ -1,11 +1,13 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import maryk.foundationdb.Transaction
+import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.foundationdb.Transaction
+import maryk.lib.exceptions.ParseException
 
 /** Read the container count (varint) for a parent reference. Returns 0 if absent. */
 internal fun getContainerCount(
@@ -18,7 +20,13 @@ internal fun getContainerCount(
     return packed?.let { arr ->
         requireVersionedValue(arr)
         var ri = VERSION_BYTE_SIZE
-        initIntByVar { arr[ri++] }
+        try {
+            initIntByVar { arr[ri++] }
+        } catch (cause: ParseException) {
+            throw StorageException("Invalid stored count: ${cause.message}")
+        } catch (cause: IndexOutOfBoundsException) {
+            throw StorageException("Invalid stored count: ${cause.message}")
+        }
     } ?: 0
 }
 

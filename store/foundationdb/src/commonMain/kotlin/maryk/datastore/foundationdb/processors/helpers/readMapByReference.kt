@@ -5,6 +5,7 @@ import maryk.foundationdb.ReadTransaction
 import maryk.core.extensions.bytes.initIntByVar
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IsMapReference
+import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.rethrowIfFatal
 
@@ -33,16 +34,27 @@ internal fun ReadTransaction.readMapByReference(
             keyValue
         } catch (error: Throwable) {
             error.rethrowIfFatal()
+            if (!error.isSkippableDataError()) {
+                throw error
+            }
             continue
         }
 
-        val stored = kv.value
-        requireVersionedValue(stored)
-        val plain = decryptValue?.invoke(stored.copyOfRange(VERSION_BYTE_SIZE, stored.size))
-            ?: stored.copyOfRange(VERSION_BYTE_SIZE, stored.size)
-        var valueReadIndex = 0
-        val value = readValue(mapValueDefinition, { plain[valueReadIndex++] }) { plain.size - valueReadIndex } ?: continue
-        map[mapKey] = value
+        try {
+            val stored = kv.value
+            requireVersionedValue(stored)
+            val plain = decryptValue?.invoke(stored.copyOfRange(VERSION_BYTE_SIZE, stored.size))
+                ?: stored.copyOfRange(VERSION_BYTE_SIZE, stored.size)
+            var valueReadIndex = 0
+            val value = readValue(mapValueDefinition, { plain[valueReadIndex++] }) { plain.size - valueReadIndex } ?: continue
+            map[mapKey] = value
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            if (!error.isSkippableDataError()) {
+                throw error
+            }
+            continue
+        }
     }
 
     return map.takeIf { it.isNotEmpty() }

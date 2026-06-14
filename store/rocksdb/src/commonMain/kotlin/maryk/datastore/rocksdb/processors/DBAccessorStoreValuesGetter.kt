@@ -14,6 +14,7 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.requireVersionedValue
+import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.helpers.convertToValue
@@ -53,20 +54,29 @@ internal class DBAccessorStoreValuesGetter(
             return cache[propertyReference] as T?
         }
 
-        val value = if (toVersion == null && propertyReference is IsMapReference<*, *, *, *>) {
-            @Suppress("UNCHECKED_CAST")
-            readMapValue(propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>?) as T?
-        } else if (toVersion == null && propertyReference is SetReference<*, *>) {
-            @Suppress("UNCHECKED_CAST")
-            readSetValue(propertyReference as SetReference<Any, IsPropertyContext>?) as T?
-        } else {
-            dbAccessor.getValue(columnFamilies, readOptions, this.toVersion, key + propertyReference.toStorageByteArray()) { valueAsBytes, offset, length ->
-                (valueAsBytes.convertToValue(propertyReference, offset, length) as T?)?.also {
-                    if (captureVersion) {
-                        val version = valueAsBytes.readVersionBytes()
-                        this.lastVersion = this.lastVersion?.let {
-                            max(it, version)
-                        } ?: version
+        val value = when (toVersion) {
+            null if propertyReference is IsMapReference<*, *, *, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                readMapValue(propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>?) as T?
+            }
+            null if propertyReference is SetReference<*, *> -> {
+                @Suppress("UNCHECKED_CAST")
+                readSetValue(propertyReference as SetReference<Any, IsPropertyContext>?) as T?
+            }
+            else -> {
+                dbAccessor.getValue(
+                    columnFamilies,
+                    readOptions,
+                    this.toVersion,
+                    key + propertyReference.toStorageByteArray()
+                ) { valueAsBytes, offset, length ->
+                    (valueAsBytes.convertToValue(propertyReference, offset, length) as T?)?.also {
+                        if (captureVersion) {
+                            val version = valueAsBytes.readVersionBytes()
+                            this.lastVersion = this.lastVersion?.let {
+                                max(it, version)
+                            } ?: version
+                        }
                     }
                 }
             }
@@ -102,20 +112,32 @@ internal class DBAccessorStoreValuesGetter(
                     keyValue
                 } catch (error: Throwable) {
                     error.rethrowIfFatal()
+                    if (!error.isSkippableDataError()) {
+                        throw error
+                    }
                     iterator.next()
                     continue
                 }
 
-                val storedValue = iterator.value()
-                requireVersionedValue(storedValue)
-                val valueBytes = dbAccessor.dataStore.decryptValueIfNeeded(storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size))
-                var valueReadIndex = 0
-                val value = readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
-                    ?: run {
-                        iterator.next()
-                        continue
+                try {
+                    val storedValue = iterator.value()
+                    requireVersionedValue(storedValue)
+                    val valueBytes = dbAccessor.dataStore.decryptValueIfNeeded(storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size))
+                    var valueReadIndex = 0
+                    val value = readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
+                        ?: run {
+                            iterator.next()
+                            continue
+                        }
+                    map[mapKey] = value
+                } catch (error: Throwable) {
+                    error.rethrowIfFatal()
+                    if (!error.isSkippableDataError()) {
+                        throw error
                     }
-                map[mapKey] = value
+                    iterator.next()
+                    continue
+                }
                 iterator.next()
             }
         }
@@ -150,6 +172,9 @@ internal class DBAccessorStoreValuesGetter(
                     itemValue
                 } catch (error: Throwable) {
                     error.rethrowIfFatal()
+                    if (!error.isSkippableDataError()) {
+                        throw error
+                    }
                     iterator.next()
                     continue
                 }

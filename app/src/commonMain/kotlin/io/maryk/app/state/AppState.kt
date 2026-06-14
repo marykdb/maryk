@@ -68,6 +68,7 @@ import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 import kotlin.time.Instant
 
 @Stable
@@ -141,6 +142,8 @@ class BrowserState(
     var pendingHighlightModelId by mutableStateOf<UInt?>(null)
         private set
 
+    private var recordLoadGeneration = 0
+
     var referenceBackTarget by mutableStateOf<ReferenceBackTarget?>(null)
         private set
 
@@ -186,9 +189,9 @@ class BrowserState(
         lastActionMessage = null
         scanStatus = null
         scope.launch {
-            val result = runCatching {
+            val result = runCatchingNonFatal {
                 withContext(Dispatchers.IO) { connector.connect(definition) }
-            }.onFailure { it.rethrowIfFatal() }.getOrElse { error ->
+            }.getOrElse { error ->
                 lastActionMessage = error.message ?: error::class.simpleName ?: "Unknown error"
                 isWorking = false
                 return@launch
@@ -217,6 +220,8 @@ class BrowserState(
                     }
                     recordDetails = null
                     selectedModelField = null
+                    referenceBackTarget = null
+                    invalidateRecordLoadRequests()
                     lastActionMessage = null
                     isWorking = false
                     if (selectedModelId != null) {
@@ -236,6 +241,8 @@ class BrowserState(
         scanCursor = ScanCursor()
         recordDetails = null
         selectedModelField = null
+        referenceBackTarget = null
+        invalidateRecordLoadRequests()
         scanStatus = null
         modelRowCounts.clear()
         orderFieldsByModel.clear()
@@ -257,6 +264,8 @@ class BrowserState(
         selectedModelId = modelId
         recordDetails = null
         selectedModelField = null
+        referenceBackTarget = null
+        invalidateRecordLoadRequests()
         historyChanges = emptyList()
         scanConfig = scanConfig.copy(
             orderFields = orderFieldsByModel[modelId].orEmpty(),
@@ -354,7 +363,7 @@ class BrowserState(
         aggregationStatus = "Running aggregation..."
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingNonFatal {
                     dataModel.scan(
                         where = where,
                         limit = limit.toUInt(),
@@ -362,7 +371,7 @@ class BrowserState(
                         aggregations = aggregations,
                         allowTableScan = true,
                     ).let { connection.dataStore.execute(it) }
-                }.onFailure { it.rethrowIfFatal() }
+                }
             }
             if (result.isSuccess) {
                 val response = result.getOrNull()
@@ -421,9 +430,11 @@ class BrowserState(
         }
         selectedModelId = modelId
         recordDetails = null
+        selectedModelField = null
         historyChanges = emptyList()
         pendingHighlightKey = key
         pendingHighlightModelId = modelId
+        invalidateRecordLoadRequests()
         scanFromStart()
     }
 
@@ -449,6 +460,7 @@ class BrowserState(
     fun updateTimeTravelEnabled(enabled: Boolean) {
         if (timeTravelEnabled == enabled) return
         timeTravelEnabled = enabled
+        invalidateRecordLoadRequests()
         if (enabled && timeTravelDate.isBlank() && timeTravelTime.isBlank()) {
             val now = HLC().toPhysicalUnixTime().toLong()
             val dateTime = Instant.fromEpochMilliseconds(now).toLocalDateTime(TimeZone.currentSystemDefault())
@@ -461,12 +473,14 @@ class BrowserState(
     fun updateTimeTravelDate(value: String) {
         if (timeTravelDate == value) return
         timeTravelDate = value
+        invalidateRecordLoadRequests()
         updateTimeTravelVersion()
     }
 
     fun updateTimeTravelTime(value: String) {
         if (timeTravelTime == value) return
         timeTravelTime = value
+        invalidateRecordLoadRequests()
         updateTimeTravelVersion()
     }
 
@@ -491,11 +505,11 @@ class BrowserState(
         val minute = timeParts[1].toIntOrNull() ?: return null
         val second = timeParts.getOrNull(2)?.toIntOrNull() ?: 59
         if (month !in 1..12 || day !in 1..31 || hour !in 0..23 || minute !in 0..59 || second !in 0..59) return null
-        return runCatching {
+        return runCatchingNonFatal {
             val dateTime = kotlinx.datetime.LocalDateTime(year, month, day, hour, minute, second, 999_999_999)
             val instant = dateTime.toInstant(TimeZone.currentSystemDefault())
             HLC(instant.toEpochMilliseconds().toULong(), 0xFFFFFu).timestamp
-        }.onFailure { it.rethrowIfFatal() }.getOrNull()
+        }.getOrNull()
     }
 
     private fun normalizeTimeTravelTime(value: String): String {
@@ -562,10 +576,11 @@ class BrowserState(
         val connection = activeConnection ?: return
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return
         val toVersion = if (timeTravelEnabled) timeTravelVersion else null
+        val requestGeneration = ++recordLoadGeneration
         isWorking = true
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                try {
+                runCatchingNonFatal {
                     val response = connection.dataStore.execute(
                         dataModel.get(
                             row.key,
@@ -574,20 +589,35 @@ class BrowserState(
                         )
                     )
                     response.values.firstOrNull()
-                } catch (e: Throwable) {
-                    e.rethrowIfFatal()
-                    null
                 }
             }
-            if (result == null) {
+            if (requestGeneration != recordLoadGeneration) {
+                isWorking = false
+                return@launch
+            }
+            if (result.isFailure) {
+                recordDetails = null
+                selectedModelField = null
+                historyChanges = emptyList()
+                lastActionMessage = "Record load failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+                isWorking = false
+                return@launch
+            }
+            val loaded = result.getOrNull()
+            if (loaded == null) {
+                recordDetails = null
+                historyChanges = emptyList()
                 lastActionMessage = "Record not found."
                 isWorking = false
                 return@launch
             }
             val yaml = runCatching {
-                serializeRecordToYaml(dataModel, result)
+                serializeRecordToYaml(dataModel, loaded)
             }.getOrElse { error ->
                 error.rethrowIfFatal()
+                recordDetails = null
+                selectedModelField = null
+                historyChanges = emptyList()
                 lastActionMessage = "Record render failed: ${error.message ?: error::class.simpleName}"
                 isWorking = false
                 return@launch
@@ -596,10 +626,10 @@ class BrowserState(
                 model = dataModel,
                 key = row.key,
                 keyText = row.key.toString(),
-                firstVersion = result.firstVersion,
-                lastVersion = result.lastVersion,
-                isDeleted = result.isDeleted,
-                values = result.values,
+                firstVersion = loaded.firstVersion,
+                lastVersion = loaded.lastVersion,
+                isDeleted = loaded.isDeleted,
+                values = loaded.values,
                 yaml = yaml,
                 editedYaml = yaml,
             )
@@ -804,101 +834,86 @@ class BrowserState(
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
         val toVersion = if (timeTravelEnabled) timeTravelVersion else null
+        val requestGeneration = recordLoadGeneration
         scope.launch {
-            val refreshed = withContext(Dispatchers.IO) {
-                try {
+            val result = withContext(Dispatchers.IO) {
+                runCatchingNonFatal {
                     val response = connection.dataStore.execute(
                         details.model.get(details.key, toVersion = toVersion, filterSoftDeleted = false)
                     )
                     response.values.firstOrNull()
-                } catch (e: Throwable) {
-                    e.rethrowIfFatal()
-                    null
                 }
             }
-            if (refreshed != null) {
-                val yaml = runCatching {
-                    serializeRecordToYaml(details.model, refreshed)
-                }.getOrElse { error ->
-                    error.rethrowIfFatal()
-                    lastActionMessage = "Record render failed: ${error.message ?: error::class.simpleName}"
-                    return@launch
-                }
-                recordDetails = details.copy(
-                    firstVersion = refreshed.firstVersion,
-                    lastVersion = refreshed.lastVersion,
-                    isDeleted = refreshed.isDeleted,
-                    values = refreshed.values,
-                    yaml = yaml,
-                    editedYaml = yaml,
-                    dirty = false,
-                )
-                loadHistory()
+            if (requestGeneration != recordLoadGeneration) return@launch
+            if (result.isFailure) {
+                lastActionMessage = "Record refresh failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
+                return@launch
             }
+            val refreshed = result.getOrNull()
+            if (refreshed == null) {
+                recordDetails = null
+                selectedModelField = null
+                historyChanges = emptyList()
+                lastActionMessage = "Record not found."
+                return@launch
+            }
+            val yaml = runCatching {
+                serializeRecordToYaml(details.model, refreshed)
+            }.getOrElse { error ->
+                error.rethrowIfFatal()
+                recordDetails = null
+                selectedModelField = null
+                historyChanges = emptyList()
+                lastActionMessage = "Record render failed: ${error.message ?: error::class.simpleName}"
+                return@launch
+            }
+            recordDetails = details.copy(
+                firstVersion = refreshed.firstVersion,
+                lastVersion = refreshed.lastVersion,
+                isDeleted = refreshed.isDeleted,
+                values = refreshed.values,
+                yaml = yaml,
+                editedYaml = yaml,
+                dirty = false,
+            )
+            loadHistory()
         }
     }
 
     private fun loadHistory() {
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
+        val requestGeneration = recordLoadGeneration
         scope.launch {
-            val changes = withContext(Dispatchers.IO) {
-                runCatching {
+            val result = withContext(Dispatchers.IO) {
+                runCatchingNonFatal {
                     loadAllChanges(connection.dataStore, details.model, details.key)
-                }.onFailure { it.rethrowIfFatal() }.getOrDefault(emptyList())
+                }
             }
-            historyChanges = changes
-        }
-    }
-
-    private suspend fun loadAllChanges(
-        dataStore: IsDataStore,
-        model: IsRootDataModel,
-        key: Key<IsRootDataModel>,
-    ): List<VersionedChanges> {
-        val result = mutableListOf<VersionedChanges>()
-        var fromVersion = 0uL
-        val maxVersions = 1000u
-        while (true) {
-            val response = runCatching {
-                dataStore.execute(
-                    model.getChanges(
-                        key,
-                        fromVersion = fromVersion,
-                        maxVersions = maxVersions,
-                        filterSoftDeleted = false,
-                    )
-                )
-            }.onFailure { it.rethrowIfFatal() }.getOrElse {
-                dataStore.execute(
-                    model.getChanges(
-                        key,
-                        fromVersion = fromVersion,
-                        maxVersions = 1u,
-                        filterSoftDeleted = false,
-                    )
-                )
+            if (requestGeneration != recordLoadGeneration) return@launch
+            if (result.isSuccess) {
+                historyChanges = result.getOrNull().orEmpty()
+            } else {
+                lastActionMessage = "History load failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
             }
-            val entry = response.changes.firstOrNull() ?: break
-            if (entry.changes.isEmpty()) break
-            result += entry.changes
-            if (entry.changes.size.toUInt() < maxVersions) break
-            val lastVersion = entry.changes.last().version
-            if (lastVersion == ULong.MAX_VALUE) break
-            fromVersion = lastVersion + 1uL
         }
-        return result
     }
 
     private fun loadNextPage(reset: Boolean) {
         val connection = activeConnection ?: return
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return
         if (scanCursor.endReached && !reset) return
+        val requestGeneration = scanGeneration
         isWorking = true
         isScanning = true
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 buildScanPage(connection.dataStore, dataModel, reset)
+            }
+            if (requestGeneration != scanGeneration) {
+                isWorking = false
+                isScanning = false
+                return@launch
             }
             when (result) {
                 is ScanPageResult.Error -> {
@@ -931,7 +946,7 @@ class BrowserState(
             ScanQueryParser.parseSelectGraph(dataModel, merged)
         } catch (e: Throwable) {
             e.rethrowIfFatal()
-            null
+            return ScanPageResult.Error("Select error: ${e.message ?: e::class.simpleName}")
         }
 
         val where = scanConfig.filterText.takeIf { it.isNotBlank() }?.let { raw ->
@@ -1113,9 +1128,9 @@ class BrowserState(
         scope.launch {
             val allModels = buildAllModelsByName(connection)
             val result = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingNonFatal {
                     exportModelToFolder(model, format, folder, allModels)
-                }.onFailure { it.rethrowIfFatal() }
+                }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${model.Meta.name} as ${format.label}."
@@ -1134,11 +1149,11 @@ class BrowserState(
         scope.launch {
             val allModels = buildAllModelsByName(connection)
             val result = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingNonFatal {
                     allModels.values.forEach { model ->
                         exportModelToFolder(model, format, folder, allModels)
                     }
-                }.onFailure { it.rethrowIfFatal() }
+                }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${allModels.size} models as ${format.label}."
@@ -1163,7 +1178,7 @@ class BrowserState(
         exportToastMessage = null
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingNonFatal {
                     exportRowDataToFolder(
                         dataStore = connection.dataStore,
                         model = model,
@@ -1173,7 +1188,7 @@ class BrowserState(
                         folder = folder,
                         includeVersionHistory = includeVersionHistory,
                     )
-                }.onFailure { it.rethrowIfFatal() }
+                }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${model.Meta.name} row as ${format.label}."
@@ -1197,7 +1212,7 @@ class BrowserState(
         exportToastMessage = null
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingNonFatal {
                     exportModelDataToFolder(
                         dataStore = connection.dataStore,
                         model = model,
@@ -1205,7 +1220,7 @@ class BrowserState(
                         folder = exportFolder,
                         includeVersionHistory = includeVersionHistory,
                     )
-                }.onFailure { it.rethrowIfFatal() }
+                }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported ${model.Meta.name} data as ${format.label}."
@@ -1227,7 +1242,7 @@ class BrowserState(
         exportToastMessage = null
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingNonFatal {
                     connection.dataStore.dataModelsById.values.forEach { model ->
                         exportModelDataToFolder(
                             dataStore = connection.dataStore,
@@ -1237,7 +1252,7 @@ class BrowserState(
                             includeVersionHistory = includeVersionHistory,
                         )
                     }
-                }.onFailure { it.rethrowIfFatal() }
+                }
             }
             if (result.isSuccess) {
                 exportToastMessage = "Exported all data as ${format.label}."
@@ -1264,7 +1279,7 @@ class BrowserState(
         exportToastMessage = null
         scope.launch {
             val result = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingNonFatal {
                     val context = RequestContext(
                         DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
                         dataModel = model,
@@ -1287,7 +1302,7 @@ class BrowserState(
                             path = filePath,
                         )
                     }
-                }.onFailure { it.rethrowIfFatal() }
+                }
             }
             if (result.isSuccess) {
                 val summary = result.getOrNull()
@@ -1321,11 +1336,11 @@ class BrowserState(
         exportToastMessage = null
         scope.launch {
             val detection = withContext(Dispatchers.IO) {
-                runCatching {
+                runCatchingNonFatal {
                     val format = detectImportFormatFromPath(cleanPath)
                     val scopeDetected = format?.let { detectImportScopeFromPath(cleanPath, it) }
                     format to scopeDetected
-                }.onFailure { it.rethrowIfFatal() }
+                }
             }.getOrElse { error ->
                 lastActionMessage = "Import failed: ${error.message ?: error::class.simpleName}"
                 isWorking = false
@@ -1434,6 +1449,10 @@ class BrowserState(
         scanCursor = ScanCursor()
         scanStatus = null
         scanGeneration += 1
+    }
+
+    private fun invalidateRecordLoadRequests() {
+        recordLoadGeneration += 1
     }
 }
 
@@ -1560,6 +1579,49 @@ data class ImportModelDialogRequest(
     val format: DataExportFormat,
     val scope: DataImportScope,
 )
+
+internal suspend fun loadAllChanges(
+    dataStore: IsDataStore,
+    model: IsRootDataModel,
+    key: Key<IsRootDataModel>,
+): List<VersionedChanges> {
+    val result = mutableListOf<VersionedChanges>()
+    var fromVersion = 0uL
+    val maxVersions = 1000u
+    while (true) {
+        val requestMaxVersions = maxVersions
+        var effectiveMaxVersions = requestMaxVersions
+        val response = try {
+            dataStore.execute(
+                model.getChanges(
+                    key,
+                    fromVersion = fromVersion,
+                    maxVersions = requestMaxVersions,
+                    filterSoftDeleted = false,
+                )
+            )
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            effectiveMaxVersions = 1u
+            dataStore.execute(
+                model.getChanges(
+                    key,
+                    fromVersion = fromVersion,
+                    maxVersions = effectiveMaxVersions,
+                    filterSoftDeleted = false,
+                )
+            )
+        }
+        val entry = response.changes.firstOrNull() ?: break
+        if (entry.changes.isEmpty()) break
+        result += entry.changes
+        if (entry.changes.size.toUInt() < effectiveMaxVersions) break
+        val lastVersion = entry.changes.last().version
+        if (lastVersion == ULong.MAX_VALUE) break
+        fromVersion = lastVersion + 1uL
+    }
+    return result
+}
 
 private data class ScanCursor(
     val nextStartKey: Key<IsRootDataModel>? = null,

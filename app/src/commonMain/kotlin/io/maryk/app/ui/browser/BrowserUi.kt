@@ -63,6 +63,7 @@ import io.maryk.app.state.ExportDataDialogRequest
 import io.maryk.app.state.ExportDialogRequest
 import io.maryk.app.state.ImportDataDialogRequest
 import io.maryk.app.state.ImportModelDialogRequest
+import io.maryk.app.state.ModelEntry
 import io.maryk.app.ui.AppScaffold
 import io.maryk.app.ui.ModalPrimaryButton
 import io.maryk.app.ui.ModalSecondaryButton
@@ -76,23 +77,37 @@ fun Browser(
     onClose: () -> Unit,
 ) {
     val uiState = remember { BrowserUiState() }
+    val scopeKey = state.activeConnection?.definition?.id
     var showExplainPanel by remember { mutableStateOf(false) }
-    var appliedLastModel by remember { mutableStateOf(false) }
+    var appliedLastModel by remember(scopeKey) { mutableStateOf(false) }
     var leftPanelWidth by remember { mutableStateOf(280.dp) }
     var rightPanelWidth by remember { mutableStateOf(360.dp) }
 
-    LaunchedEffect(state.models, uiState.lastSelectedModelId) {
-        if (!appliedLastModel) {
-            val last = uiState.lastSelectedModelId
-            if (last != null && state.models.any { it.id == last }) {
+    LaunchedEffect(scopeKey, state.models) {
+        if (scopeKey == null) {
+            appliedLastModel = false
+            return@LaunchedEffect
+        }
+        if (appliedLastModel) return@LaunchedEffect
+        val last = uiState.lastSelectedModelId(scopeKey)
+        when {
+            last == null -> appliedLastModel = true
+            shouldRestoreLastModel(last, state.models) -> {
                 state.selectModel(last)
+                appliedLastModel = true
             }
-            appliedLastModel = true
+            state.models.isNotEmpty() -> appliedLastModel = true
         }
     }
 
-    LaunchedEffect(state.selectedModelId) {
-        uiState.setLastModel(state.selectedModelId)
+    LaunchedEffect(scopeKey, state.selectedModelId, appliedLastModel) {
+        if (appliedLastModel) {
+            uiState.setLastModel(scopeKey, state.selectedModelId)
+        }
+    }
+
+    LaunchedEffect(scopeKey, state.selectedModelId) {
+        uiState.ensureAutoPins(scopeKey, state.selectedModelId, emptySet())
     }
 
     LaunchedEffect(state.recordDetails) {
@@ -245,6 +260,13 @@ fun Browser(
     if (state.showDeleteDialog) {
         DeleteDialog(state)
     }
+}
+
+internal fun shouldRestoreLastModel(
+    lastSelectedModelId: UInt,
+    models: List<ModelEntry>,
+): Boolean {
+    return models.any { it.id == lastSelectedModelId }
 }
 
 @Composable

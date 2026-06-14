@@ -295,22 +295,25 @@ private suspend fun loadFullChangesForKey(
     val maxVersions = 1000u
 
     while (true) {
-        val response = runCatching {
+        val requestMaxVersions = maxVersions
+        var effectiveMaxVersions = requestMaxVersions
+        val response = try {
             dataStore.execute(
                 model.getChanges(
                     key,
                     fromVersion = fromVersion,
-                    maxVersions = maxVersions,
+                    maxVersions = requestMaxVersions,
                     filterSoftDeleted = false,
                 )
             )
-        }.getOrElse {
-            it.rethrowIfFatal()
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            effectiveMaxVersions = 1u
             dataStore.execute(
                 model.getChanges(
                     key,
                     fromVersion = fromVersion,
-                    maxVersions = 1u,
+                    maxVersions = effectiveMaxVersions,
                     filterSoftDeleted = false,
                 )
             )
@@ -319,7 +322,7 @@ private suspend fun loadFullChangesForKey(
         if (sortingKey == null) sortingKey = entry.sortingKey
         if (entry.changes.isEmpty()) break
         changes += entry.changes.mapNotNull(::sanitizeVersionedChanges)
-        if (entry.changes.size.toUInt() < maxVersions) break
+        if (entry.changes.size.toUInt() < effectiveMaxVersions) break
         val lastVersion = entry.changes.last().version
         if (lastVersion == ULong.MAX_VALUE) break
         fromVersion = lastVersion + 1uL

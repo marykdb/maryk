@@ -347,9 +347,10 @@ fun ModelTabPanel(
     val nodes = remember(dataModel) { buildModelNodes(dataModel) }
     val refMap = remember(dataModel) { buildModelRefMap(dataModel) }
     val modelId = state.selectedModelId
-    LaunchedEffect(dataModel, modelId) {
+    val scopeKey = state.activeConnection?.definition?.id
+    LaunchedEffect(dataModel, modelId, scopeKey) {
         val autoPins = collectAutoPinPaths(dataModel)
-        uiState.ensureAutoPins(modelId, autoPins)
+        uiState.ensureAutoPins(scopeKey, modelId, autoPins)
     }
     Column(
         modifier = modifier.fillMaxHeight().verticalScroll(rememberScrollState()).padding(12.dp),
@@ -364,6 +365,7 @@ fun ModelTabPanel(
                 node = node,
                 uiState = uiState,
                 modelId = modelId,
+                scopeKey = scopeKey,
                 onSelect = { ref -> state.selectModelField(ref) },
                 selectedPath = state.selectedModelField?.path,
             )
@@ -374,7 +376,6 @@ fun ModelTabPanel(
 @Composable
 fun ModelDetailsPanel(
     state: BrowserState,
-    uiState: BrowserUiState,
     modifier: Modifier = Modifier,
 ) {
     val selected = state.selectedModelField
@@ -492,11 +493,12 @@ private fun ModelNodeView(
     indent: Int = 0,
     uiState: BrowserUiState,
     modelId: UInt?,
+    scopeKey: String?,
     onSelect: (ModelFieldRef) -> Unit,
     selectedPath: String?,
 ) {
     if (node.children.isEmpty()) {
-        ModelLeafRow(node, indent, uiState, modelId, onSelect, selected = node.path == selectedPath)
+        ModelLeafRow(node, indent, uiState, modelId, scopeKey, onSelect, selected = node.path == selectedPath)
         return
     }
     var expanded by remember(node.path) { mutableStateOf(node.defaultExpanded) }
@@ -522,9 +524,9 @@ private fun ModelNodeView(
                 val definition = node.wrapper?.definition
                 val pinnable = definition?.let(::isPinnableDefinition) == true && modelId != null
                 if (pinnable) {
-                    val pinned = uiState.isPinned(modelId, node.path)
+                    val pinned = uiState.isPinned(scopeKey, modelId, node.path)
                     IconButton(
-                        onClick = { uiState.togglePinned(modelId, node.path) },
+                        onClick = { uiState.togglePinned(scopeKey, modelId, node.path) },
                         modifier = Modifier.size(20.dp).handPointer(),
                     ) {
                         Icon(
@@ -545,7 +547,7 @@ private fun ModelNodeView(
     }
     if (expanded) {
         node.children.forEach { child ->
-            ModelNodeView(child, indent + 1, uiState, modelId, onSelect, selectedPath)
+            ModelNodeView(child, indent + 1, uiState, modelId, scopeKey, onSelect, selectedPath)
         }
     }
 }
@@ -556,6 +558,7 @@ private fun ModelLeafRow(
     indent: Int,
     uiState: BrowserUiState,
     modelId: UInt?,
+    scopeKey: String?,
     onSelect: (ModelFieldRef) -> Unit,
     selected: Boolean = false,
 ) {
@@ -587,9 +590,9 @@ private fun ModelLeafRow(
             val definition = node.wrapper?.definition
             val pinnable = definition?.let(::isPinnableDefinition) == true && modelId != null
             if (pinnable) {
-                val pinned = uiState.isPinned(modelId, node.path)
+                val pinned = uiState.isPinned(scopeKey, modelId, node.path)
                 IconButton(
-                    onClick = { uiState.togglePinned(modelId, node.path) },
+                    onClick = { uiState.togglePinned(scopeKey, modelId, node.path) },
                     modifier = Modifier.size(20.dp).handPointer(),
                 ) {
                     Icon(

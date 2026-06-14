@@ -198,8 +198,7 @@ private suspend fun readJsonRecords(
     onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
 ) {
     val content = readImportText(path)
-    val iterator = content.iterator()
-    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
+    val reader = jsonReader(content)
     when (scope) {
         DataImportScope.SINGLE -> {
             val values = ValuesWithMetaData.Serializer.readJson(reader, requestContext)
@@ -311,7 +310,6 @@ private suspend fun readProtoRecords(
             var index = 0
             while (index < bytes.size) {
                 val frame = readLengthPrefixedFrame(bytes, index)
-                index = frame.start
                 val values = readProtoPayload(
                     bytes = bytes,
                     start = frame.start,
@@ -334,8 +332,7 @@ private suspend fun readVersionedJsonRecords(
     onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
 ) {
     val content = readImportText(path)
-    val iterator = content.iterator()
-    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
+    val reader = jsonReader(content)
     when (scope) {
         DataImportScope.SINGLE -> {
             val values = DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
@@ -415,7 +412,6 @@ private suspend fun readVersionedProtoRecords(
             var index = 0
             while (index < bytes.size) {
                 val frame = readLengthPrefixedFrame(bytes, index)
-                index = frame.start
                 val values = readProtoPayload(
                     bytes = bytes,
                     start = frame.start,
@@ -442,33 +438,33 @@ internal fun ensureJsonDocumentEnded(reader: JsonReader) {
     }
 }
 
+private fun jsonReader(content: String): JsonReader {
+    val iterator = content.iterator()
+    return JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
+}
+
 private fun detectVersionedJson(path: String, requestContext: RequestContext): Boolean {
     val content = readImportTextOrNull(path) ?: return false
-    val iterator = content.iterator()
-    val reader = JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
-    val token = reader.nextToken()
-    return when (token) {
-        is JsonToken.StartArray -> {
-            when (val next = reader.nextToken()) {
+    return runCatching {
+        val reader = jsonReader(content)
+        when (reader.nextToken()) {
+            is JsonToken.StartArray -> when (reader.nextToken()) {
                 is JsonToken.EndArray -> false
-                is JsonToken.StartObject -> runCatching {
+                is JsonToken.StartObject -> {
                     DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
                     true
-                }.onFailure {
-                    it.rethrowIfFatal()
-                }.getOrDefault(false)
-                is JsonToken.ArraySeparator -> false
+                }
                 else -> false
             }
+            is JsonToken.StartObject -> {
+                DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
+                true
+            }
+            else -> false
         }
-        is JsonToken.StartObject -> runCatching {
-            DataObjectVersionedChange.Serializer.readJson(reader, requestContext)
-            true
-        }.onFailure {
-            it.rethrowIfFatal()
-        }.getOrDefault(false)
-        else -> false
-    }
+    }.onFailure {
+        it.rethrowIfFatal()
+    }.getOrDefault(false)
 }
 
 private fun detectVersionedYaml(path: String, requestContext: RequestContext): Boolean {
@@ -525,8 +521,8 @@ private fun normalizeVersionedRecord(
     if (record.changes.isEmpty()) return record
     val sorted = record.changes.sortedBy { it.version }
     val first = sorted.first()
-    val snapshotItems = buildSnapshotItems(model, first.changes, requestContext)
-    val materialized = materializeItemsForModel(model, snapshotItems, requestContext)
+    val snapshotItems = buildSnapshotItems(first.changes)
+    val materialized = materializeItemsForModel(snapshotItems, requestContext)
     val firstChange = valuesToTopLevelChange(model, materialized)
     val normalizedChanges = buildList {
         add(
@@ -544,19 +540,17 @@ private fun normalizeVersionedRecord(
 }
 
 private fun buildSnapshotItems(
-    model: IsRootDataModel,
     changes: List<IsChange>,
-    requestContext: RequestContext,
 ): MutableValueItems {
     val items = MutableValueItems()
     changes.forEach { change ->
         when (change) {
             is Change -> change.referenceValuePairs.forEach { pair ->
-                applyReferenceValue(items, pair.reference, pair.value, pair is ReferenceNullPair, requestContext)
+                applyReferenceValue(items, pair.reference, pair.value, pair is ReferenceNullPair)
             }
             is SetChange -> change.setValueChanges.forEach { setChange ->
                 val setValues = setChange.addValues?.toMutableSet() ?: mutableSetOf()
-                applyReferenceValue(items, setChange.reference, setValues, false, requestContext)
+                applyReferenceValue(items, setChange.reference, setValues, false)
             }
             else -> Unit
         }
@@ -569,7 +563,6 @@ private fun applyReferenceValue(
     reference: AnyPropertyReference,
     value: Any?,
     delete: Boolean,
-    requestContext: RequestContext,
 ) {
     val refs = reference.unwrap(mutableListOf())
     var current: Any = items
@@ -730,7 +723,6 @@ private fun currentItems(value: Any): MutableValueItems? =
     }
 
 private fun materializeItemsForModel(
-    model: IsValuesDataModel,
     items: MutableValueItems,
     requestContext: RequestContext,
 ): MutableValueItems {
@@ -750,8 +742,8 @@ private fun materializeValue(
 ): Any? {
     return when (value) {
         is EmbeddedBuffer -> {
-            val materialized = materializeItemsForModel(value.dataModel, value.items, requestContext)
-            value.dataModel.emptyValues().copy(materialized)
+            val materialized = materializeItemsForModel(value.items, requestContext)
+            value.dataModel.emptyValues().copy(values = materialized)
         }
         is MutableList<*> -> value.map { item -> materializeValue(item, requestContext) }.toMutableList()
         is MutableSet<*> -> value.mapNotNull { item -> materializeValue(item, requestContext) }.toMutableSet()

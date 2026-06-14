@@ -123,6 +123,28 @@ class ScanCommandTest {
     }
 
     @Test
+    fun interactiveShowKeepsLastValidDisplayOnFailure() {
+        val state = connectedStateWithScanRows()
+
+        val result = ScanCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel"),
+        )
+
+        assertFalse(result.isError)
+        val interaction = state.currentInteraction
+        assertTrue(interaction != null)
+
+        val first = assertIs<InteractionResult.Stay>(interaction.onInput("show value"))
+        assertTrue(first.lines.single().startsWith("Display fields updated."))
+        assertTrue(interaction.promptLines().any { it.contains("Show: value") })
+
+        val failure = assertIs<InteractionResult.Stay>(interaction.onInput("show missing"))
+        assertTrue(failure.lines.single().startsWith("Show failed:"))
+        assertTrue(interaction.promptLines().any { it.contains("Show: value") })
+    }
+
+    @Test
     fun scanStartupReportsDataStoreFailure() {
         val state = connectedStateWithFailingScan()
 
@@ -180,7 +202,7 @@ class ScanCommandTest {
                 val response = ValuesResponse(
                     dataModel = scanRequest.dataModel,
                     values = listOf(
-                        ValuesWithMetaData<DM>(
+                        ValuesWithMetaData(
                             key = key as Key<DM>,
                             values = values as Values<DM>,
                             firstVersion = 1uL,
@@ -228,7 +250,7 @@ class ScanCommandTest {
                     val response = ValuesResponse(
                         dataModel = request.dataModel,
                         values = listOf(
-                            ValuesWithMetaData<DM>(
+                            ValuesWithMetaData(
                                 key = key as Key<DM>,
                                 values = values as Values<DM>,
                                 firstVersion = 1uL,

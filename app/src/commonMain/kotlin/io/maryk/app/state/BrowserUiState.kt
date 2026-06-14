@@ -43,16 +43,13 @@ class BrowserUiState {
     var resultsTab by mutableStateOf(readResultsTab())
         private set
 
-    var lastSelectedModelId by mutableStateOf(readLastModel())
-        private set
-
     var lastRefreshLabel by mutableStateOf("Idle")
         private set
 
     val selectedRowKeys = mutableStateMapOf<Key<IsRootDataModel>, Boolean>()
 
     val columnVisibility = mutableStateMapOf<String, Set<String>>()
-    val pinnedProperties = mutableStateMapOf<UInt, Set<String>>()
+    val pinnedProperties = mutableStateMapOf<String, Set<String>>()
 
     init {
         readColumns().forEach { (key, value) ->
@@ -87,42 +84,70 @@ class BrowserUiState {
         AppPreferences.putString(keyResultsTab, tab.name)
     }
 
-    fun setLastModel(modelId: UInt?) {
-        lastSelectedModelId = modelId
+    fun lastSelectedModelId(scopeKey: String?): UInt? {
+        return readLastModel(scopeKey)
+    }
+
+    fun setLastModel(scopeKey: String?, modelId: UInt?) {
+        val key = lastModelKey(scopeKey)
         if (modelId != null) {
-            AppPreferences.putString(keyLastModel, modelId.toString())
+            AppPreferences.putString(key, modelId.toString())
+        } else {
+            AppPreferences.putString(key, "")
+            AppPreferences.putString(keyLastModel, "")
         }
     }
 
-    fun pinnedPaths(modelId: UInt?): Set<String> {
+    fun pinnedPaths(scopeKey: String?, modelId: UInt?): Set<String> {
         if (modelId == null) return emptySet()
-        return pinnedProperties[modelId].orEmpty()
+        val scopedKey = pinnedKey(scopeKey, modelId)
+        pinnedProperties[scopedKey]?.let { return it }
+        return pinnedProperties[legacyPinnedKey(modelId)].orEmpty()
     }
 
-    fun isPinned(modelId: UInt?, path: String): Boolean {
+    fun isPinned(scopeKey: String?, modelId: UInt?, path: String): Boolean {
         if (modelId == null) return false
-        return pinnedProperties[modelId]?.contains(path) == true
+        return pinnedPaths(scopeKey, modelId).contains(path)
     }
 
-    fun togglePinned(modelId: UInt?, path: String) {
+    fun togglePinned(scopeKey: String?, modelId: UInt?, path: String) {
         if (modelId == null) return
-        val current = pinnedProperties[modelId]?.toMutableSet() ?: mutableSetOf()
+        val key = pinnedKey(scopeKey, modelId)
+        val current = pinnedProperties[key]?.toMutableSet()
+            ?: pinnedProperties[legacyPinnedKey(modelId)]?.toMutableSet()
+            ?: mutableSetOf()
         if (!current.add(path)) {
             current.remove(path)
         }
         if (current.isEmpty()) {
-            pinnedProperties.remove(modelId)
+            pinnedProperties.remove(key)
+            pinnedProperties.remove(legacyPinnedKey(modelId))
         } else {
-            pinnedProperties[modelId] = current
+            pinnedProperties[key] = current
+            pinnedProperties.remove(legacyPinnedKey(modelId))
         }
         persistPinned()
     }
 
-    fun ensureAutoPins(modelId: UInt?, paths: Set<String>) {
+    fun ensureAutoPins(scopeKey: String?, modelId: UInt?, paths: Set<String>) {
         if (modelId == null) return
-        if (pinnedProperties[modelId]?.isNotEmpty() == true) return
+        val key = pinnedKey(scopeKey, modelId)
+        val legacyKey = legacyPinnedKey(modelId)
+        if (pinnedProperties[key]?.isNotEmpty() == true) {
+            if (pinnedProperties.remove(legacyKey) != null) {
+                persistPinned()
+            }
+            return
+        }
+        val legacy = pinnedProperties[legacyKey]
+        if (legacy?.isNotEmpty() == true) {
+            pinnedProperties[key] = legacy
+            pinnedProperties.remove(legacyKey)
+            persistPinned()
+            return
+        }
         if (paths.isEmpty()) return
-        pinnedProperties[modelId] = paths
+        pinnedProperties[key] = paths
         persistPinned()
     }
 
@@ -140,16 +165,16 @@ class BrowserUiState {
             .toMap()
     }
 
-    private fun readPinned(): Map<UInt, Set<String>> {
+    private fun readPinned(): Map<String, Set<String>> {
         val raw = AppPreferences.getString(keyPinned, "")
         if (raw.isBlank()) return emptyMap()
         return raw.split(";")
             .mapNotNull { entry ->
                 val parts = entry.split("=")
                 if (parts.size != 2) return@mapNotNull null
-                val modelId = parts[0].toUIntOrNull() ?: return@mapNotNull null
+                val key = parts[0]
                 val values = parts[1].split(",").filter { it.isNotBlank() }.toSet()
-                modelId to values
+                key to values
             }
             .toMap()
     }
@@ -162,9 +187,31 @@ class BrowserUiState {
         AppPreferences.putString(keyPinned, raw)
     }
 
-    private fun readLastModel(): UInt? {
-        val raw = AppPreferences.getString(keyLastModel, "")
-        return raw.toUIntOrNull()
+    private fun pinnedKey(scopeKey: String?, modelId: UInt): String {
+        val scope = scopeKey?.takeIf { it.isNotBlank() } ?: "default"
+        return "$scope:$modelId"
+    }
+
+    private fun legacyPinnedKey(modelId: UInt): String = modelId.toString()
+
+    private fun readLastModel(scopeKey: String?): UInt? {
+        val scopedKey = lastModelKey(scopeKey)
+        val scoped = AppPreferences.getString(scopedKey, "").toUIntOrNull()
+        if (scoped != null) {
+            if (AppPreferences.getString(keyLastModel, "").isNotBlank()) {
+                AppPreferences.putString(keyLastModel, "")
+            }
+            return scoped
+        }
+        val legacy = AppPreferences.getString(keyLastModel, "").toUIntOrNull() ?: return null
+        AppPreferences.putString(scopedKey, legacy.toString())
+        AppPreferences.putString(keyLastModel, "")
+        return legacy
+    }
+
+    private fun lastModelKey(scopeKey: String?): String {
+        val scope = scopeKey?.takeIf { it.isNotBlank() } ?: "default"
+        return "$keyLastModel.$scope"
     }
 
     private fun readResultsTab(): ResultsTab {

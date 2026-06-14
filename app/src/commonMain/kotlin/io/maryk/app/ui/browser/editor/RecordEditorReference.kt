@@ -76,6 +76,7 @@ import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalFoundationApi::class)
 @Composable
@@ -117,7 +118,7 @@ internal fun ReferenceEditor(
             tooltipPreview = null
             return@LaunchedEffect
         }
-        val key = runCatching { dataModel.key(text) }.onFailure { it.rethrowIfFatal() }.getOrNull() ?: run {
+        val key = runCatchingNonFatal { dataModel.key(text) }.getOrNull() ?: run {
             tooltipLoading = false
             tooltipError = "Invalid key."
             tooltipPreview = null
@@ -126,7 +127,7 @@ internal fun ReferenceEditor(
         tooltipLoading = true
         tooltipError = null
         val toVersion = state.currentTimeTravelVersion()
-        val yaml = runCatching {
+        val yaml = runCatchingNonFatal {
             connection.dataStore.execute(
                 dataModel.get(
                     key,
@@ -134,7 +135,7 @@ internal fun ReferenceEditor(
                     filterSoftDeleted = false,
                 )
             ).values.firstOrNull()?.let { serializeRecordToYaml(dataModel, it) }
-        }.onFailure { it.rethrowIfFatal() }.getOrNull()
+        }.getOrNull()
         tooltipLoading = false
         if (yaml == null) {
             tooltipPreview = null
@@ -146,14 +147,24 @@ internal fun ReferenceEditor(
     }
 
     LaunchedEffect(showInfoDialog, text, state.activeConnection) {
-        if (!showInfoDialog) return@LaunchedEffect
+        if (!showInfoDialog) {
+            infoLoading = false
+            return@LaunchedEffect
+        }
         if (text.isBlank()) {
+            infoLoading = false
             infoError = "No reference."
             infoDetails = null
             return@LaunchedEffect
         }
-        val connection = state.activeConnection ?: return@LaunchedEffect
-        val key = runCatching { dataModel.key(text) }.onFailure { it.rethrowIfFatal() }.getOrNull() ?: run {
+        val connection = state.activeConnection ?: run {
+            infoLoading = false
+            infoError = "No connection."
+            infoDetails = null
+            return@LaunchedEffect
+        }
+        val key = runCatchingNonFatal { dataModel.key(text) }.getOrNull() ?: run {
+            infoLoading = false
             infoError = "Invalid key."
             infoDetails = null
             return@LaunchedEffect
@@ -161,7 +172,7 @@ internal fun ReferenceEditor(
         infoLoading = true
         infoError = null
         val toVersion = state.currentTimeTravelVersion()
-        val result = runCatching {
+        val result = runCatchingNonFatal {
             connection.dataStore.execute(
                 dataModel.get(
                     key,
@@ -169,7 +180,7 @@ internal fun ReferenceEditor(
                     filterSoftDeleted = false,
                 )
             ).values.firstOrNull()
-        }.onFailure { it.rethrowIfFatal() }.getOrNull()
+        }.getOrNull()
         infoLoading = false
         if (result == null) {
             infoDetails = null
@@ -414,6 +425,7 @@ private fun ReferencePickerDialog(
     var search by remember { mutableStateOf("") }
     var rows by remember { mutableStateOf<List<ScanRow>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
     val sortOptions = remember(dataModel) { buildPickerSortOptions(dataModel) }
     var selectedSort by remember(dataModel) { mutableStateOf(sortOptions.firstOrNull()) }
     var sortDescending by remember(dataModel) { mutableStateOf(false) }
@@ -423,16 +435,21 @@ private fun ReferencePickerDialog(
         val option = selectedSort ?: return@remember emptyList()
         option.orderPaths.mapNotNull { path ->
             if (path == KEY_ORDER_TOKEN) return@mapNotNull null
-            val reference = runCatching {
+            val reference = runCatchingNonFatal {
                 dataModel.getPropertyReferenceByName(path, requestContext)
-            }.onFailure { it.rethrowIfFatal() }.getOrNull() ?: return@mapNotNull null
+            }.getOrNull() ?: return@mapNotNull null
             if (reference.propertyDefinition is StringDefinition) reference else null
         }
     }
 
     LaunchedEffect(dataModel, state.activeConnection, selectedSort, sortDescending) {
-        val connection = state.activeConnection ?: return@LaunchedEffect
+        val connection = state.activeConnection ?: run {
+            loading = false
+            loadError = "No connection."
+            return@LaunchedEffect
+        }
         loading = true
+        loadError = null
         val result = runCatching {
             val orderTokens = selectedSort?.orderPaths?.map { path ->
                 if (sortDescending) "-$path" else path
@@ -462,8 +479,14 @@ private fun ReferencePickerDialog(
                     ),
                 )
             }
-        }.onFailure { it.rethrowIfFatal() }.getOrDefault(emptyList())
-        rows = result
+        }.onFailure { it.rethrowIfFatal() }
+        if (result.isSuccess) {
+            rows = result.getOrNull().orEmpty()
+        } else {
+            val error = result.exceptionOrNull()
+            val errorLabel = error?.message ?: error?.let { it::class.simpleName } ?: "Unknown error"
+            loadError = "Load failed: $errorLabel"
+        }
         loading = false
     }
 
@@ -542,30 +565,31 @@ private fun ReferencePickerDialog(
                         }
                     }
                 }
-                if (loading) {
-                    Text("Loading…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else if (filtered.isEmpty()) {
-                    Text("No results.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                } else {
-                    val scrollState = rememberScrollState()
-                    Column(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(scrollState)) {
-                        filtered.forEach { row ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .handPointer().clickable { onPick(row.keyText) }
-                                    .padding(vertical = 6.dp),
-                                verticalArrangement = Arrangement.spacedBy(2.dp),
-                            ) {
-                                Text(row.keyText, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
-                                if (row.summary.isNotBlank()) {
-                                    Text(
-                                        row.summary,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                    )
+                when {
+                    loading -> Text("Loading…", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    loadError != null -> Text(loadError.orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error)
+                    filtered.isEmpty() -> Text("No results.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    else -> {
+                        val scrollState = rememberScrollState()
+                        Column(modifier = Modifier.heightIn(max = 360.dp).verticalScroll(scrollState)) {
+                            filtered.forEach { row ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .handPointer().clickable { onPick(row.keyText) }
+                                        .padding(vertical = 6.dp),
+                                    verticalArrangement = Arrangement.spacedBy(2.dp),
+                                ) {
+                                    Text(row.keyText, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                                    if (row.summary.isNotBlank()) {
+                                        Text(
+                                            row.summary,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -591,12 +615,12 @@ private fun buildPickerSortOptions(dataModel: IsRootDataModel): List<PickerSortO
     val keyPaths = if (keyRefs.isEmpty()) {
         listOf(KEY_ORDER_TOKEN)
     } else {
-        keyRefs.mapNotNull { it as? AnyPropertyReference }.map { it.completeName }
+        keyRefs.filterIsInstance<AnyPropertyReference>().map { it.completeName }
     }
     options += PickerSortOption(label = "Key", orderPaths = keyPaths)
     dataModel.Meta.indexes.orEmpty().forEachIndexed { index, indexable ->
         val refs = collectIndexReferences(indexable)
-        val paths = refs.mapNotNull { it as? AnyPropertyReference }.map { it.completeName }
+        val paths = refs.filterIsInstance<AnyPropertyReference>().map { it.completeName }
         val label = buildIndexSortLabel(index + 1, refs)
         options += PickerSortOption(label = label, orderPaths = paths)
     }

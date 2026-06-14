@@ -96,12 +96,12 @@ import io.maryk.app.state.BrowserUiState
 import io.maryk.app.state.GridDensity
 import io.maryk.app.state.ResultsTab
 import io.maryk.app.state.ScanRow
-import io.maryk.app.ui.browser.editor.RecordEditorDialog
-import io.maryk.app.ui.browser.editor.RecordEditorMode
 import io.maryk.app.ui.ModalPrimaryButton
 import io.maryk.app.ui.ModalSecondaryButton
 import io.maryk.app.ui.ModalSurface
 import io.maryk.app.ui.aggregate.AggregateTabPanel
+import io.maryk.app.ui.browser.editor.RecordEditorDialog
+import io.maryk.app.ui.browser.editor.RecordEditorMode
 import io.maryk.app.ui.catalog.ModelTabPanel
 import io.maryk.app.ui.copyToClipboard
 import io.maryk.app.ui.handPointer
@@ -121,7 +121,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.values.Values
-import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 import kotlin.math.roundToInt
 import maryk.core.properties.types.Key as MarykKey
 
@@ -150,18 +150,19 @@ fun ResultsDataGrid(
     var showFilterDialog by remember { mutableStateOf(false) }
     var hoveredRowKey by remember { mutableStateOf<MarykKey<IsRootDataModel>?>(null) }
     val dataModel = state.currentDataModel()
+    val scopeKey = state.activeConnection?.definition?.id
     val indexColumns = remember(dataModel) { buildIndexColumns(dataModel) }
-    val pinnedPaths = uiState.pinnedPaths(state.selectedModelId)
+    val pinnedPaths = uiState.pinnedPaths(scopeKey, state.selectedModelId)
     val pinnedColumns = remember(dataModel, pinnedPaths) {
         if (dataModel == null || pinnedPaths.isEmpty()) {
             emptyList()
         } else {
             val context = buildRequestContext(dataModel)
             pinnedPaths.mapNotNull { path ->
-                runCatching {
+                runCatchingNonFatal {
                     val reference = dataModel.getPropertyReferenceByName(path, context)
                     PinnedColumn(path = path, label = path, reference = reference)
-                }.onFailure { it.rethrowIfFatal() }.getOrNull()
+                }.getOrNull()
             }
         }
     }
@@ -522,7 +523,7 @@ fun ResultsDataGrid(
                                         }
                                     },
                                     onUnpin = { path ->
-                                        uiState.togglePinned(state.selectedModelId, path)
+                                        uiState.togglePinned(scopeKey, state.selectedModelId, path)
                                     },
                                 )
                             }
@@ -740,7 +741,7 @@ fun ResultsDataGrid(
             initialKeyText = editRowValue.keyText,
             onDismiss = { editRow = null },
         )
-    } else if (editRowValue != null && dataModel == null) {
+    } else if (editRowValue != null) {
         editRow = null
     }
     if (showFilterDialog && dataModel != null) {
@@ -753,7 +754,7 @@ fun ResultsDataGrid(
             },
             onDismiss = { showFilterDialog = false },
         )
-    } else if (showFilterDialog && dataModel == null) {
+    } else if (showFilterDialog) {
         showFilterDialog = false
     }
 }

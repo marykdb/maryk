@@ -149,8 +149,17 @@ class ScanViewerInteraction(
     }
 
     init {
-        resolveDisplayFields()
-        loadInitial()
+        try {
+            displayFields = resolveDisplayFields(displayPaths)
+            selectGraph = updateSelectGraph(displayPaths)
+            loadInitial()
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            statusMessage = "Scan initialization failed: ${e.message ?: e::class.simpleName}"
+            statusInPrompt = true
+            endReached = true
+            rows = mutableListOf()
+        }
     }
 
     override fun inputCompleter(): InputCompleter = completer
@@ -193,8 +202,7 @@ class ScanViewerInteraction(
             return handleDeleteConfirmation(trimmed)
         }
 
-        val args = CommandLineParser.parse(trimmed)
-        val tokens = when (args) {
+        val tokens = when (val args = CommandLineParser.parse(trimmed)) {
             is CommandLineParser.ParseResult.Success -> args.tokens
             is CommandLineParser.ParseResult.Error -> {
                 statusMessage = "Command parse error: ${args.message}"
@@ -275,8 +283,7 @@ class ScanViewerInteraction(
             dataStore = dataStore,
             includeDeleted = !filterSoftDeleted,
         )
-        val refresh = loadContext.refreshView()
-        return when (refresh) {
+        return when (val refresh = loadContext.refreshView()) {
             is RefreshResult.Error -> {
                 statusMessage = "Get failed: ${refresh.message}"
                 InteractionResult.Stay(lines = statusLines())
@@ -320,8 +327,7 @@ class ScanViewerInteraction(
             dataStore = dataStore,
             includeDeleted = !filterSoftDeleted,
         )
-        val refresh = loadContext.refreshView()
-        return when (refresh) {
+        return when (val refresh = loadContext.refreshView()) {
             is RefreshResult.Error -> {
                 statusMessage = "Save failed: ${refresh.message}"
                 InteractionResult.Stay(lines = statusLines())
@@ -457,10 +463,13 @@ class ScanViewerInteraction(
             statusMessage = "Show requires one or more references."
             return InteractionResult.Stay(lines = statusLines())
         }
-        displayPaths = ScanQueryParser.parseReferencePaths(arguments)
         try {
-            resolveDisplayFields()
-            updateSelectGraph()
+            val newDisplayPaths = ScanQueryParser.parseReferencePaths(arguments)
+            val newDisplayFields = resolveDisplayFields(newDisplayPaths)
+            val newSelectGraph = updateSelectGraph(newDisplayPaths)
+            displayPaths = newDisplayPaths
+            displayFields = newDisplayFields
+            selectGraph = newSelectGraph
         } catch (e: Throwable) {
             e.rethrowIfFatal()
             statusMessage = "Show failed: ${e.message ?: e::class.simpleName}"
@@ -533,25 +542,19 @@ class ScanViewerInteraction(
         return true
     }
 
-    private fun resolveDisplayFields() {
-        if (displayPaths.isEmpty()) {
-            displayFields = emptyList()
-            return
+    private fun resolveDisplayFields(paths: List<String>): List<DisplayField> {
+        if (paths.isEmpty()) {
+            return emptyList()
         }
-        displayFields = displayPaths.map { path ->
+        return paths.map { path ->
             val reference = dataModel.getPropertyReferenceByName(path, requestContext)
             DisplayField(path, reference)
         }
     }
 
-    private fun updateSelectGraph() {
-        val merged = (selectPaths + displayPaths).distinct()
-        selectGraph = try {
-            ScanQueryParser.parseSelectGraph(dataModel, merged)
-        } catch (e: Throwable) {
-            e.rethrowIfFatal()
-            selectGraph
-        }
+    private fun updateSelectGraph(paths: List<String>): RootPropRefGraph<IsRootDataModel>? {
+        val merged = (selectPaths + paths).distinct()
+        return ScanQueryParser.parseSelectGraph(dataModel, merged)
     }
 
     private fun formatRow(row: ScanRow, selected: Boolean): String {

@@ -88,7 +88,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.query.requests.get
 import maryk.core.values.AbstractValues
-import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 
 @Composable
 fun InspectorDrawer(
@@ -145,7 +145,7 @@ fun InspectorDrawer(
             when (tab) {
                 InspectorTab.DATA -> {
                     if (inModelMode) {
-                        ModelDetailsPanel(state, uiState, modifier = Modifier.fillMaxHeight())
+                        ModelDetailsPanel(state, modifier = Modifier.fillMaxHeight())
                     } else if (details != null) {
                         InspectorData(state, uiState, details, showEdit = !state.timeTravelEnabled)
                     }
@@ -154,7 +154,7 @@ fun InspectorDrawer(
                     if (inModelMode) {
                         ModelRawPanel(state, modifier = Modifier.fillMaxHeight())
                     } else if (details != null) {
-                        InspectorRaw(state, details)
+                        InspectorRaw(details)
                     }
                 }
                 InspectorTab.HISTORY -> {
@@ -345,7 +345,7 @@ internal fun InspectorData(
 }
 
 @Composable
-private fun InspectorRaw(state: BrowserState, details: RecordDetails) {
+private fun InspectorRaw(details: RecordDetails) {
     var search by remember { mutableStateOf("") }
     var showSearch by remember { mutableStateOf(false) }
     val searchFocusRequester = remember { FocusRequester() }
@@ -475,7 +475,8 @@ private fun buildHighlightedLine(
 private fun DataField(field: FieldEntry, indent: Int = 0, state: BrowserState, uiState: BrowserUiState) {
     val tooltip = field.type.ifBlank { "Unknown" }
     val modelId = state.selectedModelId
-    val pinned = modelId != null && uiState.isPinned(modelId, field.path)
+    val scopeKey = state.activeConnection?.definition?.id
+    val pinned = modelId != null && uiState.isPinned(scopeKey, modelId, field.path)
     if (field.reference != null) {
         Row(
             modifier = Modifier.padding(start = (indent * 12).dp),
@@ -534,12 +535,12 @@ private fun ReferenceValue(
         val toVersion = state.currentTimeTravelVersion()
         loading = true
         val yaml = withContext(Dispatchers.IO) {
-            runCatching {
+            runCatchingNonFatal {
                 val response = connection.dataStore.execute(
                     dataModel.get(reference.key, toVersion = toVersion, filterSoftDeleted = false)
                 )
                 response.values.firstOrNull()?.let { serializeRecordToYaml(dataModel, it) }
-            }.onFailure { it.rethrowIfFatal() }.getOrNull()
+            }.getOrNull()
         }
         loading = false
         preview = yaml?.let { buildPreviewYaml(it) } ?: "Not found."
@@ -879,7 +880,7 @@ private fun buildReferenceMeta(
     val resolvedKey = when (value) {
         is Key<*> -> value
         null -> null
-        else -> runCatching { dataModel.key(value.toString()) }.onFailure { it.rethrowIfFatal() }.getOrNull()
+        else -> runCatchingNonFatal { dataModel.key(value.toString()) }.getOrNull()
     } ?: return null
     @Suppress("UNCHECKED_CAST")
     val castKey = resolvedKey as Key<IsRootDataModel>

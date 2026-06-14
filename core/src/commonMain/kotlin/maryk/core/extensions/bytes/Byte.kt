@@ -18,7 +18,7 @@ internal fun Byte.writeBytes(writer: (byte: Byte) -> Unit) {
 }
 
 /** Creates a Byte by reading byte from [reader] */
-internal fun initByte(reader: () -> Byte) = reader() xor SIGN_BYTE and MAX_BYTE
+internal fun initByte(reader: () -> Byte) = readByteOrParseException(reader, "Unexpected end of input while reading byte") xor SIGN_BYTE and MAX_BYTE
 
 /**
  * Encodes the Byte in zigzag pattern so negative values are
@@ -44,7 +44,7 @@ internal fun initByteByVar(reader: () -> Byte): Byte {
     var shift = 0
     var result = 0
     while (shift < 8) {
-        val b = reader().toInt()
+        val b = readByteOrParseException(reader, "Malformed varByte").toInt()
         result = result or ((b and 0x7F) shl shift)
         if (b and 0x80 == 0) {
             return result.toByte()
@@ -60,5 +60,15 @@ internal fun Byte.calculateVarByteLength(): Int {
     return when {
         asInt and (0xff shl 7) == 0 -> 1
         else -> 2
+    }
+}
+
+internal inline fun readByteOrParseException(reader: () -> Byte, message: String): Byte {
+    return try {
+        reader()
+    } catch (error: IndexOutOfBoundsException) {
+        throw ParseException(message, error)
+    } catch (error: NoSuchElementException) {
+        throw ParseException(message, error)
     }
 }

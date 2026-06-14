@@ -21,7 +21,7 @@ internal fun Int.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 4) {
 /** Creates Integer by reading bytes from [reader] */
 internal fun initInt(reader: () -> Byte, length: Int = 4): Int {
     var int = 0
-    val firstByte = reader()
+    val firstByte = readByteOrParseException(reader, "Unexpected end of input while reading Int")
     // Sign‑extend if shorter than 4 bytes: prefill with 0xFF for negatives, 0x00 otherwise,
     // then shift to make room for the remaining bytes.
     if (length < 4) {
@@ -73,7 +73,7 @@ fun initIntByVar(reader: () -> Byte): Int {
     var shift = 0
     var result = 0
     while (shift < 32) {
-        val b = reader().toInt() and 0xFF
+        val b = readByteOrParseException(reader, "Malformed varInt").toInt() and 0xFF
         if (shift == 28 && (b and 0xF0) != 0) {
             throw ParseException("Malformed varInt")
         }
@@ -141,7 +141,7 @@ internal fun Int.writeVarIntWithExtraInfo(extraInfo: Byte, writer: (byte: Byte) 
  * This is based on ProtoBuf encoding
  */
 internal fun <T> initIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (Int, Byte) -> T): T {
-    var byte = reader()
+    var byte = readByteOrParseException(reader, "Malformed varInt")
 
     val wireTypeByte = byte and 0b111
 
@@ -152,7 +152,7 @@ internal fun <T> initIntByVarWithExtraInfo(reader: () -> Byte, objectCreator: (I
 
     var shift = 4
     while (shift < 32) {
-        byte = reader()
+        byte = readByteOrParseException(reader, "Malformed varInt")
         result = result or ((byte and 0b0111_1111).toInt() shl shift)
         if (byte and SIGN_BYTE == ZERO_BYTE) {
             return objectCreator(result, wireTypeByte)

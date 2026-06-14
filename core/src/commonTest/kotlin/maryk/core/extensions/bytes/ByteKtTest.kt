@@ -76,9 +76,18 @@ internal class ByteKtTest {
     @Test
     fun testWrongVarInt() {
         val bytes = ByteArray(3) { -1 }
-        var index = 0
         assertFailsWith<ParseException> {
-            initByteByVar { bytes[index++] }
+            initByteByVar(bytes.throwingReader())
+        }
+    }
+
+    @Test
+    fun testReaderFailurePropagates() {
+        assertFailsWith<IllegalStateException> {
+            readByteOrParseException(
+                reader = { throw IllegalStateException("boom") },
+                message = "bad input"
+            )
         }
     }
 }

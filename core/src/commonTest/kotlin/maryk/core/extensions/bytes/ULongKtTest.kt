@@ -84,9 +84,8 @@ internal class ULongKtTest {
     @Test
     fun testWrongVarULongOverflowPayload() {
         val bytes = byteArrayOf(-128, -128, -128, -128, -128, -128, -128, -128, -128, 2)
-        var index = 0
         assertFailsWith<ParseException> {
-            initULongByVar { bytes[index++] }
+            initULongByVar(bytes.throwingReader())
         }
     }
 }

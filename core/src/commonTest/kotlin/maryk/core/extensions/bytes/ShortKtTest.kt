@@ -77,9 +77,8 @@ internal class ShortKtTest {
     @Test
     fun testWrongVarInt() {
         val bytes = ByteArray(4) { -1 }
-        var index = 0
         assertFailsWith<ParseException> {
-            initShortByVar { bytes[index++] }
+            initShortByVar(bytes.throwingReader())
         }
     }
 }

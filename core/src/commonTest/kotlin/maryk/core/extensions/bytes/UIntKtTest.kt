@@ -2,6 +2,7 @@ package maryk.core.extensions.bytes
 
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
@@ -96,18 +97,16 @@ internal class UIntKtTest {
     @Test
     fun testWrongVarUInt() {
         val bytes = ByteArray(6) { -1 }
-        var index = 0
         assertFailsWith<ParseException> {
-            initUIntByVar { bytes[index++] }
+            initUIntByVar(bytes.throwingReader())
         }
     }
 
     @Test
     fun testWrongVarUIntOverflowPayload() {
         val bytes = byteArrayOf(-1, -1, -1, -1, 16)
-        var index = 0
         assertFailsWith<ParseException> {
-            initUIntByVar { bytes[index++] }
+            initUIntByVar(bytes.throwingReader())
         }
     }
 
@@ -125,11 +124,25 @@ internal class UIntKtTest {
     }
 
     @Test
+    fun initUIntByVarDoesNotWrapCancellation() {
+        assertFailsWith<CancellationException> {
+            initUIntByVar { throw CancellationException("cancel") }
+        }
+    }
+
+    @Test
     fun testWrongVarUIntWithExtraInfoTooLong() {
         val bytes = byteArrayOf(-128, -128, -128, -128, -128, 1)
-        var index = 0
         assertFailsWith<ParseException> {
-            initUIntByVarWithExtraInfo({ bytes[index++] }) { _, _ -> }
+            initUIntByVarWithExtraInfo(bytes.throwingReader()) { _, _ -> }
+        }
+    }
+
+    @Test
+    fun testWrongVarUIntWithExtraInfoTruncatedInput() {
+        val bytes = byteArrayOf(-128)
+        assertFailsWith<ParseException> {
+            initUIntByVarWithExtraInfo(bytes.throwingReader()) { _, _ -> }
         }
     }
 }

@@ -24,7 +24,7 @@ internal fun Long.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
 /** Reads Long from [reader] with bytes until [length] */
 internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
     var long = 0L
-    val firstByte = reader()
+    val firstByte = readByteOrParseException(reader, "Unexpected end of input while reading Long")
     // Sign‑extend if shorter than 8 bytes: prefill with 0xFF for negatives, 0x00 otherwise,
     // then shift to make room for the remaining bytes.
     if (length < 8) {
@@ -67,7 +67,7 @@ internal fun initLongByVar(reader: () -> Byte): Long {
     var shift = 0
     var result = 0L
     while (shift < 64) {
-        val b = reader().toLong() and 0xFF
+        val b = readByteOrParseException(reader, "Malformed varLong").toLong() and 0xFF
         if (shift == 63 && (b and 0xFE) != 0L) {
             throw ParseException("Malformed varInt")
         }

@@ -22,7 +22,7 @@ internal suspend fun <DM : IsRootDataModel> processAddRequest(
     updateFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val addRequest = storeAction.request
-    val statuses = mutableListOf<IsAddResponseStatus<DM>>()
+    val statuses = ArrayList<IsAddResponseStatus<DM>>(addRequest.objects.size.coerceAtLeast(4))
 
     val dataStore = dataStoreFetcher.invoke(addRequest.dataModel)
 

@@ -17,7 +17,7 @@ internal fun <DM : IsRootDataModel> processScanChangesRequest(
     dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val scanRequest = storeAction.request
-    val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
+    val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
 
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
 

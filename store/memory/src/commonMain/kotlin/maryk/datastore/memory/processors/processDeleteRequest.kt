@@ -25,7 +25,7 @@ internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) {
     val deleteRequest = storeAction.request
-    val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
+    val statuses = ArrayList<IsDeleteResponseStatus<DM>>(deleteRequest.keys.size.coerceAtLeast(4))
 
     if (deleteRequest.keys.isNotEmpty()) {
         val dataStore = dataStoreFetcher.invoke(deleteRequest.dataModel)

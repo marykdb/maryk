@@ -20,7 +20,7 @@ internal fun <DM : IsRootDataModel> processGetChangesRequest(
     dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val getRequest = storeAction.request
-    val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
+    val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(getRequest.keys.size.coerceAtLeast(4))
 
     val dataStore = dataStoreFetcher.invoke(getRequest.dataModel)
 

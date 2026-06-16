@@ -24,7 +24,7 @@ internal suspend fun <DM : IsRootDataModel> processChangeRequest(
 
     val dataStore = dataStoreFetcher.invoke(changeRequest.dataModel)
 
-    val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
+    val statuses = ArrayList<IsChangeResponseStatus<DM>>(changeRequest.objects.size.coerceAtLeast(4))
 
     if (changeRequest.objects.isNotEmpty()) {
         for (objectChange in changeRequest.objects) {

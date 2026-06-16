@@ -32,7 +32,8 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
     }
 
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
     for (entry in dataStore.updateHistory) {
         if (entry.version > (scanRequest.toVersion ?: ULong.MAX_VALUE)) continue
@@ -64,7 +65,7 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
             1u,
             null,
             record
-        )?.changes?.mapNotNull { versionedChange ->
+        )?.changes?.forEach { versionedChange ->
             val changes = versionedChange.changes
             if (changes.contains(ObjectCreate)) {
                 scanRequest.dataModel.recordToValueWithMeta(
@@ -72,7 +73,7 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
                     HLC(versionedChange.version),
                     record
                 )?.let { valuesWithMeta ->
-                    AdditionUpdate(
+                    updates += AdditionUpdate(
                         key = key,
                         version = versionedChange.version,
                         firstVersion = valuesWithMeta.firstVersion,
@@ -82,14 +83,14 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
                     )
                 }
             } else {
-                ChangeUpdate(
+                updates += ChangeUpdate(
                     key = key,
                     version = versionedChange.version,
                     index = updates.size,
                     changes = changes
                 )
             }
-        }?.let { updates += it }
+        }
     }
 
     storeAction.response.complete(

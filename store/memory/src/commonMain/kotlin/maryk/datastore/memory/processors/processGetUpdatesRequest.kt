@@ -33,8 +33,9 @@ internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
     getRequest.checkToVersion(dataStore.keepAllVersions)
     getRequest.checkMaxVersions(dataStore.keepAllVersions)
 
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = getRequest.keys.size.coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     var lastResponseVersion = 0uL
     var insertionIndex = -1
 
@@ -62,7 +63,7 @@ internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
                 null,
                 record
             )?.let { objectChange ->
-                updates += objectChange.changes.mapNotNull { versionedChange ->
+                for (versionedChange in objectChange.changes) {
                     val changes = versionedChange.changes
 
                     if (changes.contains(ObjectCreate)) {
@@ -71,7 +72,7 @@ internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
                             HLC(versionedChange.version),
                             record
                         )?.let { valuesWithMeta ->
-                            AdditionUpdate(
+                            updates += AdditionUpdate(
                                 key = objectChange.key,
                                 version = versionedChange.version,
                                 firstVersion = valuesWithMeta.firstVersion,
@@ -81,7 +82,7 @@ internal fun <DM : IsRootDataModel> processGetUpdatesRequest(
                             )
                         }
                     } else {
-                        ChangeUpdate(
+                        updates += ChangeUpdate(
                             key = objectChange.key,
                             version = versionedChange.version,
                             index = insertionIndex,

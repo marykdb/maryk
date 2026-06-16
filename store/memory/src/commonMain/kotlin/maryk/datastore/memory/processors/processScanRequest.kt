@@ -20,7 +20,7 @@ internal fun <DM : IsRootDataModel> processScanRequest(
     dataStoreFetcher: IsStoreFetcher<DM>
 ) {
     val scanRequest = storeAction.request
-    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
+    val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
 
     val aggregator = scanRequest.aggregations?.let {
         Aggregator(it)

@@ -43,8 +43,9 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
         return
     }
 
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
     var lastResponseVersion = 0uL
 
@@ -58,7 +59,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
         recordFetcher = recordFetcher,
         scanSetup = {
             (it as? IndexScan)?.let { _ ->
-                sortingKeys = mutableListOf()
+                sortingKeys = ArrayList(expectedSize)
             }
         }
     ) { record, sortingKey ->
@@ -83,7 +84,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             sortingKey,
             record
         )?.let { objectChange ->
-            updates += objectChange.changes.mapNotNull { versionedChange ->
+            for (versionedChange in objectChange.changes) {
                 val changes = versionedChange.changes
 
                 if (changes.contains(ObjectCreate)) {
@@ -92,7 +93,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                         HLC(versionedChange.version),
                         record
                     )?.let { valuesWithMeta ->
-                        AdditionUpdate(
+                        updates += AdditionUpdate(
                             key = objectChange.key,
                             version = versionedChange.version,
                             firstVersion = valuesWithMeta.firstVersion,
@@ -103,7 +104,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                     }
                 } else {
                     if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
-                        ChangeUpdate(
+                        updates += ChangeUpdate(
                             key = objectChange.key,
                             version = versionedChange.version,
                             index = insertionIndex,
@@ -115,7 +116,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                             scanRequest.toVersion?.let { HLC(it) },
                             record
                         )?.let { valuesWithMeta ->
-                            AdditionUpdate(
+                            updates += AdditionUpdate(
                                 key = objectChange.key,
                                 version = versionedChange.version,
                                 firstVersion = valuesWithMeta.firstVersion,
@@ -146,7 +147,10 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
     scanRequest.orderedKeys?.let { orderedKeys ->
         // Remove values which should or should not be there from passed orderedKeys
         // This so the requester is up to date with any in between filtered values
-        orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
+        val matchingKeysSet = matchingKeys.toHashSet()
+        val orderedKeysSet = orderedKeys.toHashSet()
+
+        orderedKeys.subtract(matchingKeysSet).let { removedKeys ->
             for (removedKey in removedKeys) {
                 val record = recordFetcher(scanRequest.dataModel, removedKey)
 
@@ -162,7 +166,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             }
         }
 
-        matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
+        matchingKeys.subtract(orderedKeysSet).let { addedKeys ->
             for (addedKey in addedKeys) {
                 @Suppress("UNCHECKED_CAST")
                 val record = recordFetcher(scanRequest.dataModel, addedKey) as DataRecord<DM>?
@@ -202,9 +206,10 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
     recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?
 ) {
     val scanRequest = storeAction.request
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
-    val seenKeys = mutableSetOf<Key<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
+    val seenKeys = HashSet<Key<DM>>(expectedSize * 2)
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
     val toVersion = scanRequest.toVersion ?: ULong.MAX_VALUE
 
@@ -247,7 +252,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
             null,
             record
         )?.let { objectChange ->
-            updates += objectChange.changes.mapNotNull { versionedChange ->
+            for (versionedChange in objectChange.changes) {
                 val changes = versionedChange.changes
 
                 if (changes.contains(ObjectCreate)) {
@@ -256,7 +261,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                         HLC(versionedChange.version),
                         record
                     )?.let { valuesWithMeta ->
-                        AdditionUpdate(
+                        updates += AdditionUpdate(
                             key = objectChange.key,
                             version = versionedChange.version,
                             firstVersion = valuesWithMeta.firstVersion,
@@ -267,7 +272,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                     }
                 } else {
                     if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
-                        ChangeUpdate(
+                        updates += ChangeUpdate(
                             key = objectChange.key,
                             version = versionedChange.version,
                             index = matchingKeys.lastIndex,
@@ -279,7 +284,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                             scanRequest.toVersion?.let { HLC(it) },
                             record
                         )?.let { valuesWithMeta ->
-                            AdditionUpdate(
+                            updates += AdditionUpdate(
                                 key = objectChange.key,
                                 version = versionedChange.version,
                                 firstVersion = valuesWithMeta.firstVersion,
@@ -309,7 +314,10 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
     )
 
     scanRequest.orderedKeys?.let { orderedKeys ->
-        orderedKeys.subtract(matchingKeys.toSet()).forEach { removedKey ->
+        val matchingKeysSet = matchingKeys.toHashSet()
+        val orderedKeysSet = orderedKeys.toHashSet()
+
+        orderedKeys.subtract(matchingKeysSet).forEach { removedKey ->
             @Suppress("UNCHECKED_CAST")
             val record = recordFetcher(scanRequest.dataModel, removedKey) as DataRecord<DM>?
             updates += RemovalUpdate(
@@ -323,7 +331,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
             )
         }
 
-        matchingKeys.subtract(orderedKeys.toSet()).forEach { addedKey ->
+        matchingKeys.subtract(orderedKeysSet).forEach { addedKey ->
             @Suppress("UNCHECKED_CAST")
             val record = recordFetcher(scanRequest.dataModel, addedKey) as DataRecord<DM>?
             if (record != null) {

@@ -24,8 +24,12 @@ internal fun <T : Any> Transaction.getValue(
     return if (toVersion == null) {
         val packedKey = packKey(tableDirs.tablePrefix, keyAndReference)
         val value = this.get(packedKey).awaitResult() ?: return null
-        value.withCurrentPayload(decryptValue) { payload, offset, length ->
-            handleResult(payload, offset, length)
+        requireVersionedValue(value)
+        if (decryptValue == null) {
+            handleResult(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
+        } else {
+            val payload = decryptValue(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
+            handleResult(payload, 0, payload.size)
         }
     } else {
         val historicDirs = tableDirs as? HistoricTableDirectories
@@ -56,18 +60,5 @@ internal fun <T : Any> Transaction.getValue(
             }
         }
         null
-    }
-}
-
-private inline fun <T> ByteArray.withCurrentPayload(
-    noinline decryptValue: DecryptValue?,
-    handle: (ByteArray, Int, Int) -> T
-): T {
-    requireVersionedValue(this)
-    return if (decryptValue == null) {
-        handle(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
-    } else {
-        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
-        handle(payload, 0, payload.size)
     }
 }

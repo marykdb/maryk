@@ -91,14 +91,16 @@ internal fun decodeZeroFreeUsing01(encoded: ByteArray): ByteArray {
 }
 
 internal fun decodeZeroFreeUsing01(encoded: ByteArray, offset: Int, length: Int): ByteArray {
-    val out = ArrayList<Byte>(length)
+    val decodedLength = encoded.zeroFreeDecodedLength(offset, length)
+    val out = ByteArray(decodedLength)
     val end = offset + length
     var i = offset
+    var writeIndex = 0
     while (i < end) {
         val u = encoded[i].toInt() and 0xFF
         if (u != 0x01) {
             require(u != 0x00) { "Encoded stream contains 0x00, which is disallowed" }
-            out.add(encoded[i])
+            out[writeIndex++] = encoded[i]
             i++
         } else {
             require(i + 1 < end) { "Truncated escape at end" }
@@ -108,11 +110,11 @@ internal fun decodeZeroFreeUsing01(encoded: ByteArray, offset: Int, length: Int)
                 0x02 -> 0x01
                 else -> error("Invalid escape: 0x01 0x${v.toString(16).padStart(2, '0')}")
             }
-            out.add(orig.toByte())
+            out[writeIndex++] = orig.toByte()
             i += 2
         }
     }
-    return out.toByteArray()
+    return out
 }
 
 internal fun decodeZeroFreeUsing01OrNull(encoded: ByteArray): ByteArray? = try {
@@ -129,4 +131,35 @@ internal fun decodeZeroFreeUsing01OrNull(encoded: ByteArray, offset: Int, length
     null
 } catch (_: IllegalStateException) {
     null
+}
+
+private fun ByteArray.zeroFreeDecodedLength(offset: Int, length: Int): Int {
+    require(offset >= 0) { "Offset cannot be negative: $offset" }
+    require(length >= 0) { "Length cannot be negative: $length" }
+    require(offset + length <= size) { "Range [$offset, ${offset + length}) out of bounds for $size" }
+
+    val end = offset + length
+    var index = offset
+    var decodedLength = 0
+    while (index < end) {
+        val value = this[index].toInt() and 0xFF
+        when (value) {
+            0x00 -> throw IllegalArgumentException("Encoded stream contains 0x00, which is disallowed")
+            0x01 -> {
+                if (index + 1 >= end) throw IllegalArgumentException("Truncated escape at end")
+                when (this[index + 1].toInt() and 0xFF) {
+                    0x01, 0x02 -> {
+                        decodedLength++
+                        index += 2
+                    }
+                    else -> throw IllegalStateException("Invalid escape sequence")
+                }
+            }
+            else -> {
+                decodedLength++
+                index++
+            }
+        }
+    }
+    return decodedLength
 }

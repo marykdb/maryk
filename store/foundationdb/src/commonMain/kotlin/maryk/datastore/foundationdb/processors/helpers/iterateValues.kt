@@ -5,6 +5,7 @@ import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
 import maryk.lib.extensions.compare.compareToRange
 
 /**
@@ -12,7 +13,8 @@ import maryk.lib.extensions.compare.compareToRange
  * If [toVersion] is provided, read from the historic table encoding where the
  * version is part of the key suffix (reversed for lexicographic ordering).
  *
- * [handleValue] receives (referenceBytes, keyPrefixLength, keySuffixLength, valueBytes, valueOffset, valueLength).
+ * [handleValue] receives bytes that contain the qualifier to inspect at
+ * `[keyPrefixLength, keyPrefixLength + keySuffixLength)`, plus the value slice.
  * Return a non-null value to stop iteration and return it.
  */
 internal fun <R : Any> Transaction.iterateValues(
@@ -35,16 +37,27 @@ internal fun <R : Any> Transaction.iterateValues(
             val refOffset = tablePrefix.size + keyLength
             val refLength = referenceBytes.size - refOffset
             if (refLength < 0) continue
-            value.withCurrentPayload(decryptValue) { payload, offset, length ->
+            requireVersionedValue(value)
+            if (decryptValue == null) {
+                handleValue(
+                    referenceBytes,
+                    refOffset,
+                    refLength,
+                    value,
+                    VERSION_BYTE_SIZE,
+                    value.size - VERSION_BYTE_SIZE
+                )?.let { return it }
+            } else {
+                val payload = decryptValue(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
                 handleValue(
                     referenceBytes,
                     refOffset,
                     refLength,
                     payload,
-                    offset,
-                    length
-                )
-            }?.let { return it }
+                    0,
+                    payload.size
+                )?.let { return it }
+            }
         }
         null
     } else {
@@ -65,29 +78,23 @@ internal fun <R : Any> Transaction.iterateValues(
             val kv = it.next()
             val keyBytes = kv.key
             val versionOffset = keyBytes.size - toVersionBytes.size
-            val refOffset = histPrefix.size + keyLength
+            val encodedQualifierOffset = histPrefix.size + keyLength
             val sepIndex = versionOffset - 1
             // Validate separator and ranges
-            if (versionOffset <= 0 || sepIndex < refOffset || keyBytes[sepIndex] != 0.toByte()) {
+            if (versionOffset <= 0 || sepIndex < encodedQualifierOffset || keyBytes[sepIndex] != 0.toByte()) {
                 continue
             }
-            val encRefLength = sepIndex - refOffset
+            val encodedQualifierLength = sepIndex - encodedQualifierOffset
 
             if (toVersionBytes.compareToRange(keyBytes, versionOffset) <= 0) {
                 val value = kv.value
-                // Decode qualifier before handing to caller
-                val decodedQualifier = if (encRefLength > 0) {
-                    decodeZeroFreeUsing01OrNull(keyBytes, refOffset, encRefLength) ?: continue
-                } else ByteArray(0)
-                val refBytesForCaller = ByteArray(histPrefix.size + keyLength + decodedQualifier.size).also { fullRef ->
-                    histPrefix.copyInto(fullRef, 0)
-                    keyBytes.copyInto(fullRef, histPrefix.size, histPrefix.size, histPrefix.size + keyLength)
-                    decodedQualifier.copyInto(fullRef, histPrefix.size + keyLength)
-                }
+                val decodedQualifier = if (encodedQualifierLength > 0) {
+                    decodeZeroFreeUsing01OrNull(keyBytes, encodedQualifierOffset, encodedQualifierLength) ?: continue
+                } else EMPTY_BYTEARRAY
                 if (decryptValue == null) {
                     handleValue(
-                        refBytesForCaller,
-                        histPrefix.size + keyLength,
+                        decodedQualifier,
+                        0,
                         decodedQualifier.size,
                         value,
                         0,
@@ -96,8 +103,8 @@ internal fun <R : Any> Transaction.iterateValues(
                 } else {
                     val decrypted = decryptValue(value, 0, value.size)
                     handleValue(
-                        refBytesForCaller,
-                        histPrefix.size + keyLength,
+                        decodedQualifier,
+                        0,
                         decodedQualifier.size,
                         decrypted,
                         0,
@@ -107,18 +114,5 @@ internal fun <R : Any> Transaction.iterateValues(
             }
         }
         null
-    }
-}
-
-private inline fun <T> ByteArray.withCurrentPayload(
-    noinline decryptValue: DecryptValue?,
-    handle: (ByteArray, Int, Int) -> T
-): T {
-    requireVersionedValue(this)
-    return if (decryptValue == null) {
-        handle(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
-    } else {
-        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
-        handle(payload, 0, payload.size)
     }
 }

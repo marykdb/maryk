@@ -469,11 +469,7 @@ class RocksDBDataStore private constructor(
                         val key = Key<IsRootDataModel>(keyIterator.key().copyOf())
                         val creationVersion = keyIterator.value().readVersionBytes()
 
-                        db.put(
-                            tableColumnFamilies.updateHistory,
-                            creationVersion.toReversedVersionBytes() + key.bytes,
-                            EMPTY_ARRAY
-                        )
+                        writeSingleUpdateHistoryVersion(tableColumnFamilies, key, creationVersion)
 
                         dbAccessor.getIterator(defaultReadOptions, tableColumnFamilies.historic.table).use { historicIterator ->
                             historicIterator.seek(key.bytes)
@@ -487,10 +483,10 @@ class RocksDBDataStore private constructor(
                                     continue
                                 }
 
-                                db.put(
-                                    tableColumnFamilies.updateHistory,
-                                    historicKey.readReversedVersionBytes(versionOffset).toReversedVersionBytes() + key.bytes,
-                                    EMPTY_ARRAY
+                                writeSingleUpdateHistoryVersion(
+                                    tableColumnFamilies,
+                                    key,
+                                    historicKey.readReversedVersionBytes(versionOffset)
                                 )
                                 historicIterator.next()
                             }
@@ -504,11 +500,7 @@ class RocksDBDataStore private constructor(
                             recyclableByteArray
                         )
                         if (softDeleteValueLength == ULong.SIZE_BYTES + 1) {
-                            db.put(
-                                tableColumnFamilies.updateHistory,
-                                recyclableByteArray.readVersionBytes().toReversedVersionBytes() + key.bytes,
-                                EMPTY_ARRAY
-                            )
+                            writeSingleUpdateHistoryVersion(tableColumnFamilies, key, recyclableByteArray.readVersionBytes())
                         }
 
                         keyIterator.next()
@@ -517,16 +509,25 @@ class RocksDBDataStore private constructor(
                     while (keyIterator.isValid()) {
                         val key = Key<IsRootDataModel>(keyIterator.key().copyOf())
                         val lastVersion = getLastVersion(dbAccessor, tableColumnFamilies, defaultReadOptions, key)
-                        db.put(
-                            tableColumnFamilies.updateHistory,
-                            lastVersion.toReversedVersionBytes() + key.bytes,
-                            EMPTY_ARRAY
-                        )
+                        writeSingleUpdateHistoryVersion(tableColumnFamilies, key, lastVersion)
                         keyIterator.next()
                     }
                 }
             }
         }
+    }
+
+    private fun writeSingleUpdateHistoryVersion(
+        tableColumnFamilies: TableColumnFamilies,
+        key: Key<IsRootDataModel>,
+        version: ULong,
+    ) {
+        val updateHistory = tableColumnFamilies.updateHistory ?: return
+        db.put(
+            updateHistory,
+            version.toReversedVersionBytes() + key.bytes,
+            EMPTY_ARRAY
+        )
     }
 
     private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: IsRootDataModel) {
@@ -662,7 +663,29 @@ class RocksDBDataStore private constructor(
         if (!isEncryptedValue(value)) return value
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        return runBlocking { provider.decrypt(value.copyOfRange(ENCRYPTED_VALUE_MAGIC.size, value.size)) }
+        return runBlocking { provider.decrypt(value, ENCRYPTED_VALUE_MAGIC.size, value.size - ENCRYPTED_VALUE_MAGIC.size) }
+    }
+
+    internal fun decryptValueIfNeeded(value: ByteArray, offset: Int, length: Int): ByteArray {
+        if (!isEncryptedValue(value, offset, length)) {
+            return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        }
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
+        return runBlocking { provider.decrypt(value, offset + ENCRYPTED_VALUE_MAGIC.size, length - ENCRYPTED_VALUE_MAGIC.size) }
+    }
+
+    internal inline fun <T> withDecryptedValueIfNeeded(
+        value: ByteArray,
+        offset: Int = 0,
+        length: Int = value.size - offset,
+        handle: (ByteArray, Int, Int) -> T
+    ): T {
+        if (!isEncryptedValue(value, offset, length)) return handle(value, offset, length)
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
+        val decrypted = runBlocking { provider.decrypt(value, offset + ENCRYPTED_VALUE_MAGIC.size, length - ENCRYPTED_VALUE_MAGIC.size) }
+        return handle(decrypted, 0, decrypted.size)
     }
 
     internal fun mapUniqueValueBytes(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
@@ -670,6 +693,21 @@ class RocksDBDataStore private constructor(
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
             ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
         return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value) }
+    }
+
+    internal fun mapUniqueValueBytes(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int
+    ): ByteArray {
+        if (!isSensitiveUniqueReference(modelId, reference)) {
+            return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        }
+        val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
+            ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
+        return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value, offset, length) }
     }
 
     private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean =
@@ -760,11 +798,14 @@ class RocksDBDataStore private constructor(
     }
 
     private fun isEncryptedValue(value: ByteArray): Boolean =
-        value.size >= ENCRYPTED_VALUE_MAGIC.size &&
-            value[0] == ENCRYPTED_VALUE_MAGIC[0] &&
-            value[1] == ENCRYPTED_VALUE_MAGIC[1] &&
-            value[2] == ENCRYPTED_VALUE_MAGIC[2] &&
-            value[3] == ENCRYPTED_VALUE_MAGIC[3]
+        isEncryptedValue(value, 0, value.size)
+
+    private fun isEncryptedValue(value: ByteArray, offset: Int, length: Int): Boolean =
+        length >= ENCRYPTED_VALUE_MAGIC.size &&
+            value[offset] == ENCRYPTED_VALUE_MAGIC[0] &&
+            value[offset + 1] == ENCRYPTED_VALUE_MAGIC[1] &&
+            value[offset + 2] == ENCRYPTED_VALUE_MAGIC[2] &&
+            value[offset + 3] == ENCRYPTED_VALUE_MAGIC[3]
 
     private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
         if (size < prefix.size) return false

@@ -36,8 +36,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
     getRequest.checkToVersion(keepAllVersions)
     getRequest.checkMaxVersions(keepAllVersions)
 
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = getRequest.keys.size.coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     var lastResponseVersion = 0uL
     var insertionIndex = -1
 
@@ -128,12 +129,12 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                                 changes
                             }
                         }?.also { objectChange ->
-                            updates += objectChange.changes.mapNotNull { versionedChange ->
+                            for (versionedChange in objectChange.changes) {
                                 val changes = versionedChange.changes
 
                                 if (changes.contains(ObjectCreate)) {
                                     getSingleValues(versionedChange.version)?.let { valuesWithMeta ->
-                                        AdditionUpdate(
+                                        updates += AdditionUpdate(
                                             objectChange.key,
                                             versionedChange.version,
                                             valuesWithMeta.firstVersion,
@@ -143,7 +144,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                                         )
                                     }
                                 } else {
-                                    ChangeUpdate(
+                                    updates += ChangeUpdate(
                                         objectChange.key,
                                         versionedChange.version,
                                         insertionIndex,

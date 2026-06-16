@@ -27,7 +27,8 @@ internal class StoreValuesGetter(
     val db: RocksDB,
     val columnFamilies: TableColumnFamilies,
     val readOptions: ReadOptions,
-    private val captureVersion: Boolean = false
+    private val captureVersion: Boolean = false,
+    private val decryptValue: DecryptValue? = null
 ) : IsValuesGetter {
     private val cache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()
 
@@ -62,10 +63,19 @@ internal class StoreValuesGetter(
             else -> {
                 val reference = currentKey + propertyReference.toStorageByteArray()
                 val valueAsBytes = db.get(columnFamilies.table, readOptions, reference)
-                valueAsBytes?.convertToValue(
-                    propertyReference,
-                    VERSION_BYTE_SIZE, valueAsBytes.size - VERSION_BYTE_SIZE
-                )?.also {
+                valueAsBytes?.let { storedValue ->
+                    requireVersionedValue(storedValue)
+                    if (decryptValue == null) {
+                        storedValue.convertToValue(
+                            propertyReference,
+                            VERSION_BYTE_SIZE,
+                            storedValue.size - VERSION_BYTE_SIZE
+                        )
+                    } else {
+                        val plainValue = decryptValue(storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)
+                        plainValue.convertToValue(propertyReference, 0, plainValue.size)
+                    }
+                }?.also {
                     if (captureVersion) {
                         val version = valueAsBytes.readVersionBytes()
                         this.lastVersion = this.lastVersion?.let {
@@ -117,9 +127,14 @@ internal class StoreValuesGetter(
                 try {
                     val storedValue = iterator.value()
                     requireVersionedValue(storedValue)
-                    val valueBytes = storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size)
-                    var valueReadIndex = 0
-                    val value = readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
+                    val value = if (decryptValue == null) {
+                        var valueReadIndex = VERSION_BYTE_SIZE
+                        readValue(mapValueDefinition, { storedValue[valueReadIndex++] }) { storedValue.size - valueReadIndex }
+                    } else {
+                        val valueBytes = decryptValue(storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)
+                        var valueReadIndex = 0
+                        readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
+                    }
                         ?: run {
                             iterator.next()
                             continue

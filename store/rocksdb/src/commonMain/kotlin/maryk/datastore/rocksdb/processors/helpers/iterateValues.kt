@@ -29,12 +29,12 @@ internal fun <R: Any> DBAccessor.iterateValues(
                 if (!referenceBytes.matchesRangePart(0, reference)) break
                 val value = iterator.value()
                 requireVersionedValue(value)
-                val decrypted = this.dataStore.decryptValueIfNeeded(value.copyOfRange(VERSION_BYTE_SIZE, value.size))
-                handleValue(
-                    referenceBytes, keyLength, referenceBytes.size - keyLength,
-                    decrypted,
-                    0, decrypted.size
-                )?.let { return it }
+                this.dataStore.withDecryptedValueIfNeeded(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE) { payload, offset, length ->
+                    handleValue(
+                        referenceBytes, keyLength, referenceBytes.size - keyLength,
+                        payload, offset, length
+                    )
+                }?.let { return it }
                 iterator.next()
             }
             return null

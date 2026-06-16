@@ -70,9 +70,13 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                             transaction.get(columnFamilies.table, defaultReadOptions, referenceAndKey)!!
                         } else recyclableByteArray
 
-                        val storedValue = value.copyOfRange(VERSION_BYTE_SIZE, valueLength)
-                        val plainValue = decryptValueIfNeeded(storedValue)
-                        val uniqueValue = mapUniqueValueBytes(dbIndex, reference, plainValue)
+                        val uniqueValue = withDecryptedValueIfNeeded(
+                            value,
+                            VERSION_BYTE_SIZE,
+                            valueLength - VERSION_BYTE_SIZE
+                        ) { plainValue, offset, length ->
+                            mapUniqueValueBytes(dbIndex, reference, plainValue, offset, length)
+                        }
 
                         deleteUniqueIndexValue(
                             transaction,

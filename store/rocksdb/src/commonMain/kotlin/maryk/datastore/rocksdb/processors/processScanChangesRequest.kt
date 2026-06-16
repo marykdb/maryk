@@ -22,7 +22,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
     cache: Cache
 ) {
     val scanRequest = storeAction.request
-    val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
+    val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
     val dbIndex = getDataModelId(scanRequest.dataModel)
     val columnFamilies = getColumnFamilies(dbIndex)
 

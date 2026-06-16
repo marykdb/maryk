@@ -26,7 +26,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetChangesRequest(
     cache: Cache
 ) {
     val getRequest = storeAction.request
-    val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
+    val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(getRequest.keys.size.coerceAtLeast(4))
 
     getRequest.checkToVersion(keepAllVersions)
     getRequest.checkMaxVersions(keepAllVersions)

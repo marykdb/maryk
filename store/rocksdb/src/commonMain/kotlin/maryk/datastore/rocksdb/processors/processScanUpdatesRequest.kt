@@ -2,6 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.references.IsPropertyReferenceForCache
@@ -53,8 +54,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
         return
     }
 
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
     var lastResponseVersion = 0uL
 
@@ -226,9 +228,12 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
         )
 
         scanRequest.orderedKeys?.let { orderedKeys ->
+            val matchingKeysSet = matchingKeys.toHashSet()
+            val orderedKeysSet = orderedKeys.toHashSet()
+
             // Remove values which should or should not be there from passed orderedKeys
             // This so the requester is up-to-date with any in between filtered values
-            orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
+            orderedKeys.subtract(matchingKeysSet).let { removedKeys ->
                 for (removedKey in removedKeys) {
                     val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, removedKey.bytes, recyclableByteArray)
 
@@ -246,7 +251,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                 }
             }
 
-            matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
+            matchingKeys.subtract(orderedKeysSet).let { addedKeys ->
                 for (addedKey in addedKeys) {
                     val valueLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, addedKey.bytes, recyclableByteArray)
                     // Only process it if it was created
@@ -290,8 +295,9 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
 ) {
     val scanRequest = storeAction.request
     val keySize = scanRequest.dataModel.Meta.keyByteSize
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
     var lastResponseVersion = 0uL
 
@@ -336,7 +342,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
 
         scanRequest.checkMaxVersions(keepAllVersions)
         dbAccessor.getIterator(defaultReadOptions, columnFamilies.updateHistory!!).use { historyIterator ->
-        val seenKeys = mutableSetOf<Key<DM>>()
+        val seenKeys = HashSet<Key<DM>>(expectedSize * 2)
 
         when (val toVersion = scanRequest.toVersion) {
             null -> historyIterator.seekToFirst()
@@ -354,7 +360,10 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                 break
             }
 
-            val key = Key<DM>(historyKey.copyOfRange(VERSION_BYTE_SIZE, VERSION_BYTE_SIZE + keySize))
+            var keyReadIndex = VERSION_BYTE_SIZE
+            val key = scanRequest.dataModel.key {
+                historyKey[keyReadIndex++]
+            }
             if (!seenKeys.add(key)) {
                 historyIterator.next()
                 continue
@@ -489,7 +498,10 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
 
     DBAccessor(this).use { dbAccessor ->
         scanRequest.orderedKeys?.let { orderedKeys ->
-            orderedKeys.subtract(matchingKeys.toSet()).forEach { removedKey ->
+            val matchingKeysSet = matchingKeys.toHashSet()
+            val orderedKeysSet = orderedKeys.toHashSet()
+
+            orderedKeys.subtract(matchingKeysSet).forEach { removedKey ->
                 val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, removedKey.bytes, recyclableByteArray)
                 updates += RemovalUpdate(
                     key = removedKey,
@@ -502,7 +514,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                 )
             }
 
-            matchingKeys.subtract(orderedKeys.toSet()).forEach { addedKey ->
+            matchingKeys.subtract(orderedKeysSet).forEach { addedKey ->
                 val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, addedKey.bytes, recyclableByteArray)
                 recyclableByteArray.readVersionBytesIfPresent(createdVersionLength)?.let { creationVersion ->
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->

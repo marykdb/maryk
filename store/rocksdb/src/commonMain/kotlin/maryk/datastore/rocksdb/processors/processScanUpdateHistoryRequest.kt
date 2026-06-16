@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.runBlocking
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.key
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
@@ -44,7 +45,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
         throw updateHistoryNotAvailable()
     }
 
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     val keySize = scanRequest.dataModel.Meta.keyByteSize
 
     DBAccessor(this).use { dbAccessor ->
@@ -96,7 +98,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
             val version = historyKey.readReversedVersionBytes(0)
             if (version < scanRequest.fromVersion) break
 
-            val key = Key<DM>(historyKey.copyOfRange(VERSION_BYTE_SIZE, VERSION_BYTE_SIZE + keySize))
+            var keyReadIndex = VERSION_BYTE_SIZE
+            val key = scanRequest.dataModel.key {
+                historyKey[keyReadIndex++]
+            }
             val isHardDelete = historyIterator.value().firstOrNull() == 1.toByte()
             val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, key.bytes, recyclableByteArray)
             if (createdVersionLength == rocksDBNotFound) {
@@ -162,11 +167,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
                 } else {
                     changes
                 }
-            }?.changes?.mapNotNull { versionedChange ->
+            }?.changes?.forEach { versionedChange ->
                 val changes = versionedChange.changes
                 if (changes.contains(ObjectCreate)) {
                     getSingleValues(key, creationVersion, versionedChange.version, cacheReader)?.let { valuesWithMeta ->
-                        AdditionUpdate(
+                        updates += AdditionUpdate(
                             key = key,
                             version = versionedChange.version,
                             firstVersion = valuesWithMeta.firstVersion,
@@ -176,14 +181,14 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
                         )
                     }
                 } else {
-                    ChangeUpdate(
+                    updates += ChangeUpdate(
                         key = key,
                         version = versionedChange.version,
                         index = updates.size,
                         changes = changes
                     )
                 }
-            }?.let { updates += it }
+            }
 
             historyIterator.next()
         }

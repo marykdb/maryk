@@ -29,15 +29,19 @@ internal fun <T: Any> DBAccessor.getValue(
             valueLength > recyclableByteArray.size -> {
                 val valueBytes = this.get(columnFamilies.table, readOptions, keyAndReference)!!
                 requireVersionedValueSize(valueLength)
-                val decrypted = this.dataStore.decryptValueIfNeeded(valueBytes.copyOfRange(VERSION_BYTE_SIZE, valueLength))
-                handleResult(decrypted, 0, decrypted.size)
+                this.dataStore.withDecryptedValueIfNeeded(valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE) { value, offset, length ->
+                    handleResult(value, offset, length)
+                }
             }
             else -> {
                 requireVersionedValueSize(valueLength)
-                val decrypted = this.dataStore.decryptValueIfNeeded(
-                    recyclableByteArray.copyOfRange(VERSION_BYTE_SIZE, valueLength)
-                )
-                handleResult(decrypted, 0, decrypted.size)
+                this.dataStore.withDecryptedValueIfNeeded(
+                    recyclableByteArray,
+                    VERSION_BYTE_SIZE,
+                    valueLength - VERSION_BYTE_SIZE
+                ) { value, offset, length ->
+                    handleResult(value, offset, length)
+                }
             }
         }
     } else {

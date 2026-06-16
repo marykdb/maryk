@@ -20,14 +20,14 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeReques
 ) {
     val changeRequest = storeAction.request
 
-    val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
+    val statuses = ArrayList<IsChangeResponseStatus<DM>>(changeRequest.objects.size.coerceAtLeast(4))
 
     if (changeRequest.objects.isNotEmpty()) {
         val dbIndex = getDataModelId(changeRequest.dataModel)
         val columnFamilies = getColumnFamilies(dbIndex)
 
         withTransaction { transaction ->
-            val updatesToEmit = mutableListOf<Update<DM>>()
+            val updatesToEmit = ArrayList<Update<DM>>(changeRequest.objects.size.coerceAtLeast(4))
 
             for (objectChange in changeRequest.objects) {
                 statuses += processChange(

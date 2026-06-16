@@ -302,7 +302,9 @@ private fun <DM : IsRootDataModel> checkAndProcess(
                 keySize,
                 indexScan.index.referenceStorageByteArray.bytes,
                 indexScanRange.valueMatches,
-                indexRecord.copyOfRange(keyOffset, keyOffset + keySize),
+                indexRecord,
+                keyOffset,
+                keySize,
                 scanRequest.toVersion
             ) &&
             checkVersion(indexRecord)
@@ -348,13 +350,36 @@ private fun hasAdditionalMatches(
     keySize: Int,
     indexReference: ByteArray,
     matches: List<IndexValueMatch>,
-    recordKey: ByteArray,
+    recordKeySource: ByteArray,
+    recordKeyOffset: Int,
+    recordKeyLength: Int,
     toVersion: ULong?
 ) = matches.all { match ->
     if (match.partialMatch) {
-        hasMatchingPrefixValue(dbAccessor, indexColumnHandle, readOptions, keySize, indexReference, match.toMatch, recordKey, toVersion)
+        hasMatchingPrefixValue(
+            dbAccessor,
+            indexColumnHandle,
+            readOptions,
+            keySize,
+            indexReference,
+            match.toMatch,
+            recordKeySource,
+            recordKeyOffset,
+            recordKeyLength,
+            toVersion
+        )
     } else {
-        hasMatchingExactValue(dbAccessor, indexColumnHandle, readOptions, indexReference, match.toMatch, recordKey, toVersion)
+        hasMatchingExactValue(
+            dbAccessor,
+            indexColumnHandle,
+            readOptions,
+            indexReference,
+            match.toMatch,
+            recordKeySource,
+            recordKeyOffset,
+            recordKeyLength,
+            toVersion
+        )
     }
 }
 
@@ -364,10 +389,12 @@ private fun hasMatchingExactValue(
     readOptions: ReadOptions,
     indexReference: ByteArray,
     value: ByteArray,
-    recordKey: ByteArray,
+    recordKeySource: ByteArray,
+    recordKeyOffset: Int,
+    recordKeyLength: Int,
     toVersion: ULong?
 ): Boolean {
-    val fullIndexValue = indexReference + createIndexValue(value, recordKey)
+    val fullIndexValue = indexReference + createIndexValue(value, recordKeySource, recordKeyOffset, recordKeyLength)
     return if (toVersion == null) {
         dbAccessor.get(indexColumnHandle, readOptions, fullIndexValue) != null
     } else {
@@ -402,7 +429,9 @@ private fun hasMatchingPrefixValue(
     keySize: Int,
     indexReference: ByteArray,
     prefix: ByteArray,
-    recordKey: ByteArray,
+    recordKeySource: ByteArray,
+    recordKeyOffset: Int,
+    recordKeyLength: Int,
     toVersion: ULong?
 ): Boolean {
     val prefixWithReference = combineToByteArray(indexReference, prefix)
@@ -427,9 +456,9 @@ private fun hasMatchingPrefixValue(
                     iterator.next()
                     continue
                 }
-                val qualifierKeyEnd = indexReference.size + qualifierSize + keySize
-                val qualifier = firstKey.copyOfRange(indexReference.size, qualifierKeyEnd)
-                val recordKeyOffset = qualifier.size - keySize
+                val qualifierOffset = indexReference.size
+                val qualifierLength = qualifierSize + keySize
+                val recordKeyInQualifierOffset = qualifierLength - keySize
                 var foundVisibleVersion = false
                 while (iterator.isValid()) {
                     val indexRecord = iterator.key()
@@ -437,12 +466,12 @@ private fun hasMatchingPrefixValue(
                         return false
                     }
 
-                    if (!indexRecord.matchesRangePart(indexReference.size, qualifier, length = qualifier.size)) {
+                    if (!indexRecord.matchesRangePart(indexReference.size, firstKey, qualifierLength, qualifierOffset, qualifierLength)) {
                         break
                     }
 
                     val versionOffset = indexRecord.size - VERSION_BYTE_SIZE
-                    if (versionOffset < qualifier.size + indexReference.size) {
+                    if (versionOffset < qualifierLength + indexReference.size) {
                         iterator.next()
                         continue
                     }
@@ -450,7 +479,13 @@ private fun hasMatchingPrefixValue(
                         foundVisibleVersion = true
                         if (
                             iterator.value().contentEquals(EMPTY_ARRAY) &&
-                            qualifier.matchesRangePart(recordKeyOffset, recordKey, length = recordKey.size)
+                            indexRecord.matchesRangePart(
+                                indexReference.size + recordKeyInQualifierOffset,
+                                recordKeySource,
+                                recordKeyLength,
+                                recordKeyOffset,
+                                recordKeyLength
+                            )
                         ) {
                             return true
                         }
@@ -469,7 +504,7 @@ private fun hasMatchingPrefixValue(
                     if (!indexRecord.matchesRangePart(0, prefixWithReference, length = prefixWithReference.size)) {
                         return false
                     }
-                    if (!indexRecord.matchesRangePart(indexReference.size, qualifier, length = qualifier.size)) {
+                    if (!indexRecord.matchesRangePart(indexReference.size, firstKey, qualifierLength, qualifierOffset, qualifierLength)) {
                         break
                     }
                     iterator.next()
@@ -479,7 +514,9 @@ private fun hasMatchingPrefixValue(
             return false
         }
 
-        var settledValueAndKey: ByteArray? = null
+        var settledValueAndKeyBytes: ByteArray? = null
+        var settledValueAndKeyOffset = 0
+        var settledValueAndKeyLength = 0
         while (iterator.isValid()) {
             val indexRecord = iterator.key()
             if (prefixWithReference.compareDefinedRange(indexRecord, 0, prefixWithReference.size) > 0) {
@@ -496,17 +533,30 @@ private fun hasMatchingPrefixValue(
                 continue
             }
             val keyOffset = indexReference.size + valueSize
-            val valueAndKey = indexRecord.copyOfRange(indexReference.size, keyOffset + keySize)
+            val valueAndKeyOffset = indexReference.size
+            val valueAndKeyLength = valueSize + keySize
 
-            if (settledValueAndKey?.contentEquals(valueAndKey) == true) {
+            if (
+                settledValueAndKeyBytes != null &&
+                settledValueAndKeyLength == valueAndKeyLength &&
+                indexRecord.matchesRangePart(
+                    valueAndKeyOffset,
+                    settledValueAndKeyBytes,
+                    valueAndKeyLength,
+                    settledValueAndKeyOffset,
+                    settledValueAndKeyLength
+                )
+            ) {
                 iterator.next()
                 continue
             }
 
-            if (indexRecord.matchesRangePart(keyOffset, recordKey, length = recordKey.size)) {
+            if (indexRecord.matchesRangePart(keyOffset, recordKeySource, recordKeyLength, recordKeyOffset, recordKeyLength)) {
                 return true
             } else {
-                settledValueAndKey = valueAndKey
+                settledValueAndKeyBytes = indexRecord
+                settledValueAndKeyOffset = valueAndKeyOffset
+                settledValueAndKeyLength = valueAndKeyLength
             }
             iterator.next()
         }
@@ -516,15 +566,18 @@ private fun hasMatchingPrefixValue(
 }
 
 private fun createIndexValue(value: ByteArray, key: ByteArray): ByteArray {
+    return createIndexValue(value, key, 0, key.size)
+}
+
+private fun createIndexValue(value: ByteArray, keySource: ByteArray, keyOffset: Int, keyLength: Int): ByteArray {
     val valueLength = value.size
-    return combineToByteArray(
-        value,
-        ByteArray(valueLength.calculateVarByteLength()).also { lengthBytes ->
-            var index = 0
-            valueLength.writeVarBytes { lengthBytes[index++] = it }
-        },
-        key
-    )
+    val valueLengthBytes = valueLength.calculateVarByteLength()
+    return ByteArray(valueLength + valueLengthBytes + keyLength).also { output ->
+        value.copyInto(output, 0)
+        var index = valueLength
+        valueLength.writeVarBytes { output[index++] = it }
+        keySource.copyInto(output, index, keyOffset, keyOffset + keyLength)
+    }
 }
 
 /** Creates a Key out of a [indexRecord] by reading from [keyOffset] */

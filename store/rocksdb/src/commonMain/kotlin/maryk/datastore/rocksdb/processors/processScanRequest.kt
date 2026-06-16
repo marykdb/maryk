@@ -26,7 +26,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
     cache: Cache
 ) {
     val scanRequest = storeAction.request
-    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
+    val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
     val dbIndex = getDataModelId(scanRequest.dataModel)
     val columnFamilies = getColumnFamilies(dbIndex)
 

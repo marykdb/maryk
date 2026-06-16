@@ -122,12 +122,16 @@ internal class DBAccessorStoreValuesGetter(
                 try {
                     val storedValue = iterator.value()
                     requireVersionedValue(storedValue)
-                    val valueBytes = dbAccessor.dataStore.decryptValueIfNeeded(storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size))
-                    var valueReadIndex = 0
-                    val value = readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
-                        ?: run {
-                            iterator.next()
-                            continue
+                    val value = dbAccessor.dataStore.withDecryptedValueIfNeeded(
+                        storedValue,
+                        VERSION_BYTE_SIZE,
+                        storedValue.size - VERSION_BYTE_SIZE
+                    ) { valueBytes, offset, length ->
+                        var valueReadIndex = offset
+                        readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { offset + length - valueReadIndex }
+                    } ?: run {
+                        iterator.next()
+                        continue
                         }
                     map[mapKey] = value
                 } catch (error: Throwable) {

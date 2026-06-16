@@ -19,7 +19,14 @@ internal fun walkDataRecordsAndFillIndex(
 ) {
     Transaction(dataStore).use { transaction ->
         transaction.getIterator(dataStore.defaultReadOptions, columnFamilies.keys).use { iterator ->
-            val storeGetter = StoreValuesGetter(null, dataStore.db, columnFamilies, dataStore.defaultReadOptions, captureVersion = true)
+            val storeGetter = StoreValuesGetter(
+                null,
+                dataStore.db,
+                columnFamilies,
+                dataStore.defaultReadOptions,
+                captureVersion = true,
+                decryptValue = dataStore::decryptValueIfNeeded
+            )
             val historicStoreIndexValuesWalker = if (columnFamilies is HistoricTableColumnFamilies) {
                 HistoricStoreIndexValuesWalker(
                     columnFamilies,

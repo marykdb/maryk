@@ -127,27 +127,28 @@ class RocksDBSensitivePropertiesTest {
 }
 
 private class XorFieldEncryptionProvider : FieldEncryptionProvider {
-    override suspend fun encrypt(value: ByteArray): ByteArray = xor(value)
-    override suspend fun decrypt(value: ByteArray): ByteArray = xor(value)
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
 
-    private fun xor(value: ByteArray): ByteArray =
-        ByteArray(value.size) { i -> (value[i].toInt() xor 0x5A).toByte() }
+    private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
+        ByteArray(length) { i -> (value[offset + i].toInt() xor 0x5A).toByte() }
 }
 
 private class XorWithTokenFieldEncryptionProvider :
     FieldEncryptionProvider,
     SensitiveIndexTokenProvider {
-    override suspend fun encrypt(value: ByteArray): ByteArray = xor(value)
-    override suspend fun decrypt(value: ByteArray): ByteArray = xor(value)
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
 
-    override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+    override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray, offset: Int, length: Int): ByteArray {
         val token = ByteArray(16)
         var i = 0
         for (b in reference) {
             token[i % token.size] = (token[i % token.size].toInt() xor b.toInt() xor 0x21).toByte()
             i++
         }
-        for (b in value) {
+        for (index in offset until offset + length) {
+            val b = value[index]
             token[i % token.size] = (token[i % token.size].toInt() xor b.toInt() xor 0x63).toByte()
             i++
         }
@@ -155,8 +156,8 @@ private class XorWithTokenFieldEncryptionProvider :
         return token
     }
 
-    private fun xor(value: ByteArray): ByteArray =
-        ByteArray(value.size) { i -> (value[i].toInt() xor 0x5A).toByte() }
+    private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
+        ByteArray(length) { i -> (value[offset + i].toInt() xor 0x5A).toByte() }
 }
 
 object SensitiveRocksModel : RootDataModel<SensitiveRocksModel>(

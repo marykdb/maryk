@@ -20,7 +20,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAddRequest(
     storeAction: StoreAction<DM, AddRequest<DM>, AddResponse<DM>>,
 ) {
     val addRequest = storeAction.request
-    val statuses = mutableListOf<IsAddResponseStatus<DM>>()
+    val statuses = ArrayList<IsAddResponseStatus<DM>>(addRequest.objects.size.coerceAtLeast(4))
 
     if (addRequest.objects.isNotEmpty()) {
         val dbIndex = getDataModelId(addRequest.dataModel)

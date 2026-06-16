@@ -773,7 +773,13 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
         dataModel.Meta.indexes?.let { indexes ->
             indexUpdates = mutableListOf()
 
-            val storeGetter = StoreValuesGetter(key.bytes, db, columnFamilies, defaultReadOptions)
+            val storeGetter = StoreValuesGetter(
+                key.bytes,
+                db,
+                columnFamilies,
+                defaultReadOptions,
+                decryptValue = this::decryptValueIfNeeded
+            )
             val transactionGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
             transactionGetter.moveToKey(key.bytes, transaction)
 

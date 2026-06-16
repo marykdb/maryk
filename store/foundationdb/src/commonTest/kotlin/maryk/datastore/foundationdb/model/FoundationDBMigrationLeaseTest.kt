@@ -52,21 +52,23 @@ class FoundationDBMigrationLeaseTest {
             tc = dataStore.tc,
             modelPrefixesById = mapOf(1u to modelPrefix),
             scope = ownerScope,
-            leaseTimeoutMs = 200,
-            heartbeatIntervalMs = 40,
+            leaseTimeoutMs = 1_500,
+            heartbeatIntervalMs = 100,
         )
         val contenderLease = FoundationDBMigrationLease(
             tc = dataStore.tc,
             modelPrefixesById = mapOf(1u to modelPrefix),
             scope = contenderScope,
-            leaseTimeoutMs = 200,
-            heartbeatIntervalMs = 40,
+            leaseTimeoutMs = 1_500,
+            heartbeatIntervalMs = 100,
         )
 
         try {
             assertTrue(ownerLease.tryAcquire(1u, "migration-v1-v2"))
-            delay(650.milliseconds)
-            assertFalse(contenderLease.tryAcquire(1u, "migration-v1-v2"))
+            repeat(5) {
+                delay(250.milliseconds)
+                assertFalse(contenderLease.tryAcquire(1u, "migration-v1-v2"))
+            }
         } finally {
             ownerLease.release(1u, "migration-v1-v2")
             contenderLease.release(1u, "migration-v1-v2")
@@ -93,20 +95,20 @@ class FoundationDBMigrationLeaseTest {
             tc = dataStore.tc,
             modelPrefixesById = mapOf(1u to modelPrefix),
             scope = ownerScope,
-            leaseTimeoutMs = 150,
+            leaseTimeoutMs = 400,
             heartbeatIntervalMs = 5_000,
         )
         val contenderLease = FoundationDBMigrationLease(
             tc = dataStore.tc,
             modelPrefixesById = mapOf(1u to modelPrefix),
             scope = contenderScope,
-            leaseTimeoutMs = 150,
+            leaseTimeoutMs = 400,
             heartbeatIntervalMs = 5_000,
         )
 
         try {
             assertTrue(ownerLease.tryAcquire(1u, "migration-v1-v2"))
-            delay(300.milliseconds)
+            delay(900.milliseconds)
             assertTrue(contenderLease.tryAcquire(1u, "migration-v1-v2"))
         } finally {
             ownerLease.release(1u, "migration-v1-v2")

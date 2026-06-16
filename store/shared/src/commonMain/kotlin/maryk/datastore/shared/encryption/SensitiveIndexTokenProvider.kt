@@ -5,5 +5,11 @@ package maryk.datastore.shared.encryption
  * Implementations should use a keyed function.
  */
 interface SensitiveIndexTokenProvider {
-    suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray
+    suspend fun deriveDeterministicToken(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int = 0,
+        length: Int = value.size - offset
+    ): ByteArray
 }

@@ -40,37 +40,56 @@ class AesGcmHmacSha256EncryptionProvider(
         require(tokenSizeBytes in 8..32) { "tokenSizeBytes must be in range 8..32" }
     }
 
-    override suspend fun encrypt(value: ByteArray): ByteArray {
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray {
+        validateRange(value, offset, length)
         val aesKey = aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, encryptionKeyBytes)
         val aesCipher = aesKey.cipher()
         val nonce = generateNonce()
-        val cipherText = aesCipher.encryptWithIv(nonce, value, associatedData)
+        val plainText = if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        val cipherText = aesCipher.encryptWithIv(nonce, plainText, associatedData)
         return byteArrayOf(V1_PAYLOAD_HEADER) + nonce + cipherText
     }
 
-    override suspend fun decrypt(value: ByteArray): ByteArray {
-        require(value.size >= 1 + GCM_NONCE_SIZE_BYTES + GCM_TAG_SIZE_BYTES) {
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray {
+        validateRange(value, offset, length)
+        require(length >= 1 + GCM_NONCE_SIZE_BYTES + GCM_TAG_SIZE_BYTES) {
             "Encrypted payload too short"
         }
-        require(value[0] == V1_PAYLOAD_HEADER) {
-            "Unsupported encrypted payload version: ${value[0]}"
+        require(value[offset] == V1_PAYLOAD_HEADER) {
+            "Unsupported encrypted payload version: ${value[offset]}"
         }
-        val nonceStart = 1
+        val nonceStart = offset + 1
         val nonceEnd = nonceStart + GCM_NONCE_SIZE_BYTES
         val nonce = value.copyOfRange(nonceStart, nonceEnd)
-        val cipherText = value.copyOfRange(nonceEnd, value.size)
+        val cipherText = value.copyOfRange(nonceEnd, offset + length)
         val aesKey = aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, encryptionKeyBytes)
         val aesCipher = aesKey.cipher()
         return aesCipher.decryptWithIv(nonce, cipherText, associatedData)
     }
 
-    override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
-        val input = byteArrayOf(1) +
-            modelId.toByteArray() +
-            reference.size.toByteArray() +
-            reference +
-            value.size.toByteArray() +
-            value
+    override suspend fun deriveDeterministicToken(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int
+    ): ByteArray {
+        validateRange(value, offset, length)
+        val modelIdBytes = modelId.toByteArray()
+        val referenceSizeBytes = reference.size.toByteArray()
+        val valueSizeBytes = length.toByteArray()
+        val input = ByteArray(1 + modelIdBytes.size + referenceSizeBytes.size + reference.size + valueSizeBytes.size + length)
+        var index = 0
+        input[index++] = 1
+        modelIdBytes.copyInto(input, index)
+        index += modelIdBytes.size
+        referenceSizeBytes.copyInto(input, index)
+        index += referenceSizeBytes.size
+        reference.copyInto(input, index)
+        index += reference.size
+        valueSizeBytes.copyInto(input, index)
+        index += valueSizeBytes.size
+        value.copyInto(input, index, offset, offset + length)
 
         val hmacKey = hmac.keyDecoder(SHA256).decodeFromByteArray(HMAC.Key.Format.RAW, tokenKeyBytes)
         val tokenSignatureGenerator = hmacKey.signatureGenerator()
@@ -160,6 +179,12 @@ class AesGcmHmacSha256EncryptionProvider(
             )
         }
     }
+}
+
+private fun validateRange(value: ByteArray, offset: Int, length: Int) {
+    require(offset >= 0) { "Offset cannot be negative: $offset" }
+    require(length >= 0) { "Length cannot be negative: $length" }
+    require(offset + length <= value.size) { "Range [$offset, ${offset + length}) out of bounds for ${value.size}" }
 }
 
 private fun UInt.toByteArray(): ByteArray = ByteArray(UInt.SIZE_BYTES).also { bytes ->

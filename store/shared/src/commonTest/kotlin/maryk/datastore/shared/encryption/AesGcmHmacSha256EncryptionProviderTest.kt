@@ -140,6 +140,36 @@ class AesGcmHmacSha256EncryptionProviderTest {
     }
 
     @Test
+    fun decryptSupportsOffsetAndLength() = runTest {
+        val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
+        val provider = AesGcmHmacSha256EncryptionProvider(
+            encryptionKey = keyMaterial.encryptionKey,
+            tokenKey = keyMaterial.tokenKey
+        )
+
+        val plain = "secret".encodeToByteArray()
+        val encrypted = provider.encrypt(plain)
+        val wrapped = byteArrayOf(9, 8, 7) + encrypted + byteArrayOf(6, 5)
+
+        assertContentEquals(plain, provider.decrypt(wrapped, 3, encrypted.size))
+    }
+
+    @Test
+    fun deterministicTokenSupportsOffsetAndLength() = runTest {
+        val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
+        val provider = AesGcmHmacSha256EncryptionProvider(
+            encryptionKey = keyMaterial.encryptionKey,
+            tokenKey = keyMaterial.tokenKey
+        )
+
+        val value = "__same__".encodeToByteArray()
+        val full = provider.deriveDeterministicToken(7u, byteArrayOf(1, 2), "same".encodeToByteArray())
+        val ranged = provider.deriveDeterministicToken(7u, byteArrayOf(1, 2), value, 2, 4)
+
+        assertContentEquals(full, ranged)
+    }
+
+    @Test
     fun keyMaterialDefensivelyCopiesKeys() {
         val encryptionKey = ByteArray(32) { it.toByte() }
         val tokenKey = ByteArray(32) { (it + 64).toByte() }

@@ -14,7 +14,7 @@ internal fun ReadTransaction.readMapByReference(
     tablePrefix: ByteArray,
     keyBytes: ByteArray,
     mapReference: IsMapReference<Any, Any, IsPropertyContext, *>,
-    decryptValue: ((ByteArray) -> ByteArray)? = null
+    decryptValue: DecryptValue? = null
 ): Map<Any, Any>? {
     val mapDefinition = mapReference.propertyDefinition.definition
     val mapValueDefinition = mapDefinition.valueDefinition
@@ -42,11 +42,10 @@ internal fun ReadTransaction.readMapByReference(
 
         try {
             val stored = kv.value
-            requireVersionedValue(stored)
-            val plain = decryptValue?.invoke(stored.copyOfRange(VERSION_BYTE_SIZE, stored.size))
-                ?: stored.copyOfRange(VERSION_BYTE_SIZE, stored.size)
-            var valueReadIndex = 0
-            val value = readValue(mapValueDefinition, { plain[valueReadIndex++] }) { plain.size - valueReadIndex } ?: continue
+            val value = stored.withCurrentPayload(decryptValue) { payload, offset, length ->
+                var valueReadIndex = offset
+                readValue(mapValueDefinition, { payload[valueReadIndex++] }) { offset + length - valueReadIndex }
+            } ?: continue
             map[mapKey] = value
         } catch (error: Throwable) {
             error.rethrowIfFatal()
@@ -58,4 +57,17 @@ internal fun ReadTransaction.readMapByReference(
     }
 
     return map.takeIf { it.isNotEmpty() }
+}
+
+private inline fun <T> ByteArray.withCurrentPayload(
+    noinline decryptValue: DecryptValue?,
+    handle: (ByteArray, Int, Int) -> T
+): T {
+    requireVersionedValue(this)
+    return if (decryptValue == null) {
+        handle(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+    } else {
+        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+        handle(payload, 0, payload.size)
+    }
 }

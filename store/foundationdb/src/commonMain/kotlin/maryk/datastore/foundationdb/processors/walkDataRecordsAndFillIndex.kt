@@ -94,7 +94,10 @@ internal fun walkDataRecordsAndFillIndex(
         while (it.hasNext()) {
             val kv = it.nextBlocking()
             val fullKey = kv.key
-            val keyBytes = fullKey.copyOfRange(tableDirectories.keysPrefix.size, fullKey.size)
+            val keyPrefixSize = tableDirectories.keysPrefix.size
+            val keyBytes = ByteArray(fullKey.size - keyPrefixSize).also { keyBytes ->
+                fullKey.copyInto(keyBytes, 0, keyPrefixSize)
+            }
             val latestVersion = tr.get(packKey(tableDirectories.tablePrefix, keyBytes)).awaitResult() ?: continue
             processKey(keyBytes, latestVersion)
         }

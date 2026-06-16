@@ -141,9 +141,13 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
         val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes)).awaitResult()
         if (currentTop != null) {
             requireVersionedValue(currentTop)
-            val storedValueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
-            val valueBytes = decryptValueIfNeeded(storedValueBytes)
-            val uniqueValue = mapUniqueValueBytes(dataModelId, referenceBytes, valueBytes)
+            val uniqueValue = withDecryptedValueIfNeeded(
+                currentTop,
+                VERSION_BYTE_SIZE,
+                currentTop.size - VERSION_BYTE_SIZE
+            ) { valueBytes, offset, length ->
+                mapUniqueValueBytes(dataModelId, referenceBytes, valueBytes, offset, length)
+            }
             val uniqueRef = referenceBytes + uniqueValue
             tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))
             writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)

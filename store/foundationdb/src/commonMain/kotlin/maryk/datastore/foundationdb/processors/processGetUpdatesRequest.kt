@@ -39,8 +39,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
     val dbIndex = getDataModelId(getRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = getRequest.keys.size.coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
     var lastResponseVersion = 0uL
     var insertionIndex = -1
@@ -130,11 +131,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
             }
 
             changes?.let { oc ->
-                updates += oc.changes.mapNotNull { versionedChange ->
+                for (versionedChange in oc.changes) {
                     val ch = versionedChange.changes
                     if (ch.contains(ObjectCreate)) {
                         getSingleValues?.invoke(versionedChange.version)?.let { valuesWithMeta ->
-                            AdditionUpdate(
+                            updates += AdditionUpdate(
                                 key = oc.key,
                                 version = versionedChange.version,
                                 firstVersion = valuesWithMeta.firstVersion,
@@ -144,7 +145,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             )
                         }
                     } else {
-                        ChangeUpdate(
+                        updates += ChangeUpdate(
                             key = oc.key,
                             version = versionedChange.version,
                             index = insertionIndex,

@@ -21,7 +21,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeR
 ) {
     val changeRequest = storeAction.request
 
-    val statuses = mutableListOf<IsChangeResponseStatus<DM>>()
+    val statuses = ArrayList<IsChangeResponseStatus<DM>>(changeRequest.objects.size.coerceAtLeast(4))
 
     if (changeRequest.objects.isNotEmpty()) {
         val dbIndex = getDataModelId(changeRequest.dataModel)

@@ -25,7 +25,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
     cache: Cache,
 ) {
     val getRequest = storeAction.request
-    val objectChanges = mutableListOf<DataObjectVersionedChange<DM>>()
+    val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(getRequest.keys.size.coerceAtLeast(4))
 
     getRequest.checkToVersion(keepAllVersions)
     getRequest.checkMaxVersions(keepAllVersions)

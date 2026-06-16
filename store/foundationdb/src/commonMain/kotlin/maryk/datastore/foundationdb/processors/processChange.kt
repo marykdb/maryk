@@ -285,7 +285,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                     addValidation(InvalidValueException(reference, expected.toString()))
                                 } else {
                                     requireVersionedValue(packed)
-                                    val stored = decryptValueIfNeeded(packed.copyOfRange(VERSION_BYTE_SIZE, packed.size))
+                                    val stored = decryptValueIfNeeded(packed, VERSION_BYTE_SIZE, packed.size - VERSION_BYTE_SIZE)
                                     try {
                                         val storable = Value.castDefinition(reference.propertyDefinition)
                                         @Suppress("UNCHECKED_CAST")

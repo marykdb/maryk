@@ -73,9 +73,13 @@ internal fun FoundationDBDataStore.createValueWriter(
                         val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, reference)).awaitResult()
                         if (currentTop != null) {
                             requireVersionedValue(currentTop)
-                            val prevStoredValueBytes = currentTop.copyOfRange(VERSION_BYTE_SIZE, currentTop.size)
-                            val prevValueBytes = decryptValueIfNeeded(prevStoredValueBytes)
-                            val oldUniqueValue = mapUniqueValueBytes(dataModelId, reference, prevValueBytes)
+                            val oldUniqueValue = withDecryptedValueIfNeeded(
+                                currentTop,
+                                VERSION_BYTE_SIZE,
+                                currentTop.size - VERSION_BYTE_SIZE
+                            ) { prevValueBytes, offset, length ->
+                                mapUniqueValueBytes(dataModelId, reference, prevValueBytes, offset, length)
+                            }
                             val oldUniqueRef = reference + oldUniqueValue
                             tr.clear(packKey(tableDirs.uniquePrefix, oldUniqueRef))
                         }

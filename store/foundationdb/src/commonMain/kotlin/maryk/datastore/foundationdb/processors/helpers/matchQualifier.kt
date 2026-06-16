@@ -29,7 +29,7 @@ internal fun <T : Any> Transaction.matchQualifier(
     keyLength: Int,
     reference: IsPropertyReference<T, *, *>,
     toVersion: ULong?,
-    decryptValue: ((ByteArray) -> ByteArray)? = null,
+    decryptValue: DecryptValue? = null,
     matcher: (T?) -> Boolean
 ): Boolean =
     this.matchQualifier(
@@ -52,7 +52,7 @@ internal fun <T : Any> Transaction.matchQualifier(
     reference: IsPropertyReference<T, *, *>,
     qualifierMatcher: IsQualifierMatcher,
     toVersion: ULong?,
-    decryptValue: ((ByteArray) -> ByteArray)? = null,
+    decryptValue: DecryptValue? = null,
     matcher: (T?) -> Boolean
 ): Boolean {
     when (qualifierMatcher) {
@@ -179,7 +179,7 @@ private fun <T : Any> Transaction.matchReferenced(
     keyLength: Int,
     referencedMatcher: ReferencedQualifierMatcher,
     reference: IsPropertyReference<T, *, *>,
-    decryptValue: ((ByteArray) -> ByteArray)? = null,
+    decryptValue: DecryptValue? = null,
     matcher: (T?) -> Boolean
 ): Boolean {
     val referencedKey = this.getValue(
@@ -220,7 +220,7 @@ private fun <T : Any> Transaction.matchExactFromRange(
     keyLength: Int,
     qualifier: ByteArray,
     reference: IsPropertyReference<T, *, *>,
-    decryptValue: ((ByteArray) -> ByteArray)? = null,
+    decryptValue: DecryptValue? = null,
     matcher: (T?) -> Boolean
 ): Boolean {
     val exact = qualifier.copyOfRange(keyLength, qualifier.size)

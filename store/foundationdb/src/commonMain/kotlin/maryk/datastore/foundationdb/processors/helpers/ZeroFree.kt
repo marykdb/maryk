@@ -9,35 +9,74 @@ package maryk.datastore.foundationdb.processors.helpers
 internal fun encodeZeroFreeUsing01(src: ByteArray): ByteArray {
     val encodedLength = src.zeroFreeEncodedLength()
     val out = ByteArray(encodedLength)
-    var index = 0
-    for (b in src) {
-        val u = b.toInt() and 0xFF
-        when (u) {
-            0x00 -> {
-                out[index++] = 0x01
-                out[index++] = 0x01
-            }
-            0x01 -> {
-                out[index++] = 0x01
-                out[index++] = 0x02
-            }
-            else -> out[index++] = u.toByte()
-        }
-    }
+    encodeZeroFreeUsing01Into(src, 0, src.size, out, 0)
     return out
 }
 
+internal fun encodeZeroFreeUsing01(src: ByteArray, offset: Int, length: Int): ByteArray {
+    val encodedLength = src.zeroFreeEncodedLength(offset, length)
+    val out = ByteArray(encodedLength)
+    encodeZeroFreeUsing01Into(src, offset, length, out, 0)
+    return out
+}
+
+internal fun encodeZeroFreeSuffixUsing01(src: ByteArray, prefixLength: Int): ByteArray {
+    require(prefixLength in 0..src.size) { "Prefix length $prefixLength out of bounds for ${src.size}" }
+    if (prefixLength == src.size) return src
+
+    val encodedLength = prefixLength + src.zeroFreeEncodedLength(prefixLength, src.size - prefixLength)
+    val out = ByteArray(encodedLength)
+    src.copyInto(out, 0, 0, prefixLength)
+    encodeZeroFreeUsing01Into(src, prefixLength, src.size - prefixLength, out, prefixLength)
+    return out
+}
+
+private fun encodeZeroFreeUsing01Into(
+    src: ByteArray,
+    offset: Int,
+    length: Int,
+    out: ByteArray,
+    outOffset: Int
+) {
+    var index = 0
+    val end = offset + length
+    for (srcIndex in offset until end) {
+        val u = src[srcIndex].toInt() and 0xFF
+        when (u) {
+            0x00 -> {
+                out[outOffset + index++] = 0x01
+                out[outOffset + index++] = 0x01
+            }
+            0x01 -> {
+                out[outOffset + index++] = 0x01
+                out[outOffset + index++] = 0x02
+            }
+            else -> out[outOffset + index++] = u.toByte()
+        }
+    }
+}
+
 internal fun ByteArray.zeroFreeEncodedLength(): Int {
-    var length = 0
-    for (b in this) {
-        length = length.checkedZeroFreeLengthPlus(
+    return zeroFreeEncodedLength(0, size)
+}
+
+internal fun ByteArray.zeroFreeEncodedLength(offset: Int, length: Int): Int {
+    require(offset >= 0) { "Offset cannot be negative: $offset" }
+    require(length >= 0) { "Length cannot be negative: $length" }
+    require(offset + length <= size) { "Range [$offset, ${offset + length}) out of bounds for $size" }
+
+    var resultLength = 0
+    val end = offset + length
+    for (index in offset until end) {
+        val b = this[index]
+        resultLength = resultLength.checkedZeroFreeLengthPlus(
             when ((b.toInt() and 0xFF)) {
                 0x00, 0x01 -> 2
                 else -> 1
             }
         )
     }
-    return length
+    return resultLength
 }
 
 internal fun Int.checkedZeroFreeLengthPlus(addend: Int): Int {
@@ -48,16 +87,21 @@ internal fun Int.checkedZeroFreeLengthPlus(addend: Int): Int {
 
 /** Decode a stream encoded by [encodeZeroFreeUsing01]. */
 internal fun decodeZeroFreeUsing01(encoded: ByteArray): ByteArray {
-    val out = ArrayList<Byte>(encoded.size)
-    var i = 0
-    while (i < encoded.size) {
+    return decodeZeroFreeUsing01(encoded, 0, encoded.size)
+}
+
+internal fun decodeZeroFreeUsing01(encoded: ByteArray, offset: Int, length: Int): ByteArray {
+    val out = ArrayList<Byte>(length)
+    val end = offset + length
+    var i = offset
+    while (i < end) {
         val u = encoded[i].toInt() and 0xFF
         if (u != 0x01) {
             require(u != 0x00) { "Encoded stream contains 0x00, which is disallowed" }
             out.add(encoded[i])
             i++
         } else {
-            require(i + 1 < encoded.size) { "Truncated escape at end" }
+            require(i + 1 < end) { "Truncated escape at end" }
             val v = encoded[i + 1].toInt() and 0xFF
             val orig = when (v) {
                 0x01 -> 0x00
@@ -73,6 +117,14 @@ internal fun decodeZeroFreeUsing01(encoded: ByteArray): ByteArray {
 
 internal fun decodeZeroFreeUsing01OrNull(encoded: ByteArray): ByteArray? = try {
     decodeZeroFreeUsing01(encoded)
+} catch (_: IllegalArgumentException) {
+    null
+} catch (_: IllegalStateException) {
+    null
+}
+
+internal fun decodeZeroFreeUsing01OrNull(encoded: ByteArray, offset: Int, length: Int): ByteArray? = try {
+    decodeZeroFreeUsing01(encoded, offset, length)
 } catch (_: IllegalArgumentException) {
     null
 } catch (_: IllegalStateException) {

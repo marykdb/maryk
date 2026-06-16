@@ -25,6 +25,7 @@ import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
+import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
@@ -46,6 +47,7 @@ import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToRange
+import maryk.lib.extensions.compare.matchesRange
 import maryk.lib.extensions.compare.matchesRangePart
 import kotlin.math.min
 
@@ -55,7 +57,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
     scanRequest: IsScanRequest<DM, *>,
     indexScan: ScanType.IndexScan,
     keyScanRange: KeyScanRanges,
-    decryptValue: ((ByteArray) -> ByteArray)? = null,
+    decryptValue: DecryptValue? = null,
     processStoreValue: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
@@ -168,24 +170,29 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                 val totalLen = indexKeyBytes.size
                                 val valueSize = totalLen - valueOffset - keySize - versionSize
                                 if (valueSize < 0) return@forEachInRangeBatch true
-                                val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
                                 if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) return@forEachInRangeBatch true
                                 val keyOffset = valueOffset + valueSize
-                                val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
-                                if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, null)) return@forEachInRangeBatch true
-                                val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: return@forEachInRangeBatch true
+                                var keyReadIndex = keyOffset
+                                val key = scanRequest.dataModel.key { indexKeyBytes[keyReadIndex++] }
+                                if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachInRangeBatch true
+                                val createdPacked = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult() ?: return@forEachInRangeBatch true
                                 val createdVersion = createdPacked.readHLCTimestampIfPresent() ?: return@forEachInRangeBatch true
-                                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
+                                if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
                                     return@forEachInRangeBatch true
                                 }
 
                                 if (effectiveStartKey != null) {
-                                    val cmp = sortingKey.compareDefinedRange(effectiveStartKey)
+                                    val cmp = compareDefinedRange(
+                                        indexKeyBytes,
+                                        valueOffset,
+                                        totalLen - versionSize - valueOffset,
+                                        effectiveStartKey
+                                    )
                                     if (cmp < 0) return@forEachInRangeBatch true
                                     if (!includeStartFilter && cmp == 0) return@forEachInRangeBatch true
                                 }
 
-                                val key = scanRequest.dataModel.key(keyBytes)
+                                val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
                                 processStoreValue(tr, key, createdVersion, sortingKey)
                                 emitted++
                                 emitted < scanRequest.limit
@@ -244,23 +251,28 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                 val totalLen = indexKeyBytes.size
                                 val valueSize = totalLen - valueOffset - keySize - versionSize
                                 if (valueSize < 0) return@forEachInRangeBatch true
-                                val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
                                 if (startIndexKey != null) {
-                                    val cmp = sortingKey.compareDefinedRange(startIndexKey)
+                                    val cmp = compareDefinedRange(
+                                        indexKeyBytes,
+                                        valueOffset,
+                                        totalLen - versionSize - valueOffset,
+                                        startIndexKey
+                                    )
                                     if (cmp > 0) return@forEachInRangeBatch true
                                     if (!scanRequest.includeStart && cmp == 0) return@forEachInRangeBatch true
                                 }
                                 if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize)) return@forEachInRangeBatch true
                                 val keyOffset = valueOffset + valueSize
-                                val keyBytes = indexKeyBytes.copyOfRange(keyOffset, keyOffset + keySize)
-                                if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, null)) return@forEachInRangeBatch true
-                                val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: return@forEachInRangeBatch true
+                                var keyReadIndex = keyOffset
+                                val key = scanRequest.dataModel.key { indexKeyBytes[keyReadIndex++] }
+                                if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachInRangeBatch true
+                                val createdPacked = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult() ?: return@forEachInRangeBatch true
                                 val createdVersion = createdPacked.readHLCTimestampIfPresent() ?: return@forEachInRangeBatch true
-                                if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
+                                if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
                                     return@forEachInRangeBatch true
                                 }
 
-                                val key = scanRequest.dataModel.key(keyBytes)
+                                val sortingKey = indexKeyBytes.copyOfRange(valueOffset, totalLen - versionSize)
                                 processStoreValue(tr, key, createdVersion, sortingKey)
                                 emitted++
                                 emitted < scanRequest.limit
@@ -328,7 +340,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
             }
             if (beginGteEnd) continue
 
-            var lastQualifierEncoded: ByteArray? = null
+            var lastQualifierSource: ByteArray? = null
+            var lastQualifierOffset = 0
+            var lastQualifierLength = 0
             var nextBegin = begin
             while (true) {
                 val result = transactionRunner.run { tr ->
@@ -339,19 +353,31 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         if (sepIndex < histBase.size || k[sepIndex] != 0.toByte()) return@forEachInRangeBatch true
                         if (toVersionBytes.compareToRange(k, versionOffset) > 0) return@forEachInRangeBatch true
 
-                        val encQualifier = k.copyOfRange(histBase.size, sepIndex)
-                        val prevEnc = lastQualifierEncoded
-                        if (prevEnc != null && prevEnc.contentEquals(encQualifier)) return@forEachInRangeBatch true
-                        lastQualifierEncoded = encQualifier
-                        val qualifier = decodeZeroFreeUsing01OrNull(encQualifier) ?: return@forEachInRangeBatch true
+                        val encQualifierOffset = histBase.size
+                        val encQualifierLength = sepIndex - histBase.size
+                        if (
+                            lastQualifierSource != null &&
+                            qualifierMatches(
+                                lastQualifierSource!!,
+                                lastQualifierOffset,
+                                lastQualifierLength,
+                                k,
+                                encQualifierOffset,
+                                encQualifierLength
+                            )
+                        ) return@forEachInRangeBatch true
+                        lastQualifierSource = k
+                        lastQualifierOffset = encQualifierOffset
+                        lastQualifierLength = encQualifierLength
+                        val qualifier = decodeZeroFreeUsing01OrNull(k, encQualifierOffset, encQualifierLength) ?: return@forEachInRangeBatch true
                         if (qualifier.size <= indexReference.size) return@forEachInRangeBatch true
-                        val valueAndKey = qualifier.copyOfRange(indexReference.size, qualifier.size)
-                        val valueSize = valueAndKey.size - keySize
+                        val valueSize = qualifier.size - indexReference.size - keySize
                         if (valueSize < 0) return@forEachInRangeBatch true
 
-                        if (!indexScanRange.matchesPartials(valueAndKey, 0, valueSize)) return@forEachInRangeBatch true
+                        if (!indexScanRange.matchesPartials(qualifier, indexReference.size, valueSize)) return@forEachInRangeBatch true
 
-                        val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
+                        val keyOffset = qualifier.size - keySize
+                        val keyBytes = qualifier.copyOfRange(keyOffset, qualifier.size)
                         if (!hasHistoricAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, keyBytes, indexScanRange.valueMatches, scanRequest.toVersion!!)) return@forEachInRangeBatch true
                         if (scanRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, keySize, null, scanRequest.toVersion, decryptValue, indexScan.index)) {
                             return@forEachInRangeBatch true
@@ -360,7 +386,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         val createdPacked = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult() ?: return@forEachInRangeBatch true
                         val createdVersion = createdPacked.readHLCTimestampIfPresent() ?: return@forEachInRangeBatch true
                         val version = k.readReversedVersionBytes(versionOffset)
-                        val rec = Rec(valueAndKey, keyBytes, createdVersion)
+                        val rec = Rec(qualifier.copyOfRange(indexReference.size, qualifier.size), keyBytes, createdVersion)
                         val keyRef = keyBytes.asByteArrayKey()
                         val prev = latestByKey[keyRef]
                         if (prev == null || version > prev.version) {
@@ -542,14 +568,32 @@ private fun hasHistoricMatchingExactValue(
 
 private fun createIndexValue(value: ByteArray, key: ByteArray): ByteArray {
     val valueLength = value.size
-    return combineToByteArray(
-        value,
-        ByteArray(valueLength.calculateVarByteLength()).also { lengthBytes ->
-            var index = 0
-            valueLength.writeVarBytes { lengthBytes[index++] = it }
-        },
-        key
-    )
+    val valueLengthBytes = valueLength.calculateVarByteLength()
+    return ByteArray(valueLength + valueLengthBytes + key.size).also { output ->
+        value.copyInto(output, 0)
+        var index = valueLength
+        valueLength.writeVarBytes { output[index++] = it }
+        key.copyInto(output, index)
+    }
+}
+
+private fun compareDefinedRange(
+    source: ByteArray,
+    offset: Int,
+    length: Int,
+    other: ByteArray
+): Int {
+    val minSize = min(other.size, length)
+    var index = 0
+    while (index < minSize) {
+        val a = source[offset + index].toInt() and 0xFF
+        val b = other[index].toInt() and 0xFF
+        if (a != b) {
+            return a - b
+        }
+        index++
+    }
+    return if (other.size > length) length - other.size else 0
 }
 
 private fun hasHistoricMatchingPrefixValue(
@@ -563,7 +607,9 @@ private fun hasHistoricMatchingPrefixValue(
     val qualifierPrefix = encodeZeroFreeUsing01(combineToByteArray(indexReference, prefix))
     val scanPrefix = packKey(tableDirs.historicIndexPrefix, qualifierPrefix)
     val toVersionBytes = toVersion.toReversedVersionBytes()
-    var settledQualifier: ByteArray? = null
+    var settledQualifierSource: ByteArray? = null
+    var settledQualifierOffset = 0
+    var settledQualifierLength = 0
     val range = Range.startsWith(scanPrefix)
     var nextBegin = range.begin
 
@@ -576,26 +622,40 @@ private fun hasHistoricMatchingPrefixValue(
                 val sepIndex = versionOffset - 1
                 if (sepIndex < tableDirs.historicIndexPrefix.size || key[sepIndex] != 0.toByte()) return@forEachInRangeBatch true
 
-                val encodedQualifier = key.copyOfRange(tableDirs.historicIndexPrefix.size, sepIndex)
-                if (!encodedQualifier.matchesRangePart(0, qualifierPrefix, length = qualifierPrefix.size)) {
+                val encodedQualifierOffset = tableDirs.historicIndexPrefix.size
+                val encodedQualifierLength = sepIndex - encodedQualifierOffset
+                if (!key.matchesRangePart(encodedQualifierOffset, qualifierPrefix, sourceLength = encodedQualifierLength, length = qualifierPrefix.size)) {
                     return@forEachInRangeBatch false
                 }
-                if (settledQualifier?.contentEquals(encodedQualifier) == true) return@forEachInRangeBatch true
+                if (
+                    settledQualifierSource != null &&
+                    qualifierMatches(
+                        settledQualifierSource!!,
+                        settledQualifierOffset,
+                        settledQualifierLength,
+                        key,
+                        encodedQualifierOffset,
+                        encodedQualifierLength
+                    )
+                ) return@forEachInRangeBatch true
 
                 if (toVersionBytes.compareToRange(key, versionOffset) > 0) {
                     return@forEachInRangeBatch true
                 }
 
-                val qualifier = decodeZeroFreeUsing01OrNull(encodedQualifier) ?: return@forEachInRangeBatch true
+                val qualifier = decodeZeroFreeUsing01OrNull(key, encodedQualifierOffset, encodedQualifierLength) ?: return@forEachInRangeBatch true
                 if (qualifier.size <= indexReference.size + recordKey.size) {
-                    settledQualifier = encodedQualifier
+                    settledQualifierSource = key
+                    settledQualifierOffset = encodedQualifierOffset
+                    settledQualifierLength = encodedQualifierLength
                     return@forEachInRangeBatch true
                 }
 
-                val valueAndKey = qualifier.copyOfRange(indexReference.size, qualifier.size)
-                val keyOffset = valueAndKey.size - recordKey.size
-                if (keyOffset < 0 || !valueAndKey.matchesRangePart(keyOffset, recordKey, length = recordKey.size)) {
-                    settledQualifier = encodedQualifier
+                val keyOffset = qualifier.size - recordKey.size
+                if (keyOffset < indexReference.size || !qualifier.matchesRangePart(keyOffset, recordKey, length = recordKey.size)) {
+                    settledQualifierSource = key
+                    settledQualifierOffset = encodedQualifierOffset
+                    settledQualifierLength = encodedQualifierLength
                     return@forEachInRangeBatch true
                 }
 
@@ -604,7 +664,9 @@ private fun hasHistoricMatchingPrefixValue(
                     return@forEachInRangeBatch false
                 }
 
-                settledQualifier = encodedQualifier
+                settledQualifierSource = key
+                settledQualifierOffset = encodedQualifierOffset
+                settledQualifierLength = encodedQualifierLength
                 true
             }
         }
@@ -614,4 +676,16 @@ private fun hasHistoricMatchingPrefixValue(
         if (result.completed) return false
         nextBegin = result.lastKey?.let { it + byteArrayOf(0) } ?: return false
     }
+}
+
+private fun qualifierMatches(
+    left: ByteArray,
+    leftOffset: Int,
+    leftLength: Int,
+    right: ByteArray,
+    rightOffset: Int,
+    rightLength: Int
+): Boolean {
+    if (leftLength != rightLength) return false
+    return left.matchesRange(leftOffset, right, sourceLength = leftLength, offset = rightOffset, length = rightLength)
 }

@@ -27,7 +27,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
     cache: Cache,
 ) {
     val getRequest = storeAction.request
-    val valuesWithMeta = mutableListOf<ValuesWithMetaData<DM>>()
+    val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(getRequest.keys.size.coerceAtLeast(4))
     val dbIndex = getDataModelId(getRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 

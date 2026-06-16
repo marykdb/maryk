@@ -29,6 +29,7 @@ import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
@@ -52,6 +53,7 @@ import maryk.foundationdb.Range as FDBRange
 
 internal typealias ScanUpdatesStoreAction<DM> = StoreAction<DM, ScanUpdatesRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootDataModel>
+private val nextKeySuffix = byteArrayOf(0)
 
 /** Processes a ScanUpdatesRequest in a [storeAction] into a [FoundationDBDataStore] */
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequest(
@@ -67,8 +69,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
         return
     }
 
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
     var lastResponseVersion = 0uL
 
@@ -211,8 +214,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
     runTransaction { tr ->
         // orderedKeys reconciliation
         scanRequest.orderedKeys?.let { orderedKeys ->
+            val matchingKeysSet = matchingKeys.toHashSet()
+            val orderedKeysSet = orderedKeys.toHashSet()
+
             // Removals for keys no longer in range
-            orderedKeys.subtract(matchingKeys.toSet()).let { removedKeys ->
+            orderedKeys.subtract(matchingKeysSet).let { removedKeys ->
                 for (removedKey in removedKeys) {
                     val exists = tr.get(packKey(tableDirs.keysPrefix, removedKey.bytes)).awaitResult()
                     updates += RemovalUpdate(
@@ -228,7 +234,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
             }
 
             // Additions for keys newly added in range relative to old orderedKeys
-            matchingKeys.subtract(orderedKeys.toSet()).let { addedKeys ->
+            matchingKeys.subtract(orderedKeysSet).let { addedKeys ->
                 for (addedKey in addedKeys) {
                     val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).awaitResult()
                     if (createdBytes != null) {
@@ -271,14 +277,15 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
 ) {
     val scanRequest = storeAction.request
     val keySize = scanRequest.dataModel.Meta.keyByteSize
-    val matchingKeys = mutableListOf<Key<DM>>()
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
     var lastResponseVersion = 0uL
 
     scanRequest.checkMaxVersions(keepAllVersions)
 
-    val seenKeys = mutableSetOf<Key<DM>>()
+    val seenKeys = HashSet<Key<DM>>(expectedSize * 2)
     val historyPrefix = tableDirs.updateHistoryPrefix!!
     val historyStart = scanRequest.toVersion?.let { packKey(historyPrefix, it.toReversedVersionBytes()) } ?: historyPrefix
     val historyEnd = if (scanRequest.fromVersion == 0uL) {
@@ -418,7 +425,10 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                 if (version < scanRequest.fromVersion) return@forEachInRangeBatch false
 
                 val keyOffset = versionOffset + VERSION_BYTE_SIZE
-                val key = scanRequest.dataModel.key(historyKey.copyOfRange(keyOffset, keyOffset + keySize))
+                var keyReadIndex = keyOffset
+                val key = scanRequest.dataModel.key {
+                    historyKey[keyReadIndex++]
+                }
                 if (!seenKeys.add(key)) return@forEachInRangeBatch true
 
                 processEntry(tr, key, version, historyEntry.value.firstOrNull() == 1.toByte())
@@ -427,12 +437,15 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
         }
 
         if (result.completed || result.stoppedByCallback || matchingKeys.size.toUInt() >= scanRequest.limit) break
-        nextStart = result.lastKey?.let { it + byteArrayOf(0) } ?: break
+        nextStart = result.lastKey?.let { it + nextKeySuffix } ?: break
     }
 
     runTransaction { tr ->
         scanRequest.orderedKeys?.let { orderedKeys ->
-            orderedKeys.subtract(matchingKeys.toSet()).forEach { removedKey ->
+            val matchingKeysSet = matchingKeys.toHashSet()
+            val orderedKeysSet = orderedKeys.toHashSet()
+
+            orderedKeys.subtract(matchingKeysSet).forEach { removedKey ->
                 val exists = tr.get(packKey(tableDirs.keysPrefix, removedKey.bytes)).awaitResult()
                 updates += RemovalUpdate(
                     key = removedKey,
@@ -445,7 +458,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                 )
             }
 
-            matchingKeys.subtract(orderedKeys.toSet()).forEach { addedKey ->
+            matchingKeys.subtract(orderedKeysSet).forEach { addedKey ->
                 val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).awaitResult()
                 if (createdBytes != null) {
                     val creationVersion = createdBytes.readHLCTimestampIfPresent() ?: return@forEach
@@ -506,7 +519,7 @@ private fun ScanUpdatesRequest<*>.needsSoftDeleteFallback() =
 private class StoreValuesGetter(
     private val tr: Transaction,
     private val tableDirs: IsTableDirectories,
-    private val decryptValue: ((ByteArray) -> ByteArray)? = null
+    private val decryptValue: DecryptValue? = null
 ) : IsValuesGetter {
     private lateinit var keyBytes: ByteArray
     private val cache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()

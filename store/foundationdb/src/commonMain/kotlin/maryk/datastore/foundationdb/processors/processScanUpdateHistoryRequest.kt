@@ -30,6 +30,7 @@ import maryk.foundationdb.Range as FDBRange
 
 internal typealias ScanUpdateHistoryStoreAction<DM> = StoreAction<DM, ScanUpdateHistoryRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyScanUpdateHistoryStoreAction = ScanUpdateHistoryStoreAction<IsRootDataModel>
+private val nextKeySuffix = byteArrayOf(0)
 
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHistoryRequest(
     storeAction: ScanUpdateHistoryStoreAction<DM>,
@@ -44,7 +45,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
         throw updateHistoryNotAvailable()
     }
 
-    val updates = mutableListOf<IsUpdateResponse<DM>>()
+    val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
+    val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val historyPrefix = tableDirs.updateHistoryPrefix
     val historyStart = scanRequest.toVersion?.let { packKey(historyPrefix, it.toReversedVersionBytes()) } ?: historyPrefix
@@ -68,7 +70,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                 if (version < scanRequest.fromVersion) return@forEachInRangeBatch false
 
                 val keyOffset = historyPrefix.size + VERSION_BYTE_SIZE
-                val key = scanRequest.dataModel.key(historyEntry.key.copyOfRange(keyOffset, keyOffset + keySize))
+                var keyReadIndex = keyOffset
+                val key = scanRequest.dataModel.key {
+                    historyEntry.key[keyReadIndex++]
+                }
                 val isHardDelete = historyEntry.value.firstOrNull() == 1.toByte()
                 val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
                 if (createdBytes == null) {
@@ -123,7 +128,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     } else {
                         changes
                     }
-                }?.changes?.mapNotNull { versionedChange ->
+                }?.changes?.forEach { versionedChange ->
                     val changes = versionedChange.changes
                     if (changes.contains(ObjectCreate)) {
                         scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
@@ -136,7 +141,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                             cachedRead = cacheReader,
                             decryptValue = this@processScanUpdateHistoryRequest::decryptValueIfNeeded
                         )?.let { valuesWithMeta ->
-                            AdditionUpdate(
+                            updates += AdditionUpdate(
                                 key = key,
                                 version = versionedChange.version,
                                 firstVersion = valuesWithMeta.firstVersion,
@@ -146,20 +151,20 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                             )
                         }
                     } else {
-                        ChangeUpdate(
+                        updates += ChangeUpdate(
                             key = key,
                             version = versionedChange.version,
                             index = updates.size,
                             changes = changes
                         )
                     }
-                }?.let { updates += it }
+                }
                 updates.size.toUInt() < scanRequest.limit
             }
         }
 
         if (result.completed || result.stoppedByCallback || updates.size.toUInt() >= scanRequest.limit) break
-        nextStart = result.lastKey?.let { it + byteArrayOf(0) } ?: break
+        nextStart = result.lastKey?.let { it + nextKeySuffix } ?: break
     }
 
     storeAction.response.complete(

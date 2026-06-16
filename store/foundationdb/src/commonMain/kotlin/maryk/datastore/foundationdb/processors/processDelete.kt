@@ -116,23 +116,30 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 val fullKey = kv.key
                 // Skip meta latest-version entry
                 if (fullKey.size == prefix.size) continue
-
-                val reference = fullKey.copyOfRange(prefix.size, fullKey.size)
+                val referenceLength = fullKey.size - prefix.size
 
                 // Skip soft delete indicator entries here; they are handled below
-                if (reference.size == 1 && reference[0] == SOFT_DELETE_INDICATOR) continue
+                if (referenceLength == 1 && fullKey[prefix.size] == SOFT_DELETE_INDICATOR) continue
 
                 // Map reference bytes to property reference; if unique -> delete unique index
                 var idx = 0
-                val propRef = dataModel.getPropertyReferenceByStorageBytes(reference.size, { reference[idx++] })
+                val propRef = dataModel.getPropertyReferenceByStorageBytes(
+                    referenceLength,
+                    { fullKey[prefix.size + idx++] }
+                )
                 val def = propRef.comparablePropertyDefinition
                 if (def is IsComparableDefinition<*, *> && def.unique) {
+                    val reference = propRef.toStorageByteArray()
                     val value = kv.value
                     // Stored as (version || value)
                     requireVersionedValue(value)
-                    val storedValueBytes = value.copyOfRange(VERSION_BYTE_SIZE, value.size)
-                    val valueBytes = decryptValueIfNeeded(storedValueBytes)
-                    val uniqueValue = mapUniqueValueBytes(dbIndex, reference, valueBytes)
+                    val uniqueValue = withDecryptedValueIfNeeded(
+                        value,
+                        VERSION_BYTE_SIZE,
+                        value.size - VERSION_BYTE_SIZE
+                    ) { plainValue, offset, length ->
+                        mapUniqueValueBytes(dbIndex, reference, plainValue, offset, length)
+                    }
                     val uniqueRef = combineToByteArray(reference, uniqueValue)
 
                     // Delete current unique entry

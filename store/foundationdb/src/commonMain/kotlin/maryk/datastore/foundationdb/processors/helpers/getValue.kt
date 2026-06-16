@@ -6,7 +6,6 @@ import maryk.core.exceptions.RequestException
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
-import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.compareToRange
 
 /**
@@ -19,19 +18,14 @@ internal fun <T : Any> Transaction.getValue(
     toVersion: ULong?,
     keyAndReference: ByteArray,
     keyLength: Int? = null,
-    decryptValue: ((ByteArray) -> ByteArray)? = null,
+    decryptValue: DecryptValue? = null,
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
     return if (toVersion == null) {
         val packedKey = packKey(tableDirs.tablePrefix, keyAndReference)
         val value = this.get(packedKey).awaitResult() ?: return null
-        requireVersionedValue(value)
-        if (decryptValue == null) {
-            handleResult(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
-        } else {
-            val payload = value.copyOfRange(VERSION_BYTE_SIZE, value.size)
-            val decrypted = decryptValue(payload)
-            handleResult(decrypted, 0, decrypted.size)
+        value.withCurrentPayload(decryptValue) { payload, offset, length ->
+            handleResult(payload, offset, length)
         }
     } else {
         val historicDirs = tableDirs as? HistoricTableDirectories
@@ -40,9 +34,7 @@ internal fun <T : Any> Transaction.getValue(
         val toVersionBytes = toVersion.toReversedVersionBytes()
 
         val encodedRef = if (keyLength != null && keyAndReference.size > keyLength) {
-            val keyPart = keyAndReference.copyOfRange(0, keyLength)
-            val qualPart = keyAndReference.copyOfRange(keyLength, keyAndReference.size)
-            combineToByteArray(keyPart, encodeZeroFreeUsing01(qualPart))
+            encodeZeroFreeSuffixUsing01(keyAndReference, keyLength)
         } else keyAndReference
 
         val prefixForKey = packKey(historicDirs.historicTablePrefix, encodedRef)
@@ -58,11 +50,24 @@ internal fun <T : Any> Transaction.getValue(
                 return if (decryptValue == null) {
                     handleResult(result, 0, result.size)
                 } else {
-                    val decrypted = decryptValue(result)
+                    val decrypted = decryptValue(result, 0, result.size)
                     handleResult(decrypted, 0, decrypted.size)
                 }
             }
         }
         null
+    }
+}
+
+private inline fun <T> ByteArray.withCurrentPayload(
+    noinline decryptValue: DecryptValue?,
+    handle: (ByteArray, Int, Int) -> T
+): T {
+    requireVersionedValue(this)
+    return if (decryptValue == null) {
+        handle(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+    } else {
+        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+        handle(payload, 0, payload.size)
     }
 }

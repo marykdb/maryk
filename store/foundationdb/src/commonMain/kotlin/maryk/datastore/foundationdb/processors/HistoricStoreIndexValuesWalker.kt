@@ -15,6 +15,7 @@ import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
+import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
@@ -97,8 +98,7 @@ internal class HistoricStoreIndexValuesWalker(
                 val sepIndex = versionOffset - 1
                 if (sepIndex < prefix.size || historicKey[sepIndex] != 0.toByte()) continue
 
-                val encodedMapKey = historicKey.copyOfRange(prefix.size, sepIndex)
-                val mapKeyBytes = decodeZeroFreeUsing01(encodedMapKey)
+                val mapKeyBytes = decodeZeroFreeUsing01OrNull(historicKey, prefix.size, sepIndex - prefix.size) ?: continue
 
                 var readIndex = 0
                 val mapKeyLength = initIntByVar { mapKeyBytes[readIndex++] }
@@ -146,8 +146,7 @@ internal class HistoricStoreIndexValuesWalker(
                 val sepIndex = versionOffset - 1
                 if (sepIndex < prefix.size || historicKey[sepIndex] != 0.toByte()) continue
 
-                val encodedSetItem = historicKey.copyOfRange(prefix.size, sepIndex)
-                val setItemBytes = decodeZeroFreeUsing01(encodedSetItem)
+                val setItemBytes = decodeZeroFreeUsing01OrNull(historicKey, prefix.size, sepIndex - prefix.size) ?: continue
 
                 var readIndex = 0
                 val setItemLength = initIntByVar { setItemBytes[readIndex++] }

@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.index.stringIndexTransform
 import maryk.core.query.filters.matchesFilter
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.matchQualifier
 
 /**
@@ -25,7 +26,7 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
     keyLength: Int,
     createdVersion: ULong?, // Can be null in cases when creationVersion is certainly lower than toVersion
     toVersion: ULong?,
-    decryptValue: ((ByteArray) -> ByteArray)? = null,
+    decryptValue: DecryptValue? = null,
     normalizingIndex: IsIndexable? = null
 ) = when {
     toVersion != null && createdVersion != null && createdVersion > toVersion -> true

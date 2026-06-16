@@ -23,7 +23,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDeleteR
     cache: Cache,
 ) {
     val deleteRequest = storeAction.request
-    val statuses = mutableListOf<IsDeleteResponseStatus<DM>>()
+    val statuses = ArrayList<IsDeleteResponseStatus<DM>>(deleteRequest.keys.size.coerceAtLeast(4))
 
     if (deleteRequest.keys.isNotEmpty()) {
         val dbIndex = getDataModelId(deleteRequest.dataModel)

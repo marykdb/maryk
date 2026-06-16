@@ -13,6 +13,7 @@ import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
@@ -27,7 +28,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     scanRequest: IsScanRequest<DM, *>,
     direction: Direction,
     scanRange: KeyScanRanges,
-    decryptValue: ((ByteArray) -> ByteArray)? = null,
+    decryptValue: DecryptValue? = null,
     processStoreValue: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val prefix = tableDirs.keysPrefix

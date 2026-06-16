@@ -15,14 +15,13 @@ internal fun Transaction.getKeyByUniqueValue(
     tableDirs: IsTableDirectories,
     reference: ByteArray,
     toVersion: ULong?,
-    handle: (keyBytes: ByteArray, setAtVersion: ULong) -> Unit
+    handle: (keyBytes: ByteArray, keyOffset: Int, keyLength: Int, setAtVersion: ULong) -> Unit
 ) {
     if (toVersion == null) {
         val value = this.get(packKey(tableDirs.uniquePrefix, reference)).awaitResult()
         if (value != null && value.size >= VERSION_BYTE_SIZE) {
             val setAtVersion = value.readVersionBytes()
-            val keyBytes = value.copyOfRange(VERSION_BYTE_SIZE, value.size)
-            handle(keyBytes, setAtVersion)
+            handle(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE, setAtVersion)
         }
     } else {
         val historic = tableDirs as? HistoricTableDirectories
@@ -41,7 +40,7 @@ internal fun Transaction.getKeyByUniqueValue(
                 val version = kv.key.readReversedVersionBytes(versionOffset)
                 val keyBytes = kv.value
                 if (keyBytes.isNotEmpty()) {
-                    handle(keyBytes, version)
+                    handle(keyBytes, 0, keyBytes.size, version)
                 }
                 break
             }

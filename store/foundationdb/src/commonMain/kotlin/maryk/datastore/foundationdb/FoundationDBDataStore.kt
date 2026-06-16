@@ -131,6 +131,7 @@ import kotlin.time.TimeSource
 private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
 private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
 private const val UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE = 256
+private val nextKeySuffix = byteArrayOf(0)
 
 /**
  * FoundationDB DataStore (JVM-only).
@@ -788,7 +789,7 @@ class FoundationDBDataStore private constructor(
         while (true) {
             val batch = runTransaction { tr ->
                 val iterator = tr.getRange(Range(nextStart, end), batchSize, false).iterator()
-                buildList {
+                ArrayList<Pair<ByteArray, ByteArray>>(batchSize).apply {
                     while (iterator.hasNext()) {
                         val entry = iterator.nextBlocking()
                         add(entry.key.copyOf() to entry.value.copyOf())
@@ -800,7 +801,7 @@ class FoundationDBDataStore private constructor(
             batch.forEach { (packedKey, storedValue) ->
                 // Backfill only handles key-table rows with created-version values.
                 if (storedValue.size != ULong.SIZE_BYTES) {
-                    nextStart = packedKey + byteArrayOf(0)
+                    nextStart = packedKey + nextKeySuffix
                     return@forEach
                 }
 
@@ -808,7 +809,7 @@ class FoundationDBDataStore private constructor(
                 val key = Key<IsRootDataModel>(keyBytes)
 
                 if (keepAllVersions && tableDirectories is HistoricTableDirectories) {
-                    writeUpdateHistoryVersions(updateHistoryPrefix, key, listOf(HLC.fromStorageBytes(storedValue).timestamp))
+                    writeSingleUpdateHistoryVersion(updateHistoryPrefix, key, HLC.fromStorageBytes(storedValue).timestamp)
 
                     val historicPrefix = packKey(tableDirectories.historicTablePrefix, key.bytes)
                     val historicEnd = historicPrefix.nextByteInSameLength()
@@ -820,7 +821,7 @@ class FoundationDBDataStore private constructor(
                                 UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE,
                                 false
                             ).iterator()
-                            val versions = mutableListOf<ULong>()
+                            val versions = ArrayList<ULong>(UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE)
                             var lastKey: ByteArray? = null
                             while (historicIterator.hasNext()) {
                                 val historicEntry = historicIterator.nextBlocking()
@@ -834,7 +835,7 @@ class FoundationDBDataStore private constructor(
 
                                 versions += historicKey.readReversedVersionBytes(versionOffset)
                             }
-                            versions to lastKey?.let { it + byteArrayOf(0) }
+                            versions to lastKey?.let { it + nextKeySuffix }
                         }
                         if (versions.isNotEmpty()) {
                             writeUpdateHistoryVersions(updateHistoryPrefix, key, versions)
@@ -849,7 +850,7 @@ class FoundationDBDataStore private constructor(
                             ?.let { HLC.fromStorageBytes(it).timestamp }
                     }
                     softDeleteVersion?.let {
-                        writeUpdateHistoryVersions(updateHistoryPrefix, key, listOf(it))
+                        writeSingleUpdateHistoryVersion(updateHistoryPrefix, key, it)
                     }
                 } else {
                     val lastVersion = runTransaction { tr ->
@@ -863,7 +864,7 @@ class FoundationDBDataStore private constructor(
                     }
                 }
 
-                nextStart = packedKey + byteArrayOf(0)
+                nextStart = packedKey + nextKeySuffix
             }
         }
     }
@@ -880,6 +881,19 @@ class FoundationDBDataStore private constructor(
                     EMPTY_BYTEARRAY
                 )
             }
+        }
+    }
+
+    private fun writeSingleUpdateHistoryVersion(
+        updateHistoryPrefix: ByteArray,
+        key: Key<IsRootDataModel>,
+        version: ULong,
+    ) {
+        runTransaction { tr ->
+            tr.set(
+                packKey(updateHistoryPrefix, version.toReversedVersionBytes(), key.bytes),
+                EMPTY_BYTEARRAY
+            )
         }
     }
 
@@ -994,8 +1008,33 @@ class FoundationDBDataStore private constructor(
         if (!isEncryptedValue(value)) return value
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        val payload = value.copyOfRange(ENCRYPTED_VALUE_MAGIC.size, value.size)
-        return runBlocking { provider.decrypt(payload) }
+        return runBlocking { provider.decrypt(value, ENCRYPTED_VALUE_MAGIC.size, value.size - ENCRYPTED_VALUE_MAGIC.size) }
+    }
+
+    internal fun decryptValueIfNeeded(value: ByteArray, offset: Int, length: Int): ByteArray {
+        if (!isEncryptedValue(value, offset, length)) {
+            return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        }
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
+        return runBlocking {
+            provider.decrypt(value, offset + ENCRYPTED_VALUE_MAGIC.size, length - ENCRYPTED_VALUE_MAGIC.size)
+        }
+    }
+
+    internal inline fun <T> withDecryptedValueIfNeeded(
+        value: ByteArray,
+        offset: Int = 0,
+        length: Int = value.size - offset,
+        handle: (ByteArray, Int, Int) -> T
+    ): T {
+        if (!isEncryptedValue(value, offset, length)) return handle(value, offset, length)
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
+        val decrypted = runBlocking {
+            provider.decrypt(value, offset + ENCRYPTED_VALUE_MAGIC.size, length - ENCRYPTED_VALUE_MAGIC.size)
+        }
+        return handle(decrypted, 0, decrypted.size)
     }
 
     internal fun mapUniqueValueBytes(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
@@ -1003,6 +1042,21 @@ class FoundationDBDataStore private constructor(
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
             ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
         return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value) }
+    }
+
+    internal fun mapUniqueValueBytes(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int
+    ): ByteArray {
+        if (!isSensitiveUniqueReference(modelId, reference)) {
+            return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        }
+        val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
+            ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
+        return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value, offset, length) }
     }
 
     private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean {
@@ -1124,11 +1178,14 @@ class FoundationDBDataStore private constructor(
     }
 
     private fun isEncryptedValue(value: ByteArray): Boolean =
-        value.size >= ENCRYPTED_VALUE_MAGIC.size &&
-            value[0] == ENCRYPTED_VALUE_MAGIC[0] &&
-            value[1] == ENCRYPTED_VALUE_MAGIC[1] &&
-            value[2] == ENCRYPTED_VALUE_MAGIC[2] &&
-            value[3] == ENCRYPTED_VALUE_MAGIC[3]
+        isEncryptedValue(value, 0, value.size)
+
+    private fun isEncryptedValue(value: ByteArray, offset: Int, length: Int): Boolean =
+        length >= ENCRYPTED_VALUE_MAGIC.size &&
+            value[offset] == ENCRYPTED_VALUE_MAGIC[0] &&
+            value[offset + 1] == ENCRYPTED_VALUE_MAGIC[1] &&
+            value[offset + 2] == ENCRYPTED_VALUE_MAGIC[2] &&
+            value[offset + 3] == ENCRYPTED_VALUE_MAGIC[3]
 
     private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
         if (size < prefix.size) return false

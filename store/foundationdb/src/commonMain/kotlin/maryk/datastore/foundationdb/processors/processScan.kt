@@ -16,6 +16,7 @@ import maryk.core.query.responses.FetchByUniqueKey
 import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getKeyByUniqueValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
@@ -83,8 +84,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
         }
 
         transactionRunner.run { tr ->
-            tr.getKeyByUniqueValue(tableDirs, reference, scanRequest.toVersion) { keyBytes, setAtVersion ->
-                val key = scanRequest.dataModel.key(keyBytes)
+            tr.getKeyByUniqueValue(tableDirs, reference, scanRequest.toVersion) { keyBytes, keyOffset, keyLength, setAtVersion ->
+                var keyReadIndex = keyOffset
+                val key = scanRequest.dataModel.key {
+                    keyBytes[keyReadIndex++]
+                }
                 if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
                     // Ensure we have the creation version for processRecord callback
                     val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
@@ -143,7 +147,7 @@ internal fun <DM : IsRootDataModel> shouldProcessRecord(
     createdVersion: ULong?,
     scanRequest: IsScanRequest<DM, *>,
     scanRange: KeyScanRanges,
-    decryptValue: ((ByteArray) -> ByteArray)? = null
+    decryptValue: DecryptValue? = null
 ): Boolean {
     if (createdVersion == null) return false
     val keyBytes = key.bytes

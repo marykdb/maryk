@@ -3,6 +3,7 @@ package maryk.datastore.foundationdb.processors
 import maryk.core.exceptions.StorageException
 import maryk.foundationdb.Transaction
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.getValue
 
 /** Check if Object is soft deleted */
@@ -13,7 +14,7 @@ internal fun isSoftDeleted(
     key: ByteArray,
     keyOffset: Int = 0,
     keyLength: Int = key.size,
-    decryptValue: ((ByteArray) -> ByteArray)? = null
+    decryptValue: DecryptValue? = null
 ): Boolean {
     val softDeleteQualifier = ByteArray(keyLength + 1)
     key.copyInto(softDeleteQualifier, 0, keyOffset, keyOffset + keyLength)

@@ -25,6 +25,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 private const val maxUShortLength = 0xFFFF
+private val nextKeySuffix = byteArrayOf(0)
 
 internal class ClusterUpdateLog(
     private val logPrefix: ByteArray,
@@ -93,13 +94,13 @@ internal class ClusterUpdateLog(
         val shardModelPrefix = shardModelPrefix(shard, modelId)
         val shardModelRange = Range.startsWith(shardModelPrefix)
 
-        val begin = cursorKey?.let { combineToByteArray(it, byteArrayOf(0)) } ?: shardModelRange.begin
+        val begin = cursorKey?.let { combineToByteArray(it, nextKeySuffix) } ?: shardModelRange.begin
         val range = Range(begin, shardModelRange.end)
 
         val it = tr.getRange(range, limit, false).iterator()
 
         var lastKey: ByteArray? = null
-        val updates = mutableListOf<DecodedUpdate>()
+        val updates = ArrayList<DecodedUpdate>(limit)
         while (it.hasNext()) {
             val kv = it.nextBlocking()
             lastKey = kv.key
@@ -272,7 +273,7 @@ internal class ClusterUpdateLog(
 
         val originLen = ((value[o++].toInt() and 0xFF) shl 8) or (value[o++].toInt() and 0xFF)
         if (originLen < 0 || value.size < o + originLen + 4 + 1 + 8 + 2 + 4) return null
-        val origin = value.copyOfRange(o, o + originLen).decodeToString()
+        val origin = value.decodeToString(o, o + originLen)
         o += originLen
 
         val modelId = (
@@ -310,21 +311,19 @@ internal class ClusterUpdateLog(
                 (value[o++].toInt() and 0xFF)
             )
         if (payloadLen < 0 || payloadLen != value.size - o) return null
-        val payload = value.copyOfRange(o, o + payloadLen)
-
         val decodedUpdate = when (type) {
             ClusterLogUpdate.TYPE_ADDITION -> {
-                val valuesDecoded = decodeValuesBytes(ctx, dataModel, payload)
+                val valuesDecoded = decodeValuesBytes(ctx, dataModel, value, o, payloadLen)
                     ?: return null
                 ClusterLogAddition(keyBytes = keyBytes, version = version, values = valuesDecoded)
             }
             ClusterLogUpdate.TYPE_CHANGE -> {
-                val changes = decodeChangesBytes(ctx, payload) ?: return null
+                val changes = decodeChangesBytes(ctx, value, o, payloadLen) ?: return null
                 ClusterLogChange(keyBytes = keyBytes, version = version, changes = changes)
             }
             ClusterLogUpdate.TYPE_DELETION -> {
-                if (payload.size != 1) return null
-                ClusterLogDeletion(keyBytes = keyBytes, version = version, hardDelete = payload[0].toInt() != 0)
+                if (payloadLen != 1) return null
+                ClusterLogDeletion(keyBytes = keyBytes, version = version, hardDelete = value[o].toInt() != 0)
             }
             else -> return null
         }
@@ -364,14 +363,21 @@ internal class ClusterUpdateLog(
         return out
     }
 
-    private fun decodeValuesBytes(ctx: RequestContext, dataModel: IsRootDataModel, bytes: ByteArray): maryk.core.values.Values<*>? {
-        var i = 0
+    private fun decodeValuesBytes(
+        ctx: RequestContext,
+        dataModel: IsRootDataModel,
+        bytes: ByteArray,
+        offset: Int,
+        length: Int
+    ): maryk.core.values.Values<*>? {
+        var i = offset
+        val end = offset + length
         @Suppress("UNCHECKED_CAST")
         val serializer =
             dataModel.Serializer as IsDataModelSerializer<maryk.core.values.Values<IsRootDataModel>, IsRootDataModel, RequestContext>
         return try {
-            serializer.readProtoBuf(bytes.size, { bytes[i++] }, ctx).also {
-                if (i != bytes.size) return null
+            serializer.readProtoBuf(length, { bytes[i++] }, ctx).also {
+                if (i != end) return null
             }
         } catch (_: ParseException) {
             null
@@ -390,12 +396,18 @@ internal class ClusterUpdateLog(
         return out
     }
 
-    private fun decodeChangesBytes(ctx: RequestContext, bytes: ByteArray): List<maryk.core.query.changes.IsChange>? {
-        var i = 0
+    private fun decodeChangesBytes(
+        ctx: RequestContext,
+        bytes: ByteArray,
+        offset: Int,
+        length: Int
+    ): List<maryk.core.query.changes.IsChange>? {
+        var i = offset
+        val end = offset + length
         return try {
             val serializer = VersionedChanges.Serializer
-            val values = serializer.readProtoBuf(bytes.size, { bytes[i++] }, ctx).toDataObject()
-            if (i != bytes.size) return null
+            val values = serializer.readProtoBuf(length, { bytes[i++] }, ctx).toDataObject()
+            if (i != end) return null
             values.changes
         } catch (_: ParseException) {
             null

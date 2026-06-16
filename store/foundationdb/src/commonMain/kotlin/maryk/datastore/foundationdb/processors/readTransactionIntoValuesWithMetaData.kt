@@ -22,6 +22,7 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.checkExistence
@@ -49,7 +50,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     select: RootPropRefGraph<DM>?,
     toVersion: ULong?,
     cachedRead: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?,
-    decryptValue: ((ByteArray) -> ByteArray)? = null
+    decryptValue: DecryptValue? = null
 ): ValuesWithMetaData<DM>? {
     var maxVersion = creationVersion
     var isDeleted = false
@@ -80,49 +81,52 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                 when (storageType) {
                     ObjectDelete -> {
                         currentVersion = maxOf(value.readVersionBytes(), maxVersion)
-                        val payload = value.currentPayload(decryptValue)
-                        isDeleted = payload.isNotEmpty() && payload[0] == TRUE
+                        value.withCurrentPayload(decryptValue) { payload, offset, length ->
+                            isDeleted = length > 0 && payload[offset] == TRUE
+                        }
                         true
                     }
                     Value -> {
                         currentVersion = value.readVersionBytes()
-                        val payload = value.currentPayload(decryptValue)
-                        index = 0
-                        val reader = { payload[index++] }
-
                         cachedRead(reference, currentVersion) {
-                            val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
-                                ?: reference.propertyDefinition
+                            value.withCurrentPayload(decryptValue) { payload, offset, length ->
+                                index = offset
+                                val reader = { payload[index++] }
 
-                            readValue(definition, reader) {
-                                payload.size - index
+                                val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
+                                    ?: reference.propertyDefinition
+
+                                readValue(definition, reader) {
+                                    offset + length - index
+                                }
                             }
                         }
                     }
                     ListSize -> {
                         currentVersion = value.readVersionBytes()
-                        val payload = value.currentPayload(decryptValue)
-                        index = 0
-
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { payload[index++] }
+                            value.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                                index = offset
+                                initIntByVar { payload[index++] }
+                            }
                         }
                     }
                     SetSize -> {
                         currentVersion = value.readVersionBytes()
-                        val payload = value.currentPayload(decryptValue)
-                        index = 0
-
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { payload[index++] }
+                            value.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                                index = offset
+                                initIntByVar { payload[index++] }
+                            }
                         }
                     }
                     MapSize -> {
                         currentVersion = value.readVersionBytes()
-                        val payload = value.currentPayload(decryptValue)
-                        index = 0
                         cachedRead(reference, currentVersion) {
-                            initIntByVar { payload[index++] }
+                            value.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                                index = offset
+                                initIntByVar { payload[index++] }
+                            }
                         }
                     }
                     Embed -> {
@@ -162,7 +166,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                 if (storageType == ObjectDelete) {
                     val cached = cachedRead(reference, currentVersion) {
                         val value = iterator.current.value
-                        val payload = decryptValue?.invoke(value) ?: value
+                        val payload = decryptValue?.invoke(value, 0, value.size) ?: value
                         if (payload.isNotEmpty()) payload[0] == TRUE else true
                     }
                     if (cached is Boolean) {
@@ -171,7 +175,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     cached
                 } else {
                     cachedRead(reference, currentVersion) {
-                        val value = decryptValue?.invoke(iterator.current.value) ?: iterator.current.value
+                        val value = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
                         when (storageType) {
                             Value -> {
                                 index = 0
@@ -221,8 +225,15 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     )
 }
 
-private fun ByteArray.currentPayload(decryptValue: ((ByteArray) -> ByteArray)?): ByteArray {
+private inline fun <T> ByteArray.withCurrentPayload(
+    noinline decryptValue: DecryptValue?,
+    handle: (ByteArray, Int, Int) -> T
+): T {
     requireVersionedValue(this)
-    return decryptValue?.invoke(this.copyOfRange(VERSION_BYTE_SIZE, this.size))
-        ?: this.copyOfRange(VERSION_BYTE_SIZE, this.size)
+    return if (decryptValue == null) {
+        handle(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+    } else {
+        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+        handle(payload, 0, payload.size)
+    }
 }

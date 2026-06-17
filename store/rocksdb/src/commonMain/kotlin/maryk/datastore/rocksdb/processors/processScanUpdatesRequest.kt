@@ -119,6 +119,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                 dbAccessor,
                 columnFamilies,
                 defaultReadOptions,
+                includeSortingKey = true,
                 scanSetup = {
                     (it as? IndexScan)?.let { indexScan ->
                         sortingKeys = mutableListOf()

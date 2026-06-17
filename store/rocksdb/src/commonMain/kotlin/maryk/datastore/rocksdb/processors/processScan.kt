@@ -36,6 +36,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
     dbAccessor: DBAccessor,
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
+    includeSortingKey: Boolean = false,
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
@@ -127,6 +128,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                         scanRequest,
                         processedScanIndex,
                         keyScanRange,
+                        includeSortingKey,
                         processRecord
                     )
                 }

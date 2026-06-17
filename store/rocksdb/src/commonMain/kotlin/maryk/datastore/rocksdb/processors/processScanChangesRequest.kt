@@ -37,7 +37,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
                 scanRequest,
                 dbAccessor,
                 columnFamilies,
-                defaultReadOptions
+                defaultReadOptions,
+                includeSortingKey = true
             ) { key, creationVersion, sortingKey ->
                 val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                     runBlocking {

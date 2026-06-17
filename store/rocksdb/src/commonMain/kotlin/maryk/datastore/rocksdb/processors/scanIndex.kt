@@ -39,6 +39,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     scanRequest: IsScanRequest<DM, *>,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
+    includeSortingKey: Boolean,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
@@ -89,6 +90,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                         indexScanRange,
                         versionSize,
                         valueOffset,
+                        includeSortingKey,
                         currentSize,
                         processStoreValue,
                         { indexRecord, valueSize ->
@@ -134,6 +136,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                         indexScanRange,
                         versionSize,
                         valueOffset,
+                        includeSortingKey,
                         currentSize,
                         processStoreValue,
                         { indexRecord, valueSize ->
@@ -272,6 +275,7 @@ private fun <DM : IsRootDataModel> checkAndProcess(
     indexScanRange: IndexableScanRanges,
     versionSize: Int,
     valueOffset: Int,
+    includeSortingKey: Boolean,
     emitted: UInt,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit,
     isPastRange: (ByteArray, Int) -> Boolean,
@@ -288,7 +292,6 @@ private fun <DM : IsRootDataModel> checkAndProcess(
         }
         val keyOffset = valueOffset + valueSize
         val partialMatchBytes = if (versionSize == 0) indexRecord else indexRecord.copyOf(indexRecord.size - versionSize)
-
         if (isPastRange(indexRecord, valueSize)) {
             break
         }
@@ -330,7 +333,11 @@ private fun <DM : IsRootDataModel> checkAndProcess(
                     readOptions,
                     key.bytes
                 )?.let { createdVersion ->
-                    processStoreValue(key, createdVersion, indexRecord.copyOfRange(valueOffset, indexRecord.size - versionSize))
+                    processStoreValue(
+                        key,
+                        createdVersion,
+                        if (includeSortingKey) indexRecord.copyOfRange(valueOffset, indexRecord.size - versionSize) else null
+                    )
                 }
 
                 // Break when limit is found

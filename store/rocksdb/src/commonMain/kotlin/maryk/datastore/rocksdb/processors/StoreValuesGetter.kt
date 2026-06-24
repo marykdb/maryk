@@ -64,23 +64,36 @@ internal class StoreValuesGetter(
                 val reference = currentKey + propertyReference.toStorageByteArray()
                 val valueAsBytes = db.get(columnFamilies.table, readOptions, reference)
                 valueAsBytes?.let { storedValue ->
-                    requireVersionedValue(storedValue)
-                    if (decryptValue == null) {
-                        storedValue.convertToValue(
-                            propertyReference,
-                            VERSION_BYTE_SIZE,
-                            storedValue.size - VERSION_BYTE_SIZE
-                        )
-                    } else {
-                        val plainValue = decryptValue(storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)
-                        plainValue.convertToValue(propertyReference, 0, plainValue.size)
-                    }
-                }?.also {
-                    if (captureVersion) {
-                        val version = valueAsBytes.readVersionBytes()
-                        this.lastVersion = this.lastVersion?.let {
-                            max(it, version)
-                        } ?: version
+                    try {
+                        requireVersionedValue(storedValue)
+                        val version = if (captureVersion) {
+                            storedValue.readVersionBytes()
+                        } else {
+                            null
+                        }
+                        val convertedValue = if (decryptValue == null) {
+                            storedValue.convertToValue(
+                                propertyReference,
+                                VERSION_BYTE_SIZE,
+                                storedValue.size - VERSION_BYTE_SIZE
+                            )
+                        } else {
+                            val plainValue = decryptValue(storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)
+                            plainValue.convertToValue(propertyReference, 0, plainValue.size)
+                        }
+                        version?.let { exactVersion ->
+                            this.lastVersion = this.lastVersion?.let {
+                                max(it, exactVersion)
+                            }
+                                ?: exactVersion
+                        }
+                        convertedValue
+                    } catch (error: Throwable) {
+                        error.rethrowIfFatal()
+                        if (!error.isSkippableDataError()) {
+                            throw error
+                        }
+                        null
                     }
                 }
             }

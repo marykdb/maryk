@@ -32,6 +32,7 @@ class GetKeyByUniqueValueTest {
                     columnFamilies = columnFamilies,
                     readOptions = store.defaultReadOptions,
                     reference = reference,
+                    keySize = CompleteMarykModel.Meta.keyByteSize,
                     toVersion = null,
                 ) { _, _ ->
                     processed = true

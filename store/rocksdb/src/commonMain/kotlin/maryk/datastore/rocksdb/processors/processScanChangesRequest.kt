@@ -9,6 +9,8 @@ import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
+import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
@@ -30,7 +32,20 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
         val columnToScan = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        dbAccessor.getIterator(defaultReadOptions, columnToScan).use { iterator ->
+        val historicalReader = scanRequest.toVersion?.let { toVersion ->
+            (columnFamilies as? HistoricTableColumnFamilies)?.let {
+                HistoricalTableReader(dbAccessor, it, sequentialReadOptions, toVersion)
+            }
+        }
+        val softDeleteCache = RequestKeySoftDeleteCache(
+            dbAccessor,
+            columnFamilies,
+            defaultReadOptions,
+            scanRequest.toVersion,
+            historicalReader
+        )
+        dbAccessor.getIterator(sequentialReadOptions, columnToScan).use { iterator ->
+            historicalReader.use { reader ->
             scanRequest.checkMaxVersions(keepAllVersions)
 
             val dataFetchType = processScan(
@@ -38,7 +53,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
                 dbAccessor,
                 columnFamilies,
                 defaultReadOptions,
-                includeSortingKey = true
+                includeSortingKey = true,
+                softDeleteCache = softDeleteCache,
+                historicalReader = reader
             ) { key, creationVersion, sortingKey ->
                 val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                     runBlocking {
@@ -46,7 +63,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
                     }
                 }
 
-                scanRequest.dataModel.readTransactionIntoObjectChanges(
+                val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
                     iterator,
                     creationVersion,
                     columnFamilies,
@@ -57,20 +74,22 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
                     scanRequest.maxVersions,
                     sortingKey,
                     cacheReader
-                )?.let { changes ->
-                    val updated = if (scanRequest.toVersion == null && scanRequest.maxVersions > 1u && columnFamilies is HistoricTableColumnFamilies) {
-                        addSoftDeleteChangeIfMissing(
-                            dbAccessor = dbAccessor,
-                            columnFamilies = columnFamilies,
-                            readOptions = defaultReadOptions,
-                            key = key,
-                            fromVersion = scanRequest.fromVersion,
-                            objectChange = changes
-                        )
-                    } else {
-                        changes
-                    }
-                    objectChanges += updated
+                )
+                val updatedObjectChange = if (scanRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
+                    addSoftDeleteChangeIfMissing(
+                        dbAccessor = dbAccessor,
+                        columnFamilies = columnFamilies,
+                        readOptions = defaultReadOptions,
+                        key = key,
+                        fromVersion = scanRequest.fromVersion,
+                        objectChange = objectChange,
+                        sortingKey = sortingKey
+                    )
+                } else {
+                    objectChange
+                }
+                updatedObjectChange?.let {
+                    objectChanges += it
                 }
             }
 
@@ -81,6 +100,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
                     dataFetchType = dataFetchType,
                 )
             )
+            }
         }
     }
 }
+
+private fun ScanChangesRequest<*>.needsSoftDeleteFallback() =
+    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)

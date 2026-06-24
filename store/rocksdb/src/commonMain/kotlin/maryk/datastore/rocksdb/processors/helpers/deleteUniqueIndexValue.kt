@@ -15,7 +15,8 @@ internal fun deleteUniqueIndexValue(
     valueOffset: Int,
     valueLength: Int,
     version: ByteArray,
-    hardDelete: Boolean = false
+    hardDelete: Boolean = false,
+    historicValue: ByteArray = EMPTY_ARRAY
 ) {
     requireValueRange(value.size, valueOffset, valueLength)
     val reference = ByteArray(indexReference.size.checkedRocksDbByteLengthPlus(valueLength))
@@ -29,7 +30,7 @@ internal fun deleteUniqueIndexValue(
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(reference.size)
 
-        transaction.put(columnFamilies.historic.unique, historicReference, EMPTY_ARRAY)
+        transaction.put(columnFamilies.historic.unique, historicReference, historicValue)
     }
 }
 

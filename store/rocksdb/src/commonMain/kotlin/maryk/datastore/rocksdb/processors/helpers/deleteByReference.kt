@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.exceptions.StorageException
 import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
@@ -163,6 +164,17 @@ internal fun <T : Any> deleteByReference(
     if (shouldHandlePrevValue) {
         // Primarily for validations
         handlePreviousValue?.invoke(referenceToCompareTo, prevValue)
+    }
+
+    if ((reference.comparablePropertyDefinition as? IsComparableDefinition<*, *>)?.unique == true) {
+        deleteCurrentUniqueIndexEntryForKeyByScan(
+            transaction = transaction,
+            columnFamilies = columnFamilies,
+            readOptions = readOptions,
+            reference = referenceAsBytes,
+            key = key.bytes,
+            versionBytes = version
+        )
     }
 
     // Do not delete IncMap values since they are needed for incrementing

@@ -4,6 +4,7 @@ import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBIterator
 import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRange
+import maryk.lib.extensions.compare.matchesRangePart
 
 /** Find historic qualifiers on [iterator] for [key] */
 internal fun DBIterator.historicQualifierRetriever(
@@ -21,14 +22,16 @@ internal fun DBIterator.historicQualifierRetriever(
 
         val toVersionBytes = toVersion.toReversedVersionBytes()
 
-        var isValid = false
-        qualifierFinder@while (isValid()) {
+        var found = false
+        qualifierFinder@while (true) {
             next()
             if (!isValid()) {
                 break // At end of iterator
             } else {
-                // key range check is ensured with setPrefixSameAsStart
                 val qualifier: ByteArray = key()
+                if (!qualifier.matchesRangePart(0, key.bytes, length = key.size)) {
+                    break
+                }
                 val versionOffset = qualifier.size - toVersionBytes.size
                 if (versionOffset < offset) {
                     continue@qualifierFinder
@@ -43,7 +46,7 @@ internal fun DBIterator.historicQualifierRetriever(
                 }
 
                 if (toVersionBytes.compareToRange(qualifier, versionOffset) <= 0) {
-                    isValid = true
+                    found = true
 
                     lastQualifier = qualifier
                     lastQualifierLength = versionOffset - offset
@@ -62,6 +65,6 @@ internal fun DBIterator.historicQualifierRetriever(
             }
         }
 
-        isValid
+        found
     }
 }

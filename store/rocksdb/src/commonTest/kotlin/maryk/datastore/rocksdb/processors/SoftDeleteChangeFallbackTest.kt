@@ -2,7 +2,6 @@ package maryk.datastore.rocksdb.processors
 
 import kotlinx.coroutines.test.runTest
 import maryk.core.clock.HLC
-import maryk.core.exceptions.StorageException
 import maryk.core.models.key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.createTestDBFolder
@@ -12,11 +11,12 @@ import maryk.datastore.test.dataModelsForTests
 import maryk.deleteFolder
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
-import kotlin.test.assertFailsWith
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 class SoftDeleteChangeFallbackTest {
     @Test
-    fun rejectsSoftDeleteValueWithoutDeleteFlag() = runTest {
+    fun ignoresSoftDeleteValueWithoutDeleteFlag() = runTest {
         val folder = createTestDBFolder("soft-delete-missing-flag")
         val store = RocksDBDataStore.open(
             relativePath = folder,
@@ -39,16 +39,57 @@ class SoftDeleteChangeFallbackTest {
             )
 
             DBAccessor(store).use { dbAccessor ->
-                assertFailsWith<StorageException> {
+                val objectChange = DataObjectVersionedChange(key, changes = emptyList())
+                assertEquals(
+                    objectChange,
                     addSoftDeleteChangeIfMissing(
                         dbAccessor = dbAccessor,
                         columnFamilies = columnFamilies,
                         readOptions = store.defaultReadOptions,
                         key = key,
                         fromVersion = version,
-                        objectChange = DataObjectVersionedChange(key, changes = emptyList()),
+                        objectChange = objectChange,
                     )
+                )
+            }
+        } finally {
+            store.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun ignoresOverlongSoftDeleteValueForDeletionChecks() = runTest {
+        val folder = createTestDBFolder("soft-delete-overlong")
+        val store = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = true,
+        )
+
+        try {
+            val columnFamilies = store.getColumnFamilies(SimpleMarykModel)
+            val key = SimpleMarykModel.key(
+                SimpleMarykModel.create {
+                    value with "haha"
                 }
+            )
+            store.db.put(
+                columnFamilies.table,
+                key.bytes + SOFT_DELETE_INDICATOR,
+                HLC.toStorageBytes(HLC(5uL)) + byteArrayOf(TRUE, FALSE)
+            )
+
+            DBAccessor(store).use { dbAccessor ->
+                assertFalse(
+                    isSoftDeleted(
+                        dbAccessor = dbAccessor,
+                        columnFamilies = columnFamilies,
+                        readOptions = store.defaultReadOptions,
+                        toVersion = null,
+                        key = key.bytes
+                    )
+                )
             }
         } finally {
             store.close()

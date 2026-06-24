@@ -13,7 +13,8 @@ import maryk.core.query.responses.FetchByTableScan
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
-import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
+import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 
 internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
     dbAccessor: DBAccessor,
@@ -21,6 +22,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
     scanRequest: IsScanRequest<DM, *>,
     direction: Direction,
     scanRange: KeyScanRanges,
+    historicalReader: HistoricalTableReader? = null,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     var overallStartKey: ByteArray?
@@ -55,9 +57,18 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
                             continue
                         }
 
-                        val creationVersion = iterator.value().readVersionBytes()
+                        val creationVersion = readCreationVersion(
+                            dbAccessor,
+                            columnFamilies,
+                            defaultReadOptions,
+                            key.bytes,
+                            scanRequest.toVersion
+                        ) ?: run {
+                            iterator.next()
+                            continue
+                        }
 
-                        if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                        if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, historicalReader = historicalReader)) {
                             iterator.next()
                             continue
                         }
@@ -100,9 +111,18 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
                             continue
                         }
 
-                        val creationVersion = iterator.value().readVersionBytes()
+                        val creationVersion = readCreationVersion(
+                            dbAccessor,
+                            columnFamilies,
+                            defaultReadOptions,
+                            key.bytes,
+                            scanRequest.toVersion
+                        ) ?: run {
+                            iterator.prev()
+                            continue
+                        }
 
-                        if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)) {
+                        if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, historicalReader = historicalReader)) {
                             iterator.prev()
                             continue
                         }

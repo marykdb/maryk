@@ -10,6 +10,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.orders.Direction
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.UpdatesResponse
@@ -25,15 +26,18 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
+import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
-import maryk.datastore.rocksdb.processors.helpers.getLastVersion
+import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
-import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfPresent
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.rocksDBNotFound
 
@@ -56,12 +60,16 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
 
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
     val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val matchingVersions = mutableMapOf<Key<DM>, ULong>()
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
+    val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     var lastResponseVersion = 0uL
 
     var sortingKeys: MutableList<ByteArray>? = null
     var sortingIndex: IsIndexable? = null
+    var sortingDirection: Direction? = null
+    var sortingIndexScanRange: maryk.core.processors.datastore.scanRange.IndexableScanRanges? = null
 
     var insertionIndex = -1
 
@@ -69,9 +77,28 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
         val columnToScan = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
+        val currentReadIterator = dbAccessor.getIterator(sequentialReadOptions, columnToScan)
+        val historicReadIterator = (columnFamilies as? HistoricTableColumnFamilies)?.let {
+            if (columnToScan === it.historic.table) null else dbAccessor.getIterator(sequentialReadOptions, it.historic.table)
+        }
 
         scanRequest.checkMaxVersions(keepAllVersions)
 
+        currentReadIterator.use { currentIterator ->
+        historicReadIterator.use { historicIterator ->
+        val historicalReader = scanRequest.toVersion?.let { toVersion ->
+            (columnFamilies as? HistoricTableColumnFamilies)?.let {
+                HistoricalTableReader(dbAccessor, it, sequentialReadOptions, toVersion)
+            }
+        }
+        historicalReader.use { reader ->
+        val softDeleteCache = RequestKeySoftDeleteCache(
+            dbAccessor,
+            columnFamilies,
+            defaultReadOptions,
+            scanRequest.toVersion,
+            reader
+        )
         fun getSingleValues(
             key: Key<DM>,
             creationVersion: ULong,
@@ -79,51 +106,75 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
             cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
         ): ValuesWithMetaData<DM>? {
             val readVersion = version.takeIf { columnFamilies is HistoricTableColumnFamilies }
-            val readColumn = if ((readVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
-                columnFamilies.historic.table
+            val deepIterator = if ((readVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
+                historicIterator ?: currentIterator
             } else {
-                columnToScan
+                currentIterator
             }
 
-            dbAccessor.getIterator(defaultReadOptions, readColumn).use { deepIterator ->
-                return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                    deepIterator,
-                    creationVersion,
-                    columnFamilies,
-                    key,
-                    scanRequest.select,
-                    readVersion,
-                    cacheReader
-                )?.let { values ->
-                    if (readVersion == null) {
-                        values
-                    } else {
-                        val deleted = isSoftDeleted(
-                            dbAccessor,
-                            columnFamilies,
-                            defaultReadOptions,
-                            readVersion,
-                            key.bytes,
-                            0,
-                            key.size
-                        )
-                        if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
-                    }
+            return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                deepIterator,
+                creationVersion,
+                columnFamilies,
+                key,
+                scanRequest.select,
+                readVersion,
+                cacheReader
+            )?.let { values ->
+                if (readVersion == null) {
+                    values
+                } else {
+                    val deleted = isSoftDeleted(
+                        dbAccessor = dbAccessor,
+                        columnFamilies = columnFamilies,
+                        readOptions = defaultReadOptions,
+                        toVersion = readVersion,
+                        key = key.bytes,
+                        keyLength = key.size,
+                        historicalTableReader = reader.takeIf { readVersion == scanRequest.toVersion }
+                    )
+                    if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
                 }
             }
         }
+        fun selectSortingKey(getter: DBAccessorStoreValuesGetter, index: IsIndexable, keyBytes: ByteArray): ByteArray? {
+            val allIndexValues = index.toStorageByteArraysForIndex(getter, keyBytes)
+            return allIndexValues
+                .filter { indexValue ->
+                    sortingIndexScanRange?.let { scanRange ->
+                        scanRange.keyWithinRanges(indexValue) && scanRange.matchesPartials(indexValue)
+                    } ?: true
+                }
+                .ifEmpty { allIndexValues }
+                .let { candidateIndexValues ->
+                    when (sortingDirection) {
+                        Direction.ASC -> candidateIndexValues.minWithOrNull { a, b -> a compareTo b }
+                        Direction.DESC -> candidateIndexValues.maxWithOrNull { a, b -> a compareTo b }
+                        null -> candidateIndexValues.firstOrNull()
+                    }
+                }
+        }
+        val objectIterator = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
+            historicIterator ?: currentIterator
+        } else {
+            currentIterator
+        }
 
-        val dataFetchType = dbAccessor.getIterator(defaultReadOptions, columnToScan).use { iterator ->
+        val dataFetchType = dbAccessor.getIterator(sequentialReadOptions, columnToScan).use { iterator ->
             processScan(
                 scanRequest,
                 dbAccessor,
                 columnFamilies,
                 defaultReadOptions,
                 includeSortingKey = true,
+                softDeleteCache = softDeleteCache,
+                historicalReader = reader,
                 scanSetup = {
                     (it as? IndexScan)?.let { indexScan ->
                         sortingKeys = mutableListOf()
                         sortingIndex = indexScan.index
+                        sortingDirection = indexScan.direction
+                        sortingIndexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
                     }
                 }
             ) { key, creationVersion, sortingKey ->
@@ -133,15 +184,22 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
 
                 // Add sorting index
                 sortingIndex?.let {
-                    val storeGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
-                    storeGetter.moveToKey(key.bytes, dbAccessor, scanRequest.toVersion)
-
-                    it.toStorageByteArrayForIndex(storeGetter, key.bytes)?.let { indexableBytes ->
+                    sortingKey?.let { indexableBytes ->
                         sortingKeys?.add(indexableBytes)
+                    } ?: DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions).use { storeGetter ->
+                        storeGetter.moveToKey(key.bytes, dbAccessor, scanRequest.toVersion)
+
+                        selectSortingKey(storeGetter, it, key.bytes)?.let { indexableBytes ->
+                            sortingKeys?.add(indexableBytes)
+                        }
                     }
                 }
 
-                val lastVersion = getLastVersion(dbAccessor, columnFamilies, defaultReadOptions, key)
+                val latestKey = key.bytes + LAST_VERSION_INDICATOR
+                val latestLength = dbAccessor.get(columnFamilies.table, defaultReadOptions, latestKey, recyclableByteArray)
+                val lastVersion = recyclableByteArray.readVersionBytesIfExact(latestLength)
+                    ?: scanRequest.toVersion
+                    ?: return@processScan
                 lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
 
                 val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
@@ -150,8 +208,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                     }
                 }
 
-                scanRequest.dataModel.readTransactionIntoObjectChanges(
-                    iterator,
+                val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
+                    objectIterator,
                     creationVersion,
                     columnFamilies,
                     key,
@@ -161,20 +219,21 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                     scanRequest.maxVersions,
                     sortingKey,
                     cacheReader
-                )?.let { changes ->
-                    if (scanRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
-                        addSoftDeleteChangeIfMissing(
-                            dbAccessor = dbAccessor,
-                            columnFamilies = columnFamilies,
-                            readOptions = defaultReadOptions,
-                            key = key,
-                            fromVersion = scanRequest.fromVersion,
-                            objectChange = changes
-                        )
-                    } else {
-                        changes
-                    }
-                }?.let { objectChange ->
+                )
+                val updatedObjectChange = if (scanRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
+                    addSoftDeleteChangeIfMissing(
+                        dbAccessor = dbAccessor,
+                        columnFamilies = columnFamilies,
+                        readOptions = defaultReadOptions,
+                        key = key,
+                        fromVersion = scanRequest.fromVersion,
+                        objectChange = objectChange,
+                        sortingKey = sortingKey
+                    )
+                } else {
+                    objectChange
+                }
+                updatedObjectChange?.let { objectChange ->
                     updates += objectChange.changes.mapNotNull { versionedChange ->
                         val changes = versionedChange.changes
 
@@ -244,7 +303,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                         reason = when {
                             createdVersionLength == rocksDBNotFound ->
                                 HardDelete
-                            isSoftDeleted(dbAccessor, columnFamilies, defaultReadOptions, scanRequest.toVersion, removedKey.bytes) ->
+                            softDeleteCache.get(removedKey.bytes) ->
                                 SoftDelete
                             else -> NotInRange
                         }
@@ -254,9 +313,13 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
 
             matchingKeys.subtract(orderedKeysSet).let { addedKeys ->
                 for (addedKey in addedKeys) {
-                    val valueLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, addedKey.bytes, recyclableByteArray)
-                    // Only process it if it was created
-                    recyclableByteArray.readVersionBytesIfPresent(valueLength)?.let { createdVersion ->
+                    readCreationVersion(
+                        dbAccessor,
+                        columnFamilies,
+                        defaultReadOptions,
+                        addedKey.bytes,
+                        scanRequest.toVersion
+                    )?.let { createdVersion ->
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                             runBlocking {
                                 cache.readValue(dbIndex, addedKey, reference, version, valueReader)
@@ -285,6 +348,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                 dataFetchType = dataFetchType,
             )
         )
+        }
+        }
+        }
     }
 }
 
@@ -298,180 +364,309 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
     val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val matchingVersions = mutableMapOf<Key<DM>, ULong>()
+    val matchingOrder = mutableMapOf<Key<DM>, Int>()
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
     var lastResponseVersion = 0uL
 
     DBAccessor(this).use { dbAccessor ->
-        fun getSingleValues(
-            key: Key<DM>,
-            creationVersion: ULong,
-            version: ULong?,
-            cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
-        ): ValuesWithMetaData<DM>? {
-            val readVersion = version.takeIf { columnFamilies is HistoricTableColumnFamilies }
-            val readColumn = if ((readVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
-                columnFamilies.historic.table
-            } else columnFamilies.table
-            dbAccessor.getIterator(defaultReadOptions, readColumn).use { deepIterator ->
-                return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                    deepIterator,
-                    creationVersion,
+        val currentReadIterator = dbAccessor.getIterator(sequentialReadOptions, columnFamilies.table)
+        val historicReadIterator = (columnFamilies as? HistoricTableColumnFamilies)?.let {
+            dbAccessor.getIterator(sequentialReadOptions, it.historic.table)
+        }
+
+        currentReadIterator.use { currentIterator ->
+            historicReadIterator.use { historicIterator ->
+                val historicalReader = scanRequest.toVersion?.let { toVersion ->
+                    (columnFamilies as? HistoricTableColumnFamilies)?.let {
+                        HistoricalTableReader(dbAccessor, it, sequentialReadOptions, toVersion)
+                    }
+                }
+                historicalReader.use { reader ->
+                val softDeleteCache = RequestKeySoftDeleteCache(
+                    dbAccessor,
                     columnFamilies,
-                    key,
-                    scanRequest.select,
-                    readVersion,
-                    cacheReader
-                )?.let { values ->
-                    if (readVersion == null) {
-                        values
+                    defaultReadOptions,
+                    scanRequest.toVersion,
+                    reader
+                )
+                fun getSingleValues(
+                    key: Key<DM>,
+                    creationVersion: ULong,
+                    version: ULong?,
+                    cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
+                ): ValuesWithMetaData<DM>? {
+                    val readVersion = version.takeIf { columnFamilies is HistoricTableColumnFamilies }
+                    val valueIterator = if ((readVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
+                        historicIterator ?: currentIterator
                     } else {
-                        val deleted = isSoftDeleted(
+                        currentIterator
+                    }
+
+                    return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                        valueIterator,
+                        creationVersion,
+                        columnFamilies,
+                        key,
+                        scanRequest.select,
+                        readVersion,
+                        cacheReader
+                    )?.let { values ->
+                        if (readVersion == null) {
+                            values
+                        } else {
+                            val deleted = isSoftDeleted(
+                                dbAccessor = dbAccessor,
+                                columnFamilies = columnFamilies,
+                                readOptions = defaultReadOptions,
+                                toVersion = readVersion,
+                                key = key.bytes,
+                                keyLength = key.size,
+                                historicalTableReader = reader.takeIf { readVersion == scanRequest.toVersion }
+                            )
+                            if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
+                        }
+                    }
+                }
+
+                val objectIterator = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
+                    historicIterator ?: currentIterator
+                } else {
+                    currentIterator
+                }
+
+                scanRequest.checkMaxVersions(keepAllVersions)
+                dbAccessor.getIterator(defaultReadOptions, columnFamilies.updateHistory!!).use { historyIterator ->
+                    val seenKeys = HashSet<Key<DM>>(expectedSize * 2)
+
+                    when (val toVersion = scanRequest.toVersion) {
+                        null -> historyIterator.seekToFirst()
+                        else -> historyIterator.seek(toVersion.toReversedVersionBytes())
+                    }
+
+                    while (historyIterator.isValid()) {
+                        val historyKey = historyIterator.key()
+                        if (historyKey.size != VERSION_BYTE_SIZE + keySize) {
+                            historyIterator.next()
+                            continue
+                        }
+                        val version = historyKey.readReversedVersionBytes(0)
+                        if (version < scanRequest.fromVersion) {
+                            break
+                        }
+                        val lowestSelectedVersion = matchingVersions.values.minOrNull()
+                        if (
+                            matchingKeys.size.toUInt() >= scanRequest.limit &&
+                            lowestSelectedVersion != null &&
+                            version < lowestSelectedVersion
+                        ) {
+                            break
+                        }
+
+                        var keyReadIndex = VERSION_BYTE_SIZE
+                        val key = scanRequest.dataModel.key {
+                            historyKey[keyReadIndex++]
+                        }
+                        if (!seenKeys.add(key)) {
+                            historyIterator.next()
+                            continue
+                        }
+
+                        val isHardDelete = historyIterator.value().firstOrNull() == 1.toByte()
+                        val creationVersion = readCreationVersion(
                             dbAccessor,
                             columnFamilies,
                             defaultReadOptions,
-                            readVersion,
                             key.bytes,
-                            0,
-                            key.size
+                            scanRequest.toVersion
                         )
-                        if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
-                    }
-                }
-            }
-        }
-
-        scanRequest.checkMaxVersions(keepAllVersions)
-        dbAccessor.getIterator(defaultReadOptions, columnFamilies.updateHistory!!).use { historyIterator ->
-        val seenKeys = HashSet<Key<DM>>(expectedSize * 2)
-
-        when (val toVersion = scanRequest.toVersion) {
-            null -> historyIterator.seekToFirst()
-            else -> historyIterator.seek(toVersion.toReversedVersionBytes())
-        }
-
-        while (historyIterator.isValid() && matchingKeys.size.toUInt() < scanRequest.limit) {
-            val historyKey = historyIterator.key()
-            if (historyKey.size < VERSION_BYTE_SIZE + keySize) {
-                historyIterator.next()
-                continue
-            }
-            val version = historyKey.readReversedVersionBytes(0)
-            if (version < scanRequest.fromVersion) {
-                break
-            }
-
-            var keyReadIndex = VERSION_BYTE_SIZE
-            val key = scanRequest.dataModel.key {
-                historyKey[keyReadIndex++]
-            }
-            if (!seenKeys.add(key)) {
-                historyIterator.next()
-                continue
-            }
-
-            val isHardDelete = historyIterator.value().firstOrNull() == 1.toByte()
-            val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, key.bytes, recyclableByteArray)
-            if (createdVersionLength == rocksDBNotFound) {
-                if (isHardDelete && scanRequest.where == null &&
-                    !scanRange.keyBeforeStart(key.bytes, 0) && scanRange.keyWithinRanges(key.bytes, 0) && scanRange.matchesPartials(key.bytes) &&
-                    version >= scanRequest.fromVersion
-                ) {
-                    updates += RemovalUpdate(
-                        key = key,
-                        version = version,
-                        reason = HardDelete
-                    )
-                    lastResponseVersion = maxOf(lastResponseVersion, version)
-                }
-                historyIterator.next()
-                continue
-            }
-            val creationVersion = recyclableByteArray.readVersionBytesIfPresent(createdVersionLength) ?: run {
-                historyIterator.next()
-                continue
-            }
-
-            if (scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion)
-                || scanRange.keyBeforeStart(key.bytes, 0)
-                || !scanRange.keyWithinRanges(key.bytes, 0)
-                || !scanRange.matchesPartials(key.bytes)
-            ) {
-                historyIterator.next()
-                continue
-            }
-
-            matchingKeys += key
-            lastResponseVersion = maxOf(lastResponseVersion, getLastVersion(dbAccessor, columnFamilies, defaultReadOptions, key))
-
-            val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
-                runBlocking {
-                    cache.readValue(dbIndex, key, reference, readVersion, valueReader)
-                }
-            }
-
-            val readColumn = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
-                columnFamilies.historic.table
-            } else {
-                columnFamilies.table
-            }
-
-            dbAccessor.getIterator(defaultReadOptions, readColumn).use { objectIterator ->
-                scanRequest.dataModel.readTransactionIntoObjectChanges(
-                    objectIterator,
-                    creationVersion,
-                    columnFamilies,
-                    key,
-                    scanRequest.select,
-                    scanRequest.fromVersion,
-                    scanRequest.toVersion,
-                    scanRequest.maxVersions,
-                    null,
-                    cacheReader
-                )
-            }?.let { changes ->
-                if (scanRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
-                    addSoftDeleteChangeIfMissing(
-                        dbAccessor = dbAccessor,
-                        columnFamilies = columnFamilies,
-                        readOptions = defaultReadOptions,
-                        key = key,
-                        fromVersion = scanRequest.fromVersion,
-                        objectChange = changes
-                    )
-                } else {
-                    changes
-                }
-            }?.let { objectChange ->
-                updates += objectChange.changes.mapNotNull { versionedChange ->
-                    val changes = versionedChange.changes
-
-                    if (changes.contains(ObjectCreate)) {
-                        getSingleValues(key, creationVersion, versionedChange.version, cacheReader)?.let { valuesWithMeta ->
-                            AdditionUpdate(
-                                key = objectChange.key,
-                                version = versionedChange.version,
-                                firstVersion = valuesWithMeta.firstVersion,
-                                insertionIndex = matchingKeys.lastIndex,
-                                isDeleted = valuesWithMeta.isDeleted,
-                                values = valuesWithMeta.values
-                            )
+                        if (creationVersion == null) {
+                            if (isHardDelete && scanRequest.where == null &&
+                                !scanRange.keyBeforeStart(key.bytes, 0) && scanRange.keyWithinRanges(key.bytes, 0) && scanRange.matchesPartials(key.bytes) &&
+                                version >= scanRequest.fromVersion
+                            ) {
+                                updates += RemovalUpdate(
+                                    key = key,
+                                    version = version,
+                                    reason = HardDelete
+                                )
+                                lastResponseVersion = maxOf(lastResponseVersion, version)
+                            }
+                            historyIterator.next()
+                            continue
                         }
-                    } else {
-                        if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
-                            ChangeUpdate(
-                                key = objectChange.key,
-                                version = versionedChange.version,
-                                index = matchingKeys.lastIndex,
-                                changes = changes
+
+                        if (scanRequest.shouldBeFiltered(
+                                dbAccessor,
+                                columnFamilies,
+                                defaultReadOptions,
+                                key.bytes,
+                                0,
+                                key.size,
+                                creationVersion,
+                                scanRequest.toVersion,
+                                historicalReader = reader,
+                                softDeleteCache = softDeleteCache
+                            )
+                            || scanRange.keyBeforeStart(key.bytes, 0)
+                            || !scanRange.keyWithinRanges(key.bytes, 0)
+                            || !scanRange.matchesPartials(key.bytes)
+                        ) {
+                            historyIterator.next()
+                            continue
+                        }
+
+                        val latestKey = key.bytes + LAST_VERSION_INDICATOR
+                        val latestLength = dbAccessor.get(columnFamilies.table, defaultReadOptions, latestKey, recyclableByteArray)
+                        val lastVersion = recyclableByteArray.readVersionBytesIfExact(latestLength)
+                            ?: scanRequest.toVersion
+                            ?: run {
+                                historyIterator.next()
+                                continue
+                            }
+
+                        matchingKeys += key
+                        matchingVersions[key] = version
+                        matchingOrder[key] = matchingKeys.lastIndex
+                        lastResponseVersion = maxOf(lastResponseVersion, lastVersion)
+
+                        val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
+                            runBlocking {
+                                cache.readValue(dbIndex, key, reference, readVersion, valueReader)
+                            }
+                        }
+
+                        val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
+                            objectIterator,
+                            creationVersion,
+                            columnFamilies,
+                            key,
+                            scanRequest.select,
+                            scanRequest.fromVersion,
+                            scanRequest.toVersion,
+                            scanRequest.maxVersions,
+                            null,
+                            cacheReader
+                        )
+                        val updatedObjectChange = if (scanRequest.needsSoftDeleteFallback() && columnFamilies is HistoricTableColumnFamilies) {
+                            addSoftDeleteChangeIfMissing(
+                                dbAccessor = dbAccessor,
+                                columnFamilies = columnFamilies,
+                                readOptions = defaultReadOptions,
+                                key = key,
+                                fromVersion = scanRequest.fromVersion,
+                                objectChange = objectChange
                             )
                         } else {
-                            getSingleValues(key, creationVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->
-                                AdditionUpdate(
-                                    key = objectChange.key,
-                                    version = versionedChange.version,
+                            objectChange
+                        }
+                        updatedObjectChange?.let { objectChange ->
+                            updates += objectChange.changes.mapNotNull { versionedChange ->
+                                val changes = versionedChange.changes
+
+                                if (changes.contains(ObjectCreate)) {
+                                    getSingleValues(key, creationVersion, versionedChange.version, cacheReader)?.let { valuesWithMeta ->
+                                        AdditionUpdate(
+                                            key = objectChange.key,
+                                            version = versionedChange.version,
+                                            firstVersion = valuesWithMeta.firstVersion,
+                                            insertionIndex = matchingKeys.lastIndex,
+                                            isDeleted = valuesWithMeta.isDeleted,
+                                            values = valuesWithMeta.values
+                                        )
+                                    }
+                                } else {
+                                    if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
+                                        ChangeUpdate(
+                                            key = objectChange.key,
+                                            version = versionedChange.version,
+                                            index = matchingKeys.lastIndex,
+                                            changes = changes
+                                        )
+                                    } else {
+                                        getSingleValues(key, creationVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->
+                                            AdditionUpdate(
+                                                key = objectChange.key,
+                                                version = versionedChange.version,
+                                                firstVersion = valuesWithMeta.firstVersion,
+                                                insertionIndex = matchingKeys.lastIndex,
+                                                isDeleted = valuesWithMeta.isDeleted,
+                                                values = valuesWithMeta.values
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        historyIterator.next()
+                    }
+                }
+
+                matchingKeys.sortWith(
+                    compareByDescending<Key<DM>> { matchingVersions[it] ?: 0uL }
+                        .thenByDescending { matchingOrder[it] ?: -1 }
+                )
+                if (matchingKeys.size.toUInt() > scanRequest.limit) {
+                    val keptKeys = matchingKeys.take(scanRequest.limit.toInt()).toHashSet()
+                    matchingKeys.subList(scanRequest.limit.toInt(), matchingKeys.size).clear()
+                    updates.removeAll { update ->
+                        when (update) {
+                            is AdditionUpdate<*> -> update.key !in keptKeys
+                            is ChangeUpdate<*> -> update.key !in keptKeys
+                            is RemovalUpdate<*> -> update.key !in keptKeys
+                            else -> false
+                        }
+                    }
+                }
+                updates.sortBy { it.version }
+                lastResponseVersion = minOf(scanRequest.toVersion ?: ULong.MAX_VALUE, lastResponseVersion)
+                updates.add(
+                    0,
+                    OrderedKeysUpdate(
+                        version = lastResponseVersion,
+                        keys = matchingKeys,
+                        sortingKeys = null
+                    )
+                )
+
+                scanRequest.orderedKeys?.let { orderedKeys ->
+                    val matchingKeysSet = matchingKeys.toHashSet()
+                    val orderedKeysSet = orderedKeys.toHashSet()
+
+                    orderedKeys.subtract(matchingKeysSet).forEach { removedKey ->
+                        val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, removedKey.bytes, recyclableByteArray)
+                        updates += RemovalUpdate(
+                            key = removedKey,
+                            version = lastResponseVersion,
+                            reason = when {
+                                createdVersionLength == rocksDBNotFound -> HardDelete
+                                softDeleteCache.get(removedKey.bytes) -> SoftDelete
+                                else -> NotInRange
+                            }
+                        )
+                    }
+
+                    matchingKeys.subtract(orderedKeysSet).forEach { addedKey ->
+                        readCreationVersion(
+                            dbAccessor,
+                            columnFamilies,
+                            defaultReadOptions,
+                            addedKey.bytes,
+                            scanRequest.toVersion
+                        )?.let { creationVersion ->
+                            val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
+                                runBlocking {
+                                    cache.readValue(dbIndex, addedKey, reference, readVersion, valueReader)
+                                }
+                            }
+
+                            getSingleValues(addedKey, creationVersion, scanRequest.toVersion, cacheReader)?.let { valuesWithMeta ->
+                                updates += AdditionUpdate(
+                                    key = addedKey,
+                                    version = lastResponseVersion,
                                     firstVersion = valuesWithMeta.firstVersion,
-                                    insertionIndex = matchingKeys.lastIndex,
+                                    insertionIndex = matchingKeys.indexOf(addedKey),
                                     isDeleted = valuesWithMeta.isDeleted,
                                     values = valuesWithMeta.values
                                 )
@@ -479,76 +674,6 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                         }
                     }
                 }
-            }
-            historyIterator.next()
-        }
-
-        }
-    }
-
-    updates.sortBy { it.version }
-    lastResponseVersion = minOf(scanRequest.toVersion ?: ULong.MAX_VALUE, lastResponseVersion)
-    updates.add(
-        0,
-        OrderedKeysUpdate(
-            version = lastResponseVersion,
-            keys = matchingKeys,
-            sortingKeys = null
-        )
-    )
-
-    DBAccessor(this).use { dbAccessor ->
-        scanRequest.orderedKeys?.let { orderedKeys ->
-            val matchingKeysSet = matchingKeys.toHashSet()
-            val orderedKeysSet = orderedKeys.toHashSet()
-
-            orderedKeys.subtract(matchingKeysSet).forEach { removedKey ->
-                val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, removedKey.bytes, recyclableByteArray)
-                updates += RemovalUpdate(
-                    key = removedKey,
-                    version = lastResponseVersion,
-                    reason = when {
-                        createdVersionLength == rocksDBNotFound -> HardDelete
-                        isSoftDeleted(dbAccessor, columnFamilies, defaultReadOptions, scanRequest.toVersion, removedKey.bytes) -> SoftDelete
-                        else -> NotInRange
-                    }
-                )
-            }
-
-            matchingKeys.subtract(orderedKeysSet).forEach { addedKey ->
-                val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, addedKey.bytes, recyclableByteArray)
-                recyclableByteArray.readVersionBytesIfPresent(createdVersionLength)?.let { creationVersion ->
-                    val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
-                        runBlocking {
-                            cache.readValue(dbIndex, addedKey, reference, readVersion, valueReader)
-                        }
-                    }
-                    val readColumn = if ((scanRequest.toVersion != null || scanRequest.maxVersions > 1u) && columnFamilies is HistoricTableColumnFamilies) {
-                        columnFamilies.historic.table
-                    } else {
-                        columnFamilies.table
-                    }
-
-                    dbAccessor.getIterator(defaultReadOptions, readColumn).use { objectIterator ->
-                        scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                            objectIterator,
-                            creationVersion,
-                            columnFamilies,
-                            addedKey,
-                            scanRequest.select,
-                            scanRequest.toVersion,
-                            cacheReader
-                        )?.let { valuesWithMeta ->
-                            updates += AdditionUpdate(
-                                key = addedKey,
-                                version = lastResponseVersion,
-                                firstVersion = valuesWithMeta.firstVersion,
-                                insertionIndex = matchingKeys.indexOf(addedKey),
-                                isDeleted = valuesWithMeta.isDeleted,
-                                values = valuesWithMeta.values
-                            )
-                        }
-                    }
                 }
             }
         }
@@ -564,7 +689,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
 }
 
 private fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
-    order == null && fromVersion == 0uL && toVersion == null && maxVersions == 1u
+    order == null && startKey == null && includeStart && fromVersion == 0uL && toVersion == null && maxVersions == 1u
 
 private fun ScanUpdatesRequest<*>.needsSoftDeleteFallback() =
     toVersion == null && (maxVersions > 1u || !filterSoftDeleted)

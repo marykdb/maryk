@@ -13,13 +13,14 @@ import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
+import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.getValue
-import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfPresent
+import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.helpers.convertToValue
-import maryk.lib.recyclableByteArray
 
 internal typealias GetStoreAction<DM> = StoreAction<DM, GetRequest<DM>, ValuesResponse<DM>>
 internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
@@ -44,16 +45,46 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
         val columnToScan = if (getRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        dbAccessor.getIterator(defaultReadOptions, columnToScan).use { iterator ->
-            keyWalk@ for (key in getRequest.keys) {
-                val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
-                if (mayExist) {
-                    val valueLength =
-                        dbAccessor.get(columnFamilies.keys, defaultReadOptions, key.bytes, recyclableByteArray)
-
-                    recyclableByteArray.readVersionBytesIfPresent(valueLength)?.let { creationVersion ->
+        val historicalReader = getRequest.toVersion?.let { toVersion ->
+            (columnFamilies as? HistoricTableColumnFamilies)?.let {
+                HistoricalTableReader(dbAccessor, it, sequentialReadOptions, toVersion)
+            }
+        }
+        val softDeleteCache = RequestKeySoftDeleteCache(
+            dbAccessor,
+            columnFamilies,
+            defaultReadOptions,
+            getRequest.toVersion,
+            historicalReader
+        )
+        dbAccessor.getIterator(sequentialReadOptions, columnToScan).use { iterator ->
+            historicalReader.use { reader ->
+                keyWalk@ for (key in getRequest.keys) {
+                    readCreationVersion(
+                        dbAccessor,
+                        columnFamilies,
+                        defaultReadOptions,
+                        key.bytes,
+                        getRequest.toVersion
+                    )?.let { creationVersion ->
+                        val deleted = if (getRequest.toVersion != null || getRequest.filterSoftDeleted) {
+                            softDeleteCache.get(key.bytes, 0, key.size)
+                        } else {
+                            null
+                        }
                         if (
-                            getRequest.shouldBeFiltered(dbAccessor, columnFamilies, defaultReadOptions, key.bytes, 0, key.size, creationVersion, getRequest.toVersion)
+                            getRequest.shouldBeFiltered(
+                                dbAccessor,
+                                columnFamilies,
+                                defaultReadOptions,
+                                key.bytes,
+                                0,
+                                key.size,
+                                creationVersion,
+                                getRequest.toVersion,
+                                historicalReader = reader,
+                                softDeleteCache = softDeleteCache
+                            )
                         ) {
                             continue@keyWalk
                         }
@@ -76,19 +107,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
                             if (getRequest.toVersion == null) {
                                 values
                             } else {
-                                val deleted = isSoftDeleted(
-                                    dbAccessor,
-                                    columnFamilies,
-                                    defaultReadOptions,
-                                    getRequest.toVersion,
-                                    key.bytes,
-                                    0,
-                                    key.size
-                                )
-                                if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
+                                val cachedDeleted = deleted ?: softDeleteCache.get(key.bytes, 0, key.size)
+                                if (values.isDeleted == cachedDeleted) values else values.copy(isDeleted = cachedDeleted)
                             }
                         }?.also {
-                            // Only add if not null
                             valuesWithMeta.add(it)
                         }
 
@@ -99,10 +121,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
                                     columnFamilies,
                                     defaultReadOptions,
                                     getRequest.toVersion,
-                                    it.toStorageByteArray()
+                                    it.toStorageByteArray(key.bytes),
+                                    reader
                                 ) { valueBytes, offset, length ->
                                     valueBytes.convertToValue(it, offset, length)
-                            }
+                                }
                         }
                     }
                 }

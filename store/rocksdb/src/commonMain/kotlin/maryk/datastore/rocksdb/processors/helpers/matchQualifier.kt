@@ -12,6 +12,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.SetAnyValueReference
 import maryk.datastore.rocksdb.DBAccessor
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.isSkippableDataError
@@ -30,9 +31,10 @@ internal fun <T : Any> DBAccessor.matchQualifier(
     keyLength: Int,
     reference: IsPropertyReference<T, *, *>,
     toVersion: ULong?,
+    historicalReader: HistoricalTableReader? = null,
     matcher: (T?) -> Boolean
 ) =
-    this.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, reference, reference.toQualifierMatcher(), toVersion, matcher)
+    this.matchQualifierWithReader(columnFamilies, readOptions, key, keyOffset, keyLength, reference, reference.toQualifierMatcher(), toVersion, historicalReader, matcher)
 
 /**
  * Match a qualifier from [reference] on transaction at [columnFamilies] and [readOptions] with [matcher] for [key].
@@ -47,6 +49,50 @@ internal fun <T : Any> DBAccessor.matchQualifier(
     reference: IsPropertyReference<T, *, *>,
     qualifierMatcher: IsQualifierMatcher,
     toVersion: ULong?,
+    historicalReader: HistoricalTableReader? = null,
+    matcher: (T?) -> Boolean
+): Boolean {
+    if (historicalReader != null || toVersion == null || columnFamilies !is HistoricTableColumnFamilies) {
+        return matchQualifierWithReader(
+            columnFamilies,
+            readOptions,
+            key,
+            keyOffset,
+            keyLength,
+            reference,
+            qualifierMatcher,
+            toVersion,
+            historicalReader,
+            matcher
+        )
+    }
+
+    HistoricalTableReader(this, columnFamilies, readOptions, toVersion).use { reader ->
+        return matchQualifierWithReader(
+            columnFamilies,
+            readOptions,
+            key,
+            keyOffset,
+            keyLength,
+            reference,
+            qualifierMatcher,
+            toVersion,
+            reader,
+            matcher
+        )
+    }
+}
+
+private fun <T : Any> DBAccessor.matchQualifierWithReader(
+    columnFamilies: TableColumnFamilies,
+    readOptions: ReadOptions,
+    key: ByteArray,
+    keyOffset: Int,
+    keyLength: Int,
+    reference: IsPropertyReference<T, *, *>,
+    qualifierMatcher: IsQualifierMatcher,
+    toVersion: ULong?,
+    historicalReader: HistoricalTableReader?,
     matcher: (T?) -> Boolean
 ): Boolean {
     when (qualifierMatcher) {
@@ -57,14 +103,14 @@ internal fun <T : Any> DBAccessor.matchQualifier(
 
             return when (val referencedMatcher = qualifierMatcher.referencedQualifierMatcher) {
                 null -> {
-                    val value = this.getValue(columnFamilies, readOptions, toVersion, qualifier) { valueBytes, offset, length ->
+                    val value = this.getValue(columnFamilies, readOptions, toVersion, qualifier, historicalReader) { valueBytes, offset, length ->
                         valueBytes.convertToValue(reference, offset, length)
                     }
 
                     matcher(value)
                 }
                 else ->
-                    matchReferenced(columnFamilies, readOptions, toVersion, qualifier, referencedMatcher, reference, matcher)
+                    matchReferenced(columnFamilies, readOptions, toVersion, qualifier, referencedMatcher, reference, historicalReader, matcher)
             }
         }
         is QualifierFuzzyMatcher -> {
@@ -73,7 +119,7 @@ internal fun <T : Any> DBAccessor.matchQualifier(
             key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
             firstPossible.copyInto(qualifier, keyLength)
 
-            val result = this.iterateValues(columnFamilies, readOptions, toVersion, keyLength, qualifier) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
+            val result = this.iterateValues(columnFamilies, readOptions, toVersion, keyLength, qualifier, historicalReader) { referenceBytes, refOffset, refLength, valueBytes, valOffset, valLength ->
                 when (qualifierMatcher.isMatch(referenceBytes, refOffset, refLength)) {
                     NO_MATCH -> null
                     MATCH -> {
@@ -84,7 +130,16 @@ internal fun <T : Any> DBAccessor.matchQualifier(
                                 matcher(value)
                             }
                             else ->
-                                matchReferenced(columnFamilies, readOptions, toVersion, qualifier, referencedMatcher, reference, matcher)
+                                matchReferenced(
+                                    columnFamilies,
+                                    readOptions,
+                                    toVersion,
+                                    matchedQualifier(key, keyOffset, keyLength, referenceBytes, refOffset, refLength),
+                                    referencedMatcher,
+                                    reference,
+                                    historicalReader,
+                                    matcher
+                                )
                         }
 
                         if (matches) true else null
@@ -95,6 +150,20 @@ internal fun <T : Any> DBAccessor.matchQualifier(
             return result == true
         }
     }
+}
+
+private fun matchedQualifier(
+    key: ByteArray,
+    keyOffset: Int,
+    keyLength: Int,
+    referenceBytes: ByteArray,
+    refOffset: Int,
+    refLength: Int
+): ByteArray {
+    val qualifier = ByteArray(keyLength + refLength)
+    key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
+    referenceBytes.copyInto(qualifier, keyLength, refOffset, refOffset + refLength)
+    return qualifier
 }
 
 private fun <T : Any> readFuzzyValue(
@@ -144,9 +213,10 @@ private fun <T : Any> DBAccessor.matchReferenced(
     qualifier: ByteArray,
     referencedMatcher: ReferencedQualifierMatcher,
     reference: IsPropertyReference<T, *, *>,
+    historicalReader: HistoricalTableReader?,
     matcher: (T?) -> Boolean
 ): Boolean {
-    val referencedKey = this.getValue(columnFamilies, readOptions, toVersion, qualifier) { valueBytes, offset, length ->
+    val referencedKey = this.getValue(columnFamilies, readOptions, toVersion, qualifier, historicalReader) { valueBytes, offset, length ->
         valueBytes.convertToValue(referencedMatcher.reference, offset, length)
     }
 

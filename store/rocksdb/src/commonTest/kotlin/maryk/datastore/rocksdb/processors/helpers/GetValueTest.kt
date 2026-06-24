@@ -8,6 +8,7 @@ import maryk.createTestDBFolder
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.test.dataModelsForTests
 import maryk.deleteFolder
 import maryk.test.models.CompleteMarykModel
@@ -103,6 +104,97 @@ class GetValueTest {
                     value.copyOfRange(offset, offset + length)
                 }
                 assertContentEquals(exactPayload, exact)
+            }
+        } finally {
+            store.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun historicGetValueIgnoresTooShortPrefixMatchingRow() = runTest {
+        val folder = createTestDBFolder("get-value-short-historic-row")
+        val store = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = true,
+        )
+
+        try {
+            val columnFamilies = store.getColumnFamilies(CompleteMarykModel) as HistoricTableColumnFamilies
+            val key = ByteArray(CompleteMarykModel.Meta.keyByteSize) { (it + 1).toByte() }
+            val reference = byteArrayOf(5)
+            val version = 10uL
+            val exactPayload = byteArrayOf(7)
+            val versionBytes = HLC.toStorageBytes(HLC(version))
+
+            store.db.put(
+                columnFamilies.historic.table,
+                key + reference + byteArrayOf(version.toReversedVersionBytes().first()),
+                byteArrayOf(42)
+            )
+            store.db.put(
+                columnFamilies.historic.table,
+                (key + reference + versionBytes).also { it.invert(it.size - versionBytes.size) },
+                exactPayload
+            )
+
+            DBAccessor(store).use { dbAccessor ->
+                val exact = dbAccessor.getValue(
+                    columnFamilies = columnFamilies,
+                    readOptions = store.defaultReadOptions,
+                    toVersion = version,
+                    keyAndReference = key + reference,
+                ) { value, offset, length ->
+                    value.copyOfRange(offset, offset + length)
+                }
+                assertContentEquals(exactPayload, exact)
+            }
+        } finally {
+            store.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun historicGetValueReturnsNullForDeleteMarker() = runTest {
+        val folder = createTestDBFolder("get-value-historic-delete-marker")
+        val store = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = true,
+        )
+
+        try {
+            val columnFamilies = store.getColumnFamilies(CompleteMarykModel) as HistoricTableColumnFamilies
+            val key = ByteArray(CompleteMarykModel.Meta.keyByteSize) { (it + 1).toByte() }
+            val reference = byteArrayOf(5)
+            val oldVersion = 10uL
+            val deleteVersion = 20uL
+            val oldVersionBytes = HLC.toStorageBytes(HLC(oldVersion))
+            val deleteVersionBytes = HLC.toStorageBytes(HLC(deleteVersion))
+
+            store.db.put(
+                columnFamilies.historic.table,
+                (key + reference + oldVersionBytes).also { it.invert(it.size - oldVersionBytes.size) },
+                byteArrayOf(42)
+            )
+            store.db.put(
+                columnFamilies.historic.table,
+                (key + reference + deleteVersionBytes).also { it.invert(it.size - deleteVersionBytes.size) },
+                TypeIndicator.DeletedIndicator.byteArray
+            )
+
+            DBAccessor(store).use { dbAccessor ->
+                val deleted = dbAccessor.getValue(
+                    columnFamilies = columnFamilies,
+                    readOptions = store.defaultReadOptions,
+                    toVersion = deleteVersion,
+                    keyAndReference = key + reference,
+                ) { value, offset, length ->
+                    value.copyOfRange(offset, offset + length)
+                }
+                assertNull(deleted)
             }
         } finally {
             store.close()

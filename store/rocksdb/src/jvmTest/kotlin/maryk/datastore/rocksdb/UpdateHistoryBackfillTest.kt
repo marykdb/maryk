@@ -16,6 +16,7 @@ import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.models.key
 import maryk.createTestDBFolder
+import maryk.datastore.rocksdb.processors.LAST_VERSION_INDICATOR
 import maryk.datastore.test.dataModelsForTests
 import maryk.deleteFolder
 import maryk.test.models.Log
@@ -25,6 +26,94 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class UpdateHistoryBackfillTest {
+    @Test
+    fun enablingUpdateHistoryIndexSkipsMalformedOverlongLatestVersion() = runTest {
+        val folder = createTestDBFolder("update-history-backfill-malformed-latest")
+        val values = Log("latest-state")
+        val key = Log.key(values)
+
+        RocksDBDataStore.open(
+            relativePath = folder,
+            keepAllVersions = false,
+            keepUpdateHistoryIndex = false,
+            dataModelsById = dataModelsForTests,
+        ).let { dataStore ->
+            try {
+                assertIs<AddSuccess<*>>(dataStore.execute(Log.add(key to values)).statuses.first())
+                val columnFamilies = dataStore.getColumnFamilies(Log)
+                val latestKey = key.bytes + LAST_VERSION_INDICATOR
+                val latest = dataStore.db.get(columnFamilies.table, latestKey)!!
+                dataStore.db.put(columnFamilies.table, latestKey, latest + byteArrayOf(1))
+            } finally {
+                dataStore.close()
+            }
+        }
+
+        RocksDBDataStore.open(
+            relativePath = folder,
+            keepAllVersions = false,
+            keepUpdateHistoryIndex = true,
+            dataModelsById = dataModelsForTests,
+        ).let { dataStore ->
+            try {
+                val scanResponse = dataStore.execute(Log.scanUpdates(limit = 1u))
+
+                assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
+                assertEquals(emptyList(), assertIs<OrderedKeysUpdate<Log>>(scanResponse.updates.first()).keys)
+            } finally {
+                dataStore.close()
+            }
+        }
+
+        deleteFolder(folder)
+    }
+
+    @Test
+    fun enablingUpdateHistoryIndexSkipsMalformedOverlongCreationMetadata() = runTest {
+        val folder = createTestDBFolder("update-history-backfill-malformed-creation")
+        val values = Log("latest-state")
+        val key = Log.key(values)
+
+        RocksDBDataStore.open(
+            relativePath = folder,
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = false,
+            dataModelsById = dataModelsForTests,
+        ).let { dataStore ->
+            try {
+                assertIs<AddSuccess<*>>(dataStore.execute(Log.add(key to values)).statuses.first())
+                val columnFamilies = dataStore.getColumnFamilies(Log)
+                val current = dataStore.db.get(columnFamilies.keys, key.bytes)!!
+                dataStore.db.put(columnFamilies.keys, key.bytes, current + byteArrayOf(1))
+            } finally {
+                dataStore.close()
+            }
+        }
+
+        RocksDBDataStore.open(
+            relativePath = folder,
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+            dataModelsById = dataModelsForTests,
+        ).let { dataStore ->
+            try {
+                val scanResponse = dataStore.execute(
+                    Log.scanUpdateHistory(
+                        fromVersion = 0uL,
+                        limit = 10u
+                    )
+                )
+
+                assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
+                assertEquals(0, scanResponse.updates.size)
+            } finally {
+                dataStore.close()
+            }
+        }
+
+        deleteFolder(folder)
+    }
+
     @Test
     fun enablingUpdateHistoryIndexBackfillsLatestStateWithoutHistory() = runTest {
         val folder = createTestDBFolder("update-history-backfill-latest")

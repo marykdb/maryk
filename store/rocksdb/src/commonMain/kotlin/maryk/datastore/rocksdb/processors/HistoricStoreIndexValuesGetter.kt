@@ -2,9 +2,9 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.DefNotFoundException
+import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.initIntByVar
-import maryk.core.extensions.bytes.invert
-import maryk.core.extensions.bytes.writeBytes
+import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.exceptions.ValidationException
@@ -16,8 +16,10 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.createHistoricIndexKey
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
+import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.helpers.convertToValueOrNull
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.exceptions.ParseException
@@ -55,26 +57,16 @@ internal class HistoricStoreIndexValuesWalker(
         }
 
         getter.moveToKey(key, dbAccessor)
-        val indexableBytes = indexable.referenceStorageByteArray.bytes
-
-        val keyAndVersionSize = key.size + VERSION_BYTE_SIZE
         do {
             try {
-                var index = 0
-                val historicIndexReference = ByteArray(
-                    indexableBytes.size + indexable.calculateStorageByteLengthForIndex(
-                        getter, keyAndVersionSize
-                    )
-                ).also { bytes ->
-                    val writer = { it: Byte -> bytes[index++] = it }
-                    indexableBytes.forEach(writer)
-                    indexable.writeStorageBytesForIndex(getter, key, writer)
-                    val versionIndex = index
-                    getter.latestVersion?.writeBytes(writer)
-                        ?: throw StorageException("Latest overall version was not set")
-                    bytes.invert(versionIndex)
+                val valuesAndKeys = indexable.toStorageByteArraysForIndex(getter, key)
+                val version = getter.latestVersion
+                    ?: throw StorageException("Latest overall version was not set")
+                val reversedVersion = version.toReversedVersionBytes()
+
+                valuesAndKeys.forEach { valueAndKeyBytes ->
+                    handleIndexReference(createHistoricIndexKey(indexable.referenceStorageByteArray.bytes, valueAndKeyBytes, reversedVersion))
                 }
-                handleIndexReference(historicIndexReference)
             } catch (_: ValidationException) {
                 // skip historical values no longer valid for the current index
             } catch (_: ParseException) {
@@ -96,7 +88,109 @@ internal class HistoricStoreIndexValuesWalker(
         handleIndexReference: (ByteArray) -> Unit
     ) {
         val parentReference = indexable.parentReference ?: return
-        val indexableBytes = indexable.referenceStorageByteArray.bytes
+        val keyAndReference = key + parentReference.toStorageByteArray()
+        @Suppress("UNCHECKED_CAST")
+        val typedIndexable = indexable as MapAnyKeyReference<Any, Any, *>
+
+        dbAccessor.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
+            iterator.seek(keyAndReference.copyOf(keyAndReference.size + VERSION_BYTE_SIZE))
+            val pendingEvents = mutableListOf<Pair<ByteArray, Boolean>>()
+            var currentMapKey: Any? = null
+
+            fun flushPendingEvents(mapKey: Any?) {
+                if (mapKey == null || pendingEvents.isEmpty()) return
+
+                val indexValueLength = try {
+                    typedIndexable.calculateStorageByteLength(mapKey)
+                } catch (_: ValidationException) {
+                    pendingEvents.clear()
+                    return
+                } catch (_: ParseException) {
+                    pendingEvents.clear()
+                    return
+                } catch (_: StorageException) {
+                    pendingEvents.clear()
+                    return
+                } catch (e: DefNotFoundException) {
+                    throw e
+                }
+                val indexValueLengthSize = indexValueLength.calculateVarByteLength()
+                val valueAndKey = ByteArray(indexValueLength + indexValueLengthSize + key.size).also { bytes ->
+                    var writeIndex = 0
+                    typedIndexable.writeStorageBytes(mapKey) { bytes[writeIndex++] = it }
+                    indexValueLength.writeVarBytes { bytes[writeIndex++] = it }
+                    key.copyInto(bytes, writeIndex)
+                }
+
+                var present = false
+                for (i in pendingEvents.lastIndex downTo 0) {
+                    val (reversedVersion, isDelete) = pendingEvents[i]
+                    if (isDelete) {
+                        present = false
+                    } else if (!present) {
+                        handleIndexReference(createHistoricIndexKey(indexable.referenceStorageByteArray.bytes, valueAndKey, reversedVersion))
+                        present = true
+                    }
+                }
+                pendingEvents.clear()
+            }
+
+            while (iterator.isValid()) {
+                val qualifier = iterator.key()
+                if (!qualifier.matchesRangePart(0, keyAndReference)) {
+                    break
+                }
+                if (qualifier.size < keyAndReference.size + VERSION_BYTE_SIZE) {
+                    iterator.next()
+                    continue
+                }
+
+                val valueBytes = iterator.value()
+                val isDelete = valueBytes.size == 1 && valueBytes[0] == TypeIndicator.DeletedIndicator.byte
+
+                try {
+                    var readIndex = keyAndReference.size
+                    val mapKeyLength = initIntByVar { qualifier[readIndex++] }
+                    val mapKey = typedIndexable.readStorageBytes(mapKeyLength) { qualifier[readIndex++] }
+                    if (readIndex != qualifier.size - VERSION_BYTE_SIZE) {
+                        iterator.next()
+                        continue
+                    }
+
+                    if (currentMapKey != null && currentMapKey != mapKey) {
+                        flushPendingEvents(currentMapKey)
+                    }
+                    currentMapKey = mapKey
+
+                    val reversedVersion = qualifier.readReversedVersionBytes(
+                        offset = qualifier.size - VERSION_BYTE_SIZE
+                    ).toReversedVersionBytes()
+                    pendingEvents += reversedVersion to isDelete
+                } catch (_: ValidationException) {
+                    // skip historical values no longer valid for the current index
+                } catch (_: ParseException) {
+                    // skip malformed historical values
+                } catch (_: StorageException) {
+                    // skip obsolete historical values which cannot be reconstructed anymore
+                } catch (e: DefNotFoundException) {
+                    throw e
+                } catch (_: IndexOutOfBoundsException) {
+                    // skip malformed references
+                }
+                iterator.next()
+            }
+
+            flushPendingEvents(currentMapKey)
+        }
+    }
+
+    private fun walkSetAnyValueHistory(
+        key: ByteArray,
+        dbAccessor: DBAccessor,
+        indexable: SetAnyValueReference<*, *>,
+        handleIndexReference: (ByteArray) -> Unit
+    ) {
+        val parentReference = indexable.parentReference ?: return
         val keyAndReference = key + parentReference.toStorageByteArray()
 
         dbAccessor.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
@@ -106,12 +200,22 @@ internal class HistoricStoreIndexValuesWalker(
                 if (!qualifier.matchesRangePart(0, keyAndReference)) {
                     break
                 }
+                if (qualifier.size < keyAndReference.size + VERSION_BYTE_SIZE) {
+                    iterator.next()
+                    continue
+                }
+
+                val valueBytes = iterator.value()
+                if (valueBytes.size == 1 && valueBytes[0] == TypeIndicator.DeletedIndicator.byte) {
+                    iterator.next()
+                    continue
+                }
 
                 try {
                     var readIndex = keyAndReference.size
-                    val mapKeyLength = initIntByVar { qualifier[readIndex++] }
+                    val setItemLength = initIntByVar { qualifier[readIndex++] }
                     @Suppress("UNCHECKED_CAST")
-                    val mapKey = (indexable as MapAnyKeyReference<Any, Any, *>).readStorageBytes(mapKeyLength) { qualifier[readIndex++] }
+                    val setItem = (indexable as SetAnyValueReference<Any, *>).readStorageBytes(setItemLength) { qualifier[readIndex++] }
                     if (readIndex != qualifier.size - VERSION_BYTE_SIZE) {
                         iterator.next()
                         continue
@@ -120,20 +224,16 @@ internal class HistoricStoreIndexValuesWalker(
                     val reversedVersion = qualifier.readReversedVersionBytes(
                         offset = qualifier.size - VERSION_BYTE_SIZE
                     ).toReversedVersionBytes()
-                    val indexValueLength = indexable.calculateStorageByteLength(mapKey)
-                    val historicIndexReference = ByteArray(
-                        indexableBytes.size + indexValueLength + key.size + VERSION_BYTE_SIZE
-                    )
+                    val indexValueLength = indexable.calculateStorageByteLength(setItem)
+                    val indexValueLengthSize = indexValueLength.calculateVarByteLength()
+                    val valueAndKey = ByteArray(indexValueLength + indexValueLengthSize + key.size).also { valueBytes ->
+                        var writeIndex = 0
+                        indexable.writeStorageBytes(setItem) { valueBytes[writeIndex++] = it }
+                        indexValueLength.writeVarBytes { valueBytes[writeIndex++] = it }
+                        key.copyInto(valueBytes, writeIndex)
+                    }
 
-                    var writeIndex = 0
-                    indexableBytes.copyInto(historicIndexReference, writeIndex)
-                    writeIndex += indexableBytes.size
-                    indexable.writeStorageBytes(mapKey) { historicIndexReference[writeIndex++] = it }
-                    key.copyInto(historicIndexReference, writeIndex)
-                    writeIndex += key.size
-                    reversedVersion.copyInto(historicIndexReference, writeIndex)
-
-                    handleIndexReference(historicIndexReference)
+                    handleIndexReference(createHistoricIndexKey(indexable.referenceStorageByteArray.bytes, valueAndKey, reversedVersion))
                 } catch (_: ValidationException) {
                     // skip historical values no longer valid for the current index
                 } catch (_: ParseException) {
@@ -152,67 +252,6 @@ internal class HistoricStoreIndexValuesWalker(
 
     override fun close() {
         getter.close()
-    }
-
-    private fun walkSetAnyValueHistory(
-        key: ByteArray,
-        dbAccessor: DBAccessor,
-        indexable: SetAnyValueReference<*, *>,
-        handleIndexReference: (ByteArray) -> Unit
-    ) {
-        val parentReference = indexable.parentReference ?: return
-        val indexableBytes = indexable.referenceStorageByteArray.bytes
-        val keyAndReference = key + parentReference.toStorageByteArray()
-
-        dbAccessor.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
-            iterator.seek(keyAndReference.copyOf(keyAndReference.size + VERSION_BYTE_SIZE))
-            while (iterator.isValid()) {
-                val qualifier = iterator.key()
-                if (!qualifier.matchesRangePart(0, keyAndReference)) {
-                    break
-                }
-
-                try {
-                    var readIndex = keyAndReference.size
-                    val setItemLength = initIntByVar { qualifier[readIndex++] }
-                    @Suppress("UNCHECKED_CAST")
-                    val setItem = (indexable as SetAnyValueReference<Any, *>).readStorageBytes(setItemLength) { qualifier[readIndex++] }
-                    if (readIndex != qualifier.size - VERSION_BYTE_SIZE) {
-                        iterator.next()
-                        continue
-                    }
-
-                    val reversedVersion = qualifier.readReversedVersionBytes(
-                        offset = qualifier.size - VERSION_BYTE_SIZE
-                    ).toReversedVersionBytes()
-                    val indexValueLength = indexable.calculateStorageByteLength(setItem)
-                    val historicIndexReference = ByteArray(
-                        indexableBytes.size + indexValueLength + key.size + VERSION_BYTE_SIZE
-                    )
-
-                    var writeIndex = 0
-                    indexableBytes.copyInto(historicIndexReference, writeIndex)
-                    writeIndex += indexableBytes.size
-                    indexable.writeStorageBytes(setItem) { historicIndexReference[writeIndex++] = it }
-                    key.copyInto(historicIndexReference, writeIndex)
-                    writeIndex += key.size
-                    reversedVersion.copyInto(historicIndexReference, writeIndex)
-
-                    handleIndexReference(historicIndexReference)
-                } catch (_: ValidationException) {
-                    // skip historical values no longer valid for the current index
-                } catch (_: ParseException) {
-                    // skip malformed historical values
-                } catch (_: StorageException) {
-                    // skip obsolete historical values which cannot be reconstructed anymore
-                } catch (e: DefNotFoundException) {
-                    throw e
-                } catch (_: IndexOutOfBoundsException) {
-                    // skip malformed references
-                }
-                iterator.next()
-            }
-        }
     }
 }
 
@@ -283,7 +322,6 @@ private class HistoricStoreIndexValuesGetter(
             )
         }
         val iterator = iterableReference.iterator
-        val reference = iterableReference.referenceAsBytes
         val keyAndReference = key + iterableReference.referenceAsBytes
 
         // Only seek the first time
@@ -294,40 +332,39 @@ private class HistoricStoreIndexValuesGetter(
 
         // Go to next version if it is the version to read past or not yet set
         if (!iterableReference.isPastBeginning && (iterableReference.lastVersion == null || versionToSkip == iterableReference.lastVersion)) {
-            if (iterator.isValid()) {
+            var foundNextValue = false
+            while (iterator.isValid()) {
                 val qualifier = iterator.key()
 
-                if (qualifier.matchesRangePart(0, keyAndReference)) {
-                    val valueBytes = iterator.value()
-                    val historicReference =
-                        ByteArray(reference.size + valueBytes.size + key.size + VERSION_BYTE_SIZE)
-                    reference.copyInto(historicReference)
-                    valueBytes.copyInto(historicReference, reference.size)
-                    key.copyInto(historicReference, valueBytes.size + reference.size)
-                    qualifier.copyInto(
-                        historicReference,
-                        valueBytes.size + reference.size + key.size,
-                        qualifier.size - VERSION_BYTE_SIZE
-                    )
-
-                    iterableReference.lastValue = valueBytes
-
-                    val lastVersion = qualifier.readReversedVersionBytes(
-                        offset = qualifier.size - VERSION_BYTE_SIZE // start at version
-                    )
-
-                    iterableReference.lastVersion = lastVersion
-                    latestVersion = latestVersion?.let {
-                        maxOf(lastVersion, it)
-                    } ?: lastVersion
-
-                    // already go to next value for next read
-                    iterator.next()
-                } else {
-                    // Past beginning of the value history
+                if (!qualifier.matchesRangePart(0, keyAndReference)) {
                     iterableReference.isPastBeginning = true
+                    break
                 }
-            } else {
+
+                if (qualifier.size < keyAndReference.size + VERSION_BYTE_SIZE) {
+                    iterator.next()
+                    continue
+                }
+
+                val valueBytes = iterator.value().copyOf()
+                iterableReference.lastValue = valueBytes
+
+                val lastVersion = qualifier.readReversedVersionBytes(
+                    offset = qualifier.size - VERSION_BYTE_SIZE // start at version
+                )
+
+                iterableReference.lastVersion = lastVersion
+                latestVersion = latestVersion?.let {
+                    maxOf(lastVersion, it)
+                } ?: lastVersion
+
+                // already go to next value for next read
+                iterator.next()
+                foundNextValue = true
+                break
+            }
+
+            if (!foundNextValue && !iterableReference.isPastBeginning) {
                 iterableReference.isPastBeginning = true
             }
         } else {

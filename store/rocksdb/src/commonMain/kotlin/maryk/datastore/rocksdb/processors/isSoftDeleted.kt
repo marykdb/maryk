@@ -2,8 +2,10 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
 
@@ -15,7 +17,8 @@ internal fun isSoftDeleted(
     toVersion: ULong?,
     key: ByteArray,
     keyOffset: Int = 0,
-    keyLength: Int = key.size
+    keyLength: Int = key.size,
+    historicalTableReader: HistoricalTableReader? = null
 ): Boolean {
     val softDeleteQualifier = ByteArray(keyLength + 1)
     key.copyInto(softDeleteQualifier, 0, keyOffset, keyOffset + keyLength)
@@ -25,18 +28,19 @@ internal fun isSoftDeleted(
         columnFamilies,
         readOptions,
         toVersion,
-        softDeleteQualifier
+        softDeleteQualifier,
+        historicalTableReader
     ) { b, o, l ->
-        if (l <= 0) return@getValue true
+        if (l != 1) return@getValue false
         b[l + o - 1] == TRUE
     }
     if (historicValue != null || toVersion == null) {
         return historicValue == true
     }
 
-    val valueBytes = maryk.lib.recyclableByteArray
+    val valueBytes = recyclableByteArray
     val length = dbAccessor.get(columnFamilies.table, readOptions, softDeleteQualifier, valueBytes)
-    if (length == rocksDBNotFound || length <= 0) return false
+    if (length == rocksDBNotFound || length != ULong.SIZE_BYTES + 1) return false
 
     val version = valueBytes.readVersionBytes()
     val deleted = valueBytes[length - 1] == TRUE

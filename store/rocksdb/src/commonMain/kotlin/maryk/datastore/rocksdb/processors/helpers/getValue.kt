@@ -19,6 +19,7 @@ internal fun <T: Any> DBAccessor.getValue(
     readOptions: ReadOptions,
     toVersion: ULong?,
     keyAndReference: ByteArray,
+    historicalTableReader: HistoricalTableReader? = null,
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
     return if (toVersion == null) {
@@ -45,36 +46,18 @@ internal fun <T: Any> DBAccessor.getValue(
             }
         }
     } else {
-        val versionBytes = toVersion.toReversedVersionBytes()
-
         if (columnFamilies !is HistoricTableColumnFamilies) {
             throw RequestException("Cannot use toVersion on a non historic table")
         }
 
-        this.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
-            val toSeek = keyAndReference + versionBytes
-            iterator.seek(toSeek)
-            while (iterator.isValid()) {
-                val key = iterator.key()
-
-                // Only continue if still same keyAndReference
-                if (key.matchesRangePart(0, keyAndReference)) {
-                    val versionOffset = key.size - versionBytes.size
-                    if (versionOffset != keyAndReference.size) {
-                        iterator.next()
-                        continue
-                    }
-                    // Only match if version is valid, else read next version
-                    if (versionBytes.compareToRange(key, versionOffset) <= 0) {
-                        val result = iterator.value()
-                        val decrypted = this.dataStore.decryptValueIfNeeded(result)
-                        return handleResult(decrypted, 0, decrypted.size)
-                    }
-                } else break
-
-                iterator.next()
+        historicalTableReader?.getValue(keyAndReference) { result, offset, length ->
+            val decrypted = this.dataStore.decryptValueIfNeeded(result)
+            handleResult(decrypted, offset, length)
+        } ?: HistoricalTableReader(this, columnFamilies, readOptions, toVersion).use { reader ->
+            reader.getValue(keyAndReference) { result, offset, length ->
+                val decrypted = this.dataStore.decryptValueIfNeeded(result)
+                handleResult(decrypted, offset, length)
             }
         }
-        null
     }
 }

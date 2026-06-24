@@ -2,6 +2,7 @@ package maryk.datastore.rocksdb.processors.helpers
 
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.DBIterator
+import maryk.lib.extensions.compare.matchesRangePart
 
 /** Find non historic qualifiers on [iterator] for [key] */
 internal fun DBIterator.nonHistoricQualifierRetriever(
@@ -12,7 +13,11 @@ internal fun DBIterator.nonHistoricQualifierRetriever(
         false
     } else {
         val qualifier: ByteArray = key()
-        resultHandler({ qualifier[key.bytes.size + it] }, qualifier.size - key.bytes.size)
-        true
+        if (!qualifier.matchesRangePart(0, key.bytes)) {
+            false
+        } else {
+            resultHandler({ qualifier[key.bytes.size + it] }, qualifier.size - key.bytes.size)
+            true
+        }
     }
 }

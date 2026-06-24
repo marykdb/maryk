@@ -13,8 +13,10 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.deleteCurrentUniqueIndexEntryForKeyByScan
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
 import maryk.datastore.rocksdb.processors.helpers.requireVersionedValueSize
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
@@ -42,8 +44,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
 
     val exists = if (mayExist) {
-        // Really check if item exists
-        db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
+        val valueLength = db.get(columnFamilies.keys, key.bytes, recyclableByteArray)
+        recyclableByteArray.readVersionBytesIfExact(valueLength) != null
     } else false
 
     when {
@@ -86,7 +88,19 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                             0,
                             uniqueValue.size,
                             versionBytes,
-                            hardDelete
+                            hardDelete,
+                            key.bytes
+                        )
+                    }
+
+                    if (hardDelete) {
+                        deleteCurrentUniqueIndexEntryForKeyByScan(
+                            transaction,
+                            columnFamilies,
+                            defaultReadOptions,
+                            reference,
+                            key.bytes,
+                            versionBytes
                         )
                     }
 
@@ -118,7 +132,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                                 indexReference,
                                 valueAndKeyBytes,
                                 versionBytes,
-                                hardDelete
+                                hardDelete,
+                                historicValue = if (hardDelete) FALSE_ARRAY else TRUE_ARRAY
                             )
                         }
 

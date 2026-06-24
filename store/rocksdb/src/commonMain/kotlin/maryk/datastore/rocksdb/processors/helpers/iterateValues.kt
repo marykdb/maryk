@@ -18,6 +18,7 @@ internal fun <R: Any> DBAccessor.iterateValues(
     toVersion: ULong?,
     keyLength: Int,
     reference: ByteArray,
+    historicalTableReader: HistoricalTableReader? = null,
     handleValue: (ByteArray, Int, Int, ByteArray, Int, Int) -> R?
 ): R? {
     if (toVersion == null) {
@@ -43,29 +44,14 @@ internal fun <R: Any> DBAccessor.iterateValues(
         if (columnFamilies !is HistoricTableColumnFamilies) {
             throw RequestException("Cannot use toVersion on a non historic table")
         }
-        this.getIterator(readOptions, columnFamilies.historic.table).use { iterator ->
-            val toVersionBytes = toVersion.toReversedVersionBytes()
-            val toSeek = reference + toVersionBytes
-            iterator.seek(toSeek)
-            while (iterator.isValid()) {
-                val referenceBytes = iterator.key()
-                if (!referenceBytes.matchesRangePart(0, reference)) break
-                val versionOffset = referenceBytes.size - toVersionBytes.size
-                if (versionOffset < reference.size) {
-                    iterator.next()
-                    continue
-                }
-                if (toVersionBytes.compareToRange(referenceBytes, versionOffset) <= 0) {
-                    val value = iterator.value()
-                    val decrypted = this.dataStore.decryptValueIfNeeded(value)
-                    handleValue(
-                        referenceBytes, keyLength, versionOffset,
-                        decrypted, 0, decrypted.size
-                    )?.let { return it }
-                }
-                iterator.next()
+        return historicalTableReader?.iterateValues(keyLength, reference) { referenceBytes, refOffset, refLength, value, valOffset, valLength ->
+            val decrypted = this.dataStore.decryptValueIfNeeded(value)
+            handleValue(referenceBytes, refOffset, refLength, decrypted, valOffset, valLength)
+        } ?: HistoricalTableReader(this, columnFamilies, readOptions, toVersion).use { reader ->
+            reader.iterateValues(keyLength, reference) { referenceBytes, refOffset, refLength, value, valOffset, valLength ->
+                val decrypted = this.dataStore.decryptValueIfNeeded(value)
+                handleValue(referenceBytes, refOffset, refLength, decrypted, valOffset, valLength)
             }
-            return null
         }
     }
 }

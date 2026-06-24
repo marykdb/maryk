@@ -26,6 +26,7 @@ import maryk.core.values.Values
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.setCreatedVersion
 import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
@@ -108,7 +109,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                             checksBeforeWrite.add {
                                 val uniqueCount =
                                     db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
-                                if (uniqueCount != rocksDBNotFound) {
+                                if (uniqueCount == VERSION_BYTE_SIZE + key.size) {
                                     throw UniqueException(
                                         reference,
                                         Key<DM>(

@@ -5,7 +5,6 @@ import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.FALSE_ARRAY
-import maryk.lib.bytes.combineToByteArray
 
 /** Delete the [indexReference] and [valueAndKey] for [version] */
 internal fun deleteIndexValue(
@@ -14,20 +13,21 @@ internal fun deleteIndexValue(
     indexReference: ByteArray,
     valueAndKey: ByteArray,
     version: ByteArray,
-    hardDelete: Boolean = false
+    hardDelete: Boolean = false,
+    historicValue: ByteArray = FALSE_ARRAY
 ) {
-    transaction.delete(columnFamilies.index, indexReference + valueAndKey)
+    transaction.delete(columnFamilies.index, createIndexKey(indexReference, valueAndKey))
 
     // Only delete with non hard deletes since with hard deletes all values are deleted
     if (!hardDelete && columnFamilies is HistoricTableColumnFamilies) {
-        val historicReference = combineToByteArray(indexReference, valueAndKey, version)
+        val historicReference = createHistoricIndexKey(indexReference, valueAndKey, version)
         // Invert so the time is sorted in reverse order with newest on top
         historicReference.invert(historicReference.size - version.size)
 
         transaction.put(
             columnFamilies.historic.index,
             historicReference,
-            FALSE_ARRAY
+            historicValue
         )
     }
 }

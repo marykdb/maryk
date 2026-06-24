@@ -9,7 +9,9 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.rocksdb.DBAccessor
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
@@ -29,11 +31,12 @@ internal class DBAccessorStoreValuesGetter(
     val columnFamilies: TableColumnFamilies,
     val readOptions: ReadOptions,
     private val captureVersion: Boolean = false
-) : IsValuesGetter {
+) : IsValuesGetter, AutoCloseable {
     private val cache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()
 
     private var toVersion: ULong? = ULong.MAX_VALUE
     internal var lastVersion: ULong? = null
+    private var historicalReader: HistoricalTableReader? = null
 
     lateinit var dbAccessor: DBAccessor
     lateinit var key: ByteArray
@@ -45,6 +48,12 @@ internal class DBAccessorStoreValuesGetter(
         this.toVersion = toVersion
         this.lastVersion = null
         cache.clear()
+        historicalReader?.close()
+        historicalReader = toVersion?.let {
+            (columnFamilies as? HistoricTableColumnFamilies)?.let { historicColumnFamilies ->
+                HistoricalTableReader(dbAccessor, historicColumnFamilies, readOptions, toVersion)
+            }
+        }
     }
 
     /** Get latest value for property of [propertyReference] */
@@ -68,7 +77,8 @@ internal class DBAccessorStoreValuesGetter(
                     columnFamilies,
                     readOptions,
                     this.toVersion,
-                    key + propertyReference.toStorageByteArray()
+                    key + propertyReference.toStorageByteArray(),
+                    historicalReader
                 ) { valueAsBytes, offset, length ->
                     (valueAsBytes.convertToValue(propertyReference, offset, length) as T?)?.also {
                         if (captureVersion) {
@@ -84,6 +94,11 @@ internal class DBAccessorStoreValuesGetter(
 
         cache[propertyReference] = value
         return value
+    }
+
+    override fun close() {
+        historicalReader?.close()
+        historicalReader = null
     }
 
     private fun readMapValue(

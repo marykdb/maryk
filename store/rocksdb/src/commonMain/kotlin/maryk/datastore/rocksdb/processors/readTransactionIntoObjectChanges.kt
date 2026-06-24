@@ -27,6 +27,7 @@ import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.readValue
 
 /** Process values for [key] from transaction to a DataObjectWithChanges object */
@@ -60,12 +61,17 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                 val value = when (storageType) {
                     ObjectDelete -> {
                         val valueBytes = iterator.value()
-                        currentVersion = valueBytes.readVersionBytes()
+                        if (valueBytes.size != VERSION_BYTE_SIZE + 1) {
+                            currentVersion = 0uL
+                            null
+                        } else {
+                            currentVersion = valueBytes.readVersionBytes()
 
-                        cachedRead(reference, currentVersion) {
-                            if (currentVersion >= fromVersion && iterator.key()[key.size] == 0.toByte()) {
-                                valueBytes.last() == TRUE
-                            } else null
+                            cachedRead(reference, currentVersion) {
+                                if (currentVersion >= fromVersion && iterator.key()[key.size] == 0.toByte()) {
+                                    valueBytes.last() == TRUE
+                                } else null
+                            }
                         }
                     }
                     Value -> {
@@ -156,11 +162,14 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                             ObjectDelete -> {
                                 if (iterator.key().last() == 0.toByte()) {
                                     val value = iterator.value()
-                                    value[0] == TRUE
+                                    if (value.isNotEmpty()) value[0] == TRUE else true
                                 } else null
                             }
                             Value -> {
                                 val valueBytes = iterator.value()
+                                if (valueBytes.isHistoricDeleteMarker()) {
+                                    return@cachedRead null
+                                }
                                 index = 0
                                 val reader = { valueBytes[index++] }
 
@@ -172,16 +181,25 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                             }
                             ListSize -> {
                                 val valueBytes = iterator.value()
+                                if (valueBytes.isHistoricDeleteMarker()) {
+                                    return@cachedRead null
+                                }
                                 index = 0
                                 initIntByVar { valueBytes[index++] }
                             }
                             SetSize -> {
                                 val valueBytes = iterator.value()
+                                if (valueBytes.isHistoricDeleteMarker()) {
+                                    return@cachedRead null
+                                }
                                 index = 0
                                 initIntByVar { valueBytes[index++] }
                             }
                             MapSize -> {
                                 val valueBytes = iterator.value()
+                                if (valueBytes.isHistoricDeleteMarker()) {
+                                    return@cachedRead null
+                                }
                                 index = 0
                                 initIntByVar { valueBytes[index++] }
                             }
@@ -205,3 +223,6 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
         changes = changes
     )
 }
+
+private fun ByteArray.isHistoricDeleteMarker() =
+    this.size == 1 && this[0] == TypeIndicator.DeletedIndicator.byte

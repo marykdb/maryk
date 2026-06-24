@@ -4,10 +4,13 @@ import maryk.core.exceptions.StorageException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.key
+import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
+import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
+import maryk.core.processors.datastore.matchers.IndexPartialToMatch
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.IndexValueMatch
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
+import maryk.core.processors.datastore.scanRange.ScanRange
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction
@@ -21,15 +24,26 @@ import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
+import maryk.datastore.rocksdb.processors.helpers.createIndexKey
+import maryk.datastore.rocksdb.processors.helpers.createIndexKeyPrefix
+import maryk.datastore.rocksdb.processors.helpers.createIndexRangeEnd
+import maryk.datastore.rocksdb.processors.helpers.createIndexKeyWithPrefix
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
+import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.ScanType.IndexScan
+import maryk.datastore.shared.isSkippableDataError
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.lib.bytes.combineToByteArray
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareToRange
+import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRangePart
-import maryk.lib.extensions.compare.nextByteInSameLength
+import maryk.lib.exceptions.ParseException
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ReadOptions
 
@@ -40,20 +54,65 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
     includeSortingKey: Boolean,
+    softDeleteCache: RequestKeySoftDeleteCache? = null,
+    historicalReader: HistoricalTableReader? = null,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
+    val indexKeyPrefix = createIndexKeyPrefix(indexReference)
+    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
     val startKey = scanRequest.startKey?.let { startKey ->
-        val startValuesGetter = DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions)
-        startValuesGetter.moveToKey(startKey.bytes, dbAccessor, scanRequest.toVersion)
-        indexScan.index.toStorageByteArrayForIndex(startValuesGetter, startKey.bytes)
+        DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions).use { startValuesGetter ->
+            startValuesGetter.moveToKey(startKey.bytes, dbAccessor, scanRequest.toVersion)
+            try {
+                selectIndexKeyForScan(
+                    valuesGetter = startValuesGetter,
+                    index = indexScan.index,
+                    direction = indexScan.direction,
+                    keyBytes = startKey.bytes,
+                    indexScanRange = indexScanRange
+                )
+            } catch (error: Throwable) {
+                error.rethrowIfFatal()
+                if (!error.isSkippableDataError()) {
+                    throw error
+                }
+                scanRequest.toVersion?.let { toVersion ->
+                    findHistoricIndexEntryForKey(
+                        dbAccessor = dbAccessor,
+                        columnFamilies = columnFamilies as? HistoricTableColumnFamilies ?: return@let null,
+                        readOptions = defaultReadOptions,
+                        indexReference = indexReference,
+                        key = startKey.bytes,
+                        toVersion = toVersion,
+                        direction = indexScan.direction,
+                        includeSoftDeleted = !scanRequest.filterSoftDeleted
+                    )
+                } ?: findCurrentIndexEntryForKey(
+                    dbAccessor = dbAccessor,
+                    columnFamily = columnFamilies.index,
+                    readOptions = defaultReadOptions,
+                    indexReference = indexReference,
+                    key = startKey.bytes,
+                    direction = indexScan.direction
+                )
+            }
+        }
     }
 
-    var overallStartKey: ByteArray?
-    var overallStopKey: ByteArray?
-
-    val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
+    var overallStartKey: ByteArray? = null
+    var overallStopKey: ByteArray? = null
+    overallStartKey = when (indexScan.direction) {
+        ASC -> startKey?.let {
+            indexScanRange.ranges.first().getAscendingStartKey(it, keyScanRange.includeStart)
+        } ?: indexScanRange.ranges.first().start
+        DESC -> indexScanRange.ranges.first().getDescendingStartKey(startKey, keyScanRange.includeStart)
+    }
+    overallStopKey = when (indexScan.direction) {
+        ASC -> indexScanRange.ranges.last().getDescendingStartKey()
+        DESC -> indexScanRange.ranges.last().getAscendingStartKey()
+    }
 
     val indexColumnHandle = if(scanRequest.toVersion == null) {
         columnFamilies.index
@@ -63,20 +122,193 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     }
 
     val keySize = scanRequest.dataModel.Meta.keyByteSize
-    val valueOffset = indexReference.size
+    val indexPartCount = indexScan.index.indexPartCount
+    val valueOffset = indexKeyPrefix.size
     val versionSize = if(scanRequest.toVersion != null) VERSION_BYTE_SIZE else 0
+    val indexReferenceUpperBound = createIndexRangeEnd(indexReference)
     var currentSize = 0u
+    val seenKeys = mutableSetOf<ByteArrayKey>()
+
+    if (scanRequest.toVersion != null) {
+        val toVersion = scanRequest.toVersion ?: throw StorageException("Historic scan requires toVersion")
+        data class HistoricIndexRecord(val sort: ByteArray, val keyBytes: ByteArray, val createdVersion: ULong)
+
+        val latestByKey = hashMapOf<ByteArrayKey, HistoricIndexRecord>()
+        val filterCache = mutableMapOf<ByteArrayKey, Pair<ULong, Boolean>>()
+
+        dbAccessor.getIterator(defaultReadOptions, indexColumnHandle).use { iterator ->
+            iterator.seek(indexKeyPrefix)
+
+            while (iterator.isValid()) {
+                val indexRecord = iterator.key()
+                if (!isKeyInIndexRange(indexRecord, indexKeyPrefix, indexReferenceUpperBound)) {
+                    break
+                }
+
+                val qualifierSize = indexRecord.size - VERSION_BYTE_SIZE
+                if (qualifierSize <= valueOffset + keySize) {
+                    iterator.next()
+                    continue
+                }
+
+                val valueSize = findIndexValueSize(indexRecord, valueOffset, qualifierSize, keySize, indexPartCount)
+                if (valueSize < 0) {
+                    iterator.next()
+                    continue
+                }
+
+                val keyOffset = qualifierSize - keySize
+                if (
+                    indexScanRange.ranges.none { range ->
+                        range.matchesIndexValue(indexScanRange, indexRecord, valueSize, valueOffset)
+                    } ||
+                    !indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize, qualifierSize)
+                ) {
+                    skipCurrentHistoricIndexQualifier(iterator, indexRecord, qualifierSize)
+                    continue
+                }
+
+                var resolvedVisibleState: ByteArray? = null
+
+                while (
+                    iterator.isValid() &&
+                    iterator.key().size >= qualifierSize &&
+                    iterator.key().matchesRangePart(0, indexRecord, sourceLength = qualifierSize, offset = 0, length = qualifierSize)
+                ) {
+                    val candidateRecord = iterator.key()
+                    val candidateVersion = candidateRecord.readReversedVersionBytes(qualifierSize)
+                    if (candidateVersion > toVersion) {
+                        iterator.next()
+                        continue
+                    }
+
+                    resolvedVisibleState = iterator.value()
+                    break
+                }
+
+                if (resolvedVisibleState != null && isHistoricIndexVisible(resolvedVisibleState, !scanRequest.filterSoftDeleted)) {
+                    if (
+                        !hasAdditionalMatches(
+                            dbAccessor,
+                            indexColumnHandle,
+                            defaultReadOptions,
+                            keySize,
+                            indexPartCount,
+                            indexKeyPrefix,
+                            indexScanRange.valueMatches,
+                            indexRecord,
+                            keyOffset,
+                            keySize,
+                            scanRequest.toVersion,
+                            !scanRequest.filterSoftDeleted
+                        )
+                    ) {
+                        skipCurrentHistoricIndexQualifier(iterator, indexRecord, qualifierSize)
+                        continue
+                    }
+
+                    val keyBytes = createKeyBytes(indexRecord, keyOffset, keySize)
+                    val keyRef = ByteArrayKey(keyBytes)
+                    val (createdVersion, shouldFilter) = filterCache.getOrPut(keyRef) {
+                        val createdVersion = softDeleteCache?.getCreationVersion(keyBytes)
+                            ?: readCreationVersion(
+                                dbAccessor,
+                                columnFamilies,
+                                defaultReadOptions,
+                                keyBytes,
+                                scanRequest.toVersion
+                            )
+                            ?: return@getOrPut 0uL to true
+
+                        createdVersion to scanRequest.shouldBeFiltered(
+                            dbAccessor,
+                            columnFamilies,
+                            defaultReadOptions,
+                            keyBytes,
+                            0,
+                            keySize,
+                            createdVersion,
+                            scanRequest.toVersion,
+                            indexScan.index,
+                            historicalReader = historicalReader,
+                            softDeleteCache = softDeleteCache
+                        )
+                    }
+
+                    if (!shouldFilter) {
+                        val record = HistoricIndexRecord(
+                            sort = indexRecord.copyOfRange(valueOffset, qualifierSize),
+                            keyBytes = keyBytes,
+                            createdVersion = createdVersion
+                        )
+                        val previous = latestByKey[keyRef]
+                        if (
+                            previous == null ||
+                            when (indexScan.direction) {
+                                ASC -> record.sort compareTo previous.sort < 0
+                                DESC -> record.sort compareTo previous.sort > 0
+                            }
+                        ) {
+                            latestByKey[keyRef] = record
+                        }
+                    }
+                }
+
+                skipCurrentHistoricIndexQualifier(iterator, indexRecord, qualifierSize)
+            }
+        }
+
+        val sortedResults = latestByKey.values.sortedWith { a, b -> a.sort compareTo b.sort }
+
+        val orderedResults = when (indexScan.direction) {
+            ASC -> sortedResults
+            DESC -> sortedResults.asReversed()
+        }
+
+        for (result in orderedResults) {
+            if (currentSize == scanRequest.limit) {
+                break
+            }
+            if (startKey != null) {
+                val comparison = result.sort.compareToRange(startKey, 0)
+                if (
+                    (indexScan.direction == ASC && (comparison < 0 || (!keyScanRange.includeStart && comparison == 0))) ||
+                    (indexScan.direction == DESC && (comparison > 0 || (!keyScanRange.includeStart && comparison == 0)))
+                ) {
+                    continue
+                }
+            }
+
+            processStoreValue(
+                Key<DM>(result.keyBytes),
+                result.createdVersion,
+                if (includeSortingKey) result.sort else null
+            )
+            currentSize++
+        }
+
+        return FetchByIndexScan(
+            index = indexScan.index.referenceStorageByteArray.bytes,
+            direction = indexScan.direction,
+            startKey = overallStartKey,
+            stopKey = overallStopKey,
+        )
+    }
 
     dbAccessor.getIterator(defaultReadOptions, indexColumnHandle).use { iterator ->
         when (indexScan.direction) {
             ASC -> {
-                overallStartKey = indexScanRange.ranges.first().getAscendingStartKey(startKey, keyScanRange.includeStart)
+                overallStartKey = startKey?.let {
+                    indexScanRange.ranges.first().getAscendingStartKey(it, keyScanRange.includeStart)
+                } ?: indexScanRange.ranges.first().start
                 overallStopKey = indexScanRange.ranges.last().getDescendingStartKey()
 
                 for (indexRange in indexScanRange.ranges) {
-                    val indexStartKey = indexRange.getAscendingStartKey(startKey, keyScanRange.includeStart)
+                    val indexStartKey = startKey?.let {
+                        indexRange.getAscendingStartKey(it, keyScanRange.includeStart)
+                    } ?: indexRange.start
 
-                    iterator.seek(indexReference + indexStartKey)
+                    iterator.seek(indexKeyPrefix + indexStartKey)
 
                     currentSize = checkAndProcess(
                         dbAccessor,
@@ -86,6 +318,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                         indexScan,
                         indexColumnHandle,
                         keySize,
+                        indexKeyPrefix,
+                        indexPartCount,
                         scanRequest,
                         indexScanRange,
                         versionSize,
@@ -94,10 +328,14 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                         currentSize,
                         processStoreValue,
                         { indexRecord, valueSize ->
-                            !indexRecord.matchesRangePart(0, indexReference) ||
-                            indexRange.keyOutOfRange(indexRecord, valueOffset, valueSize)
+                            val rangeLength = indexRangeLength(indexScanRange, indexRange, valueSize)
+                            !isKeyInIndexRange(indexRecord, indexKeyPrefix, indexReferenceUpperBound) ||
+                            indexRange.keyOutOfRange(indexRecord, valueOffset, rangeLength)
                         },
-                        createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
+                        createVersionChecker(scanRequest.toVersion, !scanRequest.filterSoftDeleted, iterator, indexScan.direction),
+                        seenKeys,
+                        historicalReader,
+                        softDeleteCache,
                         createGotoNext(scanRequest, iterator, iterator::next)
                     )
                     if (currentSize == scanRequest.limit) break
@@ -114,14 +352,14 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                     }
 
                     if (indexStartKey == null || indexStartKey.isEmpty()) {
-                        iterator.seek(indexReference.nextByteInSameLength())
+                        iterator.seek(indexReferenceUpperBound)
                         if (iterator.isValid()) {
                             iterator.prev()
                         } else {
                             iterator.seekToLast()
                         }
                     } else {
-                        iterator.seekForPrev(indexReference + indexStartKey)
+                        iterator.seekForPrev(indexKeyPrefix + indexStartKey)
                     }
 
                     currentSize = checkAndProcess(
@@ -132,6 +370,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                         indexScan,
                         indexColumnHandle,
                         keySize,
+                        indexKeyPrefix,
+                        indexPartCount,
                         scanRequest,
                         indexScanRange,
                         versionSize,
@@ -140,10 +380,14 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                         currentSize,
                         processStoreValue,
                         { indexRecord, valueSize ->
-                            !indexRecord.matchesRangePart(0, indexReference) ||
-                            indexRange.keyBeforeStart(indexRecord, valueOffset, valueSize)
+                            val rangeLength = indexRangeLength(indexScanRange, indexRange, valueSize)
+                            !isKeyInIndexRange(indexRecord, indexKeyPrefix, indexReferenceUpperBound) ||
+                            indexRange.keyBeforeStart(indexRecord, valueOffset, rangeLength)
                         },
-                        createVersionChecker(scanRequest.toVersion, iterator, indexScan.direction),
+                        createVersionChecker(scanRequest.toVersion, !scanRequest.filterSoftDeleted, iterator, indexScan.direction),
+                        seenKeys,
+                        historicalReader,
+                        softDeleteCache,
                         createGotoNext(scanRequest, iterator, iterator::prev)
                     )
                     if (currentSize == scanRequest.limit) break
@@ -160,10 +404,161 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     )
 }
 
+private fun selectIndexKeyForScan(
+    valuesGetter: DBAccessorStoreValuesGetter,
+    index: maryk.core.properties.definitions.index.IsIndexable,
+    direction: Direction,
+    keyBytes: ByteArray,
+    indexScanRange: IndexableScanRanges
+): ByteArray? {
+    val allIndexValues = index.toStorageByteArraysForIndex(valuesGetter, keyBytes)
+    return allIndexValues
+        .filter { indexValue ->
+            resolveIndexRangeValueSize(indexValue, index.indexPartCount, indexScanRange.keyScanRange.keySize)?.let { valueSize ->
+                indexScanRange.matchesPartials(indexValue, length = valueSize) &&
+                    indexScanRange.ranges.any { range ->
+                        range.matchesIndexValue(indexScanRange, indexValue, valueSize)
+                    }
+            } == true
+        }
+        .let { candidateIndexValues ->
+            when (direction) {
+                ASC -> candidateIndexValues.minWithOrNull { a, b -> a compareTo b }
+                DESC -> candidateIndexValues.maxWithOrNull { a, b -> a compareTo b }
+            }
+        }
+}
+
+private fun skipCurrentHistoricIndexQualifier(
+    iterator: DBIterator,
+    indexRecord: ByteArray,
+    qualifierSize: Int
+) {
+    while (
+        iterator.isValid() &&
+        iterator.key().size >= qualifierSize &&
+        iterator.key().matchesRangePart(0, indexRecord, sourceLength = qualifierSize, offset = 0, length = qualifierSize)
+    ) {
+        iterator.next()
+    }
+}
+
+private fun findCurrentIndexEntryForKey(
+    dbAccessor: DBAccessor,
+    columnFamily: ColumnFamilyHandle,
+    readOptions: ReadOptions,
+    indexReference: ByteArray,
+    key: ByteArray,
+    direction: Direction
+): ByteArray? {
+    val indexKeyPrefix = createIndexKeyPrefix(indexReference)
+    var matchedValueAndKey: ByteArray? = null
+
+    dbAccessor.getIterator(readOptions, columnFamily).use { iterator ->
+        iterator.seek(indexKeyPrefix)
+
+        while (iterator.isValid()) {
+            val indexRecord = iterator.key()
+            if (!indexRecord.matchesRangePart(0, indexKeyPrefix, length = indexKeyPrefix.size)) {
+                break
+            }
+
+            val keyOffset = indexRecord.size - key.size
+            if (keyOffset >= indexKeyPrefix.size && indexRecord.matchesRangePart(keyOffset, key, length = key.size)) {
+                matchedValueAndKey = indexRecord.copyOfRange(indexKeyPrefix.size, indexRecord.size)
+                if (direction == ASC) {
+                    break
+                }
+            }
+
+            iterator.next()
+        }
+    }
+
+    return matchedValueAndKey
+}
+
+private fun findHistoricIndexEntryForKey(
+    dbAccessor: DBAccessor,
+    columnFamilies: HistoricTableColumnFamilies,
+    readOptions: ReadOptions,
+    indexReference: ByteArray,
+    key: ByteArray,
+    toVersion: ULong,
+    direction: Direction,
+    includeSoftDeleted: Boolean
+): ByteArray? {
+    val indexKeyPrefix = createIndexKeyPrefix(indexReference)
+    val indexReferenceUpperBound = createIndexRangeEnd(indexReference)
+    var matchedValueAndKey: ByteArray? = null
+
+    dbAccessor.getIterator(readOptions, columnFamilies.historic.index).use { iterator ->
+        iterator.seek(indexKeyPrefix)
+
+        while (iterator.isValid()) {
+            val indexRecord = iterator.key()
+            if (!isKeyInIndexRange(indexRecord, indexKeyPrefix, indexReferenceUpperBound)) {
+                break
+            }
+
+            val qualifierSize = indexRecord.size - VERSION_BYTE_SIZE
+            if (qualifierSize <= indexKeyPrefix.size + key.size) {
+                iterator.next()
+                continue
+            }
+
+            val keyOffset = qualifierSize - key.size
+            var resolvedVisibleState: ByteArray? = null
+
+            while (
+                iterator.isValid() &&
+                iterator.key().size >= qualifierSize &&
+                iterator.key().matchesRangePart(0, indexRecord, sourceLength = qualifierSize, offset = 0, length = qualifierSize)
+            ) {
+                val candidateRecord = iterator.key()
+                val candidateVersion = candidateRecord.readReversedVersionBytes(qualifierSize)
+                if (candidateVersion > toVersion) {
+                    iterator.next()
+                    continue
+                }
+
+                resolvedVisibleState = iterator.value()
+                break
+            }
+
+            if (
+                resolvedVisibleState != null &&
+                isHistoricIndexVisible(resolvedVisibleState, includeSoftDeleted) &&
+                indexRecord.matchesRangePart(keyOffset, key, length = key.size)
+            ) {
+                matchedValueAndKey = indexRecord.copyOfRange(indexKeyPrefix.size, qualifierSize)
+                if (direction == ASC) {
+                    break
+                }
+            }
+
+            while (
+                iterator.isValid() &&
+                iterator.key().size >= qualifierSize &&
+                iterator.key().matchesRangePart(0, indexRecord, sourceLength = qualifierSize, offset = 0, length = qualifierSize)
+            ) {
+                iterator.next()
+            }
+        }
+    }
+
+    return matchedValueAndKey
+}
+
 /**
  * Create a version checker to see if record has to be skipped or not.
  */
-fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Direction): (ByteArray) -> Boolean =
+fun createVersionChecker(
+    toVersion: ULong?,
+    includeSoftDeleted: Boolean,
+    iterator: DBIterator,
+    direction: Direction
+): (ByteArray) -> Boolean =
     if (toVersion == null) {
         { true } // Version is always latest and thus valid, because is scanning on normal table
     } else {
@@ -194,8 +589,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
                             // Continue to older version since key was too new for request
                             iterator.next()
                         } else {
-                            // Check if is deleted and skip if so
-                            validResult = iterator.value().contentEquals(EMPTY_ARRAY)
+                            validResult = isHistoricIndexVisible(iterator.value(), includeSoftDeleted)
                             break
                         }
                     }
@@ -225,7 +619,7 @@ fun createVersionChecker(toVersion: ULong?, iterator: DBIterator, direction: Dir
 
                         // Continue to newer versions until key is not of a valid version
                         if (versionBytesToMatch.compareToRange(newKey, newKeyVersionOffset) <= 0) {
-                            validResult = iterator.value().contentEquals(EMPTY_ARRAY)
+                            validResult = isHistoricIndexVisible(iterator.value(), includeSoftDeleted)
                             iterator.prev()
                         } else {
                             break
@@ -271,6 +665,8 @@ private fun <DM : IsRootDataModel> checkAndProcess(
     indexScan: IndexScan,
     indexColumnHandle: ColumnFamilyHandle,
     keySize: Int,
+    indexKeyPrefix: ByteArray,
+    indexPartCount: Int,
     scanRequest: IsScanRequest<DM, *>,
     indexScanRange: IndexableScanRanges,
     versionSize: Int,
@@ -280,38 +676,126 @@ private fun <DM : IsRootDataModel> checkAndProcess(
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit,
     isPastRange: (ByteArray, Int) -> Boolean,
     checkVersion: (ByteArray) -> Boolean,
+    seenKeys: MutableSet<ByteArrayKey>,
+    historicalReader: HistoricalTableReader?,
+    softDeleteCache: RequestKeySoftDeleteCache?,
     next: (ByteArray, Int, Int) -> Unit
 ): UInt {
     var currentSize = emitted
     while (iterator.isValid()) {
         val indexRecord = iterator.key()
-        val valueSize = indexRecord.size - valueOffset - keySize - versionSize
-        if (valueSize < 0 || indexRecord.size < versionSize) {
+        if (versionSize == 0) {
+            val valueSize = findIndexValueSize(indexRecord, valueOffset, indexRecord.size, keySize, indexPartCount)
+            if (valueSize < 0) {
+                iterator.next()
+                continue
+            }
+            val keyOffset = indexRecord.size - keySize
+            if (isPastRange(indexRecord, valueSize)) {
+                break
+            }
+
+            if (
+                indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize, indexRecord.size) &&
+                hasAdditionalMatches(
+                    dbAccessor,
+                    indexColumnHandle,
+                    readOptions,
+                    keySize,
+                    indexPartCount,
+                    indexKeyPrefix,
+                    indexScanRange.valueMatches,
+                    indexRecord,
+                    keyOffset,
+                    keySize,
+                    null,
+                    true
+                ) &&
+                checkVersion(indexRecord)
+            ) {
+                if (
+                    !scanRequest.shouldBeFiltered(
+                        dbAccessor,
+                        columnFamilies,
+                        readOptions,
+                        indexRecord,
+                        keyOffset,
+                        keySize,
+                        null,
+                        null,
+                        indexScan.index
+                    )
+                ) {
+                    val keyBytes = createKeyBytes(indexRecord, keyOffset, keySize)
+                    if (!seenKeys.add(ByteArrayKey(keyBytes))) {
+                        next(indexRecord, keyOffset, keySize)
+                        continue
+                    }
+
+                    val createdVersion = readCreationVersion(
+                        dbAccessor,
+                        columnFamilies,
+                        readOptions,
+                        keyBytes,
+                        scanRequest.toVersion
+                    ) ?: run {
+                        next(indexRecord, keyOffset, keySize)
+                        continue
+                    }
+
+                    processStoreValue(
+                        Key<DM>(keyBytes),
+                        createdVersion,
+                        if (includeSortingKey) indexRecord.copyOfRange(valueOffset, indexRecord.size) else null
+                    )
+
+                    if (++currentSize == scanRequest.limit) break
+                }
+            }
+
+            next(indexRecord, keyOffset, keySize)
+            continue
+        }
+
+        val qualifierEnd = indexRecord.size - versionSize
+        if (qualifierEnd <= valueOffset + keySize || indexRecord.size < versionSize) {
             iterator.next()
             continue
         }
-        val keyOffset = valueOffset + valueSize
-        val partialMatchBytes = if (versionSize == 0) indexRecord else indexRecord.copyOf(indexRecord.size - versionSize)
+        val valueSize = findIndexValueSize(indexRecord, valueOffset, qualifierEnd, keySize, indexPartCount)
+        if (valueSize < 0) {
+            iterator.next()
+            continue
+        }
+        val keyOffset = qualifierEnd - keySize
         if (isPastRange(indexRecord, valueSize)) {
             break
         }
 
         if (
-            indexScanRange.matchesPartials(partialMatchBytes, valueOffset, valueSize) &&
+            indexScanRange.matchesPartials(indexRecord, valueOffset, valueSize, qualifierEnd) &&
             hasAdditionalMatches(
                 dbAccessor,
                 indexColumnHandle,
                 readOptions,
                 keySize,
-                indexScan.index.referenceStorageByteArray.bytes,
+                indexPartCount,
+                indexKeyPrefix,
                 indexScanRange.valueMatches,
                 indexRecord,
                 keyOffset,
                 keySize,
-                scanRequest.toVersion
+                scanRequest.toVersion,
+                !scanRequest.filterSoftDeleted
             ) &&
             checkVersion(indexRecord)
         ) {
+            val keyBytes = createKeyBytes(indexRecord, keyOffset, keySize)
+            if (!seenKeys.add(ByteArrayKey(keyBytes))) {
+                next(indexRecord, keyOffset, keySize)
+                continue
+            }
+
             if (
                 !scanRequest.shouldBeFiltered(
                     dbAccessor,
@@ -322,21 +806,24 @@ private fun <DM : IsRootDataModel> checkAndProcess(
                     keySize,
                     null, // Since version is checked in checkVersion, created version does not need to be checked
                     null,
-                    indexScan.index
+                    indexScan.index,
+                    checkSoftDelete = false,
+                    historicalReader = historicalReader,
+                    softDeleteCache = softDeleteCache
                 )
             ) {
-                val key = createKey(scanRequest.dataModel, indexRecord, keyOffset)
-
-                readCreationVersion(
-                    dbAccessor,
-                    columnFamilies,
-                    readOptions,
-                    key.bytes
-                )?.let { createdVersion ->
+                (softDeleteCache?.getCreationVersion(keyBytes)
+                    ?: readCreationVersion(
+                        dbAccessor,
+                        columnFamilies,
+                        readOptions,
+                        keyBytes,
+                        scanRequest.toVersion
+                    ))?.let { createdVersion ->
                     processStoreValue(
-                        key,
+                        Key<DM>(keyBytes),
                         createdVersion,
-                        if (includeSortingKey) indexRecord.copyOfRange(valueOffset, indexRecord.size - versionSize) else null
+                        if (includeSortingKey) indexRecord.copyOfRange(valueOffset, qualifierEnd) else null
                     )
                 }
 
@@ -355,12 +842,14 @@ private fun hasAdditionalMatches(
     indexColumnHandle: ColumnFamilyHandle,
     readOptions: ReadOptions,
     keySize: Int,
-    indexReference: ByteArray,
+    indexPartCount: Int,
+    indexKeyPrefix: ByteArray,
     matches: List<IndexValueMatch>,
     recordKeySource: ByteArray,
     recordKeyOffset: Int,
     recordKeyLength: Int,
-    toVersion: ULong?
+    toVersion: ULong?,
+    includeSoftDeleted: Boolean
 ) = matches.all { match ->
     if (match.partialMatch) {
         hasMatchingPrefixValue(
@@ -368,24 +857,27 @@ private fun hasAdditionalMatches(
             indexColumnHandle,
             readOptions,
             keySize,
-            indexReference,
+            indexPartCount,
+            indexKeyPrefix,
             match.toMatch,
             recordKeySource,
             recordKeyOffset,
             recordKeyLength,
-            toVersion
+            toVersion,
+            includeSoftDeleted
         )
     } else {
         hasMatchingExactValue(
             dbAccessor,
             indexColumnHandle,
             readOptions,
-            indexReference,
+            indexKeyPrefix,
             match.toMatch,
             recordKeySource,
             recordKeyOffset,
             recordKeyLength,
-            toVersion
+            toVersion,
+            includeSoftDeleted
         )
     }
 }
@@ -394,14 +886,15 @@ private fun hasMatchingExactValue(
     dbAccessor: DBAccessor,
     indexColumnHandle: ColumnFamilyHandle,
     readOptions: ReadOptions,
-    indexReference: ByteArray,
+    indexKeyPrefix: ByteArray,
     value: ByteArray,
     recordKeySource: ByteArray,
     recordKeyOffset: Int,
     recordKeyLength: Int,
-    toVersion: ULong?
+    toVersion: ULong?,
+    includeSoftDeleted: Boolean
 ): Boolean {
-    val fullIndexValue = indexReference + createIndexValue(value, recordKeySource, recordKeyOffset, recordKeyLength)
+    val fullIndexValue = createIndexKeyWithPrefix(indexKeyPrefix, createIndexValue(value, recordKeySource, recordKeyOffset, recordKeyLength))
     return if (toVersion == null) {
         dbAccessor.get(indexColumnHandle, readOptions, fullIndexValue) != null
     } else {
@@ -410,6 +903,10 @@ private fun hasMatchingExactValue(
             iterator.seek(fullIndexValue + versionBytes)
             while (iterator.isValid()) {
                 val key = iterator.key()
+                if (key.size < fullIndexValue.size) {
+                    iterator.next()
+                    continue
+                }
                 if (!key.matchesRangePart(0, fullIndexValue, length = fullIndexValue.size)) {
                     return false
                 }
@@ -420,7 +917,7 @@ private fun hasMatchingExactValue(
                     continue
                 }
                 if (versionBytes.compareToRange(key, versionOffset) <= 0) {
-                    return iterator.value().contentEquals(EMPTY_ARRAY)
+                    return isHistoricIndexVisible(iterator.value(), includeSoftDeleted)
                 }
                 iterator.next()
             }
@@ -434,14 +931,16 @@ private fun hasMatchingPrefixValue(
     indexColumnHandle: ColumnFamilyHandle,
     readOptions: ReadOptions,
     keySize: Int,
-    indexReference: ByteArray,
+    indexPartCount: Int,
+    indexKeyPrefix: ByteArray,
     prefix: ByteArray,
     recordKeySource: ByteArray,
     recordKeyOffset: Int,
     recordKeyLength: Int,
-    toVersion: ULong?
+    toVersion: ULong?,
+    includeSoftDeleted: Boolean
 ): Boolean {
-    val prefixWithReference = combineToByteArray(indexReference, prefix)
+    val prefixWithReference = combineToByteArray(indexKeyPrefix, prefix)
     val versionBytes = toVersion?.toReversedVersionBytes()
 
     dbAccessor.getIterator(readOptions, indexColumnHandle).use { iterator ->
@@ -450,6 +949,10 @@ private fun hasMatchingPrefixValue(
         if (versionBytes != null) {
             while (iterator.isValid()) {
                 val firstKey = iterator.key()
+                if (firstKey.size < prefixWithReference.size) {
+                    iterator.next()
+                    continue
+                }
                 if (prefixWithReference.compareDefinedRange(firstKey, 0, prefixWithReference.size) > 0) {
                     iterator.next()
                     continue
@@ -458,36 +961,44 @@ private fun hasMatchingPrefixValue(
                     return false
                 }
 
-                val qualifierSize = firstKey.size - indexReference.size - keySize - VERSION_BYTE_SIZE
-                if (qualifierSize < 0) {
+                val qualifierEnd = firstKey.size - VERSION_BYTE_SIZE
+                val qualifierLength = qualifierEnd - indexKeyPrefix.size
+                if (qualifierLength < keySize) {
                     iterator.next()
                     continue
                 }
-                val qualifierOffset = indexReference.size
-                val qualifierLength = qualifierSize + keySize
+                val qualifierOffset = indexKeyPrefix.size
                 val recordKeyInQualifierOffset = qualifierLength - keySize
                 var foundVisibleVersion = false
                 while (iterator.isValid()) {
                     val indexRecord = iterator.key()
+                    if (indexRecord.size < prefixWithReference.size) {
+                        iterator.next()
+                        continue
+                    }
                     if (!indexRecord.matchesRangePart(0, prefixWithReference, length = prefixWithReference.size)) {
                         return false
                     }
 
-                    if (!indexRecord.matchesRangePart(indexReference.size, firstKey, qualifierLength, qualifierOffset, qualifierLength)) {
+                    if (indexRecord.size < indexKeyPrefix.size + qualifierLength) {
+                        iterator.next()
+                        continue
+                    }
+                    if (!indexRecord.matchesRangePart(indexKeyPrefix.size, firstKey, qualifierLength, qualifierOffset, qualifierLength)) {
                         break
                     }
 
                     val versionOffset = indexRecord.size - VERSION_BYTE_SIZE
-                    if (versionOffset < qualifierLength + indexReference.size) {
+                    if (versionOffset < qualifierLength + indexKeyPrefix.size) {
                         iterator.next()
                         continue
                     }
                     if (versionBytes.compareToRange(indexRecord, versionOffset) <= 0) {
                         foundVisibleVersion = true
                         if (
-                            iterator.value().contentEquals(EMPTY_ARRAY) &&
+                            isHistoricIndexVisible(iterator.value(), includeSoftDeleted) &&
                             indexRecord.matchesRangePart(
-                                indexReference.size + recordKeyInQualifierOffset,
+                                indexKeyPrefix.size + recordKeyInQualifierOffset,
                                 recordKeySource,
                                 recordKeyLength,
                                 recordKeyOffset,
@@ -508,10 +1019,18 @@ private fun hasMatchingPrefixValue(
 
                 while (iterator.isValid()) {
                     val indexRecord = iterator.key()
+                    if (indexRecord.size < prefixWithReference.size) {
+                        iterator.next()
+                        continue
+                    }
                     if (!indexRecord.matchesRangePart(0, prefixWithReference, length = prefixWithReference.size)) {
                         return false
                     }
-                    if (!indexRecord.matchesRangePart(indexReference.size, firstKey, qualifierLength, qualifierOffset, qualifierLength)) {
+                    if (indexRecord.size < indexKeyPrefix.size + qualifierLength) {
+                        iterator.next()
+                        continue
+                    }
+                    if (!indexRecord.matchesRangePart(indexKeyPrefix.size, firstKey, qualifierLength, qualifierOffset, qualifierLength)) {
                         break
                     }
                     iterator.next()
@@ -526,6 +1045,10 @@ private fun hasMatchingPrefixValue(
         var settledValueAndKeyLength = 0
         while (iterator.isValid()) {
             val indexRecord = iterator.key()
+            if (indexRecord.size < prefixWithReference.size) {
+                iterator.next()
+                continue
+            }
             if (prefixWithReference.compareDefinedRange(indexRecord, 0, prefixWithReference.size) > 0) {
                 iterator.next()
                 continue
@@ -534,13 +1057,13 @@ private fun hasMatchingPrefixValue(
                 return false
             }
 
-            val valueSize = indexRecord.size - indexReference.size - keySize
+            val valueSize = findIndexValueSize(indexRecord, indexKeyPrefix.size, indexRecord.size, keySize, indexPartCount)
             if (valueSize < 0) {
                 iterator.next()
                 continue
             }
-            val keyOffset = indexReference.size + valueSize
-            val valueAndKeyOffset = indexReference.size
+            val keyOffset = indexRecord.size - keySize
+            val valueAndKeyOffset = indexKeyPrefix.size
             val valueAndKeyLength = valueSize + keySize
 
             if (
@@ -572,6 +1095,92 @@ private fun hasMatchingPrefixValue(
     }
 }
 
+private fun isHistoricIndexVisible(value: ByteArray, includeSoftDeleted: Boolean) = when {
+    value.isEmpty() -> true
+    value.contentEquals(TRUE_ARRAY) -> includeSoftDeleted
+    else -> false
+}
+
+private fun ScanRange.matchesIndexValue(
+    indexScanRange: IndexableScanRanges,
+    indexValue: ByteArray,
+    valueSize: Int,
+    offset: Int = 0
+): Boolean {
+    val rangeLength = indexRangeLength(indexScanRange, this, valueSize)
+    return !keyBeforeStart(indexValue, offset, rangeLength) && !keyOutOfRange(indexValue, offset, rangeLength)
+}
+
+private fun indexRangeLength(indexScanRange: IndexableScanRanges, range: ScanRange, valueSize: Int): Int =
+    if (
+        range.start.isNotEmpty() &&
+        range.startInclusive &&
+        range.endInclusive &&
+        range.end?.contentEquals(range.start) == true &&
+        indexScanRange.partialMatches?.any {
+            (it is IndexPartialSizeToMatch && it.size == range.start.size) ||
+                (it is IndexPartialToMatch &&
+                    it.partialMatch &&
+                    it.toMatch.contentEquals(range.start))
+        } == true
+    ) {
+        range.start.size
+    } else {
+        valueSize
+    }
+
+private fun isKeyInIndexRange(
+    key: ByteArray,
+    indexKeyPrefix: ByteArray,
+    indexReferenceUpperBound: ByteArray?
+): Boolean {
+    if (indexKeyPrefix.compareDefinedRange(key) > 0) {
+        return false
+    }
+
+    return indexReferenceUpperBound?.compareDefinedRange(key)?.let { it > 0 } != false
+}
+
+private fun findIndexValueSize(
+    indexRecord: ByteArray,
+    valueOffset: Int,
+    sourceEnd: Int,
+    keySize: Int,
+    indexPartCount: Int
+): Int {
+    if (sourceEnd <= valueOffset + keySize || indexPartCount <= 0) {
+        return -1
+    }
+
+    val (lastPartOffset, lastPartSize) = try {
+        findByteIndexAndSizeByPartIndex(
+            indexPartCount - 1,
+            indexRecord,
+            keySize,
+            sourceStart = valueOffset,
+            sourceEnd = sourceEnd,
+            indexPartCount = indexPartCount
+        )
+    } catch (_: ParseException) {
+        // Skip malformed index rows.
+        return -1
+    }
+    return lastPartOffset + lastPartSize
+}
+
+private fun resolveIndexRangeValueSize(indexValue: ByteArray, indexPartCount: Int, keySize: Int): Int? =
+    try {
+        val (lastPartOffset, lastPartSize) = findByteIndexAndSizeByPartIndex(
+            indexPartCount - 1,
+            indexValue,
+            keySize,
+            indexPartCount = indexPartCount
+        )
+        lastPartOffset + lastPartSize
+    } catch (_: ParseException) {
+        null
+    }
+
 private fun createIndexValue(value: ByteArray, key: ByteArray): ByteArray {
     return createIndexValue(value, key, 0, key.size)
 }
@@ -587,14 +1196,18 @@ private fun createIndexValue(value: ByteArray, keySource: ByteArray, keyOffset: 
     }
 }
 
-/** Creates a Key out of a [indexRecord] by reading from [keyOffset] */
-private fun <DM : IsRootDataModel> createKey(
-    dataModel: DM,
-    indexRecord: ByteArray,
-    keyOffset: Int
-): Key<DM> {
-    var readIndex = keyOffset
-    return dataModel.key {
-        indexRecord[readIndex++]
-    }
+private class ByteArrayKey(
+    private val bytes: ByteArray
+) {
+    override fun hashCode() = bytes.contentHashCode()
+
+    override fun equals(other: Any?) = other is ByteArrayKey && bytes.contentEquals(other.bytes)
 }
+
+private fun createKeyBytes(
+    source: ByteArray,
+    keyOffset: Int,
+    keyLength: Int
+) = source.copyOfRange(keyOffset, keyOffset + keyLength)
+
+/** Creates a Key out of a [indexRecord] by reading from [keyOffset] */

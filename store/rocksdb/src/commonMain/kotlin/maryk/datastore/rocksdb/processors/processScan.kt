@@ -14,11 +14,14 @@ import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.FetchByUniqueKey
 import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.rocksdb.DBAccessor
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
+import maryk.datastore.rocksdb.processors.helpers.createIndexKeyPrefix
 import maryk.datastore.rocksdb.processors.helpers.getKeyByUniqueValue
+import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
-import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfPresent
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.ScanType.IndexScan
 import maryk.datastore.shared.ScanType.TableScan
@@ -27,7 +30,7 @@ import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.checkToVersion
 import maryk.datastore.shared.optimizeTableScan
 import maryk.datastore.shared.orderToScanType
-import maryk.lib.recyclableByteArray
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.rocksdb.ReadOptions
 
 /** Walk with [scanRequest] on [RocksDBDataStore] and do [processRecord] */
@@ -37,6 +40,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
     columnFamilies: TableColumnFamilies,
     readOptions: ReadOptions,
     includeSortingKey: Boolean = false,
+    softDeleteCache: RequestKeySoftDeleteCache? = null,
+    historicalReader: HistoricalTableReader? = null,
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
@@ -53,14 +58,16 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
         // If hard key match then quit with direct record
         keyScanRange.isSingleKey() -> {
             val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start)
-            val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
-            if (mayExist) {
-                val valueLength = dbAccessor.get(columnFamilies.keys, readOptions, key.bytes, recyclableByteArray)
-                // Only process it if it was created
-                recyclableByteArray.readVersionBytesIfPresent(valueLength)?.let { createdVersion ->
-                    if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, keyScanRange)) {
-                        processRecord(key, createdVersion, null)
-                    }
+            val createdVersion = readCreationVersion(
+                dbAccessor,
+                columnFamilies,
+                readOptions,
+                key.bytes,
+                scanRequest.toVersion
+            )
+            if (createdVersion != null) {
+                if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, createdVersion, scanRequest, keyScanRange, softDeleteCache, historicalReader)) {
+                    processRecord(key, createdVersion, null)
                 }
             }
             return FetchByKey
@@ -85,11 +92,25 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                     uniqueValue.copyInto(this, firstMatcher.reference.size)
                 }
 
-                getKeyByUniqueValue(dbAccessor, columnFamilies, readOptions, reference, scanRequest.toVersion) { keyReader, setAtVersion ->
+                getKeyByUniqueValue(
+                    dbAccessor = dbAccessor,
+                    columnFamilies = columnFamilies,
+                    readOptions = readOptions,
+                    reference = reference,
+                    keySize = scanRequest.dataModel.Meta.keyByteSize,
+                    toVersion = scanRequest.toVersion
+                ) { keyReader, setAtVersion ->
                     val key = scanRequest.dataModel.key(keyReader)
 
-                    if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange)) {
-                        readCreationVersion(dbAccessor, columnFamilies, readOptions, key.bytes)?.let { createdVersion ->
+                    if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange, softDeleteCache, historicalReader)) {
+                        (softDeleteCache?.getCreationVersion(key.bytes)
+                            ?: readCreationVersion(
+                                dbAccessor,
+                                columnFamilies,
+                                readOptions,
+                                key.bytes,
+                                scanRequest.toVersion
+                            ))?.let { createdVersion ->
                             processRecord(key, createdVersion, null)
                         }
                     }
@@ -118,19 +139,49 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                         scanRequest,
                         processedScanIndex.direction,
                         keyScanRange,
+                        historicalReader,
                         processRecord
                     )
                 }
                 is IndexScan -> {
-                    scanIndex(
+                    var processedRecords = 0u
+                    val dataFetchType = scanIndex(
                         dbAccessor,
                         columnFamilies,
                         scanRequest,
                         processedScanIndex,
                         keyScanRange,
                         includeSortingKey,
-                        processRecord
-                    )
+                        softDeleteCache,
+                        historicalReader
+                    ) { key, createdVersion, sortingKey ->
+                        processedRecords++
+                        processRecord(key, createdVersion, sortingKey)
+                    }
+
+                    if (
+                        processedRecords == 0u &&
+                        scanRequest.allowTableScan &&
+                        isIndexUnavailableForReference(
+                            dbAccessor = dbAccessor,
+                            columnFamilies = columnFamilies,
+                            readOptions = readOptions,
+                            indexReference = processedScanIndex.index.referenceStorageByteArray.bytes,
+                            toVersion = scanRequest.toVersion
+                        )
+                    ) {
+                        scanStore(
+                            dbAccessor,
+                            columnFamilies,
+                            scanRequest,
+                            processedScanIndex.direction,
+                            keyScanRange,
+                            historicalReader,
+                            processRecord
+                        )
+                    } else {
+                        dataFetchType
+                    }
                 }
                 is UpdateHistoryScan -> throw IllegalStateException("UpdateHistoryScan is only supported by scanUpdates")
             }
@@ -145,7 +196,9 @@ internal fun <DM: IsRootDataModel> shouldProcessRecord(
     key: Key<*>,
     createdVersion: ULong?,
     scanRequest: IsScanRequest<DM, *>,
-    scanRange: KeyScanRanges
+    scanRange: KeyScanRanges,
+    softDeleteCache: RequestKeySoftDeleteCache? = null,
+    historicalReader: HistoricalTableReader? = null
 ): Boolean {
     if (createdVersion == null) {
         // record was not created
@@ -154,5 +207,36 @@ internal fun <DM: IsRootDataModel> shouldProcessRecord(
         return false
     }
 
-    return !scanRequest.shouldBeFiltered(dbAccessor, columnFamilies, readOptions, key.bytes, 0, key.size, createdVersion, scanRequest.toVersion)
+    return !scanRequest.shouldBeFiltered(
+        dbAccessor,
+        columnFamilies,
+        readOptions,
+        key.bytes,
+        0,
+        key.size,
+        createdVersion,
+        scanRequest.toVersion,
+        historicalReader = historicalReader,
+        softDeleteCache = softDeleteCache
+    )
+}
+
+private fun isIndexUnavailableForReference(
+    dbAccessor: DBAccessor,
+    columnFamilies: TableColumnFamilies,
+    readOptions: ReadOptions,
+    indexReference: ByteArray,
+    toVersion: ULong?
+): Boolean {
+    val columnFamily = if (toVersion == null) {
+        columnFamilies.index
+    } else {
+        (columnFamilies as? HistoricTableColumnFamilies)?.historic?.index ?: return false
+    }
+    val indexKeyPrefix = createIndexKeyPrefix(indexReference)
+
+    dbAccessor.getIterator(readOptions, columnFamily).use { iterator ->
+        iterator.seek(indexKeyPrefix)
+        return !iterator.isValid() || !iterator.key().matchesRangePart(0, indexKeyPrefix, length = indexKeyPrefix.size)
+    }
 }

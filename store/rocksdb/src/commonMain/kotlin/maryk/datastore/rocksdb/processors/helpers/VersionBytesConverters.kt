@@ -32,6 +32,14 @@ internal fun ByteArray.readVersionBytesIfPresent(valueLength: Int, offset: Int =
     }
 }
 
+internal fun ByteArray.readVersionBytesIfExact(valueLength: Int = size, offset: Int = 0): ULong? {
+    return if (valueLength - offset == VERSION_BYTE_SIZE) {
+        readVersionBytes(offset)
+    } else {
+        null
+    }
+}
+
 /**
  * Read reversed version bytes from byte array
  */

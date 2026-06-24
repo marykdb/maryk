@@ -7,6 +7,8 @@ import maryk.datastore.rocksdb.processors.FALSE_ARRAY
 import maryk.datastore.rocksdb.processors.HistoricStoreIndexValuesWalker
 import maryk.datastore.rocksdb.processors.StoreValuesGetter
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
+import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 
 /**
  * Walks all existing data records for [columnFamilies] of model in [dataStore]
@@ -40,6 +42,10 @@ internal fun walkDataRecordsAndFillIndex(
 
                 while (iterator.isValid()) {
                     val key = iterator.key()
+                    if (iterator.value().readVersionBytesIfExact() == null) {
+                        iterator.next()
+                        continue
+                    }
 
                     storeGetter.moveToKey(key)
 
@@ -47,7 +53,13 @@ internal fun walkDataRecordsAndFillIndex(
                         storeGetter.lastVersion = null
                         // Store non-historic value
                         index.toStorageByteArraysForIndex(storeGetter, key).forEach { indexValue ->
-                            transaction.put(columnFamilies.index, index.referenceStorageByteArray.bytes + indexValue, storeGetter.lastVersion!!.toByteArray())
+                            setIndexValue(
+                                transaction,
+                                columnFamilies,
+                                index.referenceStorageByteArray.bytes,
+                                indexValue,
+                                storeGetter.lastVersion!!.toByteArray()
+                            )
                         }
 
                         // Process historical values for historical index

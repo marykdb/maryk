@@ -12,6 +12,8 @@ import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
+import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
@@ -38,70 +40,78 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
             columnFamilies.historic.table
         } else columnFamilies.table
-        transaction.getIterator(defaultReadOptions, columnToScan).use { iterator ->
-            val dataFetchType = processScan(
-                scanRequest,
-                transaction,
-                columnFamilies,
-                defaultReadOptions
-            ) { key, creationVersion, _ ->
-                val cacheReader =
-                    { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                        runBlocking {
-                            cache.readValue(dbIndex, key, reference, version, valueReader)
-                        }
-                    }
-
-                val valuesWithMetaData = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                    iterator,
-                    creationVersion,
-                    columnFamilies,
-                    key,
-                    scanRequest.select,
-                    scanRequest.toVersion,
-                    cacheReader
-                )?.let { values ->
-                    if (scanRequest.toVersion == null) {
-                        values
-                    } else {
-                        val deleted = isSoftDeleted(
-                            transaction,
-                            columnFamilies,
-                            defaultReadOptions,
-                            scanRequest.toVersion,
-                            key.bytes,
-                            0,
-                            key.size
-                        )
-                        if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
-                    }
-                }?.also {
-                    // Only add if not null
-                    valuesWithMeta.add(it)
-                }
-
-                aggregator?.aggregate {
-                    @Suppress("UNCHECKED_CAST")
-                    valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
-                        ?: transaction.getValue(
-                            columnFamilies,
-                            defaultReadOptions,
-                            scanRequest.toVersion,
-                            it.toStorageByteArray()
-                        ) { valueBytes, offset, length ->
-                            valueBytes.convertToValue(it, offset, length)
-                        }
-                }
+        val historicalReader = scanRequest.toVersion?.let { toVersion ->
+            (columnFamilies as? HistoricTableColumnFamilies)?.let {
+                HistoricalTableReader(transaction, it, sequentialReadOptions, toVersion)
             }
+        }
+        val softDeleteCache = RequestKeySoftDeleteCache(
+            transaction,
+            columnFamilies,
+            defaultReadOptions,
+            scanRequest.toVersion,
+            historicalReader
+        )
+        transaction.getIterator(sequentialReadOptions, columnToScan).use { iterator ->
+            historicalReader.use { reader ->
+                val dataFetchType = processScan(
+                    scanRequest,
+                    transaction,
+                    columnFamilies,
+                    defaultReadOptions,
+                    softDeleteCache = softDeleteCache,
+                    historicalReader = reader
+                ) { key, creationVersion, _ ->
+                    val cacheReader =
+                        { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                            runBlocking {
+                                cache.readValue(dbIndex, key, reference, version, valueReader)
+                            }
+                        }
 
-            storeAction.response.complete(
-                ValuesResponse(
-                    dataModel = scanRequest.dataModel,
-                    values = valuesWithMeta,
-                    aggregations = aggregator?.toResponse(),
-                    dataFetchType = dataFetchType,
+                    val valuesWithMetaData = scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                        iterator,
+                        creationVersion,
+                        columnFamilies,
+                        key,
+                        scanRequest.select,
+                        scanRequest.toVersion,
+                        cacheReader
+                    )?.let { values ->
+                        if (scanRequest.toVersion == null) {
+                            values
+                        } else {
+                            val deleted = softDeleteCache.get(key.bytes, 0, key.size)
+                            if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
+                        }
+                    }?.also {
+                        valuesWithMeta.add(it)
+                    }
+
+                    aggregator?.aggregate {
+                        @Suppress("UNCHECKED_CAST")
+                        valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
+                            ?: transaction.getValue(
+                                columnFamilies,
+                                defaultReadOptions,
+                                scanRequest.toVersion,
+                                it.toStorageByteArray(key.bytes),
+                                reader
+                            ) { valueBytes, offset, length ->
+                                valueBytes.convertToValue(it, offset, length)
+                            }
+                    }
+                }
+
+                storeAction.response.complete(
+                    ValuesResponse(
+                        dataModel = scanRequest.dataModel,
+                        values = valuesWithMeta,
+                        aggregations = aggregator?.toResponse(),
+                        dataFetchType = dataFetchType,
+                    )
                 )
-            )
+            }
         }
     }
 }

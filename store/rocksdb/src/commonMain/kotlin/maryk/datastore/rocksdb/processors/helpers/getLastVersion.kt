@@ -14,15 +14,13 @@ import maryk.rocksdb.rocksDBNotFound
  * Get last version for given key to compare with. Object should exist, or it throws an exception.
  */
 internal fun <DM: IsRootDataModel> getLastVersion(dbAccessor: DBAccessor, columnFamilies: TableColumnFamilies, readOptions: ReadOptions, key: Key<DM>): ULong {
-    key.bytes.copyInto(recyclableByteArray)
-    recyclableByteArray[key.bytes.size] = LAST_VERSION_INDICATOR
-
-    val valueLength = dbAccessor.get(columnFamilies.table, readOptions, recyclableByteArray, 0, key.size + 1, recyclableByteArray, key.size + 2, recyclableByteArray.size - (key.size + 2))
+    val latestKey = key.bytes + LAST_VERSION_INDICATOR
+    val valueLength = dbAccessor.get(columnFamilies.table, readOptions, latestKey, recyclableByteArray)
 
     if (valueLength == rocksDBNotFound) {
         throw StorageException("Can only retrieve last versions of existing objects")
     }
 
-    requireVersionedValueSize(valueLength)
-    return recyclableByteArray.readVersionBytes(key.size + 2)
+    return recyclableByteArray.readVersionBytesIfExact(valueLength)
+        ?: throw StorageException("Invalid stored latest version: $valueLength bytes")
 }

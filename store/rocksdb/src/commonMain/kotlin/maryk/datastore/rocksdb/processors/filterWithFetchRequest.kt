@@ -10,6 +10,8 @@ import maryk.core.query.filters.matchesFilter
 import maryk.core.query.requests.IsFetchRequest
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.TableColumnFamilies
+import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
+import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.matchQualifier
 import maryk.rocksdb.ReadOptions
 
@@ -27,14 +29,19 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
     keyLength: Int,
     createdVersion: ULong?, // Can be null in cases when creationVersion is certainly lower than toVersion
     toVersion: ULong?,
-    normalizingIndex: IsIndexable? = null
+    normalizingIndex: IsIndexable? = null,
+    checkSoftDelete: Boolean = true,
+    historicalReader: HistoricalTableReader? = null,
+    softDeleteCache: RequestKeySoftDeleteCache? = null
 ) = when {
     toVersion != null && createdVersion != null && createdVersion > toVersion -> true
-    this.filterSoftDeleted && isSoftDeleted(dbAccessor, columnFamilies, readOptions, toVersion, key, keyOffset, keyLength) -> true
+    checkSoftDelete && this.filterSoftDeleted &&
+        (softDeleteCache?.get(key, keyOffset, keyLength)
+            ?: isSoftDeleted(dbAccessor, columnFamilies, readOptions, toVersion, key, keyOffset, keyLength, historicalReader)) -> true
     else -> !matchesFilter(
         where,
         valueMatcher = { propertyReference, valueMatcher ->
-            dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
+            dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, historicalReader, valueMatcher)
         },
         normalizer = { propertyReference, value ->
             val transform = normalizingIndex?.stringIndexTransform(propertyReference) ?: return@matchesFilter value
@@ -45,17 +52,17 @@ internal fun <DM : IsRootDataModel> IsFetchRequest<DM, *>.shouldBeFiltered(
         },
         searchMatcher = { name, value ->
             this.dataModel.matchesNamedSearchIndex(name, value) { propertyReference, valueMatcher ->
-                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
+                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, historicalReader, valueMatcher)
             }
         },
         searchPrefixMatcher = { name, value ->
             this.dataModel.matchesNamedSearchIndexPrefix(name, value) { propertyReference, valueMatcher ->
-                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
+                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, historicalReader, valueMatcher)
             }
         },
         searchRegexMatcher = { name, regex ->
             this.dataModel.matchesNamedSearchIndexRegex(name, regex) { propertyReference, valueMatcher ->
-                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, valueMatcher)
+                dbAccessor.matchQualifier(columnFamilies, readOptions, key, keyOffset, keyLength, propertyReference, toVersion, historicalReader, valueMatcher)
             }
         }
     )

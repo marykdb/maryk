@@ -8,8 +8,10 @@ import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.pairs.with
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
+import maryk.datastore.rocksdb.processors.helpers.createIndexKey
 import maryk.datastore.rocksdb.processors.processChange
 import maryk.datastore.test.UniqueModel
+import maryk.datastore.test.UniqueModel.email
 import maryk.datastore.test.assertStatusIs
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
@@ -97,7 +99,30 @@ class RocksDBDataStoreTest {
         try {
             runDataStoreTests(dataStore, "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex")
             runDataStoreTests(dataStore, "executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex")
+            runDataStoreTests(dataStore, "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill")
             runDataStoreTests(dataStore, "executeScanUpdateHistoryReturnsVersionOrderedEntries")
+            runDataStoreTests(dataStore, "executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexStartKey")
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion")
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun testOrderedScanFlowUpdatesSortedValueWhenPositionStaysSame() = runTest {
+        val folder = createTestDBFolder("any-value-flow-sorted-value")
+
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+        )
+        try {
+            runDataStoreTests(dataStore, "executeOrderedScanFlowUpdatesSortedValueWhenPositionStaysSame")
         } finally {
             dataStore.close()
             deleteFolder(folder)
@@ -237,6 +262,46 @@ class RocksDBDataStoreTest {
 
             val addAgain = dataStore.execute(
                 UniqueModel.add(Key<UniqueModel>(ByteArray(16) { 2 }) to UniqueModel.create { email with "reuse@test.com" })
+            )
+            assertStatusIs<AddSuccess<UniqueModel>>(addAgain.statuses.first())
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun hardDeleteCleanupFallsBackToModelUniqueDefinitionsWhenMarkerIsMissing() = runTest {
+        val folder = createTestDBFolder("unique-definitions-missing-marker")
+
+        var dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+        )
+        val key = Key<UniqueModel>(ByteArray(16) { 3 })
+        val uniqueDefinitionMarker = byteArrayOf(0) + UniqueModel { email::ref }.toStorageByteArray()
+        try {
+            dataStore.execute(
+                UniqueModel.add(key to UniqueModel.create { email with "markerless@test.com" })
+            ).statuses.forEach { assertStatusIs<AddSuccess<UniqueModel>>(it) }
+
+            val uniqueHandle = dataStore.getColumnFamilies(UniqueModel).unique
+            dataStore.db.delete(uniqueHandle, uniqueDefinitionMarker)
+        } finally {
+            dataStore.close()
+        }
+
+        dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+        )
+        try {
+            dataStore.execute(UniqueModel.delete(key, hardDelete = true))
+                .statuses
+                .forEach { assertStatusIs<DeleteSuccess<UniqueModel>>(it) }
+
+            val addAgain = dataStore.execute(
+                UniqueModel.add(Key<UniqueModel>(ByteArray(16) { 4 }) to UniqueModel.create { email with "markerless@test.com" })
             )
             assertStatusIs<AddSuccess<UniqueModel>>(addAgain.statuses.first())
         } finally {
@@ -393,7 +458,7 @@ class RocksDBDataStoreTest {
         try {
             val columnFamilies = dataStore.getColumnFamilies(TestMarykModel)
             val index = TestMarykModel.Meta.indexes!!.first()
-            val key = index.referenceStorageByteArray.bytes + byteArrayOf(1, 2, 3)
+            val key = createIndexKey(index.referenceStorageByteArray.bytes, byteArrayOf(1, 2, 3))
             dataStore.db.put(columnFamilies.index, key, byteArrayOf(44))
 
             val transaction = Transaction(dataStore)

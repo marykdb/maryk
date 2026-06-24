@@ -187,7 +187,7 @@ class LegacyIndexFormatGuardTest {
                     assertEquals(2, readStoreMetaFile(folder).indexKeyFormatVersion)
                     val response = store.execute(
                         UniqueModel.scan(
-                            where = Equals(UniqueModel { email } with "legacy@unique.test")
+                            where = Equals(UniqueModel { email::ref } with "legacy@unique.test")
                         )
                     )
                     assertEquals(listOf("legacy@unique.test"), response.values.map { it.values { email } })

@@ -42,7 +42,8 @@ internal fun walkDataRecordsAndFillIndex(
 
                 while (iterator.isValid()) {
                     val key = iterator.key()
-                    if (iterator.value().readVersionBytesIfExact() == null) {
+                    val currentVersion = iterator.value().readVersionBytesIfExact()
+                    if (currentVersion == null) {
                         iterator.next()
                         continue
                     }
@@ -58,7 +59,7 @@ internal fun walkDataRecordsAndFillIndex(
                                 columnFamilies,
                                 index.referenceStorageByteArray.bytes,
                                 indexValue,
-                                storeGetter.lastVersion!!.toByteArray()
+                                (storeGetter.lastVersion ?: currentVersion).toByteArray()
                             )
                         }
 

@@ -377,7 +377,9 @@ class RocksDBDataStore private constructor(
 
     private fun writeStoreMeta() {
         dataModelsById.forEach { (modelId, dataModel) ->
-            modelMetas.putIfAbsent(modelId, ModelMeta(dataModel.Meta.name, dataModel.Meta.keyByteSize))
+            if (modelId !in modelMetas) {
+                modelMetas[modelId] = ModelMeta(dataModel.Meta.name, dataModel.Meta.keyByteSize)
+            }
         }
         storeMeta = StoreMeta(
             models = modelMetas.toMap(),

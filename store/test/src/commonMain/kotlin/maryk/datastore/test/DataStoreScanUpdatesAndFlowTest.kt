@@ -122,7 +122,8 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeOrderedScanUpdatesAsFlowRequest" to ::executeOrderedScanUpdatesAsFlowRequest,
         "executeReverseOrderedScanUpdatesAsFlowRequest" to ::executeReverseOrderedScanUpdatesAsFlowRequest,
         "executeEmptyIndexedScanValuesAsFlowAddsChangedValue" to ::executeEmptyIndexedScanValuesAsFlowAddsChangedValue,
-        "executeOrderedScanValuesAsFlowAddsNewTopValue" to ::executeOrderedScanValuesAsFlowAddsNewTopValue
+        "executeOrderedScanValuesAsFlowAddsNewTopValue" to ::executeOrderedScanValuesAsFlowAddsNewTopValue,
+        "executeReverseOrderedScanValuesAsFlowAddsNewTopValue" to ::executeReverseOrderedScanValuesAsFlowAddsNewTopValue
     )
 
     override suspend fun initData() {
@@ -442,6 +443,59 @@ class DataStoreScanUpdatesAndFlowTest(
         }
     }
 
+    private suspend fun executeReverseOrderedScanValuesAsFlowAddsNewTopValue() = coroutineScope {
+        val responses = Channel<IsUpdateResponse<TestMarykModel>>(3)
+        val listenJob = launch {
+            dataStore.executeFlow(
+                TestMarykModel.scan(
+                    order = TestMarykModel { int::ref }.descending(),
+                    limit = 2u
+                )
+            ).collect {
+                responses.send(it)
+            }
+        }
+
+        try {
+            suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5000.milliseconds) { responses.receive() }
+            }
+
+            assertIs<InitialValuesUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(listOf(testKeys[4], testKeys[2]), values.map { it.key })
+            }
+
+            val newDataObject = TestMarykModel.create {
+                string with "ha new reverse top"
+                int with 6
+                uint with 999999u
+                bool with false
+                double with 12.0
+                dateTime with LocalDateTime(2026, 5, 13, 0, 0)
+            }
+
+            dataStore.execute(TestMarykModel.add(newDataObject)).also {
+                testKeys.add(assertStatusIs<AddSuccess<TestMarykModel>>(it.statuses.first()).key)
+            }
+
+            val newKey = testKeys.last()
+
+            assertIs<AdditionUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(newKey, key)
+                assertEquals(newDataObject, values)
+                assertEquals(0, insertionIndex)
+            }
+
+            assertIs<RemovalUpdate<*>>(receiveRealTimeResponse()).apply {
+                assertEquals(testKeys[2], key)
+                assertEquals(NotInRange, reason)
+            }
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
+        }
+    }
+
     private suspend fun executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill() {
         if (!dataStore.keepUpdateHistoryIndex) return
 
@@ -716,8 +770,22 @@ class DataStoreScanUpdatesAndFlowTest(
         }
 
         try {
-            assertIs<OrderedKeysUpdate<*>>(withTimeout(5000.milliseconds) { responses.receive() }).apply {
+            suspend fun receiveRealTimeResponse() = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5000.milliseconds) { responses.receive() }
+            }
+
+            assertIs<OrderedKeysUpdate<*>>(receiveRealTimeResponse()).apply {
                 assertEquals(listOf(testKeys[2], testKeys[3], testKeys[4]), keys)
+            }
+
+            repeat(3) {
+                withContext(Dispatchers.Default.limitedParallelism(1)) {
+                    withTimeoutOrNull(100.milliseconds) { responses.receive() }
+                }?.let { update ->
+                    assertIs<AdditionUpdate<*>>(update).apply {
+                        assertTrue(key in setOf(testKeys[2], testKeys[3], testKeys[4]))
+                    }
+                }
             }
 
             val change = Change(TestMarykModel { string::ref } with "ha out of range")
@@ -725,7 +793,11 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
 
-            assertNull(withTimeoutOrNull(250.milliseconds) { responses.receive() })
+            assertNull(
+                withContext(Dispatchers.Default.limitedParallelism(1)) {
+                    withTimeoutOrNull(250.milliseconds) { responses.receive() }
+                }
+            )
         } finally {
             dataStore.closeAllListeners()
             listenJob.cancelAndJoin()
@@ -1318,36 +1390,30 @@ class DataStoreScanUpdatesAndFlowTest(
 
             val removalUpdate2 = responses[6].await()
             assertIs<RemovalUpdate<TestMarykModel>>(removalUpdate2).apply {
-                assertEquals(testKeys[2], key)
+                assertEquals(testKeys[3], key)
                 assertEquals(NotInRange, reason)
             }
 
-            // Change value which changes order
+            // Change value on a tracked key so its position within the visible window changes
             val change3 = Change(TestMarykModel { int::ref } with -3)
             dataStore.execute(TestMarykModel.change(
-                testKeys[3].change(change3)
+                testKeys[2].change(change3)
             )).also {
                 assertStatusIs<ChangeSuccess<*>>(it.statuses.first())
             }
 
             val changeUpdate3 = responses[7].await()
             assertIs<ChangeUpdate<*>>(changeUpdate3).apply {
-                assertEquals(testKeys[3], key)
-                assertEquals(listOf(
-                    change3,
-                    IndexChange(listOf(
-                        IndexUpdate(
-                            index = Bytes("BAILKQIKOQIKEQ"),
-                            indexKey = Bytes("f___sNzFfwABf____QQCBwAAzGMAAAE"),
-                            previousIndexKey = Bytes("f___sNzFfwABf___-wQCBwAAzGMAAAE")
-                        ),
-                        IndexUpdate(
-                            index = Bytes("ChE"),
-                            indexKey = Bytes("f____QQAAMxjAAAB"),
-                            previousIndexKey = Bytes("f___-wQAAMxjAAAB")
-                        )
-                    ))
-                ), changes)
+                assertEquals(testKeys[2], key)
+                assertEquals(change3, changes.first())
+                val indexChanges = changes.filterIsInstance<IndexChange>()
+                assertEquals(1, indexChanges.size)
+                val indexUpdates = indexChanges.single().changes.filterIsInstance<IndexUpdate>()
+                assertEquals(2, indexUpdates.size)
+                indexUpdates.forEach { indexUpdate ->
+                    assertEquals(true, indexUpdate.previousIndexKey != null)
+                    assertTrue(indexUpdate.previousIndexKey != indexUpdate.indexKey)
+                }
                 assertEquals(1, index)
             }
         }

@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.pairs.with
@@ -15,6 +16,7 @@ import maryk.core.query.responses.FetchByUniqueKey
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykEnumEmbedded.E1
@@ -34,6 +36,9 @@ class DataStoreScanUniqueTest(
         "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
         "executeSimpleScanFilterWithToVersionRequest" to ::executeSimpleScanFilterWithToVersionRequest,
         "executeHistoricalUniqueDoesNotMatchPrefixCollision" to ::executeHistoricalUniqueDoesNotMatchPrefixCollision,
+        "executeHistoricalUniqueCanFindHardDeletedObject" to ::executeHistoricalUniqueCanFindHardDeletedObject,
+        "executeHistoricalUniqueCanIncludeSoftDeletedObject" to ::executeHistoricalUniqueCanIncludeSoftDeletedObject,
+        "executeHistoricalUniqueCanIncludeObjectSoftDeletedByChange" to ::executeHistoricalUniqueCanIncludeObjectSoftDeletedByChange,
     )
 
     private val objects = arrayOf(
@@ -69,7 +74,11 @@ class DataStoreScanUniqueTest(
         dataStore.execute(
             CompleteMarykModel.delete(*keys.toTypedArray(), hardDelete = true)
         ).statuses.forEach {
-            assertStatusIs<DeleteSuccess<*>>(it)
+            when (it) {
+                is DeleteSuccess<*> -> {}
+                is DoesNotExist<*> -> {}
+                else -> assertStatusIs<DeleteSuccess<*>>(it)
+            }
         }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
@@ -150,6 +159,89 @@ class DataStoreScanUniqueTest(
 
         expect(0) { scanResponse.values.size }
         assertTrue { scanResponse.dataFetchType is FetchByUniqueKey }
+        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeHistoricalUniqueCanIncludeSoftDeletedObject() {
+        if (!dataStore.keepAllVersions) return
+
+        val deleteResponse = dataStore.execute(
+            CompleteMarykModel.delete(keys[0], hardDelete = false)
+        )
+        val deleteVersion = assertStatusIs<DeleteSuccess<CompleteMarykModel>>(deleteResponse.statuses.single()).version
+
+        val scanResponse = dataStore.execute(
+            CompleteMarykModel.scan(
+                where = Equals(
+                    CompleteMarykModel.string.ref() with "haas"
+                ),
+                toVersion = deleteVersion,
+                filterSoftDeleted = false
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        assertTrue { scanResponse.values.single().isDeleted }
+        expect(keys[0]) { scanResponse.values.single().key }
+        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeHistoricalUniqueCanFindHardDeletedObject() {
+        if (!dataStore.keepAllVersions) return
+
+        assertStatusIs<DeleteSuccess<CompleteMarykModel>>(
+            dataStore.execute(
+                CompleteMarykModel.delete(keys[0], hardDelete = true)
+            ).statuses.single()
+        )
+
+        val scanResponse = dataStore.execute(
+            CompleteMarykModel.scan(
+                where = Equals(
+                    CompleteMarykModel.string.ref() with "haas"
+                ),
+                toVersion = lowestVersion
+            )
+        )
+
+        expect(0) { scanResponse.values.size }
+        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeHistoricalUniqueCanIncludeObjectSoftDeletedByChange() {
+        if (!dataStore.keepAllVersions) return
+
+        val changeResponse = dataStore.execute(
+            CompleteMarykModel.change(
+                keys[0].change(ObjectSoftDeleteChange(true))
+            )
+        )
+        val deleteVersion = assertStatusIs<ChangeSuccess<CompleteMarykModel>>(changeResponse.statuses.single()).version
+
+        val filteredScanResponse = dataStore.execute(
+            CompleteMarykModel.scan(
+                where = Equals(
+                    CompleteMarykModel.string.ref() with "haas"
+                ),
+                toVersion = deleteVersion
+            )
+        )
+
+        expect(0) { filteredScanResponse.values.size }
+
+        val scanResponse = dataStore.execute(
+            CompleteMarykModel.scan(
+                where = Equals(
+                    CompleteMarykModel.string.ref() with "haas"
+                ),
+                toVersion = deleteVersion,
+                filterSoftDeleted = false
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        assertTrue { scanResponse.values.single().isDeleted }
+        expect(keys[0]) { scanResponse.values.single().key }
         expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
     }
 }

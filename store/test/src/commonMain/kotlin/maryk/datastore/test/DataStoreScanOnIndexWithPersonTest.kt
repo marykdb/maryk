@@ -26,6 +26,7 @@ class DataStoreScanOnIndexWithPersonTest(
         "executeIndexScanRequestWithPerson" to ::executeIndexScanRequestWithPerson,
         "executeIndexScanFilterRequestWithPerson" to ::executeIndexScanFilterRequestWithPerson,
         "executeIndexScanFilterSpecificRequestWithPerson" to ::executeIndexScanFilterSpecificRequestWithPerson,
+        "executeHistoricIndexScanFilterSpecificRequestWithPerson" to ::executeHistoricIndexScanFilterSpecificRequestWithPerson,
     )
 
     private val persons = arrayOf(
@@ -153,6 +154,33 @@ class DataStoreScanOnIndexWithPersonTest(
         )) { scanResponse.dataFetchType }
 
         // Sorted on name
+        scanResponse.values[0].let {
+            expect(persons[1]) { it.values }
+            expect(keys[1]) { it.key }
+        }
+    }
+
+    private suspend fun executeHistoricIndexScanFilterSpecificRequestWithPerson() {
+        if (!dataStore.keepAllVersions) return
+
+        val scanResponse = dataStore.execute(
+            Person.scan(
+                where = Equals(
+                    Person { firstName::ref } with "Karel",
+                    Person { surname::ref } with "Kastens",
+                ),
+                toVersion = highestCreationVersion
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = byteArrayOf(4, 2, 10, 17, 2, 10, 9),
+            startKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 108),
+            stopKey = byteArrayOf(75, 97, 115, 116, 101, 110, 115, 75, 97, 114, 101, 109),
+        )) { scanResponse.dataFetchType }
+
         scanResponse.values[0].let {
             expect(persons[1]) { it.values }
             expect(keys[1]) { it.key }

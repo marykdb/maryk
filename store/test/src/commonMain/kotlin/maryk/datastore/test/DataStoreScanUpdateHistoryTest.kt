@@ -3,6 +3,7 @@ package maryk.datastore.test
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
@@ -28,7 +29,8 @@ class DataStoreScanUpdateHistoryTest(
 
     override val allTests = mapOf(
         "executeScanUpdateHistoryFailsWithoutIndex" to ::executeScanUpdateHistoryFailsWithoutIndex,
-        "executeScanUpdateHistoryReturnsVersionOrderedEntries" to ::executeScanUpdateHistoryReturnsVersionOrderedEntries
+        "executeScanUpdateHistoryReturnsVersionOrderedEntries" to ::executeScanUpdateHistoryReturnsVersionOrderedEntries,
+        "executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion" to ::executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion
     )
 
     override suspend fun initData() {
@@ -90,5 +92,38 @@ class DataStoreScanUpdateHistoryTest(
         assertEquals(listOf(change3), updates[0].changes)
         assertEquals(listOf(change2), updates[1].changes)
         assertEquals(listOf(change1), updates[2].changes)
+    }
+
+    private suspend fun executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion() {
+        if (!(dataStore.keepAllVersions && dataStore.keepUpdateHistoryIndex)) return
+
+        val deleteVersion = assertStatusIs<DeleteSuccess<*>>(
+            dataStore.execute(TestMarykModel.delete(testKeys[1], hardDelete = false)).statuses.first()
+        ).version
+
+        val filteredResponse = dataStore.execute(
+            TestMarykModel.scanUpdateHistory(
+                fromVersion = deleteVersion,
+                toVersion = deleteVersion,
+                limit = 1u,
+                filterSoftDeleted = true
+            )
+        )
+        assertEquals(0, filteredResponse.updates.size)
+
+        val response = dataStore.execute(
+            TestMarykModel.scanUpdateHistory(
+                fromVersion = deleteVersion,
+                toVersion = deleteVersion,
+                limit = 1u,
+                filterSoftDeleted = false
+            )
+        )
+
+        assertIs<FetchByUpdateHistoryIndex>(response.dataFetchType)
+        val update = assertIs<ChangeUpdate<TestMarykModel>>(response.updates.single())
+        assertEquals(deleteVersion, update.version)
+        assertEquals(testKeys[1], update.key)
+        assertEquals(listOf(ObjectSoftDeleteChange(true)), update.changes)
     }
 }

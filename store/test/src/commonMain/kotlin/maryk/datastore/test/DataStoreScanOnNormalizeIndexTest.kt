@@ -5,6 +5,7 @@ import maryk.core.query.changes.change
 import maryk.core.properties.types.Key
 import maryk.core.query.filters.And
 import maryk.core.query.filters.Equals
+import maryk.core.query.filters.GreaterThan
 import maryk.core.query.filters.Matches
 import maryk.core.query.filters.MatchesPrefix
 import maryk.core.query.filters.MatchesRegEx
@@ -37,6 +38,8 @@ class DataStoreScanOnNormalizeIndexTest(
         "executeIndexEqualsScanRequestOnNormalizeIndex" to ::executeIndexEqualsScanRequestOnNormalizeIndex,
         "executeIndexPrefixScanRequestOnNormalizeIndex" to ::executeIndexPrefixScanRequestOnNormalizeIndex,
         "executeIndexRegexScanRequestOnNormalizeIndex" to ::executeIndexRegexScanRequestOnNormalizeIndex,
+        "executeIndexGreaterThanScanRequestOnNormalizeIndex" to ::executeIndexGreaterThanScanRequestOnNormalizeIndex,
+        "executeHistoricIndexGreaterThanScanRequestOnNormalizeIndex" to ::executeHistoricIndexGreaterThanScanRequestOnNormalizeIndex,
         "executeIndexOnlyNormalizesConfiguredPart" to ::executeIndexOnlyNormalizesConfiguredPart,
         "executeNamedAnyOfMatchesWithoutOrder" to ::executeNamedAnyOfMatchesWithoutOrder,
         "executeNamedAnyOfMultiTermMatchesWithoutOrder" to ::executeNamedAnyOfMultiTermMatchesWithoutOrder,
@@ -48,6 +51,7 @@ class DataStoreScanOnNormalizeIndexTest(
         "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersion" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersion,
         "executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrderToVersion" to ::executeNamedAnyOfMultiTermMatchesPrefixWithAndWithoutOrderToVersion,
         "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersionSkipsDeletedSiblingToken" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrderToVersionSkipsDeletedSiblingToken,
+        "executeNamedAnyOfMatchesPrefixWithoutOrderToVersionIncludesSoftDeleted" to ::executeNamedAnyOfMatchesPrefixWithoutOrderToVersionIncludesSoftDeleted,
         "executeNamedAnyOfMatchesRegexWithoutOrder" to ::executeNamedAnyOfMatchesRegexWithoutOrder,
         "executePropertyEqualsDoesNotUseNamedAnyOfSearch" to ::executePropertyEqualsDoesNotUseNamedAnyOfSearch,
     )
@@ -224,6 +228,56 @@ class DataStoreScanOnNormalizeIndexTest(
 
         expect(1) { scanResponse.values.size }
         expect(persons[4]) { scanResponse.values.first().values }
+    }
+
+    private suspend fun executeIndexGreaterThanScanRequestOnNormalizeIndex() {
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = GreaterThan(
+                    CaseInsensitivePerson { surname::ref } with "garcia"
+                ),
+                order = Orders(
+                    CaseInsensitivePerson { surname::ref }.ascending(),
+                    CaseInsensitivePerson { firstName::ref }.ascending()
+                ),
+            )
+        )
+
+        expect(8) { scanResponse.values.size }
+        expect(persons[4]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![0].referenceStorageByteArray.bytes,
+            startKey = "garcia".encodeToByteArray(),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeHistoricIndexGreaterThanScanRequestOnNormalizeIndex() {
+        if (!dataStore.keepAllVersions) return
+
+        val version = initialVersion ?: error("Missing initial version")
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = GreaterThan(
+                    CaseInsensitivePerson { surname::ref } with "garcia"
+                ),
+                order = Orders(
+                    CaseInsensitivePerson { surname::ref }.ascending(),
+                    CaseInsensitivePerson { firstName::ref }.ascending()
+                ),
+                toVersion = version
+            )
+        )
+
+        expect(8) { scanResponse.values.size }
+        expect(persons[4]) { scanResponse.values.first().values }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![0].referenceStorageByteArray.bytes,
+            startKey = "garcia".encodeToByteArray(),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
     }
 
     private suspend fun executeIndexOnlyNormalizesConfiguredPart() {
@@ -494,6 +548,36 @@ class DataStoreScanOnNormalizeIndexTest(
                 surname with "Vermeer"
             }
         ) { scanResponse.values.first().values }
+        expect(keys[6]) { scanResponse.values.first().key }
+        expect(FetchByIndexScan(
+            direction = Direction.ASC,
+            index = CaseInsensitivePerson.Meta.indexes!![1].referenceStorageByteArray.bytes,
+            startKey = "mila".encodeToByteArray(),
+            stopKey = "milb".encodeToByteArray(),
+        )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeNamedAnyOfMatchesPrefixWithoutOrderToVersionIncludesSoftDeleted() {
+        if (!dataStore.keepAllVersions) return
+
+        val deleteVersion = dataStore.execute(
+            CaseInsensitivePerson.delete(keys[6], hardDelete = false)
+        ).statuses.first().let {
+            assertStatusIs<DeleteSuccess<CaseInsensitivePerson>>(it).version
+        }
+
+        val scanResponse = dataStore.execute(
+            CaseInsensitivePerson.scan(
+                where = MatchesPrefix(
+                    "name" with "mila verh"
+                ),
+                toVersion = deleteVersion,
+                filterSoftDeleted = false
+            )
+        )
+
+        expect(1) { scanResponse.values.size }
+        expect(persons[6]) { scanResponse.values.first().values }
         expect(keys[6]) { scanResponse.values.first().key }
         expect(FetchByIndexScan(
             direction = Direction.ASC,

@@ -119,3 +119,76 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
         throw RuntimeException(messages.toString(), firstThrowable)
     }
 }
+
+suspend fun runDataStoreTestsIsolated(
+    createDataStore: () -> IsDataStore,
+    runOnlyTests: Set<String>? = null
+) {
+    val exceptionList = mutableMapOf<String, Throwable>()
+    var executedTests = 0
+
+    for ((testClassName, testClassConstructor) in allTestClasses) {
+        val testNames = createDataStore().let { dataStore ->
+            try {
+                testClassConstructor(dataStore).allTests.keys.toList()
+            } finally {
+                dataStore.close()
+            }
+        }
+
+        for (testName in testNames) {
+            if (runOnlyTests != null && testName !in runOnlyTests) {
+                continue
+            }
+
+            println(testClassName)
+            println("- $testName")
+            executedTests += 1
+
+            val dataStore = createDataStore()
+            try {
+                val testClass = testClassConstructor(dataStore)
+                val test = testClass.allTests[testName]
+                    ?: error("Missing test `$testName` in `$testClassName`.")
+
+                var phase = "init"
+                try {
+                    testClass.initData()
+                    phase = "test"
+                    test()
+                } catch (throwable: Throwable) {
+                    println("  FAILED $phase")
+                    exceptionList["$testClassName.$testName.$phase"] = throwable
+                    throwable.printStackTrace()
+                }
+
+                phase = "reset"
+                try {
+                    testClass.resetData()
+                } catch (throwable: Throwable) {
+                    println("  FAILED $phase")
+                    exceptionList["$testClassName.$testName.$phase"] = throwable
+                    throwable.printStackTrace()
+                }
+            } finally {
+                dataStore.close()
+            }
+        }
+    }
+
+    if (runOnlyTests != null && executedTests == 0) {
+        throw IllegalArgumentException("No datastore test found with names `${runOnlyTests.joinToString()}`.")
+    }
+    if (exceptionList.isNotEmpty()) {
+        val messages = StringBuilder("DataStore Tests failed: (${exceptionList.size})[\n")
+        var firstThrowable: Throwable? = null
+        for ((name, exception) in exceptionList) {
+            if (firstThrowable == null) {
+                firstThrowable = exception
+            }
+            messages.append("\t$name: $exception\n")
+        }
+        messages.append(']')
+        throw RuntimeException(messages.toString(), firstThrowable)
+    }
+}

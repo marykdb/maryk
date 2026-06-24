@@ -45,6 +45,7 @@ class DataStoreScanChangesTest(
         "executeScanChangesOnDescendingIndexRequest" to ::executeScanChangesOnDescendingIndexRequest,
         "executeScanChangesRequestWithLimit" to ::executeScanChangesRequestWithLimit,
         "executeScanChangesRequestWithToVersion" to ::executeScanChangesRequestWithToVersion,
+        "executeScanChangesOnIndexRequestWithToVersion" to ::executeScanChangesOnIndexRequestWithToVersion,
         "executeScanChangesRequestWithFromVersion" to ::executeScanChangesRequestWithFromVersion,
         "executeScanChangesRequestWithSelect" to ::executeScanChangesRequestWithSelect,
         "executeScanChangesRequestWithMaxVersions" to ::executeScanChangesRequestWithMaxVersions
@@ -263,6 +264,35 @@ class DataStoreScanChangesTest(
                     Log.scanChanges(startKey = keys[2], toVersion = lowestVersion - 1uL)
                 )
             }
+        }
+    }
+
+    private suspend fun executeScanChangesOnIndexRequestWithToVersion() {
+        if (!dataStore.keepAllVersions) return
+
+        val scanResponse = dataStore.execute(
+            Log.scanChanges(
+                startKey = keys[0],
+                order = Log { severity::ref }.ascending(),
+                toVersion = lowestVersion
+            )
+        )
+
+        expect(2) { scanResponse.changes.size }
+        expect(FetchByIndexScan(
+            index = byteArrayOf(10, 17),
+            direction = Direction.ASC,
+            startKey = byteArrayOf(0, 1, 2, *keys[0].bytes),
+            stopKey = byteArrayOf(),
+        )) { scanResponse.dataFetchType }
+
+        scanResponse.changes[0].apply {
+            assertEquals(keys[0], key)
+            assertEquals(Bytes("AAECf___pBP6hn_XAAE"), sortingKey)
+        }
+        scanResponse.changes[1].apply {
+            assertEquals(keys[3], key)
+            assertEquals(Bytes("AAMCf___pBPjrX__AAM"), sortingKey)
         }
     }
 

@@ -17,10 +17,8 @@ import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
-import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getKeyByUniqueValue
-import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.foundationdb.processors.helpers.TransactionRunner
 import maryk.datastore.shared.ScanType
 import maryk.datastore.shared.TypeIndicator
@@ -53,10 +51,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
     if (keyScanRange.isSingleKey()) {
         val key = scanRequest.dataModel.key(keyScanRange.ranges.first().start)
         transactionRunner.run { tr ->
-            val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-            if (exists != null) {
-                val createdVersion = exists.readHLCTimestampIfPresent()
-                    ?: return@run
+            val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
+            if (createdVersion != null) {
                 if (shouldProcessRecord(tr, tableDirs, key, createdVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
                     processRecord(tr, key, createdVersion, null)
                 }
@@ -84,15 +80,19 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
         }
 
         transactionRunner.run { tr ->
-            tr.getKeyByUniqueValue(tableDirs, reference, scanRequest.toVersion) { keyBytes, keyOffset, keyLength, setAtVersion ->
+            tr.getKeyByUniqueValue(
+                tableDirs = tableDirs,
+                reference = reference,
+                keySize = scanRequest.dataModel.Meta.keyByteSize,
+                toVersion = scanRequest.toVersion
+            ) { keyBytes, keyOffset, keyLength, setAtVersion ->
                 var keyReadIndex = keyOffset
                 val key = scanRequest.dataModel.key {
                     keyBytes[keyReadIndex++]
                 }
                 if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
                     // Ensure we have the creation version for processRecord callback
-                    val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-                    val createdVersion = createdBytes?.readHLCTimestampIfPresent()
+                    val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
                     if (createdVersion != null) {
                         processRecord(tr, key, createdVersion, null)
                     }

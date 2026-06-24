@@ -1,5 +1,3 @@
-@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
-
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.async

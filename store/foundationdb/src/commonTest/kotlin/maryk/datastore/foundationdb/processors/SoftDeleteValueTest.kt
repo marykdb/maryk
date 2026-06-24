@@ -1,10 +1,7 @@
-@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
-
 package maryk.datastore.foundationdb.processors
 
 import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
-import maryk.core.exceptions.StorageException
 import maryk.core.models.key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.datastore.foundationdb.FoundationDBDataStore
@@ -12,15 +9,16 @@ import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.test.dataModelsForTests
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
-import kotlin.test.assertFailsWith
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.uuid.Uuid
 
 class SoftDeleteValueTest {
     @Test
-    fun currentIsSoftDeletedRejectsValueWithoutDeleteFlag() {
+    fun currentIsSoftDeletedIgnoresOverlongValue() {
         runBlocking {
             val store = FoundationDBDataStore.open(
-                directoryPath = listOf("maryk", "test", "soft-delete-current-missing-flag", Uuid.random().toString()),
+                directoryPath = listOf("maryk", "test", "soft-delete-current-overlong", Uuid.random().toString()),
                 dataModelsById = dataModelsForTests,
                 keepAllVersions = true,
             )
@@ -35,15 +33,13 @@ class SoftDeleteValueTest {
                 store.runTransaction { tr ->
                     tr.set(
                         packKey(tableDirs.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR),
-                        HLC.toStorageBytes(HLC(5uL))
+                        HLC.toStorageBytes(HLC(5uL)) + byteArrayOf(TRUE, 0)
                     )
                 }
 
-                assertFailsWith<StorageException> {
-                    store.runTransaction { tr ->
-                        isSoftDeleted(tr, tableDirs, null, key.bytes)
-                    }
-                }
+                assertFalse(store.runTransaction { tr ->
+                    isSoftDeleted(tr, tableDirs, null, key.bytes)
+                })
             } finally {
                 store.close()
             }
@@ -51,7 +47,7 @@ class SoftDeleteValueTest {
     }
 
     @Test
-    fun softDeleteFallbackRejectsValueWithoutDeleteFlag() {
+    fun softDeleteFallbackIgnoresValueWithoutDeleteFlag() {
         runBlocking {
             val store = FoundationDBDataStore.open(
                 directoryPath = listOf("maryk", "test", "soft-delete-fallback-missing-flag", Uuid.random().toString()),
@@ -74,17 +70,19 @@ class SoftDeleteValueTest {
                     )
                 }
 
-                assertFailsWith<StorageException> {
+                val objectChange = DataObjectVersionedChange(key, changes = emptyList())
+                assertEquals(
+                    objectChange,
                     store.runTransaction { tr ->
                         addSoftDeleteChangeIfMissing(
                             tr = tr,
                             tableDirs = tableDirs,
                             key = key,
                             fromVersion = version,
-                            objectChange = DataObjectVersionedChange(key, changes = emptyList()),
+                            objectChange = objectChange,
                         )
                     }
-                }
+                )
             } finally {
                 store.close()
             }

@@ -47,18 +47,19 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
                 sortingKey = sortingKey,
                 cachedRead = cacheReader
             )
-            change?.let { changes ->
-                val updated = if (scanRequest.toVersion == null && scanRequest.maxVersions > 1u && tableDirs is HistoricTableDirectories) {
-                    addSoftDeleteChangeIfMissing(
-                        tr = tr,
-                        tableDirs = tableDirs,
-                        key = key,
-                        fromVersion = scanRequest.fromVersion,
-                        objectChange = changes
-                    )
-                } else {
-                    changes
-                }
+            val updated = if (scanRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
+                addSoftDeleteChangeIfMissing(
+                    tr = tr,
+                    tableDirs = tableDirs,
+                    key = key,
+                    fromVersion = scanRequest.fromVersion,
+                    objectChange = change,
+                    sortingKey = sortingKey
+                )
+            } else {
+                change
+            }
+            updated?.let {
                 objectChanges += updated
             }
         }
@@ -72,3 +73,6 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
         )
     )
 }
+
+private fun ScanChangesRequest<*>.needsSoftDeleteFallback() =
+    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)

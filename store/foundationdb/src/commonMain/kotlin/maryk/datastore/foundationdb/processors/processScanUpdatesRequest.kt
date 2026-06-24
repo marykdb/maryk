@@ -14,6 +14,7 @@ import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.orders.Direction
 import maryk.core.query.requests.ScanUpdatesRequest
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.UpdatesResponse
@@ -32,11 +33,11 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
-import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
-import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
 import maryk.datastore.foundationdb.processors.helpers.readSetByReference
@@ -48,6 +49,7 @@ import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.foundationdb.Transaction
 import maryk.lib.bytes.combineToByteArray
+import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.foundationdb.Range as FDBRange
 
@@ -71,12 +73,16 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
     val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val matchingVersions = mutableMapOf<Key<DM>, ULong>()
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
+    val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
 
     var lastResponseVersion = 0uL
 
     var sortingKeys: MutableList<ByteArray>? = null
     var sortingIndex: IsIndexable? = null
+    var sortingDirection: Direction? = null
+    var sortingIndexScanRange: maryk.core.processors.datastore.scanRange.IndexableScanRanges? = null
 
     var insertionIndex = -1
 
@@ -89,16 +95,35 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
         version: ULong?,
         cacheReader: (IsPropertyReferenceForCache<*, *>, ULong, () -> Any?) -> Any?
     ): ValuesWithMetaData<DM>? {
+        val readVersion = version.takeIf { tableDirs is HistoricTableDirectories }
         return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
             tr = tr,
             creationVersion = creationVersion,
             tableDirs = tableDirs,
             key = key,
             select = scanRequest.select,
-            toVersion = version.takeIf { tableDirs is HistoricTableDirectories },
+            toVersion = readVersion,
             cachedRead = cacheReader,
             decryptValue = this@processScanUpdatesRequest::decryptValueIfNeeded
-        )
+        )?.withSoftDeleteState(tr, tableDirs, key.bytes, readVersion)
+    }
+
+    fun selectSortingKey(getter: IsValuesGetter, index: IsIndexable, keyBytes: ByteArray): ByteArray? {
+        val allIndexValues = index.toStorageByteArraysForIndex(getter, keyBytes)
+        return allIndexValues
+            .filter { indexValue ->
+                sortingIndexScanRange?.let { scanRange ->
+                    scanRange.keyWithinRanges(indexValue) && scanRange.matchesPartials(indexValue)
+                } ?: true
+            }
+            .ifEmpty { allIndexValues }
+            .let { candidateIndexValues ->
+                when (sortingDirection) {
+                    Direction.ASC -> candidateIndexValues.minWithOrNull { a, b -> a compareTo b }
+                    Direction.DESC -> candidateIndexValues.maxWithOrNull { a, b -> a compareTo b }
+                    null -> candidateIndexValues.firstOrNull()
+                }
+            }
     }
 
     val dataFetchType = this.processScan(
@@ -108,6 +133,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
             (it as? IndexScan)?.let { indexScan ->
                 sortingKeys = mutableListOf()
                 sortingIndex = indexScan.index
+                sortingDirection = indexScan.direction
+                sortingIndexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
             }
         },
     ) { tr, key, creationVersion, sortingKey ->
@@ -117,15 +144,22 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
 
             // Add sorting index if requested
             sortingIndex?.let { idx ->
-                val getter = StoreValuesGetter(tr, tableDirs, this@processScanUpdatesRequest::decryptValueIfNeeded)
-                getter.moveToKey(key.bytes, scanRequest.toVersion)
-                idx.toStorageByteArrayForIndex(getter, key.bytes)?.let { indexableBytes ->
+                sortingKey?.let { indexableBytes ->
                     sortingKeys?.add(indexableBytes)
+                } ?: run {
+                    val getter = StoreValuesGetter(tr, tableDirs, this@processScanUpdatesRequest::decryptValueIfNeeded)
+                    getter.moveToKey(key.bytes, scanRequest.toVersion)
+                    selectSortingKey(getter, idx, key.bytes)?.let { indexableBytes ->
+                        sortingKeys?.add(indexableBytes)
+                    }
                 }
             }
 
             // Determine last known version for ordered response metadata
-            val last = getLastVersion(tr, tableDirs, key)
+            val last = tr.get(packKey(tableDirs.tablePrefix, key.bytes)).awaitResult()
+                ?.readHLCTimestampIfExact()
+                ?: scanRequest.toVersion
+                ?: return@processScan
             lastResponseVersion = maxOf(lastResponseVersion, last)
 
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
@@ -143,21 +177,21 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 maxVersions = scanRequest.maxVersions,
                 sortingKey = sortingKey,
                 cachedRead = cacheReader
-            )?.let { changes ->
-                if (scanRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
-                    addSoftDeleteChangeIfMissing(
-                        tr = tr,
-                        tableDirs = tableDirs,
-                        key = key,
-                        fromVersion = scanRequest.fromVersion,
-                        objectChange = changes
-                    )
-                } else {
-                    changes
-                }
+            )
+            val updatedObjectChange = if (scanRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
+                addSoftDeleteChangeIfMissing(
+                    tr = tr,
+                    tableDirs = tableDirs,
+                    key = key,
+                    fromVersion = scanRequest.fromVersion,
+                    objectChange = objectChange,
+                    sortingKey = sortingKey
+                )
+            } else {
+                objectChange
             }
 
-            objectChange?.let { oc ->
+            updatedObjectChange?.let { oc ->
                 for (versionedChange in oc.changes) {
                     val changes = versionedChange.changes
                     val update = if (changes.find { it is ObjectCreate } != null) {
@@ -236,9 +270,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
             // Additions for keys newly added in range relative to old orderedKeys
             matchingKeys.subtract(orderedKeysSet).let { addedKeys ->
                 for (addedKey in addedKeys) {
-                    val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).awaitResult()
-                    if (createdBytes != null) {
-                        val createdVersion = createdBytes.readHLCTimestampIfPresent() ?: continue
+                    val createdVersion = tr.readCreationVersion(tableDirs, addedKey.bytes, scanRequest.toVersion)
+                    if (createdVersion != null) {
 
                         val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                             cache.readValue(dbIndex, addedKey, reference, version, valueReader)
@@ -279,6 +312,8 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
     val matchingKeys = ArrayList<Key<DM>>(expectedSize)
+    val matchingVersions = mutableMapOf<Key<DM>, ULong>()
+    val matchingOrder = mutableMapOf<Key<DM>, Int>()
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
     val scanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
     var lastResponseVersion = 0uL
@@ -299,8 +334,8 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
         }
 
     fun processEntry(tr: Transaction, key: Key<DM>, version: ULong, isHardDelete: Boolean) {
-            val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-            if (createdBytes == null) {
+            val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
+            if (creationVersion == null) {
                 if (isHardDelete && scanRequest.where == null &&
                     !scanRange.keyBeforeStart(key.bytes, 0) && scanRange.keyWithinRanges(key.bytes, 0) && scanRange.matchesPartials(key.bytes) &&
                     version >= scanRequest.fromVersion
@@ -314,7 +349,6 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                 }
                 return
             }
-            val creationVersion = createdBytes.readHLCTimestampIfPresent() ?: return
 
             if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, this@processUpdateHistoryScanUpdates::decryptValueIfNeeded)
                 || scanRange.keyBeforeStart(key.bytes, 0)
@@ -324,15 +358,22 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                 return
             }
 
+            val last = tr.get(packKey(tableDirs.tablePrefix, key.bytes)).awaitResult()
+                ?.readHLCTimestampIfExact()
+                ?: scanRequest.toVersion
+                ?: return
+
             matchingKeys += key
-            lastResponseVersion = maxOf(lastResponseVersion, getLastVersion(tr, tableDirs, key))
+            matchingVersions[key] = version
+            matchingOrder[key] = matchingKeys.lastIndex
+            lastResponseVersion = maxOf(lastResponseVersion, last)
 
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
                 cache.readValue(dbIndex, key, reference, readVersion, valueReader)
             }
             val readVersion = scanRequest.toVersion.takeIf { tableDirs is HistoricTableDirectories }
 
-            scanRequest.dataModel.readTransactionIntoObjectChanges(
+            val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
                 tr = tr,
                 creationVersion = creationVersion,
                 tableDirs = tableDirs,
@@ -343,32 +384,38 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                 maxVersions = scanRequest.maxVersions,
                 sortingKey = null,
                 cachedRead = cacheReader
-            )?.let { changes ->
-                if (scanRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
-                    addSoftDeleteChangeIfMissing(
-                        tr = tr,
-                        tableDirs = tableDirs,
-                        key = key,
-                        fromVersion = scanRequest.fromVersion,
-                        objectChange = changes
-                    )
-                } else {
-                    changes
-                }
-            }?.let { objectChange ->
+            )
+            val updatedObjectChange = if (scanRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
+                addSoftDeleteChangeIfMissing(
+                    tr = tr,
+                    tableDirs = tableDirs,
+                    key = key,
+                    fromVersion = scanRequest.fromVersion,
+                    objectChange = objectChange
+                )
+            } else {
+                objectChange
+            }
+            updatedObjectChange?.let { objectChange ->
                 updates += objectChange.changes.mapNotNull { versionedChange ->
                     val changes = versionedChange.changes
 
                     if (changes.contains(ObjectCreate)) {
+                        val readChangeVersion = versionedChange.version.takeIf { tableDirs is HistoricTableDirectories }
                         scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                             tr = tr,
                             creationVersion = creationVersion,
                             tableDirs = tableDirs,
                             key = key,
                             select = scanRequest.select,
-                            toVersion = versionedChange.version.takeIf { tableDirs is HistoricTableDirectories },
+                            toVersion = readChangeVersion,
                             cachedRead = cacheReader,
                             decryptValue = this@processUpdateHistoryScanUpdates::decryptValueIfNeeded
+                        )?.withSoftDeleteState(
+                            tr,
+                            tableDirs,
+                            key.bytes,
+                            readChangeVersion
                         )?.let { valuesWithMeta ->
                             AdditionUpdate(
                                 key = objectChange.key,
@@ -397,7 +444,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                                 toVersion = readVersion,
                                 cachedRead = cacheReader,
                                 decryptValue = this@processUpdateHistoryScanUpdates::decryptValueIfNeeded
-                            )?.let { valuesWithMeta ->
+                            )?.withSoftDeleteState(tr, tableDirs, key.bytes, readVersion)?.let { valuesWithMeta ->
                                 AdditionUpdate(
                                     key = objectChange.key,
                                     version = versionedChange.version,
@@ -414,15 +461,20 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
     }
 
     var nextStart = historyStart
-    while (matchingKeys.size.toUInt() < scanRequest.limit) {
+    while (true) {
         val result = runScanTransaction { tr ->
             tr.forEachInRangeBatch(FDBRange(nextStart, historyEnd), false) { historyEntry ->
-                if (matchingKeys.size.toUInt() >= scanRequest.limit) return@forEachInRangeBatch false
                 val historyKey = historyEntry.key
                 val versionOffset = historyPrefix.size
-                if (historyKey.size < versionOffset + VERSION_BYTE_SIZE + keySize) return@forEachInRangeBatch true
+                if (historyKey.size != versionOffset + VERSION_BYTE_SIZE + keySize) return@forEachInRangeBatch true
                 val version = historyKey.readReversedVersionBytes(versionOffset)
                 if (version < scanRequest.fromVersion) return@forEachInRangeBatch false
+                val lowestSelectedVersion = matchingVersions.values.minOrNull()
+                if (
+                    matchingKeys.size.toUInt() >= scanRequest.limit &&
+                    lowestSelectedVersion != null &&
+                    version < lowestSelectedVersion
+                ) return@forEachInRangeBatch false
 
                 val keyOffset = versionOffset + VERSION_BYTE_SIZE
                 var keyReadIndex = keyOffset
@@ -432,12 +484,29 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                 if (!seenKeys.add(key)) return@forEachInRangeBatch true
 
                 processEntry(tr, key, version, historyEntry.value.firstOrNull() == 1.toByte())
-                matchingKeys.size.toUInt() < scanRequest.limit
+                true
             }
         }
 
-        if (result.completed || result.stoppedByCallback || matchingKeys.size.toUInt() >= scanRequest.limit) break
+        if (result.completed || result.stoppedByCallback) break
         nextStart = result.lastKey?.let { it + nextKeySuffix } ?: break
+    }
+
+    matchingKeys.sortWith(
+        compareByDescending<Key<DM>> { matchingVersions[it] ?: 0uL }
+            .thenByDescending { matchingOrder[it] ?: -1 }
+    )
+    if (matchingKeys.size.toUInt() > scanRequest.limit) {
+        val keptKeys = matchingKeys.take(scanRequest.limit.toInt()).toHashSet()
+        matchingKeys.subList(scanRequest.limit.toInt(), matchingKeys.size).clear()
+        updates.removeAll { update ->
+            when (update) {
+                is AdditionUpdate<*> -> update.key !in keptKeys
+                is ChangeUpdate<*> -> update.key !in keptKeys
+                is RemovalUpdate<*> -> update.key !in keptKeys
+                else -> false
+            }
+        }
     }
 
     runTransaction { tr ->
@@ -459,9 +528,8 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
             }
 
             matchingKeys.subtract(orderedKeysSet).forEach { addedKey ->
-                val createdBytes = tr.get(packKey(tableDirs.keysPrefix, addedKey.bytes)).awaitResult()
-                if (createdBytes != null) {
-                    val creationVersion = createdBytes.readHLCTimestampIfPresent() ?: return@forEach
+                val creationVersion = tr.readCreationVersion(tableDirs, addedKey.bytes, scanRequest.toVersion)
+                if (creationVersion != null) {
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, readVersion: ULong, valueReader: () -> Any? ->
                         cache.readValue(dbIndex, addedKey, reference, readVersion, valueReader)
                     }
@@ -474,7 +542,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                         toVersion = scanRequest.toVersion,
                         cachedRead = cacheReader,
                         decryptValue = this@processUpdateHistoryScanUpdates::decryptValueIfNeeded
-                    )?.let { valuesWithMeta ->
+                    )?.withSoftDeleteState(tr, tableDirs, addedKey.bytes, scanRequest.toVersion)?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
                             key = addedKey,
                             version = lastResponseVersion,
@@ -510,10 +578,24 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
 }
 
 private fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
-    order == null && fromVersion == 0uL && toVersion == null && maxVersions == 1u
+    order == null && startKey == null && includeStart && fromVersion == 0uL && toVersion == null && maxVersions == 1u
 
 private fun ScanUpdatesRequest<*>.needsSoftDeleteFallback() =
     toVersion == null && (maxVersions > 1u || !filterSoftDeleted)
+
+private fun <DM : IsRootDataModel> ValuesWithMetaData<DM>.withSoftDeleteState(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    key: ByteArray,
+    toVersion: ULong?
+): ValuesWithMetaData<DM> {
+    if (toVersion == null) {
+        return this
+    }
+
+    val deleted = isSoftDeleted(tr, tableDirs, toVersion, key)
+    return if (isDeleted == deleted) this else copy(isDeleted = deleted)
+}
 
 /** Simple getter to compute index values for current key within a single transaction */
 private class StoreValuesGetter(
@@ -522,7 +604,7 @@ private class StoreValuesGetter(
     private val decryptValue: DecryptValue? = null
 ) : IsValuesGetter {
     private lateinit var keyBytes: ByteArray
-    private val cache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()
+    private val cache = HashMap<IsPropertyReference<*, *, *>, Any?>(8)
 
     fun moveToKey(keyBytes: ByteArray, toVersion: ULong?) {
         this.keyBytes = keyBytes
@@ -556,12 +638,11 @@ private class StoreValuesGetter(
                 propertyReference as SetReference<Any, IsPropertyContext>
             ) as T?
         } else {
-            val keyAndRef = combineToByteArray(keyBytes, propertyReference.toStorageByteArray())
             tr.getValue(
                 tableDirs,
                 toVersion,
-                keyAndRef,
-                keyBytes.size,
+                keyBytes,
+                propertyReference.toStorageByteArray(),
                 decryptValue = decryptValue
             ) { valueBytes, offset, length ->
                 valueBytes.convertToValue(propertyReference, offset, length) as T?

@@ -1,7 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
-import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
@@ -10,7 +10,6 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
 import maryk.foundationdb.Transaction
 
@@ -19,31 +18,33 @@ internal fun <DM : IsRootDataModel> addSoftDeleteChangeIfMissing(
     tableDirs: IsTableDirectories,
     key: Key<DM>,
     fromVersion: ULong,
-    objectChange: DataObjectVersionedChange<DM>
-): DataObjectVersionedChange<DM> {
-    val hasSoftDelete = objectChange.changes.any { versioned ->
+    objectChange: DataObjectVersionedChange<DM>?,
+    sortingKey: ByteArray? = null
+): DataObjectVersionedChange<DM>? {
+    val hasSoftDelete = objectChange?.changes?.any { versioned ->
         versioned.changes.any { it is ObjectSoftDeleteChange }
-    }
+    } == true
     if (hasSoftDelete) return objectChange
 
     val softDeleteQualifier = key.bytes + SOFT_DELETE_INDICATOR
     val packedKey = packKey(tableDirs.tablePrefix, softDeleteQualifier)
     val value = tr.get(packedKey).awaitResult() ?: return objectChange
-    requireVersionedValue(value)
-    if (value.size == VERSION_BYTE_SIZE) {
-        throw StorageException("Stored soft delete value is missing delete flag")
-    }
+    if (value.size != VERSION_BYTE_SIZE + 1) return objectChange
 
     val version = value.readVersionBytes()
     if (version < fromVersion) return objectChange
 
     val isDeleted = value[value.size - 1] == TRUE
     val updatedChanges = addChangeVersion(
-        changes = objectChange.changes,
+        changes = objectChange?.changes ?: emptyList(),
         version = version,
         change = ObjectSoftDeleteChange(isDeleted)
     )
-    return objectChange.copy(changes = updatedChanges)
+    return DataObjectVersionedChange(
+        key = key,
+        sortingKey = objectChange?.sortingKey ?: sortingKey?.let(::Bytes),
+        changes = updatedChanges
+    )
 }
 
 private fun addChangeVersion(

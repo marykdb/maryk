@@ -1,5 +1,3 @@
-@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
-
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.test.runTest
@@ -8,15 +6,19 @@ import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.scanUpdateHistory
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.models.key
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.test.dataModelsForTests
 import maryk.test.models.Log
 import kotlin.test.Test
@@ -26,6 +28,97 @@ import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 class UpdateHistoryBackfillTest {
+    @Test
+    fun enablingUpdateHistoryIndexSkipsMalformedOverlongLatestVersion() = runTest {
+        val directoryPath = listOf("maryk", "test", "update-history-backfill-malformed-latest", Uuid.random().toString())
+        val values = Log("latest-state")
+        val key = Log.key(values)
+
+        FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            keepAllVersions = false,
+            keepUpdateHistoryIndex = false,
+            dataModelsById = dataModelsForTests,
+        ).let { dataStore ->
+            try {
+                assertIs<AddSuccess<*>>(dataStore.execute(Log.add(key to values)).statuses.first())
+                val tableDirs = dataStore.getTableDirs(Log)
+                val latestKey = packKey(tableDirs.tablePrefix, key.bytes)
+                dataStore.runTransaction { tr ->
+                    val latest = tr.get(latestKey).awaitResult()!!
+                    tr.set(latestKey, latest + byteArrayOf(1))
+                }
+            } finally {
+                dataStore.close()
+            }
+        }
+
+        FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            keepAllVersions = false,
+            keepUpdateHistoryIndex = true,
+            dataModelsById = dataModelsForTests,
+        ).let { dataStore ->
+            try {
+                val scanResponse = dataStore.execute(Log.scanUpdates(limit = 1u))
+
+                assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
+                assertEquals(emptyList(), assertIs<OrderedKeysUpdate<Log>>(scanResponse.updates.first()).keys)
+            } finally {
+                dataStore.close()
+            }
+        }
+    }
+
+    @Test
+    fun enablingUpdateHistoryIndexBackfillsSoftDeleteVersion() = runTest {
+        val directoryPath = listOf("maryk", "test", "update-history-backfill-soft-delete", Uuid.random().toString())
+        val values = Log("soft-delete-state")
+        val key = Log.key(values)
+
+        val deleteVersion = FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = false,
+            dataModelsById = dataModelsForTests,
+        ).let { dataStore ->
+            try {
+                assertIs<AddSuccess<*>>(dataStore.execute(Log.add(key to values)).statuses.first())
+                assertIs<DeleteSuccess<*>>(
+                    dataStore.execute(Log.delete(key, hardDelete = false)).statuses.first()
+                ).version
+            } finally {
+                dataStore.close()
+            }
+        }
+
+        FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+            dataModelsById = dataModelsForTests,
+        ).let { dataStore ->
+            try {
+                val scanResponse = dataStore.execute(
+                    Log.scanUpdateHistory(
+                        fromVersion = deleteVersion,
+                        limit = 10u,
+                        filterSoftDeleted = false
+                    )
+                )
+
+                assertIs<FetchByUpdateHistoryIndex>(scanResponse.dataFetchType)
+                assertTrue(
+                    scanResponse.updates
+                        .filterIsInstance<ChangeUpdate<Log>>()
+                        .any { it.key == key && it.version == deleteVersion }
+                )
+            } finally {
+                dataStore.close()
+            }
+        }
+    }
+
     @Test
     fun enablingUpdateHistoryIndexBackfillsLatestStateWithoutHistory() = runTest {
         val directoryPath = listOf("maryk", "test", "update-history-backfill-latest", Uuid.random().toString())

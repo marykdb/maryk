@@ -1,5 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
-
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.test.runTest
@@ -14,7 +12,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.minutes
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
@@ -60,9 +57,30 @@ class FoundationDBDataStoreTest {
 
         runDataStoreTests(dataStore, "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex")
         runDataStoreTests(dataStore, "executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex")
+        runDataStoreTests(dataStore, "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill")
         runDataStoreTests(dataStore, "executeScanUpdateHistoryReturnsVersionOrderedEntries")
+        runDataStoreTests(dataStore, "executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion")
+        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
+        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey")
+        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexStartKey")
+        runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion")
 
         dataStore.close()
+    }
+
+    @Test
+    fun testOrderedScanFlowUpdatesSortedValueWhenPositionStaysSame() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "any-value-flow-sorted-value", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+        )
+
+        try {
+            runDataStoreTests(dataStore, "executeOrderedScanFlowUpdatesSortedValueWhenPositionStaysSame")
+        } finally {
+            dataStore.close()
+        }
     }
 
     @Test

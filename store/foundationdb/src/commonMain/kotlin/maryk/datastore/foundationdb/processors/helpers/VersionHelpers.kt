@@ -8,7 +8,15 @@ import maryk.foundationdb.Transaction
 
 internal fun ByteArray.readHLCTimestampIfPresent(offset: Int = 0): ULong? {
     return if (offset >= 0 && size - offset >= VERSION_BYTE_SIZE) {
-        HLC.fromStorageBytes(this, offset).timestamp
+        HLC.fromStorageBytes(this, offset, VERSION_BYTE_SIZE).timestamp
+    } else {
+        null
+    }
+}
+
+internal fun ByteArray.readHLCTimestampIfExact(offset: Int = 0): ULong? {
+    return if (offset >= 0 && size - offset == VERSION_BYTE_SIZE) {
+        HLC.fromStorageBytes(this, offset, VERSION_BYTE_SIZE).timestamp
     } else {
         null
     }

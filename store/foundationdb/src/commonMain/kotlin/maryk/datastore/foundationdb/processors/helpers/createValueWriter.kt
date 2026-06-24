@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import maryk.foundationdb.Transaction
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.models.IsValuesDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
@@ -19,6 +18,8 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.TRUE
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
+import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
 import maryk.lib.extensions.compare.matchesRangePart
 
 internal fun FoundationDBDataStore.createValueWriter(
@@ -61,7 +62,7 @@ internal fun FoundationDBDataStore.createValueWriter(
                     val uniqueRef = reference + uniqueValue
                     try {
                         val uniqueExists = tr.get(packKey(tableDirs.uniquePrefix, uniqueRef)).awaitResult()
-                        if (uniqueExists != null) {
+                        if (uniqueExists?.size == VERSION_BYTE_SIZE + key.bytes.size) {
                             val existingKeyBytes = uniqueExists.copyOfRange(
                                 VERSION_BYTE_SIZE,
                                 uniqueExists.size
@@ -69,20 +70,15 @@ internal fun FoundationDBDataStore.createValueWriter(
                             throw UniqueException(reference, Key<IsValuesDataModel>(existingKeyBytes))
                         }
 
-                        // Remove old unique entry if present for this qualifier
-                        val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, reference)).awaitResult()
-                        if (currentTop != null) {
-                            requireVersionedValue(currentTop)
-                            val oldUniqueValue = withDecryptedValueIfNeeded(
-                                currentTop,
-                                VERSION_BYTE_SIZE,
-                                currentTop.size - VERSION_BYTE_SIZE
-                            ) { prevValueBytes, offset, length ->
-                                mapUniqueValueBytes(dataModelId, reference, prevValueBytes, offset, length)
-                            }
-                            val oldUniqueRef = reference + oldUniqueValue
-                            tr.clear(packKey(tableDirs.uniquePrefix, oldUniqueRef))
-                        }
+                        deleteCurrentUniqueIndexEntryForKey(
+                            tr = tr,
+                            tableDirs = tableDirs,
+                            reference = reference,
+                            key = key.bytes,
+                            versionBytes = versionBytes
+                        )
+
+                        createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference)
 
                         // Write new unique entry
                         setUniqueIndexValue(tr, tableDirs, uniqueRef, versionBytes, key.bytes)
@@ -125,6 +121,30 @@ internal fun FoundationDBDataStore.createValueWriter(
                 onWrite?.invoke()
                 setValue(tr, tableDirs, key.bytes, reference, versionBytes, valueBytes)
             }
+        }
+    }
+}
+
+private fun deleteCurrentUniqueIndexEntryForKey(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    reference: ByteArray,
+    key: ByteArray,
+    versionBytes: ByteArray
+) {
+    val prefix = packKey(tableDirs.uniquePrefix, reference)
+    val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
+
+    while (iterator.hasNext()) {
+        val kv = iterator.nextBlocking()
+        if (
+            kv.value.size == VERSION_BYTE_SIZE + key.size &&
+            kv.value.matchesRangePart(VERSION_BYTE_SIZE, key)
+        ) {
+            tr.clear(kv.key)
+            val uniqueRef = kv.key.copyOfRange(tableDirs.uniquePrefix.size, kv.key.size)
+            writeHistoricUnique(tr, tableDirs, key, uniqueRef, versionBytes)
+            break
         }
     }
 }

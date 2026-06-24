@@ -15,11 +15,10 @@ import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
-import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.Cache
@@ -65,7 +64,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
         val result = runScanTransaction { tr ->
             tr.forEachInRangeBatch(FDBRange(nextStart, historyEnd), false) { historyEntry ->
                 if (updates.size.toUInt() >= scanRequest.limit) return@forEachInRangeBatch false
-                if (historyEntry.key.size < historyPrefix.size + VERSION_BYTE_SIZE + keySize) return@forEachInRangeBatch true
+                if (historyEntry.key.size != historyPrefix.size + VERSION_BYTE_SIZE + keySize) return@forEachInRangeBatch true
                 val version = historyEntry.key.readReversedVersionBytes(historyPrefix.size)
                 if (version < scanRequest.fromVersion) return@forEachInRangeBatch false
 
@@ -75,8 +74,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     historyEntry.key[keyReadIndex++]
                 }
                 val isHardDelete = historyEntry.value.firstOrNull() == 1.toByte()
-                val createdBytes = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-                if (createdBytes == null) {
+                val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
+                if (creationVersion == null) {
                     if (isHardDelete && scanRequest.where == null) {
                         updates += RemovalUpdate(
                             key = key,
@@ -87,7 +86,6 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     return@forEachInRangeBatch true
                 }
 
-                val creationVersion = createdBytes.readHLCTimestampIfPresent() ?: return@forEachInRangeBatch true
                 if (scanRequest.shouldBeFiltered(
                         transaction = tr,
                         tableDirs = tableDirs,
@@ -104,7 +102,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     cache.readValue(dbIndex, key, reference, readVersion, valueReader)
                 }
 
-                scanRequest.dataModel.readTransactionIntoObjectChanges(
+                val objectChange = scanRequest.dataModel.readTransactionIntoObjectChanges(
                     tr = tr,
                     creationVersion = creationVersion,
                     tableDirs = tableDirs,
@@ -116,19 +114,19 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                     sortingKey = null,
                     cachedRead = cacheReader,
                     decryptValue = this@processScanUpdateHistoryRequest::decryptValueIfNeeded
-                )?.let { changes ->
-                    if (!scanRequest.filterSoftDeleted) {
-                        addSoftDeleteChangeIfMissing(
-                            tr = tr,
-                            tableDirs = tableDirs,
-                            key = key,
-                            fromVersion = version,
-                            objectChange = changes
-                        )
-                    } else {
-                        changes
-                    }
-                }?.changes?.forEach { versionedChange ->
+                )
+                val updatedObjectChange = if (!scanRequest.filterSoftDeleted) {
+                    addSoftDeleteChangeIfMissing(
+                        tr = tr,
+                        tableDirs = tableDirs,
+                        key = key,
+                        fromVersion = version,
+                        objectChange = objectChange
+                    )
+                } else {
+                    objectChange
+                }
+                updatedObjectChange?.changes?.forEach { versionedChange ->
                     val changes = versionedChange.changes
                     if (changes.contains(ObjectCreate)) {
                         scanRequest.dataModel.readTransactionIntoValuesWithMetaData(

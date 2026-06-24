@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-import maryk.foundationdb.Transaction
 import maryk.core.exceptions.RequestException
 import maryk.core.models.emptyValues
 import maryk.core.properties.IsPropertyContext
@@ -8,6 +7,7 @@ import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.references.EmbeddedValuesPropertyRef
+import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceWithParent
 import maryk.core.properties.references.ListItemReference
@@ -25,7 +25,12 @@ import maryk.core.properties.types.invoke
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
+import maryk.datastore.foundationdb.processors.HISTORIC_DELETE_MARKER
+import maryk.datastore.shared.TypeIndicator
+import maryk.datastore.shared.readValue
+import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
+import maryk.lib.extensions.compare.matchesRangePart
 
 /**
  * Delete all values under the given [reference] for [key].
@@ -58,15 +63,15 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
 
             // Collect current values under this map value and delete or mark deleted
             val current = getCurrentValuesForPrefix(tr, tableDirs, key, referenceBytes)
-            val isIncMap = reference.parentReference is maryk.core.properties.references.IncMapReference<*, *, *>
+            val isIncMap = reference.parentReference is IncMapReference<*, *, *>
             var changed = false
             for ((qualifier, _) in current) {
                 if (isIncMap && qualifier.contentEquals(referenceBytes)) {
                     // Keep record for incrementing map; mark as deleted instead of clearing
-                    setValue(tr, tableDirs, key.bytes, qualifier, versionBytes, maryk.datastore.shared.TypeIndicator.DeletedIndicator.byteArray)
+                    setValue(tr, tableDirs, key.bytes, qualifier, versionBytes, TypeIndicator.DeletedIndicator.byteArray)
                 } else {
                     tr.clear(packKey(tableDirs.tablePrefix, key.bytes, qualifier))
-                    writeHistoricTable(tr, tableDirs, key.bytes, referenceBytes, versionBytes, EMPTY_BYTEARRAY)
+                    writeHistoricTable(tr, tableDirs, key.bytes, referenceBytes, versionBytes, HISTORIC_DELETE_MARKER)
                 }
                 changed = true
             }
@@ -103,7 +108,7 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
 
             // Delete single item
             tr.clear(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes))
-            writeHistoricTable(tr, tableDirs, key.bytes, referenceBytes, versionBytes, EMPTY_BYTEARRAY)
+            writeHistoricTable(tr, tableDirs, key.bytes, referenceBytes, versionBytes, HISTORIC_DELETE_MARKER)
             return true
         }
         else -> {}
@@ -122,7 +127,7 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
                 reference.propertyDefinition.definition.dataModel.emptyValues()
             is MultiTypePropertyReference<*, *, *, *, *> -> {
                 var ri = VERSION_BYTE_SIZE
-                val read = maryk.datastore.shared.readValue(reference.comparablePropertyDefinition, { prev[ri++] }) { prev.size - ri }
+                val read = readValue(reference.comparablePropertyDefinition, { prev[ri++] }) { prev.size - ri }
                 when (read) {
                     is TypedValue<*, *> -> read as Any
                     is MultiTypeEnum<*> -> read(Unit) as Any
@@ -136,26 +141,37 @@ internal fun <T : Any> FoundationDBDataStore.deleteByReference(
     }
 
     // Maintain unique index for top-level comparable unique values
-    val def = reference.propertyDefinition
-    if (def is IsComparableDefinition<*, *> && def.unique) {
-        val currentTop = tr.get(packKey(tableDirs.tablePrefix, key.bytes, referenceBytes)).awaitResult()
-        if (currentTop != null) {
-            requireVersionedValue(currentTop)
-            val uniqueValue = withDecryptedValueIfNeeded(
-                currentTop,
-                VERSION_BYTE_SIZE,
-                currentTop.size - VERSION_BYTE_SIZE
-            ) { valueBytes, offset, length ->
-                mapUniqueValueBytes(dataModelId, referenceBytes, valueBytes, offset, length)
-            }
-            val uniqueRef = referenceBytes + uniqueValue
-            tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))
-            writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
-        }
+    val comparableDef = reference.comparablePropertyDefinition
+    if (comparableDef is IsComparableDefinition<*, *> && comparableDef.unique) {
+        deleteCurrentUniqueIndexEntryForKey(tr, tableDirs, referenceBytes, key.bytes, versionBytes)
     }
 
     // Delete current values in normal table and write tombstones in history
     deletePrefixWithTombstones(tr, tableDirs, key, referenceBytes, versionBytes)
 
     return current.isNotEmpty()
+}
+
+private fun deleteCurrentUniqueIndexEntryForKey(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    reference: ByteArray,
+    key: ByteArray,
+    versionBytes: ByteArray
+) {
+    val prefix = packKey(tableDirs.uniquePrefix, reference)
+    val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
+
+    while (iterator.hasNext()) {
+        val kv = iterator.nextBlocking()
+        if (
+            kv.value.size == VERSION_BYTE_SIZE + key.size &&
+            kv.value.matchesRangePart(VERSION_BYTE_SIZE, key)
+        ) {
+            tr.clear(kv.key)
+            val uniqueRef = kv.key.copyOfRange(tableDirs.uniquePrefix.size, kv.key.size)
+            writeHistoricUnique(tr, tableDirs, key, uniqueRef, versionBytes)
+            break
+        }
+    }
 }

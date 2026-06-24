@@ -94,10 +94,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
                             val uniqueValue = mapUniqueValueBytes(dataModelId, reference, valueBytes)
                             val uniqueRef = reference + uniqueValue
+                            createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference)
                             checks += {
                                 val uniqueKey = packKey(tableDirs.uniquePrefix, uniqueRef)
                                 val uniqueExists = tr.get(uniqueKey).awaitResult()
-                                if (uniqueExists != null) {
+                                if (uniqueExists?.size == VERSION_BYTE_SIZE + key.bytes.size) {
                                     // Stored as (version || key)
                                     val existingKeyBytes = uniqueExists.copyOfRange(
                                         VERSION_BYTE_SIZE,

@@ -2,7 +2,6 @@ package maryk.datastore.foundationdb.processors.helpers
 
 import maryk.foundationdb.Transaction
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.lib.bytes.combineToByteArray
 
 internal fun setValue(
     tr: Transaction,
@@ -15,7 +14,7 @@ internal fun setValue(
     // Latest table value: (key, reference) -> (version || value)
     tr.set(
         packKey(tableDirs.tablePrefix, keyBytes, reference),
-        combineToByteArray(version, value)
+        concatArrays(version, value)
     )
     writeHistoricTable(tr, tableDirs, keyBytes, reference, version, value)
 }

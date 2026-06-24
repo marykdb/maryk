@@ -2,7 +2,6 @@ package maryk.datastore.foundationdb.processors.helpers
 
 import maryk.foundationdb.Transaction
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.lib.bytes.combineToByteArray
 
 internal fun setUniqueIndexValue(
     tr: Transaction,
@@ -14,7 +13,7 @@ internal fun setUniqueIndexValue(
     // unique: (uniqueRef||value) -> (version || key)
     tr.set(
         packKey(tableDirs.uniquePrefix, uniqueReferenceWithValue),
-        combineToByteArray(version, keyBytes)
+        concatArrays(version, keyBytes)
     )
     writeHistoricUnique(tr, tableDirs, keyBytes, uniqueReferenceWithValue, version)
 }

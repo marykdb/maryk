@@ -5,11 +5,15 @@ import maryk.foundationdb.Transaction
 import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initIntByVar
+import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.writeVarBytes
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyKeyReference
+import maryk.core.properties.references.SetReference
 import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.HistoricTableDirectories
@@ -17,10 +21,14 @@ import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
+import maryk.datastore.foundationdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.shared.helpers.convertToValueOrNull
+import maryk.foundationdb.KeyValue
+import maryk.foundationdb.async.AsyncIterator
 import maryk.lib.exceptions.ParseException
 
 /**
@@ -85,9 +93,50 @@ internal class HistoricStoreIndexValuesWalker(
         handleIndex: (ByteArray, ULong) -> Unit
     ) {
         val parentReference = indexable.parentReference ?: return
+        @Suppress("UNCHECKED_CAST")
+        val typedIndexable = indexable as MapAnyKeyReference<Any, Any, *>
         val encodedParent = encodeZeroFreeUsing01(parentReference.toStorageByteArray())
         val prefix = packKey(tableDirs.historicTablePrefix, key, encodedParent)
         val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
+        val pendingEvents = mutableListOf<Pair<ULong, Boolean>>()
+        var currentMapKey: Any? = null
+
+        fun flushPendingEvents(mapKey: Any?) {
+            if (mapKey == null || pendingEvents.isEmpty()) return
+
+            val valueAndKey = try {
+                val valueLength = typedIndexable.calculateStorageByteLength(mapKey)
+                ByteArray(valueLength + valueLength.calculateVarByteLength() + key.size).also { bytes ->
+                    var writeIndex = 0
+                    typedIndexable.writeStorageBytes(mapKey) { bytes[writeIndex++] = it }
+                    valueLength.writeVarBytes { bytes[writeIndex++] = it }
+                    key.copyInto(bytes, writeIndex)
+                }
+            } catch (_: ValidationException) {
+                pendingEvents.clear()
+                return
+            } catch (_: ParseException) {
+                pendingEvents.clear()
+                return
+            } catch (_: StorageException) {
+                pendingEvents.clear()
+                return
+            } catch (e: DefNotFoundException) {
+                throw e
+            }
+
+            var present = false
+            for (i in pendingEvents.lastIndex downTo 0) {
+                val (version, isDelete) = pendingEvents[i]
+                if (isDelete) {
+                    present = false
+                } else if (!present) {
+                    handleIndex(valueAndKey, version)
+                    present = true
+                }
+            }
+            pendingEvents.clear()
+        }
 
         while (iterator.hasNext()) {
             val kv = iterator.nextBlocking()
@@ -102,16 +151,14 @@ internal class HistoricStoreIndexValuesWalker(
 
                 var readIndex = 0
                 val mapKeyLength = initIntByVar { mapKeyBytes[readIndex++] }
-                @Suppress("UNCHECKED_CAST")
-                val mapKey = (indexable as MapAnyKeyReference<Any, Any, *>).readStorageBytes(mapKeyLength) { mapKeyBytes[readIndex++] }
+                val mapKey = typedIndexable.readStorageBytes(mapKeyLength) { mapKeyBytes[readIndex++] }
                 if (readIndex != mapKeyBytes.size) continue
 
-                val valueAndKey = ByteArray(indexable.calculateStorageByteLength(mapKey) + key.size)
-                var writeIndex = 0
-                indexable.writeStorageBytes(mapKey) { valueAndKey[writeIndex++] = it }
-                key.copyInto(valueAndKey, writeIndex)
-
-                handleIndex(valueAndKey, historicKey.readReversedVersionBytes(versionOffset))
+                if (currentMapKey != null && currentMapKey != mapKey) {
+                    flushPendingEvents(currentMapKey)
+                }
+                currentMapKey = mapKey
+                pendingEvents += historicKey.readReversedVersionBytes(versionOffset) to kv.value.isHistoricDeleteMarker()
             } catch (_: ValidationException) {
                 // Skip historical values no longer valid for the current index
             } catch (_: ParseException) {
@@ -124,6 +171,8 @@ internal class HistoricStoreIndexValuesWalker(
                 // Skip malformed entries and keep walking
             }
         }
+
+        flushPendingEvents(currentMapKey)
     }
 
     private fun walkSetAnyValueHistory(
@@ -133,6 +182,15 @@ internal class HistoricStoreIndexValuesWalker(
         handleIndex: (ByteArray, ULong) -> Unit
     ) {
         val parentReference = indexable.parentReference ?: return
+        val currentlyPresent = mutableMapOf<Any, Boolean>()
+        @Suppress("UNCHECKED_CAST")
+        tr.readSetByReference(
+            tableDirs.tablePrefix,
+            key,
+            parentReference as SetReference<Any, IsPropertyContext>
+        )?.forEach {
+            currentlyPresent[it] = true
+        }
         val encodedParent = encodeZeroFreeUsing01(parentReference.toStorageByteArray())
         val prefix = packKey(tableDirs.historicTablePrefix, key, encodedParent)
         val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
@@ -154,12 +212,21 @@ internal class HistoricStoreIndexValuesWalker(
                 val setItem = (indexable as SetAnyValueReference<Any, *>).readStorageBytes(setItemLength) { setItemBytes[readIndex++] }
                 if (readIndex != setItemBytes.size) continue
 
-                val valueAndKey = ByteArray(indexable.calculateStorageByteLength(setItem) + key.size)
+                val valueAndKey = ByteArray(
+                    indexable.calculateStorageByteLength(setItem) +
+                        setItemLength.calculateVarByteLength() +
+                        key.size
+                )
                 var writeIndex = 0
                 indexable.writeStorageBytes(setItem) { valueAndKey[writeIndex++] = it }
+                setItemLength.writeVarBytes { valueAndKey[writeIndex++] = it }
                 key.copyInto(valueAndKey, writeIndex)
 
-                handleIndex(valueAndKey, historicKey.readReversedVersionBytes(versionOffset))
+                if (currentlyPresent.remove(setItem) == true) {
+                    handleIndex(valueAndKey, historicKey.readReversedVersionBytes(versionOffset))
+                } else {
+                    currentlyPresent[setItem] = true
+                }
             } catch (_: ValidationException) {
                 // Skip historical values no longer valid for the current index
             } catch (_: ParseException) {
@@ -184,7 +251,7 @@ private class HistoricStoreIndexValuesGetter(
 ) : IsValuesGetter {
     private data class IterableReference(
         val referenceAsBytes: ByteArray,
-        val iterator: maryk.foundationdb.async.AsyncIterator<maryk.foundationdb.KeyValue>,
+        val iterator: AsyncIterator<KeyValue>,
         var lastVersion: ULong? = null,
         var lastValue: ByteArray? = null,
         var isPastBeginning: Boolean = false
@@ -265,7 +332,8 @@ private class HistoricStoreIndexValuesGetter(
 
         // Only advance to next version if needed
         if (!iterableReference.isPastBeginning && (iterableReference.lastVersion == null || versionToSkip == iterableReference.lastVersion)) {
-            if (iterator.hasNext()) {
+            var foundNextValue = false
+            while (iterator.hasNext()) {
                 val kv = iterator.nextBlocking()
                 val keyBytes = kv.key
 
@@ -273,8 +341,7 @@ private class HistoricStoreIndexValuesGetter(
                 val versionOffset = keyBytes.size - VERSION_BYTE_SIZE
                 val sepIndex = versionOffset - 1
                 if (sepIndex < 0 || keyBytes[sepIndex] != 0.toByte()) {
-                    iterableReference.isPastBeginning = true
-                    return null
+                    continue
                 }
 
                 // Decode stored value and reversed version
@@ -285,7 +352,11 @@ private class HistoricStoreIndexValuesGetter(
 
                 // Track latest across properties
                 latestVersion = latestVersion?.let { maxOf(lastVersion, it) } ?: lastVersion
-            } else {
+                foundNextValue = true
+                break
+            }
+
+            if (!foundNextValue) {
                 iterableReference.isPastBeginning = true
                 return null
             }
@@ -299,6 +370,7 @@ private class HistoricStoreIndexValuesGetter(
         if (iterableReference.isPastBeginning) return null
 
         val lastValue = iterableReference.lastValue ?: return null
+        if (lastValue.isHistoricDeleteMarker()) return null
         return lastValue.convertToValueOrNull(propertyReference, 0, lastValue.size)
     }
 }

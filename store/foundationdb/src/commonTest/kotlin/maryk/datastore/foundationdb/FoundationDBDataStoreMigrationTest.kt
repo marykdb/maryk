@@ -1,4 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
 @file:Suppress("unused")
 
 package maryk.datastore.foundationdb
@@ -55,7 +54,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
-import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreMigrationTest {

@@ -24,13 +24,7 @@ internal fun <T : Any> Transaction.getValue(
     return if (toVersion == null) {
         val packedKey = packKey(tableDirs.tablePrefix, keyAndReference)
         val value = this.get(packedKey).awaitResult() ?: return null
-        requireVersionedValue(value)
-        if (decryptValue == null) {
-            handleResult(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
-        } else {
-            val payload = decryptValue(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
-            handleResult(payload, 0, payload.size)
-        }
+        value.handleCurrentValue(decryptValue, handleResult)
     } else {
         val historicDirs = tableDirs as? HistoricTableDirectories
             ?: throw RequestException("Cannot use toVersion on a non historic table")
@@ -51,6 +45,7 @@ internal fun <T : Any> Transaction.getValue(
             if (key.size != versionOffset + VERSION_BYTE_SIZE || key[prefixForKey.size] != 0.toByte()) continue
             if (toVersionBytes.compareToRange(key, versionOffset) <= 0) {
                 val result = kv.value
+                if (result.isHistoricDeleteMarker()) return null
                 return if (decryptValue == null) {
                     handleResult(result, 0, result.size)
                 } else {
@@ -60,5 +55,60 @@ internal fun <T : Any> Transaction.getValue(
             }
         }
         null
+    }
+}
+
+internal fun <T : Any> Transaction.getValue(
+    tableDirs: IsTableDirectories,
+    toVersion: ULong?,
+    keyBytes: ByteArray,
+    referenceBytes: ByteArray,
+    decryptValue: DecryptValue? = null,
+    handleResult: (ByteArray, Int, Int) -> T?
+): T? {
+    return if (toVersion == null) {
+        val value = this.get(packKey(tableDirs.tablePrefix, keyBytes, referenceBytes)).awaitResult() ?: return null
+        value.handleCurrentValue(decryptValue, handleResult)
+    } else {
+        val historicDirs = tableDirs as? HistoricTableDirectories
+            ?: throw RequestException("Cannot use toVersion on a non historic table")
+
+        val prefixForKey = packKey(
+            historicDirs.historicTablePrefix,
+            encodeZeroFreeSuffixUsing01(keyBytes, referenceBytes)
+        )
+        val toVersionBytes = toVersion.toReversedVersionBytes()
+
+        val it = this.getRange(Range.startsWith(prefixForKey)).iterator()
+        while (it.hasNext()) {
+            val kv = it.nextBlocking()
+            val key = kv.key
+            val versionOffset = prefixForKey.size + 1
+            if (key.size != versionOffset + VERSION_BYTE_SIZE || key[prefixForKey.size] != 0.toByte()) continue
+            if (toVersionBytes.compareToRange(key, versionOffset) <= 0) {
+                val result = kv.value
+                if (result.isHistoricDeleteMarker()) return null
+                return if (decryptValue == null) {
+                    handleResult(result, 0, result.size)
+                } else {
+                    val decrypted = decryptValue(result, 0, result.size)
+                    handleResult(decrypted, 0, decrypted.size)
+                }
+            }
+        }
+        null
+    }
+}
+
+private inline fun <T : Any> ByteArray.handleCurrentValue(
+    noinline decryptValue: DecryptValue?,
+    handleResult: (ByteArray, Int, Int) -> T?
+): T? {
+    requireVersionedValue(this)
+    return if (decryptValue == null) {
+        handleResult(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+    } else {
+        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+        handleResult(payload, 0, payload.size)
     }
 }

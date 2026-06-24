@@ -87,6 +87,8 @@ import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
 import maryk.datastore.foundationdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
@@ -113,8 +115,8 @@ import maryk.datastore.shared.migration.MigrationRuntimeDetails
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
 import maryk.datastore.shared.updates.Update
+import maryk.foundationdb.Database
 import maryk.foundationdb.DatabaseOptions
-import maryk.foundationdb.FDB
 import maryk.foundationdb.FdbFuture
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
@@ -137,6 +139,7 @@ private val nextKeySuffix = byteArrayOf(0)
  * FoundationDB DataStore (JVM-only).
  */
 class FoundationDBDataStore private constructor(
+    private val db: Database,
     override val keepAllVersions: Boolean = true,
     override val keepUpdateHistoryIndex: Boolean = false,
     val fdbClusterFilePath: String? = null,
@@ -153,8 +156,6 @@ class FoundationDBDataStore private constructor(
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
-    private val fdb = FDB.selectAPIVersion(730)
-    private val db = (if (fdbClusterFilePath != null) fdb.open(fdbClusterFilePath) else fdb.open())
     internal val tc: TransactionContext = db
 
     init {
@@ -184,6 +185,7 @@ class FoundationDBDataStore private constructor(
 
     // Cluster HLC sync: store actor uses max(observedClusterHlc, local wall clock) when generating new versions.
     private val observedClusterHlc = atomic(0uL)
+    private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
     private var clusterUpdateLogHeadGroupCount: Int = 0
     private val activeUpdateListenersByModelId = dataModelsById.keys.associateWith { atomic(0) }
     private val clusterLogTailTransactions = atomic(0L)
@@ -207,6 +209,8 @@ class FoundationDBDataStore private constructor(
         sensitiveReferencesByModelId.mapValues { it.value.sensitiveReferences }
     private val sensitiveUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
         sensitiveReferencesByModelId.mapValues { it.value.sensitiveUniqueReferences }
+    private val declaredUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
+        dataModelsById.mapValues { (_, model) -> collectUniqueReferences(model) }
 
     internal inline fun <T> runTransaction(
         crossinline block: (Transaction) -> T
@@ -846,15 +850,19 @@ class FoundationDBDataStore private constructor(
                     val softDeleteVersion = runTransaction { tr ->
                         tr.get(packKey(tableDirectories.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR))
                             .awaitResult()
-                            ?.takeIf { it.size == ULong.SIZE_BYTES }
-                            ?.let { HLC.fromStorageBytes(it).timestamp }
+                            ?.takeIf { it.size == ULong.SIZE_BYTES + 1 }
+                            ?.readHLCTimestampIfPresent()
                     }
                     softDeleteVersion?.let {
                         writeSingleUpdateHistoryVersion(updateHistoryPrefix, key, it)
                     }
                 } else {
                     val lastVersion = runTransaction { tr ->
-                        getLastVersion(tr, tableDirectories, key)
+                        tr.get(packKey(tableDirectories.tablePrefix, key.bytes)).awaitResult()
+                            ?.readHLCTimestampIfExact()
+                    } ?: run {
+                        nextStart = packedKey + nextKeySuffix
+                        continue
                     }
                     runTransaction { tr ->
                         tr.set(
@@ -923,13 +931,26 @@ class FoundationDBDataStore private constructor(
 
         cancelPendingMigrations("Datastore closing")
 
-        if (!startClosingDataStore()) return
+        try {
+            if (startClosingDataStore()) {
+                cancelAndJoinDataStoreScope()
+            }
+        } finally {
+            runCatchingNonFatal { this.db.close() }
+        }
+    }
 
-        runCatchingNonFatal { this.db.close() }
+    private suspend fun shutdownAfterInitFailure() {
+        if (!isClosing.compareAndSet(false, update = true)) return
 
-        cancelAndJoinDataStoreScope()
+        cancelPendingMigrations("Datastore init failed")
+        runCatchingNonFatal { startClosingDataStore() }
 
-        runCatchingNonFatal { this.db.close() }
+        try {
+            cancelAndJoinDataStoreScope()
+        } finally {
+            runCatchingNonFatal { this.db.close() }
+        }
     }
 
     override suspend fun closeAllListeners() {
@@ -1059,6 +1080,42 @@ class FoundationDBDataStore private constructor(
         return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value, offset, length) }
     }
 
+    internal fun getUniqueIndices(dbIndex: UInt, uniquePrefix: ByteArray) =
+        uniqueIndicesByDataModelIndex.value[dbIndex] ?: mergeUniqueReferences(
+            declaredUniqueReferencesByModelId[dbIndex].orEmpty(),
+            searchExistingUniqueIndices(uniquePrefix)
+        ).also { existingDbUniques ->
+            uniqueIndicesByDataModelIndex.value =
+                uniqueIndicesByDataModelIndex.value.plus(dbIndex to existingDbUniques)
+        }
+
+    internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniquePrefix: ByteArray, uniqueName: ByteArray) {
+        val existingDbUniques = getUniqueIndices(dbIndex, uniquePrefix)
+        val existingValue = existingDbUniques.find { it.contentEquals(uniqueName) }
+
+        if (existingValue == null) {
+            runTransaction { tr ->
+                tr.set(packKey(uniquePrefix, byteArrayOf(0) + uniqueName), EMPTY_BYTEARRAY)
+            }
+
+            uniqueIndicesByDataModelIndex.value =
+                uniqueIndicesByDataModelIndex.value.plus(dbIndex to existingDbUniques.plus(uniqueName))
+        }
+    }
+
+    private fun searchExistingUniqueIndices(uniquePrefix: ByteArray) = buildList {
+        runTransaction { tr ->
+            val iterator = tr.getRange(Range.startsWith(uniquePrefix)).iterator()
+            while (iterator.hasNext()) {
+                val kv = iterator.nextBlocking()
+                if (kv.key.size <= uniquePrefix.size || kv.key[uniquePrefix.size] != 0.toByte()) {
+                    break
+                }
+                this += kv.key.copyOfRange(uniquePrefix.size + 1, kv.key.size)
+            }
+        }
+    }
+
     private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean {
         val prefixes = sensitiveReferencePrefixesByModelId[modelId] ?: return false
         return prefixes.any { prefix -> reference.hasPrefix(prefix) }
@@ -1082,6 +1139,60 @@ class FoundationDBDataStore private constructor(
             modelPath = mutableListOf()
         )
         return SensitiveModelReferences(sensitiveReferences, sensitiveUniqueReferences)
+    }
+
+    private fun collectUniqueReferences(dataModel: IsRootDataModel): List<ByteArray> {
+        val uniqueReferences = mutableListOf<ByteArray>()
+        collectUniqueReferencesRecursive(
+            dataModel = dataModel,
+            parentRef = null,
+            uniqueReferences = uniqueReferences,
+            modelPath = mutableListOf()
+        )
+        return uniqueReferences
+    }
+
+    private fun collectUniqueReferencesRecursive(
+        dataModel: IsValuesDataModel,
+        parentRef: AnyPropertyReference?,
+        uniqueReferences: MutableList<ByteArray>,
+        modelPath: MutableList<IsValuesDataModel>
+    ) {
+        if (modelPath.any { it === dataModel }) return
+        modelPath += dataModel
+
+        try {
+            dataModel.forEach { wrapper ->
+                val propertyReference = wrapper.ref(parentRef)
+                val definition = wrapper.definition
+                if (definition is IsComparableDefinition<*, *> && definition.unique) {
+                    uniqueReferences += propertyReference.toStorageByteArray()
+                }
+
+                if (definition is EmbeddedValuesDefinition<*>) {
+                    collectUniqueReferencesRecursive(
+                        dataModel = definition.dataModel,
+                        parentRef = propertyReference,
+                        uniqueReferences = uniqueReferences,
+                        modelPath = modelPath
+                    )
+                }
+            }
+        } finally {
+            modelPath.removeAt(modelPath.lastIndex)
+        }
+    }
+
+    private fun mergeUniqueReferences(
+        declaredReferences: List<ByteArray>,
+        storedReferences: List<ByteArray>
+    ) = buildList {
+        declaredReferences.forEach { add(it) }
+        storedReferences.forEach { storedReference ->
+            if (none { it.contentEquals(storedReference) }) {
+                add(storedReference)
+            }
+        }
     }
 
     private fun collectSensitiveReferencesRecursive(
@@ -1277,24 +1388,34 @@ class FoundationDBDataStore private constructor(
         ): FoundationDBDataStore {
             orderMigrationModelIds(dataModelsById)
 
-            return FoundationDBDataStore(
-                keepAllVersions = keepAllVersions,
-                keepUpdateHistoryIndex = keepUpdateHistoryIndex,
-                fdbClusterFilePath = fdbClusterFilePath,
-                directoryRootPath = directoryPath,
-                dataModelsById = dataModelsById,
-                onlyCheckModelVersion = onlyCheckModelVersion,
-                databaseOptionsSetter = databaseOptionsSetter,
-                migrationConfiguration = migrationConfiguration,
-                migrationLeaseConfiguration = migrationLeaseConfiguration,
-                versionUpdateHandler = versionUpdateHandler,
-                clusterUpdateLogConfiguration = clusterUpdateLogConfiguration,
-                fieldEncryptionProvider = fieldEncryptionProvider,
-            ).apply {
+            val db = openFoundationDatabase(fdbClusterFilePath)
+
+            val dataStore = try {
+                FoundationDBDataStore(
+                    db = db,
+                    keepAllVersions = keepAllVersions,
+                    keepUpdateHistoryIndex = keepUpdateHistoryIndex,
+                    fdbClusterFilePath = fdbClusterFilePath,
+                    directoryRootPath = directoryPath,
+                    dataModelsById = dataModelsById,
+                    onlyCheckModelVersion = onlyCheckModelVersion,
+                    databaseOptionsSetter = databaseOptionsSetter,
+                    migrationConfiguration = migrationConfiguration,
+                    migrationLeaseConfiguration = migrationLeaseConfiguration,
+                    versionUpdateHandler = versionUpdateHandler,
+                    clusterUpdateLogConfiguration = clusterUpdateLogConfiguration,
+                    fieldEncryptionProvider = fieldEncryptionProvider,
+                )
+            } catch (e: Throwable) {
+                runCatchingNonFatal { db.close() }
+                throw e.unwrapFdb()
+            }
+
+            return dataStore.apply {
                 try {
                     initAsync()
                 } catch (e: Throwable) {
-                    close()
+                    shutdownAfterInitFailure()
                     throw e.unwrapFdb()
                 }
             }

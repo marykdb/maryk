@@ -4,7 +4,7 @@ import maryk.foundationdb.Transaction
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
+import maryk.datastore.foundationdb.processors.HISTORIC_DELETE_MARKER
 
 /**
  * For all [currentValues] under [key], clear those not present in [qualifiersToKeep].
@@ -24,7 +24,7 @@ internal fun unsetNonChangedValues(
         val keep = qualifierSet.contains(qualifier.asByteArrayKey())
         if (!keep) {
             tr.clear(packKey(tableDirs.tablePrefix, key.bytes, qualifier))
-            writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, EMPTY_BYTEARRAY)
+            writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, HISTORIC_DELETE_MARKER)
             deleted = true
         }
     }

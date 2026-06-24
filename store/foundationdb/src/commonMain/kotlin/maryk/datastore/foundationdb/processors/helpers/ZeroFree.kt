@@ -13,6 +13,18 @@ internal fun encodeZeroFreeUsing01(src: ByteArray): ByteArray {
     return out
 }
 
+internal fun encodeZeroFreeUsing01(
+    first: ByteArray,
+    second: ByteArray
+): ByteArray {
+    val firstEncodedLength = first.zeroFreeEncodedLength()
+    val secondEncodedLength = second.zeroFreeEncodedLength()
+    val out = ByteArray(firstEncodedLength.checkedZeroFreeLengthPlus(secondEncodedLength))
+    encodeZeroFreeUsing01Into(first, 0, first.size, out, 0)
+    encodeZeroFreeUsing01Into(second, 0, second.size, out, firstEncodedLength)
+    return out
+}
+
 internal fun encodeZeroFreeUsing01(src: ByteArray, offset: Int, length: Int): ByteArray {
     val encodedLength = src.zeroFreeEncodedLength(offset, length)
     val out = ByteArray(encodedLength)
@@ -28,6 +40,14 @@ internal fun encodeZeroFreeSuffixUsing01(src: ByteArray, prefixLength: Int): Byt
     val out = ByteArray(encodedLength)
     src.copyInto(out, 0, 0, prefixLength)
     encodeZeroFreeUsing01Into(src, prefixLength, src.size - prefixLength, out, prefixLength)
+    return out
+}
+
+internal fun encodeZeroFreeSuffixUsing01(prefix: ByteArray, suffix: ByteArray): ByteArray {
+    val encodedSuffixLength = suffix.zeroFreeEncodedLength()
+    val out = ByteArray(prefix.size.checkedZeroFreeLengthPlus(encodedSuffixLength))
+    prefix.copyInto(out)
+    encodeZeroFreeUsing01Into(suffix, 0, suffix.size, out, prefix.size)
     return out
 }
 

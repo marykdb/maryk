@@ -1,11 +1,11 @@
-@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
-
 package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.test.runTest
 import maryk.core.clock.HLC
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.getChanges
@@ -15,6 +15,7 @@ import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.foundationdb.processors.SOFT_DELETE_INDICATOR
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.packVersionedKey
@@ -64,6 +65,15 @@ class SoftDeleteLegacyTimeTravelTest {
         )
         assertTrue(hasSoftDeleteChange(changesResponse.changes.firstOrNull()?.changes.orEmpty()))
 
+        val singleVersionChangesResponse = dataStore.execute(
+            Log.getChanges(
+                key,
+                maxVersions = 1u,
+                filterSoftDeleted = false,
+            )
+        )
+        assertTrue(hasSoftDeleteChange(singleVersionChangesResponse.changes.firstOrNull()?.changes.orEmpty()))
+
         val scanChangesResponse = dataStore.execute(
             Log.scanChanges(
                 startKey = key,
@@ -75,6 +85,18 @@ class SoftDeleteLegacyTimeTravelTest {
         )
         val scanned = scanChangesResponse.changes.firstOrNull { it.key == key }
         assertTrue(hasSoftDeleteChange(scanned?.changes.orEmpty()))
+
+        val singleVersionScanChangesResponse = dataStore.execute(
+            Log.scanChanges(
+                startKey = key,
+                includeStart = true,
+                limit = 1u,
+                maxVersions = 1u,
+                filterSoftDeleted = false,
+            )
+        )
+        val singleVersionScanned = singleVersionScanChangesResponse.changes.firstOrNull { it.key == key }
+        assertTrue(hasSoftDeleteChange(singleVersionScanned?.changes.orEmpty()))
 
         val getUpdatesResponse = dataStore.execute(
             Log.getUpdates(key, maxVersions = 100u, filterSoftDeleted = false)
@@ -134,13 +156,13 @@ class SoftDeleteLegacyTimeTravelTest {
     }
 }
 
-private fun hasSoftDeleteChange(changes: List<maryk.core.query.changes.VersionedChanges>): Boolean =
+private fun hasSoftDeleteChange(changes: List<VersionedChanges>): Boolean =
     changes.any { versioned ->
         versioned.changes.any { it is ObjectSoftDeleteChange }
     }
 
-private fun <DM : maryk.core.models.IsRootDataModel> hasSoftDeleteUpdate(
-    updates: List<maryk.core.query.responses.updates.IsUpdateResponse<DM>>
+private fun <DM : IsRootDataModel> hasSoftDeleteUpdate(
+    updates: List<IsUpdateResponse<DM>>
 ): Boolean =
     updates.filterIsInstance<ChangeUpdate<DM>>().any { update ->
         update.changes.any { it is ObjectSoftDeleteChange }

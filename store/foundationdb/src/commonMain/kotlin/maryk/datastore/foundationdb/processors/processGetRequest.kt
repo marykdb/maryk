@@ -10,10 +10,8 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
-import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.getValue
-import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkToVersion
@@ -37,31 +35,28 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
 
     runTransaction { tr ->
         keyWalk@ for (key in getRequest.keys) {
+            val keyBytes = key.bytes
             val valuesWithMetaData = run {
-                val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-                if (existing == null) {
+                val creationVersion = tr.readCreationVersion(tableDirs, keyBytes, getRequest.toVersion)
+                    ?: return@run null
+
+                if (getRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, key.size, creationVersion, getRequest.toVersion, this@processGetRequest::decryptValueIfNeeded)) {
                     null
                 } else {
-                    val creationVersion = existing.readHLCTimestampIfPresent() ?: return@run null
-
-                    if (getRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, getRequest.toVersion, this@processGetRequest::decryptValueIfNeeded)) {
-                        null
-                    } else {
-                        val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
-                            cache.readValue(dbIndex, key, reference, version, valueReader)
-                        }
-
-                        getRequest.dataModel.readTransactionIntoValuesWithMetaData(
-                            tr = tr,
-                            creationVersion = creationVersion,
-                            tableDirs = tableDirs,
-                            key = key,
-                            select = getRequest.select,
-                            toVersion = getRequest.toVersion,
-                            cachedRead = cacheReader,
-                            decryptValue = this@processGetRequest::decryptValueIfNeeded
-                        )
+                    val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
+                        cache.readValue(dbIndex, key, reference, version, valueReader)
                     }
+
+                    getRequest.dataModel.readTransactionIntoValuesWithMetaData(
+                        tr = tr,
+                        creationVersion = creationVersion,
+                        tableDirs = tableDirs,
+                        key = key,
+                        select = getRequest.select,
+                        toVersion = getRequest.toVersion,
+                        cachedRead = cacheReader,
+                        decryptValue = this@processGetRequest::decryptValueIfNeeded
+                    )
                 }
             }
 
@@ -74,7 +69,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                     ?: tr.getValue(
                             tableDirs = tableDirs,
                             toVersion = getRequest.toVersion,
-                            keyAndReference = it.toStorageByteArray(),
+                            keyBytes = keyBytes,
+                            referenceBytes = it.toStorageByteArray(),
                             decryptValue = this@processGetRequest::decryptValueIfNeeded
                         ) { valueBytes, offset, length ->
                             valueBytes.convertToValue(it, offset, length)

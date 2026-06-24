@@ -19,12 +19,11 @@ internal fun Transaction.forEachInRangeBatch(
     batchSize: Int = RANGE_SCAN_BATCH_SIZE,
     process: (KeyValue) -> Boolean
 ): RangeBatchResult {
-    val iterator = getRange(range, batchSize, reverse).iterator()
+    val batch = getRange(range, batchSize, reverse).asList().awaitResult()
     var count = 0
     var lastKey: ByteArray? = null
 
-    while (iterator.hasNext()) {
-        val kv = iterator.nextBlocking()
+    for (kv in batch) {
         count++
         lastKey = kv.key
         if (!process(kv)) {

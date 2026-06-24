@@ -4,9 +4,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import maryk.core.models.RootDataModel
+import maryk.datastore.foundationdb.openFoundationDatabase
 import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.foundationdb.metadata.readStoredModelNames
-import maryk.foundationdb.FDB
 import maryk.foundationdb.TransactionContext
 import maryk.foundationdb.runSuspend
 import maryk.foundationdb.directory.DirectoryLayer
@@ -24,8 +24,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
     fdbClusterFilePath: String? = null,
     directoryPath: List<String> = listOf("maryk"),
 ): Map<UInt, RootDataModel<*>> {
-    val fdb = FDB.selectAPIVersion(730)
-    val db = if (fdbClusterFilePath != null) fdb.open(fdbClusterFilePath) else fdb.open()
+    val db = openFoundationDatabase(fdbClusterFilePath)
 
     val tc: TransactionContext = db
 
@@ -38,7 +37,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
                     }
                 }
             } catch (e: Throwable) {
-                if (e.isNoSuchDirectory()) return@withContext emptyMap()
+                if (e.isMissingDirectory()) return@withContext emptyMap()
                 throw e
             }
 
@@ -49,7 +48,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
                     }
                 }
             } catch (e: Throwable) {
-                if (e.isNoSuchDirectory()) return@withContext emptyMap()
+                if (e.isMissingDirectory()) return@withContext emptyMap()
                 throw e
             }
             val metadataPrefix = metadataDirectory.pack()
@@ -84,7 +83,7 @@ suspend fun readStoredModelDefinitionsFromDirectory(
     }
 }
 
-private fun Throwable.isNoSuchDirectory(): Boolean {
+private fun Throwable.isMissingDirectory(): Boolean {
     var current: Throwable? = this
     while (current != null) {
         if (current::class.simpleName == "NoSuchDirectoryException") return true

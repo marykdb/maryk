@@ -14,12 +14,13 @@ import maryk.lib.extensions.compare.compareToRange
 internal fun Transaction.getKeyByUniqueValue(
     tableDirs: IsTableDirectories,
     reference: ByteArray,
+    keySize: Int,
     toVersion: ULong?,
     handle: (keyBytes: ByteArray, keyOffset: Int, keyLength: Int, setAtVersion: ULong) -> Unit
 ) {
     if (toVersion == null) {
         val value = this.get(packKey(tableDirs.uniquePrefix, reference)).awaitResult()
-        if (value != null && value.size >= VERSION_BYTE_SIZE) {
+        if (value != null && value.size == VERSION_BYTE_SIZE + keySize) {
             val setAtVersion = value.readVersionBytes()
             handle(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE, setAtVersion)
         }
@@ -39,10 +40,14 @@ internal fun Transaction.getKeyByUniqueValue(
             if (toVersionBytes.compareToRange(kv.key, versionOffset) <= 0) {
                 val version = kv.key.readReversedVersionBytes(versionOffset)
                 val keyBytes = kv.value
-                if (keyBytes.isNotEmpty()) {
+                if (keyBytes.size == keySize) {
                     handle(keyBytes, 0, keyBytes.size, version)
+                    break
                 }
-                break
+
+                if (keyBytes.isEmpty()) {
+                    break
+                }
             }
         }
     }

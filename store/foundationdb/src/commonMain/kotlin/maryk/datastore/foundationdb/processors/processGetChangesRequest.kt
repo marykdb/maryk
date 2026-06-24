@@ -8,9 +8,7 @@ import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.FetchByKey
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
-import maryk.datastore.foundationdb.processors.helpers.awaitResult
-import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
@@ -36,12 +34,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
     runTransaction { tr ->
         keyWalk@ for (key in getRequest.keys) {
             val changes: DataObjectVersionedChange<DM>? = run {
-                val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-                if (existing == null) {
+                val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, getRequest.toVersion)
+                if (creationVersion == null) {
                     null
                 } else {
-                    val creationVersion = existing.readHLCTimestampIfPresent() ?: return@run null
-
                     if (getRequest.shouldBeFiltered(
                             transaction = tr,
                             tableDirs = tableDirs,
@@ -60,7 +56,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
                                 cache.readValue(dbIndex, key, reference, version, valueReader)
                             }
 
-                        getRequest.dataModel.readTransactionIntoObjectChanges(
+                        val objectChange = getRequest.dataModel.readTransactionIntoObjectChanges(
                             tr = tr,
                             creationVersion = creationVersion,
                             tableDirs = tableDirs,
@@ -72,18 +68,18 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
                             sortingKey = null,
                             cachedRead = cacheReader,
                             decryptValue = this@processGetChangesRequest::decryptValueIfNeeded
-                        )?.let { changes ->
-                            if (getRequest.toVersion == null && getRequest.maxVersions > 1u && tableDirs is HistoricTableDirectories) {
-                                addSoftDeleteChangeIfMissing(
-                                    tr = tr,
-                                    tableDirs = tableDirs,
-                                    key = key,
-                                    fromVersion = getRequest.fromVersion,
-                                    objectChange = changes
-                                )
-                            } else {
-                                changes
-                            }
+                        )
+
+                        if (getRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
+                            addSoftDeleteChangeIfMissing(
+                                tr = tr,
+                                tableDirs = tableDirs,
+                                key = key,
+                                fromVersion = getRequest.fromVersion,
+                                objectChange = objectChange
+                            )
+                        } else {
+                            objectChange
                         }
                     }
                 }
@@ -102,3 +98,6 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
         )
     )
 }
+
+private fun GetChangesRequest<*>.needsSoftDeleteFallback() =
+    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)

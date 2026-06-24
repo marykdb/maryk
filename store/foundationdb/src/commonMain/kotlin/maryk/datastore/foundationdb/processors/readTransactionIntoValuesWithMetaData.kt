@@ -24,13 +24,14 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.FDBIterator
-import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.checkExistence
 import maryk.datastore.foundationdb.processors.helpers.historicQualifierRetriever
+import maryk.datastore.foundationdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.foundationdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
-import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
+import maryk.datastore.foundationdb.processors.helpers.withCurrentPayload
 import maryk.datastore.shared.readValue
 import maryk.foundationdb.Range as FDBRange
 
@@ -62,7 +63,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
 
         val iterator = FDBIterator(
-            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).iterator()
+            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).asList().awaitResult().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)
@@ -80,11 +81,17 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
                 when (storageType) {
                     ObjectDelete -> {
-                        currentVersion = maxOf(value.readVersionBytes(), maxVersion)
-                        value.withCurrentPayload(decryptValue) { payload, offset, length ->
-                            isDeleted = length > 0 && payload[offset] == TRUE
+                        val deleted = value.withCurrentPayload(decryptValue) { payload, offset, length ->
+                            if (length == 1) payload[offset] == TRUE else null
                         }
-                        true
+                        if (deleted != null) {
+                            currentVersion = maxOf(value.readVersionBytes(), maxVersion)
+                            isDeleted = deleted
+                            true
+                        } else {
+                            currentVersion = 0uL
+                            false
+                        }
                     }
                     Value -> {
                         currentVersion = value.readVersionBytes()
@@ -146,7 +153,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
 
         val iterator = FDBIterator(
-            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).iterator()
+            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).asList().awaitResult().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)
@@ -176,6 +183,9 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                 } else {
                     cachedRead(reference, currentVersion) {
                         val value = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                        if (value.isHistoricDeleteMarker()) {
+                            return@cachedRead null
+                        }
                         when (storageType) {
                             Value -> {
                                 index = 0
@@ -223,17 +233,4 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         firstVersion = creationVersion,
         lastVersion = maxVersion
     )
-}
-
-private inline fun <T> ByteArray.withCurrentPayload(
-    noinline decryptValue: DecryptValue?,
-    handle: (ByteArray, Int, Int) -> T
-): T {
-    requireVersionedValue(this)
-    return if (decryptValue == null) {
-        handle(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
-    } else {
-        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
-        handle(payload, 0, payload.size)
-    }
 }

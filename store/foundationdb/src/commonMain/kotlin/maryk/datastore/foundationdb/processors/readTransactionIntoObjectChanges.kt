@@ -24,13 +24,14 @@ import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.FDBIterator
-import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.checkExistence
 import maryk.datastore.foundationdb.processors.helpers.historicQualifierRetriever
+import maryk.datastore.foundationdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.foundationdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.readVersionBytes
-import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
+import maryk.datastore.foundationdb.processors.helpers.withCurrentPayload
 import maryk.datastore.shared.readValue
 import maryk.foundationdb.Range as FDBRange
 
@@ -54,7 +55,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
         val prefixWithKeyRange = packKey(tableDirs.tablePrefix, key.bytes)
 
         val iterator = FDBIterator(
-            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).iterator()
+            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).asList().awaitResult().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)
@@ -74,13 +75,19 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
 
                 val value = when (storageType) {
                     ObjectDelete -> {
-                        currentVersion = valueBytes.readVersionBytes()
-                        cachedRead(reference, currentVersion) {
-                            if (currentVersion >= fromVersion && keyBytes[prefixWithKeyRange.size] == 0.toByte()) {
-                                valueBytes.withCurrentPayload(decryptValue) { payload, offset, length ->
-                                    if (length > 0) payload[offset + length - 1] == TRUE else false
-                                }
-                            } else null
+                        val deleted = valueBytes.withCurrentPayload(decryptValue) { payload, offset, length ->
+                            if (length == 1) payload[offset] == TRUE else null
+                        }
+                        if (deleted == null) {
+                            currentVersion = 0uL
+                            null
+                        } else {
+                            currentVersion = valueBytes.readVersionBytes()
+                            cachedRead(reference, currentVersion) {
+                                if (currentVersion >= fromVersion && keyBytes[prefixWithKeyRange.size] == 0.toByte()) {
+                                    deleted
+                                } else null
+                            }
                         }
                     }
                     Value -> {
@@ -152,7 +159,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
 
         val prefixWithKeyRange = packKey(tableDirs.historicTablePrefix, key.bytes)
         val iterator = FDBIterator(
-            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).iterator()
+            tr.getRange(FDBRange.startsWith(prefixWithKeyRange)).asList().awaitResult().iterator()
         )
 
         checkExistence(iterator, prefixWithKeyRange)
@@ -175,11 +182,14 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                             ObjectDelete -> {
                                 if (iterator.current.key[prefixWithKeyRange.size] == 0.toByte()) {
                                     val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
-                                    v[0] == TRUE
+                                    if (v.isNotEmpty()) v[0] == TRUE else true
                                 } else null
                             }
                             Value -> {
                                 val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                if (v.isHistoricDeleteMarker()) {
+                                    return@cachedRead null
+                                }
                                 index = 0
                                 val reader = { v[index++] }
 
@@ -191,16 +201,25 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                             }
                             ListSize -> {
                                 val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                if (v.isHistoricDeleteMarker()) {
+                                    return@cachedRead null
+                                }
                                 index = 0
                                 initIntByVar { v[index++] }
                             }
                             SetSize -> {
                                 val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                if (v.isHistoricDeleteMarker()) {
+                                    return@cachedRead null
+                                }
                                 index = 0
                                 initIntByVar { v[index++] }
                             }
                             MapSize -> {
                                 val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                if (v.isHistoricDeleteMarker()) {
+                                    return@cachedRead null
+                                }
                                 index = 0
                                 initIntByVar { v[index++] }
                             }
@@ -220,17 +239,4 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
         sortingKey = sortingKey?.let(::Bytes),
         changes = changes
     )
-}
-
-private inline fun <T> ByteArray.withCurrentPayload(
-    noinline decryptValue: DecryptValue?,
-    handle: (ByteArray, Int, Int) -> T
-): T {
-    requireVersionedValue(this)
-    return if (decryptValue == null) {
-        handle(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
-    } else {
-        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
-        handle(payload, 0, payload.size)
-    }
 }

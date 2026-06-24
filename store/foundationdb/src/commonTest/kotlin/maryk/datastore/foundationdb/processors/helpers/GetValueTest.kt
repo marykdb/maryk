@@ -1,5 +1,3 @@
-@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
-
 package maryk.datastore.foundationdb.processors.helpers
 
 import kotlinx.coroutines.test.runTest

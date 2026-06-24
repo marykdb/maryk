@@ -3,6 +3,7 @@ package maryk.datastore.foundationdb.processors
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
 import maryk.core.properties.types.Key
+import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.requests.GetUpdatesRequest
@@ -14,14 +15,16 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
+import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
-import maryk.datastore.foundationdb.processors.helpers.getLastVersion
 import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.checkMaxVersions
 import maryk.datastore.shared.checkToVersion
+import maryk.foundationdb.Transaction
 
 internal typealias GetUpdatesStoreAction<DM> = StoreAction<DM, GetUpdatesRequest<DM>, UpdatesResponse<DM>>
 internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootDataModel>
@@ -48,15 +51,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
 
     this.runTransaction { tr ->
         keyWalk@ for (key in getRequest.keys) {
-            var getSingleValues: ((ULong?) -> maryk.core.query.ValuesWithMetaData<DM>?)? = null
+            var getSingleValues: ((ULong?) -> ValuesWithMetaData<DM>?)? = null
             val result = run {
-                val existing = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult()
-                if (existing == null) {
+                val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, getRequest.toVersion)
+                if (creationVersion == null) {
                     Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
                 } else {
-                    val creationVersion = existing.readHLCTimestampIfPresent()
-                        ?: return@run Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
-
                     if (getRequest.shouldBeFiltered(
                             transaction = tr,
                             tableDirs = tableDirs,
@@ -71,7 +71,10 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                         Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
                     } else {
                         // Determine last known version for ordered response metadata
-                        val last = getLastVersion(tr, tableDirs, key)
+                        val last = tr.get(packKey(tableDirs.tablePrefix, key.bytes)).awaitResult()
+                            ?.readHLCTimestampIfExact()
+                            ?: getRequest.toVersion
+                            ?: return@run Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
 
                         val cacheReader =
                             { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
@@ -79,16 +82,17 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             }
 
                         getSingleValues = { version ->
+                            val readVersion = version.takeIf { tableDirs is HistoricTableDirectories }
                             getRequest.dataModel.readTransactionIntoValuesWithMetaData(
                                 tr = tr,
                                 creationVersion = creationVersion,
                                 tableDirs = tableDirs,
                                 key = key,
                                 select = getRequest.select,
-                                toVersion = version.takeIf { tableDirs is HistoricTableDirectories },
+                                toVersion = readVersion,
                                 cachedRead = cacheReader,
                                 decryptValue = this@processGetUpdatesRequest::decryptValueIfNeeded
-                            )
+                            )?.withSoftDeleteState(tr, tableDirs, key.bytes, readVersion)
                         }
 
                         val objChanges = getRequest.dataModel.readTransactionIntoObjectChanges(
@@ -103,21 +107,21 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             sortingKey = null,
                             cachedRead = cacheReader,
                             decryptValue = this@processGetUpdatesRequest::decryptValueIfNeeded
-                        )?.let { changes ->
-                            if (getRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
-                                addSoftDeleteChangeIfMissing(
-                                    tr = tr,
-                                    tableDirs = tableDirs,
-                                    key = key,
-                                    fromVersion = getRequest.fromVersion,
-                                    objectChange = changes
-                                )
-                            } else {
-                                changes
-                            }
+                        )
+
+                        val fallbackChanges = if (getRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {
+                            addSoftDeleteChangeIfMissing(
+                                tr = tr,
+                                tableDirs = tableDirs,
+                                key = key,
+                                fromVersion = getRequest.fromVersion,
+                                objectChange = objChanges
+                            )
+                        } else {
+                            objChanges
                         }
 
-                        Pair(last, objChanges)
+                        Pair(last, fallbackChanges)
                     }
                 }
             }
@@ -181,3 +185,17 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
 
 private fun GetUpdatesRequest<*>.needsSoftDeleteFallback() =
     toVersion == null && (maxVersions > 1u || !filterSoftDeleted)
+
+private fun <DM : IsRootDataModel> ValuesWithMetaData<DM>.withSoftDeleteState(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    key: ByteArray,
+    toVersion: ULong?
+): ValuesWithMetaData<DM> {
+    if (toVersion == null) {
+        return this
+    }
+
+    val deleted = isSoftDeleted(tr, tableDirs, toVersion, key)
+    return if (isDeleted == deleted) this else copy(isDeleted = deleted)
+}

@@ -7,7 +7,7 @@ import maryk.core.properties.references.ListReference
 import maryk.core.properties.types.Key
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.datastore.foundationdb.processors.EMPTY_BYTEARRAY
+import maryk.datastore.foundationdb.processors.HISTORIC_DELETE_MARKER
 import maryk.datastore.shared.TypeIndicator
 import maryk.foundationdb.Transaction
 
@@ -42,7 +42,7 @@ internal fun <T : Any> setListValue(
             tr.clear(refToDelete)
             if (tableDirs is HistoricTableDirectories) {
                 val qualifier = refToDelete.copyOfRange(packKey(tableDirs.tablePrefix, key.bytes).size, refToDelete.size)
-                writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, EMPTY_BYTEARRAY)
+                writeHistoricTable(tr, tableDirs, key.bytes, qualifier, versionBytes, HISTORIC_DELETE_MARKER)
             }
         }
         changed = true

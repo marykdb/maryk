@@ -114,7 +114,7 @@ internal fun <T : Any> Transaction.matchQualifier(
                                 matchReferenced(
                                     tableDirs = tableDirs,
                                     toVersion = toVersion,
-                                    qualifier = qualifier,
+                                    qualifier = matchedQualifier(key, keyOffset, keyLength, referenceBytes, refOffset, refLength),
                                     keyLength = keyLength,
                                     referencedMatcher = referencedMatcher,
                                     reference = reference,
@@ -130,6 +130,20 @@ internal fun <T : Any> Transaction.matchQualifier(
             return result == true
         }
     }
+}
+
+private fun matchedQualifier(
+    key: ByteArray,
+    keyOffset: Int,
+    keyLength: Int,
+    referenceBytes: ByteArray,
+    refOffset: Int,
+    refLength: Int
+): ByteArray {
+    val qualifier = ByteArray(keyLength + refLength)
+    key.copyInto(qualifier, 0, keyOffset, keyOffset + keyLength)
+    referenceBytes.copyInto(qualifier, keyLength, refOffset, refOffset + refLength)
+    return qualifier
 }
 
 private fun <T : Any> readFuzzyValue(

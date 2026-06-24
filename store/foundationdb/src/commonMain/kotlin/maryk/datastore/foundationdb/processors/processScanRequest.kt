@@ -34,6 +34,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
         tableDirs = tableDirs,
         scanSetup = { /* nothing */ }
     ) { tr, key, creationVersion, _ ->
+            val keyBytes = key.bytes
             val cacheReader = { ref: IsPropertyReferenceForCache<*, *>, version: ULong, reader: () -> Any? ->
                 cache.readValue(dbIndex, key, ref, version, reader)
             }
@@ -56,7 +57,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
                     ?: tr.getValue(
                         tableDirs = tableDirs,
                         toVersion = scanRequest.toVersion,
-                        keyAndReference = it.toStorageByteArray(),
+                        keyBytes = keyBytes,
+                        referenceBytes = it.toStorageByteArray(),
                         decryptValue = this@processScanRequest::decryptValueIfNeeded
                     ) { valueBytes, offset, length ->
                         valueBytes.convertToValue(it, offset, length)

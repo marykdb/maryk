@@ -8,38 +8,41 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.SetReference
+import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
-import maryk.core.properties.types.Bytes
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
+import maryk.datastore.foundationdb.clusterlog.ClusterLogDeletion
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.packVersionedKey
 import maryk.datastore.foundationdb.processors.helpers.readMapByReference
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
 import maryk.datastore.foundationdb.processors.helpers.readSetByReference
 import maryk.datastore.foundationdb.processors.helpers.requireVersionedValue
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
+import maryk.datastore.foundationdb.processors.helpers.setValue
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
-import maryk.datastore.foundationdb.processors.helpers.setValue
-import maryk.datastore.foundationdb.processors.helpers.packVersionedKey
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricUnique
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.helpers.convertToValue
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
-import maryk.datastore.foundationdb.clusterlog.ClusterLogDeletion
 import maryk.lib.bytes.combineToByteArray
+import maryk.lib.extensions.compare.matchesRangePart
+import maryk.foundationdb.Transaction
 import maryk.foundationdb.Range as FDBRange
 
 /** Process the deletion of the value at [key]/[version] from FoundationDB */
@@ -54,7 +57,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 ): IsDeleteResponseStatus<DM> = try {
     var updateToEmit: Update<DM>? = null
     runTransaction { tr ->
-        val exists = tr.get(packKey(tableDirs.keysPrefix, key.bytes)).awaitResult() != null
+        val keyBytes = key.bytes
+        val exists = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
+            ?.readHLCTimestampIfExact() != null
 
         if (!exists) {
             return@runTransaction DoesNotExist(key)
@@ -64,7 +69,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 
         // Values getter to read current values by property reference for index computation
         val valuesGetter = object : IsValuesGetter {
-            private val valueCache = mutableMapOf<IsPropertyReference<*, *, *>, Any?>()
+            private val valueCache = HashMap<IsPropertyReference<*, *, *>, Any?>(8)
 
             override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
                 propertyReference: IsPropertyReference<T, D, C>
@@ -78,7 +83,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     @Suppress("UNCHECKED_CAST")
                     tr.readMapByReference(
                         tableDirs.tablePrefix,
-                        key.bytes,
+                        keyBytes,
                         propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
                         this@processDelete::decryptValueIfNeeded
                     ) as T?
@@ -86,7 +91,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     @Suppress("UNCHECKED_CAST")
                     tr.readSetByReference(
                         tableDirs.tablePrefix,
-                        key.bytes,
+                        keyBytes,
                         propertyReference as SetReference<Any, IsPropertyContext>
                     ) as T?
                 } else {
@@ -94,7 +99,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     tr.getValue(
                         tableDirs,
                         null,
-                        combineToByteArray(key.bytes, propertyReference.toStorageByteArray()),
+                        keyBytes,
+                        propertyReference.toStorageByteArray(),
                         decryptValue = this@processDelete::decryptValueIfNeeded
                     ) { valueBytes, offset, length ->
                         valueBytes.convertToValue(propertyReference, offset, length) as T?
@@ -154,6 +160,18 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                             writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
                         }
                     }
+                }
+            }
+
+            if (hardDelete) {
+                for (reference in getUniqueIndices(dbIndex, tableDirs.uniquePrefix)) {
+                    deleteCurrentUniqueIndexEntryForKey(
+                        tr,
+                        tableDirs,
+                        reference,
+                        key.bytes,
+                        versionBytes
+                    )
                 }
             }
         }
@@ -233,4 +251,28 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
     e.rethrowIfFatal()
     val cause = e.unwrapFdb()
     ServerFail(cause.toString(), cause)
+}
+
+private fun deleteCurrentUniqueIndexEntryForKey(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    reference: ByteArray,
+    key: ByteArray,
+    versionBytes: ByteArray
+) {
+    val prefix = packKey(tableDirs.uniquePrefix, reference)
+    val iterator = tr.getRange(FDBRange.startsWith(prefix)).iterator()
+
+    while (iterator.hasNext()) {
+        val kv = iterator.nextBlocking()
+        if (
+            kv.value.size == VERSION_BYTE_SIZE + key.size &&
+            kv.value.matchesRangePart(VERSION_BYTE_SIZE, key)
+        ) {
+            tr.clear(kv.key)
+            val uniqueRef = kv.key.copyOfRange(tableDirs.uniquePrefix.size, kv.key.size)
+            writeHistoricUnique(tr, tableDirs, key, uniqueRef, versionBytes)
+            break
+        }
+    }
 }

@@ -3,7 +3,6 @@ package maryk.datastore.foundationdb.processors.helpers
 import maryk.foundationdb.Transaction
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
-import maryk.lib.bytes.combineToByteArray
 
 internal fun writeHistoricTable(
     tr: Transaction,
@@ -41,9 +40,8 @@ internal fun writeHistoricIndex(
     value: ByteArray,
 ) {
     if (tableDirs is HistoricTableDirectories) {
-        // Encode the full qualifier (indexRef || valueAndKey) to be zero-free up to the separator
-        val combined = combineToByteArray(indexRefBytes, keyAndValue)
-        val encodedQualifier = encodeZeroFreeUsing01(combined)
+        // Encode the full qualifier (indexRef || valueAndKey) directly into the final zero-free buffer.
+        val encodedQualifier = encodeZeroFreeUsing01(indexRefBytes, keyAndValue)
         tr.set(packVersionedKey(tableDirs.historicIndexPrefix, encodedQualifier, version = version), value)
     }
 }

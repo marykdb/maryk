@@ -17,7 +17,7 @@ import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
 import maryk.datastore.foundationdb.processors.helpers.packDescendingExclusiveEnd
 import maryk.datastore.foundationdb.processors.helpers.packKey
-import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfPresent
+import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.foundationdb.processors.helpers.TransactionRunner
 import maryk.lib.extensions.compare.compareDefinedRange
 import kotlin.math.min
@@ -101,7 +101,8 @@ internal fun <DM : IsRootDataModel> scanStore(
                             }
 
                             val key = scanRequest.dataModel.key(modelKeyBytes)
-                            val creationVersion = kv.value.readHLCTimestampIfPresent() ?: return@forEachInRangeBatch true
+                            val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
+                                ?: return@forEachInRangeBatch true
                             if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) {
                                 return@forEachInRangeBatch true
                             }
@@ -181,7 +182,8 @@ internal fun <DM : IsRootDataModel> scanStore(
                             if (!scanRange.matchesPartials(modelKeyBytes)) return@forEachInRangeBatch true
 
                             val key = scanRequest.dataModel.key(modelKeyBytes)
-                            val creationVersion = kv.value.readHLCTimestampIfPresent() ?: return@forEachInRangeBatch true
+                            val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
+                                ?: return@forEachInRangeBatch true
                             if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, decryptValue)) {
                                 return@forEachInRangeBatch true
                             }

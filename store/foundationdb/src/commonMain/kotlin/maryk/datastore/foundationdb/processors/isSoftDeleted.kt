@@ -1,10 +1,9 @@
 package maryk.datastore.foundationdb.processors
 
-import maryk.core.exceptions.StorageException
-import maryk.foundationdb.Transaction
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.getValue
+import maryk.foundationdb.Transaction
 
 /** Check if Object is soft deleted */
 internal fun isSoftDeleted(
@@ -27,9 +26,7 @@ internal fun isSoftDeleted(
         keyLength,
         decryptValue = decryptValue,
     ) { b, o, l ->
-        if (l <= 0) {
-            throw StorageException("Stored soft delete value is missing delete flag")
-        }
+        if (l != 1) return@getValue false
         b[o + l - 1] == TRUE
     } == true
 }

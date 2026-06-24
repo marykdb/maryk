@@ -1,5 +1,3 @@
-@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
-
 package io.maryk.app
 
 import androidx.compose.runtime.DisposableEffect

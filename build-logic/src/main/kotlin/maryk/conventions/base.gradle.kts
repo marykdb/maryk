@@ -4,6 +4,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.gradle.kotlin.dsl.base
 import org.gradle.kotlin.dsl.withType
+import java.io.File
 
 /** common config for all subprojects */
 
@@ -23,6 +24,14 @@ tasks.withType<AbstractArchiveTask>().configureEach {
 }
 
 tasks.withType<Test>().configureEach {
+    System.getProperty("maryk.jfr.filename")?.takeIf { it.isNotBlank() }?.let { jfrFilename ->
+        val settings = System.getProperty("maryk.jfr.settings")?.takeIf { it.isNotBlank() } ?: "profile"
+        doFirst("prepare jfr output dir") {
+            File(jfrFilename).parentFile?.mkdirs()
+        }
+        jvmArgs("-XX:StartFlightRecording=filename=$jfrFilename,settings=$settings,dumponexit=true")
+    }
+
     // increase logging for all tests
     testLogging {
         events(

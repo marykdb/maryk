@@ -4,7 +4,6 @@ import org.gradle.internal.os.OperatingSystem
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
 import org.jetbrains.kotlin.konan.target.Family
-import java.io.ByteArrayOutputStream
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
@@ -60,14 +59,11 @@ kotlin {
                 }
 
                 return try {
-                    val output = ByteArrayOutputStream()
-                    val result = project.providers.exec {
-                        commandLine("lipo", "-archs", file.absolutePath)
-                        standardOutput = output
-                        errorOutput = output
-                        setIgnoreExitValue(true)
-                    }.result.get()
-                    result.exitValue == 0 && output.toString().trim().split(Regex("\\s+")).contains(expectedArch)
+                    val process = ProcessBuilder("lipo", "-archs", file.absolutePath)
+                        .redirectErrorStream(true)
+                        .start()
+                    val output = process.inputStream.bufferedReader().use { it.readText() }
+                    process.waitFor() == 0 && output.trim().split(Regex("\\s+")).contains(expectedArch)
                 } catch (_: RuntimeException) {
                     false
                 }

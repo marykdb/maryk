@@ -15,6 +15,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.toByteArray
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.migration.MigrationAuditEvent
@@ -36,12 +37,16 @@ import maryk.core.models.migration.VersionUpdateHandler
 import maryk.core.models.migration.orderMigrationModelIds
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
+import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.addDataModelReferences
 import maryk.core.query.requests.AddRequest
@@ -70,10 +75,13 @@ import maryk.datastore.rocksdb.TableType.Model
 import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.UpdateHistory
 import maryk.datastore.rocksdb.TableType.Unique
+import maryk.datastore.rocksdb.metadata.CURRENT_INDEX_KEY_FORMAT_VERSION
 import maryk.datastore.rocksdb.metadata.ModelMeta
-import maryk.datastore.rocksdb.metadata.readMetaFile
-import maryk.datastore.rocksdb.metadata.writeMetaFile
+import maryk.datastore.rocksdb.metadata.StoreMeta
+import maryk.datastore.rocksdb.metadata.readStoreMetaFile
+import maryk.datastore.rocksdb.metadata.writeStoreMetaFile
 import maryk.datastore.rocksdb.model.RocksDBLocalMigrationLease
+import maryk.datastore.rocksdb.processors.LAST_VERSION_INDICATOR
 import maryk.datastore.rocksdb.model.RocksDBMigrationAuditLogStore
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
@@ -104,21 +112,25 @@ import maryk.datastore.rocksdb.processors.processGetRequest
 import maryk.datastore.rocksdb.processors.processGetUpdatesRequest
 import maryk.datastore.rocksdb.processors.processInitialChangesUpdate
 import maryk.datastore.rocksdb.processors.SOFT_DELETE_INDICATOR
+import maryk.datastore.rocksdb.processors.StoreValuesGetter
 import maryk.datastore.rocksdb.processors.processScanChangesRequest
 import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdateHistoryRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
-import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
+import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
+import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
+import maryk.datastore.shared.TypeIndicator
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.ColumnFamilyOptions
@@ -158,6 +170,8 @@ class RocksDBDataStore private constructor(
         sensitiveReferencesByModelId.mapValues { it.value.sensitiveReferences }
     private val sensitiveUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
         sensitiveReferencesByModelId.mapValues { it.value.sensitiveUniqueReferences }
+    private val declaredUniqueReferencesByModelId: Map<UInt, List<ByteArray>> =
+        dataModelsById.mapValues { (_, model) -> collectUniqueReferences(model) }
 
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
@@ -171,13 +185,14 @@ class RocksDBDataStore private constructor(
     internal val db: OptimisticTransactionDB
 
     private val storePath: String = relativePath
-
-    private val modelMetas: MutableMap<UInt, ModelMeta> = readMetaFile(storePath).toMutableMap()
+    private var storeMeta: StoreMeta = readStoreMetaFile(storePath)
+    private val modelMetas: MutableMap<UInt, ModelMeta> = storeMeta.models.toMutableMap()
 
     internal val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {
         setPrefixSameAsStart(true)
     }
+    internal val sequentialReadOptions = ReadOptions()
 
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val updateHistoryReadyModelIds = atomic(setOf<UInt>())
@@ -233,6 +248,8 @@ class RocksDBDataStore private constructor(
                     )
                 }
             }
+
+            validateStoredIndexKeyFormat()
         } catch (e: Throwable) {
             closeResources()
             throw e
@@ -327,7 +344,7 @@ class RocksDBDataStore private constructor(
                             versionUpdateHandler?.invoke(this, storedModel, dataModel)
                             storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
                             ensureUpdateHistoryIndexReady(index, tableColumnFamilies)
-                            writeMetaFile(storePath, modelMetas)
+                            writeStoreMeta()
                         },
                         finalizeInStartup = {
                             migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
@@ -354,9 +371,182 @@ class RocksDBDataStore private constructor(
 
         scheduledVersionUpdateHandlers.forEach {
             it()
-            writeMetaFile(storePath, modelMetas)
+            writeStoreMeta()
         }
     }
+
+    private fun writeStoreMeta() {
+        dataModelsById.forEach { (modelId, dataModel) ->
+            modelMetas.putIfAbsent(modelId, ModelMeta(dataModel.Meta.name, dataModel.Meta.keyByteSize))
+        }
+        storeMeta = StoreMeta(
+            models = modelMetas.toMap(),
+            indexKeyFormatVersion = CURRENT_INDEX_KEY_FORMAT_VERSION
+        )
+        writeStoreMetaFile(storePath, storeMeta)
+    }
+
+    private fun validateStoredIndexKeyFormat() {
+        val hasIndexOrUniqueData = !isIndexAndUniqueStorageEmpty()
+        val storedFormat = storeMeta.indexKeyFormatVersion
+        if (storedFormat == CURRENT_INDEX_KEY_FORMAT_VERSION) {
+            return
+        }
+
+        if (!hasIndexOrUniqueData) {
+            writeStoreMeta()
+            return
+        }
+
+        migrateStoredIndexKeyFormat()
+    }
+
+    private fun migrateStoredIndexKeyFormat() {
+        Transaction(this).use { transaction ->
+            for ((_, columnFamilies) in columnFamilyHandlesByDataModelIndex) {
+                clearColumnFamily(transaction, columnFamilies.index)
+                clearColumnFamily(transaction, columnFamilies.unique)
+                if (columnFamilies is HistoricTableColumnFamilies) {
+                    clearColumnFamily(transaction, columnFamilies.historic.index)
+                }
+            }
+            transaction.commit()
+        }
+
+        for ((modelId, dataModel) in dataModelsById) {
+            val columnFamilies = getColumnFamilies(modelId)
+            val indexes = dataModel.Meta.indexes.orEmpty()
+            if (indexes.isNotEmpty()) {
+                walkDataRecordsAndFillIndex(this, columnFamilies, indexes)
+            }
+            rebuildCurrentUniqueIndex(modelId, dataModel, columnFamilies)
+        }
+
+        uniqueIndicesByDataModelIndex.value = emptyMap()
+        writeStoreMeta()
+    }
+
+    private fun rebuildCurrentUniqueIndex(
+        modelId: UInt,
+        dataModel: IsRootDataModel,
+        columnFamilies: TableColumnFamilies
+    ) {
+        val uniqueReferences = declaredUniqueReferencesByModelId[modelId].orEmpty()
+        if (uniqueReferences.isEmpty()) return
+
+        Transaction(this).use { transaction ->
+            val storeGetter = StoreValuesGetter(
+                null,
+                db,
+                columnFamilies,
+                defaultReadOptions,
+                captureVersion = true,
+                decryptValue = this::decryptValueIfNeeded
+            )
+
+            transaction.getIterator(defaultReadOptions, columnFamilies.keys).use { iterator ->
+                iterator.seekToFirst()
+                while (iterator.isValid()) {
+                    val keyBytes = iterator.key()
+                    if (iterator.value().readVersionBytesIfExact() == null) {
+                        iterator.next()
+                        continue
+                    }
+
+                    storeGetter.moveToKey(keyBytes)
+                    val key = Key<IsRootDataModel>(keyBytes)
+                    for (reference in uniqueReferences) {
+                        writeCurrentUniqueValue(
+                            modelId = modelId,
+                            dataModel = dataModel,
+                            transaction = transaction,
+                            columnFamilies = columnFamilies,
+                            storeGetter = storeGetter,
+                            key = key,
+                            reference = reference
+                        )
+                    }
+                    iterator.next()
+                }
+            }
+            transaction.commit()
+        }
+    }
+
+    private fun writeCurrentUniqueValue(
+        modelId: UInt,
+        dataModel: IsRootDataModel,
+        transaction: Transaction,
+        columnFamilies: TableColumnFamilies,
+        storeGetter: StoreValuesGetter,
+        key: Key<*>,
+        reference: ByteArray
+    ) {
+        try {
+            var index = 0
+            @Suppress("UNCHECKED_CAST")
+            val propertyReference = dataModel.getPropertyReferenceByStorageBytes(
+                reference.size,
+                { reference[index++] },
+                null
+            ) as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>
+
+            storeGetter.lastVersion = null
+            val value = storeGetter[propertyReference] ?: return
+            val storableDefinition = Value.castDefinition(propertyReference.comparablePropertyDefinition)
+            @Suppress("UNCHECKED_CAST")
+            val valueBytes = (storableDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(
+                value,
+                TypeIndicator.NoTypeIndicator.byte
+            )
+            val uniqueReferenceWithValue = reference + mapUniqueValueBytes(modelId, reference, valueBytes)
+            val versionBytes = storeGetter.lastVersion?.toByteArray() ?: return
+
+            createUniqueIndexIfNotExists(modelId, columnFamilies.unique, reference)
+            setUniqueIndexValue(columnFamilies, transaction, uniqueReferenceWithValue, versionBytes, key)
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            if (!error.isSkippableDataError()) {
+                throw error
+            }
+        }
+    }
+
+    private fun clearColumnFamily(
+        transaction: Transaction,
+        columnFamily: ColumnFamilyHandle
+    ) {
+        do {
+            val keysToDelete = ArrayList<ByteArray>(INDEX_FORMAT_MIGRATION_DELETE_BATCH_SIZE)
+            transaction.getIterator(defaultReadOptions, columnFamily).use { iterator ->
+                iterator.seekToFirst()
+                while (iterator.isValid() && keysToDelete.size < INDEX_FORMAT_MIGRATION_DELETE_BATCH_SIZE) {
+                    keysToDelete += iterator.key()
+                    iterator.next()
+                }
+            }
+
+            keysToDelete.forEach { transaction.delete(columnFamily, it) }
+        } while (keysToDelete.size == INDEX_FORMAT_MIGRATION_DELETE_BATCH_SIZE)
+    }
+
+    private fun isIndexAndUniqueStorageEmpty(): Boolean {
+        for ((_, columnFamilies) in columnFamilyHandlesByDataModelIndex) {
+            if (!isColumnFamilyEmpty(columnFamilies.index)) return false
+            if (!isColumnFamilyEmpty(columnFamilies.unique)) return false
+            if (columnFamilies is HistoricTableColumnFamilies) {
+                if (!isColumnFamilyEmpty(columnFamilies.historic.index)) return false
+                if (!isColumnFamilyEmpty(columnFamilies.historic.unique)) return false
+            }
+        }
+        return true
+    }
+
+    private fun isColumnFamilyEmpty(columnFamily: ColumnFamilyHandle): Boolean =
+        db.newIterator(columnFamily, defaultReadOptions).use { iterator ->
+            iterator.seekToFirst()
+            !iterator.isValid()
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun startFlows() {
@@ -467,7 +657,10 @@ class RocksDBDataStore private constructor(
                 if (keepAllVersions && tableColumnFamilies is HistoricTableColumnFamilies) {
                     while (keyIterator.isValid()) {
                         val key = Key<IsRootDataModel>(keyIterator.key().copyOf())
-                        val creationVersion = keyIterator.value().readVersionBytes()
+                        val creationVersion = keyIterator.value().readVersionBytesIfExact() ?: run {
+                            keyIterator.next()
+                            continue
+                        }
 
                         writeSingleUpdateHistoryVersion(tableColumnFamilies, key, creationVersion)
 
@@ -508,7 +701,12 @@ class RocksDBDataStore private constructor(
                 } else {
                     while (keyIterator.isValid()) {
                         val key = Key<IsRootDataModel>(keyIterator.key().copyOf())
-                        val lastVersion = getLastVersion(dbAccessor, tableColumnFamilies, defaultReadOptions, key)
+                        val latestKey = key.bytes + LAST_VERSION_INDICATOR
+                        val latestLength = dbAccessor.get(tableColumnFamilies.table, defaultReadOptions, latestKey, recyclableByteArray)
+                        val lastVersion = recyclableByteArray.readVersionBytesIfExact(latestLength) ?: run {
+                            keyIterator.next()
+                            continue
+                        }
                         writeSingleUpdateHistoryVersion(tableColumnFamilies, key, lastVersion)
                         keyIterator.next()
                     }
@@ -582,6 +780,7 @@ class RocksDBDataStore private constructor(
         ownRocksDBOptions?.close()
         defaultWriteOptions.close()
         defaultReadOptions.close()
+        sequentialReadOptions.close()
 
         columnFamilyHandlesByDataModelIndex.values.forEach {
             it.close()
@@ -602,15 +801,20 @@ class RocksDBDataStore private constructor(
 
     /** Get the unique indexes for [dbIndex] and [uniqueHandle] */
     internal fun getUniqueIndices(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle) =
-        uniqueIndicesByDataModelIndex.value[dbIndex] ?: searchExistingUniqueIndices(uniqueHandle)
+        uniqueIndicesByDataModelIndex.value[dbIndex] ?: mergeUniqueReferences(
+            declaredUniqueReferencesByModelId[dbIndex].orEmpty(),
+            searchExistingUniqueIndices(uniqueHandle)
+        ).also { existingDbUniques ->
+            uniqueIndicesByDataModelIndex.value =
+                uniqueIndicesByDataModelIndex.value.plus(dbIndex to existingDbUniques)
+        }
 
     /**
      * Checks if a unique index exists and creates it if not otherwise.
      * This is needed so delete knows which indexes to scan for values to delete.
      */
     internal fun createUniqueIndexIfNotExists(dbIndex: UInt, uniqueHandle: ColumnFamilyHandle, uniqueName: ByteArray) {
-        val existingDbUniques = uniqueIndicesByDataModelIndex.value[dbIndex]
-            ?: searchExistingUniqueIndices(uniqueHandle)
+        val existingDbUniques = getUniqueIndices(dbIndex, uniqueHandle)
         val existingValue = existingDbUniques.find { it.contentEquals(uniqueName) }
 
         if (existingValue == null) {
@@ -729,6 +933,58 @@ class RocksDBDataStore private constructor(
             modelPath = mutableListOf()
         )
         return SensitiveModelReferences(sensitiveReferences, sensitiveUniqueReferences)
+    }
+
+    private fun collectUniqueReferences(dataModel: IsRootDataModel): List<ByteArray> {
+        val uniqueReferences = mutableListOf<ByteArray>()
+        collectUniqueReferencesRecursive(
+            dataModel = dataModel,
+            parentRef = null,
+            uniqueReferences = uniqueReferences,
+            modelPath = mutableListOf()
+        )
+        return uniqueReferences
+    }
+
+    private fun collectUniqueReferencesRecursive(
+        dataModel: IsValuesDataModel,
+        parentRef: AnyPropertyReference?,
+        uniqueReferences: MutableList<ByteArray>,
+        modelPath: MutableList<IsValuesDataModel>
+    ) {
+        if (modelPath.any { it === dataModel }) return
+        modelPath += dataModel
+        try {
+            dataModel.forEach { wrapper ->
+                val propertyReference = wrapper.ref(parentRef)
+                val definition = wrapper.definition
+                if (definition is IsComparableDefinition<*, *> && definition.unique) {
+                    uniqueReferences += propertyReference.toStorageByteArray()
+                }
+                if (definition is EmbeddedValuesDefinition<*>) {
+                    collectUniqueReferencesRecursive(
+                        dataModel = definition.dataModel,
+                        parentRef = propertyReference,
+                        uniqueReferences = uniqueReferences,
+                        modelPath = modelPath
+                    )
+                }
+            }
+        } finally {
+            modelPath.removeAt(modelPath.lastIndex)
+        }
+    }
+
+    private fun mergeUniqueReferences(
+        declaredReferences: List<ByteArray>,
+        storedReferences: List<ByteArray>
+    ) = buildList {
+        declaredReferences.forEach { add(it) }
+        storedReferences.forEach { storedReference ->
+            if (none { it.contentEquals(storedReference) }) {
+                add(storedReference)
+            }
+        }
     }
 
     private fun collectSensitiveReferencesRecursive(
@@ -890,6 +1146,8 @@ class RocksDBDataStore private constructor(
 
     }
 }
+
+private const val INDEX_FORMAT_MIGRATION_DELETE_BATCH_SIZE = 1024
 
 private data class SensitiveModelReferences(
     val sensitiveReferences: List<ByteArray>,

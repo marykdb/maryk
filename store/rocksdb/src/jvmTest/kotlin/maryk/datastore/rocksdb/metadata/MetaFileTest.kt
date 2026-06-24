@@ -30,11 +30,12 @@ class MetaFileTest {
             2u to ModelMeta("Another Model", 8),
         )
 
-        writeMetaFile(path, metas)
+        writeStoreMetaFile(path, StoreMeta(metas, CURRENT_INDEX_KEY_FORMAT_VERSION))
 
         // Verify exact YAML structure
         val expected = """
             |version: 1
+            |indexKeyFormatVersion: 2
             |models:
             |  1:
             |    name: ModelName
@@ -50,6 +51,7 @@ class MetaFileTest {
 
         val readBack = readMetaFile(path)
         assertEquals(metas, readBack)
+        assertEquals(CURRENT_INDEX_KEY_FORMAT_VERSION, readStoreMetaFile(path).indexKeyFormatVersion)
     }
 
     @Test
@@ -84,6 +86,7 @@ class MetaFileTest {
             "$path/MARYK_META.yml",
             """
                 |version: 1
+                |indexKeyFormatVersion: 2
                 |models:
                 |  1:
                 |    name: Broken
@@ -107,6 +110,7 @@ class MetaFileTest {
             "$path/MARYK_META.yml",
             """
                 |version: 1
+                |indexKeyFormatVersion: 2
                 |models:
                 |  1:
                 |    name: Broken
@@ -126,6 +130,7 @@ class MetaFileTest {
             "$path/MARYK_META.yml",
             """
                 |version: 1
+                |indexKeyFormatVersion: 2
                 |models:
                 |  1:
                 |    name: Broken
@@ -137,5 +142,24 @@ class MetaFileTest {
         assertFailsWith<IllegalArgumentException> {
             readMetaFile(path)
         }
+    }
+
+    @Test
+    fun defaultsMissingIndexKeyFormatVersionToLegacy() {
+        File.writeText(
+            "$path/MARYK_META.yml",
+            """
+                |version: 1
+                |models:
+                |  1:
+                |    name: Legacy
+                |    keySize: 8
+                |
+            """.trimMargin()
+        )
+
+        val storeMeta = readStoreMetaFile(path)
+        assertEquals(LEGACY_INDEX_KEY_FORMAT_VERSION, storeMeta.indexKeyFormatVersion)
+        assertEquals(mapOf(1u to ModelMeta("Legacy", 8)), storeMeta.models)
     }
 }

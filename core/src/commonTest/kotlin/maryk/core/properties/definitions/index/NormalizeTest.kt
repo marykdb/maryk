@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.string
 import maryk.core.query.DefinitionsConversionContext
 import maryk.test.ByteCollector
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
@@ -130,6 +131,17 @@ internal class NormalizeTest {
                 .map { it.decodeToString() }
                 .sorted()
         }
+    }
+
+    @Test
+    fun anyOfCalculateStorageByteLengthForIndexUsesLongestToken() {
+        val values = TokenModel.create {
+            family with "ab"
+            given with setOf("z", "longer token")
+        }
+
+        val lengths = TokenModel.Meta.indexes!![0].toStorageByteArraysForIndex(values).map { it.size }
+        assertEquals(lengths.max(), TokenModel.Meta.indexes!![0].calculateStorageByteLengthForIndex(values))
     }
 
     @Test

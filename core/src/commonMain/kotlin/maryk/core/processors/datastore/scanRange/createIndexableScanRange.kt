@@ -75,7 +75,13 @@ private fun createScanRangeFromParts(
                 // Partial matches can only happen on index since is string only
                 if (!keyPart.partialMatch) {
                     // Add size checker for exact matches
-                    toAdd += IndexPartialSizeToMatch(keyIndex, null, keyPart.keySize, keyPart.toMatch.size)
+                    toAdd += IndexPartialSizeToMatch(
+                        keyIndex,
+                        null,
+                        keyPart.keySize,
+                        keyPart.indexPartCount,
+                        keyPart.toMatch.size
+                    )
                 }
 
                 if (keyPart.partialMatch && appliedToRange) {
@@ -86,7 +92,9 @@ private fun createScanRangeFromParts(
 
                 if (appliedToRange) {
                     anchoredIndexParts += keyPart.indexableIndex
-                    toRemove += keyPart
+                    if (!keyPart.partialMatch) {
+                        toRemove += keyPart
+                    }
                 }
             }
             is IndexPartialToBeBigger -> {

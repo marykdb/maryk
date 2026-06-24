@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.models.key
+import maryk.core.processors.datastore.matchers.IndexPartialToMatch
 import maryk.core.properties.definitions.index.Normalize
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.types.invoke
@@ -20,6 +21,7 @@ import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.CompleteMarykModel.number
+import maryk.test.models.CompleteMarykModel.string
 import maryk.test.models.CompleteMarykModel.time
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.SimpleMarykTypeEnum.S1
@@ -64,6 +66,13 @@ class IndexableScanRangesTest {
     private val earlierIndexValue = number.ref().toStorageByteArrayForIndex(
         earlierDO, earlierKey.bytes
     )!!
+    private val earlierCompositeIndexValue = indexable.toStorageByteArrayForIndex(
+        earlierDO, earlierKey.bytes
+    )!!
+    private val earlierStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
+        earlierDO, earlierKey.bytes
+    )!!
+    private val earlierStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(earlierDO).single().size
 
     private val matchDO = CompleteMarykModel.create {
         string with "Jannes"
@@ -78,6 +87,20 @@ class IndexableScanRangesTest {
     private val matchIndexValue = number.ref().toStorageByteArrayForIndex(
         matchDO, matchKey.bytes
     )!!
+    private val matchCompositeIndexValue = indexable.toStorageByteArrayForIndex(
+        matchDO, matchKey.bytes
+    )!!
+    private val matchCompositeValueSize = indexable.toStorageByteArrays(matchDO).single().size
+    private val numberValueSize = number.ref().toStorageByteArrays(matchDO).single().size
+    private val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
+        matchDO, matchKey.bytes
+    )!!
+    private val matchStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(matchDO).single().size
+    private val normalizedStringIndexable = Normalize(CompleteMarykModel.string.ref())
+    private val matchNormalizedStringIndexValue = normalizedStringIndexable.toStorageByteArrayForIndex(
+        matchDO, matchKey.bytes
+    )!!
+    private val matchNormalizedStringValueSize = normalizedStringIndexable.toStorageByteArrays(matchDO).single().size
 
     private val laterDO = CompleteMarykModel.create {
         string with "Karel"
@@ -92,6 +115,13 @@ class IndexableScanRangesTest {
     private val laterIndexValue = number.ref().toStorageByteArrayForIndex(
         laterDO, laterKey.bytes
     )!!
+    private val laterCompositeIndexValue = indexable.toStorageByteArrayForIndex(
+        laterDO, laterKey.bytes
+    )!!
+    private val laterStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
+        laterDO, laterKey.bytes
+    )!!
+    private val laterStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(laterDO).single().size
 
     @Test
     fun convertSimpleEqualFilterToScanRange() {
@@ -106,17 +136,49 @@ class IndexableScanRangesTest {
         expect("00000005") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.matchesPartials(matchIndexValue, 0, numberValueSize, matchIndexValue.size) }
 
-        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue) }
-        assertTrue { scanRange.matchesPartials(earlierIndexValue) }
+        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.matchesPartials(earlierIndexValue, 0, numberValueSize, earlierIndexValue.size) }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue) }
-        assertTrue { scanRange.ranges.first().keyOutOfRange(laterIndexValue) }
-        assertTrue { scanRange.matchesPartials(laterIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(laterIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.matchesPartials(laterIndexValue, 0, numberValueSize, laterIndexValue.size) }
+    }
+
+    @Test
+    fun exactEqualityRangeWithPartialMatchersExcludesLongerEqualPrefix() {
+        val scanRange = IndexableScanRanges(
+            ranges = listOf(
+                ScanRange(
+                    start = "garcia".encodeToByteArray(),
+                    startInclusive = true,
+                    end = "garcia".encodeToByteArray(),
+                    endInclusive = true
+                )
+            ),
+            partialMatches = listOf(
+                IndexPartialToMatch(
+                    indexableIndex = 0,
+                    fromByteIndex = 0,
+                    keySize = keyScanRange.keySize,
+                    indexPartCount = 1,
+                    toMatch = "gar".encodeToByteArray(),
+                    partialMatch = true
+                )
+            ),
+            keyScanRange = keyScanRange
+        )
+
+        val keySuffix = ByteArray(keyScanRange.keySize)
+        val exact = "garcia".encodeToByteArray() + keySuffix
+        val longerPrefix = "garcialopez".encodeToByteArray() + keySuffix
+
+        assertTrue { scanRange.matchesPartials(exact, 0, exact.size - keySuffix.size, exact.size) }
+        assertFalse { scanRange.matchesPartials(longerPrefix, 0, longerPrefix.size - keySuffix.size, longerPrefix.size) }
     }
 
     @Test
@@ -132,16 +194,16 @@ class IndexableScanRangesTest {
         expect("") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
-        assertTrue { scanRange.ranges.first().keyBeforeStart(matchIndexValue) } // Because should skip
-        assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchIndexValue) }
+        assertTrue { scanRange.ranges.first().keyBeforeStart(matchIndexValue, 0, numberValueSize) } // Because should skip
+        assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.matchesPartials(matchIndexValue, 0, numberValueSize, matchIndexValue.size) }
 
-        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue) }
+        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue, 0, numberValueSize) }
         assertTrue { scanRange.matchesPartials(earlierIndexValue) }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(laterIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(laterIndexValue, 0, numberValueSize) }
         assertTrue { scanRange.matchesPartials(laterIndexValue) }
     }
 
@@ -160,7 +222,7 @@ class IndexableScanRangesTest {
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchIndexValue) }
+        assertTrue { scanRange.matchesPartials(matchIndexValue, 0, numberValueSize, matchIndexValue.size) }
 
         assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue) }
@@ -186,7 +248,7 @@ class IndexableScanRangesTest {
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
         assertTrue { scanRange.ranges.first().keyOutOfRange(matchIndexValue) } // because should not be included
-        assertTrue { scanRange.matchesPartials(matchIndexValue) }
+        assertTrue { scanRange.matchesPartials(matchIndexValue, 0, numberValueSize, matchIndexValue.size) }
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(earlierIndexValue) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue) }
@@ -210,16 +272,16 @@ class IndexableScanRangesTest {
         expect("00000005") { scanRange.ranges.first().end?.toHexString() }
         assertTrue { scanRange.ranges.first().endInclusive }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.matchesPartials(matchIndexValue, 0, numberValueSize, matchIndexValue.size) }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(earlierIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(earlierIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue, 0, numberValueSize) }
         assertTrue { scanRange.matchesPartials(earlierIndexValue) }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue) }
-        assertTrue { scanRange.ranges.first().keyOutOfRange(laterIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(laterIndexValue, 0, numberValueSize) }
         assertTrue { scanRange.matchesPartials(laterIndexValue) }
     }
 
@@ -238,7 +300,7 @@ class IndexableScanRangesTest {
 
         assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(matchIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchIndexValue) }
+        assertTrue { scanRange.matchesPartials(matchIndexValue, 0, numberValueSize, matchIndexValue.size) }
 
         assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue) }
@@ -278,21 +340,21 @@ class IndexableScanRangesTest {
         expect("00000006") { scanRange.ranges.last().end?.toHexString() }
         assertTrue { scanRange.ranges.last().endInclusive }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
-        assertTrue { scanRange.ranges.first().keyOutOfRange(matchIndexValue) }
-        assertFalse { scanRange.ranges[1].keyBeforeStart(matchIndexValue) }
-        assertFalse { scanRange.ranges[1].keyOutOfRange(matchIndexValue) }
-        assertTrue { scanRange.ranges.last().keyBeforeStart(matchIndexValue) }
-        assertFalse { scanRange.ranges.last().keyOutOfRange(matchIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(matchIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges[1].keyBeforeStart(matchIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges[1].keyOutOfRange(matchIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.ranges.last().keyBeforeStart(matchIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges.last().keyOutOfRange(matchIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.matchesPartials(matchIndexValue, 0, numberValueSize, matchIndexValue.size) }
 
-        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue) }
-        assertFalse { scanRange.ranges.last().keyOutOfRange(earlierIndexValue) }
-        assertFalse { scanRange.matchesPartials(earlierIndexValue) }
+        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.ranges.last().keyOutOfRange(earlierIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.matchesPartials(earlierIndexValue, 0, numberValueSize, earlierIndexValue.size) }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue) }
-        assertTrue { scanRange.ranges.last().keyOutOfRange(laterIndexValue) }
-        assertFalse { scanRange.matchesPartials(laterIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue, 0, numberValueSize) }
+        assertTrue { scanRange.ranges.last().keyOutOfRange(laterIndexValue, 0, numberValueSize) }
+        assertFalse { scanRange.matchesPartials(laterIndexValue, 0, numberValueSize, laterIndexValue.size) }
     }
 
     @Test
@@ -327,7 +389,8 @@ class IndexableScanRangesTest {
 
                 assertTrue(
                     scanRange.ranges.any { range ->
-                        !range.keyBeforeStart(indexValue) && !range.keyOutOfRange(indexValue)
+                        !range.keyBeforeStart(indexValue, 0, matchCompositeValueSize) &&
+                            !range.keyOutOfRange(indexValue, 0, matchCompositeValueSize)
                     }
                 )
             }
@@ -363,17 +426,17 @@ class IndexableScanRangesTest {
         expect("00000005029d6730") { scanRange.ranges.first().end?.toHexString() }
         assertFalse { scanRange.ranges.first().endInclusive }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(matchIndexValue) }
-        assertTrue { scanRange.ranges.first().keyOutOfRange(matchIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchCompositeIndexValue, 0, matchCompositeValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(matchCompositeIndexValue, 0, matchCompositeValueSize) }
+        assertTrue { scanRange.matchesPartials(matchCompositeIndexValue, 0, matchCompositeValueSize, matchCompositeIndexValue.size) }
 
-        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierIndexValue) }
-        assertTrue { scanRange.matchesPartials(earlierIndexValue) }
+        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierCompositeIndexValue, 0, matchCompositeValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierCompositeIndexValue, 0, matchCompositeValueSize) }
+        assertTrue { scanRange.matchesPartials(earlierCompositeIndexValue, 0, matchCompositeValueSize, earlierCompositeIndexValue.size) }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(laterIndexValue) }
-        assertTrue { scanRange.ranges.first().keyOutOfRange(laterIndexValue) }
-        assertTrue { scanRange.matchesPartials(laterIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(laterCompositeIndexValue, 0, matchCompositeValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(laterCompositeIndexValue, 0, matchCompositeValueSize) }
+        assertTrue { scanRange.matchesPartials(laterCompositeIndexValue, 0, matchCompositeValueSize, laterCompositeIndexValue.size) }
     }
 
     @Test
@@ -411,29 +474,17 @@ class IndexableScanRangesTest {
         expect("4a616e") { scanRange.ranges.first().start.toHexString() }
         expect("4a616e") { scanRange.ranges.first().end?.toHexString() }
 
-        val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
-            matchDO, matchKey.bytes
-        )!!
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue, 0, matchStringValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
+        assertTrue { scanRange.matchesPartials(matchStringIndexValue, 0, matchStringValueSize, matchStringIndexValue.size) }
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchStringIndexValue) }
+        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierStringIndexValue, 0, earlierStringValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierStringIndexValue, 0, earlierStringValueSize) }
+        assertFalse { scanRange.matchesPartials(earlierStringIndexValue, 0, earlierStringValueSize, earlierStringIndexValue.size) }
 
-        val earlierStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
-            earlierDO, earlierKey.bytes
-        )!!
-
-        assertTrue { scanRange.ranges.first().keyBeforeStart(earlierStringIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(earlierStringIndexValue) }
-        assertTrue { scanRange.matchesPartials(earlierStringIndexValue) }
-
-        val laterStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
-            laterDO, laterKey.bytes
-        )!!
-
-        assertFalse { scanRange.ranges.first().keyBeforeStart(laterStringIndexValue) }
-        assertTrue { scanRange.ranges.first().keyOutOfRange(laterStringIndexValue) }
-        assertTrue { scanRange.matchesPartials(laterStringIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(laterStringIndexValue, 0, laterStringValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(laterStringIndexValue, 0, laterStringValueSize) }
+        assertFalse { scanRange.matchesPartials(laterStringIndexValue, 0, laterStringValueSize, laterStringIndexValue.size) }
     }
 
     @Test
@@ -442,19 +493,62 @@ class IndexableScanRangesTest {
             CompleteMarykModel { string::ref } with " j-a n "
         )
 
-        val normalizedIndexable = Normalize(CompleteMarykModel.string.ref())
-        val scanRange = normalizedIndexable.createScanRange(filter, keyScanRange)
+        val scanRange = normalizedStringIndexable.createScanRange(filter, keyScanRange)
 
         expect("6a616e") { scanRange.ranges.first().start.toHexString() }
         expect("6a616e") { scanRange.ranges.first().end?.toHexString() }
 
-        val matchStringIndexValue = normalizedIndexable.toStorageByteArrayForIndex(
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchNormalizedStringIndexValue, 0, matchNormalizedStringValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(matchNormalizedStringIndexValue, 0, matchNormalizedStringValueSize) }
+        assertTrue { scanRange.matchesPartials(matchNormalizedStringIndexValue, 0, matchNormalizedStringValueSize, matchNormalizedStringIndexValue.size) }
+    }
+
+    @Test
+    fun convertGreaterThanStringFilterToScanRange() {
+        val filter = GreaterThan(
+            CompleteMarykModel { string::ref } with "Jan"
+        )
+
+        val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
+        val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
             matchDO, matchKey.bytes
         )!!
+        val matchStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(matchDO).single().size
 
-        assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue) }
-        assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue) }
-        assertTrue { scanRange.matchesPartials(matchStringIndexValue) }
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue, 0, matchStringValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
+    }
+
+    @Test
+    fun convertLessThanStringFilterToScanRange() {
+        val filter = LessThan(
+            CompleteMarykModel { string::ref } with "Jannesz"
+        )
+
+        val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
+        val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
+            matchDO, matchKey.bytes
+        )!!
+        val matchStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(matchDO).single().size
+
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue, 0, matchStringValueSize) }
+        assertFalse { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
+    }
+
+    @Test
+    fun convertLessThanStringFilterToScanRangeRejectsLongerEqualPrefix() {
+        val filter = LessThanEquals(
+            CompleteMarykModel { string::ref } with "Jan"
+        )
+
+        val scanRange = CompleteMarykModel.string.ref().createScanRange(filter, keyScanRange)
+        val matchStringIndexValue = CompleteMarykModel.string.ref().toStorageByteArrayForIndex(
+            matchDO, matchKey.bytes
+        )!!
+        val matchStringValueSize = CompleteMarykModel.string.ref().toStorageByteArrays(matchDO).single().size
+
+        assertFalse { scanRange.ranges.first().keyBeforeStart(matchStringIndexValue, 0, matchStringValueSize) }
+        assertTrue { scanRange.ranges.first().keyOutOfRange(matchStringIndexValue, 0, matchStringValueSize) }
     }
 
     @Test
@@ -492,5 +586,56 @@ class IndexableScanRangesTest {
         assertFalse { scanRange.ranges.first().keyBeforeStart(laterStringIndexValue) }
         assertFalse { scanRange.ranges.first().keyOutOfRange(laterStringIndexValue) }
         assertFalse { scanRange.matchesPartials(laterStringIndexValue) }
+    }
+
+    @Test
+    fun matchesPartialsLimitsEmbeddedKeyToSourceEnd() {
+        val key = byteArrayOf(9, 9)
+        val scanRange = IndexableScanRanges(
+            ranges = listOf(ScanRange(byteArrayOf(1), true, byteArrayOf(1), true)),
+            keyScanRange = KeyScanRanges(
+                ranges = listOf(ScanRange(key, true, key, true)),
+                startKey = null,
+                includeStart = true,
+                equalPairs = emptyList(),
+                keySize = key.size,
+                equalBytes = 0u
+            )
+        )
+
+        val indexValueWithHistoricVersion = byteArrayOf(1) + key + byteArrayOf(7, 7)
+
+        assertTrue {
+            scanRange.matchesPartials(
+                indexValueWithHistoricVersion,
+                offset = 0,
+                length = 1,
+                sourceEnd = 1 + key.size
+            )
+        }
+    }
+
+    @Test
+    fun matchesPartialsReturnsFalseWhenSourceEndCannotContainKey() {
+        val scanRange = IndexableScanRanges(
+            ranges = listOf(ScanRange(byteArrayOf(1), true, byteArrayOf(1), true)),
+            keyScanRange = KeyScanRanges(
+                ranges = listOf(ScanRange(byteArrayOf(9, 9), true, byteArrayOf(9, 9), true)),
+                startKey = null,
+                includeStart = true,
+                equalPairs = emptyList(),
+                keySize = 2,
+                equalBytes = 0u
+            )
+        )
+
+        assertFalse {
+            scanRange.matchesPartials(
+                byteArrayOf(1),
+                offset = 0,
+                length = 1,
+                sourceEnd = 1
+            )
+        }
     }
 }

@@ -1,7 +1,7 @@
 package maryk.core.processors.datastore.scanRange
 
-import maryk.lib.extensions.compare.compareDefinedRange
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.extensions.compare.prevByteInSameLength
 
@@ -19,7 +19,7 @@ data class ScanRange internal constructor(
         if (start.isEmpty()) {
             false
         } else {
-            start.compareDefinedRange(key, offset, length).let {
+            start.compareToRange(key, offset, length).let {
                 if (startInclusive) it > 0 else it >= 0
             }
         }
@@ -29,7 +29,7 @@ data class ScanRange internal constructor(
         if (end.isEmpty()) {
             false
         } else {
-            end.compareDefinedRange(key, offset, length).let {
+            end.compareToRange(key, offset, length).let {
                 if (endInclusive) it < 0 else it <= 0
             }
         }

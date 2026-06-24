@@ -33,8 +33,8 @@ class KeyScanRangesTest {
             )
         ),
         partialMatches = listOf(
-            IndexPartialToMatch(1, 1, 5, byteArrayOf(2, 4)),
-            IndexPartialToMatch(2, 3, 5, byteArrayOf(5, 6))
+            IndexPartialToMatch(1, 1, 5, 1, byteArrayOf(2, 4)),
+            IndexPartialToMatch(2, 3, 5, 1, byteArrayOf(5, 6))
         ),
         equalPairs = listOf(),
         uniques = listOf(),
@@ -48,6 +48,119 @@ class KeyScanRangesTest {
     fun keyOutOfRange() {
         assertFalse { scanRange.ranges.first().keyOutOfRange(byteArrayOf(3, 4, 5, 6, 7)) }
         assertTrue { scanRange.ranges.first().keyOutOfRange(byteArrayOf(9, 9, 8, 7, 6)) }
+    }
+
+    @Test
+    fun inclusiveEndExcludesLongerEqualPrefixKey() {
+        val prefixRange = KeyScanRanges(
+            ranges = listOf(
+                ScanRange(
+                    start = byteArrayOf(1, 2),
+                    startInclusive = true,
+                    end = byteArrayOf(1, 2),
+                    endInclusive = true
+                )
+            ),
+            partialMatches = null,
+            equalPairs = emptyList(),
+            uniques = null,
+            startKey = null,
+            includeStart = true,
+            keySize = 2,
+            equalBytes = 0u,
+        )
+
+        assertTrue { prefixRange.keyWithinRanges(byteArrayOf(1, 2)) }
+        assertTrue { prefixRange.matchesPartials(byteArrayOf(1, 2)) }
+
+        assertTrue { prefixRange.keyWithinRanges(byteArrayOf(1, 2, 3)) }
+        assertFalse { prefixRange.matchesPartials(byteArrayOf(1, 2, 3)) }
+    }
+
+    @Test
+    fun inclusiveEndExcludesLongerEqualPrefixKeyWithPartialMatches() {
+        val prefixRange = KeyScanRanges(
+            ranges = listOf(
+                ScanRange(
+                    start = byteArrayOf(1, 2),
+                    startInclusive = true,
+                    end = byteArrayOf(1, 2),
+                    endInclusive = true
+                )
+            ),
+            partialMatches = listOf(
+                IndexPartialToMatch(0, 0, 2, 1, byteArrayOf(1), partialMatch = true)
+            ),
+            equalPairs = emptyList(),
+            uniques = null,
+            startKey = null,
+            includeStart = true,
+            keySize = 2,
+            equalBytes = 0u,
+        )
+
+        assertTrue { prefixRange.keyWithinRanges(byteArrayOf(1, 2)) }
+        assertTrue { prefixRange.matchesPartials(byteArrayOf(1, 2)) }
+
+        assertTrue { prefixRange.keyWithinRanges(byteArrayOf(1, 2, 3)) }
+        assertFalse { prefixRange.matchesPartials(byteArrayOf(1, 2, 3)) }
+    }
+
+    @Test
+    fun longerExactRangeIsNotRejectedByShorterExactPrefixRange() {
+        val prefixRange = KeyScanRanges(
+            ranges = listOf(
+                ScanRange(
+                    start = byteArrayOf(1, 2),
+                    startInclusive = true,
+                    end = byteArrayOf(1, 2),
+                    endInclusive = true
+                ),
+                ScanRange(
+                    start = byteArrayOf(1, 2, 3),
+                    startInclusive = true,
+                    end = byteArrayOf(1, 2, 3),
+                    endInclusive = true
+                )
+            ),
+            partialMatches = listOf(
+                IndexPartialToMatch(0, 0, 3, 1, byteArrayOf(1), partialMatch = true)
+            ),
+            equalPairs = emptyList(),
+            uniques = null,
+            startKey = null,
+            includeStart = true,
+            keySize = 3,
+            equalBytes = 0u,
+        )
+
+        assertTrue { prefixRange.matchesPartials(byteArrayOf(1, 2, 3)) }
+    }
+
+    @Test
+    fun exclusiveStartIncludesLongerEqualPrefixKey() {
+        val prefixRange = KeyScanRanges(
+            ranges = listOf(
+                ScanRange(
+                    start = byteArrayOf(1, 2),
+                    startInclusive = false,
+                    end = byteArrayOf(),
+                    endInclusive = true
+                )
+            ),
+            partialMatches = null,
+            equalPairs = emptyList(),
+            uniques = null,
+            startKey = null,
+            includeStart = true,
+            keySize = 2,
+            equalBytes = 0u,
+        )
+
+        assertTrue { prefixRange.ranges.first().keyBeforeStart(byteArrayOf(1, 2)) }
+        assertFalse { prefixRange.ranges.first().keyBeforeStart(byteArrayOf(1, 2, 3)) }
+        assertTrue { prefixRange.keyWithinRanges(byteArrayOf(1, 2, 3)) }
+        assertTrue { prefixRange.matchesPartials(byteArrayOf(1, 2, 3)) }
     }
 
     @Test

@@ -18,6 +18,7 @@ data class Multiple(
 ) : IsIndexable {
     override val indexKeyPartType = IndexKeyPartType.Multiple
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
+    override val indexPartCount by lazy { references.sumOf { it.indexPartCount } }
 
     /** Convenience method to set with each [reference] as separate argument */
     constructor(vararg reference: IsIndexable) : this(listOf(*reference))
@@ -28,45 +29,65 @@ data class Multiple(
             return emptyList()
         }
 
-        var combinations = listOf(Combination())
-        for (options in subValues) {
-            val next = mutableListOf<Combination>()
-            for (current in combinations) {
-                for (option in options) {
-                    next += Combination(
-                        bytes = current.bytes + option,
-                        partLengths = current.partLengths + option.size
-                    )
+        val selectedValues = arrayOfNulls<ByteArray>(subValues.size)
+        val partLengths = IntArray(subValues.size)
+        val results = mutableListOf<ByteArray>()
+        val keySize = key?.size ?: 0
+
+        fun appendCombination(depth: Int, valueBytesLength: Int, lengthBytesLength: Int) {
+            if (depth == subValues.size) {
+                val totalLength = valueBytesLength
+                    .checkedIndexByteLengthPlus(lengthBytesLength)
+                    .checkedIndexByteLengthPlus(keySize)
+
+                results += ByteArray(totalLength).also { output ->
+                    var writeIndex = 0
+                    selectedValues.forEach { selectedValue ->
+                        val bytes = selectedValue ?: return@forEach
+                        bytes.copyInto(output, writeIndex)
+                        writeIndex += bytes.size
+                    }
+
+                    for (sizeIndex in partLengths.lastIndex downTo 0) {
+                        partLengths[sizeIndex].writeVarBytes { output[writeIndex++] = it }
+                    }
+
+                    key?.copyInto(output, writeIndex)
                 }
+                return
             }
-            combinations = next
+
+            for (option in subValues[depth]) {
+                selectedValues[depth] = option
+                partLengths[depth] = option.size
+                appendCombination(
+                    depth = depth + 1,
+                    valueBytesLength = valueBytesLength.checkedIndexByteLengthPlus(option.size),
+                    lengthBytesLength = lengthBytesLength.checkedIndexByteLengthPlus(option.size.calculateVarByteLength())
+                )
+            }
         }
 
-        return combinations.map { combination ->
-            val totalLength = combination.bytes.size
-                .checkedIndexByteLengthPlus(combination.partLengths.sumOf { it.calculateVarByteLength() })
-                .checkedIndexByteLengthPlus(key?.size ?: 0)
-
-            ByteArray(totalLength).also { output ->
-                var writeIndex = 0
-                combination.bytes.copyInto(output, writeIndex)
-                writeIndex += combination.bytes.size
-
-                for (sizeIndex in combination.partLengths.lastIndex downTo 0) {
-                    combination.partLengths[sizeIndex].writeVarBytes { output[writeIndex++] = it }
-                }
-
-                key?.copyInto(output, writeIndex)
-            }
-        }
+        appendCombination(depth = 0, valueBytesLength = 0, lengthBytesLength = 0)
+        return results
     }
 
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int?): Int {
-        return toStorageByteArrayForIndex(values, ByteArray(keySize ?: 0))?.size ?: 0
+        val subValues = references.map { it.toStorageByteArrays(values) }
+        if (subValues.any { it.isEmpty() }) {
+            return 0
+        }
+
+        val longestCombination = subValues.sumOf { options ->
+            val maxLength = options.maxOf { it.size }
+            maxLength.checkedIndexByteLengthPlus(maxLength.calculateVarByteLength())
+        }
+
+        return longestCombination.checkedIndexByteLengthPlus(keySize ?: 0)
     }
 
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray?, writer: (byte: Byte) -> Unit) {
-        toStorageByteArrayForIndex(values, key)?.forEach(writer)
+        toStorageByteArraysForIndex(values, key).firstOrNull()?.forEach(writer)
     }
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
@@ -128,11 +149,6 @@ data class Multiple(
             }
         )
     }
-
-    private data class Combination(
-        val bytes: ByteArray = ByteArray(0),
-        val partLengths: IntArray = IntArray(0)
-    )
 }
 
 internal fun Int.checkedIndexByteLengthPlus(addend: Int): Int {

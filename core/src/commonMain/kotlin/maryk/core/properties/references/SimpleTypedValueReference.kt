@@ -112,6 +112,17 @@ class SimpleTypedValueReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
         } else throw StorageException("Unknown type for $typedValue")
     }
 
+    override fun getValueOrNull(values: IsValuesGetter): T? {
+        @Suppress("UNCHECKED_CAST")
+        val typedValue = values[parentReference as IsPropertyReference<Any, *, *>] ?: return null
+        @Suppress("UNCHECKED_CAST")
+        return when (typedValue) {
+            is TypedValue<*, *> -> if (typedValue.type == type) typedValue.value as T else null
+            is MultiTypeEnum<*> -> null
+            else -> null
+        }
+    }
+
     override fun isForPropertyReference(propertyReference: AnyPropertyReference): Boolean =
         propertyReference == this
 

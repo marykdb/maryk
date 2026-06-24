@@ -27,6 +27,9 @@ data class Split(
     override fun getValue(values: IsValuesGetter) =
         splitValues(referenceValues(values)).first().decodeToString()
 
+    override fun getValueOrNull(values: IsValuesGetter) =
+        splitValues(referenceValues(values)).firstOrNull()?.decodeToString()
+
     override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> =
         splitValues(referenceValues(values)).distinct()
 

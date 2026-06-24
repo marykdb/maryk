@@ -40,6 +40,8 @@ interface IsValuePropertyReference<
     override fun getValue(values: IsValuesGetter) =
         values[this] ?: throw RequiredException(this)
 
+    override fun getValueOrNull(values: IsValuesGetter) = values[this]
+
     override fun isForPropertyReference(propertyReference: IsPropertyReference<*, *, *>) =
         propertyReference == this
 }

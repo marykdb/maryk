@@ -10,8 +10,12 @@ interface ScanRanges {
     val partialMatches: List<IsIndexPartialToMatch>?
 
     /** Checks if [key] matches the partial matches for this scan range */
-    fun matchesPartials(key: ByteArray, offset: Int = 0, length: Int = key.size - offset): Boolean =
-        partialMatches?.all { it.match(key, offset) } != false
+    fun matchesPartials(
+        key: ByteArray,
+        offset: Int = 0,
+        length: Int = key.size - offset,
+        sourceEnd: Int = key.size
+    ): Boolean = partialMatches?.all { it.match(key, offset, length, sourceEnd) } != false
 
     fun keyWithinRanges(key: ByteArray, keyIndex: Int = 0): Boolean =
         ranges.any { !it.keyBeforeStart(key, keyIndex) && !it.keyOutOfRange(key, keyIndex) }

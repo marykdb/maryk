@@ -25,6 +25,9 @@ data class Normalize(
     override fun getValue(values: IsValuesGetter) =
         normalizeValues(reference.toStorageByteArrays(values)).first().decodeToString()
 
+    override fun getValueOrNull(values: IsValuesGetter) =
+        normalizeValues(reference.toStorageByteArrays(values)).firstOrNull()?.decodeToString()
+
     override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> =
         normalizeValues(reference.toStorageByteArrays(values)).distinct()
 

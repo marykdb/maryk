@@ -53,12 +53,13 @@ class QualifierFuzzyMatcher(
         // Clamp end to the physical array end
         val endExclusive = if (length > qualifier.size - offset) qualifier.size else offset + length
 
-        qualifierParts.forEachIndexed { qIndex, qPart ->
-            if (!qPart.all { byte ->
+        for (qIndex in qualifierParts.indices) {
+            val qPart = qualifierParts[qIndex]
+            for (partIndex in qPart.indices) {
                 if (index >= endExclusive) return NO_MATCH
-                qualifier[index++] == byte
-            }) {
-                return if (qIndex == 0) OUT_OF_RANGE else NO_MATCH
+                if (qualifier[index++] != qPart[partIndex]) {
+                    return if (qIndex == 0) OUT_OF_RANGE else NO_MATCH
+                }
             }
 
             if (qIndex <= fuzzyMatchers.lastIndex) {

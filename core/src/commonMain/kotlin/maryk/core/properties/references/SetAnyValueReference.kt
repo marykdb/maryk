@@ -76,9 +76,12 @@ class SetAnyValueReference<T : Any, CX : IsPropertyContext> internal constructor
     override fun getValue(values: IsValuesGetter): T =
         getValues(values).firstOrNull() ?: throw RequiredException(this)
 
+    override fun getValueOrNull(values: IsValuesGetter) =
+        getValuesOrNull(values)?.firstOrNull()
+
     override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> {
         val valueBytes = LinkedHashSet<Bytes>()
-        for (value in getValues(values)) {
+        for (value in getValuesOrNull(values) ?: return emptyList()) {
             val length = bytesDefinition.calculateStorageByteLength(value)
             val output = ByteArray(length)
             var index = 0
@@ -87,6 +90,18 @@ class SetAnyValueReference<T : Any, CX : IsPropertyContext> internal constructor
         }
         return valueBytes.map { it.bytes }
     }
+
+    override fun toStorageByteArraysForIndex(values: IsValuesGetter, key: ByteArray?): List<ByteArray> =
+        this.toStorageByteArrays(values).map { valueBytes ->
+            val length = valueBytes.size
+            ByteArray(length + length.calculateVarByteLength() + (key?.size ?: 0)).also { output ->
+                var index = 0
+                valueBytes.copyInto(output, index)
+                index += length
+                length.writeVarBytes { output[index++] = it }
+                key?.copyInto(output, index)
+            }
+        }
 
     override fun calculateStorageByteLength(value: T): Int =
         bytesDefinition.calculateStorageByteLength(value)
@@ -118,9 +133,13 @@ class SetAnyValueReference<T : Any, CX : IsPropertyContext> internal constructor
         dataModel.compatibleWithReference(this)
 
     private fun getValues(values: IsValuesGetter): List<T> {
+        return getValuesOrNull(values) ?: throw RequiredException(parentReference)
+    }
+
+    private fun getValuesOrNull(values: IsValuesGetter): List<T>? {
         @Suppress("UNCHECKED_CAST")
         val set = values[parentReference as AnyPropertyReference] as? Set<T>
-            ?: throw RequiredException(parentReference)
+            ?: return null
         return set.toList()
     }
 

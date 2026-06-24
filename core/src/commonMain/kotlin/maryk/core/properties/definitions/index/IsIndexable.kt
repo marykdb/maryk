@@ -15,6 +15,7 @@ import maryk.lib.exceptions.ParseException
 interface IsIndexable {
     val indexKeyPartType: IndexKeyPartType<IsIndexable>
     val referenceStorageByteArray: Bytes
+    val indexPartCount: Int get() = 1
 
     /** Convert indexable to a ByteArray so it can be referenced */
     fun toStorageByteArrayForIndex(values: IsValuesGetter, key: ByteArray? = null): ByteArray? =

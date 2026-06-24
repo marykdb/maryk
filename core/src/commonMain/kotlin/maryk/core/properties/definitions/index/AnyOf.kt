@@ -46,10 +46,13 @@ data class AnyOf(
     }
 
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int?) =
-        toStorageByteArrayForIndex(values, ByteArray(keySize ?: 0))?.size ?: 0
+        toStorageByteArrays(values).maxOfOrNull { valueBytes ->
+            val length = valueBytes.size
+            length + length.calculateVarByteLength()
+        }?.plus(keySize ?: 0) ?: 0
 
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray?, writer: (byte: Byte) -> Unit) {
-        toStorageByteArrayForIndex(values, key)?.forEach(writer)
+        toStorageByteArraysForIndex(values, key).firstOrNull()?.forEach(writer)
     }
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {

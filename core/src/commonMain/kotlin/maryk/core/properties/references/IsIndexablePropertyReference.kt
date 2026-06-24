@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.definitions.IsStorageBytesEncodable
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.exceptions.RequiredException
 import maryk.core.values.IsValuesGetter
 
 interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsStorageBytesEncodable<T> {
@@ -12,6 +13,13 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsStorageBytesEnc
      * to be used in a fixed bytes encodable
      */
     fun getValue(values: IsValuesGetter): T
+
+    /** Get value if available without forcing exception-based control flow */
+    fun getValueOrNull(values: IsValuesGetter): T? = try {
+        getValue(values)
+    } catch (_: RequiredException) {
+        null
+    }
 
     /**
      * Check if value getter is defined for property referred by [propertyReference]
@@ -35,6 +43,25 @@ interface IsIndexablePropertyReference<T : Any> : IsIndexable, IsStorageBytesEnc
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
         val value = this.getValue(values)
         this.writeStorageBytes(value, writer)
+    }
+
+    override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> {
+        val value = this.getValueOrNull(values) ?: return emptyList()
+        return listOf(ByteArray(this.calculateStorageByteLength(value)).also { valueBytes ->
+            var index = 0
+            this.writeStorageBytes(value) { valueBytes[index++] = it }
+        })
+    }
+
+    override fun toStorageByteArraysForIndex(values: IsValuesGetter, key: ByteArray?): List<ByteArray> {
+        val value = this.getValueOrNull(values) ?: return emptyList()
+        val valueLength = this.calculateStorageByteLength(value)
+        return listOf(ByteArray(valueLength + valueLength.calculateVarByteLength() + (key?.size ?: 0)).also { output ->
+            var index = 0
+            this.writeStorageBytes(value) { output[index++] = it }
+            valueLength.writeVarBytes { output[index++] = it }
+            key?.copyInto(output, index)
+        })
     }
 
     fun toQualifierStorageByteArray(): ByteArray?

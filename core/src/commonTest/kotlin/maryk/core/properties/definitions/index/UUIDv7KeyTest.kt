@@ -1,4 +1,3 @@
-@file:OptIn(ExperimentalUuidApi::class)
 package maryk.core.properties.definitions.index
 
 import maryk.checkJsonConversion
@@ -14,7 +13,6 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.test.expect
-import kotlin.uuid.ExperimentalUuidApi
 
 internal class UUIDv7KeyTest {
     object MarykModel : RootDataModel<MarykModel>(

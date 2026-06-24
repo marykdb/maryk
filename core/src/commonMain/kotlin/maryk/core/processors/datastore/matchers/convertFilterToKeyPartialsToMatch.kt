@@ -42,24 +42,25 @@ fun convertFilterToIndexPartsToMatch(
     filter: IsFilter?,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>,
     listOfEqualPairs: MutableList<ReferenceValuePair<Any>>? = null,
-    listOfUniqueFilters: MutableList<UniqueToMatch>? = null
+    listOfUniqueFilters: MutableList<UniqueToMatch>? = null,
+    totalIndexPartCount: Int = indexable.indexPartCount
 ) {
     when (filter) {
         null -> return
-        is Equals -> handleEquals(filter, indexable, convertIndex, keySize, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
-        is Prefix -> handlePrefix(filter, indexable, convertIndex, keySize, listOfIndexParts, listOfUniqueFilters)
-        is Matches -> handleMatches(filter, indexable, keySize, listOfIndexParts)
-        is MatchesPrefix -> handleMatchesPrefix(filter, indexable, keySize, listOfIndexParts)
-        is MatchesRegEx -> handleMatchesRegEx(filter, indexable, keySize, listOfIndexParts)
-        is GreaterThan -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, false, false)
-        is GreaterThanEquals -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, false, true)
-        is LessThan -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, true, false)
-        is LessThanEquals -> handleComparison(filter, indexable, convertIndex, keySize, listOfIndexParts, true, true)
-        is Range -> handleRange(filter, indexable, convertIndex, keySize, listOfIndexParts)
-        is ValueIn -> handleValueIn(filter, indexable, convertIndex, keySize, listOfIndexParts, listOfUniqueFilters)
-        is RegEx -> handleRegEx(filter, indexable, keySize, listOfIndexParts)
+        is Equals -> handleEquals(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
+        is Prefix -> handlePrefix(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, listOfUniqueFilters)
+        is Matches -> handleMatches(filter, indexable, keySize, totalIndexPartCount, listOfIndexParts)
+        is MatchesPrefix -> handleMatchesPrefix(filter, indexable, keySize, totalIndexPartCount, listOfIndexParts)
+        is MatchesRegEx -> handleMatchesRegEx(filter, indexable, keySize, totalIndexPartCount, listOfIndexParts)
+        is GreaterThan -> handleComparison(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, false, false)
+        is GreaterThanEquals -> handleComparison(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, false, true)
+        is LessThan -> handleComparison(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, true, false)
+        is LessThanEquals -> handleComparison(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, true, true)
+        is Range -> handleRange(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts)
+        is ValueIn -> handleValueIn(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, listOfUniqueFilters)
+        is RegEx -> handleRegEx(filter, indexable, keySize, totalIndexPartCount, listOfIndexParts)
         is And -> filter.filters.forEach { subFilter ->
-            convertFilterToIndexPartsToMatch(indexable, keySize, convertIndex, subFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
+            convertFilterToIndexPartsToMatch(indexable, keySize, convertIndex, subFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters, totalIndexPartCount)
         }
         else -> { /* Skip unsupported filters */ }
     }
@@ -69,6 +70,7 @@ private fun handleMatches(
     filter: Matches,
     indexable: IsIndexable,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>
 ) {
     if (indexable !is AnyOf) return
@@ -80,7 +82,7 @@ private fun handleMatches(
         if (matchBytes.isEmpty()) continue
 
         listOfIndexParts += matchBytes.map { bytes ->
-            IndexPartialToMatch(0, null, keySize, bytes)
+            IndexPartialToMatch(0, null, keySize, indexPartCount, bytes)
         }
         return
     }
@@ -90,6 +92,7 @@ private fun handleMatchesPrefix(
     filter: MatchesPrefix,
     indexable: IsIndexable,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>
 ) {
     if (indexable !is AnyOf) return
@@ -101,7 +104,7 @@ private fun handleMatchesPrefix(
         if (matchBytes.isEmpty()) continue
 
         listOfIndexParts += matchBytes.map { bytes ->
-            IndexPartialToMatch(0, null, keySize, bytes, partialMatch = true)
+            IndexPartialToMatch(0, null, keySize, indexPartCount, bytes, partialMatch = true)
         }
         return
     }
@@ -111,6 +114,7 @@ private fun handleMatchesRegEx(
     filter: MatchesRegEx,
     indexable: IsIndexable,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>
 ) {
     if (indexable !is AnyOf) return
@@ -118,7 +122,7 @@ private fun handleMatchesRegEx(
     for ((name, regex) in filter.nameRegexPairs) {
         if (indexable.name != name) continue
 
-        listOfIndexParts += IndexPartialToRegexMatch(0, keySize, regex, null)
+        listOfIndexParts += IndexPartialToRegexMatch(0, keySize, indexPartCount, regex, null)
         return
     }
 }
@@ -128,6 +132,7 @@ private fun handleEquals(
     indexable: IsIndexable,
     convertIndex: ((Int) -> Int)?,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>,
     listOfEqualPairs: MutableList<ReferenceValuePair<Any>>?,
     listOfUniqueFilters: MutableList<UniqueToMatch>?
@@ -135,7 +140,7 @@ private fun handleEquals(
     listOfEqualPairs?.addAll(filter.referenceValuePairs)
     walkFilterReferencesAndValues(filter, indexable, listOfUniqueFilters) { index, _, byteArray ->
         val keyIndex = convertIndex?.invoke(index)
-        listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, byteArray))
+        listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, indexPartCount, byteArray))
     }
 }
 
@@ -144,12 +149,13 @@ private fun handlePrefix(
     indexable: IsIndexable,
     convertIndex: ((Int) -> Int)?,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>,
     listOfUniqueFilters: MutableList<UniqueToMatch>?
 ) {
     walkFilterReferencesAndValues(filter, indexable, listOfUniqueFilters) { index, _, byteArray ->
         val keyIndex = convertIndex?.invoke(index)
-        listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, byteArray, partialMatch = true))
+        listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, indexPartCount, byteArray, partialMatch = true))
     }
 }
 
@@ -158,6 +164,7 @@ private fun handleComparison(
     indexable: IsIndexable,
     convertIndex: ((Int) -> Int)?,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>,
     isReversed: Boolean,
     isInclusive: Boolean
@@ -171,6 +178,7 @@ private fun handleComparison(
                 index,
                 keyIndex,
                 keySize,
+                indexPartCount,
                 byteArray,
                 isInclusive
             )
@@ -183,6 +191,7 @@ private fun handleRange(
     indexable: IsIndexable,
     convertIndex: ((Int) -> Int)?,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>
 ) {
     for ((reference, value) in filter.referenceValuePairs) {
@@ -197,6 +206,7 @@ private fun handleRange(
                     index,
                     keyIndex,
                     keySize,
+                    indexPartCount,
                     fromBytes,
                     value.inclusiveFrom
                 )
@@ -207,6 +217,7 @@ private fun handleRange(
                     index,
                     keyIndex,
                     keySize,
+                    indexPartCount,
                     toBytes,
                     value.inclusiveTo
                 )
@@ -220,6 +231,7 @@ private fun handleValueIn(
     indexable: IsIndexable,
     convertIndex: ((Int) -> Int)?,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>,
     listOfUniqueFilters: MutableList<UniqueToMatch>?
 ) {
@@ -227,7 +239,7 @@ private fun handleValueIn(
         getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
             val keyIndex = convertIndex?.invoke(index)
             val list = value.map { convertValueToIndexableBytes(keyDefinition, it) }.sortedWith { a, b -> a compareTo b }
-            listOfIndexParts.add(IndexPartialToBeOneOf(index, keyIndex, keySize, list))
+            listOfIndexParts.add(IndexPartialToBeOneOf(index, keyIndex, keySize, indexPartCount, list))
         }
 
         listOfUniqueFilters?.let {
@@ -246,11 +258,12 @@ private fun handleRegEx(
     filter: RegEx,
     indexable: IsIndexable,
     keySize: Int,
+    indexPartCount: Int,
     listOfIndexParts: MutableList<IsIndexPartialToMatch>
 ) {
     for ((reference, regex) in filter.referenceValuePairs) {
         getDefinitionOrNull(indexable, reference) { index, keyDefinition ->
-            listOfIndexParts += IndexPartialToRegexMatch(index, keySize, regex, stringTransformerForIndex(keyDefinition))
+            listOfIndexParts += IndexPartialToRegexMatch(index, keySize, indexPartCount, regex, stringTransformerForIndex(keyDefinition))
         }
     }
 }
@@ -267,12 +280,13 @@ private fun indexPartialWithDirection(
     index: Int,
     keyIndex: Int?,
     keySize: Int,
+    indexPartCount: Int,
     byteArray: ByteArray,
     inclusive: Boolean
 ): IsIndexPartialToMatch = if (bigger) {
-    IndexPartialToBeBigger(index, keyIndex, keySize, byteArray, inclusive)
+    IndexPartialToBeBigger(index, keyIndex, keySize, indexPartCount, byteArray, inclusive)
 } else {
-    IndexPartialToBeSmaller(index, keyIndex, keySize, byteArray, inclusive)
+    IndexPartialToBeSmaller(index, keyIndex, keySize, indexPartCount, byteArray, inclusive)
 }
 
 private fun convertValueToIndexableBytes(
@@ -322,27 +336,38 @@ private fun <T : Any> getDefinitionOrNull(
     reference: IsPropertyReference<out T, IsSerializablePropertyDefinition<out T, IsPropertyContext>, *>,
     processKeyDefinitionWhenFound: (Int, IsIndexablePropertyReference<Any>) -> Unit
 ) {
+    resolveDefinitionOrNull(indexable, reference)?.let { (index, keyDefinition) ->
+        processKeyDefinitionWhenFound(index, keyDefinition)
+    }
+}
+
+private fun <T : Any> resolveDefinitionOrNull(
+    indexable: IsIndexable,
+    reference: IsPropertyReference<out T, IsSerializablePropertyDefinition<out T, IsPropertyContext>, *>,
+    indexOffset: Int = 0
+): Pair<Int, IsIndexablePropertyReference<Any>>? =
     when (indexable) {
-        is Multiple -> indexable.references.withIndex()
-            .firstOrNull { (_, keyDef) ->
-                keyDef is IsIndexablePropertyReference<*> && keyDef.isForPropertyReference(reference)
+        is Multiple -> {
+            var currentIndexOffset = indexOffset
+            for (subIndexable in indexable.references) {
+                resolveDefinitionOrNull(subIndexable, reference, currentIndexOffset)?.let { return it }
+                currentIndexOffset += subIndexable.indexPartCount
             }
-            ?.let { (index, keyDef) ->
-                @Suppress("UNCHECKED_CAST")
-                processKeyDefinitionWhenFound(index, keyDef as IsIndexablePropertyReference<Any>)
-            }
-        is AnyOf -> indexable.references.withIndex()
-            .firstOrNull { (_, keyDef) -> keyDef.isForPropertyReference(reference) }
-            ?.let { (_, keyDef) ->
-                @Suppress("UNCHECKED_CAST")
-                processKeyDefinitionWhenFound(0, keyDef as IsIndexablePropertyReference<Any>)
-            }
+            null
+        }
+        is AnyOf -> indexable.references.firstOrNull { keyDef ->
+            keyDef.isForPropertyReference(reference)
+        }?.let { keyDef ->
+            @Suppress("UNCHECKED_CAST")
+            indexOffset to (keyDef as IsIndexablePropertyReference<Any>)
+        }
         is IsIndexablePropertyReference<*> -> {
             if (indexable.isForPropertyReference(reference)) {
                 @Suppress("UNCHECKED_CAST")
-                processKeyDefinitionWhenFound(0, indexable as IsIndexablePropertyReference<Any>)
+                indexOffset to (indexable as IsIndexablePropertyReference<Any>)
+            } else {
+                null
             }
         }
         else -> throw TypeException("Impossible option $indexable for keyDefinition")
     }
-}

@@ -22,7 +22,7 @@ import maryk.core.values.ObjectValues
 
 /**
  * Creates a request to get DataObject its versioned changes by value [keys]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  */
 fun <DM : IsRootDataModel> DM.getChanges(
@@ -47,7 +47,7 @@ fun <DM : IsRootDataModel> DM.getChanges(
 
 /**
  * A Request to get DataObject its versioned changes by value [keys] for specific [dataModel] of type [DM]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1000) is reached.
+ * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Only selected properties can be returned with a [select] graph
  */
@@ -90,7 +90,7 @@ data class GetChangesRequest<DM : IsRootDataModel> internal constructor(
         val toVersion by number(5u, GetChangesRequest<*>::toVersion, UInt64, required = false)
         val filterSoftDeleted by boolean(6u, GetChangesRequest<*>::filterSoftDeleted, default = true)
         val fromVersion by number(7u, GetChangesRequest<*>::fromVersion, UInt64)
-        val maxVersions by number(8u, GetChangesRequest<*>::maxVersions, UInt32, maxValue = 1u)
+        val maxVersions by number(8u, GetChangesRequest<*>::maxVersions, UInt32, maxValue = 1000u)
 
         override fun invoke(values: ObjectValues<GetChangesRequest<*>, Companion>) =
             GetChangesRequest(

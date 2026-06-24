@@ -126,7 +126,7 @@ data class ScanChangesRequest<DM : IsRootDataModel> internal constructor(
         val limit by number(9u, ScanChangesRequest<*>::limit, type = UInt32, minValue = 1u, maxValue = MAX_SCAN_LIMIT, default = 100u)
         val includeStart by boolean(10u, ScanChangesRequest<*>::includeStart, default = true)
         val fromVersion by number(11u, ScanChangesRequest<*>::fromVersion, UInt64)
-        val maxVersions by number(12u, ScanChangesRequest<*>::maxVersions, UInt32, maxValue = 1u)
+        val maxVersions by number(12u, ScanChangesRequest<*>::maxVersions, UInt32, maxValue = 1000u)
 
         override fun invoke(values: ObjectValues<ScanChangesRequest<*>, Companion>) =
             ScanChangesRequest(

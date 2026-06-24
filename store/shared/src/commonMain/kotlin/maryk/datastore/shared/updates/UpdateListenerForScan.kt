@@ -4,7 +4,12 @@ import kotlinx.atomicfu.AtomicRef
 import kotlinx.atomicfu.atomic
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
+import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
+import maryk.core.processors.datastore.matchers.IndexPartialToMatch
+import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
+import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
+import maryk.core.processors.datastore.scanRange.ScanRange
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
@@ -15,6 +20,7 @@ import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdatesResponse
@@ -47,6 +53,12 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     }
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
+    private val indexStartBoundary = when (response) {
+        is UpdatesResponse<DM> -> (response.dataFetchType as? FetchByIndexScan)?.startKey
+        is ValuesResponse<DM> -> (response.dataFetchType as? FetchByIndexScan)?.startKey
+        is ChangesResponse<DM> -> (response.dataFetchType as? FetchByIndexScan)?.startKey
+        else -> null
+    }?.takeUnless { it.isEmpty() }
 
     internal val sortedValues: AtomicRef<List<ByteArray>>? = when(response) {
         is UpdatesResponse<DM> -> {
@@ -73,6 +85,11 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         update: Update<DM>,
         dataStore: IsDataStore
     ) {
+        if (scanType is IndexScan) {
+            update.process(this, dataStore, sendFlow)
+            return
+        }
+
         val updateKey = update.key.bytes
         val shouldProcess: Boolean = when (scanType) {
             is TableScan -> when (scanType.direction) {
@@ -80,7 +97,6 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                 DESC -> !scanRange.keyAfterStart(updateKey, 0)
             }
             is UpdateHistoryScan -> !scanRange.keyBeforeStart(updateKey, 0)
-            is IndexScan -> true
         }
 
         when (scanType) {
@@ -108,7 +124,13 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                     when {
                         indexPosition < 0 -> {
                             val newPos = indexPosition * -1 - 1
-                            val beforeStartKey = request.startKey != null && newPos == 0
+                            val beforeStartKey = indexStartBoundary?.let { boundary ->
+                                when (scanType.direction) {
+                                    ASC -> indexKey compareTo boundary < 0
+                                    DESC -> indexKey compareTo boundary > 0
+                                }
+                            } == true
+
                             if (!beforeStartKey && newPos.toUInt() < request.limit) {
                                 sortedValues?.value = buildList {
                                     addAll(sortedValues.value)
@@ -185,11 +207,7 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     private fun resolveIndexKey(values: Values<DM>, keyBytes: ByteArray): ByteArray? {
         val indexScan = scanType as? IndexScan ?: return null
 
-        val matchingIndexKeys = indexScan.index.toStorageByteArraysForIndex(values, keyBytes).filter { indexKey ->
-            indexScanRange?.let { range ->
-                range.keyWithinRanges(indexKey) && range.matchesPartials(indexKey)
-            } ?: true
-        }
+        val matchingIndexKeys = visibleIndexKeys(indexScan.index.toStorageByteArraysForIndex(values, keyBytes))
 
         if (matchingIndexKeys.isEmpty()) return null
 
@@ -273,7 +291,14 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                                             // Don't add items which are moved to after the limit
                                             changedHandler(null, false)
                                         } else {
-                                            if (request.startKey != null && newIndex == 0) {
+                                            val beforeStartKey = indexStartBoundary?.let { boundary ->
+                                                when (scanType.direction) {
+                                                    ASC -> indexKey compareTo boundary < 0
+                                                    DESC -> indexKey compareTo boundary > 0
+                                                }
+                                            } == true
+
+                                            if (beforeStartKey) {
                                                 // Remove items which are before the first start key/range
                                                 changedHandler(null, false)
                                             } else {
@@ -301,6 +326,12 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                                 }
                             } else { // Is at same position as existing index
                                 if (existingIndex >= 0) {
+                                    if (existingIndexKey != null && !existingIndexKey.contentEquals(indexKey)) {
+                                        sortedValues?.value = buildList {
+                                            addAll(sortedValues.value)
+                                            set(existingIndex, indexKey)
+                                        }
+                                    }
                                     changedHandler(existingIndex, false)
                                 }
                             }
@@ -336,17 +367,53 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
             }
         }
 
-        val matchingCandidates = candidates.filter { indexKey ->
-            indexScanRange?.let { range ->
-                range.keyWithinRanges(indexKey) && range.matchesPartials(indexKey)
-            } ?: true
-        }
+        val matchingCandidates = visibleIndexKeys(candidates)
 
         if (matchingCandidates.isEmpty()) return null
 
         return when (scanType.direction) {
             ASC -> matchingCandidates.minWithOrNull { a, b -> a compareTo b }
             DESC -> matchingCandidates.maxWithOrNull { a, b -> a compareTo b }
+        }
+    }
+
+    private fun visibleIndexKeys(indexKeys: List<ByteArray>): List<ByteArray> =
+        indexKeys.filter { indexKey ->
+            val matchesRange = indexScanRange?.let { range ->
+                resolveIndexValueSize(indexKey)?.let { valueSize ->
+                    range.matchesPartials(indexKey, length = valueSize) &&
+                        range.ranges.any { scanRange ->
+                            scanRange.matchesIndexValue(range, indexKey, valueSize)
+                        }
+                } == true
+            } ?: true
+
+            if (!matchesRange) {
+                false
+            } else {
+                indexStartBoundary?.let { boundary ->
+                    when (scanType.direction) {
+                        ASC -> indexKey compareTo boundary >= 0
+                        DESC -> indexKey compareTo boundary <= 0
+                    }
+                } ?: true
+            }
+        }
+
+    private fun resolveIndexValueSize(indexKey: ByteArray): Int? {
+        val indexScan = scanType as? IndexScan ?: return null
+        if (indexKey.size < scanRange.keySize) return null
+
+        return try {
+            val (offset, size) = findByteIndexAndSizeByPartIndex(
+                partIndex = indexScan.index.indexPartCount - 1,
+                indexable = indexKey,
+                keySize = scanRange.keySize,
+                indexPartCount = indexScan.index.indexPartCount
+            )
+            offset + size
+        } catch (_: Exception) {
+            null
         }
     }
 
@@ -376,9 +443,30 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     /** Get last key depending on scan direction */
     fun getLast() = when (scanType) {
         is UpdateHistoryScan -> matchingKeys.value.last()
-        else -> when (scanType.direction) {
-            ASC -> matchingKeys.value.last()
-            DESC -> matchingKeys.value.first()
-        }
+        is IndexScan -> matchingKeys.value.last()
+        else -> matchingKeys.value.last()
     }
 }
+
+private fun ScanRange.matchesIndexValue(indexScanRange: IndexableScanRanges, indexValue: ByteArray, valueSize: Int): Boolean {
+    val rangeLength = indexRangeLength(indexScanRange, this, valueSize)
+    return !keyBeforeStart(indexValue, length = rangeLength) && !keyOutOfRange(indexValue, length = rangeLength)
+}
+
+private fun indexRangeLength(indexScanRange: IndexableScanRanges, range: ScanRange, valueSize: Int): Int =
+    if (
+        range.start.isNotEmpty() &&
+        range.startInclusive &&
+        range.endInclusive &&
+        range.end?.contentEquals(range.start) == true &&
+        indexScanRange.partialMatches?.any {
+            (it is IndexPartialSizeToMatch && it.size == range.start.size) ||
+                (it is IndexPartialToMatch &&
+                    it.partialMatch &&
+                    it.toMatch.contentEquals(range.start))
+        } == true
+    ) {
+        range.start.size
+    } else {
+        valueSize
+    }

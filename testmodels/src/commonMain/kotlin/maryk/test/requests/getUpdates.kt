@@ -3,19 +3,19 @@ package maryk.test.requests
 import maryk.core.models.graph
 import maryk.core.models.key
 import maryk.core.query.filters.Exists
-import maryk.core.query.requests.getChanges
+import maryk.core.query.requests.getUpdates
 import maryk.test.models.SimpleMarykModel
 
 private val key1 = SimpleMarykModel.key("WWurg6ysTsozoMei_SurOw")
 private val key2 = SimpleMarykModel.key("awfbjYrVQ-cdXblfQKV10A")
 
-val getUpdatesRequest = SimpleMarykModel.getChanges(
+val getUpdatesRequest = SimpleMarykModel.getUpdates(
     key1,
     key2
 )
 
 val getUpdatesMaxRequest = SimpleMarykModel.run {
-    getChanges(
+    getUpdates(
         key1,
         key2,
         where = Exists(invoke { value::ref }),

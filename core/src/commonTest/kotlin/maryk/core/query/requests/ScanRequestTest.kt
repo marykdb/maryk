@@ -14,7 +14,7 @@ import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
-class ScanSelectRequestTest {
+class ScanRequestTest {
     private val context = RequestContext(mapOf(
         SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))

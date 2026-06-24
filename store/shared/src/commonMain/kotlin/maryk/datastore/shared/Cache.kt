@@ -12,7 +12,7 @@ class Cache(
     private val maxKeysPerDb: Int = DEFAULT_MAX_KEYS_PER_DB,
     private val maxSizeBytesPerKey: Int = DEFAULT_CACHE_SIZE_BYTES_PER_KEY
 ) {
-    private val cachePerDb = mutableMapOf<UInt, DbCache>()
+    private val cachePerDb = HashMap<UInt, DbCache>(4)
 
     init {
         require(maxKeysPerDb > 0) { "maxKeysPerDb should be greater than zero" }
@@ -64,7 +64,7 @@ private class DbCache(
     private val maxKeys: Int,
     private val maxSizeBytesPerKey: Int
 ) {
-    private val values = mutableMapOf<Key<*>, ReferenceCache>()
+    private val values = HashMap<Key<*>, ReferenceCache>(maxKeys.coerceAtMost(16))
     private val order = LinkedHashSet<Key<*>>()
 
     fun get(key: Key<*>): ReferenceCache? {
@@ -103,7 +103,7 @@ private class DbCache(
 
 private class ReferenceCache(maxSizeBytes: Int) {
     private val maxEntries = max(1, maxSizeBytes / APPROX_ENTRY_SIZE_BYTES)
-    private val values = mutableMapOf<IsPropertyReferenceForCache<*, *>, CachedValue>()
+    private val values = HashMap<IsPropertyReferenceForCache<*, *>, CachedValue>(maxEntries.coerceAtMost(16))
     private val order = LinkedHashSet<IsPropertyReferenceForCache<*, *>>()
 
     fun get(reference: IsPropertyReferenceForCache<*, *>): CachedValue? {

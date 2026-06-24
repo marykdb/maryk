@@ -30,14 +30,14 @@ class GetUpdatesRequestTest {
 
     @Test
     fun convertToProtoBufAndBack() {
-        checkProtoBufConversion(getUpdatesRequest, GetChangesRequest, { this.context })
-        checkProtoBufConversion(getUpdatesMaxRequest, GetChangesRequest, { this.context })
+        checkProtoBufConversion(getUpdatesRequest, GetUpdatesRequest, { this.context })
+        checkProtoBufConversion(getUpdatesMaxRequest, GetUpdatesRequest, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
-        checkJsonConversion(getUpdatesRequest, GetChangesRequest, { this.context })
-        checkJsonConversion(getUpdatesMaxRequest, GetChangesRequest, { this.context })
+        checkJsonConversion(getUpdatesRequest, GetUpdatesRequest, { this.context })
+        checkJsonConversion(getUpdatesMaxRequest, GetUpdatesRequest, { this.context })
     }
 
     @Test
@@ -52,7 +52,7 @@ class GetUpdatesRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(getUpdatesRequest, GetChangesRequest, { this.context })
+            checkYamlConversion(getUpdatesRequest, GetUpdatesRequest, { this.context })
         }
 
         expect(
@@ -69,7 +69,7 @@ class GetUpdatesRequestTest {
 
             """.trimIndent()
         ) {
-            checkYamlConversion(getUpdatesMaxRequest, GetChangesRequest, { this.context })
+            checkYamlConversion(getUpdatesMaxRequest, GetUpdatesRequest, { this.context })
         }
     }
 }

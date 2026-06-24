@@ -12,9 +12,11 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
@@ -89,8 +91,16 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     fun getFlow() = channelFlow {
         when (response) {
             is UpdatesResponse<DM> -> {
-                for (update in response.updates) {
-                    send(update)
+                if (response.dataFetchType is FetchByUpdateHistoryIndex) {
+                    for (update in response.updates) {
+                        if (update !is AdditionUpdate<*>) {
+                            send(update)
+                        }
+                    }
+                } else {
+                    for (update in response.updates) {
+                        send(update)
+                    }
                 }
             }
             is ValuesResponse<DM> -> send(

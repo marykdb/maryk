@@ -21,7 +21,7 @@ import maryk.core.query.responses.UpdatesResponse
 import maryk.core.values.ObjectValues
 
 /**
- * Creates a request to get DataObject its versioned changes by value [keys]
+ * Creates a request to get DataObject its versioned updates by value [keys]
  * It will only fetch the updates [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  */
@@ -46,8 +46,8 @@ fun <DM : IsRootDataModel> DM.getUpdates(
     )
 
 /**
- * A Request to get DataObject its versioned changes by value [keys] for specific [dataModel] of type [DM]
- * It will only fetch the changes [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
+ * A Request to get DataObject its versioned updates by value [keys] for specific [dataModel] of type [DM]
+ * It will only fetch the updates [fromVersion] (Inclusive) until [maxVersions] (Default=1) is reached.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Only selected properties can be returned with a [select] graph
  */
@@ -64,7 +64,7 @@ data class GetUpdatesRequest<DM : IsRootDataModel> internal constructor(
     override val requestType = GetUpdates
     override val responseModel = UpdatesResponse
 
-    // Aggregations are not allowed on a get changes request
+    // Aggregations are not allowed on a get updates request
     override val aggregations: Aggregations? = null
 
     init {

@@ -12,7 +12,13 @@ plugins {
 kotlin {
     js {
         browser()
-        nodejs()
+        nodejs {
+            testTask {
+                useMocha {
+                    timeout = "3m"
+                }
+            }
+        }
     }
     wasmJs {
         browser()

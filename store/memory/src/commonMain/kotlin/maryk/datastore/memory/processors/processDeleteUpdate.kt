@@ -29,18 +29,12 @@ internal suspend fun <DM : IsRootDataModel> processDeleteUpdate(
 
     // Only delete from store
     val response = if (update.reason !== NotInRange) {
-        // Delete it from history if it is a hard deletion
-        val historicStoreIndexValuesWalker = if (update.reason == HardDelete && dataStore.keepAllVersions) {
-            HistoricStoreIndexValuesWalker
-        } else null
-
         processDelete(
             dataStore,
             dataModel,
             update.key,
             HLC(update.version),
             update.reason == HardDelete,
-            historicStoreIndexValuesWalker,
             updateSharedFlow
         )
     } else {

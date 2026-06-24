@@ -27,6 +27,7 @@ internal fun <DM : IsRootDataModel> processScan(
     dataStore: DataStore<DM>,
     recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
     scanSetup: ((ScanType) -> Unit)? = null,
+    allowTableScanOverride: Boolean = false,
     processRecord: (DataRecord<DM>, ByteArray?) -> Unit
 ): DataFetchType {
     val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
@@ -40,7 +41,8 @@ internal fun <DM : IsRootDataModel> processScan(
     when {
         // If hard key match then quit with direct record
         keyScanRange.isSingleKey() -> {
-            dataStore.getByKey(keyScanRange.ranges.first().start)?.let {
+            val toVersion = scanRequest.toVersion?.let(::HLC)
+            dataStore.getByKeyAtVersion(keyScanRange.ranges.first().start, toVersion)?.let {
                 if (shouldProcessRecord(it, scanRequest, keyScanRange, recordFetcher)) {
                     processRecord(it, null)
                 }
@@ -58,9 +60,12 @@ internal fun <DM : IsRootDataModel> processScan(
                 @Suppress("UNCHECKED_CAST")
                 val value = firstReference.value as Comparable<Any>
 
-                val record = scanRequest.toVersion?.let { version ->
-                    uniqueIndex[value, HLC(version)]
-                } ?: uniqueIndex[value]
+                val record = uniqueIndex.resolveRecordForValue(
+                    value,
+                    scanRequest.toVersion?.let(::HLC),
+                    !scanRequest.filterSoftDeleted,
+                    dataStore
+                )
 
                 record?.let {
                     if (shouldProcessRecord(record, scanRequest, keyScanRange, recordFetcher)) {
@@ -77,7 +82,7 @@ internal fun <DM : IsRootDataModel> processScan(
                     scanIndex,
                     keyScanRange,
                     filter = scanRequest.where,
-                    allowTableScan = scanRequest.allowTableScan
+                    allowTableScan = allowTableScanOverride || scanRequest.allowTableScan
                 )
             } else scanIndex
 

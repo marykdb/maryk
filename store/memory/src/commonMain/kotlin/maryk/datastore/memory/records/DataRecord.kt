@@ -10,7 +10,9 @@ import maryk.core.processors.datastore.matchers.IsQualifierMatcher
 import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.processors.datastore.matchers.QualifierFuzzyMatcher
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.references.IncMapReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsMapReference
 import maryk.core.properties.references.IsPropertyReference
@@ -69,13 +71,30 @@ internal data class DataRecord<DM : IsRootDataModel>(
 
             val key = try {
                 var readIndex = mapPrefix.size
-                val mapKeyLength = readQualifierLength(
-                    qualifierLength = reference.size,
-                    offsetGetter = { readIndex },
-                    offsetSetter = { readIndex = it },
-                    qualifierReader = { reference[it] },
-                    subject = "map key"
-                )
+                val mapKeyLength = if (propertyReference is IncMapReference<*, *, *>) {
+                    @Suppress("UNCHECKED_CAST")
+                    val keyDefinition = mapDefinition.keyDefinition as? IsFixedStorageBytesEncodable<Any>
+                        ?: throw ParseException("Incrementing map key definition should be fixed-size")
+                    if (reference.size - readIndex == keyDefinition.byteSize) {
+                        keyDefinition.byteSize
+                    } else {
+                        readQualifierLength(
+                            qualifierLength = reference.size,
+                            offsetGetter = { readIndex },
+                            offsetSetter = { readIndex = it },
+                            qualifierReader = { reference[it] },
+                            subject = "map key"
+                        )
+                    }
+                } else {
+                    readQualifierLength(
+                        qualifierLength = reference.size,
+                        offsetGetter = { readIndex },
+                        offsetSetter = { readIndex = it },
+                        qualifierReader = { reference[it] },
+                        subject = "map key"
+                    )
+                }
                 val keyValue = mapDefinition.keyDefinition.readStorageBytes(mapKeyLength) { reference[readIndex++] }
                 if (readIndex != reference.size) continue
                 keyValue
@@ -225,13 +244,30 @@ internal data class DataRecord<DM : IsRootDataModel>(
                     var readIndex = parentLength
                     if (readIndex >= qualifierBytes.size) return null
 
-                    val keyLength = readQualifierLength(
-                        qualifierLength = qualifierBytes.size,
-                        offsetGetter = { readIndex },
-                        offsetSetter = { readIndex = it },
-                        qualifierReader = { qualifierBytes[it] },
-                        subject = "map key",
-                    )
+                    val keyLength = if (reference.parentReference is IncMapReference<*, *, *>) {
+                        @Suppress("UNCHECKED_CAST")
+                        val keyDefinition = reference.mapDefinition.keyDefinition as? IsFixedStorageBytesEncodable<Any>
+                            ?: throw ParseException("Incrementing map key definition should be fixed-size")
+                        if (qualifierBytes.size - readIndex == keyDefinition.byteSize) {
+                            keyDefinition.byteSize
+                        } else {
+                            readQualifierLength(
+                                qualifierLength = qualifierBytes.size,
+                                offsetGetter = { readIndex },
+                                offsetSetter = { readIndex = it },
+                                qualifierReader = { qualifierBytes[it] },
+                                subject = "map key",
+                            )
+                        }
+                    } else {
+                        readQualifierLength(
+                            qualifierLength = qualifierBytes.size,
+                            offsetGetter = { readIndex },
+                            offsetSetter = { readIndex = it },
+                            qualifierReader = { qualifierBytes[it] },
+                            subject = "map key",
+                        )
+                    }
 
                     @Suppress("UNCHECKED_CAST")
                     (reference as MapAnyKeyReference<Any, Any, *>).readStorageBytes(keyLength) { qualifierBytes[readIndex++] }

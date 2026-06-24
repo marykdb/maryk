@@ -1,6 +1,8 @@
 package maryk.datastore.memory.processors
 
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
@@ -19,23 +21,27 @@ internal fun <DM : IsRootDataModel> processScanChangesRequest(
     val scanRequest = storeAction.request
     val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
 
-    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, scanRequest.toVersion?.let(::HLC))
 
     val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
 
     scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
-    val dataFetchType = processScan(scanRequest, dataStore, recordFetcher) { record, sortingKey ->
-        scanRequest.dataModel.recordToObjectChanges(
-            scanRequest.select,
-            scanRequest.fromVersion,
-            scanRequest.toVersion,
-            scanRequest.maxVersions,
-            sortingKey,
-            record
-        )?.let {
-            // Only add if not null
-            objectChanges += it
+    val dataFetchType = processScan(
+        scanRequest = scanRequest,
+        dataStore = dataStore,
+        recordFetcher = recordFetcher,
+        allowTableScanOverride = true
+    ) { record, sortingKey ->
+        scanRequest.dataModel.recordHistoryToVersionedChanges(
+            select = scanRequest.select,
+            fromVersion = scanRequest.fromVersion,
+            toVersion = scanRequest.toVersion,
+            maxVersions = scanRequest.maxVersions,
+            sortingKey = sortingKey,
+            historyRecords = dataStore.getRecordHistoryByKey(record.key.bytes, scanRequest.toVersion?.let(::HLC))
+        ).map { it.versionedChange }.takeIf { it.isNotEmpty() }?.let {
+            objectChanges += DataObjectVersionedChange(record.key, sortingKey?.let(::Bytes), it)
         }
     }
 

@@ -24,6 +24,7 @@ internal fun <DM : IsRootDataModel> scanStore(
     processStoreValue: (DataRecord<DM>, ByteArray?) -> Unit
 ): DataFetchType {
     val toVersion = scanRequest.toVersion?.let { HLC(it) }
+    val scanRecords = dataStore.getRecordsAtVersion(toVersion)
 
     var overallStartKey: ByteArray?
     var overallEndKey: ByteArray?
@@ -37,7 +38,7 @@ internal fun <DM : IsRootDataModel> scanStore(
             for (range in scanRange.ranges) {
                 val startKey = range.getAscendingStartKey(scanRange.startKey, scanRange.includeStart)
 
-                val startIndex = dataStore.records.binarySearch {
+                val startIndex = scanRecords.binarySearch {
                     it.key.bytes compareTo startKey
                 }.let { index ->
                     when {
@@ -47,8 +48,8 @@ internal fun <DM : IsRootDataModel> scanStore(
                     }
                 }
 
-                for (index in startIndex until dataStore.records.size) {
-                    val record = dataStore.records[index]
+                for (index in startIndex until scanRecords.size) {
+                    val record = scanRecords[index]
                     val recordKey = record.key.bytes
 
                     if (range.keyOutOfRange(recordKey)) {
@@ -79,16 +80,16 @@ internal fun <DM : IsRootDataModel> scanStore(
                 val lastKey = range.getDescendingStartKey(scanRange.startKey, scanRange.includeStart)
 
                 val startIndex = lastKey?.let { endRange ->
-                    dataStore.records.binarySearch { it.key.bytes compareTo endRange }.let { index ->
+                    scanRecords.binarySearch { it.key.bytes compareTo endRange }.let { index ->
                         when {
                             index < 0 -> index * -1 - 2 // If negative start before first entry point because it should be before match
                             else -> index
                         }
                     }
-                } ?: dataStore.records.lastIndex
+                } ?: scanRecords.lastIndex
 
-                for (index in min(startIndex, dataStore.records.lastIndex) downTo 0) {
-                    val record = dataStore.records[index]
+                for (index in min(startIndex, scanRecords.lastIndex) downTo 0) {
+                    val record = scanRecords[index]
                     val recordKey = record.key.bytes
 
                     if (range.keyBeforeStart(recordKey)) {

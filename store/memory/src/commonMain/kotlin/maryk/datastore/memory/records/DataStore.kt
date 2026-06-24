@@ -2,6 +2,7 @@ package maryk.datastore.memory.records
 
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.types.Bytes
 import maryk.datastore.memory.processors.changers.getValue
 import maryk.datastore.memory.records.index.IndexValues
 import maryk.datastore.memory.records.index.UniqueIndexValues
@@ -15,6 +16,11 @@ internal class DataStore<DM : IsRootDataModel>(
     val keepAllVersions: Boolean,
     val keepUpdateHistoryIndex: Boolean
 ) {
+    data class HardDeletedRecord<DM : IsRootDataModel>(
+        val record: DataRecord<DM>,
+        val deletedAtVersion: HLC
+    )
+
     data class UpdateHistoryRecord(
         val version: ULong,
         val keyBytes: ByteArray,
@@ -22,6 +28,7 @@ internal class DataStore<DM : IsRootDataModel>(
     )
 
     val records: MutableList<DataRecord<DM>> = mutableListOf()
+    val hardDeletedRecords: MutableList<HardDeletedRecord<DM>> = mutableListOf()
     val updateHistory = mutableListOf<UpdateHistoryRecord>()
     private val indexes: MutableList<IndexValues<DM>> = mutableListOf()
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, Comparable<Any>>> = mutableListOf()
@@ -89,35 +96,13 @@ internal class DataStore<DM : IsRootDataModel>(
     internal fun removeFromUniqueIndices(
         dataRecord: DataRecord<DM>,
         version: HLC,
-        hardDelete: Boolean
+        hardDelete: Boolean = false
     ) {
-        if (hardDelete) {
-            for (indexValues in uniqueIndices) {
-                val valueIndex = dataRecord.values.binarySearch {
-                    it.reference compareTo indexValues.indexReference
-                }
-                if (valueIndex >= 0) {
-                    when(val dataNode = dataRecord.values[valueIndex]) {
-                        is DataRecordHistoricValues<*> -> {
-                            dataNode.history.forEach { record ->
-                                @Suppress("UNCHECKED_CAST")
-                                indexValues.deleteHardFromIndex(
-                                    dataRecord,
-                                    (record as DataRecordValue<Comparable<Any>>).value
-                                )
-                            }
-                        }
-                        is DataRecordValue<*> -> {
-                            @Suppress("UNCHECKED_CAST")
-                            indexValues.deleteHardFromIndex(dataRecord, (dataNode as DataRecordValue<Comparable<Any>>).value)
-                        }
-                        else -> {}
-                    }
-                }
-            }
-        } else {
-            for (indexValues in uniqueIndices) {
-                getValue<Comparable<Any>>(dataRecord.values, indexValues.indexReference)?.let {
+        for (indexValues in uniqueIndices) {
+            getValue<Comparable<Any>>(dataRecord.values, indexValues.indexReference)?.let {
+                if (hardDelete) {
+                    indexValues.deleteHardFromIndex(dataRecord, it.value)
+                } else {
                     indexValues.removeFromIndex(dataRecord, it.value, version, keepAllVersions)
                 }
             }
@@ -172,5 +157,92 @@ internal class DataStore<DM : IsRootDataModel>(
         val index = this.records.binarySearch { it.key.bytes compareTo key }
 
         return if (index >= 0) this.records[index] else null
+    }
+
+    /** Get DataRecord by [key] visible at [toVersion] */
+    internal fun getByKeyAtVersion(key: ByteArray, toVersion: HLC?): DataRecord<DM>? {
+        val currentRecord = getByKey(key)
+        if (currentRecord != null && (toVersion == null || currentRecord.firstVersion <= toVersion)) {
+            return currentRecord
+        }
+
+        return getHardDeletedRecordByKey(key, toVersion)
+    }
+
+    /** Get hard deleted DataRecord by [key] when [toVersion] still points before its deletion */
+    internal fun getHardDeletedRecordByKey(key: ByteArray, toVersion: HLC?): DataRecord<DM>? {
+        if (toVersion == null) return null
+
+        for (index in hardDeletedRecords.lastIndex downTo 0) {
+            val deletedRecord = hardDeletedRecords[index]
+            val keyCompare = deletedRecord.record.key.bytes compareTo key
+            if (keyCompare == 0 &&
+                deletedRecord.record.firstVersion <= toVersion &&
+                toVersion < deletedRecord.deletedAtVersion
+            ) {
+                return deletedRecord.record
+            }
+        }
+
+        return null
+    }
+
+    /**
+     * Get all record incarnations for [key] relevant to [toVersion].
+     * If a current record exists at or before [toVersion], include older archived incarnations too.
+     * Otherwise keep the existing visible-record behavior and only return the single archived incarnation
+     * visible at [toVersion], if any.
+     */
+    internal fun getRecordHistoryByKey(key: ByteArray, toVersion: HLC?): List<DataRecord<DM>> {
+        val currentRecord = getByKey(key)
+
+        if (currentRecord != null && (toVersion == null || currentRecord.firstVersion <= toVersion)) {
+            val previousRecords = hardDeletedRecords.mapNotNull { deletedRecord ->
+                deletedRecord.record.takeIf {
+                    it.key.bytes compareTo key == 0 && it.firstVersion < currentRecord.firstVersion
+                }
+            }
+
+            return (previousRecords + currentRecord).sortedBy { it.firstVersion.timestamp }
+        }
+
+        return getHardDeletedRecordByKey(key, toVersion)?.let(::listOf) ?: emptyList()
+    }
+
+    /** Check if any currently visible key was hard deleted before and later reused. */
+    internal fun hasReusedKeys(): Boolean {
+        if (hardDeletedRecords.isEmpty() || records.isEmpty()) return false
+
+        val currentKeys = records.map { Bytes(it.key.bytes) }.toHashSet()
+        return hardDeletedRecords.any { Bytes(it.record.key.bytes) in currentKeys }
+    }
+
+    /** Get all records visible at [toVersion], sorted by key */
+    internal fun getRecordsAtVersion(toVersion: HLC?): List<DataRecord<DM>> {
+        if (toVersion == null) return records
+
+        val visibleRecords = mutableListOf<DataRecord<DM>>()
+        val visibleKeys = mutableSetOf<Bytes>()
+
+        for (record in records) {
+            if (record.firstVersion <= toVersion) {
+                visibleRecords += record
+                visibleKeys += Bytes(record.key.bytes)
+            }
+        }
+
+        for (index in hardDeletedRecords.lastIndex downTo 0) {
+            val deletedRecord = hardDeletedRecords[index]
+            val key = Bytes(deletedRecord.record.key.bytes)
+            if (key in visibleKeys) continue
+
+            if (deletedRecord.record.firstVersion <= toVersion && toVersion < deletedRecord.deletedAtVersion) {
+                visibleRecords += deletedRecord.record
+                visibleKeys += key
+            }
+        }
+
+        visibleRecords.sortBy { Bytes(it.key.bytes) }
+        return visibleRecords
     }
 }

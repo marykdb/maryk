@@ -34,12 +34,12 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
 ) {
     val scanRequest = storeAction.request
 
-    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, scanRequest.toVersion?.let(::HLC))
 
     val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
 
-    if (scanRequest.canUseUpdateHistoryIndex() && dataStore.keepUpdateHistoryIndex) {
-        processScanUpdatesByUpdateHistory(storeAction, dataStore, recordFetcher)
+    if (scanRequest.canUseUpdateHistoryIndex() && dataStore.keepUpdateHistoryIndex && !dataStore.hasReusedKeys()) {
+        processScanUpdatesByUpdateHistory(storeAction, dataStoreFetcher, dataStore, recordFetcher)
         return
     }
 
@@ -61,8 +61,10 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             (it as? IndexScan)?.let { _ ->
                 sortingKeys = ArrayList(expectedSize)
             }
-        }
+        },
+        allowTableScanOverride = true
     ) { record, sortingKey ->
+        val historyRecords = dataStore.getRecordHistoryByKey(record.key.bytes, scanRequest.toVersion?.let(::HLC))
         insertionIndex++
 
         matchingKeys.add(record.key)
@@ -72,59 +74,57 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
             sortingKeys?.add(it)
         }
 
-        lastResponseVersion = maxOf(lastResponseVersion, record.lastVersion.timestamp)
+        lastResponseVersion = maxOf(lastResponseVersion, historyRecords.maxOf { it.lastVersion.timestamp })
 
         scanRequest.checkMaxVersions(dataStore.keepAllVersions)
 
-        scanRequest.dataModel.recordToObjectChanges(
-            scanRequest.select,
-            scanRequest.fromVersion,
-            scanRequest.toVersion,
-            scanRequest.maxVersions,
-            sortingKey,
-            record
-        )?.let { objectChange ->
-            for (versionedChange in objectChange.changes) {
-                val changes = versionedChange.changes
+        scanRequest.dataModel.recordHistoryToVersionedChanges(
+            select = scanRequest.select,
+            fromVersion = scanRequest.fromVersion,
+            toVersion = scanRequest.toVersion,
+            maxVersions = scanRequest.maxVersions,
+            sortingKey = sortingKey,
+            historyRecords = historyRecords
+        ).forEach { (historyRecord, versionedChange) ->
+            val changes = versionedChange.changes
 
-                if (changes.contains(ObjectCreate)) {
+            if (changes.contains(ObjectCreate)) {
+                scanRequest.dataModel.recordToValueWithMeta(
+                    scanRequest.select,
+                    HLC(versionedChange.version),
+                    historyRecord
+                )?.let { valuesWithMeta ->
+                    updates += AdditionUpdate(
+                        key = historyRecord.key,
+                        version = versionedChange.version,
+                        firstVersion = valuesWithMeta.firstVersion,
+                        insertionIndex = insertionIndex,
+                        isDeleted = valuesWithMeta.isDeleted,
+                        values = valuesWithMeta.values
+                    )
+                }
+            } else {
+                if (scanRequest.orderedKeys?.contains(historyRecord.key) != false) {
+                    updates += ChangeUpdate(
+                        key = historyRecord.key,
+                        version = versionedChange.version,
+                        index = insertionIndex,
+                        changes = changes
+                    )
+                } else {
                     scanRequest.dataModel.recordToValueWithMeta(
                         scanRequest.select,
-                        HLC(versionedChange.version),
-                        record
+                        scanRequest.toVersion?.let { HLC(it) },
+                        historyRecord
                     )?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
-                            key = objectChange.key,
+                            key = historyRecord.key,
                             version = versionedChange.version,
                             firstVersion = valuesWithMeta.firstVersion,
                             insertionIndex = insertionIndex,
                             isDeleted = valuesWithMeta.isDeleted,
                             values = valuesWithMeta.values
                         )
-                    }
-                } else {
-                    if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
-                        updates += ChangeUpdate(
-                            key = objectChange.key,
-                            version = versionedChange.version,
-                            index = insertionIndex,
-                            changes = changes
-                        )
-                    } else {
-                        scanRequest.dataModel.recordToValueWithMeta(
-                            scanRequest.select,
-                            scanRequest.toVersion?.let { HLC(it) },
-                            record
-                        )?.let { valuesWithMeta ->
-                            updates += AdditionUpdate(
-                                key = objectChange.key,
-                                version = versionedChange.version,
-                                firstVersion = valuesWithMeta.firstVersion,
-                                insertionIndex = insertionIndex,
-                                isDeleted = valuesWithMeta.isDeleted,
-                                values = valuesWithMeta.values
-                            )
-                        }
                     }
                 }
             }
@@ -202,6 +202,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
 
 private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
     storeAction: ScanUpdatesStoreAction<DM>,
+    dataStoreFetcher: IsStoreFetcher<DM>,
     dataStore: DataStore<DM>,
     recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?
 ) {
@@ -226,10 +227,28 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
         val record = recordFetcher(scanRequest.dataModel, key) as DataRecord<DM>?
         if (record == null) {
             val keyBytes = key.bytes
-            if (entry.isHardDelete && scanRequest.where == null && !scanRange.keyBeforeStart(keyBytes, 0) &&
-                scanRange.keyWithinRanges(keyBytes, 0) && scanRange.matchesPartials(keyBytes) &&
+            val preDeleteVersion = entry.version.takeIf { it > 0uL }?.let { HLC(it - 1uL) }
+            val shouldEmitHardDelete = if (entry.isHardDelete &&
+                !scanRange.keyBeforeStart(keyBytes, 0) &&
+                scanRange.keyWithinRanges(keyBytes, 0) &&
+                scanRange.matchesPartials(keyBytes) &&
                 entry.version >= scanRequest.fromVersion
             ) {
+                when {
+                    scanRequest.where == null -> true
+                    preDeleteVersion == null -> false
+                    else -> {
+                        val preDeleteRecordFetcher = createStoreRecordFetcher(dataStoreFetcher, preDeleteVersion)
+                        @Suppress("UNCHECKED_CAST")
+                        val preDeleteRecord = preDeleteRecordFetcher(scanRequest.dataModel, key) as DataRecord<DM>?
+                        preDeleteRecord != null && shouldProcessRecord(preDeleteRecord, scanRequest, scanRange, preDeleteRecordFetcher)
+                    }
+                }
+            } else {
+                false
+            }
+
+            if (shouldEmitHardDelete) {
                 updates += RemovalUpdate(
                     key = key,
                     version = entry.version,
@@ -363,4 +382,4 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
 }
 
 private fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
-    order == null && fromVersion == 0uL && toVersion == null && maxVersions == 1u
+    order == null && startKey == null && includeStart && fromVersion == 0uL && toVersion == null && maxVersions == 1u

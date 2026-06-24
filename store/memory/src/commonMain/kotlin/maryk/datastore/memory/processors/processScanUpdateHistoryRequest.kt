@@ -31,7 +31,6 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
         throw updateHistoryNotAvailable()
     }
 
-    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)
     val updates = ArrayList<IsUpdateResponse<DM>>(expectedSize + 1)
 
@@ -41,11 +40,30 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
         if (updates.size.toUInt() >= scanRequest.limit) break
 
         val key = Key<DM>(entry.keyBytes)
+        val version = HLC(entry.version)
+        val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, version)
 
         @Suppress("UNCHECKED_CAST")
         val record = recordFetcher(scanRequest.dataModel, key) as DataRecord<DM>?
         if (record == null) {
-            if (entry.isHardDelete && scanRequest.where == null) {
+            val preDeleteVersion = entry.version.takeIf { it > 0uL }?.let { HLC(it - 1uL) }
+            val shouldEmitHardDelete = if (entry.isHardDelete) {
+                when {
+                    scanRequest.where == null -> true
+                    preDeleteVersion == null -> false
+                    else -> {
+                        val preDeleteRecordFetcher = createStoreRecordFetcher(dataStoreFetcher, preDeleteVersion)
+                        @Suppress("UNCHECKED_CAST")
+                        val preDeleteRecord = preDeleteRecordFetcher(scanRequest.dataModel, key) as DataRecord<DM>?
+                        preDeleteRecord != null &&
+                            !scanRequest.shouldBeFiltered(preDeleteRecord, preDeleteVersion, preDeleteRecordFetcher)
+                    }
+                }
+            } else {
+                false
+            }
+
+            if (shouldEmitHardDelete) {
                 updates += RemovalUpdate(
                     key = key,
                     version = entry.version,
@@ -55,7 +73,6 @@ internal fun <DM : IsRootDataModel> processScanUpdateHistoryRequest(
             continue
         }
 
-        val version = HLC(entry.version)
         if (scanRequest.shouldBeFiltered(record, version, recordFetcher)) continue
 
         scanRequest.dataModel.recordToObjectChanges(

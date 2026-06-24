@@ -30,11 +30,6 @@ internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
     if (deleteRequest.keys.isNotEmpty()) {
         val dataStore = dataStoreFetcher.invoke(deleteRequest.dataModel)
 
-        // Delete it from history if it is a hard deletion
-        val historicStoreIndexValuesWalker = if (deleteRequest.hardDelete && dataStore.keepAllVersions) {
-            HistoricStoreIndexValuesWalker
-        } else null
-
         for (key in deleteRequest.keys) {
             try {
                 statuses.add(
@@ -44,7 +39,6 @@ internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
                         key,
                         version,
                         deleteRequest.hardDelete,
-                        historicStoreIndexValuesWalker,
                         updateSharedFlow
                     )
                 )

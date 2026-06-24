@@ -22,7 +22,6 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
     key: Key<DM>,
     version: HLC,
     hardDelete: Boolean,
-    historicStoreIndexValuesWalker: HistoricStoreIndexValuesWalker?,
     updateSharedFlow: MutableSharedFlow<IsUpdateAction>
 ) : IsDeleteResponseStatus<DM> {
     val index = dataStore.records.binarySearch { it.key compareTo key }
@@ -37,25 +36,28 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                 val oldValues = indexable.toStorageByteArraysForIndex(objectToDelete, objectToDelete.key.bytes)
                 val indexRef = indexable.referenceStorageByteArray.bytes
                 oldValues.forEach { oldValue ->
-                    dataStore.removeFromIndex(
-                        objectToDelete,
-                        indexRef,
-                        version,
-                        oldValue
-                    )
+                    if (hardDelete) {
+                        dataStore.deleteHardFromIndex(indexRef, oldValue, objectToDelete)
+                    } else {
+                        dataStore.removeFromIndex(
+                            objectToDelete,
+                            indexRef,
+                            version,
+                            oldValue
+                        )
+                    }
                 } // ignore if no values existed
-
-                // Delete all historic values if historicStoreIndexValuesWalker was set
-                historicStoreIndexValuesWalker?.walkHistoricalValuesForIndexKeys(objectToDelete, indexable) { value, _ ->
-                    dataStore.deleteHardFromIndex(
-                        indexRef,
-                        value,
-                        objectToDelete
-                    )
-                }
             }
 
             if (hardDelete) {
+                if (dataStore.keepAllVersions) {
+                    dataStore.hardDeletedRecords.add(
+                        DataStore.HardDeletedRecord(
+                            record = objectToDelete,
+                            deletedAtVersion = version
+                        )
+                    )
+                }
                 dataStore.records.removeAt(index)
             } else {
                 val oldRecord = dataStore.records[index]

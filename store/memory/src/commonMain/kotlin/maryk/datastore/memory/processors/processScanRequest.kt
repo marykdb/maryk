@@ -26,11 +26,16 @@ internal fun <DM : IsRootDataModel> processScanRequest(
         Aggregator(it)
     }
 
-    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, scanRequest.toVersion?.let(::HLC))
 
     val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
 
-    val dataFetchType = processScan(scanRequest, dataStore, recordFetcher) { record, _ ->
+    val dataFetchType = processScan(
+        scanRequest = scanRequest,
+        dataStore = dataStore,
+        recordFetcher = recordFetcher,
+        allowTableScanOverride = scanRequest.toVersion != null
+    ) { record, _ ->
         val toVersion = scanRequest.toVersion?.let { HLC(it) }
 
         val valuesWithMetaData = scanRequest.dataModel.recordToValueWithMeta(

@@ -24,33 +24,28 @@ internal fun <DM : IsRootDataModel> processGetChangesRequest(
 
     val dataStore = dataStoreFetcher.invoke(getRequest.dataModel)
 
-    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
-
     getRequest.checkToVersion(dataStore.keepAllVersions)
     getRequest.checkMaxVersions(dataStore.keepAllVersions)
+    val toVersion = getRequest.toVersion?.let { HLC(it) }
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, toVersion)
 
     for (key in getRequest.keys) {
-        val index = dataStore.records.binarySearch { it.key compareTo key }
+        val records = dataStore.getRecordHistoryByKey(key.bytes, toVersion)
+        val record = records.lastOrNull() ?: continue
 
-        // Only return if found
-        if (index > -1) {
-            val record = dataStore.records[index]
+        if (getRequest.shouldBeFiltered(record, toVersion, recordFetcher)) {
+            continue
+        }
 
-            if (getRequest.shouldBeFiltered(record, getRequest.toVersion?.let { HLC(it) }, recordFetcher)) {
-                continue
-            }
-
-            getRequest.dataModel.recordToObjectChanges(
-                getRequest.select,
-                getRequest.fromVersion,
-                getRequest.toVersion,
-                getRequest.maxVersions,
-                null,
-                record
-            )?.let {
-                // Only add if not null
-                objectChanges += it
-            }
+        getRequest.dataModel.recordHistoryToVersionedChanges(
+            select = getRequest.select,
+            fromVersion = getRequest.fromVersion,
+            toVersion = getRequest.toVersion,
+            maxVersions = getRequest.maxVersions,
+            sortingKey = null,
+            historyRecords = records
+        ).map { it.versionedChange }.takeIf { it.isNotEmpty() }?.let {
+            objectChanges += DataObjectVersionedChange(key, changes = it)
         }
     }
 

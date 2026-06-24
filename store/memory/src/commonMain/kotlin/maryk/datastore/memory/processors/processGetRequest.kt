@@ -33,32 +33,29 @@ internal fun <DM : IsRootDataModel> processGetRequest(
         Aggregator(it)
     }
 
-    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher)
+    val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, toVersion)
 
     for (key in getRequest.keys) {
-        val index = dataStore.records.binarySearch { it.key compareTo key }
+        val record = dataStore.getByKeyAtVersion(key.bytes, toVersion)
+            ?: continue
 
-        // Only return if found
-        if (index > -1) {
-            val record = dataStore.records[index]
-            if (getRequest.shouldBeFiltered(record, toVersion, recordFetcher)) {
-                continue
-            }
+        if (getRequest.shouldBeFiltered(record, toVersion, recordFetcher)) {
+            continue
+        }
 
-            val valuesWithMetaData = getRequest.dataModel.recordToValueWithMeta(
-                getRequest.select,
-                toVersion,
-                record
-            )?.also {
-                // Only add if not null
-                valuesWithMeta.add(it)
-            }
+        val valuesWithMetaData = getRequest.dataModel.recordToValueWithMeta(
+            getRequest.select,
+            toVersion,
+            record
+        )?.also {
+            // Only add if not null
+            valuesWithMeta.add(it)
+        }
 
-            aggregator?.aggregate {
-                @Suppress("UNCHECKED_CAST")
-                valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
-                    ?: record[it, toVersion]
-            }
+        aggregator?.aggregate {
+            @Suppress("UNCHECKED_CAST")
+            valuesWithMetaData?.values?.get(it as IsPropertyReference<Any, IsPropertyDefinition<Any>, *>)
+                ?: record[it, toVersion]
         }
     }
 

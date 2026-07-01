@@ -33,6 +33,7 @@ include(
     ":generator:jvmTest",
     ":store:test",
     ":store:shared",
+    ":store:indexeddb",
     ":store:memory",
     ":store:remote",
     ":store:rocksdb",

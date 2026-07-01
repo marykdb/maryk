@@ -12,6 +12,7 @@ import maryk.test.requests.scanOrdersRequest
 import maryk.test.requests.scanRequest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class ScanRequestTest {
@@ -37,6 +38,7 @@ class ScanRequestTest {
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(scanRequest, ScanRequest, { this.context })
         checkProtoBufConversion(scanMaxRequest, ScanRequest, { this.context })
+        checkProtoBufConversion(scanRequest.copy(allowTableScan = true), ScanRequest, { this.context })
     }
 
     @Test
@@ -44,6 +46,9 @@ class ScanRequestTest {
         checkJsonConversion(scanRequest, ScanRequest, { this.context })
         checkJsonConversion(scanMaxRequest, ScanRequest, { this.context })
         checkJsonConversion(scanOrdersRequest, ScanRequest, { this.context })
+        assertTrue(
+            checkJsonConversion(scanRequest.copy(allowTableScan = true), ScanRequest, { this.context }).contains("allowTableScan")
+        )
     }
 
     @Test
@@ -54,6 +59,7 @@ class ScanRequestTest {
             filterSoftDeleted: true
             limit: 100
             includeStart: true
+            allowTableScan: false
 
             """.trimIndent()
         ) {
@@ -75,6 +81,7 @@ class ScanRequestTest {
             order: value
             limit: 200
             includeStart: false
+            allowTableScan: false
 
             """.trimIndent()
         ) {
@@ -93,10 +100,15 @@ class ScanRequestTest {
             - !Desc value
             limit: 100
             includeStart: true
+            allowTableScan: false
 
             """.trimIndent()
         ) {
             checkYamlConversion(scanOrdersRequest, ScanRequest, { this.context })
         }
+
+        assertTrue(
+            checkYamlConversion(scanRequest.copy(allowTableScan = true), ScanRequest, { this.context }).contains("allowTableScan: true")
+        )
     }
 }

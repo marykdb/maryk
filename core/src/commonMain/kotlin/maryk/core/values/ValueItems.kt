@@ -124,9 +124,17 @@ value class MutableValueItems(
         when {
             index < 0 -> {
                 val newValue = mutableValueCreator(originalValue)
-                list.add(-index - 1, ValueItem(referenceIndex, valueChanger(originalValue, newValue) ?: newValue!!))
+                when (val changedValue = valueChanger(originalValue, newValue)) {
+                    Unit -> list.add(-index - 1, ValueItem(referenceIndex, Unit))
+                    null -> newValue?.let { list.add(-index - 1, ValueItem(referenceIndex, it)) }
+                    else -> list.add(-index - 1, ValueItem(referenceIndex, changedValue))
+                }
             }
-            else -> valueChanger(originalValue, list[index].value)?.let { list[index] = ValueItem(referenceIndex, it) }
+            else -> when (val changedValue = valueChanger(originalValue, list[index].value)) {
+                Unit -> list.removeAt(index)
+                null -> Unit
+                else -> list[index] = ValueItem(referenceIndex, changedValue)
+            }
         }
     }
 
@@ -153,12 +161,22 @@ value class MutableValueItems(
     override fun toString() = list.joinToString(separator = ", ", prefix = "{", postfix = "}")
 }
 
-private fun mutableValueCreator(valueToChange: Any?): Any? = when (valueToChange) {
+private fun mutableValueCreator(valueToChange: Any?, preserveValues: Boolean = false): Any? = when (valueToChange) {
     null -> null
-    is List<*> -> valueToChange.toMutableList()
-    is Set<*> -> valueToChange.toMutableSet()
-    is Map<*, *> -> valueToChange.toMutableMap()
-    is Values<*> -> Values(valueToChange.dataModel, MutableValueItems(), valueToChange.context)
-    is TypedValue<*, *> -> MutableTypedValue(valueToChange.type, mutableValueCreator(valueToChange.value) as Any)
+    is List<*> -> valueToChange.mapTo(ArrayList(valueToChange.size)) {
+        mutableValueCreator(it, preserveValues = true) ?: it
+    }
+    is Set<*> -> valueToChange.mapTo(LinkedHashSet(valueToChange.size)) {
+        mutableValueCreator(it, preserveValues = true) ?: it
+    }
+    is Map<*, *> -> valueToChange.entries.associateTo(LinkedHashMap(valueToChange.size)) { (key, value) ->
+        key to (mutableValueCreator(value, preserveValues = true) ?: value)
+    }
+    is Values<*> -> if (preserveValues) {
+        Values(valueToChange.dataModel, valueToChange.values.copyAdding(emptyList()), valueToChange.context)
+    } else {
+        Values(valueToChange.dataModel, MutableValueItems(), valueToChange.context)
+    }
+    is TypedValue<*, *> -> MutableTypedValue(valueToChange.type, mutableValueCreator(valueToChange.value, preserveValues = true) as Any)
     else -> valueToChange
 }

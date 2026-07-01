@@ -45,6 +45,10 @@ data class Values<DM : IsValuesDataModel> internal constructor(
     fun copy(values: IsValueItems) =
         Values(dataModel, values.copyAdding(values), context)
 
+    /** Copy values and add or replace one raw root value item for datastore materialization. */
+    fun copyWithValue(index: UInt, value: Any) =
+        Values(dataModel, values.copyAdding(listOf(ValueItem(index, value))), context)
+
     fun filterWithSelect(select: IsPropRefGraph<*>?): Values<DM> {
         if (select == null) {
             return this

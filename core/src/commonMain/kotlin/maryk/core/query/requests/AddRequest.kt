@@ -7,6 +7,7 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.QueryModel
 import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefinition
+import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
@@ -56,11 +57,22 @@ data class AddRequest<DM : IsRootDataModel> internal constructor(
                 }
             )
         )
+        val keysForObjects by list(
+            index = 3u,
+            getter = AddRequest<*>::keysForObjects,
+            maxSize = MAX_REQUEST_BATCH_SIZE,
+            valueDefinition = ContextualReferenceDefinition<RequestContext>(
+                contextualResolver = {
+                    it?.dataModel as? IsRootDataModel ?: throw ContextNotFoundException()
+                }
+            )
+        )
 
         override fun invoke(values: ObjectValues<AddRequest<*>, Companion>) =
             AddRequest(
                 dataModel = values(1u),
-                objects = values(2u)
+                objects = values(2u),
+                keysForObjects = values(3u)
             )
     }
 }

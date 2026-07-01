@@ -11,12 +11,21 @@ import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.addRequest
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class AddRequestTest {
     private val context = RequestContext(mapOf(
         SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
     ))
+    private val keyedAddRequest = AddRequest(
+        dataModel = SimpleMarykModel,
+        objects = addRequest.objects,
+        keysForObjects = listOf(
+            SimpleMarykModel.key(ByteArray(SimpleMarykModel.Meta.keyByteSize) { it.toByte() }),
+            SimpleMarykModel.key(ByteArray(SimpleMarykModel.Meta.keyByteSize) { (it + 1).toByte() })
+        )
+    )
 
     @Test
     fun rejectTooManyObjects() {
@@ -42,11 +51,15 @@ class AddRequestTest {
     @Test
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(addRequest, AddRequest, { this.context })
+        checkProtoBufConversion(keyedAddRequest, AddRequest, { this.context })
     }
 
     @Test
     fun convertToJSONAndBack() {
         checkJsonConversion(addRequest, AddRequest, { this.context })
+        assertTrue(
+            checkJsonConversion(keyedAddRequest, AddRequest, { this.context }).contains("keysForObjects")
+        )
     }
 
     @Test
@@ -62,5 +75,9 @@ class AddRequestTest {
         ) {
             checkYamlConversion(addRequest, AddRequest, { this.context })
         }
+
+        assertTrue(
+            checkYamlConversion(keyedAddRequest, AddRequest, { this.context }).contains("keysForObjects:")
+        )
     }
 }

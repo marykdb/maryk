@@ -22,6 +22,7 @@ Start with the [website](https://marykdb.github.io/maryk/) for the best reading 
 Maryk is Kotlin Multiplatform. Platform support depends on the module:
 
 - Core modeling, validation, querying, JSON/YAML serialization, generator support, Memory Store, shared store logic, test models, and test helpers target JVM, Android, JS, WasmJS, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
+- IndexedDB Store targets JS browser and WasmJS browser for persistent browser storage.
 - File IO targets JVM, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native.
 - RocksDB Store targets JVM, Android, Linux, Windows, iOS, macOS, watchOS, tvOS, and Android Native through the `rocksdb-multiplatform` bindings.
 - FoundationDB Store targets JVM, Linux, and macOS where the FoundationDB client library (`libfdb_c`) is available.
@@ -74,6 +75,7 @@ For a complete model → store → query flow, read [Getting Started](website/sr
 ## Storage Engines
 
 - [Memory](store/memory/README.md): in-memory, non-persistent, best for tests and fast local feedback.
+- [IndexedDB](store/indexeddb/README.md): persistent browser storage for JS and WasmJS apps.
 - [RocksDB](store/rocksdb/README.md): embedded persistent storage for desktop, mobile, and single-node server use.
 - [FoundationDB](store/foundationdb/README.md): distributed transactional storage on supported platforms with `libfdb_c`.
 - [Remote Store](store/remote/README.md): expose a local Maryk store over HTTP and optionally SSH-tunnel it.
@@ -94,6 +96,7 @@ See [store/README.md](store/README.md) for the decision guide.
 - **Stores**:
   - [Shared](store/shared/README.md) – Shared logic for building stores.
   - [Memory](store/memory/README.md) – In-memory store (non-persistent).
+  - [IndexedDB](store/indexeddb/README.md) – Persistent browser store for JS and WasmJS.
   - [RocksDB](store/rocksdb/README.md) – Persistent, high-performance store.
   - [FoundationDB](store/foundationdb/README.md) – Persistent, scalable transactional store (multiplatform where `libfdb_c` is available).
   - [Remote](store/remote/README.md) – HTTP/SSH gateway and client for remote access.

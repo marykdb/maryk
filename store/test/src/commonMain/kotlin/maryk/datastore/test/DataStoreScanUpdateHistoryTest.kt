@@ -1,5 +1,6 @@
 package maryk.datastore.test
 
+import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -14,7 +15,9 @@ import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.TestMarykModel
 import kotlin.test.assertEquals
@@ -30,7 +33,8 @@ class DataStoreScanUpdateHistoryTest(
     override val allTests = mapOf(
         "executeScanUpdateHistoryFailsWithoutIndex" to ::executeScanUpdateHistoryFailsWithoutIndex,
         "executeScanUpdateHistoryReturnsVersionOrderedEntries" to ::executeScanUpdateHistoryReturnsVersionOrderedEntries,
-        "executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion" to ::executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion
+        "executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion" to ::executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion,
+        "executeScanUpdateHistoryCanIncludeHardDelete" to ::executeScanUpdateHistoryCanIncludeHardDelete
     )
 
     override suspend fun initData() {
@@ -125,5 +129,39 @@ class DataStoreScanUpdateHistoryTest(
         assertEquals(deleteVersion, update.version)
         assertEquals(testKeys[1], update.key)
         assertEquals(listOf(ObjectSoftDeleteChange(true)), update.changes)
+    }
+
+    private suspend fun executeScanUpdateHistoryCanIncludeHardDelete() {
+        if (!(dataStore.keepAllVersions && dataStore.keepUpdateHistoryIndex)) return
+
+        val addStatus = assertStatusIs<AddSuccess<TestMarykModel>>(
+            dataStore.execute(TestMarykModel.add(
+                TestMarykModel.create {
+                    string with "ha history hard delete"
+                    int with 6
+                    uint with 999u
+                    bool with true
+                    double with 6.6
+                    dateTime with LocalDateTime(2024, 1, 1, 0, 0)
+                }
+            )).statuses.first()
+        )
+        val deleteVersion = assertStatusIs<DeleteSuccess<*>>(
+            dataStore.execute(TestMarykModel.delete(addStatus.key, hardDelete = true)).statuses.first()
+        ).version
+
+        val response = dataStore.execute(
+            TestMarykModel.scanUpdateHistory(
+                fromVersion = deleteVersion,
+                toVersion = deleteVersion,
+                limit = 1u,
+            )
+        )
+
+        assertIs<FetchByUpdateHistoryIndex>(response.dataFetchType)
+        val update = assertIs<RemovalUpdate<TestMarykModel>>(response.updates.single())
+        assertEquals(deleteVersion, update.version)
+        assertEquals(addStatus.key, update.key)
+        assertEquals(HardDelete, update.reason)
     }
 }

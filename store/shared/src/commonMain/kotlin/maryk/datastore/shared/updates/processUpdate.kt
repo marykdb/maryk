@@ -246,8 +246,7 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
     ) {
         val nextValue = dataStore.requestNextValues(
             updateListener.request,
-            updateListener.matchingKeys.value,
-            updateListener.usesUpdateHistoryIndex
+            updateListener.matchingKeys.value
         )
         nextValue?.also { additionUpdate ->
             // Always at the end so no need to order
@@ -278,12 +277,9 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
 /** Requests next values object after last key in [currentKeys] */
 private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
     request: IsScanRequest<DM, *>,
-    currentKeys: List<Key<DM>>,
-    useUpdateHistoryIndex: Boolean
+    currentKeys: List<Key<DM>>
 ): AdditionUpdate<DM>? {
-    if (useUpdateHistoryIndex) {
-        val updatesRequest = request as? ScanUpdatesRequest<DM>
-            ?: error("Update history refill requires ScanUpdatesRequest")
+    if (request is ScanUpdatesRequest<DM>) {
         val nextResults = execute(
             request.dataModel.scanUpdates(
                 startKey = request.startKey,
@@ -292,8 +288,9 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
                 filterSoftDeleted = request.filterSoftDeleted,
                 limit = request.limit,
                 includeStart = request.includeStart,
-                fromVersion = updatesRequest.fromVersion,
-                maxVersions = updatesRequest.maxVersions,
+                order = request.order,
+                fromVersion = request.fromVersion,
+                maxVersions = request.maxVersions,
                 orderedKeys = currentKeys
             )
         )

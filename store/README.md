@@ -4,11 +4,12 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 
 - Common logic lives in `store/shared` and powers every engine.
 - All engines support Maryk’s versioned data model, indexes, uniques, and the standard request types (Add/Change/Delete/Get/Scan/GetChanges/ScanChanges/Updates).
-- Memory, RocksDB, and FoundationDB can optionally maintain an engine-level update history index via `keepUpdateHistoryIndex` to speed up newest-first `scanUpdates(order = null)`.
+- Memory, IndexedDB, RocksDB, and FoundationDB can optionally maintain an engine-level update history index via `keepUpdateHistoryIndex` to speed up newest-first history scans where supported.
 
 ## Selecting an Engine
 
 - Need the fastest feedback loop or CI determinism? Use Memory.
+- Need durable browser-local storage for JS/WasmJS apps? Use IndexedDB.
 - Want durable, embedded storage across desktop/mobile/server without running a service? Use RocksDB.
 - Need ACID transactions and scale‑out (JVM or native with `libfdb_c` present)? Use FoundationDB.
 - Need remote access to a local store over HTTP or SSH? Use Remote Store.
@@ -36,6 +37,14 @@ Use the Maryk CLI or the Maryk App to connect to a store, scan records, and edit
 - Why it’s a great fit: Maryk stores each model in multiple column families (keys/table/index/unique and historic variants when `keepAllVersions` is enabled). RocksDB’s ordered iteration and prefix/range reads map directly to Maryk’s layout, making latest and historic queries efficient without extra services.
 - Typical use cases: Local‑first/embedded apps, desktop/mobile deployments, single‑node servers, moderate‑to‑large datasets without a separate database process.
 - Learn more: `store/rocksdb/README.md` and `store/rocksdb/documentation/storage.md`.
+
+### IndexedDB
+
+- Type: Browser-native, persistent ordered key/value storage.
+- Strengths: Runs in JS and WasmJS browser targets; supports real IndexedDB gets, batched writes, cursor scans, indexes, unique rows, history snapshots, update-history rows, fuzzy qualifier filters, sub-reference filters, model metadata migration/backfill, and WebCrypto/provider-backed sensitive field encryption.
+- Why it’s a great fit: Maryk’s ordered byte layouts map to IndexedDB array keys and cursor ranges, giving browser apps the same request API without falling back to an in-memory store.
+- Typical use cases: Local-first browser apps, offline-capable web clients, WasmJS apps that need Maryk queries over durable browser data.
+- Learn more: `store/indexeddb/README.md`.
 
 ### FoundationDB
 

@@ -98,7 +98,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: final-build-report-${{ runner.os }}-${{ runner.arch }}
-          path: build/reports/**
+          path: |
+            **/build/reports/**
+            **/build/test-results/**
           if-no-files-found: ignore
           compression-level: 9
 

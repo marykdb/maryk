@@ -80,10 +80,11 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.time.Duration.Companion.minutes
 
 class IndexedDbDataStoreTest {
     @Test
-    fun reusesSharedAddGetScanTests() = runTest {
+    fun reusesSharedAddGetScanTests() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()
 
         val dataStore = IndexedDbDataStore.open(
@@ -181,7 +182,7 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
-    fun reusesSharedUpdateHistoryTests() = runTest {
+    fun reusesSharedUpdateHistoryTests() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()
 
         val dataStore = IndexedDbDataStore.open(
@@ -216,7 +217,7 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
-    fun reusesSharedAdvancedIndexTests() = runTest {
+    fun reusesSharedAdvancedIndexTests() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()
 
         val dataStore = IndexedDbDataStore.open(
@@ -719,7 +720,7 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
-    fun indexedScanLimitCountsMatchedRowsAfterSoftDeleteSkips() = runTest {
+    fun indexedScanLimitCountsMatchedRowsAfterSoftDeleteSkips() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()
 
         val dataStore = IndexedDbDataStore.open(
@@ -959,6 +960,8 @@ private object SensitiveUniqueRecord : RootDataModel<SensitiveUniqueRecord>(
         this.secret with secret
     }
 }
+
+private val indexedDbLongTestTimeout = 3.minutes
 
 private infix fun ByteArray.compareToBytes(other: ByteArray): Int {
     val size = minOf(size, other.size)

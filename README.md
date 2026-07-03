@@ -90,7 +90,6 @@ See [store/README.md](store/README.md) for the decision guide.
 - [JSON](json/README.md) & [YAML](yaml/README.md) – Streaming parsers and writers.
 - [Generator](generator/README.md) – Code generation from YAML and JSON models.
 - [Test Library](testlib/README.md) – Testing utilities and helpers.
-- [DataFrame Integration](dataframe/README.md) – DataFrame helper functions for Maryk objects.
 - [CLI](cli/README.md) – Interactive terminal client for browsing and editing stores.
 - [App](app/README.md) – Desktop UI for browsing and editing stores.
 - **Stores**:

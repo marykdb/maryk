@@ -27,7 +27,6 @@ include(
     ":yaml",
     ":core",
     ":file",
-    ":dataframe",
     ":testmodels",
     ":generator",
     ":generator:jvmTest",

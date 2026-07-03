@@ -11,7 +11,14 @@ plugins {
 @OptIn(ExperimentalWasmDsl::class)
 kotlin {
     js {
-        browser()
+        browser {
+            testTask {
+                useKarma {
+                    useConfigDirectory(rootProject.file("karma.config.d"))
+                    useChromeHeadless()
+                }
+            }
+        }
         nodejs {
             testTask {
                 useMocha {
@@ -21,7 +28,14 @@ kotlin {
         }
     }
     wasmJs {
-        browser()
+        browser {
+            testTask {
+                useKarma {
+                    useConfigDirectory(rootProject.file("karma.config.d"))
+                    useChromeHeadless()
+                }
+            }
+        }
         nodejs()
         binaries.library()
     }

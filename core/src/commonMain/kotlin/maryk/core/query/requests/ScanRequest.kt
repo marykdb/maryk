@@ -11,7 +11,6 @@ import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
-import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.orders.IsOrder
 import maryk.core.query.requests.RequestType.Scan
@@ -93,12 +92,7 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
         val order by addOrder(ScanRequest<*>::order)
         val limit by number(9u, ScanRequest<*>::limit, type = UInt32, minValue = 1u, maxValue = MAX_SCAN_LIMIT, default = 100u)
         val includeStart by boolean(10u, ScanRequest<*>::includeStart, default = true)
-        val allowTableScan by boolean<Boolean, ScanRequest<*>, RequestContext>(
-            index = 11u,
-            getter = { it.allowTableScan },
-            default = false,
-            shouldSerialize = { value: Any -> value == true }
-        )
+        val allowTableScan by boolean(11u, ScanRequest<*>::allowTableScan, default = false)
 
         override fun invoke(values: ObjectValues<ScanRequest<*>, Companion>) = ScanRequest(
             dataModel = values(1u),

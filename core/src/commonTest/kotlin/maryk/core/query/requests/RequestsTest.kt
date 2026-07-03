@@ -111,6 +111,7 @@ class RequestsTest {
               filterSoftDeleted: true
               limit: 100
               includeStart: true
+              allowTableScan: false
             - !ScanChanges
               from: SimpleMarykModel
               filterSoftDeleted: true

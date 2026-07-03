@@ -11,7 +11,7 @@ The short version:
 2. Embed small data that shares the parent lifecycle.
 3. Split large or independently edited data into separate roots.
 4. Pick keys for the primary local access path.
-5. Use Memory Store in tests, then RocksDB for durable embedded data.
+5. Use Memory Store in tests, then IndexedDB for browser-local data or RocksDB for durable embedded data.
 6. Use the App or CLI to inspect real records early.
 
 ## Start with roots
@@ -136,6 +136,26 @@ InMemoryDataStore.open(
 
 Keep model IDs stable before moving to a persistent store. ID `0u` is reserved.
 
+## Persist in browsers with IndexedDB
+
+Use IndexedDB for durable local storage in JS and WasmJS browser apps:
+
+```kotlin
+IndexedDbDataStore.open(
+    databaseName = "maryk-local-app",
+    keepAllVersions = true,
+    keepUpdateHistoryIndex = true,
+    dataModelsById = mapOf(
+        1u to Project,
+        2u to Task,
+    )
+).use {
+    // Same execute(...) calls as Memory Store.
+}
+```
+
+The IndexedDB store uses the browser's native IndexedDB database, key ranges, transactions, and cursor scans. It is the browser-local persistence path for web clients.
+
 ## Persist with RocksDB
 
 Use RocksDB for local-first durable storage:
@@ -154,7 +174,7 @@ RocksDBDataStore.open(
 }
 ```
 
-The request code stays the same across Memory and RocksDB.
+The request code stays the same across Memory, IndexedDB, and RocksDB.
 
 ## Inspect early
 

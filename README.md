@@ -10,7 +10,7 @@ Use Maryk when you want:
 - One schema shared by clients, servers, tools, and tests.
 - Stable binary-compatible property indexes instead of reflection-heavy runtime mapping.
 - Version-aware storage: historic reads, change queries, update streams, and efficient sync.
-- One request API across in-memory, embedded RocksDB, distributed FoundationDB, and remote stores.
+- One request API across in-memory, browser IndexedDB, embedded RocksDB, distributed FoundationDB, and remote stores.
 - Portable JSON, YAML, and ProtoBuf serialization built from the same model definitions.
 
 Maryk is a good fit for local-first apps, cross-platform products, Kotlin-heavy backends, tools that need typed data files, and systems where schema evolution and incremental sync matter.

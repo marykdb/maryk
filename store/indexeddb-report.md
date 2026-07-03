@@ -392,21 +392,6 @@ Production-readiness follow-up:
 - JS value writes now use `Int8Array` values to reduce boxing. IndexedDB keys intentionally stay numeric array keys because that preserves Maryk bytewise ordering with IndexedDB array-key comparison.
 - Paged scan logic and metadata writes have been split out of the main datastore file, but more processor-level decomposition would still improve long-term maintainability.
 
-Real-browser demo validation:
-
-- Ran `indexeddb-demo` at `http://localhost:8088/` against real browser IndexedDB.
-- Seeded 10000 `Person` rows in 5679ms.
-- Table scan read 10003 rows in 143ms.
-- Ascending compound index scan read 10003 rows in 754ms.
-- Descending compound index scan read 25 rows in 7ms.
-- Equals filter on indexed surname returned 100 rows in 9ms.
-- Prefix table scan over firstName returned 1000 rows in 124ms.
-- Greater-than indexed scan returned 403 rows in 40ms.
-- Start-key pagination read page2=100 rows in 3ms.
-- Key-ordered `scanChanges` read 1000 rows in 240ms.
-- Update-history scan read 1000 rows in 204ms.
-- Reopen check passed; persisted row was still present.
-
 Remaining production constraints:
 
 - Request mutation scopes are cross-tab serialized only when Web Locks are available. Without Web Locks, they are serialized across store instances in the same JS context, but not across separate tabs/workers.

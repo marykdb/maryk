@@ -14,7 +14,7 @@ Maryk ships with multiple storage engines that implement the same datastore API.
 - Need ACID transactions and scale‑out (JVM or native with `libfdb_c` present)? Use FoundationDB.
 - Need remote access to a local store over HTTP or SSH? Use Remote Store.
 
-All engines share the same API surface, so you can start with Memory or RocksDB locally and move to FoundationDB on the server without changing your models or queries.
+All engines share the same API surface, so you can start with Memory in tests, use IndexedDB in browser apps, use RocksDB for embedded persistence, and move to FoundationDB on the server without changing your models or queries.
 
 Below is a practical overview of each engine, why it was chosen, and when to use it.
 

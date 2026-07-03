@@ -13,7 +13,7 @@ Choose Maryk when your data model is important enough to be the source of truth.
 
 3. **Smaller, focused payloads**: Fetch only the fields you need with reference graphs (field selection). Compose filters and aggregations to move less data over the wire.
 
-4. **Storage freedom without rewrites**: Start with the in‑memory store for tests. Embed RocksDB for apps and single‑node servers. Move to FoundationDB for ACID and scale. Same query API across engines via a shared store layer.
+4. **Storage freedom without rewrites**: Start with the in‑memory store for tests. Use IndexedDB for durable browser-local JS/WasmJS apps. Embed RocksDB for apps and single-node servers. Move to FoundationDB for ACID and scale. Same query API across engines via a shared store layer.
 
 5. **Safer evolution**: Stable property indexes let old readers skip new fields and new readers handle missing old fields. Persistent stores add migration hooks when physical layout changes.
 

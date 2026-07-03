@@ -11,7 +11,7 @@ scan behavior, and versioning consistency.
 
 ## What it protects
 
-- Shared request semantics across Memory, RocksDB and FoundationDB.
+- Shared request semantics across Memory, IndexedDB, RocksDB and FoundationDB.
 - Key, index and unique handling.
 - Current and historic reads.
 - Change and update responses.

@@ -36,7 +36,7 @@ jobs:
     name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.os }}
     env:
-      FDB_VERSION: '7.3.73'
+      FDB_VERSION: '7.3.75'
 
     steps:
       - uses: actions/checkout@v5

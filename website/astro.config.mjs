@@ -120,6 +120,17 @@ export default defineConfig({
                             ],
                         },
                         {
+                            label: 'IndexedDB',
+                            collapsed: true,
+                            items: [
+                                {label: 'Overview', slug: 'stores/indexeddb'},
+                                {label: 'Architecture', slug: 'stores/indexeddb/architecture'},
+                                {label: 'Storage Layout', slug: 'stores/indexeddb/storage'},
+                                {label: 'Operations', slug: 'stores/indexeddb/operations'},
+                                {label: 'Migrations & Encryption', slug: 'stores/indexeddb/migrations-encryption-testing'},
+                            ],
+                        },
+                        {
                             label: 'RocksDB',
                             collapsed: true,
                             items: [

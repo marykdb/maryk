@@ -1,6 +1,7 @@
 // @ts-check
 import {defineConfig, passthroughImageService} from 'astro/config';
 import starlight from '@astrojs/starlight';
+import remarkGfm from 'remark-gfm';
 import {fileURLToPath} from 'node:url';
 import {resolve} from 'node:path';
 
@@ -10,6 +11,9 @@ export default defineConfig({
     base: '/maryk/',
     image: {
         service: passthroughImageService(),
+    },
+    markdown: {
+        remarkPlugins: [remarkGfm],
     },
     vite: {
         resolve: {
@@ -126,8 +130,6 @@ export default defineConfig({
                                 {label: 'Overview', slug: 'stores/indexeddb'},
                                 {label: 'Architecture', slug: 'stores/indexeddb/architecture'},
                                 {label: 'Storage Layout', slug: 'stores/indexeddb/storage'},
-                                {label: 'Operations', slug: 'stores/indexeddb/operations'},
-                                {label: 'Migrations & Encryption', slug: 'stores/indexeddb/migrations-encryption-testing'},
                             ],
                         },
                         {

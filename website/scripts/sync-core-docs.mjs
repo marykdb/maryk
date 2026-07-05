@@ -58,8 +58,6 @@ const map = [
   ['src/content/docs/stores/indexeddb.mdx', '../store/indexeddb/README.md'],
   ['src/content/docs/stores/indexeddb/architecture.mdx', '../store/indexeddb/docs/architecture.md'],
   ['src/content/docs/stores/indexeddb/storage.mdx', '../store/indexeddb/docs/storage.md'],
-  ['src/content/docs/stores/indexeddb/operations.mdx', '../store/indexeddb/docs/operations.md'],
-  ['src/content/docs/stores/indexeddb/migrations-encryption-testing.mdx', '../store/indexeddb/docs/migrations-encryption-testing.md'],
   ['src/content/docs/stores/rocksdb.mdx', '../store/rocksdb/README.md'],
   ['src/content/docs/stores/rocksdb/architecture.mdx', '../store/rocksdb/documentation/architecture.md'],
   ['src/content/docs/stores/rocksdb/migrations.mdx', '../store/rocksdb/documentation/migrations.md'],
@@ -136,8 +134,6 @@ const map = [
     ['(./docs/local-testing.md)', withPrefix('stores/foundationdb/local-testing/')],
     ['(docs/architecture.md)', withPrefix('stores/indexeddb/architecture/')],
     ['(docs/storage.md)', withPrefix('stores/indexeddb/storage/')],
-    ['(docs/operations.md)', withPrefix('stores/indexeddb/operations/')],
-    ['(docs/migrations-encryption-testing.md)', withPrefix('stores/indexeddb/migrations-encryption-testing/')],
     ['(documentation/storage.md)', withPrefix('stores/rocksdb/storage/')],
     ['(documentation/architecture.md)', withPrefix('stores/rocksdb/architecture/')],
     ['(documentation/migrations.md)', withPrefix('stores/rocksdb/migrations/')],
@@ -181,6 +177,16 @@ const map = [
     return `(${path}/${safeAnchor})`;
   });
   return out;
+}
+
+const removedTargets = [
+  'src/content/docs/stores/indexeddb/operations.mdx',
+  'src/content/docs/stores/indexeddb/migrations-encryption-testing.mdx',
+];
+
+for (const targetRel of removedTargets) {
+  const target = resolve(siteRoot, targetRel);
+  if (existsSync(target)) unlinkSync(target);
 }
 
 for (const [targetRel, srcRel] of map) {

@@ -28,8 +28,6 @@ Enable history only when the app needs `toVersion`, `getChanges`, `scanChanges`,
 
 - [Architecture](docs/architecture.md)
 - [Storage layout](docs/storage.md)
-- [Operations and query support](docs/operations.md)
-- [Migrations, encryption, and testing](docs/migrations-encryption-testing.md)
 
 ## Main Capabilities
 

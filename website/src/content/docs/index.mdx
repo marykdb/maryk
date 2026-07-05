@@ -24,9 +24,9 @@ import { Card, CardGrid } from '@astrojs/starlight/components';
 
 ## Build Typed Data Once
 
-Maryk is a Kotlin Multiplatform data toolkit. The same model definition drives validation, JSON/YAML/ProtoBuf serialization, request building, storage, history, live updates, the CLI, and the desktop App.
+Maryk is a Kotlin Multiplatform data toolkit for teams that want one durable data contract across clients, servers, tools, and tests.
 
-Use it when stable data contracts matter more than ad-hoc runtime shape. It gives Kotlin teams a single source of truth for operational data across clients, servers, tools, and tests.
+Define the model in Kotlin. Reuse it for validation, serialization, storage, history, tooling, and sync.
 
 ## Highlights
 
@@ -40,8 +40,8 @@ Use it when stable data contracts matter more than ad-hoc runtime shape. It give
 	<Card title="Portable Serialization" icon="seti:json">
 		Streaming YAML/JSON and compact ProtoBuf with consistent encoders/decoders across platforms.
 	</Card>
-	<Card title="Unified Queries" icon="seti:plan">
-		One request API on every engine: filters, reference graphs (field selection), ordering, limits, aggregations.
+	<Card title="Typed Store API" icon="seti:plan">
+		Run the same typed requests against local, embedded, distributed, or remote stores.
 	</Card>
 	<Card title="Pluggable Stores" icon="seti:db">
 		Start in‑memory for tests, use IndexedDB in browsers, embed RocksDB for apps, or run FoundationDB for ACID and scale — same API.
@@ -50,7 +50,7 @@ Use it when stable data contracts matter more than ad-hoc runtime shape. It give
 		Run on JVM, Android, iOS, macOS, Linux, Windows, and JS — share your model and logic.
 	</Card>
 	<Card title="Desktop App" icon="laptop">
-		Browse models, scan records, and edit data in the [Maryk App](app/).
+		Inspect models and edit records in the [Maryk App](app/).
 	</Card>
 </CardGrid>
 
@@ -82,21 +82,10 @@ Person.validate(jane)
 val json = Person.Serializer.writeJson(jane, pretty = true)
 ```
 
-## Learn more
+## Reading path
 
 Start with [Getting Started](getting-started/), then run the complete [First Store Tutorial](tutorials/first-store/).
 
-When you’re ready to dig in:
+Use the sidebar for the reference docs: data modeling, querying, serialization, stores, CLI, and App.
 
-- [What is Maryk?](what/) and [Tradeoffs](tradeoffs/) for fit and positioning
-- [In Practice](in-practice/) for CLI, App, and workflow examples
-- [Guides](guides/) for local-first modeling, sync keys, searchable catalogs, schema changes, and remote inspection
-- [Data Models](data-modeling/datamodels/) and [Properties](data-modeling/properties/) (types, operations, references)
-- [Querying](querying/) with filters, [reference graphs](querying/reference-graphs/), ordering, and [aggregations](querying/aggregations/)
-- [Serialization](serialization/) (YAML/JSON/ProtoBuf)
-- [Versioning](data-modeling/versioning/) for historic views and change/update streams
-- [App](app/) for a desktop browser and editor
-- [CLI](cli/) for interactive browsing and editing of stores
-
-Picking storage? See [Stores](stores/) for the overview, or jump straight to
-[In‑Memory](stores/memory/), [IndexedDB](stores/indexeddb/), [RocksDB](stores/rocksdb/), [FoundationDB](stores/foundationdb/), or [Remote](stores/remote/).
+Picking storage? See [Stores](stores/) for the overview, or jump straight to [In‑Memory](stores/memory/), [IndexedDB](stores/indexeddb/), [RocksDB](stores/rocksdb/), [FoundationDB](stores/foundationdb/), or [Remote](stores/remote/).

@@ -6,6 +6,8 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsChangeableValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.exceptions.PropertyConversionDirection
+import maryk.core.properties.exceptions.PropertyConversionException
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.CanHaveComplexChildReference
@@ -41,6 +43,26 @@ data class MapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyConte
             this as MapDefinitionWrapper<K, V, Any, CX, *>,
             parentRef as CanHaveComplexChildReference<*, *, *, *>?
         )
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun getPropertyAndSerialize(dataObject: DO, context: CX?): Map<K, V>? {
+        val value = getter(dataObject)
+        val converter = toSerializable
+        return try {
+            if (converter != null) {
+                converter.invoke(value, context)
+            } else {
+                value as? Map<K, V>
+            }
+        } catch (error: ClassCastException) {
+            throw PropertyConversionException(
+                propertyName = name,
+                direction = PropertyConversionDirection.TO_SERIALIZABLE,
+                inputType = value?.let { it::class.simpleName }.orEmpty().ifEmpty { "unknown" },
+                cause = error,
+            )
+        }
     }
 
     // For delegation in definition

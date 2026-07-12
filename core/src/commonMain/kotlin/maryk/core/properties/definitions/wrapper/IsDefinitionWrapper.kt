@@ -139,10 +139,13 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
     @Suppress("UNCHECKED_CAST")
     fun getPropertyAndSerialize(dataObject: DO, context: CX?): T? {
         val value = this.getter(dataObject)
+        val converter = this.toSerializable
         return try {
-            this.toSerializable?.let {
-                it.invoke(value, context)
-            } ?: value as T?
+            if (converter != null) {
+                converter.invoke(value, context)
+            } else {
+                value as T?
+            }
         } catch (error: ClassCastException) {
             throw PropertyConversionException(
                 propertyName = name,

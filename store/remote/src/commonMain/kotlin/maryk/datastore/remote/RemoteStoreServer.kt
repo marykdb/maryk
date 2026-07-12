@@ -39,9 +39,15 @@ import maryk.datastore.shared.rethrowIfFatal
 class RemoteStoreServer(
     private val dataStore: IsDataStore,
 ) {
-    fun start(host: String, port: Int, wait: Boolean = true): RemoteStoreServerHandle {
+    fun start(
+        host: String,
+        port: Int,
+        wait: Boolean = true,
+        config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
+    ): RemoteStoreServerHandle {
+        validateRemoteStoreServerBinding(host, config)
         val engine = embeddedServer(CIO, host = host, port = port) {
-            remoteStoreModule(dataStore)
+            remoteStoreModule(dataStore, config)
         }
         engine.start(wait = wait)
         return KtorRemoteStoreServerHandle(engine)
@@ -60,11 +66,38 @@ private class KtorRemoteStoreServerHandle(
     }
 }
 
-internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
+fun validateRemoteStoreServerBinding(host: String, config: RemoteStoreServerConfig) {
+    if (host.isBlank()) {
+        throw IllegalArgumentException("Remote Store host cannot be blank")
+    }
+    if (config.bearerToken != null && config.bearerToken.isBlank()) {
+        throw IllegalArgumentException("Remote Store bearer token cannot be blank")
+    }
+    if (!host.isLoopbackHost() && config.bearerToken == null && !config.allowInsecureRemoteBinding) {
+        throw IllegalArgumentException(
+            "Remote Store refuses an unauthenticated non-loopback bind; configure a bearer token " +
+                "or explicitly allow insecure remote binding"
+        )
+    }
+}
+
+private fun String.isLoopbackHost(): Boolean = when (lowercase()) {
+    "localhost", "127.0.0.1", "::1", "[::1]", "0:0:0:0:0:0:0:1" -> true
+    else -> false
+}
+
+internal fun Application.remoteStoreModule(
+    dataStore: IsDataStore,
+    config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
+) {
+    if (config.bearerToken != null && config.bearerToken.isBlank()) {
+        throw IllegalArgumentException("Remote Store bearer token cannot be blank")
+    }
     val info = buildRemoteStoreInfo(dataStore)
 
     routing {
         get(RemoteStoreProtocol.infoPath) {
+            if (!call.requireAuthorization(config.bearerToken)) return@get
             call.respondValidationErrors {
                 val bytes = RemoteStoreCodec.encode(
                     RemoteStoreInfo.Serializer,
@@ -77,6 +110,7 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
         }
 
         post(RemoteStoreProtocol.executePath) {
+            if (!call.requireAuthorization(config.bearerToken)) return@post
             call.respondValidationErrors {
                 requireRequestContentType(call, RemoteStoreProtocol.contentType)
                 val requestBytes = readRequestBytes(call, "execute")
@@ -142,6 +176,7 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
         }
 
         post(RemoteStoreProtocol.flowPath) {
+            if (!call.requireAuthorization(config.bearerToken)) return@post
             call.respondValidationErrors {
                 requireRequestContentType(call, RemoteStoreProtocol.contentType)
                 val requestBytes = readRequestBytes(call, "flow")
@@ -173,6 +208,7 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
         }
 
         post(RemoteStoreProtocol.processUpdatePath) {
+            if (!call.requireAuthorization(config.bearerToken)) return@post
             call.respondValidationErrors {
                 requireRequestContentType(call, RemoteStoreProtocol.contentType)
                 val requestBytes = readRequestBytes(call, "process-update")
@@ -197,6 +233,30 @@ internal fun Application.remoteStoreModule(dataStore: IsDataStore) {
             }
         }
     }
+}
+
+private suspend fun ApplicationCall.requireAuthorization(bearerToken: String?): Boolean {
+    if (bearerToken == null) return true
+
+    val supplied = request.headers[HttpHeaders.Authorization]
+    val authorized = supplied != null && constantTimeEquals(supplied, "Bearer $bearerToken")
+    if (!authorized) {
+        respondText("Unauthorized", status = HttpStatusCode.Unauthorized)
+    }
+    return authorized
+}
+
+private fun constantTimeEquals(left: String, right: String): Boolean {
+    val leftBytes = left.encodeToByteArray()
+    val rightBytes = right.encodeToByteArray()
+    var difference = leftBytes.size xor rightBytes.size
+    val length = maxOf(leftBytes.size, rightBytes.size)
+    for (index in 0 until length) {
+        val leftByte = leftBytes.getOrElse(index) { 0 }
+        val rightByte = rightBytes.getOrElse(index) { 0 }
+        difference = difference or (leftByte.toInt() xor rightByte.toInt())
+    }
+    return difference == 0
 }
 
 private fun resolveRequest(rawRequest: Any, operation: String): IsTransportableRequest<*> = when (rawRequest) {

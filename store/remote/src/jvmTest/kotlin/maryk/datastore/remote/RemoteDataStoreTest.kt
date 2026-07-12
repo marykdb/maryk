@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
@@ -35,9 +36,12 @@ import maryk.core.query.RequestContext
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
 import maryk.core.query.responses.AddResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.UpdatesResponse
+import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.memory.InMemoryDataStore
@@ -61,10 +65,18 @@ class RemoteDataStoreTest {
         val infoBytes = RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
         RemoteStoreCodec.decode(RemoteStoreInfo.Serializer, infoBytes, DefinitionsConversionContext())
         val port = ServerSocket(0).use { it.localPort }
-        val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val engine = RemoteStoreServer(store).start(
+            "127.0.0.1",
+            port,
+            wait = false,
+            config = RemoteStoreServerConfig(bearerToken = "integration-secret"),
+        )
 
         val remote = RemoteDataStore.connect(
-            RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port")
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                bearerToken = "integration-secret",
+            )
         )
 
         try {
@@ -87,11 +99,43 @@ class RemoteDataStoreTest {
             val flowRequest = SimpleMarykModel.get(addSuccess.key)
             val initialUpdate = remote.executeFlow(flowRequest).first()
             assertTrue(initialUpdate is InitialValuesUpdate<*>)
+
+            val replicatedValues = SimpleMarykModel.create {
+                value with "replicated"
+            }
+            val processResponse: ProcessResponse<SimpleMarykModel> = remote.processUpdate(
+                UpdateResponse(
+                    dataModel = SimpleMarykModel,
+                    update = AdditionUpdate(
+                        key = SimpleMarykModel.key(ByteArray(16) { 1 }),
+                        version = 1uL,
+                        firstVersion = 1uL,
+                        insertionIndex = 0,
+                        isDeleted = false,
+                        values = replicatedValues,
+                    ),
+                )
+            )
+            assertIs<AddResponse<*>>(processResponse.result)
         } finally {
             remote.close()
             engine.stop(500, 500)
             store.close()
         }
+    }
+
+    @Test
+    fun connectRejectsBlankBearerToken() = runBlocking {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            RemoteDataStore.connect(
+                RemoteStoreConfig(
+                    baseUrl = "http://127.0.0.1:8210",
+                    bearerToken = " ",
+                )
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("bearer token cannot be blank"))
     }
 
     @Test
@@ -120,11 +164,11 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsNonHttpUrl() = runBlocking {
+    fun connectRejectsUnsupportedUrlScheme() = runBlocking {
         val exception = assertFailsWith<IllegalArgumentException> {
-            RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "https://127.0.0.1:8210"))
+            RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "ftp://127.0.0.1:8210"))
         }
-        assertEquals(exception.message?.contains("only supports http URLs"), true)
+        assertEquals(exception.message?.contains("only supports http or https URLs"), true)
     }
 
     @Test

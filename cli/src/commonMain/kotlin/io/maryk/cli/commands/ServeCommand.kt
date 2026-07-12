@@ -4,6 +4,8 @@ import io.maryk.cli.CliEnvironment
 import io.maryk.cli.DirectoryResolution
 import io.maryk.cli.StoreType
 import maryk.datastore.remote.RemoteStoreServer
+import maryk.datastore.remote.RemoteStoreServerConfig
+import maryk.datastore.remote.validateRemoteStoreServerBinding
 import maryk.file.File
 
 class ServeCommand(
@@ -19,8 +21,8 @@ class ServeCommand(
             is ServeParseResult.Error -> return CommandResult(
                 lines = listOf(
                     "Serve configuration error: ${parseResult.reason}",
-                    "Usage: serve rocksdb --dir <path> [--host <host>] [--port <port>]",
-                    "       serve foundationdb --dir <dir> [--cluster <file>] [--host <host>] [--port <port>]",
+                    "Usage: serve rocksdb --dir <path> [--host <host>] [--port <port>] [--bearer-token <token>]",
+                    "       serve foundationdb --dir <dir> [--cluster <file>] [--host <host>] [--port <port>] [--bearer-token <token>]",
                     "       serve --config <file>",
                 ),
                 isError = true,
@@ -49,11 +51,23 @@ class ServeCommand(
         val server = RemoteStoreServer(dataStore)
 
         println("Serving ${options.store.displayName()} at http://${options.host}:${options.port}")
-        println("Warning: no auth or TLS; bind to localhost or use SSH tunneling.")
+        when {
+            options.bearerToken != null -> println("Bearer authentication enabled; use TLS or SSH to protect traffic in transit.")
+            options.allowInsecureRemoteBinding -> println("Warning: explicitly allowing an unauthenticated remote bind without TLS.")
+            else -> println("Loopback-only service; use SSH tunneling for remote access.")
+        }
         println("Press Ctrl+C to stop.")
 
         return try {
-            server.start(options.host, options.port, wait = true)
+            server.start(
+                options.host,
+                options.port,
+                wait = true,
+                config = RemoteStoreServerConfig(
+                    allowInsecureRemoteBinding = options.allowInsecureRemoteBinding,
+                    bearerToken = options.bearerToken,
+                ),
+            )
             CommandResult(lines = listOf("Server stopped."))
         } finally {
             connection.close()
@@ -61,18 +75,20 @@ class ServeCommand(
     }
 }
 
-private sealed class ServeParseResult {
+internal sealed class ServeParseResult {
     data class Success(val options: ServeOptions) : ServeParseResult()
     data class Error(val reason: String) : ServeParseResult()
 }
 
-private data class ServeOptions(
+internal data class ServeOptions(
     val store: ServeStore,
     val host: String,
     val port: Int,
+    val bearerToken: String?,
+    val allowInsecureRemoteBinding: Boolean,
 )
 
-private sealed class ServeStore {
+internal sealed class ServeStore {
     data class RocksDb(val directory: String) : ServeStore()
     data class FoundationDb(val options: ConnectCommand.FoundationOptions) : ServeStore()
 
@@ -82,12 +98,14 @@ private sealed class ServeStore {
     }
 }
 
-private data class ServeConfigInput(
+internal data class ServeConfigInput(
     val storeType: StoreType? = null,
     val directory: String? = null,
     val clusterFile: String? = null,
     val host: String? = null,
     val port: Int? = null,
+    val bearerToken: String? = null,
+    val allowInsecureRemoteBinding: Boolean? = null,
 ) {
     fun merge(override: ServeConfigInput): ServeConfigInput = ServeConfigInput(
         storeType = override.storeType ?: storeType,
@@ -95,13 +113,15 @@ private data class ServeConfigInput(
         clusterFile = override.clusterFile ?: clusterFile,
         host = override.host ?: host,
         port = override.port ?: port,
+        bearerToken = override.bearerToken ?: bearerToken,
+        allowInsecureRemoteBinding = override.allowInsecureRemoteBinding ?: allowInsecureRemoteBinding,
     )
 }
 
 private const val defaultHost = "127.0.0.1"
 private const val defaultPort = 8210
 
-private fun parseServeOptions(environment: CliEnvironment, arguments: List<String>): ServeParseResult {
+internal fun parseServeOptions(environment: CliEnvironment, arguments: List<String>): ServeParseResult {
     val cliInput = when (val parsed = parseServeArguments(arguments)) {
         is CliParseResult.Error -> return ServeParseResult.Error(parsed.reason)
         is CliParseResult.Success -> parsed.input
@@ -124,6 +144,20 @@ private fun parseServeOptions(environment: CliEnvironment, arguments: List<Strin
     val host = merged.host?.ifBlank { defaultHost } ?: defaultHost
     val port = merged.port ?: defaultPort
     if (port !in 1..65535) return ServeParseResult.Error("Port must be between 1 and 65535.")
+    if (merged.bearerToken != null && merged.bearerToken.isBlank()) {
+        return ServeParseResult.Error("Bearer token cannot be blank.")
+    }
+    try {
+        validateRemoteStoreServerBinding(
+            host,
+            RemoteStoreServerConfig(
+                allowInsecureRemoteBinding = merged.allowInsecureRemoteBinding ?: false,
+                bearerToken = merged.bearerToken,
+            ),
+        )
+    } catch (error: IllegalArgumentException) {
+        return ServeParseResult.Error(error.message ?: "Invalid Remote Store binding configuration.")
+    }
 
     return when (storeType) {
         StoreType.ROCKS_DB -> when (val resolution = environment.resolveDirectory(directory)) {
@@ -133,6 +167,8 @@ private fun parseServeOptions(environment: CliEnvironment, arguments: List<Strin
                     store = ServeStore.RocksDb(resolution.normalizedPath),
                     host = host,
                     port = port,
+                    bearerToken = merged.bearerToken,
+                    allowInsecureRemoteBinding = merged.allowInsecureRemoteBinding ?: false,
                 ),
             )
         }
@@ -149,6 +185,8 @@ private fun parseServeOptions(environment: CliEnvironment, arguments: List<Strin
                     store = ServeStore.FoundationDb(options),
                     host = host,
                     port = port,
+                    bearerToken = merged.bearerToken,
+                    allowInsecureRemoteBinding = merged.allowInsecureRemoteBinding ?: false,
                 ),
             )
         }
@@ -174,6 +212,8 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
     var clusterFile: String? = null
     var host: String? = null
     var port: Int? = null
+    var bearerToken: String? = null
+    var allowInsecureRemoteBinding: Boolean? = null
 
     var index = 0
     while (index < arguments.size) {
@@ -234,6 +274,21 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
                 port = arguments[++index].toIntOrNull()
                     ?: return CliParseResult.Error("Invalid port value.")
             }
+            token.startsWith("--bearer-token=") -> {
+                if (bearerToken != null) return CliParseResult.Error("Bearer token provided multiple times.")
+                bearerToken = token.substringAfter("=")
+            }
+            token == "--bearer-token" -> {
+                if (bearerToken != null) return CliParseResult.Error("Bearer token provided multiple times.")
+                if (index + 1 >= arguments.size) return CliParseResult.Error("`--bearer-token` requires a value.")
+                bearerToken = arguments[++index]
+            }
+            token == "--allow-insecure-remote-binding" -> {
+                if (allowInsecureRemoteBinding != null) {
+                    return CliParseResult.Error("Insecure remote binding option provided multiple times.")
+                }
+                allowInsecureRemoteBinding = true
+            }
             token.startsWith("-") -> return CliParseResult.Error("Unknown option $token")
             storeType == null -> storeType = parseStoreType(token)
                 ?: return CliParseResult.Error("Unknown store type $token")
@@ -251,23 +306,28 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
                 clusterFile = clusterFile,
                 host = host,
                 port = port,
+                bearerToken = bearerToken,
+                allowInsecureRemoteBinding = allowInsecureRemoteBinding,
             ),
             configPath = configPath,
         ),
     )
 }
 
-private sealed class ConfigParseResult {
+internal sealed class ConfigParseResult {
     data class Success(val input: ServeConfigInput) : ConfigParseResult()
     data class Error(val reason: String) : ConfigParseResult()
 }
 
-private fun parseServeConfig(contents: String): ConfigParseResult {
+internal fun parseServeConfig(contents: String): ConfigParseResult {
     var storeType: StoreType? = null
     var directory: String? = null
     var clusterFile: String? = null
     var host: String? = null
     var port: Int? = null
+    var bearerToken: String? = null
+    var allowInsecureRemoteBinding: Boolean? = null
+    val seenKeys = mutableSetOf<String>()
 
     contents.lineSequence().forEachIndexed { index, line ->
         val trimmed = line.trim()
@@ -281,6 +341,18 @@ private fun parseServeConfig(contents: String): ConfigParseResult {
         val rawValue = trimmed.substring(separatorIndex + 1).trim()
         val value = rawValue.trim('"', '\'')
 
+        val canonicalKey = when (key) {
+            "store", "type" -> "store"
+            "dir", "directory", "path" -> "directory"
+            "cluster", "clusterfile" -> "cluster"
+            "bearertoken", "bearer-token" -> "bearer-token"
+            "allowinsecureremotebinding", "allow-insecure-remote-binding" -> "allow-insecure-remote-binding"
+            else -> key
+        }
+        if (!seenKeys.add(canonicalKey)) {
+            return ConfigParseResult.Error("Duplicate config key $key on line ${index + 1}")
+        }
+
         when (key) {
             "store", "type" -> storeType = parseStoreType(value)
                 ?: return ConfigParseResult.Error("Unknown store type on line ${index + 1}")
@@ -288,6 +360,11 @@ private fun parseServeConfig(contents: String): ConfigParseResult {
             "cluster", "clusterfile" -> clusterFile = value
             "host" -> host = value
             "port" -> port = value.toIntOrNull() ?: return ConfigParseResult.Error("Invalid port on line ${index + 1}")
+            "bearertoken", "bearer-token" -> bearerToken = value
+            "allowinsecureremotebinding", "allow-insecure-remote-binding" -> {
+                allowInsecureRemoteBinding = value.toBooleanStrictOrNull()
+                    ?: return ConfigParseResult.Error("Invalid boolean on line ${index + 1}")
+            }
             else -> return ConfigParseResult.Error("Unknown config key $key on line ${index + 1}")
         }
     }
@@ -299,6 +376,8 @@ private fun parseServeConfig(contents: String): ConfigParseResult {
             clusterFile = clusterFile,
             host = host,
             port = port,
+            bearerToken = bearerToken,
+            allowInsecureRemoteBinding = allowInsecureRemoteBinding,
         )
     )
 }

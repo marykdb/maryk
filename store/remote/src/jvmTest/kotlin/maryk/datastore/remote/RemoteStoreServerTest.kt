@@ -14,6 +14,8 @@ import io.ktor.server.engine.embeddedServer
 import java.net.Socket
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -28,6 +30,72 @@ import maryk.datastore.memory.InMemoryDataStore
 import maryk.test.models.SimpleMarykModel
 
 class RemoteStoreServerTest {
+    @Test
+    fun rejectsUnauthenticatedPublicBindingByDefault() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            validateRemoteStoreServerBinding("0.0.0.0", RemoteStoreServerConfig())
+        }
+
+        assertTrue(exception.message.orEmpty().contains("non-loopback"))
+    }
+
+    @Test
+    fun acceptsLoopbackOrProtectedPublicBinding() {
+        validateRemoteStoreServerBinding("127.0.0.1", RemoteStoreServerConfig())
+        validateRemoteStoreServerBinding("localhost", RemoteStoreServerConfig())
+        validateRemoteStoreServerBinding(
+            "0.0.0.0",
+            RemoteStoreServerConfig(bearerToken = "secret"),
+        )
+        validateRemoteStoreServerBinding(
+            "0.0.0.0",
+            RemoteStoreServerConfig(allowInsecureRemoteBinding = true),
+        )
+    }
+
+    @Test
+    fun rejectsBlankBearerToken() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            validateRemoteStoreServerBinding(
+                "127.0.0.1",
+                RemoteStoreServerConfig(bearerToken = " "),
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("cannot be blank"))
+    }
+
+    @Test
+    fun bearerAuthenticationProtectsEveryEndpointBeforeValidation() = runBlocking {
+        withServer(RemoteStoreServerConfig(bearerToken = "secret")) { baseUrl, client ->
+            listOf(
+                RemoteStoreProtocol.infoPath to false,
+                RemoteStoreProtocol.executePath to true,
+                RemoteStoreProtocol.flowPath to true,
+                RemoteStoreProtocol.processUpdatePath to true,
+            ).forEach { (path, post) ->
+                val missingResponse = if (post) client.post("$baseUrl$path") else client.get("$baseUrl$path")
+                assertEquals(HttpStatusCode.Unauthorized, missingResponse.status, path)
+
+                val wrongResponse = if (post) {
+                    client.post("$baseUrl$path") {
+                        header(HttpHeaders.Authorization, "Bearer wrong")
+                    }
+                } else {
+                    client.get("$baseUrl$path") {
+                        header(HttpHeaders.Authorization, "Bearer wrong")
+                    }
+                }
+                assertEquals(HttpStatusCode.Unauthorized, wrongResponse.status, path)
+            }
+
+            val response = client.get("$baseUrl${RemoteStoreProtocol.infoPath}") {
+                header(HttpHeaders.Authorization, "Bearer secret")
+            }
+            assertEquals(HttpStatusCode.OK, response.status)
+        }
+    }
+
     @Test
     fun infoAllowsArbitraryAcceptHeader() = runBlocking {
         withServer { baseUrl, client ->
@@ -622,10 +690,13 @@ class RemoteStoreServerTest {
     }
 }
 
-private suspend fun withServer(block: suspend (String, HttpClient) -> Unit) {
+private suspend fun withServer(
+    config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
+    block: suspend (String, HttpClient) -> Unit,
+) {
     val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
     val (server, port) = startTestServer {
-        remoteStoreModule(store)
+        remoteStoreModule(store, config)
     }
     val client = HttpClient(CIO) { expectSuccess = false }
     try {

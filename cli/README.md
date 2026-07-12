@@ -40,6 +40,7 @@ Expose a local store via a lightweight Ktor server:
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
 serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
+serve rocksdb --dir ./data --host 0.0.0.0 --bearer-token "$MARYK_BEARER_TOKEN"
 serve --config ./serve.conf
 ```
 
@@ -50,10 +51,12 @@ store: rocksdb
 dir: ./data
 host: 127.0.0.1
 port: 8210
+bearer-token: replace-with-a-secret
 ```
 
 Note: `serve` works in JVM and native desktop binaries.
-Warning: no auth or TLS; bind to localhost or use SSH tunneling.
+Non-loopback binds require bearer authentication unless `--allow-insecure-remote-binding` is explicitly supplied.
+Use TLS termination or SSH tunneling because bearer authentication does not encrypt traffic.
 
 ## Development Notes
 

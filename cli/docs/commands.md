@@ -55,6 +55,7 @@ Serve a local store over HTTP (Ktor):
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
 serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
+serve rocksdb --dir ./data --host 0.0.0.0 --bearer-token "$MARYK_BEARER_TOKEN"
 ```
 
 Config file:
@@ -64,6 +65,7 @@ store: rocksdb
 dir: ./data
 host: 127.0.0.1
 port: 8210
+bearer-token: replace-with-a-secret
 ```
 
 ```text
@@ -75,7 +77,9 @@ Notes:
 - Each response message is length-prefixed (4 bytes, big-endian).
 - `serve` blocks the CLI session until the server is stopped.
 - `serve` is available in JVM and native desktop binaries.
-- Warning: no auth or TLS; bind to localhost or use SSH tunneling.
+- Loopback is the default and requires no authentication.
+- Non-loopback binds require `--bearer-token`, or the explicit unsafe `--allow-insecure-remote-binding` opt-in.
+- Bearer authentication does not encrypt traffic; use TLS termination or SSH tunneling outside localhost.
 
 ## Model
 

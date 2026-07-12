@@ -64,12 +64,13 @@ class HelpCommand : Command {
                 "serve <store> [options]",
                 "Serve a local store over HTTP.",
                 "Usage:",
-                "  serve rocksdb --dir <directory> [--host <host>] [--port <port>]",
-                "  serve foundationdb --dir <directory> [--cluster <cluster file>] [--host <host>] [--port <port>]",
+                "  serve rocksdb --dir <directory> [--host <host>] [--port <port>] [--bearer-token <token>]",
+                "  serve foundationdb --dir <directory> [--cluster <cluster file>] [--host <host>] [--port <port>] [--bearer-token <token>]",
                 "  serve --config <file>",
                 "Notes:",
                 "  - Config files support key/value (`key=value`) and YAML-style (`key: value`) entries.",
-                "  - Warning: no auth or TLS; bind to localhost or use SSH tunneling.",
+                "  - Non-loopback binds require bearer authentication or --allow-insecure-remote-binding.",
+                "  - Use TLS termination or SSH tunneling to encrypt remote traffic.",
             )
             "disconnect" -> listOf(
                 "disconnect",

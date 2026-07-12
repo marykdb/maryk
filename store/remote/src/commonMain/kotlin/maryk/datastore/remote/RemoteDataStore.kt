@@ -9,6 +9,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HeadersBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.URLBuilder
 import io.ktor.http.Url
@@ -55,6 +56,7 @@ class RemoteDataStore private constructor(
     private val listeners: RemoteListenerRegistry,
     private val sshTunnel: SshTunnel?,
     private val ownsClient: Boolean,
+    private val bearerToken: String?,
     override val dataModelsById: Map<UInt, IsRootDataModel>,
     override val keepAllVersions: Boolean,
     override val keepUpdateHistoryIndex: Boolean,
@@ -69,6 +71,9 @@ class RemoteDataStore private constructor(
 
     companion object {
         suspend fun connect(config: RemoteStoreConfig): RemoteDataStore {
+            if (config.bearerToken != null && config.bearerToken.isBlank()) {
+                throw IllegalArgumentException("Remote store bearer token cannot be blank.")
+            }
             if (config.baseUrl != config.baseUrl.trim()) {
                 throw IllegalArgumentException("Remote store base URL cannot contain leading or trailing whitespace.")
             }
@@ -82,8 +87,8 @@ class RemoteDataStore private constructor(
                 throw IllegalArgumentException("Remote store base URL is invalid: `${config.baseUrl}`", error)
             }
             validateBaseUrl(baseUrl)
-            if (baseUrl.protocol != URLProtocol.HTTP) {
-                throw IllegalArgumentException("Remote store only supports http URLs.")
+            if (baseUrl.protocol != URLProtocol.HTTP && baseUrl.protocol != URLProtocol.HTTPS) {
+                throw IllegalArgumentException("Remote store only supports http or https URLs.")
             }
             if (baseUrl.port !in 1..65535) {
                 throw IllegalArgumentException("Remote store base URL port must be between 1 and 65535.")
@@ -107,7 +112,7 @@ class RemoteDataStore private constructor(
                     baseUrl
                 }
 
-                val infoResult = fetchInfo(client, effectiveUrl)
+                val infoResult = fetchInfo(client, effectiveUrl, config.bearerToken)
                 val modelMap = buildModelMap(infoResult.info, infoResult.definitionsContext)
 
                 RemoteDataStore(
@@ -117,6 +122,7 @@ class RemoteDataStore private constructor(
                     listeners = RemoteListenerRegistry(),
                     sshTunnel = tunnel,
                     ownsClient = ownsClient,
+                    bearerToken = config.bearerToken,
                     dataModelsById = modelMap,
                     keepAllVersions = infoResult.info.keepAllVersions,
                     keepUpdateHistoryIndex = infoResult.info.keepUpdateHistoryIndex,
@@ -179,10 +185,11 @@ class RemoteDataStore private constructor(
             return SshTarget(host = host, port = port)
         }
 
-        private suspend fun fetchInfo(client: HttpClient, baseUrl: Url): InfoResult {
+        private suspend fun fetchInfo(client: HttpClient, baseUrl: Url, bearerToken: String?): InfoResult {
             val response = client.get(buildUrl(baseUrl, RemoteStoreProtocol.infoPath)) {
                 headers {
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                    appendBearerToken(bearerToken)
                 }
             }
             requireSuccess(response, "info")
@@ -268,6 +275,7 @@ class RemoteDataStore private constructor(
             headers {
                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                appendBearerToken(bearerToken)
             }
             setBody(payload)
         }
@@ -316,6 +324,7 @@ class RemoteDataStore private constructor(
                 headers {
                     append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                     append(HttpHeaders.Accept, RemoteStoreProtocol.streamContentType)
+                    appendBearerToken(bearerToken)
                 }
                 setBody(payload)
             }
@@ -388,6 +397,7 @@ class RemoteDataStore private constructor(
             headers {
                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                appendBearerToken(bearerToken)
             }
             setBody(payload)
         }
@@ -423,6 +433,12 @@ class RemoteDataStore private constructor(
                 definitionsContext.dataModels[model.Meta.name] = DataModelReference(model)
             }
         }
+    }
+}
+
+private fun HeadersBuilder.appendBearerToken(bearerToken: String?) {
+    if (bearerToken != null) {
+        append(HttpHeaders.Authorization, "Bearer $bearerToken")
     }
 }
 

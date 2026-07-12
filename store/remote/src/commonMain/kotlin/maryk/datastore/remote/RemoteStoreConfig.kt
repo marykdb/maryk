@@ -8,6 +8,13 @@ data class RemoteStoreConfig(
     val ssh: RemoteSshConfig? = null,
     val sshTunnelFactory: SshTunnelFactory? = defaultSshTunnelFactory(),
     val httpClient: HttpClient? = null,
+    val bearerToken: String? = null,
+)
+
+/** Security policy for exposing a remote store server. */
+data class RemoteStoreServerConfig(
+    val allowInsecureRemoteBinding: Boolean = false,
+    val bearerToken: String? = null,
 )
 
 /** Optional SSH tunnel configuration for remote store connections. */

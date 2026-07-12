@@ -73,5 +73,7 @@ class HelpCommandTest {
         assertFalse(result.isError)
         assertEquals("serve <store> [options]", result.lines.first())
         assertTrue(result.lines.any { it.contains("serve --config <file>") })
+        assertTrue(result.lines.any { it.contains("--bearer-token") })
+        assertTrue(result.lines.any { it.contains("Non-loopback binds require") })
     }
 }

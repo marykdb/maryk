@@ -25,7 +25,18 @@ Programmatic server:
 
 ```kotlin
 val server = RemoteStoreServer(dataStore)
-server.start(host = "0.0.0.0", port = 8210, wait = true)
+server.start(host = "127.0.0.1", port = 8210, wait = true)
+```
+
+Non-loopback binds require authentication or an explicit insecure opt-in:
+
+```kotlin
+server.start(
+    host = "0.0.0.0",
+    port = 8210,
+    wait = true,
+    config = RemoteStoreServerConfig(bearerToken = System.getenv("MARYK_BEARER_TOKEN")),
+)
 ```
 
 FoundationDB:
@@ -42,6 +53,7 @@ store: rocksdb
 dir: ./data
 host: 127.0.0.1
 port: 8210
+bearer-token: replace-with-a-secret
 ```
 
 ```text
@@ -54,19 +66,25 @@ Accepted config keys:
 - `cluster` or `clusterFile`: FoundationDB cluster file
 - `host`: bind host (default `127.0.0.1`)
 - `port`: bind port (default `8210`)
+- `bearer-token`: optional bearer credential required by every endpoint
+- `allow-insecure-remote-binding`: explicit opt-in for an unauthenticated non-loopback bind
 
 ## Connect as a client
 
 ```kotlin
 val remote = RemoteDataStore.connect(
-    RemoteStoreConfig(baseUrl = "http://127.0.0.1:8210")
+    RemoteStoreConfig(
+        baseUrl = "https://store.example.test",
+        bearerToken = System.getenv("MARYK_BEARER_TOKEN"),
+    )
 )
 ```
 
 Notes:
 - `RemoteDataStore.connect` is `suspend`; call it from a coroutine.
-- Only plain HTTP is supported; use SSH tunneling for encryption.
+- HTTP and HTTPS are supported. Never send a bearer token over an untrusted plain HTTP connection.
 - `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
+- For direct internet exposure, terminate TLS in a reverse proxy and forward to the loopback server.
 
 Use it like any other store:
 
@@ -99,11 +117,13 @@ Notes:
 - `remotePort`/`remoteHost` default to the `baseUrl` host/port if omitted.
 - `localPort` can be omitted to auto-select a free port.
 - Uses `ssh -N -L localPort:remoteHost:remotePort` with `ExitOnForwardFailure=yes`.
+- An SSH tunnel can safely connect to a loopback-bound server without bearer authentication.
 
 ## HTTP protocol overview
 
 All payloads are Maryk ProtoBuf bytes.
 Request requirements:
+- `Authorization: Bearer <token>` on every endpoint when server authentication is configured.
 - `Content-Type: application/x-maryk-protobuf` on all `POST` endpoints.
 - Empty request bodies are rejected.
 - Request body max size is 16 MiB.

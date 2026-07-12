@@ -54,6 +54,7 @@ abstract class AbstractDataStore(
 
     private val initIsDone: AtomicBoolean = atomic(false)
     private val isClosed: AtomicBoolean = atomic(false)
+    private val updateProcessorFailure = atomic<Throwable?>(null)
     private val pendingResponsesMutex = Mutex()
     private val pendingResponses = mutableSetOf<CompletableDeferred<*>>()
 
@@ -66,7 +67,10 @@ abstract class AbstractDataStore(
 
     open fun startFlows() {
         this.launch {
-            startProcessUpdateFlow(updateSharedFlow, updateSharedFlowHasStarted)
+            startProcessUpdateFlow(updateSharedFlow, updateSharedFlowHasStarted) { error ->
+                updateProcessorFailure.value = error
+                failPendingResponses(error)
+            }
         }
     }
 
@@ -82,6 +86,9 @@ abstract class AbstractDataStore(
     }
 
     private fun ensureOpen() {
+        updateProcessorFailure.value?.let { failure ->
+            throw StorageException("DataStore update processor failed", failure)
+        }
         if (isClosed.value) {
             throw StorageException("DataStore is closed")
         }

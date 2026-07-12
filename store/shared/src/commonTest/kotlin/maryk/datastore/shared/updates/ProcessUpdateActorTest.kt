@@ -38,6 +38,22 @@ import kotlin.time.Duration.Companion.seconds
 
 class ProcessUpdateActorTest {
     @Test
+    fun reportsUnexpectedProcessorFailure() = runTest {
+        val failure = Error("processor failed")
+        val reportedFailure = CompletableDeferred<Throwable>()
+
+        val error = assertFailsWith<Error> {
+            TestDataStore.startProcessUpdateFlow(
+                flow { throw failure },
+                CompletableDeferred(),
+            ) { reportedFailure.complete(it) }
+        }
+
+        assertEquals(failure.message, error.message)
+        assertEquals(failure.message, reportedFailure.await().message)
+    }
+
+    @Test
     fun removeMissingListenerCompletes() = runTest {
         val key = SimpleMarykModel.key(ByteArray(16))
         val values = SimpleMarykModel.create {

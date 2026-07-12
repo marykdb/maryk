@@ -19,6 +19,7 @@ import maryk.datastore.shared.rethrowIfFatal
 internal suspend fun IsDataStore.startProcessUpdateFlow(
     updateSendChannel: Flow<IsUpdateAction>,
     updateSendChannelHasStarted: CompletableDeferred<Unit>,
+    onFailure: suspend (Throwable) -> Unit = {},
 ) = coroutineScope {
     val updateListeners = mutableMapOf<UInt, MutableList<ListenerRegistration>>()
 
@@ -83,6 +84,11 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(
                 else -> throw RuntimeException("Unknown update listener action: $update")
             }
         }
+    } catch (error: Throwable) {
+        if (error !is CancellationException) {
+            onFailure(error)
+        }
+        throw error
     } finally {
         val registrations = updateListeners.values.flatten()
         updateListeners.clear()

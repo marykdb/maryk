@@ -81,6 +81,24 @@ private fun findCyclePath(
 }
 
 fun orderMigrationModelIds(dataModelsById: Map<UInt, IsRootDataModel>): List<UInt> {
+    dataModelsById.forEach { (id, model) ->
+        if (model.Meta.name.isBlank()) {
+            throw MigrationException("Migration model with ID $id has a blank name")
+        }
+    }
+
+    val duplicateNames = dataModelsById.entries
+        .groupBy(keySelector = { it.value.Meta.name }, valueTransform = { it.key })
+        .filterValues { it.size > 1 }
+    if (duplicateNames.isNotEmpty()) {
+        val conflicts = duplicateNames.entries
+            .sortedBy { it.key }
+            .joinToString("; ") { (name, ids) ->
+                "$name uses IDs ${ids.sorted().joinToString()}"
+            }
+        throw MigrationException("Duplicate migration model names: $conflicts")
+    }
+
     val context = ModelSortContext(
         idsByName = dataModelsById.entries.associate { (id, model) -> model.Meta.name to id },
         namesById = dataModelsById.entries.associate { (id, model) -> id to model.Meta.name },

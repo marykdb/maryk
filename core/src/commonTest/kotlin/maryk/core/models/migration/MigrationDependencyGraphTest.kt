@@ -81,7 +81,43 @@ object MigrationStructuralCycleRightModel : RootDataModel<MigrationStructuralCyc
     val left by embed(index = 1u, required = false, dataModel = { MigrationStructuralCycleLeftModel })
 }
 
+object MigrationDuplicateNameModelA : RootDataModel<MigrationDuplicateNameModelA>(
+    name = "MigrationDuplicateNameModel",
+)
+
+object MigrationDuplicateNameModelB : RootDataModel<MigrationDuplicateNameModelB>(
+    name = "MigrationDuplicateNameModel",
+)
+
+object MigrationBlankNameModel : RootDataModel<MigrationBlankNameModel>(name = "")
+
 class MigrationDependencyGraphTest {
+    @Test
+    fun rejectsBlankModelNames() {
+        val exception = assertFailsWith<MigrationException> {
+            orderMigrationModelIds(mapOf(7u to MigrationBlankNameModel))
+        }
+
+        assertTrue(exception.message.orEmpty().contains("blank name"))
+        assertTrue(exception.message.orEmpty().contains("7"))
+    }
+
+    @Test
+    fun rejectsDuplicateModelNames() {
+        val exception = assertFailsWith<MigrationException> {
+            orderMigrationModelIds(
+                mapOf(
+                    3u to MigrationDuplicateNameModelA,
+                    9u to MigrationDuplicateNameModelB,
+                )
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("MigrationDuplicateNameModel"))
+        assertTrue(exception.message.orEmpty().contains("3"))
+        assertTrue(exception.message.orEmpty().contains("9"))
+    }
+
     @Test
     fun ordersModelsByDependencies() {
         val ordered = orderMigrationModelIds(

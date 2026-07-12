@@ -43,20 +43,14 @@ import kotlin.coroutines.CoroutineContext
  * Abstract DataStore implementation that takes care of the HLC clock
  */
 abstract class AbstractDataStore(
-    final override val dataModelsById: Map<UInt, IsRootDataModel>,
+    dataModelsById: Map<UInt, IsRootDataModel>,
     coroutineContext: CoroutineContext,
 ): IsDataStore, CoroutineScope {
     override val coroutineContext = coroutineContext + SupervisorJob() + CoroutineName("MarykDataStore")
 
-    init {
-        dataModelsById[0u]?.let {
-            throw StorageException("Model 0 is reserved for Meta Data and cannot be used")
-        }
-    }
-
-    final override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (index, dataModel) ->
-        Pair(dataModel.Meta.name, index)
-    }.toMap()
+    private val dataModelRegistry = validatedDataModelRegistry(dataModelsById)
+    final override val dataModelsById = dataModelRegistry.dataModelsById
+    final override val dataModelIdsByString = dataModelRegistry.dataModelIdsByString
 
     private val initIsDone: AtomicBoolean = atomic(false)
     private val isClosed: AtomicBoolean = atomic(false)

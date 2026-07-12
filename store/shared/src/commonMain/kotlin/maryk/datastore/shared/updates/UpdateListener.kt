@@ -121,12 +121,16 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
         val updateJob = launch {
             sendFlow.receiveAsFlow().collect(::send)
         }
-        closed.invokeOnCompletion { close() }
+        closed.invokeOnCompletion { cause -> close(cause) }
         awaitClose { updateJob.cancel() }
     }
 
-    fun close() {
-        sendFlow.close()
-        closed.complete(Unit)
+    fun close(cause: Throwable? = null) {
+        sendFlow.close(cause)
+        if (cause == null) {
+            closed.complete(Unit)
+        } else {
+            closed.completeExceptionally(cause)
+        }
     }
 }

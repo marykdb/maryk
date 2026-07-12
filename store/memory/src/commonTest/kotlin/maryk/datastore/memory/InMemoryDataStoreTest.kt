@@ -63,6 +63,43 @@ import kotlin.time.Duration.Companion.seconds
 
 class InMemoryDataStoreTest {
     @Test
+    fun uncollectedFlowDoesNotBlockWritesOrLaterListeners() = runTest(timeout = 10.seconds) {
+        val dataStore = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        try {
+            dataStore.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+
+            var completedWrites = 0
+            try {
+                withContext(Dispatchers.Default.limitedParallelism(1)) {
+                    withTimeout(5.seconds) {
+                        repeat(140) { index ->
+                            dataStore.execute(
+                                SimpleMarykModel.add(
+                                    SimpleMarykModel.create {
+                                        value with "value-$index"
+                                    }
+                                )
+                            )
+                            completedWrites++
+                        }
+                    }
+                }
+            } catch (error: Throwable) {
+                throw AssertionError("Only $completedWrites writes completed before the update pipeline stalled", error)
+            }
+
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(1.seconds) {
+                    dataStore.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                }
+            }
+            dataStore.closeAllListeners()
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun testDataStore() = runTest(timeout = 3.minutes) {
         val dataStore = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
         try {

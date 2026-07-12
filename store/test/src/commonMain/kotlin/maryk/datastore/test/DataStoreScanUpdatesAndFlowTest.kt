@@ -51,6 +51,7 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.test.expect
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 val t0 = TestMarykModel.create {
     string with "ha world 1"
@@ -108,6 +109,7 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeLimitedScanValuesAsFlowRefillsAfterDeletingOnlyVisibleKey" to ::executeLimitedScanValuesAsFlowRefillsAfterDeletingOnlyVisibleKey,
         "executeLimitedScanValuesAsFlowIgnoresAddAfterWindow" to ::executeLimitedScanValuesAsFlowIgnoresAddAfterWindow,
         "executeScanValuesAsFlowRequest" to ::executeScanValuesAsFlowRequest,
+        "uncollectedFlowDoesNotBlockWritesOrLaterListeners" to ::uncollectedFlowDoesNotBlockWritesOrLaterListeners,
         "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill" to ::executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
         "executeScanUpdatesAsFlowRequest" to ::executeScanUpdatesAsFlowRequest,
@@ -152,6 +154,33 @@ class DataStoreScanUpdatesAndFlowTest(
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE
+    }
+
+    private suspend fun uncollectedFlowDoesNotBlockWritesOrLaterListeners() {
+        dataStore.executeFlow(TestMarykModel.scan(allowTableScan = true))
+
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(30.seconds) {
+                repeat(140) { index ->
+                    val response = dataStore.execute(
+                        TestMarykModel.add(
+                            TestMarykModel.create {
+                                string with "ha$index"
+                                int with 0
+                                uint with (1_000_000u + index.toUInt())
+                                bool with true
+                                double with index.toDouble()
+                                dateTime with LocalDateTime(2026, 7, 9, 0, 0)
+                            }
+                        )
+                    )
+                    testKeys += assertStatusIs<AddSuccess<TestMarykModel>>(response.statuses.single()).key
+                }
+
+                dataStore.executeFlow(TestMarykModel.scan(allowTableScan = true))
+                dataStore.closeAllListeners()
+            }
+        }
     }
 
     private suspend fun executeSimpleScanUpdatesRequest() {

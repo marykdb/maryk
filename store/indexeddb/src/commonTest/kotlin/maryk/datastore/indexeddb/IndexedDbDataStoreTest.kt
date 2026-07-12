@@ -146,6 +146,7 @@ class IndexedDbDataStoreTest {
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeSimpleScanUpdatesRequest")
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeOrderedScanUpdatesRequest")
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeScanUpdatesAsFlowRequest")
+            runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "uncollectedFlowDoesNotBlockWritesOrLaterListeners")
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeScanUpdatesAsFlowWithMutableWhereRequest")
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeScanUpdatesIncludingInitValuesAsFlowRequest")
             runTestCase(DataStoreScanUpdatesAndFlowTest(dataStore), "executeScanUpdatesAsFlowWithSelectRequest")

@@ -18,6 +18,8 @@ import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
+import maryk.core.properties.exceptions.PropertyConversionDirection
+import maryk.core.properties.exceptions.PropertyConversionException
 import maryk.core.properties.enum.TypeEnum
 import maryk.core.properties.references.CanContainListItemReference
 import maryk.core.properties.references.CanContainMapItemReference
@@ -280,11 +282,16 @@ inline fun <reified T : Any, TO : Any> IsDefinitionWrapper<T, TO, *, *>.convertT
     return when {
         value == null && this.definition is HasDefaultValueDefinition<*> -> (this.definition as? HasDefaultValueDefinition<*>)?.default as TO?
         value is ObjectValues<*, *> -> value.toDataObject() as TO?
+        this.fromSerializable == null -> value as? TO?
         else -> try {
-            this.fromSerializable?.invoke(value as? T?) ?: value as? TO?
-        } catch (e: ClassCastException) {
-            e.printStackTrace()
-            value as? TO?
+            this.fromSerializable!!.invoke(value as T?)
+        } catch (error: ClassCastException) {
+            throw PropertyConversionException(
+                propertyName = name,
+                direction = PropertyConversionDirection.FROM_SERIALIZABLE,
+                inputType = value?.let { it::class.simpleName }.orEmpty().ifEmpty { "unknown" },
+                cause = error,
+            )
         }
     }
 }

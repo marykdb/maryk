@@ -19,6 +19,8 @@ import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
 import maryk.core.properties.graph.IsPropRefGraphNode
+import maryk.core.properties.exceptions.PropertyConversionDirection
+import maryk.core.properties.exceptions.PropertyConversionException
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.TypedValue
@@ -79,8 +81,13 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                 } else {
                     value
                 }
-            } catch (_: ClassCastException) {
-                value
+            } catch (error: ClassCastException) {
+                throw PropertyConversionException(
+                    propertyName = name,
+                    direction = PropertyConversionDirection.TO_SERIALIZABLE,
+                    inputType = value::class.simpleName ?: "unknown",
+                    cause = error,
+                )
             }
 
             ValueItem(this.index, serializedValue).also { ValuesCollectorContext.add(it) }
@@ -129,11 +136,21 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
         this.writeTransportBytesWithKey(this.transportIndex(), value, cacheGetter, writer, context)
 
     /** Get the property from the [dataObject] and serialize it for transportation */
+    @Suppress("UNCHECKED_CAST")
     fun getPropertyAndSerialize(dataObject: DO, context: CX?): T? {
-        @Suppress("UNCHECKED_CAST")
-        return this.toSerializable?.let {
-            return it.invoke(this.getter(dataObject), context)
-        } ?: this.getter(dataObject) as T?
+        val value = this.getter(dataObject)
+        return try {
+            this.toSerializable?.let {
+                it.invoke(value, context)
+            } ?: value as T?
+        } catch (error: ClassCastException) {
+            throw PropertyConversionException(
+                propertyName = name,
+                direction = PropertyConversionDirection.TO_SERIALIZABLE,
+                inputType = value?.let { it::class.simpleName }.orEmpty().ifEmpty { "unknown" },
+                cause = error,
+            )
+        }
     }
 
     /** Capture the [value] in the [context] if needed */

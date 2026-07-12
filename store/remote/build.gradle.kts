@@ -10,7 +10,7 @@ kotlin {
     macosX64()
 
     sourceSets {
-        val commonMain by getting {
+        getByName("commonMain") {
             dependencies {
                 api(projects.lib)
                 api(projects.core)
@@ -22,15 +22,14 @@ kotlin {
                 implementation(libs.ktor.server.cio)
             }
         }
-        val commonTest by getting {
+        getByName("commonTest") {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(projects.testmodels)
                 implementation(projects.store.memory)
             }
         }
-        val jvmMain by getting
-        val jvmTest by getting {
+        getByName("jvmTest") {
             dependencies {
             }
         }

@@ -15,7 +15,7 @@ private val os = OperatingSystem.current()
 private val scriptsDir = rootProject.projectDir.resolve("store/foundationdb/scripts")
 
 // Install FoundationDB client locally so native link tasks can find libfdb_c
-val installFoundationDB by tasks.registering(Exec::class) {
+val installFoundationDB = tasks.register("installFoundationDB", Exec::class) {
     group = "foundationdb"
     description = "Install or link FoundationDB binaries into store/foundationdb/bin"
     if (os.isWindows) {
@@ -114,7 +114,7 @@ kotlin {
 
 
     sourceSets {
-        val commonMain by getting {
+        getByName("commonMain") {
             dependencies {
                 implementation(libs.kotter)
                 implementation(projects.file)
@@ -125,8 +125,7 @@ kotlin {
                 implementation(libs.kotlinx.coroutines.core)
             }
         }
-        val jvmMain by getting
-        val commonTest by getting {
+        getByName("commonTest") {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(projects.testmodels)

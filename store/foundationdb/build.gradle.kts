@@ -65,7 +65,7 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
+        getByName("commonMain") {
             dependencies {
                 api(projects.lib)
                 api(projects.core)
@@ -73,7 +73,7 @@ kotlin {
                 api(libs.maryk.foundationdb.multiplatform)
             }
         }
-        val commonTest by getting {
+        getByName("commonTest") {
             dependencies {
                 implementation(kotlin("test"))
                 implementation(projects.testmodels)
@@ -88,7 +88,7 @@ val os = OperatingSystem.current()
 
 val scriptsDir = rootProject.projectDir.resolve("store/foundationdb/scripts")
 
-val installFoundationDB by tasks.registering(Exec::class) {
+val installFoundationDB = tasks.register("installFoundationDB", Exec::class) {
     group = "foundationdb"
     description = "Install or link FoundationDB binaries into store/foundationdb/bin"
     if (os.isWindows) {
@@ -99,7 +99,7 @@ val installFoundationDB by tasks.registering(Exec::class) {
     }
 }
 
-val startFoundationDBForTests by tasks.registering(Exec::class) {
+val startFoundationDBForTests = tasks.register("startFoundationDBForTests", Exec::class) {
     group = "verification"
     description = "Start a local fdbserver for tests"
     dependsOn(installFoundationDB)
@@ -111,7 +111,7 @@ val startFoundationDBForTests by tasks.registering(Exec::class) {
     }
 }
 
-val stopFoundationDBForTests by tasks.registering(Exec::class) {
+val stopFoundationDBForTests = tasks.register("stopFoundationDBForTests", Exec::class) {
     group = "verification"
     description = "Stop the local fdbserver started for tests"
     if (!os.isWindows) {
@@ -129,7 +129,7 @@ val stopFoundationDBForReset = if (!os.isWindows) {
     }
 } else null
 
-val resetFoundationDBTestData by tasks.registering(Delete::class) {
+val resetFoundationDBTestData = tasks.register("resetFoundationDBTestData", Delete::class) {
     group = "verification"
     description = "Stop local fdbserver and reset FoundationDB test data directory"
     doNotTrackState("Always reset FoundationDB test data before local runs.")

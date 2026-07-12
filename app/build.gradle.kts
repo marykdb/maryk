@@ -19,7 +19,7 @@ kotlin {
     }
 
     sourceSets {
-        val commonMain by getting {
+        getByName("commonMain") {
             dependencies {
                 implementation(projects.core)
                 implementation(projects.file)
@@ -38,12 +38,12 @@ kotlin {
                 implementation(libs.compose.ui)
             }
         }
-        val commonTest by getting {
+        getByName("commonTest") {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
-        val jvmMain by getting {
+        getByName("jvmMain") {
             dependencies {
                 implementation(compose.desktop.currentOs)
                 implementation(libs.kotlinx.datetime)

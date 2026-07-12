@@ -25,42 +25,42 @@ kotlin {
     mingwX64()
 
     sourceSets {
-        val commonMain by getting
-        val commonTest by getting {
+        val commonMain = getByName("commonMain")
+        getByName("commonTest") {
             dependencies {
                 implementation(kotlin("test"))
             }
         }
 
-        val posixMain by creating {
+        val posixMain = create("posixMain") {
             dependsOn(commonMain)
         }
-        val androidNativeMain by creating {
+        val androidNativeMain = create("androidNativeMain") {
             dependsOn(posixMain)
         }
-        val appleMain by creating {
+        val appleMain = create("appleMain") {
             dependsOn(posixMain)
         }
-        val linuxMain by creating {
+        val linuxMain = create("linuxMain") {
             dependsOn(posixMain)
         }
 
-        val iosArm64Main by getting { dependsOn(appleMain) }
-        val iosX64Main by getting { dependsOn(appleMain) }
-        val iosSimulatorArm64Main by getting { dependsOn(appleMain) }
-        val macosArm64Main by getting { dependsOn(appleMain) }
-        val macosX64Main by getting { dependsOn(appleMain) }
-        val tvosArm64Main by getting { dependsOn(appleMain) }
-        val tvosSimulatorArm64Main by getting { dependsOn(appleMain) }
-        val watchosArm64Main by getting { dependsOn(appleMain) }
-        val watchosDeviceArm64Main by getting { dependsOn(appleMain) }
-        val watchosSimulatorArm64Main by getting { dependsOn(appleMain) }
-        val linuxX64Main by getting { dependsOn(linuxMain) }
-        val linuxArm64Main by getting { dependsOn(linuxMain) }
-        val androidNativeArm32Main by getting { dependsOn(androidNativeMain) }
-        val androidNativeArm64Main by getting { dependsOn(androidNativeMain) }
-        val androidNativeX86Main by getting { dependsOn(androidNativeMain) }
-        val androidNativeX64Main by getting { dependsOn(androidNativeMain) }
+        getByName("iosArm64Main") { dependsOn(appleMain) }
+        getByName("iosX64Main") { dependsOn(appleMain) }
+        getByName("iosSimulatorArm64Main") { dependsOn(appleMain) }
+        getByName("macosArm64Main") { dependsOn(appleMain) }
+        getByName("macosX64Main") { dependsOn(appleMain) }
+        getByName("tvosArm64Main") { dependsOn(appleMain) }
+        getByName("tvosSimulatorArm64Main") { dependsOn(appleMain) }
+        getByName("watchosArm64Main") { dependsOn(appleMain) }
+        getByName("watchosDeviceArm64Main") { dependsOn(appleMain) }
+        getByName("watchosSimulatorArm64Main") { dependsOn(appleMain) }
+        getByName("linuxX64Main") { dependsOn(linuxMain) }
+        getByName("linuxArm64Main") { dependsOn(linuxMain) }
+        getByName("androidNativeArm32Main") { dependsOn(androidNativeMain) }
+        getByName("androidNativeArm64Main") { dependsOn(androidNativeMain) }
+        getByName("androidNativeX86Main") { dependsOn(androidNativeMain) }
+        getByName("androidNativeX64Main") { dependsOn(androidNativeMain) }
     }
 }
 

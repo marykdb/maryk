@@ -16,7 +16,7 @@ kotlin {
     }
 
     sourceSets {
-        val commonTest by getting {
+        getByName("commonTest") {
             kotlin.srcDir("src/commonTestExpect/kotlin")
             dependencies {
                 implementation(kotlin("test"))

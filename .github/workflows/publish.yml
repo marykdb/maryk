@@ -5,21 +5,52 @@ on:
     branches: [ main ]
     types: [ completed ]
   workflow_dispatch:
+    inputs:
+      ref:
+        description: Full commit SHA to publish
+        required: true
+        type: string
 
 concurrency:
-  group: "${{ github.workflow }}"
+  group: "${{ github.workflow }}-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ref }}"
   cancel-in-progress: false
 
 jobs:
   maven-publish:
     runs-on: macos-latest # macOS supports building all Kotlin targets
-    if: ${{ github.event.workflow_run.conclusion == 'success' }} # only publish if the 'Build' workflow passed
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch' ||
+        (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')
+      }}
     permissions:
       contents: read
       packages: write
+    env:
+      EXPECTED_REF: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ref }}
 
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.EXPECTED_REF }}
+          fetch-depth: 1
+
+      - name: Verify publish provenance
+        shell: bash
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && ! "$EXPECTED_REF" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "Manual publish ref must be a full 40-character commit SHA" >&2
+            exit 1
+          fi
+          EXPECTED_SHA=$(git rev-parse "${EXPECTED_REF}^{commit}")
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          if [[ "$ACTUAL_SHA" != "$EXPECTED_SHA" ]]; then
+            echo "Checked out $ACTUAL_SHA, expected $EXPECTED_SHA" >&2
+            exit 1
+          fi
+          echo "MARYK_PUBLISH_SHA=$ACTUAL_SHA" >> "$GITHUB_ENV"
+          echo "commit_sha=$ACTUAL_SHA" > publish-provenance.txt
+          echo "Publishing commit \`$ACTUAL_SHA\`" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Setup JDK 21
         uses: actions/setup-java@v4
@@ -50,3 +81,11 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVENCENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{secrets.MARYK_SIGNING_KEY}}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{secrets.MARYK_SIGNING_PASSWORD}}
+
+      - name: Upload publish provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: publish-provenance-${{ env.MARYK_PUBLISH_SHA }}
+          path: publish-provenance.txt
+          if-no-files-found: error

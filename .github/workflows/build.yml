@@ -16,6 +16,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  publish-provenance-check:
+    name: Publish workflow provenance check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check publish workflow structure
+        run: .github/scripts/check-publish-provenance.sh
+
   build:
     strategy:
       matrix:
@@ -27,7 +35,7 @@ jobs:
             gradle_task: "macosX64Test"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest
-            gradle_task: linuxX64Test wasmJsTest jsTest jvmTest
+            gradle_task: linuxX64Test wasmJsTest jsTest jvmTest :generator:jvmTest:test
             job_name: Linux JVM/JS tests
           - os: windows-latest
             gradle_task: mingwX64Test :core:jvmTest

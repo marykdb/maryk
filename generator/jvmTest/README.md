@@ -20,5 +20,5 @@ Run this module after changing:
 Use:
 
 ```bash
-./gradlew :generator:jvmTest:jvmTest
+./gradlew :generator:jvmTest:test
 ```

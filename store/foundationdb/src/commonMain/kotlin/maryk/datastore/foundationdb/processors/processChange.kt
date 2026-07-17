@@ -122,7 +122,7 @@ private class EarlyStatus(val status: IsChangeResponseStatus<*>) : RuntimeExcept
 /**
  * Apply [changes] on a single [key] inside a transaction and write them as [version].
  * Focuses on Check and Change operations for simple properties, embedded values, lists, sets, maps and typed values.
- * Incremental list/set/incMap operations are not implemented.
+ * Supports incremental list, set, and incrementing-map operations.
  */
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
     dataModel: DM,

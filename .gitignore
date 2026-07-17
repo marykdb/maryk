@@ -1,5 +1,8 @@
 .kotlin/
 
+# Agent execution artifacts
+/docs/superpowers/
+
 generator/jvm/gen
 generator/jvmTest/gen
 

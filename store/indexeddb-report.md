@@ -4,9 +4,6 @@ This is the original exploration report. For current module documentation, use:
 
 - `store/indexeddb/README.md`
 - `store/indexeddb/docs/architecture.md`
-- `store/indexeddb/docs/storage.md`
-- `store/indexeddb/docs/operations.md`
-- `store/indexeddb/docs/migrations-encryption-testing.md`
 
 Goal: add a browser store for JS and WasmJS that uses IndexedDB directly. No memory-store fallback for query execution.
 

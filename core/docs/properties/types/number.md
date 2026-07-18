@@ -17,9 +17,9 @@ integer range. `Decimal(scale = 0u)` is its exact whole-number form.
 - `UInt8` - 8 bit Unsigned Integer 
     * Range: `0..255`
 - `UInt16` - 16 bit Unsigned Integer 
-    * Range: `0..65536`
+    * Range: `0..65535`
 - `UInt32` - 32 bit Unsigned Integer 
-    * Range: `0..4294967296`
+    * Range: `0..4294967295`
 - `UInt64` - 64 bit Unsigned Integer 
     * Range: `0..18446744073709551615`
 

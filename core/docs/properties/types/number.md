@@ -1,6 +1,10 @@
 # Number
 Used to store numbers in specific formats. Signed and unsigned integers as well as floating‑point types are available.
 
+Choose [Decimal](decimal.md) when a value must be exact at a fixed scale, such
+as money or a rate, or when a whole number needs more than the built-in 64-bit
+integer range. `Decimal(scale = 0u)` is its exact whole-number form.
+
 - Kotlin Definition: `NumberDefinition`
 - Kotlin Value: `UInt8` | `UInt16` | `UInt32` | `UInt64` | `Byte` | 
                 `Short` | `Int` | `Long` | `Float` | `Double`
@@ -49,7 +53,12 @@ Used to store numbers in specific formats. Signed and unsigned integers as well 
 
 ## Other options
 - `default` - the default value to be used if value was not set.
-- `type` - [type of number](#types). 
+- `type` - [type of number](#types).
+- `reversedStorage` - reverses sortable storage bytes for descending index storage.
+
+`NumberDefinition` implements the arithmetic, random-value, and reversible
+storage capabilities. This allows `Sum`, `Average`, and `Stats` to work without
+depending on the concrete number definition class.
 
 ## Examples
 

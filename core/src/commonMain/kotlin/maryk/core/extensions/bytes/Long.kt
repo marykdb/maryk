@@ -9,8 +9,8 @@ internal const val MIN_SEVEN_VALUE = 256L * 256L * 256L * 256L * 256L * 256L * 1
 
 /** Write the bytes of this Long to a [writer] */
 internal fun Long.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
-    if (length !in 5..8) {
-        throw IllegalArgumentException("Length should be within range of 5 to 8")
+    if (length !in 1..8) {
+        throw IllegalArgumentException("Length should be within range of 1 to 8")
     }
 
     for (it in 0 until length) {
@@ -23,18 +23,14 @@ internal fun Long.writeBytes(writer: (byte: Byte) -> Unit, length: Int = 8) {
 
 /** Reads Long from [reader] with bytes until [length] */
 internal fun initLong(reader: () -> Byte, length: Int = 8): Long {
-    var long = 0L
     val firstByte = readByteOrParseException(reader, "Unexpected end of input while reading Long")
-    // Sign‑extend if shorter than 8 bytes: prefill with 0xFF for negatives, 0x00 otherwise,
-    // then shift to make room for the remaining bytes.
-    if (length < 8) {
-        long = if (firstByte and SIGN_BYTE != SIGN_BYTE) -1L else 0L
-        long = long shl ((8 - length) * 8)
-    }
-    long = long xor ((firstByte xor SIGN_BYTE).toLong() and 0xFF)
+    var long = (firstByte xor SIGN_BYTE).toLong() and 0xFF
     repeat(length - 1) {
         long = long shl 8
         long = long xor (reader().toLong() and 0xFF)
+    }
+    if (length < 8 && long and (1L shl (length * 8 - 1)) != 0L) {
+        long = long or (-1L shl (length * 8))
     }
     return long
 }

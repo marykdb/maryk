@@ -5,6 +5,7 @@ import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.DecimalDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
@@ -43,6 +44,7 @@ internal fun <T : Any, D : IsTransportablePropertyDefinitionType<in T>, DM : IsO
 
 private val dateImports = arrayOf("kotlinx.datetime.LocalDate")
 private val dateTimeImports = arrayOf("kotlinx.datetime.LocalDateTime")
+private val decimalImports = arrayOf("maryk.core.properties.types.Decimal")
 private val geoPointImports = arrayOf("maryk.core.properties.types.GeoPoint")
 private val timeImports = arrayOf("kotlinx.datetime.LocalTime")
 private val multiTypeImports = arrayOf("maryk.core.properties.types.TypedValue")
@@ -84,6 +86,13 @@ private val definitionNamesMap = mapOf(
         kotlinTypeName = { "LocalDateTime" },
         definitionModel = DateTimeDefinition.Model,
         imports = { dateTimeImports }
+    ),
+    PropertyDefinitionType.Decimal to PropertyDefinitionKotlinDescriptor(
+        className = "DecimalDefinition",
+        wrapFunctionName = "decimal",
+        kotlinTypeName = { "Decimal" },
+        definitionModel = DecimalDefinition.Model,
+        imports = { decimalImports },
     ),
     PropertyDefinitionType.Enum to PropertyDefinitionKotlinDescriptor(
         className = "EnumDefinition",

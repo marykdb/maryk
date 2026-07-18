@@ -1,6 +1,7 @@
 package maryk.core.aggregations.metric
 
 import maryk.test.models.TestMarykModel
+import maryk.core.properties.types.Decimal
 import kotlin.test.Test
 import kotlin.test.expect
 
@@ -35,6 +36,29 @@ class StatsAggregatorTest {
                 sum = 14177,
                 average = 4725,
                 valueCount = 3uL
+            )
+        ) {
+            statsAggregator.toResponse()
+        }
+    }
+
+    @Test
+    fun aggregateDecimal() {
+        val statsAggregator = StatsAggregator(
+            Stats(DecimalAggregationModel { amount::ref })
+        )
+
+        statsAggregator.aggregate { Decimal.parse("1.02") }
+        statsAggregator.aggregate { Decimal.parse("2.01") }
+
+        expect(
+            StatsResponse(
+                DecimalAggregationModel { amount::ref },
+                min = Decimal.parse("1.02"),
+                max = Decimal.parse("2.01"),
+                sum = Decimal.parse("3.03"),
+                average = Decimal.parse("1.52"),
+                valueCount = 2uL,
             )
         ) {
             statsAggregator.toResponse()

@@ -1,6 +1,7 @@
 package maryk.generator.kotlin
 
 import kotlinx.datetime.LocalDateTime
+import maryk.generator.DecimalGeneratorModel
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Measurement
@@ -358,6 +359,22 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
 """.trimIndent()
 
 class GenerateKotlinForRootDataModelTest {
+    @Test
+    fun generateKotlinForDecimalProperty() {
+        val output = buildString {
+            DecimalGeneratorModel.generateKotlin("maryk.test.models") {
+                append(it)
+            }
+        }
+
+        assertTrue(output.contains("import maryk.core.properties.definitions.decimal"))
+        assertTrue(output.contains("import maryk.core.properties.types.Decimal"))
+        assertTrue(output.contains("val amount by decimal("))
+        assertTrue(output.contains("scale = 2u"))
+        assertTrue(output.contains("byteSize = 2"))
+        assertTrue(output.contains("default = Decimal.parse(\"12.30\")"))
+    }
+
     @Test
     fun generateKotlinForSimpleModel() {
         val output = buildString {

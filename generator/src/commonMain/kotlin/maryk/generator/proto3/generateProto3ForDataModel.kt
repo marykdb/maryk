@@ -6,6 +6,7 @@ import maryk.core.models.definitions.IsValuesDataModelDefinition
 import maryk.core.properties.definitions.BooleanDefinition
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.DecimalDefinition
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
@@ -100,6 +101,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
 ): String {
     return when (this) {
         is StringDefinition -> "string"
+        is DecimalDefinition -> "string"
         is BooleanDefinition -> "bool"
         is FixedBytesDefinition,
         is FlexBytesDefinition,

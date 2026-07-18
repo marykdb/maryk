@@ -43,7 +43,8 @@ enum class PropertyDefinitionType(
     Set(15u),
     String(16u),
     Time(17u),
-    Value(18u);
+    Value(18u),
+    Decimal(19u);
 
     companion object : IndexedEnumDefinition<PropertyDefinitionType>(PropertyDefinitionType::class, { entries })
 }
@@ -53,6 +54,7 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
         PropertyDefinitionType.Boolean to EmbeddedObjectDefinition(dataModel = { BooleanDefinition.Model }),
         PropertyDefinitionType.Date to EmbeddedObjectDefinition(dataModel = { DateDefinition.Model }),
         PropertyDefinitionType.DateTime to EmbeddedObjectDefinition(dataModel = { DateTimeDefinition.Model }),
+        PropertyDefinitionType.Decimal to EmbeddedObjectDefinition(dataModel = { DecimalDefinition.Model }),
         PropertyDefinitionType.Embed to EmbeddedObjectDefinition(dataModel = { EmbeddedValuesDefinition.Model }),
         PropertyDefinitionType.Enum to EmbeddedObjectDefinition(dataModel = { EnumDefinition.Model }),
         PropertyDefinitionType.FixedBytes to EmbeddedObjectDefinition(dataModel = { FixedBytesDefinition.Model }),
@@ -96,6 +98,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
     PropertyDefinitionType.Boolean to createFixedBytesWrapper,
     PropertyDefinitionType.Date to createFixedBytesWrapper,
     PropertyDefinitionType.DateTime to createFixedBytesWrapper,
+    PropertyDefinitionType.Decimal to createFixedBytesWrapper,
     PropertyDefinitionType.Embed to { index, name, altNames, definition ->
         @Suppress("UNCHECKED_CAST")
         EmbeddedValuesDefinitionWrapper(

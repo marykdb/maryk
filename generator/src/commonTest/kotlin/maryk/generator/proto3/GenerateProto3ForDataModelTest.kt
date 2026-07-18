@@ -1,6 +1,7 @@
 package maryk.generator.proto3
 
 import maryk.generator.kotlin.GenerationContext
+import maryk.generator.DecimalGeneratorModel
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum
@@ -165,6 +166,24 @@ message CompleteMarykModel {
 """.trimIndent()
 
 class GenerateProto3ForDataModelTest {
+    @Test
+    fun decimalUsesExactStringType() {
+        val output = buildString {
+            DecimalGeneratorModel.generateProto3Schema(GenerationContext()) {
+                append(it)
+            }
+        }
+
+        assertEquals(
+            """
+            message DecimalGeneratorModel {
+              string amount = 1;
+            }
+            """.trimIndent(),
+            output,
+        )
+    }
+
     @Test
     fun testDataModelConversion() {
         val output = buildString {

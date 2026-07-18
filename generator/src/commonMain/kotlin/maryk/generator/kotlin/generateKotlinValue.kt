@@ -24,6 +24,7 @@ import maryk.core.properties.enum.IndexedEnum
 import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.Decimal
 import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
@@ -86,6 +87,10 @@ internal fun generateKotlinValue(
     is Bytes -> {
         addImport("maryk.core.properties.types.Bytes")
         """Bytes("$value")"""
+    }
+    is Decimal -> {
+        addImport("maryk.core.properties.types.Decimal")
+        """Decimal.parse("$value")"""
     }
     is IsTransportablePropertyDefinitionType<*> -> {
         val kotlinDescriptor = value.getKotlinDescriptor()

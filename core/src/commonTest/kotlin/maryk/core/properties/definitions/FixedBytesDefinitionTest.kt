@@ -35,7 +35,9 @@ internal class FixedBytesDefinitionTest {
 
     @Test
     fun createRandomValue() {
-        def.createRandom()
+        val randomizable: IsRandomizableDefinition<Bytes> = def
+        randomizable.createRandom()
+        assertFalse { (def as Any) is IsArithmeticDefinition<*> }
     }
 
     @Test

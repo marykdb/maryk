@@ -2,14 +2,15 @@ package maryk.core.aggregations.metric
 
 import maryk.core.aggregations.IsAggregator
 import maryk.core.aggregations.ValueByPropertyReference
-import maryk.core.properties.definitions.NumberDefinition
 
 /** The aggregator to find stats for given reference */
 data class StatsAggregator<T: Comparable<T>>(
     override val request: Stats<T>
 ) : IsAggregator<T, Stats<T>, StatsResponse<T>> {
-    @Suppress("UNCHECKED_CAST")
-    private val numberDefinition = request.reference.comparablePropertyDefinition as NumberDefinition<T>
+    private val arithmeticDefinition = getArithmeticDefinition(
+        request.reference.comparablePropertyDefinition,
+        "Stats",
+    )
 
     private var summedValue: T? = null
     private var valueCount: Long = 0L
@@ -22,7 +23,7 @@ data class StatsAggregator<T: Comparable<T>>(
 
         if (value != null) {
             this.summedValue = summedValue?.let {
-                numberDefinition.type.sum(it, value)
+                arithmeticDefinition.add(it, value)
             } ?: value
 
             this.maxValue = this.maxValue?.let {
@@ -42,10 +43,7 @@ data class StatsAggregator<T: Comparable<T>>(
             request.reference,
             sum = summedValue,
             average = summedValue?.let {
-                numberDefinition.type.divide(
-                    it,
-                    numberDefinition.type.ofLong(valueCount)
-                )
+                arithmeticDefinition.average(it, valueCount)
             },
             valueCount = valueCount.toULong(),
             min = minValue,

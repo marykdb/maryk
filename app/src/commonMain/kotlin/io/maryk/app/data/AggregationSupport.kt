@@ -20,7 +20,7 @@ import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
-import maryk.core.properties.definitions.IsNumericDefinition
+import maryk.core.properties.definitions.IsArithmeticDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSetDefinition
@@ -42,7 +42,7 @@ enum class AggregationMetric(val label: String) {
     fun supports(definition: IsPropertyDefinition<*>?): Boolean {
         return when (this) {
             VALUE_COUNT -> true
-            SUM, AVERAGE, STATS -> definition is IsNumericDefinition<*>
+            SUM, AVERAGE, STATS -> definition is IsArithmeticDefinition<*>
             MIN, MAX -> definition is IsComparableDefinition<*, *>
         }
     }

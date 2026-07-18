@@ -11,6 +11,7 @@ The table below lists the available property types and where they can be used.
 | [String](types/string.md)           |    ❌    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
 | [Boolean](types/boolean.md)         |    ✅    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
 | [Number](types/number.md)🔢         |    ✅    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
+| [Decimal](types/decimal.md)         |    ✅    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
 | [Enum](types/enum.md)               |    ✅    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
 | [GeoPoint](types/geopoint.md)       |    ✅    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
 | [Date](types/date.md)               |    ✅    |     ✅     |    ✅     |   ✅    |    ✅     |     ✅     |
@@ -31,6 +32,19 @@ The table below lists the available property types and where they can be used.
 🆔 Only the type ID of multi types can be used in the key  
 🔑 Only the map key can be indexed  
 ⤵️ Only nested values inside the embedded object can be indexed
+
+## Choosing Number or Decimal
+
+Use [Number](types/number.md) for values that fit a selected built-in integer
+type, or for intentional `Float`/`Double` approximation. Use
+[Decimal](types/decimal.md) for exact fixed-point domain values such as money,
+rates, and measured quantities.
+
+Decimal also supports exact whole numbers: set `scale = 0u` and choose the
+required `byteSize` when an ordered, aggregatable integer can exceed `Long`.
+For example, `byteSize = 16` stores a signed 128-bit integer. Choose the type
+from domain semantics and range, not merely from whether the current examples
+happen to have decimal places.
 
 ### Characteristic meanings
 

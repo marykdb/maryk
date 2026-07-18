@@ -35,6 +35,7 @@ const map = [
   ['src/content/docs/data-modeling/properties/types/boolean.mdx', 'properties/types/boolean.md'],
   ['src/content/docs/data-modeling/properties/types/date.mdx', 'properties/types/date.md'],
   ['src/content/docs/data-modeling/properties/types/datetime.mdx', 'properties/types/datetime.md'],
+  ['src/content/docs/data-modeling/properties/types/decimal.mdx', 'properties/types/decimal.md'],
   ['src/content/docs/data-modeling/properties/types/embedded-object.mdx', 'properties/types/embeddedObject.md'],
   ['src/content/docs/data-modeling/properties/types/embedded-values.mdx', 'properties/types/embeddedValues.md'],
   ['src/content/docs/data-modeling/properties/types/enum.mdx', 'properties/types/enum.md'],

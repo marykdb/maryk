@@ -8,6 +8,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.SingleTypedValueDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.core.properties.definitions.DecimalDefinition
 import maryk.core.properties.definitions.FixedBytesDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.TimeDefinition
@@ -59,6 +60,7 @@ data class ReferenceToMax<T : Any>(
             Float32 -> Float.MAX_VALUE
             else -> throw IllegalStateException("Unknown number type ${def.type}")
         }) as T
+        is DecimalDefinition -> (def.maxValue ?: def.maximumStorageValue()) as T
         is DateDefinition -> (def.maxValue ?: DateDefinition.MAX) as T
         is DateTimeDefinition -> (def.maxValue ?: when (def.precision) {
             TimePrecision.SECONDS -> DateTimeDefinition.MAX_IN_SECONDS

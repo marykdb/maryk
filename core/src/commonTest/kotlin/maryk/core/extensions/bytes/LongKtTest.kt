@@ -53,6 +53,20 @@ internal class LongKtTest {
     }
 
     @Test
+    fun testStreaming1To4Conversion() {
+        (1..4).forEach { length ->
+            val maximum = (1L shl (length * 8 - 1)) - 1L
+            longArrayOf(-maximum - 1L, -1L, 0L, 1L, maximum).forEach { long ->
+                val collector = ByteCollector()
+                collector.reserve(length)
+                long.writeBytes(collector::write, length)
+
+                expect(long) { initLong(collector::read, length) }
+            }
+        }
+    }
+
+    @Test
     fun testOutOfRangeConversion() {
         assertFailsWith<IllegalArgumentException> {
             4L.writeBytes({}, 9)

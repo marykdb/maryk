@@ -7,8 +7,10 @@ import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.date
+import maryk.core.properties.definitions.decimal
 import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.Decimal
 import maryk.core.query.DefinitionsConversionContext
 import kotlin.test.Test
 import kotlin.test.expect
@@ -30,6 +32,15 @@ internal class ReferenceToMaxTest {
     ) {
         val startDate by date(1u)
         val endBytes by fixedBytes(2u, byteSize = 2, required = false)
+    }
+
+    object PeriodDecimalModel : RootDataModel<PeriodDecimalModel>(
+        indexes = { listOf(
+            Multiple(PeriodDecimalModel.startDate.ref(), ReferenceToMax(PeriodDecimalModel.endAmount.ref()))
+        )}
+    ) {
+        val startDate by date(1u)
+        val endAmount by decimal(2u, scale = 2u, byteSize = 2, required = false)
     }
 
     private val context = DefinitionsConversionContext(
@@ -72,6 +83,27 @@ internal class ReferenceToMaxTest {
         )
         val without = indexable.toStorageByteArrayForIndex(valuesWithoutEnd)
         val withEnd = indexable.toStorageByteArrayForIndex(valuesWithEnd)
+        expect(withEnd!!.toHexString()) { without!!.toHexString() }
+    }
+
+    @Test
+    fun writesScaleAwareDecimalMaxWhenEndDecimalMissing() {
+        val start = LocalDate(2020, 5, 1)
+        val valuesWithoutEnd = PeriodDecimalModel.create {
+            startDate with start
+        }
+        val valuesWithEnd = PeriodDecimalModel.create {
+            startDate with start
+            endAmount with Decimal.fromUnscaled(Short.MAX_VALUE.toLong(), 2u)
+        }
+        val indexable = Multiple(
+            PeriodDecimalModel.startDate.ref(),
+            ReferenceToMax(PeriodDecimalModel.endAmount.ref())
+        )
+
+        val without = indexable.toStorageByteArrayForIndex(valuesWithoutEnd)
+        val withEnd = indexable.toStorageByteArrayForIndex(valuesWithEnd)
+
         expect(withEnd!!.toHexString()) { without!!.toHexString() }
     }
 

@@ -25,7 +25,8 @@ data class FixedBytesDefinition(
     override val default: Bytes? = null,
     override val byteSize: Int
 ) :
-    IsNumericDefinition<Bytes>,
+    IsComparableDefinition<Bytes, IsPropertyContext>,
+    IsRandomizableDefinition<Bytes>,
     IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
     HasDefaultValueDefinition<Bytes> {
@@ -62,7 +63,7 @@ data class FixedBytesDefinition(
         checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?,
     ): Boolean {
-        var compatible = super<IsNumericDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+        var compatible = super<IsComparableDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? FixedBytesDefinition)?.let {
             if (definition.byteSize != this.byteSize) {

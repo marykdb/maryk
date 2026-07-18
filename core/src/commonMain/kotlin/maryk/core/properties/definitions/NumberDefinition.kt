@@ -32,10 +32,12 @@ data class NumberDefinition<T : Comparable<T>>(
     override val minValue: T? = null,
     override val maxValue: T? = null,
     override val default: T? = null,
-    val reversedStorage: Boolean? = null,
+    override val reversedStorage: Boolean? = null,
     val type: NumberDescriptor<T>
 ) :
-    IsNumericDefinition<T>,
+    IsArithmeticDefinition<T>,
+    IsRandomizableDefinition<T>,
+    IsReversibleStorageDefinition,
     IsSerializableFixedBytesEncodable<T, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<T>,
     HasDefaultValueDefinition<T> {
@@ -44,6 +46,13 @@ data class NumberDefinition<T : Comparable<T>>(
     override val byteSize = type.size
 
     override fun createRandom() = type.createRandom()
+
+    override fun add(value1: T, value2: T) = type.sum(value1, value2)
+
+    override fun average(sum: T, count: Long): T {
+        require(count > 0L) { "Average count must be positive" }
+        return type.divide(sum, type.ofLong(count))
+    }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte) =
         when (this.reversedStorage) {
@@ -119,7 +128,7 @@ data class NumberDefinition<T : Comparable<T>>(
         checkedDataModelNames: MutableList<String>?,
         addIncompatibilityReason: ((String) -> Unit)?
     ): Boolean {
-        var compatible = super<IsNumericDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
+        var compatible = super<IsArithmeticDefinition>.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         (definition as? NumberDefinition<*>)?.let {
             if (definition.type != this.type) {

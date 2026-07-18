@@ -8,6 +8,21 @@ Maryk divides aggregation operators into two categories:
 - **Value operators** compute a single statistic such as a count or sum.
 - **Bucketing operators** group values by date, enum or object type and can contain nested value operators.
 
+Operator support follows property capabilities:
+
+- `ValueCount` accepts any property.
+- `Min` and `Max` accept any `IsComparableDefinition`.
+- `Sum`, `Average`, and `Stats` require an `IsArithmeticDefinition`.
+
+Primitive `NumberDefinition` and exact `DecimalDefinition` properties are
+arithmetic. Comparable non-arithmetic values such as strings, dates, and fixed
+bytes support `Min` and `Max`, but not arithmetic aggregations.
+
+Use Decimal aggregations for exact values such as monetary totals, rates, and
+fixed-unit quantities. A Decimal with `scale = 0u` is equally suitable for
+whole-number totals that need a range beyond `Long`; averages still retain that
+zero scale and therefore round half-to-even to a whole number.
+
 Aggregations can be added to any `Get` or `Scan` request through the `aggregations` property. Responses return the aggregated values alongside the requested objects.
 
 The sections below summarise each operator with short examples to demonstrate how they are used in Maryk.
@@ -60,6 +75,10 @@ val getResponse = dataStore.execute(
 
 The **Average** aggregation operator computes the average value of all numeric values for a specified property. This 
 operator is helpful when you want to find the central tendency of a particular attribute.
+
+Integer averages retain their existing integer-division behavior. Decimal
+averages retain the property scale and use round-half-to-even when the exact
+result is between two representable values.
 
 **Use case:** Calculate the average age of users.
 

@@ -72,6 +72,7 @@ export default defineConfig({
                                 // Types (common primitives first)
                                 {label: 'String', slug: 'data-modeling/properties/types/string'},
                                 {label: 'Number', slug: 'data-modeling/properties/types/number'},
+                                {label: 'Decimal', slug: 'data-modeling/properties/types/decimal'},
                                 {label: 'Boolean', slug: 'data-modeling/properties/types/boolean'},
                                 {label: 'Enum', slug: 'data-modeling/properties/types/enum'},
                                 {label: 'Date', slug: 'data-modeling/properties/types/date'},

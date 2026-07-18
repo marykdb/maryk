@@ -63,6 +63,7 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsReferenceDefinition
+import maryk.core.properties.definitions.IsReversibleStorageDefinition
 import maryk.core.properties.definitions.IsSetDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.StringDefinition
@@ -769,6 +770,8 @@ private fun buildModelDetails(ref: ModelFieldRef): List<Pair<String, String>> {
     }
     if (definition is NumberDefinition<*>) {
         details += "Number type" to definition.type.type.name
+    }
+    if (definition is IsReversibleStorageDefinition) {
         details += "Reversed" to (definition.reversedStorage?.toString() ?: "—")
     }
     if (definition is IsListDefinition<*, *>) {

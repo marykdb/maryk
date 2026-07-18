@@ -1,0 +1,135 @@
+name: Release installers
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build and attach
+        required: true
+        type: string
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.release.tag_name || inputs.tag }}"
+  cancel-in-progress: false
+
+jobs:
+  verify-release:
+    name: Verify release provenance
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 1
+
+      - name: Verify published release and version
+        shell: bash
+        run: |
+          TAG="$RELEASE_TAG"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            gh release view "$TAG" --json isDraft --jq 'select(.isDraft == false)' >/dev/null
+          fi
+          TAG_SHA=$(git rev-list -n 1 "$TAG")
+          ACTUAL_SHA=$(git rev-parse HEAD)
+          if [[ "$ACTUAL_SHA" != "$TAG_SHA" ]]; then
+            echo "Checked out $ACTUAL_SHA, but tag $TAG resolves to $TAG_SHA" >&2
+            exit 1
+          fi
+          ./gradlew :app:verifyDistributionVersion -PreleaseTag="$TAG" --no-daemon
+
+  distributions:
+    name: ${{ matrix.name }}
+    needs: verify-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            name: macOS DMG
+            gradle_task: :app:packageDmg
+          - os: ubuntu-latest
+            name: Linux DEB and CLI
+            gradle_task: :app:packageDeb :cli:jvmDistZip
+          - os: windows-latest
+            name: Windows MSI
+            gradle_task: :app:packageMsi
+    runs-on: ${{ matrix.os }}
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 1
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: zulu
+          java-version: 21
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-cleanup: on-success
+
+      - name: Build distribution
+        shell: bash
+        run: ./gradlew :app:verifyDistributionVersion ${{ matrix.gradle_task }} -PreleaseTag="$RELEASE_TAG" --stacktrace --build-cache --no-parallel
+
+      - name: Upload distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: maryk-distribution-${{ runner.os }}-${{ runner.arch }}
+          path: |
+            app/build/compose/binaries/main/**/*.dmg
+            app/build/compose/binaries/main/**/*.msi
+            app/build/compose/binaries/main/**/*.deb
+            cli/build/distributions/*.zip
+          if-no-files-found: error
+          compression-level: 0
+
+  attach-installers:
+    name: Attach installers to release
+    needs: distributions
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Download release distributions
+        uses: actions/download-artifact@v4
+        with:
+          pattern: maryk-distribution-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Create checksums
+        shell: bash
+        run: |
+          mkdir release-upload
+          while IFS= read -r -d '' file; do
+            target="release-upload/$(basename "$file")"
+            if [[ -e "$target" ]]; then
+              echo "Duplicate release asset basename: $(basename "$file")" >&2
+              exit 1
+            fi
+            mv "$file" "$target"
+          done < <(find release-assets -type f -print0)
+          cd release-upload
+          find . -type f ! -name 'SHA256SUMS' -print0 | sort -z | xargs -0 sha256sum > SHA256SUMS
+
+      - name: Attach artifacts
+        shell: bash
+        run: gh release upload "$RELEASE_TAG" release-upload/* --clobber

@@ -1,6 +1,8 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
 import org.gradle.internal.os.OperatingSystem
+import org.gradle.jvm.application.tasks.CreateStartScripts
+import org.gradle.api.tasks.bundling.Zip
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
 import org.jetbrains.kotlin.konan.target.Family
@@ -132,4 +134,12 @@ kotlin {
             }
         }
     }
+}
+
+tasks.named<CreateStartScripts>("startScriptsForJvm") {
+    applicationName = "maryk"
+}
+
+tasks.named<Zip>("jvmDistZip") {
+    archiveBaseName.set("maryk-cli")
 }

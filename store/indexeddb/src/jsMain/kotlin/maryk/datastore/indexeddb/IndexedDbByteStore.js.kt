@@ -4,10 +4,14 @@ package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -16,14 +20,15 @@ internal actual suspend fun openPlatformIndexedDbByteStore(
     objectStoreNames: Set<String>,
     version: Int,
 ): IndexedDbByteStore {
-    var database = openDatabase(databaseName, objectStoreNames, version)
-    val missingStoreNames = missingObjectStoreNames(database, objectStoreNames)
+    val requiredStoreNames = objectStoreNames + writeLeaseStoreName
+    var database = openDatabase(databaseName, requiredStoreNames, version)
+    val missingStoreNames = missingObjectStoreNames(database, requiredStoreNames)
     if (missingStoreNames.isNotEmpty()) {
         val nextVersion = database.version.unsafeCast<Int>() + 1
         database.close()
-        database = openDatabase(databaseName, objectStoreNames, nextVersion)
+        database = openDatabase(databaseName, requiredStoreNames, nextVersion)
     }
-    return BrowserIndexedDbByteStore(database, "maryk-indexeddb:$databaseName")
+    return BrowserIndexedDbByteStore(database, databaseName, "maryk-indexeddb:$databaseName")
 }
 
 private suspend fun openDatabase(
@@ -63,15 +68,25 @@ private fun objectStoreNamesContains(database: dynamic, storeName: String): Bool
 
 private class BrowserIndexedDbByteStore(
     private val database: dynamic,
+    private val databaseName: String,
     private val lockName: String,
 ) : IndexedDbByteStore {
+    private var activeLeaseOwnerId: String? = null
+
     override suspend fun <T> transaction(
         storeNames: Set<String>,
         mode: IndexedDbTransactionMode,
         block: suspend (IndexedDbByteStore) -> T,
     ): T =
         if (mode == IndexedDbTransactionMode.READWRITE) {
-            withBrowserWriteLock(lockName) { block(this) }
+            withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
+                activeLeaseOwnerId = leaseOwnerId
+                try {
+                    block(this)
+                } finally {
+                    activeLeaseOwnerId = null
+                }
+            }
         } else {
             block(this)
         }
@@ -84,6 +99,14 @@ private class BrowserIndexedDbByteStore(
     }
 
     override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) {
+        activeLeaseOwnerId?.let { ownerId ->
+            writeBatchWithLease(
+                listOf(IndexedDbWriteOperation.Put(storeName, key, value)),
+                ownerId,
+            )
+            return
+        }
+
         val transaction = database.transaction(arrayOf(storeName), "readwrite")
         val completion = observeCompletion(transaction)
         awaitResult(transaction.objectStore(storeName).put(value.toIndexedDbValue(), key.toIndexedDbKey()))
@@ -91,6 +114,14 @@ private class BrowserIndexedDbByteStore(
     }
 
     override suspend fun delete(storeName: String, key: ByteArray) {
+        activeLeaseOwnerId?.let { ownerId ->
+            writeBatchWithLease(
+                listOf(IndexedDbWriteOperation.Delete(storeName, key)),
+                ownerId,
+            )
+            return
+        }
+
         val transaction = database.transaction(arrayOf(storeName), "readwrite")
         val completion = observeCompletion(transaction)
         awaitResult(transaction.objectStore(storeName).delete(key.toIndexedDbKey()))
@@ -99,6 +130,11 @@ private class BrowserIndexedDbByteStore(
 
     override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) {
         if (operations.isEmpty()) return
+
+        activeLeaseOwnerId?.let { ownerId ->
+            writeBatchWithLease(operations, ownerId)
+            return
+        }
 
         val transaction = database.transaction(operations.map { it.storeName }.distinct().sorted().toTypedArray(), "readwrite")
         val completion = observeCompletion(transaction)
@@ -117,6 +153,63 @@ private class BrowserIndexedDbByteStore(
             throw cause
         }
         completion.await()
+    }
+
+    private suspend fun writeBatchWithLease(
+        operations: List<IndexedDbWriteOperation>,
+        ownerId: String,
+    ) {
+        val storeNames = (operations.map { it.storeName } + writeLeaseStoreName)
+            .distinct()
+            .sorted()
+            .toTypedArray()
+        val transaction = database.transaction(storeNames, "readwrite")
+        val completion = observeCompletion(transaction)
+        val request = transaction.objectStore(writeLeaseStoreName).get(lockName)
+
+        request.onsuccess = { _: dynamic ->
+            val lease = request.result
+            if (
+                lease == null ||
+                lease.ownerId?.unsafeCast<String>() != ownerId ||
+                lease.expiresAt.unsafeCast<Double>() <= currentTimeMillis()
+            ) {
+                completion.completeExceptionally(
+                    IllegalStateException("Lost IndexedDB write lease for $databaseName")
+                )
+                abortTransaction(transaction)
+            } else {
+                try {
+                    queueWriteOperations(transaction, operations)
+                } catch (cause: Throwable) {
+                    completion.completeExceptionally(cause)
+                    abortTransaction(transaction)
+                }
+            }
+        }
+        request.onerror = { _: dynamic ->
+            completion.completeExceptionally(
+                IllegalStateException(request.error?.message?.unsafeCast<String>() ?: "IndexedDB write lease check failed")
+            )
+            abortTransaction(transaction)
+        }
+
+        completion.await()
+    }
+
+    private fun queueWriteOperations(
+        transaction: dynamic,
+        operations: List<IndexedDbWriteOperation>,
+    ) {
+        for (operation in operations) {
+            val store = transaction.objectStore(operation.storeName)
+            when (operation) {
+                is IndexedDbWriteOperation.Delete ->
+                    store.delete(operation.key.toIndexedDbKey())
+                is IndexedDbWriteOperation.Put ->
+                    store.put(operation.value.toIndexedDbValue(), operation.key.toIndexedDbKey())
+            }
+        }
     }
 
     override suspend fun scan(
@@ -303,14 +396,13 @@ private fun abortTransaction(transaction: dynamic) {
 }
 
 private suspend fun <T> withBrowserWriteLock(
+    database: dynamic,
+    databaseName: String,
     lockName: String,
-    block: suspend () -> T,
+    block: suspend (leaseOwnerId: String?) -> T,
 ): T {
     if (!hasWebLocks()) {
-        val lock = localIndexedDbWriteLocks.getOrPut(lockName) { Mutex() }
-        return lock.withLock {
-            block()
-        }
+        return withIndexedDbWriteLease(database, databaseName, lockName, block)
     }
 
     return suspendCancellableCoroutine { continuation ->
@@ -321,15 +413,16 @@ private suspend fun <T> withBrowserWriteLock(
                     releaseWebLock(release)
                     return@requestWebLock
                 }
-                CoroutineScope(continuation.context).launch {
+                val blockJob = CoroutineScope(continuation.context).launch {
                     try {
-                        continuation.resume(block())
+                        continuation.resume(block(null))
                     } catch (cause: Throwable) {
                         continuation.resumeWithException(cause)
                     } finally {
                         releaseWebLock(release)
                     }
                 }
+                continuation.invokeOnCancellation { blockJob.cancel() }
             },
             onError = { message ->
                 continuation.resumeWithException(IllegalStateException(message))
@@ -338,7 +431,248 @@ private suspend fun <T> withBrowserWriteLock(
     }
 }
 
-private val localIndexedDbWriteLocks = mutableMapOf<String, Mutex>()
+private suspend fun <T> withIndexedDbWriteLease(
+    database: dynamic,
+    databaseName: String,
+    lockName: String,
+    block: suspend (leaseOwnerId: String) -> T,
+): T {
+    val ownerId = createLeaseOwnerId()
+    while (!tryAcquireWriteLease(database, lockName, ownerId)) {
+        awaitWriteLeaseSignal(databaseName)
+    }
+
+    return coroutineScope {
+        var leaseFailure: Throwable? = null
+        val renewal = launch {
+            while (isActive) {
+                delay(writeLeaseRenewIntervalMillis)
+                if (!renewWriteLease(database, lockName, ownerId)) {
+                    leaseFailure = IllegalStateException("Lost IndexedDB write lease for $databaseName")
+                    break
+                }
+            }
+        }
+
+        try {
+            val result = block(ownerId)
+            leaseFailure?.let { throw it }
+            result
+        } finally {
+            withContext(NonCancellable) {
+                renewal.cancelAndJoin()
+                releaseWriteLease(database, lockName, ownerId)
+                signalWriteLeaseRelease(databaseName)
+            }
+        }
+    }
+}
+
+private suspend fun tryAcquireWriteLease(
+    database: dynamic,
+    lockName: String,
+    ownerId: String,
+): Boolean = awaitLeaseTransaction { onComplete, onError ->
+    acquireOrRenewWriteLease(database, lockName, ownerId, true, onComplete, onError)
+}
+
+private suspend fun renewWriteLease(
+    database: dynamic,
+    lockName: String,
+    ownerId: String,
+): Boolean = awaitLeaseTransaction { onComplete, onError ->
+    acquireOrRenewWriteLease(database, lockName, ownerId, false, onComplete, onError)
+}
+
+private suspend fun awaitLeaseTransaction(
+    start: ((Boolean) -> Unit, (String) -> Unit) -> Unit,
+): Boolean = suspendCancellableCoroutine { continuation ->
+    start(
+        { acquired -> if (continuation.isActive) continuation.resume(acquired) },
+        { message ->
+            if (continuation.isActive) {
+                continuation.resumeWithException(IllegalStateException(message))
+            }
+        },
+    )
+}
+
+private fun acquireOrRenewWriteLease(
+    database: dynamic,
+    lockName: String,
+    ownerId: String,
+    allowExpiredOwner: Boolean,
+    onComplete: (Boolean) -> Unit,
+    onError: (String) -> Unit,
+) {
+    val leaseDurationMillis = writeLeaseDurationMillis
+    js(
+        """
+        let completed = false;
+        let acquired = false;
+        const transaction = database.transaction([writeLeaseStoreName], "readwrite");
+        const store = transaction.objectStore(writeLeaseStoreName);
+        const request = store.get(lockName);
+        request.onsuccess = () => {
+            const now = Date.now();
+            const current = request.result;
+            if (
+                current === undefined ||
+                current.ownerId === ownerId ||
+                (allowExpiredOwner && current.expiresAt <= now)
+            ) {
+                acquired = true;
+                store.put({ ownerId, expiresAt: now + leaseDurationMillis }, lockName);
+            }
+        };
+        const fail = (message) => {
+            if (!completed) {
+                completed = true;
+                onError(message);
+            }
+        };
+        transaction.oncomplete = () => {
+            if (!completed) {
+                completed = true;
+                onComplete(acquired);
+            }
+        };
+        transaction.onerror = () => fail(
+            transaction.error && transaction.error.message
+                ? transaction.error.message
+                : "IndexedDB write lease transaction failed"
+        );
+        transaction.onabort = () => fail(
+            transaction.error && transaction.error.message
+                ? transaction.error.message
+                : "IndexedDB write lease transaction aborted"
+        );
+        """
+    )
+}
+
+private suspend fun releaseWriteLease(
+    database: dynamic,
+    lockName: String,
+    ownerId: String,
+): Unit = suspendCancellableCoroutine { continuation ->
+    releaseIndexedDbWriteLease(
+        database,
+        lockName,
+        ownerId,
+        { if (continuation.isActive) continuation.resume(Unit) },
+        { message ->
+            if (continuation.isActive) {
+                continuation.resumeWithException(IllegalStateException(message))
+            }
+        },
+    )
+}
+
+private fun releaseIndexedDbWriteLease(
+    database: dynamic,
+    lockName: String,
+    ownerId: String,
+    onComplete: () -> Unit,
+    onError: (String) -> Unit,
+) {
+    js(
+        """
+        let completed = false;
+        const transaction = database.transaction([writeLeaseStoreName], "readwrite");
+        const store = transaction.objectStore(writeLeaseStoreName);
+        const request = store.get(lockName);
+        request.onsuccess = () => {
+            if (request.result && request.result.ownerId === ownerId) {
+                store.delete(lockName);
+            }
+        };
+        const fail = (message) => {
+            if (!completed) {
+                completed = true;
+                onError(message);
+            }
+        };
+        transaction.oncomplete = () => {
+            if (!completed) {
+                completed = true;
+                onComplete();
+            }
+        };
+        transaction.onerror = () => fail(
+            transaction.error && transaction.error.message
+                ? transaction.error.message
+                : "IndexedDB write lease release failed"
+        );
+        transaction.onabort = () => fail(
+            transaction.error && transaction.error.message
+                ? transaction.error.message
+                : "IndexedDB write lease release aborted"
+        );
+        """
+    )
+}
+
+private suspend fun awaitWriteLeaseSignal(databaseName: String): Unit =
+    suspendCancellableCoroutine { continuation ->
+        waitForWriteLeaseSignal(
+            writeLeaseChannelName(databaseName),
+            writeLeaseRetryMillis,
+        ) {
+            if (continuation.isActive) continuation.resume(Unit)
+        }
+    }
+
+private fun waitForWriteLeaseSignal(
+    channelName: String,
+    timeoutMillis: Int,
+    onComplete: () -> Unit,
+) {
+    js(
+        """
+        let completed = false;
+        const channel = typeof BroadcastChannel === "function"
+            ? new BroadcastChannel(channelName)
+            : null;
+        const finish = () => {
+            if (!completed) {
+                completed = true;
+                if (channel) channel.close();
+                onComplete();
+            }
+        };
+        if (channel) channel.onmessage = finish;
+        setTimeout(finish, timeoutMillis);
+        """
+    )
+}
+
+private fun signalWriteLeaseRelease(databaseName: String) {
+    val channelName = writeLeaseChannelName(databaseName)
+    js(
+        """
+        if (typeof BroadcastChannel === "function") {
+            const channel = new BroadcastChannel(channelName);
+            channel.postMessage("released");
+            channel.close();
+        }
+        """
+    )
+}
+
+private fun createLeaseOwnerId(): String =
+    js("Date.now().toString(36) + '-' + Math.random().toString(36).slice(2)").unsafeCast<String>()
+
+private fun currentTimeMillis(): Double =
+    js("Date.now()").unsafeCast<Double>()
+
+private fun writeLeaseChannelName(databaseName: String): String =
+    "maryk-indexeddb-lease:$databaseName"
+
+private const val writeLeaseStoreName = "__maryk_write_lease"
+private const val writeLeaseDurationMillis = 30_000
+private const val writeLeaseRenewIntervalMillis = 10_000L
+private const val writeLeaseRetryMillis = 100
 
 private fun hasWebLocks(): Boolean =
     js("!!(typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request)").unsafeCast<Boolean>()

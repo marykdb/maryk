@@ -105,7 +105,7 @@ Do not implement a full in-memory iterator. Cursor steps should read from Indexe
 
 Each Maryk read/scan uses native IndexedDB readonly requests over the required object stores. Each mutation serializes the whole logical request with a browser lock, then commits the planned writes through one native `readwrite` batch transaction.
 
-Current implementation note: add/change/delete mutations run inside an exclusive Web Locks API scope when available, then commit writes through one native IndexedDB `readwrite` transaction in both JS and WasmJS. This serializes preflight reads, scans, uniqueness checks, and write batches across browser tabs on runtimes with `navigator.locks`; Node tests and browsers without Web Locks fall back to a per-database in-process mutex shared by store instances in the same JS context.
+Current implementation note: add/change/delete mutations run inside an exclusive Web Locks API scope when available, then commit writes through one native IndexedDB `readwrite` transaction in both JS and WasmJS. Browsers without Web Locks use an atomic renewable IndexedDB lease with fenced write batches; `BroadcastChannel` wakeups and timed polling coordinate waiters.
 
 Open lifecycle note: JS and WasmJS connections close on IndexedDB `versionchange`, blocked opens fail explicitly instead of hanging, and existing databases auto-upgrade to add missing object stores while preserving existing rows.
 

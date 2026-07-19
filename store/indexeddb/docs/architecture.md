@@ -43,7 +43,9 @@ The common Maryk processor suspends between validation, reads, scans, and write 
 Instead:
 
 - mutation requests run under an exclusive Web Locks API lock when available;
-- browsers without Web Locks and Node tests use a per-database in-process mutex;
+- browsers without Web Locks use a renewable per-database lease stored atomically in IndexedDB;
+- lease release notifications use `BroadcastChannel`, with timed retries as a compatibility fallback;
+- fallback write batches verify the lease in the same native transaction, so an expired owner cannot commit;
 - final writes are committed with one native IndexedDB `readwrite` batch transaction.
 
 This gives good browser behavior without pretending IndexedDB transactions are long-lived coroutine scopes.

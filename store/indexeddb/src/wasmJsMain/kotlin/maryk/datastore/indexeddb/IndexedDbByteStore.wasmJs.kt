@@ -3,10 +3,14 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.js.JsAny
@@ -24,8 +28,9 @@ internal actual suspend fun openPlatformIndexedDbByteStore(
     objectStoreNames: Set<String>,
     version: Int,
 ): IndexedDbByteStore {
+    val requiredObjectStoreNames = objectStoreNames + writeLeaseStoreName
     val storeNames = JsArray<JsString>().also { array ->
-        objectStoreNames.sorted().forEachIndexed { index, storeName ->
+        requiredObjectStoreNames.sorted().forEachIndexed { index, storeName ->
             array[index] = storeName.toJsString()
         }
     }
@@ -40,20 +45,30 @@ internal actual suspend fun openPlatformIndexedDbByteStore(
         )
     }
 
-    return WasmIndexedDbByteStore(database, "maryk-indexeddb:$databaseName")
+    return WasmIndexedDbByteStore(database, databaseName, "maryk-indexeddb:$databaseName")
 }
 
 private class WasmIndexedDbByteStore(
     private val database: JsAny,
+    private val databaseName: String,
     private val lockName: String,
 ) : IndexedDbByteStore {
+    private var activeLeaseOwnerId: String? = null
+
     override suspend fun <T> transaction(
         storeNames: Set<String>,
         mode: IndexedDbTransactionMode,
         block: suspend (IndexedDbByteStore) -> T,
     ): T =
         if (mode == IndexedDbTransactionMode.READWRITE) {
-            withBrowserWriteLock(lockName) { block(this) }
+            withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
+                activeLeaseOwnerId = leaseOwnerId
+                try {
+                    block(this)
+                } finally {
+                    activeLeaseOwnerId = null
+                }
+            }
         } else {
             block(this)
         }
@@ -73,6 +88,11 @@ private class WasmIndexedDbByteStore(
     }
 
     override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) {
+        if (activeLeaseOwnerId != null) {
+            writeBatch(listOf(IndexedDbWriteOperation.Put(storeName, key, value)))
+            return
+        }
+
         suspendCancellableCoroutine<Unit> { continuation ->
             putIndexedDbValue(
                 database = database,
@@ -86,6 +106,11 @@ private class WasmIndexedDbByteStore(
     }
 
     override suspend fun delete(storeName: String, key: ByteArray) {
+        if (activeLeaseOwnerId != null) {
+            writeBatch(listOf(IndexedDbWriteOperation.Delete(storeName, key)))
+            return
+        }
+
         suspendCancellableCoroutine<Unit> { continuation ->
             deleteIndexedDbValue(
                 database = database,
@@ -120,6 +145,9 @@ private class WasmIndexedDbByteStore(
             writeIndexedDbBatch(
                 database = database,
                 operations = indexedOperations,
+                leaseStoreName = writeLeaseStoreName,
+                lockName = lockName,
+                leaseOwnerId = activeLeaseOwnerId?.toJsString(),
                 onSuccess = { continuation.resume(Unit) },
                 onError = { continuation.resumeWithException(IllegalStateException(it)) },
             )
@@ -287,6 +315,9 @@ private fun createDeleteOperation(
 private fun writeIndexedDbBatch(
     database: JsAny,
     operations: JsArray<JsAny>,
+    leaseStoreName: String,
+    lockName: String,
+    leaseOwnerId: JsString?,
     onSuccess: () -> Unit,
     onError: (String) -> Unit,
 ) {
@@ -308,18 +339,44 @@ private fun writeIndexedDbBatch(
         };
         try {
             const storeNames = [...new Set(Array.from(operations, operation => operation.storeName))].sort();
+            if (leaseOwnerId !== null) {
+                storeNames.push(leaseStoreName);
+                storeNames.sort();
+            }
             transaction = database.transaction(storeNames, "readwrite");
             transaction.oncomplete = () => succeed();
             transaction.onerror = () => fail(transaction.error?.message ?? "IndexedDB transaction failed");
             transaction.onabort = () => fail(transaction.error?.message ?? "IndexedDB transaction aborted");
-            for (let index = 0; index < operations.length; index++) {
-                const operation = operations[index];
-                const store = transaction.objectStore(operation.storeName);
-                if (operation.type === "put") {
-                    store.put(operation.value, operation.key);
-                } else {
-                    store.delete(operation.key);
+
+            const queueOperations = () => {
+                for (let index = 0; index < operations.length; index++) {
+                    const operation = operations[index];
+                    const store = transaction.objectStore(operation.storeName);
+                    if (operation.type === "put") {
+                        store.put(operation.value, operation.key);
+                    } else {
+                        store.delete(operation.key);
+                    }
                 }
+            };
+
+            if (leaseOwnerId === null) {
+                queueOperations();
+            } else {
+                const leaseRequest = transaction.objectStore(leaseStoreName).get(lockName);
+                leaseRequest.onsuccess = () => {
+                    const lease = leaseRequest.result;
+                    if (!lease || lease.ownerId !== leaseOwnerId || lease.expiresAt <= Date.now()) {
+                        fail("Lost IndexedDB write lease");
+                        transaction.abort();
+                    } else {
+                        queueOperations();
+                    }
+                };
+                leaseRequest.onerror = () => {
+                    fail(leaseRequest.error?.message ?? "IndexedDB write lease check failed");
+                    transaction.abort();
+                };
             }
         } catch (error) {
             try {
@@ -486,14 +543,13 @@ private fun scanIndexedDbValues(
 }
 
 private suspend fun <T> withBrowserWriteLock(
+    database: JsAny,
+    databaseName: String,
     lockName: String,
-    block: suspend () -> T,
+    block: suspend (leaseOwnerId: String?) -> T,
 ): T {
     if (!hasWebLocks()) {
-        val lock = localIndexedDbWriteLocks.getOrPut(lockName) { Mutex() }
-        return lock.withLock {
-            block()
-        }
+        return withIndexedDbWriteLease(database, databaseName, lockName, block)
     }
 
     return suspendCancellableCoroutine { continuation ->
@@ -504,15 +560,16 @@ private suspend fun <T> withBrowserWriteLock(
                     releaseWebLock(release)
                     return@requestWebLock
                 }
-                CoroutineScope(continuation.context).launch {
+                val blockJob = CoroutineScope(continuation.context).launch {
                     try {
-                        continuation.resume(block())
+                        continuation.resume(block(null))
                     } catch (cause: Throwable) {
                         continuation.resumeWithException(cause)
                     } finally {
                         releaseWebLock(release)
                     }
                 }
+                continuation.invokeOnCancellation { blockJob.cancel() }
             },
             onError = { message ->
                 continuation.resumeWithException(IllegalStateException(message))
@@ -521,7 +578,263 @@ private suspend fun <T> withBrowserWriteLock(
     }
 }
 
-private val localIndexedDbWriteLocks = mutableMapOf<String, Mutex>()
+private suspend fun <T> withIndexedDbWriteLease(
+    database: JsAny,
+    databaseName: String,
+    lockName: String,
+    block: suspend (leaseOwnerId: String) -> T,
+): T {
+    val ownerId = createLeaseOwnerId()
+    while (!tryAcquireWriteLease(database, lockName, ownerId)) {
+        awaitWriteLeaseSignal(databaseName)
+    }
+
+    return coroutineScope {
+        var leaseFailure: Throwable? = null
+        val renewal = launch {
+            while (isActive) {
+                delay(writeLeaseRenewIntervalMillis)
+                if (!renewWriteLease(database, lockName, ownerId)) {
+                    leaseFailure = IllegalStateException("Lost IndexedDB write lease for $databaseName")
+                    break
+                }
+            }
+        }
+
+        try {
+            val result = block(ownerId)
+            leaseFailure?.let { throw it }
+            result
+        } finally {
+            withContext(NonCancellable) {
+                renewal.cancelAndJoin()
+                releaseWriteLease(database, lockName, ownerId)
+                signalWriteLeaseRelease(databaseName)
+            }
+        }
+    }
+}
+
+private suspend fun tryAcquireWriteLease(
+    database: JsAny,
+    lockName: String,
+    ownerId: String,
+): Boolean = awaitLeaseTransaction { onComplete, onError ->
+    acquireOrRenewWriteLease(
+        database,
+        writeLeaseStoreName,
+        lockName,
+        ownerId,
+        true,
+        writeLeaseDurationMillis,
+        onComplete,
+        onError,
+    )
+}
+
+private suspend fun renewWriteLease(
+    database: JsAny,
+    lockName: String,
+    ownerId: String,
+): Boolean = awaitLeaseTransaction { onComplete, onError ->
+    acquireOrRenewWriteLease(
+        database,
+        writeLeaseStoreName,
+        lockName,
+        ownerId,
+        false,
+        writeLeaseDurationMillis,
+        onComplete,
+        onError,
+    )
+}
+
+private suspend fun awaitLeaseTransaction(
+    start: ((Boolean) -> Unit, (String) -> Unit) -> Unit,
+): Boolean = suspendCancellableCoroutine { continuation ->
+    start(
+        { acquired -> if (continuation.isActive) continuation.resume(acquired) },
+        { message ->
+            if (continuation.isActive) {
+                continuation.resumeWithException(IllegalStateException(message))
+            }
+        },
+    )
+}
+
+private fun acquireOrRenewWriteLease(
+    database: JsAny,
+    leaseStoreName: String,
+    lockName: String,
+    ownerId: String,
+    allowExpiredOwner: Boolean,
+    leaseDurationMillis: Int,
+    onComplete: (Boolean) -> Unit,
+    onError: (String) -> Unit,
+): Unit {
+    js(
+        """
+        let completed = false;
+        let acquired = false;
+        const transaction = database.transaction([leaseStoreName], "readwrite");
+        const store = transaction.objectStore(leaseStoreName);
+        const request = store.get(lockName);
+        request.onsuccess = () => {
+            const now = Date.now();
+            const current = request.result;
+            if (
+                current === undefined ||
+                current.ownerId === ownerId ||
+                (allowExpiredOwner && current.expiresAt <= now)
+            ) {
+                acquired = true;
+                store.put({ ownerId, expiresAt: now + leaseDurationMillis }, lockName);
+            }
+        };
+        const fail = (message) => {
+            if (!completed) {
+                completed = true;
+                onError(message);
+            }
+        };
+        transaction.oncomplete = () => {
+            if (!completed) {
+                completed = true;
+                onComplete(acquired);
+            }
+        };
+        transaction.onerror = () => fail(
+            transaction.error?.message ?? "IndexedDB write lease transaction failed"
+        );
+        transaction.onabort = () => fail(
+            transaction.error?.message ?? "IndexedDB write lease transaction aborted"
+        );
+        """
+    )
+}
+
+private suspend fun releaseWriteLease(
+    database: JsAny,
+    lockName: String,
+    ownerId: String,
+): Unit = suspendCancellableCoroutine { continuation ->
+    releaseIndexedDbWriteLease(
+        database,
+        writeLeaseStoreName,
+        lockName,
+        ownerId,
+        { if (continuation.isActive) continuation.resume(Unit) },
+        { message ->
+            if (continuation.isActive) {
+                continuation.resumeWithException(IllegalStateException(message))
+            }
+        },
+    )
+}
+
+private fun releaseIndexedDbWriteLease(
+    database: JsAny,
+    leaseStoreName: String,
+    lockName: String,
+    ownerId: String,
+    onComplete: () -> Unit,
+    onError: (String) -> Unit,
+): Unit {
+    js(
+        """
+        let completed = false;
+        const transaction = database.transaction([leaseStoreName], "readwrite");
+        const store = transaction.objectStore(leaseStoreName);
+        const request = store.get(lockName);
+        request.onsuccess = () => {
+            if (request.result && request.result.ownerId === ownerId) {
+                store.delete(lockName);
+            }
+        };
+        const fail = (message) => {
+            if (!completed) {
+                completed = true;
+                onError(message);
+            }
+        };
+        transaction.oncomplete = () => {
+            if (!completed) {
+                completed = true;
+                onComplete();
+            }
+        };
+        transaction.onerror = () => fail(
+            transaction.error?.message ?? "IndexedDB write lease release failed"
+        );
+        transaction.onabort = () => fail(
+            transaction.error?.message ?? "IndexedDB write lease release aborted"
+        );
+        """
+    )
+}
+
+private suspend fun awaitWriteLeaseSignal(databaseName: String): Unit =
+    suspendCancellableCoroutine { continuation ->
+        waitForWriteLeaseSignal(
+            writeLeaseChannelName(databaseName),
+            writeLeaseRetryMillis,
+        ) {
+            if (continuation.isActive) continuation.resume(Unit)
+        }
+    }
+
+private fun waitForWriteLeaseSignal(
+    channelName: String,
+    timeoutMillis: Int,
+    onComplete: () -> Unit,
+) {
+    js(
+        """
+        let completed = false;
+        const channel = typeof BroadcastChannel === "function"
+            ? new BroadcastChannel(channelName)
+            : null;
+        const finish = () => {
+            if (!completed) {
+                completed = true;
+                if (channel) channel.close();
+                onComplete();
+            }
+        };
+        if (channel) channel.onmessage = finish;
+        setTimeout(finish, timeoutMillis);
+        """
+    )
+}
+
+private fun signalWriteLeaseRelease(databaseName: String): Unit =
+    postWriteLeaseRelease(writeLeaseChannelName(databaseName))
+
+private fun postWriteLeaseRelease(channelName: String) {
+    js(
+        """
+        if (typeof BroadcastChannel === "function") {
+            const channel = new BroadcastChannel(channelName);
+            channel.postMessage("released");
+            channel.close();
+        }
+        """
+    )
+}
+
+private fun createLeaseOwnerId(): String =
+    createLeaseOwnerIdJs().toString()
+
+private fun createLeaseOwnerIdJs(): JsString =
+    js("Date.now().toString(36) + '-' + Math.random().toString(36).slice(2)")
+
+private fun writeLeaseChannelName(databaseName: String): String =
+    "maryk-indexeddb-lease:$databaseName"
+
+private const val writeLeaseStoreName = "__maryk_write_lease"
+private const val writeLeaseDurationMillis = 30_000
+private const val writeLeaseRenewIntervalMillis = 10_000L
+private const val writeLeaseRetryMillis = 100
 
 private fun hasWebLocks(): Boolean =
     js("!!(typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request)")

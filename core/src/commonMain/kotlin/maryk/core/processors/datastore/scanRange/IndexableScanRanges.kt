@@ -1,6 +1,7 @@
 package maryk.core.processors.datastore.scanRange
 
 import maryk.core.processors.datastore.matchers.IndexPartialToMatch
+import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
 import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
 import maryk.core.processors.datastore.matchers.IsIndexPartialToMatch
 import maryk.lib.extensions.compare.matchesRangePart
@@ -44,9 +45,12 @@ data class IndexableScanRanges internal constructor(
 
     private fun hasExactPrefixExpansion(rangeStart: ByteArray) =
         partialMatches?.any {
-            it is IndexPartialToMatch &&
+            (it is IndexPartialToMatch &&
                 it.partialMatch &&
-                it.toMatch.contentEquals(rangeStart)
+                it.toMatch.contentEquals(rangeStart)) ||
+                (it is IndexPartialToBeOneOf &&
+                    it.partialMatch &&
+                    it.toBeOneOf.any(rangeStart::contentEquals))
         } == true
 
     private fun hasAnchoredExactPartSize(rangeStartSize: Int) =

@@ -27,5 +27,8 @@ internal val mapOfFilterDefinitions = mapOf(
     FilterType.ValueIn to EmbeddedObjectDefinition(dataModel = { ValueIn }),
     FilterType.Matches to EmbeddedObjectDefinition(dataModel = { Matches }),
     FilterType.MatchesPrefix to EmbeddedObjectDefinition(dataModel = { MatchesPrefix }),
-    FilterType.MatchesRegEx to EmbeddedObjectDefinition(dataModel = { MatchesRegEx })
+    FilterType.MatchesRegEx to EmbeddedObjectDefinition(dataModel = { MatchesRegEx }),
+    FilterType.GeoWithinBox to EmbeddedObjectDefinition(dataModel = { GeoWithinBox }),
+    FilterType.GeoWithinRadius to EmbeddedObjectDefinition(dataModel = { GeoWithinRadius }),
+    FilterType.GeoWithinPolygon to EmbeddedObjectDefinition(dataModel = { GeoWithinPolygon }),
 )

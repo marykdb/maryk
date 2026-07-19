@@ -190,11 +190,16 @@ data class IndexPartialToBeOneOf(
     override val fromByteIndex: Int?,
     override val keySize: Int,
     override val indexPartCount: Int,
-    val toBeOneOf: List<ByteArray>
+    val toBeOneOf: List<ByteArray>,
+    val partialMatch: Boolean = false,
 ) : IsIndexPartialToMatch {
     /** Matches [bytes] to be one of partials in list */
     override fun match(bytes: ByteArray, offset: Int, length: Int, sourceEnd: Int) =
         getByteIndexAndSize(bytes, offset, sourceEnd)?.let { (byteIndex, size) ->
-            toBeOneOf.any { bytes.matchesRange(offset + byteIndex, it, size) }
+            if (partialMatch) {
+                toBeOneOf.any { bytes.matchesRangePart(offset + byteIndex, it, size, length = it.size) }
+            } else {
+                toBeOneOf.any { bytes.matchesRange(offset + byteIndex, it, size) }
+            }
         } ?: toBeOneOf.any { bytes.matchesRangePart(offset + getByteIndex(bytes, offset, sourceEnd), it, length) }
 }

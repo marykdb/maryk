@@ -21,6 +21,7 @@ import maryk.core.properties.definitions.index.Normalize as NormalizeInstance
 import maryk.core.properties.definitions.index.Split as SplitInstance
 import maryk.core.properties.definitions.index.Reversed as ReversedInstance
 import maryk.core.properties.definitions.index.ReferenceToMax as ReferenceToMaxInstance
+import maryk.core.properties.definitions.index.GeoHash as GeoHashInstance
 
 /** Indexed type of property definitions */
 sealed class IndexKeyPartType<out T: IsIndexable>(
@@ -39,10 +40,11 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
     object Normalize : IndexKeyPartType<NormalizeInstance>(7u), ValueType<String>
     object Split : IndexKeyPartType<SplitInstance>(8u), ValueType<String>
     object AnyOf : IndexKeyPartType<AnyOfInstance>(9u), ArrayType
+    object GeoHash : IndexKeyPartType<GeoHashInstance>(10u), ValueType<String>
 
     companion object : IndexedEnumDefinition<IndexKeyPartType<*>>(
         IndexKeyPartType::class, {
-            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7, Normalize, Split, AnyOf)
+            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7, Normalize, Split, AnyOf, GeoHash)
         }
     )
 }
@@ -61,6 +63,7 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
         IndexKeyPartType.UUIDv7 to EmbeddedObjectDefinition(dataModel = { UUIDv7Key.Model }),
         IndexKeyPartType.Normalize to EmbeddedObjectDefinition(dataModel = { NormalizeInstance.Model }),
         IndexKeyPartType.Split to EmbeddedObjectDefinition(dataModel = { SplitInstance.Model }),
+        IndexKeyPartType.GeoHash to EmbeddedObjectDefinition(dataModel = { GeoHashInstance.Model }),
     )
 
 internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =

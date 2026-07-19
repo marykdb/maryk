@@ -5,12 +5,16 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.properties.definitions.index.AnyOf
+import maryk.core.properties.definitions.index.GeoHash
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.Split
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.filters.And
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.filters.GeoWithinBox
+import maryk.core.query.filters.GeoWithinRadius
+import maryk.core.query.filters.GeoWithinPolygon
 import maryk.core.query.filters.Matches
 import maryk.core.query.filters.MatchesPrefix
 import maryk.core.query.filters.MatchesRegEx
@@ -64,6 +68,12 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
                     }
                     return IndexScan(indexable, ASC)
                 }
+                is GeoHash -> {
+                    if (!hasSupportedGeoMatch(indexable, filter)) {
+                        continue@indexWalk
+                    }
+                    return IndexScan(indexable, ASC)
+                }
                 is Split -> continue@indexWalk
                 else -> throw TypeException("Indexable type of $indexable is not supported")
             }
@@ -77,6 +87,14 @@ fun <DM: IsRootDataModel> DM.optimizeTableScan(
     }
 
     return tableScan
+}
+
+private fun hasSupportedGeoMatch(indexable: GeoHash, filter: IsFilter?): Boolean = when (filter) {
+    is GeoWithinBox -> indexable.reference.isForPropertyReference(filter.reference)
+    is GeoWithinRadius -> indexable.reference.isForPropertyReference(filter.reference)
+    is GeoWithinPolygon -> indexable.reference.isForPropertyReference(filter.reference)
+    is And -> filter.filters.any { hasSupportedGeoMatch(indexable, it) }
+    else -> false
 }
 
 private fun hasSupportedSearchMatch(indexable: AnyOf, filter: IsFilter?): Boolean = when (filter) {

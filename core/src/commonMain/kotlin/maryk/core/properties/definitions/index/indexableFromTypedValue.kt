@@ -15,6 +15,9 @@ internal fun TypedValue<IndexKeyPartType<*>, *>.toIndexable(): IsIndexable = whe
         IndexKeyPartType.ReferenceToMax -> ReferenceToMax.Model.invoke(
             typedValue as ObjectValues<ReferenceToMax<out Any>, ReferenceToMax.Model>
         )
+        IndexKeyPartType.GeoHash -> GeoHash.Model.invoke(
+            typedValue as ObjectValues<GeoHash, GeoHash.Model>
+        )
         else -> throw IllegalStateException("Unexpected embedded values for index type ${this.type}")
     }
     else -> throw IllegalStateException("Unexpected indexable value ${typedValue::class}")

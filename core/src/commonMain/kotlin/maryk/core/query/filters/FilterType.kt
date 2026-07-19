@@ -25,7 +25,10 @@ enum class FilterType(
     ValueIn(13u),
     Matches(14u),
     MatchesPrefix(15u),
-    MatchesRegEx(16u);
+    MatchesRegEx(16u),
+    GeoWithinBox(17u),
+    GeoWithinRadius(18u),
+    GeoWithinPolygon(19u);
 
     companion object : IndexedEnumDefinition<FilterType>(
         FilterType::class, { entries }

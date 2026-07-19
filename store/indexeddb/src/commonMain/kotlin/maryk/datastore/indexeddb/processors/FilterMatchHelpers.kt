@@ -17,6 +17,9 @@ import maryk.core.query.filters.Exists
 import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.GreaterThan
 import maryk.core.query.filters.GreaterThanEquals
+import maryk.core.query.filters.GeoWithinBox
+import maryk.core.query.filters.GeoWithinRadius
+import maryk.core.query.filters.GeoWithinPolygon
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
@@ -72,6 +75,12 @@ internal fun IsFilter.hasReferencedQualifier(): Boolean = when (filterType) {
     FilterType.ValueIn -> (this as ValueIn).referenceValuePairs.any { (reference, _) ->
         reference.toQualifierMatcher().referencedMatcher() != null
     }
+    FilterType.GeoWithinBox -> (this as GeoWithinBox).reference
+        .toQualifierMatcher().referencedMatcher() != null
+    FilterType.GeoWithinRadius -> (this as GeoWithinRadius).reference
+        .toQualifierMatcher().referencedMatcher() != null
+    FilterType.GeoWithinPolygon -> (this as GeoWithinPolygon).reference
+        .toQualifierMatcher().referencedMatcher() != null
     FilterType.Matches,
     FilterType.MatchesPrefix,
     FilterType.MatchesRegEx -> false
@@ -106,4 +115,3 @@ internal fun <DM : IsRootDataModel> ValuesWithMetaData<DM>.toCreationChanges(
         )
     )
 }
-

@@ -7,6 +7,7 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
 import maryk.core.processors.datastore.matchers.IndexPartialSizeToMatch
 import maryk.core.processors.datastore.matchers.IndexPartialToMatch
+import maryk.core.processors.datastore.matchers.IndexPartialToBeOneOf
 import maryk.core.processors.datastore.scanRange.IndexableScanRanges
 import maryk.core.processors.datastore.scanRange.IndexValueMatch
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
@@ -1121,7 +1122,10 @@ private fun indexRangeLength(indexScanRange: IndexableScanRanges, range: ScanRan
             (it is IndexPartialSizeToMatch && it.size == range.start.size) ||
                 (it is IndexPartialToMatch &&
                     it.partialMatch &&
-                    it.toMatch.contentEquals(range.start))
+                    it.toMatch.contentEquals(range.start)) ||
+                (it is IndexPartialToBeOneOf &&
+                    it.partialMatch &&
+                    it.toBeOneOf.any(range.start::contentEquals))
         } == true
     ) {
         range.start.size

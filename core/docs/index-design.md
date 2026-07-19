@@ -379,6 +379,15 @@ Property filters mean:
 Named search filters mean:
 "search this named search surface using search semantics"
 
+### Geospatial candidate indexes
+
+`GeoHash(location.ref(), precisionBits = 32u)` narrows `GeoWithinBox` and
+`GeoWithinRadius` scans. It stores one stable geohash cell per record. The
+planner covers the query bounds with at most 256 byte-aligned prefixes,
+reducing precision when needed, and exact geometry removes false positives.
+Geohash ordering is spatial cell order; it does not provide distance sorting or
+nearest-neighbour ranking.
+
 That keeps ordered equality/prefix/range logic separate from token search logic.
 
 ## Design advice

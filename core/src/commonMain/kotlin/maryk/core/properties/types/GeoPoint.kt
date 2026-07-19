@@ -11,10 +11,12 @@ data class GeoPoint(
     val longitude: Double
 ) {
     init {
+        require(latitude.isFinite()) { "Latitude must be finite" }
+        require(longitude.isFinite()) { "Longitude must be finite" }
         require(latitude >= -90) { "Latitude $latitude needs to be bigger or equal to -90" }
         require(latitude <= 90) { "Latitude $latitude needs to be smaller or equal to 90" }
-        require(longitude >= -180) { "Longitude $latitude needs to be smaller or equal to -180" }
-        require(longitude <= 180) { "Longitude $latitude needs to be smaller or equal to 180" }
+        require(longitude >= -180) { "Longitude $longitude needs to be bigger or equal to -180" }
+        require(longitude <= 180) { "Longitude $longitude needs to be smaller or equal to 180" }
     }
 
     constructor(

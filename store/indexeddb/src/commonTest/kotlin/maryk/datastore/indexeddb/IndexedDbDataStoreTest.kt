@@ -45,6 +45,7 @@ import maryk.datastore.test.DataStoreFilterTest
 import maryk.datastore.test.DataStoreGetChangesTest
 import maryk.datastore.test.DataStoreGetTest
 import maryk.datastore.test.DataStoreGetUpdatesAndFlowTest
+import maryk.datastore.test.DataStoreGeoTest
 import maryk.datastore.test.DataStoreProcessUpdateTest
 import maryk.datastore.test.DataStoreScanChangesTest
 import maryk.datastore.test.DataStoreScanMultiTypeTest
@@ -126,6 +127,9 @@ class IndexedDbDataStoreTest {
             runTestCase(DataStoreFilterTest(dataStore), "doComplexMapListSetFilter")
             runTestCase(DataStoreFilterTest(dataStore), "doReferencedEqualsFilter")
             runTestCase(DataStoreFilterComplexTest(dataStore), "doEqualsFilter")
+            DataStoreGeoTest(dataStore).allTests.keys.forEach { name ->
+                runTestCase(DataStoreGeoTest(dataStore), name)
+            }
             runTestCase(DataStoreScanChangesTest(dataStore), "executeSimpleScanChangesRequest")
             runTestCase(DataStoreScanChangesTest(dataStore), "executeSimpleScanReversedChangesRequest")
             runTestCase(DataStoreScanChangesTest(dataStore), "executeScanChangesOnAscendingIndexRequest")

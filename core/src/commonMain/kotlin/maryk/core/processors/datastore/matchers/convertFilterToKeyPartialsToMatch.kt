@@ -5,6 +5,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.index.AnyOf
+import maryk.core.properties.definitions.index.GeoHash
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Normalize
@@ -12,6 +13,7 @@ import maryk.core.properties.definitions.index.Split
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.queryToStorageByteArrays
 import maryk.core.properties.definitions.index.normalizeStringForIndex
+import maryk.core.properties.definitions.index.coveringPrefixes
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.query.filters.And
@@ -19,6 +21,9 @@ import maryk.core.query.filters.Equals
 import maryk.core.query.filters.GreaterThan
 import maryk.core.query.filters.GreaterThanEquals
 import maryk.core.query.filters.IsFilter
+import maryk.core.query.filters.GeoWithinBox
+import maryk.core.query.filters.GeoWithinRadius
+import maryk.core.query.filters.GeoWithinPolygon
 import maryk.core.query.filters.IsReferenceValuePairsFilter
 import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
@@ -29,6 +34,9 @@ import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
+import maryk.core.properties.types.GeoBounds
+import maryk.core.properties.types.radiusBounds
+import maryk.core.properties.types.polygonBounds
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.lib.extensions.compare.compareTo
 
@@ -59,10 +67,64 @@ fun convertFilterToIndexPartsToMatch(
         is Range -> handleRange(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts)
         is ValueIn -> handleValueIn(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, listOfUniqueFilters)
         is RegEx -> handleRegEx(filter, indexable, keySize, totalIndexPartCount, listOfIndexParts)
+        is GeoWithinBox -> handleGeoBounds(
+            filter.reference,
+            GeoBounds(
+                filter.southWest.latitude,
+                filter.southWest.longitude,
+                filter.northEast.latitude,
+                filter.northEast.longitude,
+            ),
+            indexable,
+            keySize,
+            totalIndexPartCount,
+            listOfIndexParts,
+        )
+        is GeoWithinRadius -> handleGeoBounds(
+            filter.reference,
+            filter.center.radiusBounds(filter.radiusMeters),
+            indexable,
+            keySize,
+            totalIndexPartCount,
+            listOfIndexParts,
+        )
+        is GeoWithinPolygon -> handleGeoBounds(
+            filter.reference,
+            filter.vertices.polygonBounds(),
+            indexable,
+            keySize,
+            totalIndexPartCount,
+            listOfIndexParts,
+        )
         is And -> filter.filters.forEach { subFilter ->
             convertFilterToIndexPartsToMatch(indexable, keySize, convertIndex, subFilter, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters, totalIndexPartCount)
         }
         else -> { /* Skip unsupported filters */ }
+    }
+}
+
+private fun handleGeoBounds(
+    reference: IsPropertyReference<*, *, *>,
+    bounds: GeoBounds,
+    indexable: IsIndexable,
+    keySize: Int,
+    indexPartCount: Int,
+    listOfIndexParts: MutableList<IsIndexPartialToMatch>,
+) {
+    if (indexable !is GeoHash || !indexable.reference.isForPropertyReference(reference)) return
+    // One prefix cover is a safe candidate superset for multiple spatial predicates.
+    // Adding another would concatenate the prefix alternatives into invalid index ranges.
+    if (listOfIndexParts.any { it is IndexPartialToBeOneOf && it.partialMatch }) return
+    val prefixes = indexable.coveringPrefixes(bounds)
+    if (prefixes.isNotEmpty()) {
+        listOfIndexParts += IndexPartialToBeOneOf(
+            indexableIndex = 0,
+            fromByteIndex = null,
+            keySize = keySize,
+            indexPartCount = indexPartCount,
+            toBeOneOf = prefixes.sortedWith { first, second -> first compareTo second },
+            partialMatch = true,
+        )
     }
 }
 

@@ -5,6 +5,7 @@ import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.index.AnyOf
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.GeoHash
 import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.index.Reversed
 import maryk.core.properties.definitions.index.Split
@@ -121,7 +122,8 @@ private fun singleIndexableToScan(
             else -> null
         }
     is Split,
-    is AnyOf -> null
+    is AnyOf,
+    is GeoHash -> null
     is Reversed<*> -> createSingleScan(indexable.reference, order, true, createScan)
     is IsIndexablePropertyReference<*> -> createSingleScan(indexable, order, false, createScan)
     else -> throw TypeException("Indexable type of $indexable is not supported")

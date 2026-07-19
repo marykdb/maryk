@@ -35,6 +35,7 @@ internal fun checkKeyDefinitionAndCountBytes(keyDefinition: IsIndexable): Int {
             throw InvalidDefinitionException("Definition should not fan out or split for a key")
         is Reversed<*> ->
             checkKeyDefinitionAndCountBytes(keyDefinition.reference)
+        is GeoHash -> keyDefinition.byteSize
         else -> throw TypeException("Unknown key IsIndexable type: $keyDefinition")
     }
 }

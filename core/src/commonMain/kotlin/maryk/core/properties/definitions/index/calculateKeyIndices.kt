@@ -22,6 +22,14 @@ internal fun calculateKeyIndices(keyDefinition: IsIndexable): IntArray {
                         if (def.reference is IsFixedStorageBytesEncodable<*>) {
                             def.reference
                         } else throw InvalidDefinitionException("Key cannot contain flex bytes encodables")
+                    is GeoHash -> object : IsFixedStorageBytesEncodable<ByteArray> {
+                        override val byteSize = def.byteSize
+                        override fun calculateStorageByteLength(value: ByteArray) = byteSize
+                        override fun readStorageBytes(length: Int, reader: () -> Byte) =
+                            ByteArray(length) { reader() }
+                        override fun writeStorageBytes(value: ByteArray, writer: (Byte) -> Unit) =
+                            value.forEach(writer)
+                    }
                     else -> throw TypeException("Unknown key encodable")
                 }
                 index += propDef.byteSize

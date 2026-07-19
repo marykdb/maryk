@@ -5,6 +5,10 @@ import maryk.core.properties.references.MapAnyValueReference
 import maryk.core.properties.references.SetAnyValueReference
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.query.ValueRange
+import maryk.core.properties.types.GeoPoint
+import maryk.core.properties.types.distanceTo
+import maryk.core.properties.types.isWithinBox
+import maryk.core.properties.types.isWithinPolygon
 
 /**
  * Test if values should be filtered based on given [filter]
@@ -195,6 +199,29 @@ fun matchesFilter(
                 if (!searchRegexMatcher(name, regex)) return false
             }
             return true
+        }
+        FilterType.GeoWithinBox -> {
+            val geoFilter = filter as GeoWithinBox
+            return valueMatcher(geoFilter.reference) {
+                it is GeoPoint && it.isWithinBox(
+                    geoFilter.southWest.latitude,
+                    geoFilter.southWest.longitude,
+                    geoFilter.northEast.latitude,
+                    geoFilter.northEast.longitude,
+                )
+            }
+        }
+        FilterType.GeoWithinRadius -> {
+            val geoFilter = filter as GeoWithinRadius
+            return valueMatcher(geoFilter.reference) {
+                it is GeoPoint && geoFilter.center.distanceTo(it) <= geoFilter.radiusMeters
+            }
+        }
+        FilterType.GeoWithinPolygon -> {
+            val geoFilter = filter as GeoWithinPolygon
+            return valueMatcher(geoFilter.reference) {
+                it is GeoPoint && it.isWithinPolygon(geoFilter.vertices)
+            }
         }
     }
 }

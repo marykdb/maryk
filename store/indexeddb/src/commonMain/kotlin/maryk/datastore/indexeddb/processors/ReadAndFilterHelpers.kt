@@ -28,6 +28,9 @@ import maryk.core.query.filters.Exists
 import maryk.core.query.filters.FilterType
 import maryk.core.query.filters.GreaterThan
 import maryk.core.query.filters.GreaterThanEquals
+import maryk.core.query.filters.GeoWithinBox
+import maryk.core.query.filters.GeoWithinRadius
+import maryk.core.query.filters.GeoWithinPolygon
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.filters.LessThan
 import maryk.core.query.filters.LessThanEquals
@@ -37,6 +40,10 @@ import maryk.core.query.filters.Prefix
 import maryk.core.query.filters.Range
 import maryk.core.query.filters.RegEx
 import maryk.core.query.filters.ValueIn
+import maryk.core.properties.types.GeoPoint
+import maryk.core.properties.types.distanceTo
+import maryk.core.properties.types.isWithinBox
+import maryk.core.properties.types.isWithinPolygon
 import maryk.core.query.filters.matchesFilter
 import maryk.core.values.Values
 import maryk.datastore.indexeddb.IndexedDbByteStore
@@ -84,8 +91,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectCurrentUni
     modelId: UInt,
     tableStoreName: String,
     keyBytes: ByteArray,
-): List<Triple<ByteArray, ByteArray, ByteArray>> {
-    val rows = mutableListOf<Triple<ByteArray, ByteArray, ByteArray>>()
+): List<IndexedDbUniqueRow> {
+    val rows = mutableListOf<IndexedDbUniqueRow>()
     for ((rowKey, rowValue) in scanTableRows(tableStoreName, keyBytes)) {
         val qualifier = tableQualifierFromRowKey(rowKey, keyBytes)
         var index = 0
@@ -96,8 +103,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectCurrentUni
         val definition = reference.comparablePropertyDefinition
         if (definition is IsComparableDefinition<*, *> && definition.unique) {
             val encodedValue = sensitiveFields.decryptValueIfNeeded(rowValue)
-            val uniqueValue = sensitiveFields.mapUniqueValueBytes(modelId, qualifier, encodedValue)
-            rows += Triple(createUniqueRowKey(qualifier, uniqueValue), keyBytes, qualifier)
+            val uniqueKeys = sensitiveFields.mapUniqueValueByteCandidates(modelId, qualifier, encodedValue)
+                .map { uniqueValue -> createUniqueRowKey(qualifier, uniqueValue) }
+            rows += IndexedDbUniqueRow(
+                uniqueKey = uniqueKeys.first(),
+                keyBytes = keyBytes,
+                qualifier = qualifier,
+                candidateKeys = uniqueKeys,
+            )
         }
     }
     return rows
@@ -107,12 +120,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.validateUniqueRow
     dataModel: DM,
     keyBytes: ByteArray,
     uniqueStoreName: String,
-    uniqueRows: List<Triple<ByteArray, ByteArray, ByteArray>>,
+    uniqueRows: List<IndexedDbUniqueRow>,
 ) {
-    for ((uniqueKey, _, qualifier) in uniqueRows) {
-        val existingKey = byteStore.get(uniqueStoreName, uniqueKey) ?: continue
-        if (!existingKey.contentEquals(keyBytes)) {
-            throw UniqueException(qualifier, dataModel.key(existingKey))
+    for (row in uniqueRows) {
+        for (candidateKey in row.candidateKeys) {
+            val existingKey = byteStore.get(uniqueStoreName, candidateKey) ?: continue
+            if (!existingKey.contentEquals(keyBytes)) {
+                throw UniqueException(row.qualifier, dataModel.key(existingKey))
+            }
         }
     }
 }
@@ -303,6 +318,26 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.valuesMatchRefere
             actual != null && expectedValues.any { valuesEqual(actual, it) }
         }
     }
+    FilterType.GeoWithinBox -> (filter as GeoWithinBox).let { geoFilter ->
+        matchPropertyReference(dataModel, values, geoFilter.reference, toVersion) { actual ->
+            actual is GeoPoint && actual.isWithinBox(
+                geoFilter.southWest.latitude,
+                geoFilter.southWest.longitude,
+                geoFilter.northEast.latitude,
+                geoFilter.northEast.longitude,
+            )
+        }
+    }
+    FilterType.GeoWithinRadius -> (filter as GeoWithinRadius).let { geoFilter ->
+        matchPropertyReference(dataModel, values, geoFilter.reference, toVersion) { actual ->
+            actual is GeoPoint && geoFilter.center.distanceTo(actual) <= geoFilter.radiusMeters
+        }
+    }
+    FilterType.GeoWithinPolygon -> (filter as GeoWithinPolygon).let { geoFilter ->
+        matchPropertyReference(dataModel, values, geoFilter.reference, toVersion) { actual ->
+            actual is GeoPoint && actual.isWithinPolygon(geoFilter.vertices)
+        }
+    }
     FilterType.Matches,
     FilterType.MatchesPrefix,
     FilterType.MatchesRegEx -> values.matches(filter)
@@ -398,4 +433,3 @@ internal suspend fun IndexedDbDataStore.matchQualifierOnRows(
     }
     return false
 }
-

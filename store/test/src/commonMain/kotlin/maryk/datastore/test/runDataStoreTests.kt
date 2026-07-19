@@ -22,6 +22,7 @@ private val allTestClasses = arrayOf(
     "DataStoreDeleteTest" to ::DataStoreDeleteTest,
     "DataStoreFilterComplexTest" to ::DataStoreFilterComplexTest,
     "DataStoreFilterTest" to ::DataStoreFilterTest,
+    "DataStoreGeoTest" to ::DataStoreGeoTest,
     "DataStoreGetChangesComplexTest" to ::DataStoreGetChangesComplexTest,
     "DataStoreGetChangesTest" to ::DataStoreGetChangesTest,
     "DataStoreGetUpdatesAndFlowTest" to ::DataStoreGetUpdatesAndFlowTest,
@@ -59,6 +60,7 @@ val dataModelsForTests = mapOf(
     11u to AnyValueIncMapIndexModel,
     12u to AnyValueSetIndexModel,
     13u to CaseInsensitivePerson,
+    14u to GeoLocation,
 )
 
 suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {

@@ -154,6 +154,35 @@ ValueIn(
 )
 ```
 
+### Geo filters
+
+Geo filters target a `GeoPoint` property.
+
+```kotlin
+GeoWithinBox(Location.location.ref(), 52.0, 5.0, 52.2, 5.2)
+
+GeoWithinRadius(
+    Location.location.ref(),
+    center = GeoPoint(52.0907, 5.1214),
+    radiusMeters = 5_000.0,
+)
+
+GeoWithinPolygon(
+    Location.location.ref(),
+    GeoPoint(52.0, 5.0),
+    GeoPoint(52.0, 5.2),
+    GeoPoint(52.2, 5.2),
+)
+```
+
+Use `GeoWithinBox` for rectangular map bounds, `GeoWithinRadius` for a
+distance from one point, and `GeoWithinPolygon` for a geofence. Boundaries are
+inclusive. For an efficient indexed scan, add a compatible `GeoHash` index;
+Maryk uses it to find candidates and then applies the exact spatial predicate.
+
+See [GeoPoint](properties/types/geopoint.md) for index setup, a complete query,
+antimeridian behaviour, and polygon limitations.
+
 ## Named search filters
 
 Named search filters target a named search surface instead of one explicit property reference.

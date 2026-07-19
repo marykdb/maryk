@@ -6,6 +6,8 @@ import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.resolveCursor
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.FetchByTableScan
@@ -30,7 +32,12 @@ internal fun <DM : IsRootDataModel> processScan(
     allowTableScanOverride: Boolean = false,
     processRecord: (DataRecord<DM>, ByteArray?) -> Unit
 ): DataFetchType {
-    val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
+    val continuation = (scanRequest as? ScanRequest<*>)?.resolveCursor()
+    val keyScanRange = scanRequest.dataModel.createScanRange(
+        scanRequest.where,
+        continuation?.key?.bytes ?: scanRequest.startKey?.bytes,
+        continuation == null && scanRequest.includeStart,
+    )
 
     scanRequest.checkToVersion(dataStore.keepAllVersions)
 
@@ -106,6 +113,7 @@ internal fun <DM : IsRootDataModel> processScan(
                         recordFetcher,
                         processedScanIndex,
                         keyScanRange,
+                        continuation,
                         processRecord
                     )
                 }

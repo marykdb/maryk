@@ -5,8 +5,10 @@ import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.createCursor
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.shared.StoreAction
@@ -29,20 +31,27 @@ internal fun <DM : IsRootDataModel> processScanRequest(
     val recordFetcher = createStoreRecordFetcher(dataStoreFetcher, scanRequest.toVersion?.let(::HLC))
 
     val dataStore = dataStoreFetcher.invoke(scanRequest.dataModel)
+    var lastEmittedKey: Key<DM>? = null
+    var lastEmittedOrderKey: ByteArray? = null
 
     val dataFetchType = processScan(
         scanRequest = scanRequest,
         dataStore = dataStore,
         recordFetcher = recordFetcher,
         allowTableScanOverride = scanRequest.toVersion != null
-    ) { record, _ ->
+    ) { record, orderKey ->
         val toVersion = scanRequest.toVersion?.let { HLC(it) }
 
         val valuesWithMetaData = scanRequest.dataModel.recordToValueWithMeta(
             scanRequest.select,
             toVersion,
             record
-        )?.also { valuesWithMeta.add(it) }
+        )
+        if (valuesWithMeta.size.toUInt() < scanRequest.limit && valuesWithMetaData != null) {
+            valuesWithMeta.add(valuesWithMetaData)
+            lastEmittedKey = record.key
+            lastEmittedOrderKey = orderKey
+        }
 
         // Aggregate all values. First try from valuesWithMetaData and otherwise directly from record
         aggregator?.aggregate {
@@ -58,6 +67,9 @@ internal fun <DM : IsRootDataModel> processScanRequest(
             values = valuesWithMeta,
             aggregations = aggregator?.toResponse(),
             dataFetchType = dataFetchType,
+            nextCursor = lastEmittedKey
+                ?.takeIf { valuesWithMeta.size.toUInt() == scanRequest.limit }
+                ?.let { scanRequest.createCursor(it, lastEmittedOrderKey) },
         )
     )
 }

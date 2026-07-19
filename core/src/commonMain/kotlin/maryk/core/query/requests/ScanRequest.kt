@@ -22,6 +22,7 @@ import maryk.core.values.ObjectValues
  * values of properties.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
+ * Use [cursor] from [ValuesResponse.nextCursor] to continue a page; it cannot be combined with [startKey].
  */
 fun <DM : IsRootDataModel> DM.scan(
     startKey: Key<DM>? = null,
@@ -33,7 +34,8 @@ fun <DM : IsRootDataModel> DM.scan(
     toVersion: ULong? = null,
     filterSoftDeleted: Boolean = true,
     aggregations: Aggregations? = null,
-    allowTableScan: Boolean = false
+    allowTableScan: Boolean = false,
+    cursor: ScanCursor? = null,
 ) =
     ScanRequest(
         dataModel = this,
@@ -47,6 +49,7 @@ fun <DM : IsRootDataModel> DM.scan(
         filterSoftDeleted = filterSoftDeleted,
         aggregations = aggregations,
         allowTableScan = allowTableScan,
+        cursor = cursor,
     )
 
 /**
@@ -55,6 +58,7 @@ fun <DM : IsRootDataModel> DM.scan(
  * values of properties.
  * Can also contain a [where] filter, [filterSoftDeleted], [toVersion] to further limit results.
  * Results can be ordered with an [order]
+ * Use [cursor] from [ValuesResponse.nextCursor] to continue a page; it cannot be combined with [startKey].
  */
 data class ScanRequest<DM : IsRootDataModel> internal constructor(
     override val dataModel: DM,
@@ -67,7 +71,8 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
     override val toVersion: ULong? = null,
     override val filterSoftDeleted: Boolean = true,
     override val aggregations: Aggregations? = null,
-    override val allowTableScan: Boolean = false
+    override val allowTableScan: Boolean = false,
+    override val cursor: ScanCursor? = null,
 ) : IsScanRequest<DM, ValuesResponse<DM>>, IsTransportableRequest<ValuesResponse<DM>> {
     override val requestType = Scan
     override val responseModel = ValuesResponse
@@ -78,6 +83,9 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
         }
         if (limit > MAX_SCAN_LIMIT) {
             throw RequestException("Scan limit $limit exceeds maximum $MAX_SCAN_LIMIT")
+        }
+        if (startKey != null && cursor != null) {
+            throw RequestException("Scan startKey and cursor cannot be used together")
         }
     }
 
@@ -93,6 +101,11 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
         val limit by number(9u, ScanRequest<*>::limit, type = UInt32, minValue = 1u, maxValue = MAX_SCAN_LIMIT, default = 100u)
         val includeStart by boolean(10u, ScanRequest<*>::includeStart, default = true)
         val allowTableScan by boolean(11u, ScanRequest<*>::allowTableScan, default = false)
+        val cursor by embedObject(
+            12u,
+            ScanRequest<*>::cursor,
+            dataModel = { ScanCursor.Model },
+        )
 
         override fun invoke(values: ObjectValues<ScanRequest<*>, Companion>) = ScanRequest(
             dataModel = values(1u),
@@ -105,7 +118,8 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
             order = values(8u),
             limit = values(9u),
             includeStart = values(10u),
-            allowTableScan = values(11u)
+            allowTableScan = values(11u),
+            cursor = values(12u),
         )
     }
 }

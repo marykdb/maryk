@@ -1,20 +1,26 @@
 package maryk.datastore.indexeddb.processors
 
 import maryk.core.aggregations.Aggregator
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.key
 import maryk.core.processors.datastore.StorageTypeEnum.Value
 import maryk.core.processors.datastore.scanRange.KeyScanRanges
 import maryk.core.processors.datastore.scanRange.createScanRange
+import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.add
+import maryk.core.query.requests.createCursor
+import maryk.core.query.requests.resolveCursor
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.FetchByUniqueKey
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.values.IsValuesGetter
 import maryk.datastore.indexeddb.IndexedDbDataStore
 import maryk.datastore.indexeddb.scanInBatches
 import maryk.datastore.shared.ScanType.IndexScan
@@ -31,8 +37,13 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
 ) {
     val request = storeAction.request
     request.checkToVersion(keepAllVersions)
+    val continuation = request.resolveCursor()
 
-    val keyScanRange = request.dataModel.createScanRange(request.where, request.startKey?.bytes, request.includeStart)
+    val keyScanRange = request.dataModel.createScanRange(
+        request.where,
+        continuation?.key?.bytes ?: request.startKey?.bytes,
+        continuation == null && request.includeStart,
+    )
     if (keyScanRange.ranges.isEmpty()) {
         storeAction.response.complete(
             ValuesResponse(
@@ -54,6 +65,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
     val values = ArrayList<ValuesWithMetaData<DM>>(request.limit.toInt().coerceAtLeast(4))
 
     if (keyScanRange.isSingleKey()) {
+        if (continuation != null) {
+            storeAction.response.complete(
+                ValuesResponse(
+                    dataModel = request.dataModel,
+                    values = emptyList(),
+                    dataFetchType = FetchByKey,
+                )
+            )
+            return
+        }
         val keyBytes = keyScanRange.ranges.first().start
         val toVersion = request.toVersion
         val record = if (toVersion != null) {
@@ -83,6 +104,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
     }
 
     keyScanRange.uniques?.firstOrNull()?.let { uniqueToMatch ->
+        if (continuation != null) {
+            storeAction.response.complete(
+                ValuesResponse(
+                    dataModel = request.dataModel,
+                    values = emptyList(),
+                    dataFetchType = FetchByUniqueKey(uniqueToMatch.reference),
+                )
+            )
+            return
+        }
         @Suppress("UNCHECKED_CAST")
         val uniqueValue = Value.castDefinition(uniqueToMatch.definition).toStorageBytes(
             uniqueToMatch.value as Comparable<Any>,
@@ -171,6 +202,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
 
     val overallStartKey: ByteArray?
     val overallEndKey: ByteArray?
+    var processed = 0u
+    var lastEmittedKey: Key<DM>? = null
 
     when (scanType.direction) {
         ASC -> {
@@ -206,11 +239,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                     if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true
                     if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) return@scanInBatches true
 
-                    values += record
+                    if (values.size.toUInt() < request.limit) {
+                        values += record
+                        lastEmittedKey = request.dataModel.key(keyBytes)
+                    }
                     aggregator?.aggregate { reference -> record.values[reference] }
-                    values.size.toUInt() < request.limit
+                    ++processed < request.limit
                 }
-                if (values.size.toUInt() == request.limit) break@rangeLoop
+                if (processed == request.limit) break@rangeLoop
             }
         }
         DESC -> {
@@ -247,11 +283,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                     if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true
                     if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) return@scanInBatches true
 
-                    values += record
+                    if (values.size.toUInt() < request.limit) {
+                        values += record
+                        lastEmittedKey = request.dataModel.key(keyBytes)
+                    }
                     aggregator?.aggregate { reference -> record.values[reference] }
-                    values.size.toUInt() < request.limit
+                    ++processed < request.limit
                 }
-                if (values.size.toUInt() == request.limit) break@rangeLoop
+                if (processed == request.limit) break@rangeLoop
             }
         }
     }
@@ -265,7 +304,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                 direction = scanType.direction,
                 startKey = overallStartKey,
                 stopKey = overallEndKey,
-            )
+            ),
+            nextCursor = lastEmittedKey
+                ?.takeIf { values.size.toUInt() == request.limit }
+                ?.let { request.createCursor(it, null) },
         )
     )
 }
@@ -283,26 +325,21 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
     aggregator: Aggregator?,
 ): ValuesResponse<DM> {
     val values = ArrayList<ValuesWithMetaData<DM>>(request.limit.toInt().coerceAtLeast(4))
+    var processed = 0u
     val seenKeys = mutableSetOf<String>()
     val keySize = request.dataModel.Meta.keyByteSize
     val indexPrefix = createIndexKeyPrefix(indexScan.index.referenceStorageByteArray.bytes)
-    val indexKeyScanRange = if (request.startKey == null) {
+    val continuation = request.resolveCursor()
+    val indexKeyScanRange = if (request.startKey == null && continuation == null) {
         keyScanRange
     } else {
         request.dataModel.createScanRange(request.where, null, request.includeStart)
     }
     val baseIndexRanges = indexScan.index.createScanRange(request.where, indexKeyScanRange)
-    val startIndexValue = request.startKey?.let { startKey ->
-        val toVersion = request.toVersion
-        val record = if (toVersion != null) {
-            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, startKey.bytes, toVersion, null)
-        } else {
-            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, startKey.bytes, null)
-                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, startKey.bytes, null)
-        }
-        record?.let {
-            val allIndexValues = indexScan.index.toStorageByteArraysForIndex(it.values, startKey.bytes)
-            val matchedIndexValues = allIndexValues.filter { indexValue ->
+
+    fun selectCanonicalIndexValue(valuesGetter: IsValuesGetter, keyBytes: ByteArray): ByteArray? {
+        val candidates = indexScan.index.toStorageByteArraysForIndex(valuesGetter, keyBytes)
+            .filter { indexValue ->
                 resolveIndexValueSize(indexValue, keySize, indexScan.index.indexPartCount)?.let { valueSize ->
                     baseIndexRanges.matchesPartials(indexValue, length = valueSize, sourceEnd = indexValue.size) &&
                         baseIndexRanges.ranges.any { range ->
@@ -312,13 +349,29 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
                         }
                 } == true
             }
-            when (indexScan.direction) {
-                ASC -> matchedIndexValues.minWithOrNull { a, b -> a compareTo b }
-                DESC -> matchedIndexValues.maxWithOrNull { a, b -> a compareTo b }
-            }
+        return when (indexScan.direction) {
+            ASC -> candidates.minWithOrNull { first, second -> first compareTo second }
+            DESC -> candidates.maxWithOrNull { first, second -> first compareTo second }
+        }
+    }
+
+    val startIndexValue = continuation?.let {
+        it.orderKey?.bytes ?: throw RequestException("Scan cursor has no index ordering boundary")
+    } ?: request.startKey?.let { startKey ->
+        val toVersion = request.toVersion
+        val record = if (toVersion != null) {
+            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, startKey.bytes, toVersion, null)
+        } else {
+            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, startKey.bytes, null)
+                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, startKey.bytes, null)
+        }
+        record?.let {
+            selectCanonicalIndexValue(it.values, startKey.bytes)
         }
     }
     val indexRanges = baseIndexRanges
+    var lastEmittedKey: Key<DM>? = null
+    var lastEmittedOrderKey: ByteArray? = null
 
     val overallStartKey = when (indexScan.direction) {
         ASC -> startIndexValue?.let {
@@ -364,7 +417,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
                 storeName = historicIndexStoreName,
                 startKey = startKey,
                 endKey = endKey,
-                includeEnd = indexScan.direction == DESC && startIndexValue != null && request.includeStart,
+                includeEnd = indexScan.direction == DESC && startIndexValue != null && keyScanRange.includeStart,
                 toVersion = toVersion,
                 reverse = indexScan.direction == DESC,
             )
@@ -376,8 +429,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
             val valueSize = resolveIndexValueSize(valueAndKey, keySize, indexScan.index.indexPartCount) ?: return true
             if (startIndexValue != null) {
                 val comparison = valueAndKey compareTo startIndexValue
-                if (indexScan.direction == ASC && (comparison < 0 || (comparison == 0 && !request.includeStart))) return true
-                if (indexScan.direction == DESC && (comparison > 0 || (comparison == 0 && !request.includeStart))) return true
+                if (indexScan.direction == ASC && (comparison < 0 || (comparison == 0 && !keyScanRange.includeStart))) return true
+                if (indexScan.direction == DESC && (comparison > 0 || (comparison == 0 && !keyScanRange.includeStart))) return true
             }
             val rangeLength = indexRangeLength(indexRanges, range, valueSize)
 
@@ -387,6 +440,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
 
             val keyBytes = valueAndKey.copyOfRange(valueAndKey.size - keySize, valueAndKey.size)
             if (!indexKeyScanRange.keyWithinRanges(keyBytes, 0) || !indexKeyScanRange.matchesPartials(keyBytes, 0)) return true
+            if (continuation?.key?.bytes?.contentEquals(keyBytes) == true) return true
 
             val dedupe = keyBytes.joinToString(",")
             if (!seenKeys.add(dedupe)) return true
@@ -402,9 +456,49 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
             if (request.filterSoftDeleted && record.isDeleted) return true
             if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion, indexScan.index)) return true
 
-            values += record
+            if (continuation != null) {
+                val canonicalValues = if (request.select == null) {
+                    record.values
+                } else {
+                    val completeRecord = if (toVersion != null) {
+                        readHistoricRecordDecrypted(
+                            byteStore,
+                            request.dataModel,
+                            historicTableStoreName,
+                            keyBytes,
+                            toVersion,
+                            null,
+                        )
+                    } else {
+                        readCurrentSnapshotDecrypted(
+                            byteStore,
+                            request.dataModel,
+                            keyStoreName,
+                            keyBytes,
+                            null,
+                        ) ?: readRecordDecrypted(
+                            byteStore,
+                            request.dataModel,
+                            keyStoreName,
+                            tableStoreName,
+                            keyBytes,
+                            null,
+                        )
+                    }
+                    completeRecord?.values ?: return true
+                }
+                if (selectCanonicalIndexValue(canonicalValues, keyBytes)?.contentEquals(valueAndKey) != true) {
+                    return true
+                }
+            }
+
+            if (values.size.toUInt() < request.limit) {
+                values += record
+                lastEmittedKey = request.dataModel.key(keyBytes)
+                lastEmittedOrderKey = valueAndKey
+            }
             aggregator?.aggregate { reference -> record.values[reference] }
-            return values.size.toUInt() < request.limit
+            return ++processed < request.limit
         }
 
         if (rows == null) {
@@ -413,7 +507,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
                 startKey = startKey,
                 includeStart = true,
                 endKey = endKey,
-                includeEnd = indexScan.direction == DESC && startIndexValue != null && request.includeStart,
+                includeEnd = indexScan.direction == DESC && startIndexValue != null && keyScanRange.includeStart,
                 reverse = indexScan.direction == DESC,
                 targetLimit = UInt.MAX_VALUE,
             ) { rowKey, _ ->
@@ -424,7 +518,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
                 if (!processIndexRow(rowKey)) break
             }
         }
-        if (values.size.toUInt() == request.limit) {
+        if (processed == request.limit) {
             return ValuesResponse(
                 dataModel = request.dataModel,
                 values = values,
@@ -434,7 +528,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
                     direction = indexScan.direction,
                     startKey = overallStartKey,
                     stopKey = overallStopKey,
-                )
+                ),
+                nextCursor = lastEmittedKey
+                    ?.takeIf { values.size.toUInt() == request.limit }
+                    ?.let { request.createCursor(it, lastEmittedOrderKey) },
             )
         }
     }
@@ -448,7 +545,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
             direction = indexScan.direction,
             startKey = overallStartKey,
             stopKey = overallStopKey,
-        )
+        ),
+        nextCursor = lastEmittedKey
+            ?.takeIf { values.size.toUInt() == request.limit }
+            ?.let { request.createCursor(it, lastEmittedOrderKey) },
     )
 }
-

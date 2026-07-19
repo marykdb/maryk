@@ -6,8 +6,10 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.createCursor
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
@@ -35,6 +37,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
     val aggregator = scanRequest.aggregations?.let {
         Aggregator(it)
     }
+    var lastEmittedKey: Key<DM>? = null
+    var lastEmittedOrderKey: ByteArray? = null
 
     DBAccessor(this).use { transaction ->
         val columnToScan = if (scanRequest.toVersion != null && columnFamilies is HistoricTableColumnFamilies) {
@@ -59,9 +63,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
                     transaction,
                     columnFamilies,
                     defaultReadOptions,
+                    includeSortingKey = true,
                     softDeleteCache = softDeleteCache,
                     historicalReader = reader
-                ) { key, creationVersion, _ ->
+                ) { key, creationVersion, orderKey ->
                     val cacheReader =
                         { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                             runBlocking {
@@ -84,8 +89,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
                             val deleted = softDeleteCache.get(key.bytes, 0, key.size)
                             if (values.isDeleted == deleted) values else values.copy(isDeleted = deleted)
                         }
-                    }?.also {
-                        valuesWithMeta.add(it)
+                    }
+                    if (valuesWithMeta.size.toUInt() < scanRequest.limit && valuesWithMetaData != null) {
+                        valuesWithMeta.add(valuesWithMetaData)
+                        lastEmittedKey = key
+                        lastEmittedOrderKey = orderKey
                     }
 
                     aggregator?.aggregate {
@@ -109,6 +117,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanRequest(
                         values = valuesWithMeta,
                         aggregations = aggregator?.toResponse(),
                         dataFetchType = dataFetchType,
+                        nextCursor = lastEmittedKey
+                            ?.takeIf { valuesWithMeta.size.toUInt() == scanRequest.limit }
+                            ?.let { scanRequest.createCursor(it, lastEmittedOrderKey) },
                     )
                 )
             }

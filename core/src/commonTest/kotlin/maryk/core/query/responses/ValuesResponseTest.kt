@@ -10,6 +10,8 @@ import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
+import maryk.core.query.requests.createCursor
+import maryk.core.query.requests.scan
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykObject
 import kotlin.test.Test
@@ -45,6 +47,13 @@ class ValuesResponseTest {
     @Test
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.objectsResponse, ValuesResponse, { this.context })
+        checkProtoBufConversion(
+            this.objectsResponse.copy(
+                nextCursor = SimpleMarykModel.scan().createCursor(key, null),
+            ),
+            ValuesResponse,
+            { this.context },
+        )
     }
 
     @Test

@@ -188,7 +188,7 @@ val getRequest = Person.run {
 ### Scan
 
 With [`ScanRequest`](../src/commonMain/kotlin/maryk/core/query/requests/ScanRequest.kt),
-multiple objects can be queried by passing a startKey to scan from and filters on key parts to end it.
+multiple objects can be queried by passing a `startKey` to scan from and filters on key parts to end it.
 To select a subset of values in the query, use `select` with a [graph](reference-graphs.md).
 It is possible to filter the results with [filters](filters.md), order, or limit the results (default= 100).
 You can also include soft-deleted results by passing `filterSoftDeleted=false`.
@@ -198,6 +198,24 @@ Additionally, you can view the objects at a certain version with `toVersion` if 
 When applied, it will deliver an [`ValuesResponse`](../src/commonMain/kotlin/maryk/core/query/responses/ValuesResponse.kt)
 with a list of [`ValuesWithMetaData`](../src/commonMain/kotlin/maryk/core/query/ValuesWithMetaData.kt)
 containing the `key`, `object`, `firstVersion`, `lastVersion`, and `isDeleted`.
+
+For pagination, pass `response.nextCursor` unchanged into the next scan. The opaque,
+versioned cursor stores both the primary key and the effective ordering boundary, so
+index pagination does not need to re-read the boundary record. It is bound to the
+model and query; changing the filter, order, selection, or historical version rejects
+the cursor. `startKey` remains supported for direct boundaries and legacy clients,
+but cannot be combined with `cursor`.
+For multi-entry indexes, cursor paging emits each record once through its first
+eligible entry in the requested direction.
+Aggregations apply to the current page; combine page results in the application
+when a total across every page is needed.
+
+```kotlin
+val firstPage = dataStore.execute(Logs.scan(order = Logs { timeStamp::ref }, limit = 50u))
+val secondPage = firstPage.nextCursor?.let { cursor ->
+    dataStore.execute(Logs.scan(order = Logs { timeStamp::ref }, limit = 50u, cursor = cursor))
+}
+```
 
 ```kotlin
 val timedKey // Key starting at a certain time

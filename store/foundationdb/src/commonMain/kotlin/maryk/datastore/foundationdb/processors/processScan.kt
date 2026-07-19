@@ -9,6 +9,8 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.resolveCursor
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.FetchByTableScan
@@ -39,7 +41,12 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
             }
     }
     val dataModelId = getDataModelId(scanRequest.dataModel)
-    val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
+    val continuation = (scanRequest as? ScanRequest<*>)?.resolveCursor()
+    val keyScanRange = scanRequest.dataModel.createScanRange(
+        scanRequest.where,
+        continuation?.key?.bytes ?: scanRequest.startKey?.bytes,
+        continuation == null && scanRequest.includeStart,
+    )
 
     scanRequest.checkToVersion(keepAllVersions)
 
@@ -138,6 +145,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
                 scanRequest = scanRequest,
                 indexScan = processedScanIndex,
                 keyScanRange = keyScanRange,
+                continuation = continuation,
                 decryptValue = this::decryptValueIfNeeded,
                 processStoreValue = processRecord
             )

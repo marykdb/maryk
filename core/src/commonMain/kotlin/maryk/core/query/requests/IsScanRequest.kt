@@ -34,6 +34,8 @@ const val MAX_REQUEST_BATCH_SIZE = 100_000u
 /** Defines a Scan from key request. */
 interface IsScanRequest<DM : IsRootDataModel, RP : IsDataResponse<DM>> : IsFlowRequest<DM, RP> {
     val startKey: Key<DM>?
+    val cursor: ScanCursor?
+        get() = null
     val order: IsOrder?
     val limit: UInt
     val includeStart: Boolean

@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.processors
 
 import maryk.core.exceptions.StorageException
+import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
@@ -18,6 +19,7 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanContinuation
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.datastore.rocksdb.DBAccessor
@@ -54,6 +56,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     scanRequest: IsScanRequest<DM, *>,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
+    continuation: ScanContinuation?,
     includeSortingKey: Boolean,
     softDeleteCache: RequestKeySoftDeleteCache? = null,
     historicalReader: HistoricalTableReader? = null,
@@ -63,7 +66,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     val indexKeyPrefix = createIndexKeyPrefix(indexReference)
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
 
-    val startKey = scanRequest.startKey?.let { startKey ->
+    val startKey = continuation?.let {
+        it.orderKey?.bytes ?: throw RequestException("Scan cursor has no index ordering boundary")
+    } ?: scanRequest.startKey?.let { startKey ->
         DBAccessorStoreValuesGetter(columnFamilies, defaultReadOptions).use { startValuesGetter ->
             startValuesGetter.moveToKey(startKey.bytes, dbAccessor, scanRequest.toVersion)
             try {
@@ -279,6 +284,9 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                     continue
                 }
             }
+            if (continuation?.key?.bytes?.contentEquals(result.keyBytes) == true) {
+                continue
+            }
 
             processStoreValue(
                 Key<DM>(result.keyBytes),
@@ -326,6 +334,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                         versionSize,
                         valueOffset,
                         includeSortingKey,
+                        continuation?.key?.bytes,
+                        continuation != null,
                         currentSize,
                         processStoreValue,
                         { indexRecord, valueSize ->
@@ -378,6 +388,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
                         versionSize,
                         valueOffset,
                         includeSortingKey,
+                        continuation?.key?.bytes,
+                        continuation != null,
                         currentSize,
                         processStoreValue,
                         { indexRecord, valueSize ->
@@ -673,6 +685,8 @@ private fun <DM : IsRootDataModel> checkAndProcess(
     versionSize: Int,
     valueOffset: Int,
     includeSortingKey: Boolean,
+    excludedKey: ByteArray?,
+    canonicalizeCursorEntries: Boolean,
     emitted: UInt,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit,
     isPastRange: (ByteArray, Int) -> Boolean,
@@ -728,6 +742,27 @@ private fun <DM : IsRootDataModel> checkAndProcess(
                     )
                 ) {
                     val keyBytes = createKeyBytes(indexRecord, keyOffset, keySize)
+                    if (excludedKey?.contentEquals(keyBytes) == true) {
+                        next(indexRecord, keyOffset, keySize)
+                        continue
+                    }
+                    if (canonicalizeCursorEntries) {
+                        val canonicalIndexValue = DBAccessorStoreValuesGetter(columnFamilies, readOptions).use { valuesGetter ->
+                            valuesGetter.moveToKey(keyBytes, dbAccessor)
+                            selectIndexKeyForScan(
+                                valuesGetter = valuesGetter,
+                                index = indexScan.index,
+                                direction = indexScan.direction,
+                                keyBytes = keyBytes,
+                                indexScanRange = indexScanRange,
+                            )
+                        }
+                        val currentIndexValue = indexRecord.copyOfRange(valueOffset, indexRecord.size)
+                        if (canonicalIndexValue?.contentEquals(currentIndexValue) != true) {
+                            next(indexRecord, keyOffset, keySize)
+                            continue
+                        }
+                    }
                     if (!seenKeys.add(ByteArrayKey(keyBytes))) {
                         next(indexRecord, keyOffset, keySize)
                         continue
@@ -792,6 +827,10 @@ private fun <DM : IsRootDataModel> checkAndProcess(
             checkVersion(indexRecord)
         ) {
             val keyBytes = createKeyBytes(indexRecord, keyOffset, keySize)
+            if (excludedKey?.contentEquals(keyBytes) == true) {
+                next(indexRecord, keyOffset, keySize)
+                continue
+            }
             if (!seenKeys.add(ByteArrayKey(keyBytes))) {
                 next(indexRecord, keyOffset, keySize)
                 continue

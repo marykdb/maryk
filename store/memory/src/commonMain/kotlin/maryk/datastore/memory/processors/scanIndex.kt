@@ -1,6 +1,7 @@
 package maryk.datastore.memory.processors
 
 import maryk.core.clock.HLC
+import maryk.core.exceptions.RequestException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.models.IsRootDataModel
@@ -18,6 +19,7 @@ import maryk.core.properties.types.Key
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanContinuation
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.datastore.memory.records.DataRecord
@@ -35,6 +37,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
     recordFetcher: (IsRootDataModel, Key<*>) -> DataRecord<*>?,
     indexScan: IndexScan,
     keyScanRange: KeyScanRanges,
+    continuation: ScanContinuation?,
     processStoreValue: (DataRecord<DM>, ByteArray?) -> Unit
 ): DataFetchType {
     val indexReference = indexScan.index.referenceStorageByteArray.bytes
@@ -46,7 +49,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
     val seenKeys = mutableSetOf<Bytes>()
 
     val indexScanRange = indexScan.index.createScanRange(scanRequest.where, keyScanRange)
-    val startKey = scanRequest.startKey?.let { startKey ->
+    val startKey = continuation?.let {
+        it.orderKey?.bytes ?: throw RequestException("Scan cursor has no index ordering boundary")
+    } ?: scanRequest.startKey?.let { startKey ->
         recordFetcher(scanRequest.dataModel, scanRequest.startKey as Key<*>)?.let { startRecord ->
             val allIndexValues = indexScan.index.toStorageByteArraysForIndex(startRecord, startKey.bytes)
             allIndexValues
@@ -67,12 +72,30 @@ internal fun <DM : IsRootDataModel> scanIndex(
         }
     }
     val excludedStartIndexValue = startKey.takeIf { !keyScanRange.includeStart }
-    val excludedStartRecordKey = scanRequest.startKey
+    val excludedStartRecordKey = continuation?.key ?: scanRequest.startKey
         ?.takeIf { excludedStartIndexValue != null }
         ?.let { Bytes((it as Key<*>).bytes) }
 
     val toVersion = scanRequest.toVersion?.let { HLC(it) }
     val includeSoftDeleted = !scanRequest.filterSoftDeleted
+
+    fun isCanonicalCursorEntry(dataRecord: DataRecord<DM>, indexValue: ByteArray): Boolean {
+        if (continuation == null) return true
+        val candidates = indexScan.index.toStorageByteArraysForIndex(dataRecord, dataRecord.key.bytes)
+            .filter { candidate ->
+                resolveIndexValueSize(candidate, keyScanRange.keySize, indexScan.index.indexPartCount)?.let { valueSize ->
+                    indexScanRange.matchesPartials(candidate, length = valueSize) &&
+                        indexScanRange.ranges.any { range ->
+                            range.matchesIndexValue(indexScanRange, candidate, valueSize)
+                        }
+                } == true
+            }
+        val canonical = when (indexScan.direction) {
+            ASC -> candidates.minWithOrNull { first, second -> first compareTo second }
+            DESC -> candidates.maxWithOrNull { first, second -> first compareTo second }
+        }
+        return canonical?.contentEquals(indexValue) == true
+    }
 
     when (indexScan.direction) {
         ASC -> {
@@ -132,14 +155,17 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
                     if (
                         excludedStartRecordKey != null &&
-                        excludedStartIndexValue != null &&
                         Bytes(dataRecord.key.bytes) == excludedStartRecordKey &&
-                        indexRecord.value.contentEquals(excludedStartIndexValue)
+                        (continuation != null || indexRecord.value.contentEquals(excludedStartIndexValue))
                     ) {
                         continue
                     }
 
                     if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher, indexScan.index)) {
+                        continue
+                    }
+
+                    if (!isCanonicalCursorEntry(dataRecord, indexRecord.value)) {
                         continue
                     }
 
@@ -213,14 +239,17 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
                     if (
                         excludedStartRecordKey != null &&
-                        excludedStartIndexValue != null &&
                         Bytes(dataRecord.key.bytes) == excludedStartRecordKey &&
-                        indexRecord.value.contentEquals(excludedStartIndexValue)
+                        (continuation != null || indexRecord.value.contentEquals(excludedStartIndexValue))
                     ) {
                         continue
                     }
 
                     if (scanRequest.shouldBeFiltered(dataRecord, toVersion, recordFetcher, indexScan.index)) {
+                        continue
+                    }
+
+                    if (!isCanonicalCursorEntry(dataRecord, indexRecord.value)) {
                         continue
                     }
 

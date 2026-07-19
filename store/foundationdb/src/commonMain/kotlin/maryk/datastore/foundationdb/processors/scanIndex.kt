@@ -5,6 +5,7 @@ import maryk.foundationdb.Transaction
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.exceptions.StorageException
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.processors.datastore.findByteIndexAndSizeByPartIndex
@@ -26,6 +27,7 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Direction.ASC
 import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanContinuation
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.values.IsValuesGetter
@@ -68,6 +70,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
     scanRequest: IsScanRequest<DM, *>,
     indexScan: ScanType.IndexScan,
     keyScanRange: KeyScanRanges,
+    continuation: ScanContinuation?,
     decryptValue: DecryptValue? = null,
     processStoreValue: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
@@ -86,50 +89,17 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
     // Compute response metadata start/stop
     // Build a helper valuesGetter for computing index start from the startKey (respecting toVersion)
-    val startIndexKey: ByteArray? = scanRequest.startKey?.let { startKey -> transactionRunner.run { tr ->
+    val startIndexKey: ByteArray? = continuation?.let {
+        it.orderKey?.bytes ?: throw RequestException("Scan cursor has no index ordering boundary")
+    } ?: scanRequest.startKey?.let { startKey -> transactionRunner.run { tr ->
         val startKeyBytes = startKey.bytes
-        val getter = object : IsValuesGetter {
-            private val cache = HashMap<IsPropertyReference<*, *, *>, Any?>(8)
-
-            override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
-                propertyReference: IsPropertyReference<T, D, C>
-            ): T? {
-                if (cache.containsKey(propertyReference)) {
-                    @Suppress("UNCHECKED_CAST")
-                    return cache[propertyReference] as T?
-                }
-
-                val value = if (propertyReference is IsMapReference<*, *, *, *> && scanRequest.toVersion == null) {
-                    @Suppress("UNCHECKED_CAST")
-                    tr.readMapByReference(
-                        tableDirs.tablePrefix,
-                        startKeyBytes,
-                        propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
-                        decryptValue
-                    ) as T?
-                } else if (propertyReference is SetReference<*, *> && scanRequest.toVersion == null) {
-                    @Suppress("UNCHECKED_CAST")
-                    tr.readSetByReference(
-                        tableDirs.tablePrefix,
-                        startKeyBytes,
-                        propertyReference as SetReference<Any, IsPropertyContext>
-                    ) as T?
-                } else {
-                    tr.getValue(
-                        tableDirs,
-                        scanRequest.toVersion,
-                        startKeyBytes,
-                        propertyReference.toStorageByteArray(),
-                        decryptValue = decryptValue
-                    ) { valueBytes, offset, length ->
-                        valueBytes.convertToValue(propertyReference, offset, length) as T?
-                    }
-                }
-
-                cache[propertyReference] = value
-                return value
-            }
-        }
+        val getter = createIndexValuesGetter(
+            tr = tr,
+            tableDirs = tableDirs,
+            keyBytes = startKeyBytes,
+            toVersion = scanRequest.toVersion,
+            decryptValue = decryptValue,
+        )
         try {
             selectIndexKeyForScan(
                 valuesGetter = getter,
@@ -164,9 +134,9 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
     val responseStartKey = when (indexScan.direction) {
         ASC -> startIndexKey?.let {
-            indexScanRange.ranges.first().getAscendingStartKey(it, scanRequest.includeStart)
+            indexScanRange.ranges.first().getAscendingStartKey(it, keyScanRange.includeStart)
         } ?: indexScanRange.ranges.first().start
-        DESC -> indexScanRange.ranges.first().getDescendingStartKey(startIndexKey, scanRequest.includeStart)
+        DESC -> indexScanRange.ranges.first().getDescendingStartKey(startIndexKey, keyScanRange.includeStart)
     }
     val responseStopKey = when (indexScan.direction) {
         ASC -> indexScanRange.ranges.last().getDescendingStartKey()
@@ -185,7 +155,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
         when (indexScan.direction) {
             ASC -> {
                 var startKeyFilter = startIndexKey
-                var includeStartFilter = scanRequest.includeStart
+                var includeStartFilter = keyScanRange.includeStart
                 for (i in ranges.indices) {
                     if (emitted >= scanRequest.limit) break
                     val range = ranges[i]
@@ -226,6 +196,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                 val keyOffset = totalLen - keySize - versionSize
                                 var keyReadIndex = keyOffset
                                 val key = scanRequest.dataModel.key { indexKeyBytes[keyReadIndex++] }
+                                if (continuation?.key?.bytes?.contentEquals(key.bytes) == true) return@forEachInRangeBatch true
                                 if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachInRangeBatch true
                                 val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
                                     ?: return@forEachInRangeBatch true
@@ -241,6 +212,27 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                     )
                                     if (cmp < 0) return@forEachInRangeBatch true
                                     if (!includeStartFilter && cmp == 0) return@forEachInRangeBatch true
+                                }
+
+                                if (continuation != null) {
+                                    val getter = createIndexValuesGetter(
+                                        tr = tr,
+                                        tableDirs = tableDirs,
+                                        keyBytes = key.bytes,
+                                        toVersion = null,
+                                        decryptValue = decryptValue,
+                                    )
+                                    val canonicalIndexValue = selectIndexKeyForScan(
+                                        valuesGetter = getter,
+                                        index = indexScan.index,
+                                        direction = indexScan.direction,
+                                        keyBytes = key.bytes,
+                                        indexScanRange = indexScanRange,
+                                    )
+                                    val currentIndexValue = indexKeyBytes.copyOfRange(valueOffset, totalLen)
+                                    if (canonicalIndexValue?.contentEquals(currentIndexValue) != true) {
+                                        return@forEachInRangeBatch true
+                                    }
                                 }
 
                                 if (!seenKeys.add(key.bytes.asByteArrayKey(copy = true))) return@forEachInRangeBatch true
@@ -280,7 +272,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
                         !range.keyOutOfRange(startIndexKey, 0, startIndexKey.size)
                     ) {
                         startUpperBoundApplied = true
-                        packDescendingExclusiveEnd(scanRequest.includeStart, base, startIndexKey)
+                        packDescendingExclusiveEnd(keyScanRange.includeStart, base, startIndexKey)
                     } else {
                         when (val endExclusiveSeg = range.getDescendingStartKey()) {
                             null -> baseEnd
@@ -318,17 +310,38 @@ internal fun <DM : IsRootDataModel> scanIndex(
                                         startIndexKey
                                     )
                                     if (cmp > 0) return@forEachInRangeBatch true
-                                    if (!scanRequest.includeStart && cmp == 0) return@forEachInRangeBatch true
+                                    if (!keyScanRange.includeStart && cmp == 0) return@forEachInRangeBatch true
                                 }
                                 if (!indexScanRange.matchesPartials(indexKeyBytes, valueOffset, valueSize, totalLen - versionSize)) return@forEachInRangeBatch true
                                 val keyOffset = totalLen - keySize - versionSize
                                 var keyReadIndex = keyOffset
                                 val key = scanRequest.dataModel.key { indexKeyBytes[keyReadIndex++] }
+                                if (continuation?.key?.bytes?.contentEquals(key.bytes) == true) return@forEachInRangeBatch true
                                 if (!hasAdditionalMatches(transactionRunner, tr, tableDirs, indexReference, key.bytes, indexScanRange.valueMatches, null)) return@forEachInRangeBatch true
                                 val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
                                     ?: return@forEachInRangeBatch true
                                 if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, keySize, createdVersion, scanRequest.toVersion, decryptValue, indexScan.index)) {
                                     return@forEachInRangeBatch true
+                                }
+                                if (continuation != null) {
+                                    val getter = createIndexValuesGetter(
+                                        tr = tr,
+                                        tableDirs = tableDirs,
+                                        keyBytes = key.bytes,
+                                        toVersion = null,
+                                        decryptValue = decryptValue,
+                                    )
+                                    val canonicalIndexValue = selectIndexKeyForScan(
+                                        valuesGetter = getter,
+                                        index = indexScan.index,
+                                        direction = indexScan.direction,
+                                        keyBytes = key.bytes,
+                                        indexScanRange = indexScanRange,
+                                    )
+                                    val currentIndexValue = indexKeyBytes.copyOfRange(valueOffset, totalLen)
+                                    if (canonicalIndexValue?.contentEquals(currentIndexValue) != true) {
+                                        return@forEachInRangeBatch true
+                                    }
                                 }
                                 if (!seenKeys.add(key.bytes.asByteArrayKey(copy = true))) return@forEachInRangeBatch true
 
@@ -366,7 +379,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
 
             val startSeg = when (indexScan.direction) {
                 ASC -> startIndexKey.takeIf { i == 0 }?.let {
-                    range.getAscendingStartKey(it, if (i == 0) scanRequest.includeStart else true)
+                    range.getAscendingStartKey(it, if (i == 0) keyScanRange.includeStart else true)
                 } ?: range.start
                 DESC -> range.getAscendingStartKey(null, true)
             }
@@ -379,7 +392,7 @@ internal fun <DM : IsRootDataModel> scanIndex(
             ) {
                 descendingUpperBoundApplied = true
                 val qualifier = encodeZeroFreeUsing01(concatArrays(indexReference, startIndexKey))
-                packDescendingExclusiveEnd(scanRequest.includeStart, histBase, qualifier, byteArrayOf(0), versionFloor)
+                packDescendingExclusiveEnd(keyScanRange.includeStart, histBase, qualifier, byteArrayOf(0), versionFloor)
             } else {
                 when (val endExclusiveSeg = range.getDescendingStartKey()) {
                     null -> baseEnd
@@ -483,10 +496,11 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 var idx = 0
                 startIndexKey?.let { si ->
                     while (idx < results.size && results[idx].sort.compareTo(si) < 0) idx++
-                    if (!scanRequest.includeStart && idx < results.size && results[idx].sort.contentEquals(si)) idx++
+                    if (!keyScanRange.includeStart && idx < results.size && results[idx].sort.contentEquals(si)) idx++
                 }
                 while (idx < results.size && emitted < scanRequest.limit) {
                     val rec = results[idx++]
+                    if (continuation?.key?.bytes?.contentEquals(rec.keyBytes) == true) continue
                     val key = scanRequest.dataModel.key(rec.keyBytes)
                     transactionRunner.run { tr ->
                         processStoreValue(tr, key, rec.created, rec.sort)
@@ -498,10 +512,11 @@ internal fun <DM : IsRootDataModel> scanIndex(
                 var idx = results.lastIndex
                 startIndexKey?.let { si ->
                     while (idx >= 0 && results[idx].sort.compareTo(si) > 0) idx--
-                    if (!scanRequest.includeStart && idx >= 0 && results[idx].sort.contentEquals(si)) idx--
+                    if (!keyScanRange.includeStart && idx >= 0 && results[idx].sort.contentEquals(si)) idx--
                 }
                 while (idx >= 0 && emitted < scanRequest.limit) {
                     val rec = results[idx--]
+                    if (continuation?.key?.bytes?.contentEquals(rec.keyBytes) == true) continue
                     val key = scanRequest.dataModel.key(rec.keyBytes)
                     transactionRunner.run { tr ->
                         processStoreValue(tr, key, rec.created, rec.sort)
@@ -518,6 +533,55 @@ internal fun <DM : IsRootDataModel> scanIndex(
         startKey = responseStartKey,
         stopKey = responseStopKey
     )
+}
+
+private fun createIndexValuesGetter(
+    tr: Transaction,
+    tableDirs: IsTableDirectories,
+    keyBytes: ByteArray,
+    toVersion: ULong?,
+    decryptValue: DecryptValue?,
+): IsValuesGetter = object : IsValuesGetter {
+    private val cache = HashMap<IsPropertyReference<*, *, *>, Any?>(8)
+
+    override fun <T : Any, D : IsPropertyDefinition<T>, C : Any> get(
+        propertyReference: IsPropertyReference<T, D, C>,
+    ): T? {
+        if (cache.containsKey(propertyReference)) {
+            @Suppress("UNCHECKED_CAST")
+            return cache[propertyReference] as T?
+        }
+
+        val value = if (propertyReference is IsMapReference<*, *, *, *> && toVersion == null) {
+            @Suppress("UNCHECKED_CAST")
+            tr.readMapByReference(
+                tableDirs.tablePrefix,
+                keyBytes,
+                propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
+                decryptValue,
+            ) as T?
+        } else if (propertyReference is SetReference<*, *> && toVersion == null) {
+            @Suppress("UNCHECKED_CAST")
+            tr.readSetByReference(
+                tableDirs.tablePrefix,
+                keyBytes,
+                propertyReference as SetReference<Any, IsPropertyContext>,
+            ) as T?
+        } else {
+            tr.getValue(
+                tableDirs,
+                toVersion,
+                keyBytes,
+                propertyReference.toStorageByteArray(),
+                decryptValue = decryptValue,
+            ) { valueBytes, offset, length ->
+                valueBytes.convertToValue(propertyReference, offset, length) as T?
+            }
+        }
+
+        cache[propertyReference] = value
+        return value
+    }
 }
 
 private fun selectIndexKeyForScan(

@@ -8,14 +8,19 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.wrapper.ObjectListDefinitionWrapper
 import maryk.core.query.ValuesWithMetaData
+import maryk.core.query.requests.ScanCursor
 import maryk.core.values.ObjectValues
 
-/** Response with [values] to an objects (Get/Scan) request to [dataModel] */
+/** Response with [values] to an objects (Get/Scan) request to [dataModel].
+ *
+ * [nextCursor] is set when a Scan page can be continued with the same query.
+ */
 data class ValuesResponse<DM : IsRootDataModel>(
     override val dataModel: DM,
     val values: List<ValuesWithMetaData<DM>>,
     val aggregations: AggregationsResponse? = null,
     val dataFetchType: DataFetchType? = null,
+    val nextCursor: ScanCursor? = null,
 ) : IsDataResponse<DM> {
     companion object : QueryModel<ValuesResponse<*>, Companion>() {
         val dataModel by addDataModel({ it.dataModel })
@@ -36,11 +41,17 @@ data class ValuesResponse<DM : IsRootDataModel>(
             dataModel = { AggregationsResponse },
             alternativeNames = setOf("aggs")
         )
+        val nextCursor by embedObject(
+            index = 4u,
+            getter = ValuesResponse<*>::nextCursor,
+            dataModel = { ScanCursor.Model },
+        )
 
         override fun invoke(values: ObjectValues<ValuesResponse<*>, Companion>) = ValuesResponse(
             dataModel = values(1u),
             values = values(2u),
-            aggregations = values(3u)
+            aggregations = values(3u),
+            nextCursor = values(4u),
         )
     }
 }

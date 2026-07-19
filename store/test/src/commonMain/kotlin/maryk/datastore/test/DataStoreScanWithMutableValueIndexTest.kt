@@ -29,7 +29,8 @@ class DataStoreScanWithMutableValueIndexTest(
     override val allTests = mapOf(
         "executeScanOnAscendingIndexRequest" to ::executeScanOnAscendingIndexRequest,
         "executeScanChangesOnDescendingIndexRequest" to ::executeScanOnDescendingIndexRequest,
-        "executeScanOnDescendingIndexNoStartKeyRequest" to ::executeScanOnDescendingIndexNoStartKeyRequest
+        "executeScanOnDescendingIndexNoStartKeyRequest" to ::executeScanOnDescendingIndexNoStartKeyRequest,
+        "resumeCursorAfterBoundaryIndexValueChanges" to ::resumeCursorAfterBoundaryIndexValueChanges,
     )
 
     private val objects = arrayOf(
@@ -168,5 +169,30 @@ class DataStoreScanWithMutableValueIndexTest(
         scanResponse.values[3].apply {
             expect(keys[3]) { key }
         }
+    }
+
+    private suspend fun resumeCursorAfterBoundaryIndexValueChanges() {
+        val order = ModelV2ExtraIndex { newNumber::ref }.ascending()
+        val firstPage = dataStore.execute(
+            ModelV2ExtraIndex.scan(order = order, limit = 2u)
+        )
+
+        expect(listOf(keys[3], keys[1])) { firstPage.values.map { it.key } }
+        val cursor = checkNotNull(firstPage.nextCursor)
+
+        dataStore.execute(
+            ModelV2ExtraIndex.change(
+                keys[1].change(Change(ModelV2ExtraIndex { newNumber::ref } with 100))
+            )
+        ).statuses.forEach {
+            assertStatusIs<ChangeSuccess<*>>(it)
+        }
+
+        val secondPage = dataStore.execute(
+            ModelV2ExtraIndex.scan(order = order, limit = 10u, cursor = cursor)
+        )
+
+        expect(listOf(keys[0], keys[2])) { secondPage.values.map { it.key } }
+        expect(null) { secondPage.nextCursor }
     }
 }

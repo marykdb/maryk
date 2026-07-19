@@ -5,8 +5,10 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.createCursor
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.processors.helpers.getValue
@@ -28,12 +30,14 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
     val tableDirs = getTableDirs(dbIndex)
 
     val aggregator = scanRequest.aggregations?.let { Aggregator(it) }
+    var lastEmittedKey: Key<DM>? = null
+    var lastEmittedOrderKey: ByteArray? = null
 
     val responseFetchType = this.processScan(
         scanRequest = scanRequest,
         tableDirs = tableDirs,
         scanSetup = { /* nothing */ }
-    ) { tr, key, creationVersion, _ ->
+    ) { tr, key, creationVersion, orderKey ->
             val keyBytes = key.bytes
             val cacheReader = { ref: IsPropertyReferenceForCache<*, *>, version: ULong, reader: () -> Any? ->
                 cache.readValue(dbIndex, key, ref, version, reader)
@@ -49,7 +53,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
                 cachedRead = cacheReader,
                 decryptValue = this@processScanRequest::decryptValueIfNeeded
             )
-            vwm?.also { valuesWithMeta.add(it) }
+            if (valuesWithMeta.size.toUInt() < scanRequest.limit && vwm != null) {
+                valuesWithMeta.add(vwm)
+                lastEmittedKey = key
+                lastEmittedOrderKey = orderKey
+            }
 
             aggregator?.aggregate {
                 @Suppress("UNCHECKED_CAST")
@@ -72,6 +80,9 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
             values = valuesWithMeta,
             aggregations = aggregator?.toResponse(),
             dataFetchType = responseFetchType,
+            nextCursor = lastEmittedKey
+                ?.takeIf { valuesWithMeta.size.toUInt() == scanRequest.limit }
+                ?.let { scanRequest.createCursor(it, lastEmittedOrderKey) },
         )
     )
 }

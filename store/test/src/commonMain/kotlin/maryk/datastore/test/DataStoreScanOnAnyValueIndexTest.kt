@@ -16,6 +16,7 @@ import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
+import maryk.core.query.requests.ScanCursor
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
@@ -57,6 +58,8 @@ class DataStoreScanOnAnyValueIndexTest(
         "executeInitialAddIndexesAllMapKeys" to ::executeInitialAddIndexesAllMapKeys,
         "executeInitialAddIndexesAllSetValues" to ::executeInitialAddIndexesAllSetValues,
         "executeScanOnSetRefToAnyIndexRequestDoesNotDuplicateMultiValueObject" to ::executeScanOnSetRefToAnyIndexRequestDoesNotDuplicateMultiValueObject,
+        "executeCursorPagingOnAnyValueIndexDoesNotDuplicateMultiValueObject" to ::executeCursorPagingOnAnyValueIndexDoesNotDuplicateMultiValueObject,
+        "executeDescendingCursorPagingOnAnyValueIndexDoesNotDuplicateMultiValueObject" to ::executeDescendingCursorPagingOnAnyValueIndexDoesNotDuplicateMultiValueObject,
         "executeOrderedScanOnAnyValueIndexUsesMatchedStartKey" to ::executeOrderedScanOnAnyValueIndexUsesMatchedStartKey,
         "executeFilteredOrderedScanKeepsBoundaryWhenStartKeyDoesNotMatchFilter" to ::executeFilteredOrderedScanKeepsBoundaryWhenStartKeyDoesNotMatchFilter,
         "executeOrderedScanUpdatesUsesMatchedAnyValueSortingKey" to ::executeOrderedScanUpdatesUsesMatchedAnyValueSortingKey,
@@ -304,6 +307,62 @@ class DataStoreScanOnAnyValueIndexTest(
         expect(listOf("d", "b", "c", "a")) {
             scanResponse.values.map { it.values { name } }
         }
+    }
+
+    private suspend fun executeCursorPagingOnAnyValueIndexDoesNotDuplicateMultiValueObject() {
+        val status = dataStore.execute(
+            AnyValueSetIndexModel.add(
+                AnyValueSetIndexModel.create {
+                    name with "d"
+                    setValues with setOf("s4", "s0")
+                }
+            )
+        ).statuses.single()
+        setKeys += assertStatusIs<AddSuccess<AnyValueSetIndexModel>>(status).key
+
+        val names = mutableListOf<String>()
+        var cursor: ScanCursor? = null
+        do {
+            val page = dataStore.execute(
+                AnyValueSetIndexModel.scan(
+                    order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                    cursor = cursor,
+                    limit = 1u,
+                )
+            )
+            names += page.values.map { requireNotNull(it.values { name }) }
+            cursor = page.nextCursor
+        } while (cursor != null)
+
+        expect(listOf("d", "b", "c", "a")) { names }
+    }
+
+    private suspend fun executeDescendingCursorPagingOnAnyValueIndexDoesNotDuplicateMultiValueObject() {
+        val status = dataStore.execute(
+            AnyValueSetIndexModel.add(
+                AnyValueSetIndexModel.create {
+                    name with "d"
+                    setValues with setOf("s4", "s0")
+                }
+            )
+        ).statuses.single()
+        setKeys += assertStatusIs<AddSuccess<AnyValueSetIndexModel>>(status).key
+
+        val names = mutableListOf<String>()
+        var cursor: ScanCursor? = null
+        do {
+            val page = dataStore.execute(
+                AnyValueSetIndexModel.scan(
+                    order = AnyValueSetIndexModel { setValues.refToAny() }.descending(),
+                    cursor = cursor,
+                    limit = 1u,
+                )
+            )
+            names += page.values.map { requireNotNull(it.values { name }) }
+            cursor = page.nextCursor
+        } while (cursor != null)
+
+        expect(listOf("d", "a", "c", "b")) { names }
     }
 
     private suspend fun executeOrderedScanOnAnyValueIndexUsesMatchedStartKey() {

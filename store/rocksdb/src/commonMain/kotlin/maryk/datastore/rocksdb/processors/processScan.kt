@@ -8,6 +8,8 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.IsScanRequest
+import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.resolveCursor
 import maryk.core.query.responses.DataFetchType
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.FetchByTableScan
@@ -46,7 +48,12 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
     processRecord: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val dataModelId = getDataModelId(scanRequest.dataModel)
-    val keyScanRange = scanRequest.dataModel.createScanRange(scanRequest.where, scanRequest.startKey?.bytes, scanRequest.includeStart)
+    val continuation = (scanRequest as? ScanRequest<*>)?.resolveCursor()
+    val keyScanRange = scanRequest.dataModel.createScanRange(
+        scanRequest.where,
+        continuation?.key?.bytes ?: scanRequest.startKey?.bytes,
+        continuation == null && scanRequest.includeStart,
+    )
 
     scanRequest.checkToVersion(keepAllVersions)
 
@@ -151,6 +158,22 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                     )
                 }
                 is IndexScan -> {
+                    if (
+                        continuation?.orderKey == null &&
+                        continuation != null &&
+                        scanRequest.allowTableScan
+                    ) {
+                        return scanStore(
+                            dbAccessor,
+                            columnFamilies,
+                            scanRequest,
+                            processedScanIndex.direction,
+                            keyScanRange,
+                            historicalReader,
+                            processRecord,
+                        )
+                    }
+
                     var processedRecords = 0u
                     val dataFetchType = scanIndex(
                         dbAccessor,
@@ -158,6 +181,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                         scanRequest,
                         processedScanIndex,
                         keyScanRange,
+                        continuation,
                         includeSortingKey,
                         softDeleteCache,
                         historicalReader
@@ -168,6 +192,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
 
                     if (
                         processedRecords == 0u &&
+                        continuation == null &&
                         scanRequest.allowTableScan &&
                         isIndexUnavailableForReference(
                             dbAccessor = dbAccessor,

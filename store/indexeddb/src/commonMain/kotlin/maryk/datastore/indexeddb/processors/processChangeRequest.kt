@@ -155,8 +155,12 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 for (indexRow in oldIndexRows) {
                     operations.delete(indexStoreName, indexRow)
                 }
-                for ((uniqueKey, _, _) in oldUniqueRows) {
-                    operations.delete(uniqueStoreName, uniqueKey)
+                for (row in oldUniqueRows) {
+                    for (candidateKey in row.candidateKeys) {
+                        if (byteStore.get(uniqueStoreName, candidateKey)?.contentEquals(row.keyBytes) == true) {
+                            operations.delete(uniqueStoreName, candidateKey)
+                        }
+                    }
                 }
                 for ((rowKey, _) in oldTableRows) {
                     operations.delete(tableStoreName, rowKey)
@@ -177,8 +181,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     for (indexRow in storagePlan.indexRows) {
                         operations.put(indexStoreName, indexRow, keyBytes)
                     }
-                    for ((uniqueKey, uniqueValue, _) in storagePlan.uniqueRows) {
-                        operations.put(uniqueStoreName, uniqueKey, uniqueValue)
+                    for (row in storagePlan.uniqueRows) {
+                        operations.put(uniqueStoreName, row.uniqueKey, row.keyBytes)
                     }
                 }
                 if (keepAllVersions) {
@@ -240,4 +244,3 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
         )
     )
 }
-

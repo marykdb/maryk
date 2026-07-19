@@ -725,6 +725,40 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
+    fun sensitiveUniqueDoesNotWritePreviousRotationToken() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-encryption-rotation-${Random.nextInt()}"
+        val rotatingStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+            fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(2, listOf(1)),
+        )
+        try {
+            val result: IsAddResponseStatus<SensitiveUniqueRecord> = rotatingStore.execute(
+                SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 1 }), "same-secret"))
+            ).statuses.single()
+            assertIs<AddSuccess<SensitiveUniqueRecord>>(result)
+        } finally {
+            rotatingStore.close()
+        }
+
+        val previousKeyStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+            fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(1),
+        )
+        try {
+            val result: IsAddResponseStatus<SensitiveUniqueRecord> = previousKeyStore.execute(
+                SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 2 }), "same-secret"))
+            ).statuses.single()
+            assertIs<AddSuccess<SensitiveUniqueRecord>>(result)
+        } finally {
+            previousKeyStore.close()
+        }
+    }
+
+    @Test
     fun indexedScanLimitCountsMatchedRowsAfterSoftDeleteSkips() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()
 
@@ -924,6 +958,35 @@ private class XorWithTokenFieldEncryptionProvider :
         token[0] = (token[0].toInt() xor modelId.toInt()).toByte()
         return token
     }
+
+    private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
+        ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }
+}
+
+private class RotatingTokenFieldEncryptionProvider(
+    private val activeToken: Int,
+    private val previousTokens: List<Int> = emptyList(),
+) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun deriveDeterministicToken(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray = ByteArray(16) { activeToken.toByte() }
+
+    override suspend fun deriveDeterministicTokenCandidates(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): List<ByteArray> = (listOf(activeToken) + previousTokens)
+        .distinct()
+        .map { token -> ByteArray(16) { token.toByte() } }
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }

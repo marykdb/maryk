@@ -15,6 +15,7 @@ Not intended as a standalone store.
   - `maryk.datastore.shared.encryption.AesGcmHmacSha256EncryptionProvider`
   - Field encryption: AES-GCM
   - Deterministic sensitive lookup tokens: HMAC-SHA256
+- [Encryption key rotation](docs/encryption-key-rotation.md)
 
 ## Where to use
 

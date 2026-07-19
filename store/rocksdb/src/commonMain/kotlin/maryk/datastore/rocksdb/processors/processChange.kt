@@ -1037,21 +1037,23 @@ private fun RocksDBDataStore.createValueWriter(
                 onWrite?.invoke()
                 // If a unique index, check if exists, and then write
                 if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                    val uniqueValue = mapUniqueValueBytes(dbIndex, reference, valueBytes)
-                    val uniqueReference = reference + uniqueValue
+                    val uniqueReferences = mapUniqueValueByteCandidates(dbIndex, reference, valueBytes)
+                        .map { uniqueValue -> reference + uniqueValue }
+                    val uniqueReference = uniqueReferences.first()
 
                     try {
-                        transaction.getForUpdate(defaultReadOptions, columnFamilies.unique, uniqueReference)
-                            ?.takeIf { it.size == VERSION_BYTE_SIZE + key.size }
-                            ?.let {
-                                throw UniqueException(
-                                    reference,
-                                    Key<IsValuesDataModel>(
-                                        // Get the key at the end of the stored unique index value
-                                        it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
+                        for (candidateReference in uniqueReferences) {
+                            transaction.getForUpdate(defaultReadOptions, columnFamilies.unique, candidateReference)
+                                ?.takeIf { it.size == VERSION_BYTE_SIZE + key.size }
+                                ?.let {
+                                    throw UniqueException(
+                                        reference,
+                                        Key<IsValuesDataModel>(
+                                            it.copyOfRange(fromIndex = it.size - key.size, toIndex = it.size)
+                                        )
                                     )
-                                )
-                            }
+                                }
+                        }
 
                         deleteCurrentUniqueIndexEntryForKey(
                             dataModel = dataModelsById.getValue(dbIndex),

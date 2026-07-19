@@ -55,7 +55,14 @@ internal fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
 internal data class CurrentStateStoragePlan(
     val tableRows: List<Pair<ByteArray, ByteArray>>,
     val indexRows: List<ByteArray>,
-    val uniqueRows: List<Triple<ByteArray, ByteArray, ByteArray>>,
+    val uniqueRows: List<IndexedDbUniqueRow>,
+)
+
+internal data class IndexedDbUniqueRow(
+    val uniqueKey: ByteArray,
+    val keyBytes: ByteArray,
+    val qualifier: ByteArray,
+    val candidateKeys: List<ByteArray>,
 )
 
 internal data class MaterializedChanges(
@@ -99,4 +106,3 @@ internal fun IndexedDbDataStore.modelWriteStoreNames(
         add(historicUniqueCleanupStoreName)
     }
 }
-

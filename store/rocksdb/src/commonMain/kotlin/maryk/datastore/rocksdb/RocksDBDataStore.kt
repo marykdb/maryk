@@ -901,6 +901,19 @@ class RocksDBDataStore private constructor(
         return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value) }
     }
 
+    internal fun mapUniqueValueByteCandidates(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+    ): List<ByteArray> {
+        if (!isSensitiveUniqueReference(modelId, reference)) return listOf(value)
+        val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
+            ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
+        return runBlocking {
+            tokenProvider.deriveDeterministicTokenCandidates(modelId, reference, value)
+        }
+    }
+
     internal fun mapUniqueValueBytes(
         modelId: UInt,
         reference: ByteArray,

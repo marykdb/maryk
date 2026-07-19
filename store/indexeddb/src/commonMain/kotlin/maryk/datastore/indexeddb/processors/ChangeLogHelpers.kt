@@ -129,14 +129,16 @@ internal fun MutableList<IndexedDbWriteOperation>.addHistoricIndexRows(
 internal fun MutableList<IndexedDbWriteOperation>.addHistoricUniqueRows(
     storeName: String,
     cleanupStoreName: String,
-    uniqueRows: List<Triple<ByteArray, ByteArray, ByteArray>>,
+    uniqueRows: List<IndexedDbUniqueRow>,
     version: ULong,
     active: Boolean,
 ) {
-    for ((uniqueKey, keyBytes, _) in uniqueRows) {
-        val historicRowKey = createHistoricVersionedRowKey(uniqueKey, version)
-        put(storeName, historicRowKey, if (active) keyBytes else byteArrayOf())
-        put(cleanupStoreName, createHistoricCleanupRowKey(keyBytes, historicRowKey), historicRowKey)
+    for (row in uniqueRows) {
+        val keys = if (active) listOf(row.uniqueKey) else row.candidateKeys
+        for (uniqueKey in keys) {
+            val historicRowKey = createHistoricVersionedRowKey(uniqueKey, version)
+            put(storeName, historicRowKey, if (active) row.keyBytes else byteArrayOf())
+            put(cleanupStoreName, createHistoricCleanupRowKey(row.keyBytes, historicRowKey), historicRowKey)
+        }
     }
 }
-

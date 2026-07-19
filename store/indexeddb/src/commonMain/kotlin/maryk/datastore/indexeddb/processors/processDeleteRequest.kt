@@ -68,8 +68,12 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
             for (indexRow in oldIndexRows) {
                 operations.delete(indexStoreName, indexRow)
             }
-            for ((uniqueKey, _, _) in oldUniqueRows) {
-                operations.delete(uniqueStoreName, uniqueKey)
+            for (row in oldUniqueRows) {
+                for (candidateKey in row.candidateKeys) {
+                    if (byteStore.get(uniqueStoreName, candidateKey)?.contentEquals(row.keyBytes) == true) {
+                        operations.delete(uniqueStoreName, candidateKey)
+                    }
+                }
             }
 
             if (request.hardDelete) {
@@ -143,4 +147,3 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
         )
     )
 }
-

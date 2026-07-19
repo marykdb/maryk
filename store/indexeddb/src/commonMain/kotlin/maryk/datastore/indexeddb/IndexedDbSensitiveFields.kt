@@ -63,6 +63,17 @@ internal class IndexedDbSensitiveFieldSupport(
         return tokenProvider.deriveDeterministicToken(modelId, reference, value)
     }
 
+    suspend fun mapUniqueValueByteCandidates(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+    ): List<ByteArray> {
+        if (!isSensitiveUniqueReference(modelId, reference)) return listOf(value)
+        val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
+            ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
+        return tokenProvider.deriveDeterministicTokenCandidates(modelId, reference, value)
+    }
+
     private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean =
         sensitiveReferencePrefixesByModelId[modelId]?.any { prefix -> reference.hasPrefix(prefix) } == true
 

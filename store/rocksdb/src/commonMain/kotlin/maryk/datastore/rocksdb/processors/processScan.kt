@@ -85,35 +85,42 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                     this[0] = TypeIndicator.NoTypeIndicator.byte
                     valueBytes.copyInto(this, 1)
                 }
-                val uniqueValue = mapUniqueValueBytes(dataModelId, firstMatcher.reference, rawUniqueValue)
+                val uniqueValues = mapUniqueValueByteCandidates(
+                    dataModelId,
+                    firstMatcher.reference,
+                    rawUniqueValue,
+                )
 
-                val reference = ByteArray(firstMatcher.reference.size + uniqueValue.size).apply {
-                    firstMatcher.reference.copyInto(this)
-                    uniqueValue.copyInto(this, firstMatcher.reference.size)
-                }
+                for (uniqueValue in uniqueValues) {
+                    val reference = ByteArray(firstMatcher.reference.size + uniqueValue.size).apply {
+                        firstMatcher.reference.copyInto(this)
+                        uniqueValue.copyInto(this, firstMatcher.reference.size)
+                    }
 
-                getKeyByUniqueValue(
-                    dbAccessor = dbAccessor,
-                    columnFamilies = columnFamilies,
-                    readOptions = readOptions,
-                    reference = reference,
-                    keySize = scanRequest.dataModel.Meta.keyByteSize,
-                    toVersion = scanRequest.toVersion
-                ) { keyReader, setAtVersion ->
-                    val key = scanRequest.dataModel.key(keyReader)
+                    val found = getKeyByUniqueValue(
+                        dbAccessor = dbAccessor,
+                        columnFamilies = columnFamilies,
+                        readOptions = readOptions,
+                        reference = reference,
+                        keySize = scanRequest.dataModel.Meta.keyByteSize,
+                        toVersion = scanRequest.toVersion
+                    ) { keyReader, setAtVersion ->
+                        val key = scanRequest.dataModel.key(keyReader)
 
-                    if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange, softDeleteCache, historicalReader)) {
-                        (softDeleteCache?.getCreationVersion(key.bytes)
-                            ?: readCreationVersion(
-                                dbAccessor,
-                                columnFamilies,
-                                readOptions,
-                                key.bytes,
-                                scanRequest.toVersion
-                            ))?.let { createdVersion ->
-                            processRecord(key, createdVersion, null)
+                        if (shouldProcessRecord(dbAccessor, columnFamilies, readOptions, key, setAtVersion, scanRequest, keyScanRange, softDeleteCache, historicalReader)) {
+                            (softDeleteCache?.getCreationVersion(key.bytes)
+                                ?: readCreationVersion(
+                                    dbAccessor,
+                                    columnFamilies,
+                                    readOptions,
+                                    key.bytes,
+                                    scanRequest.toVersion
+                                ))?.let { createdVersion ->
+                                processRecord(key, createdVersion, null)
+                            }
                         }
                     }
+                    if (found) break
                 }
                 return FetchByUniqueKey(firstMatcher.reference)
             }

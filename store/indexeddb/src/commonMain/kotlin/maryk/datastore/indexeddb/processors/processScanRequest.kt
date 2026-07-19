@@ -88,11 +88,26 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
             uniqueToMatch.value as Comparable<Any>,
             TypeIndicator.NoTypeIndicator.byte
         )
-        val mappedUniqueValue = sensitiveFields.mapUniqueValueBytes(modelId, uniqueToMatch.reference, uniqueValue)
-        val uniqueKey = createUniqueRowKey(uniqueToMatch.reference, mappedUniqueValue)
-        val keyBytes = request.toVersion?.let { toVersion ->
-            byteStore.readHistoricUniqueKey(historicUniqueStoreName, uniqueKey, toVersion)
-        } ?: byteStore.get(uniqueStoreName, uniqueKey)
+        val mappedUniqueValues = sensitiveFields.mapUniqueValueByteCandidates(
+            modelId,
+            uniqueToMatch.reference,
+            uniqueValue,
+        )
+        var keyBytes: ByteArray? = null
+        for (mappedUniqueValue in mappedUniqueValues) {
+            val uniqueKey = createUniqueRowKey(uniqueToMatch.reference, mappedUniqueValue)
+            val resolvedKey = request.toVersion?.let { toVersion ->
+                byteStore.readHistoricUniqueKey(historicUniqueStoreName, uniqueKey, toVersion)
+            } ?: if (request.toVersion == null) {
+                byteStore.get(uniqueStoreName, uniqueKey)
+            } else {
+                null
+            }
+            if (resolvedKey != null) {
+                keyBytes = resolvedKey
+                break
+            }
+        }
         if (keyBytes != null) {
             val toVersion = request.toVersion
             val record = if (toVersion != null) {

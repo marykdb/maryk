@@ -21,7 +21,7 @@ internal suspend fun <DM : IsRootDataModel> createStoragePlan(
 ): CurrentStateStoragePlan {
     val rows = mutableListOf<StorageRowToWrite>()
     val indexRows = mutableListOf<ByteArray>()
-    val uniqueRows = mutableListOf<Triple<ByteArray, ByteArray, ByteArray>>()
+    val uniqueRows = mutableListOf<IndexedDbUniqueRow>()
 
     dataModel.Meta.indexes?.forEach { index ->
         index.toStorageByteArraysForIndex(values, keyBytes).forEach { valueAndKey ->
@@ -42,9 +42,14 @@ internal suspend fun <DM : IsRootDataModel> createStoragePlan(
     }
     for (row in rows) {
         if (row.type == Value && row.definition is IsComparableDefinition<*, *> && row.definition.unique) {
-            val uniqueValue = sensitiveFields.mapUniqueValueBytes(modelId, row.qualifier, row.encodedValue)
-            val uniqueKey = createUniqueRowKey(row.qualifier, uniqueValue)
-            uniqueRows += Triple(uniqueKey, keyBytes, row.qualifier)
+            val uniqueKeys = sensitiveFields.mapUniqueValueByteCandidates(modelId, row.qualifier, row.encodedValue)
+                .map { uniqueValue -> createUniqueRowKey(row.qualifier, uniqueValue) }
+            uniqueRows += IndexedDbUniqueRow(
+                uniqueKey = uniqueKeys.first(),
+                keyBytes = keyBytes,
+                qualifier = row.qualifier,
+                candidateKeys = uniqueKeys,
+            )
         }
     }
 

@@ -103,23 +103,25 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
 
                         // If a unique index, check if exists, and then write
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                            val uniqueValue = mapUniqueValueBytes(dbIndex, reference, valueBytes)
-                            val uniqueReference = reference + uniqueValue
+                            val uniqueReferences = mapUniqueValueByteCandidates(dbIndex, reference, valueBytes)
+                                .map { uniqueValue -> reference + uniqueValue }
+                            val uniqueReference = uniqueReferences.first()
 
                             checksBeforeWrite.add {
-                                val uniqueCount =
-                                    db.get(columnFamilies.unique, uniqueReference, recyclableByteArray)
-                                if (uniqueCount == VERSION_BYTE_SIZE + key.size) {
-                                    throw UniqueException(
-                                        reference,
-                                        Key<DM>(
-                                            // Get the key at the end of the stored unique index value
-                                            recyclableByteArray.copyOfRange(
-                                                fromIndex = uniqueCount - key.size,
-                                                toIndex = uniqueCount
+                                for (candidateReference in uniqueReferences) {
+                                    val uniqueCount =
+                                        db.get(columnFamilies.unique, candidateReference, recyclableByteArray)
+                                    if (uniqueCount == VERSION_BYTE_SIZE + key.size) {
+                                        throw UniqueException(
+                                            reference,
+                                            Key<DM>(
+                                                recyclableByteArray.copyOfRange(
+                                                    fromIndex = uniqueCount - key.size,
+                                                    toIndex = uniqueCount
+                                                )
                                             )
                                         )
-                                    )
+                                    }
                                 }
                             }
 

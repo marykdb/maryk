@@ -58,16 +58,19 @@ internal fun FoundationDBDataStore.createValueWriter(
                 val isComparableUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
 
                 if (isComparableUnique) {
-                    val uniqueValue = mapUniqueValueBytes(dataModelId, reference, valueBytes)
-                    val uniqueRef = reference + uniqueValue
+                    val uniqueRefs = mapUniqueValueByteCandidates(dataModelId, reference, valueBytes)
+                        .map { uniqueValue -> reference + uniqueValue }
+                    val uniqueRef = uniqueRefs.first()
                     try {
-                        val uniqueExists = tr.get(packKey(tableDirs.uniquePrefix, uniqueRef)).awaitResult()
-                        if (uniqueExists?.size == VERSION_BYTE_SIZE + key.bytes.size) {
-                            val existingKeyBytes = uniqueExists.copyOfRange(
-                                VERSION_BYTE_SIZE,
-                                uniqueExists.size
-                            )
-                            throw UniqueException(reference, Key<IsValuesDataModel>(existingKeyBytes))
+                        for (candidateRef in uniqueRefs) {
+                            val uniqueExists = tr.get(packKey(tableDirs.uniquePrefix, candidateRef)).awaitResult()
+                            if (uniqueExists?.size == VERSION_BYTE_SIZE + key.bytes.size) {
+                                val existingKeyBytes = uniqueExists.copyOfRange(
+                                    VERSION_BYTE_SIZE,
+                                    uniqueExists.size
+                                )
+                                throw UniqueException(reference, Key<IsValuesDataModel>(existingKeyBytes))
+                            }
                         }
 
                         deleteCurrentUniqueIndexEntryForKey(

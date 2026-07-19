@@ -92,19 +92,21 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 
                         // Unique handling
                         if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
-                            val uniqueValue = mapUniqueValueBytes(dataModelId, reference, valueBytes)
-                            val uniqueRef = reference + uniqueValue
+                            val uniqueRefs = mapUniqueValueByteCandidates(dataModelId, reference, valueBytes)
+                                .map { uniqueValue -> reference + uniqueValue }
+                            val uniqueRef = uniqueRefs.first()
                             createUniqueIndexIfNotExists(dataModelId, tableDirs.uniquePrefix, reference)
                             checks += {
-                                val uniqueKey = packKey(tableDirs.uniquePrefix, uniqueRef)
-                                val uniqueExists = tr.get(uniqueKey).awaitResult()
-                                if (uniqueExists?.size == VERSION_BYTE_SIZE + key.bytes.size) {
-                                    // Stored as (version || key)
-                                    val existingKeyBytes = uniqueExists.copyOfRange(
-                                        VERSION_BYTE_SIZE,
-                                        uniqueExists.size
-                                    )
-                                    throw UniqueException(reference, Key<DM>(existingKeyBytes))
+                                for (candidateRef in uniqueRefs) {
+                                    val uniqueKey = packKey(tableDirs.uniquePrefix, candidateRef)
+                                    val uniqueExists = tr.get(uniqueKey).awaitResult()
+                                    if (uniqueExists?.size == VERSION_BYTE_SIZE + key.bytes.size) {
+                                        val existingKeyBytes = uniqueExists.copyOfRange(
+                                            VERSION_BYTE_SIZE,
+                                            uniqueExists.size
+                                        )
+                                        throw UniqueException(reference, Key<DM>(existingKeyBytes))
+                                    }
                                 }
                             }
                             // Defer writing unique index until after checks to avoid read-your-writes conflicts

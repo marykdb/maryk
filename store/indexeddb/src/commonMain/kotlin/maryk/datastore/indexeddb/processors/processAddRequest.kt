@@ -71,7 +71,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                 val operations = mutableListOf<IndexedDbWriteOperation>()
                 val rows = mutableListOf<StorageRowToWrite>()
                 val indexRows = mutableListOf<ByteArray>()
-                val uniqueRows = mutableListOf<Triple<ByteArray, ByteArray, ByteArray>>()
+                val uniqueRows = mutableListOf<IndexedDbUniqueRow>()
 
                 request.dataModel.Meta.indexes?.forEach { index ->
                     index.toStorageByteArraysForIndex(values, key.bytes).forEach { valueAndKey ->
@@ -92,16 +92,23 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                     tableRows += createTableRowKey(key.bytes, row.qualifier) to encryptedValue
 
                     if (row.type == Value && row.definition is IsComparableDefinition<*, *> && row.definition.unique) {
-                        val uniqueValue = sensitiveFields.mapUniqueValueBytes(modelId, row.qualifier, row.encodedValue)
-                        val uniqueKey = createUniqueRowKey(row.qualifier, uniqueValue)
-                        uniqueRows += Triple(uniqueKey, key.bytes, row.qualifier)
+                        val uniqueKeys = sensitiveFields.mapUniqueValueByteCandidates(modelId, row.qualifier, row.encodedValue)
+                            .map { uniqueValue -> createUniqueRowKey(row.qualifier, uniqueValue) }
+                        uniqueRows += IndexedDbUniqueRow(
+                            uniqueKey = uniqueKeys.first(),
+                            keyBytes = key.bytes,
+                            qualifier = row.qualifier,
+                            candidateKeys = uniqueKeys,
+                        )
                     }
                 }
 
-                for ((uniqueKey, _, qualifier) in uniqueRows) {
-                    val existingKey = byteStore.get(uniqueStoreName, uniqueKey)
-                    if (existingKey != null) {
-                        throw UniqueException(qualifier, request.dataModel.key(existingKey))
+                for (row in uniqueRows) {
+                    for (candidateKey in row.candidateKeys) {
+                        val existingKey = byteStore.get(uniqueStoreName, candidateKey)
+                        if (existingKey != null) {
+                            throw UniqueException(row.qualifier, request.dataModel.key(existingKey))
+                        }
                     }
                 }
 
@@ -119,8 +126,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                 for (indexRow in indexRows) {
                     operations.put(indexStoreName, indexRow, key.bytes)
                 }
-                for ((uniqueKey, uniqueValue, _) in uniqueRows) {
-                    operations.put(uniqueStoreName, uniqueKey, uniqueValue)
+                for (row in uniqueRows) {
+                    operations.put(uniqueStoreName, row.uniqueKey, row.keyBytes)
                 }
                 if (keepAllVersions) {
                     operations.addHistoricSnapshot(
@@ -166,4 +173,3 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
         )
     )
 }
-

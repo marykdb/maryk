@@ -71,32 +71,37 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
             this[0] = TypeIndicator.NoTypeIndicator.byte
             valueBytes.copyInto(this, 1)
         }
-        val uniqueValue = mapUniqueValueBytes(dataModelId, firstMatcher.reference, rawUniqueValue)
-
-        // Build (reference || uniqueValue) to match how uniques are stored
-        val reference = ByteArray(firstMatcher.reference.size + uniqueValue.size).apply {
-            firstMatcher.reference.copyInto(this)
-            uniqueValue.copyInto(this, firstMatcher.reference.size)
-        }
+        val uniqueValues = mapUniqueValueByteCandidates(
+            dataModelId,
+            firstMatcher.reference,
+            rawUniqueValue,
+        )
 
         transactionRunner.run { tr ->
-            tr.getKeyByUniqueValue(
-                tableDirs = tableDirs,
-                reference = reference,
-                keySize = scanRequest.dataModel.Meta.keyByteSize,
-                toVersion = scanRequest.toVersion
-            ) { keyBytes, keyOffset, keyLength, setAtVersion ->
-                var keyReadIndex = keyOffset
-                val key = scanRequest.dataModel.key {
-                    keyBytes[keyReadIndex++]
+            for (uniqueValue in uniqueValues) {
+                val reference = ByteArray(firstMatcher.reference.size + uniqueValue.size).apply {
+                    firstMatcher.reference.copyInto(this)
+                    uniqueValue.copyInto(this, firstMatcher.reference.size)
                 }
-                if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
-                    // Ensure we have the creation version for processRecord callback
-                    val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
-                    if (createdVersion != null) {
-                        processRecord(tr, key, createdVersion, null)
+
+                val found = tr.getKeyByUniqueValue(
+                    tableDirs = tableDirs,
+                    reference = reference,
+                    keySize = scanRequest.dataModel.Meta.keyByteSize,
+                    toVersion = scanRequest.toVersion
+                ) { keyBytes, keyOffset, _, setAtVersion ->
+                    var keyReadIndex = keyOffset
+                    val key = scanRequest.dataModel.key {
+                        keyBytes[keyReadIndex++]
+                    }
+                    if (shouldProcessRecord(tr, tableDirs, key, setAtVersion, scanRequest, keyScanRange, this::decryptValueIfNeeded)) {
+                        val createdVersion = tr.readCreationVersion(tableDirs, key.bytes, scanRequest.toVersion)
+                        if (createdVersion != null) {
+                            processRecord(tr, key, createdVersion, null)
+                        }
                     }
                 }
+                if (found) break
             }
         }
 

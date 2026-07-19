@@ -58,7 +58,9 @@ The `meta` object store records:
 - history options;
 - model signatures;
 - encoded model definitions;
-- migration state used by startup checks.
+- versioned per-model migration state. A `Running` marker is stored before each
+  handler call; its phase, attempt, cursor, and `Partial`/`Retry`/fatal outcome
+  diagnostics survive reopen. Successful completion removes the state.
 
 ## Relationship To Other Stores
 

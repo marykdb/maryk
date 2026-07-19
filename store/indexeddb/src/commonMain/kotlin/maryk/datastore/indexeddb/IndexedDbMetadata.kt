@@ -11,8 +11,11 @@ import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.models.migration.MigrationContext
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationPhase
+import maryk.core.models.migration.MigrationState
+import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.MigrationStatus
 import maryk.core.models.migration.VersionUpdateHandler
+import maryk.core.models.migration.nextRuntimePhaseOrNull
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.IsComparableDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -29,6 +32,7 @@ private val OptionsMetadataKey = byteArrayOf(1)
 private val ModelsMetadataKey = byteArrayOf(2)
 private val ModelDefinitionMetadataPrefix = byteArrayOf(3)
 private val ModelDependentsMetadataPrefix = byteArrayOf(4)
+private val MigrationStateMetadataPrefix = byteArrayOf(5)
 
 internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
     dataStore: IndexedDbDataStore,
@@ -112,6 +116,7 @@ internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
                     is MigrationStatus.NeedsMigration -> {
                         runMigration(
                             dataStore = dataStore,
+                            modelId = modelId,
                             storedModel = storedModel,
                             dataModel = dataModel,
                             status = status,
@@ -135,6 +140,7 @@ internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
 
 private suspend fun IndexedDbByteStore.runMigration(
     dataStore: IndexedDbDataStore,
+    modelId: UInt,
     storedModel: IsRootDataModel,
     dataModel: IsRootDataModel,
     status: MigrationStatus.NeedsMigration,
@@ -157,37 +163,138 @@ private suspend fun IndexedDbByteStore.runMigration(
         MigrationPhase.Verify to migrationConfiguration.migrationVerifyHandler,
         MigrationPhase.Contract to migrationConfiguration.migrationContractHandler,
     )
-    for ((phase, handler) in phases) {
-        var attempt = 1u
-        var retryOutcomes = 0u
+    val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
+    val resumedState = readMigrationState(modelId)
+    if (resumedState != null && resumedState.migrationId != migrationId) {
+        throw RequestException(
+            "IndexedDB migration state for ${dataModel.Meta.name} belongs to ${resumedState.migrationId}, expected $migrationId"
+        )
+    }
+    val startPhaseIndex = resumedState?.phase?.let { phase ->
+        phases.indexOfFirst { it.first == phase }
+    }?.takeIf { it >= 0 } ?: 0
+
+    for (phaseIndex in startPhaseIndex until phases.size) {
+        val (phase, handler) = phases[phaseIndex]
+        var previousState = resumedState?.takeIf { it.phase == phase }
+        var attempt = previousState?.attempt?.let { previousAttempt ->
+            if (previousAttempt == UInt.MAX_VALUE) {
+                throw RequestException(
+                    "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} exhausted its attempt counter"
+                )
+            }
+            previousAttempt + 1u
+        } ?: 1u
+        var retryOutcomes = previousState
+            ?.takeIf { it.status == MigrationStateStatus.Retry }
+            ?.attempt
+            ?: 0u
 
         while (true) {
+            val maxAttempts = migrationConfiguration.migrationRetryPolicy.maxAttempts
+            if (maxAttempts != null && attempt > maxAttempts) {
+                throw RequestException(
+                    "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} exceeded max attempts"
+                )
+            }
+            writeMigrationState(
+                modelId,
+                MigrationState(
+                    migrationId = migrationId,
+                    phase = phase,
+                    status = MigrationStateStatus.Running,
+                    attempt = attempt,
+                    fromVersion = storedModel.Meta.version.toString(),
+                    toVersion = dataModel.Meta.version.toString(),
+                    cursor = previousState?.cursor,
+                )
+            )
             val outcome = handler?.invoke(
                 MigrationContext(
                     store = dataStore,
                     storedDataModel = storedModel,
                     newDataModel = dataModel,
                     migrationStatus = status,
-                    previousState = null,
+                    previousState = previousState,
                     attempt = attempt,
                 )
             ) ?: MigrationOutcome.Success
 
             when (outcome) {
-                MigrationOutcome.Success -> break
-                is MigrationOutcome.Fatal -> throw RequestException(
-                    "IndexedDB migration ${phase.name} failed for ${dataModel.Meta.name}: ${outcome.reason}"
-                )
-                is MigrationOutcome.Partial -> throw RequestException(
-                    "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} returned Partial; resume state is not persisted by this browser runtime"
-                )
+                MigrationOutcome.Success -> {
+                    val nextPhase = phase.nextRuntimePhaseOrNull()
+                    if (nextPhase == null) {
+                        delete("meta", migrationStateMetadataKey(modelId))
+                    } else {
+                        MigrationState(
+                            migrationId = migrationId,
+                            phase = nextPhase,
+                            status = MigrationStateStatus.Running,
+                            attempt = 0u,
+                            fromVersion = storedModel.Meta.version.toString(),
+                            toVersion = dataModel.Meta.version.toString(),
+                        ).also { writeMigrationState(modelId, it) }
+                    }
+                    break
+                }
+                is MigrationOutcome.Fatal -> {
+                    writeMigrationState(
+                        modelId,
+                        MigrationState(
+                            migrationId = migrationId,
+                            phase = phase,
+                            status = MigrationStateStatus.Failed,
+                            attempt = attempt,
+                            fromVersion = storedModel.Meta.version.toString(),
+                            toVersion = dataModel.Meta.version.toString(),
+                            cursor = previousState?.cursor,
+                            message = outcome.reason,
+                        )
+                    )
+                    throw RequestException(
+                        "IndexedDB migration ${phase.name} failed for ${dataModel.Meta.name}: ${outcome.reason}"
+                    )
+                }
+                is MigrationOutcome.Partial -> {
+                    writeMigrationState(
+                        modelId,
+                        MigrationState(
+                            migrationId = migrationId,
+                            phase = phase,
+                            status = MigrationStateStatus.Partial,
+                            attempt = attempt,
+                            fromVersion = storedModel.Meta.version.toString(),
+                            toVersion = dataModel.Meta.version.toString(),
+                            cursor = outcome.nextCursor,
+                            message = outcome.message,
+                        )
+                    )
+                    throw RequestException(
+                        "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} is partial and will resume on the next open"
+                    )
+                }
                 is MigrationOutcome.Retry -> {
+                    previousState = MigrationState(
+                        migrationId = migrationId,
+                        phase = phase,
+                        status = MigrationStateStatus.Retry,
+                        attempt = attempt,
+                        fromVersion = storedModel.Meta.version.toString(),
+                        toVersion = dataModel.Meta.version.toString(),
+                        cursor = outcome.nextCursor,
+                        message = outcome.message,
+                    ).also { writeMigrationState(modelId, it) }
                     if (
                         migrationConfiguration.migrationRetryPolicy.maxRetryOutcomes == null &&
                         migrationConfiguration.migrationRetryPolicy.maxAttempts == null
                     ) {
                         throw RequestException(
                             "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} returned Retry; configure a bounded retry policy or retry in a later open"
+                        )
+                    }
+                    if (retryOutcomes == UInt.MAX_VALUE) {
+                        throw RequestException(
+                            "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} exhausted its retry counter"
                         )
                     }
                     retryOutcomes++
@@ -197,13 +304,12 @@ private suspend fun IndexedDbByteStore.runMigration(
                             "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} exceeded max retry outcomes"
                         )
                     }
-                    attempt++
-                    val maxAttempts = migrationConfiguration.migrationRetryPolicy.maxAttempts
-                    if (maxAttempts != null && attempt > maxAttempts) {
+                    if (attempt == UInt.MAX_VALUE) {
                         throw RequestException(
-                            "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} exceeded max attempts"
+                            "IndexedDB migration ${phase.name} for ${dataModel.Meta.name} exhausted its attempt counter"
                         )
                     }
+                    attempt++
                     outcome.retryAfterMs?.takeIf { it > 0 }?.let { delay(it) }
                 }
             }
@@ -274,6 +380,19 @@ private fun modelDefinitionMetadataKey(modelId: UInt): ByteArray =
 
 private fun modelDependentsMetadataKey(modelId: UInt): ByteArray =
     ModelDependentsMetadataPrefix + modelId.toBigEndianBytes()
+
+private fun migrationStateMetadataKey(modelId: UInt): ByteArray =
+    MigrationStateMetadataPrefix + modelId.toBigEndianBytes()
+
+private suspend fun IndexedDbByteStore.readMigrationState(modelId: UInt): MigrationState? {
+    val bytes = get("meta", migrationStateMetadataKey(modelId)) ?: return null
+    return MigrationState.fromPersistedBytes(bytes)
+        ?: throw RequestException("IndexedDB migration state for model $modelId is corrupt")
+}
+
+private suspend fun IndexedDbByteStore.writeMigrationState(modelId: UInt, state: MigrationState) {
+    put("meta", migrationStateMetadataKey(modelId), state.toPersistedBytes())
+}
 
 private fun UInt.toBigEndianBytes(): ByteArray = ByteArray(UInt.SIZE_BYTES).also { bytes ->
     bytes[0] = (this shr 24).toByte()

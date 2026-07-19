@@ -8,6 +8,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationRetryPolicy
+import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.properties.definitions.fixedBytes
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
@@ -81,6 +82,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 class IndexedDbDataStoreTest {
@@ -590,6 +592,43 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
+    fun migrationRetryLimitSurvivesReopen() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-migration-retry-reopen-${Random.nextInt()}"
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV1),
+        ).close()
+
+        assertFailsWith<RequestException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Retry() },
+                ),
+            )
+        }
+
+        var resumedCalls = 0
+        assertFailsWith<RequestException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = {
+                        resumedCalls++
+                        MigrationOutcome.Success
+                    },
+                    migrationRetryPolicy = MigrationRetryPolicy(maxAttempts = 1u),
+                ),
+            )
+        }
+        assertEquals(0, resumedCalls)
+    }
+
+    @Test
     fun migrationRetryAttemptsArePhaseLocal() = runTest {
         installIndexedDbForTests()
 
@@ -618,6 +657,140 @@ class IndexedDbDataStoreTest {
         ).close()
 
         assertEquals(listOf(1u), backfillAttempts)
+    }
+
+    @Test
+    fun partialMigrationResumesAfterReopen() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-migration-partial-${Random.nextInt()}"
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV1),
+        ).close()
+
+        val cursor = byteArrayOf(1, 2, 3, 4)
+        assertFailsWith<RequestException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = {
+                        assertEquals(null, it.previousState)
+                        MigrationOutcome.Partial(cursor, "continue after reopen")
+                    },
+                ),
+            )
+        }
+
+        var resumed = false
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationHandler = {
+                    resumed = true
+                    assertEquals(cursor.toList(), it.previousState?.cursor?.toList())
+                    assertEquals(2u, it.attempt)
+                    MigrationOutcome.Success
+                },
+            ),
+        ).close()
+
+        assertTrue(resumed)
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV2),
+        ).close()
+    }
+
+    @Test
+    fun interruptedMigrationResumesWithRunningState() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-migration-interrupted-${Random.nextInt()}"
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV1),
+        ).close()
+
+        assertFailsWith<IllegalStateException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationExpandHandler = { throw IllegalStateException("interrupted") },
+                ),
+            )
+        }
+
+        var resumedStateStatus: MigrationStateStatus? = null
+        var resumedAttempt: UInt? = null
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationExpandHandler = {
+                    resumedStateStatus = it.previousState?.status
+                    resumedAttempt = it.attempt
+                    MigrationOutcome.Success
+                },
+                migrationHandler = { MigrationOutcome.Success },
+            ),
+        ).close()
+
+        assertEquals(MigrationStateStatus.Running, resumedStateStatus)
+        assertEquals(2u, resumedAttempt)
+    }
+
+    @Test
+    fun fatalMigrationKeepsTheLastCursorForDiagnosis() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-migration-fatal-${Random.nextInt()}"
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV1),
+        ).close()
+
+        val cursor = byteArrayOf(5, 6, 7)
+        assertFailsWith<RequestException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Partial(cursor) },
+                ),
+            )
+        }
+        assertFailsWith<RequestException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Fatal("cannot continue") },
+                ),
+            )
+        }
+
+        var resumedStateStatus: MigrationStateStatus? = null
+        var resumedCursor: ByteArray? = null
+        assertFailsWith<RequestException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = {
+                        resumedStateStatus = it.previousState?.status
+                        resumedCursor = it.previousState?.cursor
+                        MigrationOutcome.Fatal("still cannot continue")
+                    },
+                ),
+            )
+        }
+
+        assertEquals(MigrationStateStatus.Failed, resumedStateStatus)
+        assertEquals(cursor.toList(), resumedCursor?.toList())
     }
 
     @Test

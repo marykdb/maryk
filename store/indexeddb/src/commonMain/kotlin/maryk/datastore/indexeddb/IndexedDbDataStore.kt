@@ -296,16 +296,20 @@ class IndexedDbDataStore private constructor(
                 sensitiveFields = sensitiveFields,
             )
 
-            byteStore.migrateStoreMetadata(
-                dataStore = dataStore,
-                keepAllVersions = keepAllVersions,
-                keepUpdateHistoryIndex = keepUpdateHistoryIndex,
-                dataModelsById = dataModelsById,
-                migrationConfiguration = migrationConfiguration,
-                versionUpdateHandler = versionUpdateHandler,
-            )
-
-            return dataStore
+            return try {
+                byteStore.migrateStoreMetadata(
+                    dataStore = dataStore,
+                    keepAllVersions = keepAllVersions,
+                    keepUpdateHistoryIndex = keepUpdateHistoryIndex,
+                    dataModelsById = dataModelsById,
+                    migrationConfiguration = migrationConfiguration,
+                    versionUpdateHandler = versionUpdateHandler,
+                )
+                dataStore
+            } catch (error: Throwable) {
+                dataStore.close()
+                throw error
+            }
         }
     }
 }

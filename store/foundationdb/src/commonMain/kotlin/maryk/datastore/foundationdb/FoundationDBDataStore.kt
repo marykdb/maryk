@@ -109,6 +109,8 @@ import maryk.datastore.foundationdb.processors.processScanUpdatesRequest
 import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
@@ -152,7 +154,13 @@ class FoundationDBDataStore private constructor(
     val versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
     private val clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
     private val fieldEncryptionProvider: FieldEncryptionProvider? = null,
-) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
+    maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
+) : AbstractDataStore(
+    dataModelsById = dataModelsById,
+    coroutineContext = Dispatchers.IO,
+    maxConcurrentReads = maxConcurrentReads,
+    readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
+) {
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
@@ -220,6 +228,22 @@ class FoundationDBDataStore private constructor(
             block(tr)
         }
     }
+
+    internal inline fun <T> runReadTransaction(
+        readContext: FoundationDBReadContext,
+        crossinline block: (Transaction) -> T,
+    ): T {
+        if (isClosing.value) throw CancellationException("Datastore closing")
+        return tc.run { tr ->
+            tr.options().setRetryLimit(0)
+            tr.setReadVersion(readContext.readVersion)
+            block(tr)
+        }
+    }
+
+    internal fun createReadContext() = FoundationDBReadContext(
+        runTransaction { tr -> tr.getReadVersion().awaitResult() },
+    )
 
     internal inline fun <T> runTransactionAsync(
         crossinline block: (Transaction) -> FdbFuture<T>
@@ -412,6 +436,7 @@ class FoundationDBDataStore private constructor(
                 readMaxClusterHlc(log, tr)
             }
             observedClusterHlc.value = maxOf(observedClusterHlc.value, maxClusterHlc)
+            observeCommittedVersion(maxClusterHlc)
             clusterLogLastHlcSyncAtMs.value = HLC().toPhysicalUnixTime().toLong()
 
             // Dedicated HLC syncer; independent from update listeners/tailing.
@@ -424,6 +449,7 @@ class FoundationDBDataStore private constructor(
                             readMaxClusterHlc(log, tr)
                         }
                         observedClusterHlc.value = maxOf(observedClusterHlc.value, maxSeen)
+                        observeCommittedVersion(maxSeen)
                         clusterLogHlcSyncTransactions.incrementAndGet()
                         clusterLogLastHlcSyncAtMs.value = HLC().toPhysicalUnixTime().toLong()
                         backoffMs = 100L
@@ -674,18 +700,23 @@ class FoundationDBDataStore private constructor(
         super.startFlows()
 
         this.launch {
-            val cache = Cache()
-
             var clock = HLC()
             storeActorHasStarted.complete(Unit)
             try {
-                for (storeAction in storeChannel) {
+                processStoreActions(
+                    createReadContext = ::createReadContext,
+                    closeReadContext = {},
+                ) { storeAction, readContext ->
+                    val cache = Cache()
                     try {
-                        val observed = observedClusterHlc.value
-                        clock = if (observed != 0uL) {
-                            clock.calculateMaxTimeStamp(HLC(observed))
-                        } else {
-                            clock.calculateMaxTimeStamp()
+                        if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
+                            val observed = observedClusterHlc.value
+                            val requestVersion = (storeAction.request as? UpdateResponse<*>)?.update?.version ?: 0uL
+                            val maxObserved = maxOf(observed, requestVersion)
+                            clock = if (maxObserved != 0uL) {
+                                clock.calculateMaxTimeStamp(HLC(maxObserved))
+                            } else clock.calculateMaxTimeStamp()
+                            observeCommittedVersion(clock.timestamp)
                         }
                         @Suppress("UNCHECKED_CAST")
                         when (val request = storeAction.request) {
@@ -696,19 +727,19 @@ class FoundationDBDataStore private constructor(
                             is DeleteRequest<*> ->
                                 processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, cache)
                             is GetRequest<*> ->
-                                processGetRequest(storeAction as AnyGetStoreAction, cache)
+                                processGetRequest(storeAction as AnyGetStoreAction, cache, requireNotNull(readContext))
                             is ScanRequest<*> ->
-                                processScanRequest(storeAction as AnyScanStoreAction, cache)
+                                processScanRequest(storeAction as AnyScanStoreAction, cache, requireNotNull(readContext))
                             is GetChangesRequest<*> ->
-                                processGetChangesRequest(storeAction as AnyGetChangesStoreAction, cache)
+                                processGetChangesRequest(storeAction as AnyGetChangesStoreAction, cache, requireNotNull(readContext))
                             is ScanChangesRequest<*> ->
-                                processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache)
+                                processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache, requireNotNull(readContext))
                             is ScanUpdateHistoryRequest<*> ->
-                                processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, cache)
+                                processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, cache, requireNotNull(readContext))
                             is GetUpdatesRequest<*> ->
-                                processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, cache)
+                                processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, cache, requireNotNull(readContext))
                             is ScanUpdatesRequest<*> ->
-                                processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache)
+                                processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache, requireNotNull(readContext))
                             is UpdateResponse<*> -> when (val update = (storeAction.request as UpdateResponse<*>).update) {
                                 is AdditionUpdate<*> ->
                                     processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
@@ -1398,6 +1429,7 @@ class FoundationDBDataStore private constructor(
             versionUpdateHandler: VersionUpdateHandler<FoundationDBDataStore>? = null,
             clusterUpdateLogConfiguration: FoundationDBClusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(),
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
+            maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
         ): FoundationDBDataStore {
             orderMigrationModelIds(dataModelsById)
 
@@ -1418,6 +1450,7 @@ class FoundationDBDataStore private constructor(
                     versionUpdateHandler = versionUpdateHandler,
                     clusterUpdateLogConfiguration = clusterUpdateLogConfiguration,
                     fieldEncryptionProvider = fieldEncryptionProvider,
+                    maxConcurrentReads = maxConcurrentReads,
                 )
             } catch (e: Throwable) {
                 runCatchingNonFatal { db.close() }
@@ -1435,6 +1468,8 @@ class FoundationDBDataStore private constructor(
         }
     }
 }
+
+private const val DEFAULT_MAX_CONCURRENT_READS = 4
 
 internal data class ClusterUpdateLogStats(
     val tailTransactions: Long,

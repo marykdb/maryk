@@ -11,6 +11,7 @@ import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.createCursor
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
@@ -23,6 +24,7 @@ internal typealias AnyScanStoreAction = ScanStoreAction<IsRootDataModel>
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
     storeAction: ScanStoreAction<DM>,
     cache: Cache,
+    readContext: FoundationDBReadContext,
 ) {
     val scanRequest = storeAction.request
     val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
@@ -36,6 +38,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
     val responseFetchType = this.processScan(
         scanRequest = scanRequest,
         tableDirs = tableDirs,
+        readContext = readContext,
         scanSetup = { /* nothing */ }
     ) { tr, key, creationVersion, orderKey ->
             val keyBytes = key.bytes

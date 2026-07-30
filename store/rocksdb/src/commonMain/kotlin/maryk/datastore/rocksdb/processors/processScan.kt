@@ -153,6 +153,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                         scanRequest,
                         processedScanIndex.direction,
                         keyScanRange,
+                        readOptions,
                         historicalReader,
                         processRecord
                     )
@@ -169,6 +170,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                             scanRequest,
                             processedScanIndex.direction,
                             keyScanRange,
+                            readOptions,
                             historicalReader,
                             processRecord,
                         )
@@ -183,6 +185,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                         keyScanRange,
                         continuation,
                         includeSortingKey,
+                        readOptions,
                         softDeleteCache,
                         historicalReader
                     ) { key, createdVersion, sortingKey ->
@@ -208,6 +211,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScan(
                             scanRequest,
                             processedScanIndex.direction,
                             keyScanRange,
+                            readOptions,
                             historicalReader,
                             processRecord
                         )

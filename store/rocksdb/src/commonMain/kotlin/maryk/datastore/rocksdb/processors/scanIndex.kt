@@ -58,6 +58,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanIndex(
     keyScanRange: KeyScanRanges,
     continuation: ScanContinuation?,
     includeSortingKey: Boolean,
+    defaultReadOptions: ReadOptions,
     softDeleteCache: RequestKeySoftDeleteCache? = null,
     historicalReader: HistoricalTableReader? = null,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit

@@ -2,10 +2,13 @@ package maryk.datastore.shared
 
 import kotlinx.atomicfu.AtomicBoolean
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
@@ -13,12 +16,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
+import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.scanRange.createScanRange
 import maryk.core.query.requests.IsFlowRequest
@@ -45,8 +52,15 @@ import kotlin.coroutines.CoroutineContext
 abstract class AbstractDataStore(
     dataModelsById: Map<UInt, IsRootDataModel>,
     coroutineContext: CoroutineContext,
-): IsDataStore, CoroutineScope {
+    protected val maxConcurrentReads: Int = 1,
+    readWorkerCoroutineContext: CoroutineContext = coroutineContext,
+): IsDataStore, SnapshotVersionProvider, CoroutineScope {
+    init {
+        require(maxConcurrentReads > 0) { "maxConcurrentReads must be greater than zero" }
+    }
+
     override val coroutineContext = coroutineContext + SupervisorJob() + CoroutineName("MarykDataStore")
+    private val readCoroutineContext = readWorkerCoroutineContext
 
     private val dataModelRegistry = validatedDataModelRegistry(dataModelsById)
     final override val dataModelsById = dataModelRegistry.dataModelsById
@@ -57,10 +71,19 @@ abstract class AbstractDataStore(
     private val updateProcessorFailure = atomic<Throwable?>(null)
     private val pendingResponsesMutex = Mutex()
     private val pendingResponses = mutableSetOf<CompletableDeferred<*>>()
+    private val committedVersion = atomic(HLC().timestamp)
 
     protected val storeActorHasStarted = CompletableDeferred<Unit>()
     /** StoreActor to send actions to.*/
     protected val storeChannel = Channel<StoreAction<*, *, *>>(capacity = 64)
+
+    final override suspend fun captureSnapshotVersion(): ULong =
+        committedVersion.value.let { if (it == ULong.MAX_VALUE) it else it + 1uL }
+
+    /** Publish an upper mutation boundary before processing so snapshot capture cannot lag its response. */
+    protected fun observeCommittedVersion(version: ULong) {
+        committedVersion.update { current -> maxOf(current, version) }
+    }
 
     private val updateSharedFlowHasStarted = CompletableDeferred<Unit>()
     val updateSharedFlow: MutableSharedFlow<IsUpdateAction> = MutableSharedFlow(extraBufferCapacity = 64)
@@ -175,6 +198,75 @@ abstract class AbstractDataStore(
     protected open fun onUpdateListenerRemoved(dataModelId: UInt) {}
     protected open fun onAllUpdateListenersRemoved() {}
     protected open fun assertModelReady(dataModelId: UInt) {}
+
+    /** Consume store actions with bounded reads and write exclusion. */
+    protected suspend fun processStoreActions(
+        processAction: suspend (StoreAction<*, *, *>) -> Unit,
+    ) = processStoreActions<Unit>(
+        createReadContext = null,
+        closeReadContext = {},
+    ) { action, _ ->
+        processAction(action)
+    }
+
+    /**
+     * Consume store actions with bounded reads. A prepared native read context allows
+     * mutations to overlap reads because it fixes the database state before dispatch.
+     */
+    protected suspend fun <ReadContext : Any> processStoreActions(
+        createReadContext: (suspend () -> ReadContext)?,
+        closeReadContext: suspend (ReadContext) -> Unit,
+        processAction: suspend (StoreAction<*, *, *>, ReadContext?) -> Unit,
+    ) {
+        val readSemaphore = Semaphore(maxConcurrentReads)
+        val readJobs = mutableListOf<Job>()
+
+        suspend fun drainReads() {
+            readJobs.joinAll()
+            readJobs.clear()
+        }
+
+        for (action in storeChannel) {
+            readJobs.removeAll { it.isCompleted }
+            if (action.request.requestExecutionKind == RequestExecutionKind.Read) {
+                readSemaphore.acquire()
+                val readContext = try {
+                    createReadContext?.invoke()
+                } catch (e: CancellationException) {
+                    readSemaphore.release()
+                    throw e
+                } catch (e: Throwable) {
+                    readSemaphore.release()
+                    e.rethrowIfFatal()
+                    action.response.completeExceptionally(e)
+                    continue
+                }
+                readJobs += launch(readCoroutineContext) {
+                    try {
+                        processAction(action, readContext)
+                    } finally {
+                        if (readContext != null) {
+                            try {
+                                withContext(NonCancellable) {
+                                    closeReadContext(readContext)
+                                }
+                            } catch (e: Throwable) {
+                                e.rethrowIfFatal()
+                                action.response.completeExceptionally(e)
+                            }
+                        }
+                        readSemaphore.release()
+                    }
+                }
+            } else {
+                if (createReadContext == null) {
+                    drainReads()
+                }
+                processAction(action, null)
+            }
+        }
+        drainReads()
+    }
 
     /** Get [dataModel] id to identify it for storage */
     fun getDataModelId(dataModel: IsRootDataModel) =

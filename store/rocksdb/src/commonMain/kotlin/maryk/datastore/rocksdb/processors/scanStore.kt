@@ -15,6 +15,7 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
+import maryk.rocksdb.ReadOptions
 
 internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
     dbAccessor: DBAccessor,
@@ -22,6 +23,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.scanStore(
     scanRequest: IsScanRequest<DM, *>,
     direction: Direction,
     scanRange: KeyScanRanges,
+    defaultReadOptions: ReadOptions,
     historicalReader: HistoricalTableReader? = null,
     processStoreValue: (Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {

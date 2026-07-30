@@ -1,5 +1,7 @@
 package maryk.datastore.rocksdb
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import maryk.core.exceptions.RequestException
 import maryk.core.models.RootDataModel
@@ -22,8 +24,44 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class RocksDBSensitivePropertiesTest {
+    @Test
+    fun mutationVersionIsPublishedBeforeResponseCompletion() = runTest {
+        val folder = createTestDBFolder("mutation-version-publication")
+        val encryptionProvider = BlockingEncryptFieldEncryptionProvider()
+        try {
+            val store = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = true,
+                dataModelsById = mapOf(1u to SensitiveRocksModel),
+                fieldEncryptionProvider = encryptionProvider,
+            )
+            try {
+                val beforeMutation = store.captureSnapshotVersion()
+                val mutation = async {
+                    store.execute(
+                        SensitiveRocksModel.add(
+                            SensitiveRocksModel(Bytes(ByteArray(16) { it.toByte() }), "secret")
+                        )
+                    )
+                }
+
+                encryptionProvider.encryptStarted.await()
+                val duringMutation = store.captureSnapshotVersion()
+                encryptionProvider.releaseEncrypt.complete(Unit)
+                mutation.await()
+                assertTrue(duringMutation > beforeMutation)
+            } finally {
+                encryptionProvider.releaseEncrypt.complete(Unit)
+                store.close()
+            }
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
     @Test
     fun sensitivePropertyStoredEncrypted() = runTest {
         val folder = createTestDBFolder("sensitive-rocks-encrypted")
@@ -132,6 +170,23 @@ private class XorFieldEncryptionProvider : FieldEncryptionProvider {
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { i -> (value[offset + i].toInt() xor 0x5A).toByte() }
+}
+
+private class BlockingEncryptFieldEncryptionProvider : FieldEncryptionProvider {
+    val encryptStarted = CompletableDeferred<Unit>()
+    val releaseEncrypt = CompletableDeferred<Unit>()
+
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray {
+        encryptStarted.complete(Unit)
+        releaseEncrypt.await()
+        return xor(value, offset, length)
+    }
+
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length)
+
+    private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
+        ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }
 }
 
 private class XorWithTokenFieldEncryptionProvider :

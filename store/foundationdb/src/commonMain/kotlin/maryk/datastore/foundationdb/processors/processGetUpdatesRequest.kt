@@ -14,6 +14,7 @@ import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
@@ -33,6 +34,7 @@ internal typealias AnyGetUpdatesStoreAction = GetUpdatesStoreAction<IsRootDataMo
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesRequest(
     storeAction: GetUpdatesStoreAction<DM>,
     cache: Cache,
+    readContext: FoundationDBReadContext,
 ) {
     val getRequest = storeAction.request
 
@@ -49,7 +51,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
     var lastResponseVersion = 0uL
     var insertionIndex = -1
 
-    this.runTransaction { tr ->
+    this.runReadTransaction(readContext) { tr ->
         keyWalk@ for (key in getRequest.keys) {
             var getSingleValues: ((ULong?) -> ValuesWithMetaData<DM>?)? = null
             val result = run {

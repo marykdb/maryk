@@ -20,18 +20,19 @@ internal fun getKeyByUniqueValue(
     keySize: Int,
     toVersion: ULong?,
     processKey: (() -> Byte, ULong) -> Unit
-) {
+): Boolean {
     if (toVersion == null) {
         val valueLength = dbAccessor.get(columnFamilies.unique, readOptions, reference, recyclableByteArray)
         if (valueLength == VERSION_BYTE_SIZE + keySize) {
             val value = if (valueLength > recyclableByteArray.size) {
-                dbAccessor.get(columnFamilies.unique, readOptions, reference) ?: return
+                dbAccessor.get(columnFamilies.unique, readOptions, reference) ?: return false
             } else {
                 recyclableByteArray
             }
             val setAtVersion = value.readVersionBytes()
             var readIndex = VERSION_BYTE_SIZE
             processKey({ value[readIndex++] }, setAtVersion)
+            return true
         }
     } else {
         if (columnFamilies !is HistoricTableColumnFamilies) {
@@ -62,7 +63,7 @@ internal fun getKeyByUniqueValue(
                             val resultReader = { result[readIndex++] }
                             val version = key.readReversedVersionBytes(versionOffset)
                             processKey(resultReader, version)
-                            break
+                            return true
                         }
 
                         if (result.isEmpty()) {
@@ -79,4 +80,5 @@ internal fun getKeyByUniqueValue(
             }
         }
     }
+    return false
 }

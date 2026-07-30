@@ -10,6 +10,7 @@ import maryk.core.query.responses.FetchByKey
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.RocksDBReadContext
 import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.readCreationVersion
@@ -24,8 +25,11 @@ internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootDataMo
 /** Processes a GetChangesRequest in a [storeAction] into a [RocksDBDataStore] */
 internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetChangesRequest(
     storeAction: GetChangesStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
+    readContext: RocksDBReadContext,
 ) {
+    val defaultReadOptions = readContext.defaultReadOptions
+    val sequentialReadOptions = readContext.sequentialReadOptions
     val getRequest = storeAction.request
     val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(getRequest.keys.size.coerceAtLeast(4))
 

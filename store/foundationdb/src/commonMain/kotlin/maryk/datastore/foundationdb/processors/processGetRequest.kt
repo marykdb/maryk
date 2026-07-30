@@ -10,6 +10,7 @@ import maryk.core.query.requests.GetRequest
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.processors.helpers.getValue
 import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.Cache
@@ -23,6 +24,7 @@ internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
     storeAction: GetStoreAction<DM>,
     cache: Cache,
+    readContext: FoundationDBReadContext,
 ) {
     val getRequest = storeAction.request
     val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(getRequest.keys.size.coerceAtLeast(4))
@@ -33,7 +35,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
 
     getRequest.checkToVersion(keepAllVersions)
 
-    runTransaction { tr ->
+    runReadTransaction(readContext) { tr ->
         keyWalk@ for (key in getRequest.keys) {
             val keyBytes = key.bytes
             val valuesWithMetaData = run {

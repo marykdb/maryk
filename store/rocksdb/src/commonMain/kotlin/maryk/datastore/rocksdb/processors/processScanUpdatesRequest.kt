@@ -25,6 +25,7 @@ import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.RocksDBReadContext
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
@@ -47,14 +48,17 @@ internal typealias AnyScanUpdatesStoreAction = ScanUpdatesStoreAction<IsRootData
 /** Processes a ScanUpdatesRequest in a [storeAction] into a [RocksDBDataStore] */
 internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
     storeAction: ScanUpdatesStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
+    readContext: RocksDBReadContext,
 ) {
+    val defaultReadOptions = readContext.defaultReadOptions
+    val sequentialReadOptions = readContext.sequentialReadOptions
     val scanRequest = storeAction.request
     val dbIndex = getDataModelId(scanRequest.dataModel)
     val columnFamilies = getColumnFamilies(dbIndex)
 
     if (scanRequest.canUseUpdateHistoryIndex() && canUseUpdateHistoryIndex(dbIndex) && columnFamilies.updateHistory != null) {
-        processUpdateHistoryScanUpdates(storeAction, cache, dbIndex, columnFamilies)
+        processUpdateHistoryScanUpdates(storeAction, cache, dbIndex, columnFamilies, readContext)
         return
     }
 
@@ -358,8 +362,11 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
     storeAction: ScanUpdatesStoreAction<DM>,
     cache: Cache,
     dbIndex: UInt,
-    columnFamilies: TableColumnFamilies
+    columnFamilies: TableColumnFamilies,
+    readContext: RocksDBReadContext,
 ) {
+    val defaultReadOptions = readContext.defaultReadOptions
+    val sequentialReadOptions = readContext.sequentialReadOptions
     val scanRequest = storeAction.request
     val keySize = scanRequest.dataModel.Meta.keyByteSize
     val expectedSize = scanRequest.limit.toInt().coerceAtLeast(4)

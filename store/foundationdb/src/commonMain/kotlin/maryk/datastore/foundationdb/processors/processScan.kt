@@ -17,6 +17,7 @@ import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.FetchByUniqueKey
 import maryk.core.query.orders.Direction.ASC
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
 import maryk.datastore.foundationdb.processors.helpers.getKeyByUniqueValue
@@ -31,12 +32,13 @@ import maryk.datastore.shared.orderToScanType
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
     scanRequest: IsScanRequest<DM, *>,
     tableDirs: IsTableDirectories,
+    readContext: FoundationDBReadContext,
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
     val transactionRunner = object : TransactionRunner {
         override fun <T> run(block: (Transaction) -> T): T =
-            runTransaction { tr ->
+            runReadTransaction(readContext) { tr ->
                 block(tr)
             }
     }

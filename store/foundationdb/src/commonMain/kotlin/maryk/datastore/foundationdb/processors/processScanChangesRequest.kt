@@ -6,6 +6,7 @@ import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.StoreAction
@@ -18,6 +19,7 @@ internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootData
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM>,
     cache: Cache,
+    readContext: FoundationDBReadContext,
 ) {
     val scanRequest = storeAction.request
     val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
@@ -29,6 +31,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
     val dataFetchType = this.processScan(
         scanRequest = scanRequest,
         tableDirs = tableDirs,
+        readContext = readContext,
         scanSetup = { /* no-op */ },
     ) { tr, key, creationVersion, sortingKey ->
             val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->

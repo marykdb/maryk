@@ -7,6 +7,7 @@ import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.FetchByKey
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.readCreationVersion
 import maryk.datastore.shared.Cache
@@ -21,6 +22,7 @@ internal typealias AnyGetChangesStoreAction = GetChangesStoreAction<IsRootDataMo
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesRequest(
     storeAction: GetChangesStoreAction<DM>,
     cache: Cache,
+    readContext: FoundationDBReadContext,
 ) {
     val getRequest = storeAction.request
     val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(getRequest.keys.size.coerceAtLeast(4))
@@ -31,7 +33,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
     val dbIndex = getDataModelId(getRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 
-    runTransaction { tr ->
+    runReadTransaction(readContext) { tr ->
         keyWalk@ for (key in getRequest.keys) {
             val changes: DataObjectVersionedChange<DM>? = run {
                 val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, getRequest.toVersion)

@@ -53,6 +53,37 @@ class RocksDBDataStoreTest {
     }
 
     @Test
+    fun readContextKeepsOneSnapshotAcrossWrites() = runTest {
+        val folder = createTestDBFolder("read-context-snapshot")
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+        )
+        try {
+            val keys = dataStore.getColumnFamilies(SimpleMarykModel).keys
+            val key = byteArrayOf(99)
+            dataStore.db.put(keys, key, byteArrayOf(1))
+
+            dataStore.createReadContext().use { readContext ->
+                dataStore.db.put(keys, key, byteArrayOf(2))
+
+                assertContentEquals(
+                    byteArrayOf(1),
+                    dataStore.db.get(keys, readContext.defaultReadOptions, key),
+                )
+            }
+
+            assertContentEquals(
+                byteArrayOf(2),
+                dataStore.db.get(keys, dataStore.defaultReadOptions, key),
+            )
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
     fun testDataStore() = runTest {
         val folder = createTestDBFolder("no-history")
 

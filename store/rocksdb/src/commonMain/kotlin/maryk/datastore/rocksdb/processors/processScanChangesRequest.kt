@@ -9,6 +9,7 @@ import maryk.core.query.responses.ChangesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.RocksDBReadContext
 import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.shared.Cache
@@ -21,8 +22,11 @@ internal typealias AnyScanChangesStoreAction = ScanChangesStoreAction<IsRootData
 /** Processes a ScanChangesRequest in a [storeAction] into a [RocksDBDataStore] */
 internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
     storeAction: ScanChangesStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
+    readContext: RocksDBReadContext,
 ) {
+    val defaultReadOptions = readContext.defaultReadOptions
+    val sequentialReadOptions = readContext.sequentialReadOptions
     val scanRequest = storeAction.request
     val objectChanges = ArrayList<DataObjectVersionedChange<DM>>(scanRequest.limit.toInt().coerceAtLeast(4))
     val dbIndex = getDataModelId(scanRequest.dataModel)

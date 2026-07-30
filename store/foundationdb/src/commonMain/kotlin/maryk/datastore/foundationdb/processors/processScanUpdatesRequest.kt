@@ -28,6 +28,7 @@ import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.values.IsValuesGetter
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
@@ -61,13 +62,14 @@ private val nextKeySuffix = byteArrayOf(0)
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequest(
     storeAction: ScanUpdatesStoreAction<DM>,
     cache: Cache,
+    readContext: FoundationDBReadContext,
 ) {
     val scanRequest = storeAction.request
     val dbIndex = getDataModelId(scanRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 
     if (scanRequest.canUseUpdateHistoryIndex() && canUseUpdateHistoryIndex(dbIndex) && tableDirs.updateHistoryPrefix != null) {
-        processUpdateHistoryScanUpdates(storeAction, cache, dbIndex, tableDirs)
+        processUpdateHistoryScanUpdates(storeAction, cache, dbIndex, tableDirs, readContext)
         return
     }
 
@@ -129,6 +131,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
     val dataFetchType = this.processScan(
         scanRequest = scanRequest,
         tableDirs = tableDirs,
+        readContext = readContext,
         scanSetup = {
             (it as? IndexScan)?.let { indexScan ->
                 sortingKeys = mutableListOf()
@@ -245,7 +248,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
             )
         )
 
-    runTransaction { tr ->
+    runReadTransaction(readContext) { tr ->
         // orderedKeys reconciliation
         scanRequest.orderedKeys?.let { orderedKeys ->
             val matchingKeysSet = matchingKeys.toHashSet()
@@ -307,6 +310,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
     cache: Cache,
     dbIndex: UInt,
     tableDirs: IsTableDirectories,
+    readContext: FoundationDBReadContext,
 ) {
     val scanRequest = storeAction.request
     val keySize = scanRequest.dataModel.Meta.keyByteSize
@@ -329,7 +333,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
         packKey(historyPrefix, scanRequest.fromVersion.toReversedVersionBytes().nextByteInSameLength())
     }
     fun <T> runScanTransaction(block: (Transaction) -> T): T =
-        runTransaction { tr ->
+        runReadTransaction(readContext) { tr ->
             block(tr)
         }
 
@@ -509,7 +513,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
         }
     }
 
-    runTransaction { tr ->
+    runReadTransaction(readContext) { tr ->
         scanRequest.orderedKeys?.let { orderedKeys ->
             val matchingKeysSet = matchingKeys.toHashSet()
             val orderedKeysSet = orderedKeys.toHashSet()

@@ -13,6 +13,7 @@ import maryk.core.query.responses.ValuesResponse
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.RocksDBReadContext
 import maryk.datastore.rocksdb.processors.helpers.HistoricalTableReader
 import maryk.datastore.rocksdb.processors.helpers.RequestKeySoftDeleteCache
 import maryk.datastore.rocksdb.processors.helpers.getValue
@@ -28,8 +29,11 @@ internal typealias AnyGetStoreAction = GetStoreAction<IsRootDataModel>
 /** Processes a GetRequest in a [storeAction] into a [RocksDBDataStore] */
 internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
     storeAction: GetStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
+    readContext: RocksDBReadContext,
 ) {
+    val defaultReadOptions = readContext.defaultReadOptions
+    val sequentialReadOptions = readContext.sequentialReadOptions
     val getRequest = storeAction.request
     val valuesWithMeta = ArrayList<ValuesWithMetaData<DM>>(getRequest.keys.size.coerceAtLeast(4))
     val dbIndex = getDataModelId(getRequest.dataModel)

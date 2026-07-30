@@ -14,6 +14,7 @@ import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.FoundationDBReadContext
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.forEachInRangeBatch
@@ -33,7 +34,8 @@ private val nextKeySuffix = byteArrayOf(0)
 
 internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHistoryRequest(
     storeAction: ScanUpdateHistoryStoreAction<DM>,
-    cache: Cache
+    cache: Cache,
+    readContext: FoundationDBReadContext,
 ) {
     val scanRequest = storeAction.request
     val dbIndex = getDataModelId(scanRequest.dataModel)
@@ -55,7 +57,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
         packKey(historyPrefix, scanRequest.fromVersion.toReversedVersionBytes().nextByteInSameLength())
     }
     fun <T> runScanTransaction(block: (Transaction) -> T): T =
-        runTransaction { tr ->
+        runReadTransaction(readContext) { tr ->
             block(tr)
         }
 

@@ -7,7 +7,10 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.test.models.Log
+import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -15,6 +18,39 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
+    @Test
+    fun readContextKeepsOneReadVersionAcrossWrites() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "read-context", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+        )
+        try {
+            val key = packKey(
+                dataStore.getTableDirs(SimpleMarykModel).keysPrefix,
+                byteArrayOf(99),
+            )
+            dataStore.runTransaction { tr -> tr.set(key, byteArrayOf(1)) }
+
+            val readContext = dataStore.createReadContext()
+            dataStore.runTransaction { tr -> tr.set(key, byteArrayOf(2)) }
+
+            assertEquals(
+                1.toByte(),
+                dataStore.runReadTransaction(readContext) { tr ->
+                    tr.get(key).awaitResult()?.single()
+                },
+            )
+            assertEquals(
+                2.toByte(),
+                dataStore.runTransaction { tr ->
+                    tr.get(key).awaitResult()?.single()
+                },
+            )
+        } finally {
+            dataStore.close()
+        }
+    }
+
     @Test
     fun testDataStore() = runTest(timeout = 3.minutes) {
         val dataStore = FoundationDBDataStore.open(

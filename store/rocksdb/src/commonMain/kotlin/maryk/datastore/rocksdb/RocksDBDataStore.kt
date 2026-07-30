@@ -124,6 +124,8 @@ import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
+import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
@@ -157,7 +159,13 @@ class RocksDBDataStore private constructor(
     val migrationConfiguration: MigrationConfiguration<RocksDBDataStore> = MigrationConfiguration(),
     val versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
     val fieldEncryptionProvider: FieldEncryptionProvider? = null,
-) : AbstractDataStore(dataModelsById, Dispatchers.IO.limitedParallelism(1)) {
+    maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
+) : AbstractDataStore(
+    dataModelsById = dataModelsById,
+    coroutineContext = Dispatchers.IO,
+    maxConcurrentReads = maxConcurrentReads,
+    readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
+) {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
@@ -193,6 +201,8 @@ class RocksDBDataStore private constructor(
         setPrefixSameAsStart(true)
     }
     internal val sequentialReadOptions = ReadOptions()
+
+    internal fun createReadContext() = RocksDBReadContext.create(db)
 
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val updateHistoryReadyModelIds = atomic(setOf<UInt>())
@@ -555,14 +565,22 @@ class RocksDBDataStore private constructor(
         super.startFlows()
 
         this.launch {
-            val cache = Cache()
-
             var clock = HLC()
             storeActorHasStarted.complete(Unit)
             try {
-                for (storeAction in storeChannel) {
+                processStoreActions(
+                    createReadContext = ::createReadContext,
+                    closeReadContext = RocksDBReadContext::close,
+                ) { storeAction, readContext ->
+                    val cache = Cache()
                     try {
-                        clock = clock.calculateMaxTimeStamp()
+                        if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
+                            clock = when (val request = storeAction.request) {
+                                is UpdateResponse<*> -> clock.calculateMaxTimeStamp(HLC(request.update.version))
+                                else -> clock.calculateMaxTimeStamp()
+                            }
+                            observeCommittedVersion(clock.timestamp)
+                        }
 
                         @Suppress("UNCHECKED_CAST")
                         when (storeAction.request) {
@@ -573,19 +591,19 @@ class RocksDBDataStore private constructor(
                             is DeleteRequest<*> ->
                                 processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, cache)
                             is GetRequest<*> ->
-                                processGetRequest(storeAction as AnyGetStoreAction, cache)
+                                processGetRequest(storeAction as AnyGetStoreAction, cache, requireNotNull(readContext))
                             is GetChangesRequest<*> ->
-                                processGetChangesRequest(storeAction as AnyGetChangesStoreAction, cache)
+                                processGetChangesRequest(storeAction as AnyGetChangesStoreAction, cache, requireNotNull(readContext))
                             is GetUpdatesRequest<*> ->
-                                processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, cache)
+                                processGetUpdatesRequest(storeAction as AnyGetUpdatesStoreAction, cache, requireNotNull(readContext))
                             is ScanRequest<*> ->
-                                processScanRequest(storeAction as AnyScanStoreAction, cache)
+                                processScanRequest(storeAction as AnyScanStoreAction, cache, requireNotNull(readContext))
                             is ScanChangesRequest<*> ->
-                                processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache)
+                                processScanChangesRequest(storeAction as AnyScanChangesStoreAction, cache, requireNotNull(readContext))
                             is ScanUpdateHistoryRequest<*> ->
-                                processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, cache)
+                                processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, cache, requireNotNull(readContext))
                             is ScanUpdatesRequest<*> ->
-                                processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache)
+                                processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, cache, requireNotNull(readContext))
                             is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
                                 is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
                                 is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction)
@@ -1138,6 +1156,7 @@ class RocksDBDataStore private constructor(
             migrationConfiguration: MigrationConfiguration<RocksDBDataStore> = MigrationConfiguration(),
             versionUpdateHandler: VersionUpdateHandler<RocksDBDataStore>? = null,
             fieldEncryptionProvider: FieldEncryptionProvider? = null,
+            maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
         ): RocksDBDataStore {
             return RocksDBDataStore(
                 keepAllVersions = keepAllVersions,
@@ -1149,6 +1168,7 @@ class RocksDBDataStore private constructor(
                 migrationConfiguration = migrationConfiguration,
                 versionUpdateHandler = versionUpdateHandler,
                 fieldEncryptionProvider = fieldEncryptionProvider,
+                maxConcurrentReads = maxConcurrentReads,
             ).apply {
                 try {
                     initAsync()
@@ -1163,6 +1183,7 @@ class RocksDBDataStore private constructor(
 }
 
 private const val INDEX_FORMAT_MIGRATION_DELETE_BATCH_SIZE = 1024
+private const val DEFAULT_MAX_CONCURRENT_READS = 4
 
 private data class SensitiveModelReferences(
     val sensitiveReferences: List<ByteArray>,

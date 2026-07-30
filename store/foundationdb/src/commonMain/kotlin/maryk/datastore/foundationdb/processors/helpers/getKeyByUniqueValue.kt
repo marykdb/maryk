@@ -17,12 +17,13 @@ internal fun Transaction.getKeyByUniqueValue(
     keySize: Int,
     toVersion: ULong?,
     handle: (keyBytes: ByteArray, keyOffset: Int, keyLength: Int, setAtVersion: ULong) -> Unit
-) {
+): Boolean {
     if (toVersion == null) {
         val value = this.get(packKey(tableDirs.uniquePrefix, reference)).awaitResult()
         if (value != null && value.size == VERSION_BYTE_SIZE + keySize) {
             val setAtVersion = value.readVersionBytes()
             handle(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE, setAtVersion)
+            return true
         }
     } else {
         val historic = tableDirs as? HistoricTableDirectories
@@ -42,7 +43,7 @@ internal fun Transaction.getKeyByUniqueValue(
                 val keyBytes = kv.value
                 if (keyBytes.size == keySize) {
                     handle(keyBytes, 0, keyBytes.size, version)
-                    break
+                    return true
                 }
 
                 if (keyBytes.isEmpty()) {
@@ -51,4 +52,5 @@ internal fun Transaction.getKeyByUniqueValue(
             }
         }
     }
+    return false
 }

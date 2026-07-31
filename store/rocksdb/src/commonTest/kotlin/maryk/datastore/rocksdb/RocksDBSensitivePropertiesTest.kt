@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.yield
 import maryk.core.exceptions.RequestException
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.fixedBytes
@@ -28,7 +29,7 @@ import kotlin.test.assertTrue
 
 class RocksDBSensitivePropertiesTest {
     @Test
-    fun mutationVersionIsPublishedBeforeResponseCompletion() = runTest {
+    fun snapshotCaptureWaitsForMutationCompletion() = runTest {
         val folder = createTestDBFolder("mutation-version-publication")
         val encryptionProvider = BlockingEncryptFieldEncryptionProvider()
         try {
@@ -49,10 +50,12 @@ class RocksDBSensitivePropertiesTest {
                 }
 
                 encryptionProvider.encryptStarted.await()
-                val duringMutation = store.captureSnapshotVersion()
+                val snapshot = async { store.captureSnapshotVersion() }
+                yield()
+                assertFalse(snapshot.isCompleted)
                 encryptionProvider.releaseEncrypt.complete(Unit)
                 mutation.await()
-                assertTrue(duringMutation > beforeMutation)
+                assertTrue(snapshot.await() > beforeMutation)
             } finally {
                 encryptionProvider.releaseEncrypt.complete(Unit)
                 store.close()

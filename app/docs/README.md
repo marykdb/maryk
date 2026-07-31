@@ -117,6 +117,14 @@ Two modes:
 
 - Schema export: JSON, YAML, Proto, Kotlin.
 - Data export: row/model/all.
+  - With historical retention and an authoritative snapshot provider,
+    row/model/all history exports and model/all current-state exports capture a
+    point-in-time version before paging. Otherwise the app refuses a
+    point-in-time export.
+  - Version-history exports include soft-deleted records and their deletion
+    changes.
+  - Without historical retention, current-state export remains available, but
+    concurrent writes can appear across pages.
 - Data import:
   - Auto-detect format/scope.
   - Expects Maryk export structures (metadata + versioned changes where applicable).

@@ -75,5 +75,22 @@ internal object RemoteStoreCodec {
         return LengthResult(length, offset + 4)
     }
 
+    fun encodeVersion(version: ULong): ByteArray = ByteArray(ULong.SIZE_BYTES).also { bytes ->
+        repeat(ULong.SIZE_BYTES) { index ->
+            bytes[index] = (version shr (56 - index * 8)).toByte()
+        }
+    }
+
+    fun decodeVersion(bytes: ByteArray): ULong {
+        require(bytes.size == ULong.SIZE_BYTES) {
+            "Version payload must contain exactly ${ULong.SIZE_BYTES} bytes"
+        }
+        var version = 0uL
+        bytes.forEach { byte ->
+            version = (version shl 8) or byte.toUByte().toULong()
+        }
+        return version
+    }
+
     data class LengthResult(val length: Int, val nextOffset: Int)
 }

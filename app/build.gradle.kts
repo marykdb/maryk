@@ -84,6 +84,11 @@ kotlin {
                 implementation(libs.kotlinx.datetime)
             }
         }
+        getByName("jvmTest") {
+            dependencies {
+                implementation(projects.store.memory)
+            }
+        }
     }
 }
 

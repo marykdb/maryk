@@ -53,7 +53,10 @@ import maryk.datastore.memory.processors.processScanUpdatesRequest
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
+import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.requestExecutionKind
 
 /**
  * DataProcessor that stores all data changes in local memory.
@@ -63,9 +66,11 @@ class InMemoryDataStore private constructor(
     override val keepAllVersions: Boolean = false,
     override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
-) : AbstractDataStore(dataModelsById, DISPATCHER) {
+) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider {
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
+
+    override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
     init {
         startFlows()
@@ -83,9 +88,15 @@ class InMemoryDataStore private constructor(
             storeActorHasStarted.complete(Unit)
             try {
 
-                for (storeAction in storeChannel) {
+                processStoreActions { storeAction ->
                     try {
-                        clock = clock.calculateMaxTimeStamp()
+                        if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
+                            clock = nextMutationClock(
+                                clock,
+                                (storeAction.request as? UpdateResponse<*>)?.update?.version,
+                            )
+                            observeCommittedVersion(clock.timestamp)
+                        }
 
                         val dataStoreFetcher: (IsRootDataModel) -> DataStore<IsRootDataModel> = { model: IsRootDataModel ->
                             val index = dataModelIdsByString[model.Meta.name] ?: throw DefNotFoundException(model.Meta.name)

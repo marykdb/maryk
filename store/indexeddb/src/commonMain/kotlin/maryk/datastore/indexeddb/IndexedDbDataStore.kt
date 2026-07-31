@@ -53,8 +53,10 @@ import maryk.datastore.indexeddb.processors.put
 import maryk.datastore.indexeddb.processors.readTrailingInvertedVersion
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
+import maryk.datastore.shared.RequestExecutionKind
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.requestExecutionKind
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchesRangePart
 
@@ -81,9 +83,15 @@ class IndexedDbDataStore private constructor(
 
             storeActorHasStarted.complete(Unit)
             try {
-                for (storeAction in storeChannel) {
+                processStoreActions { storeAction ->
                     try {
-                        clock = clock.calculateMaxTimeStamp()
+                        if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
+                            clock = nextMutationClock(
+                                clock,
+                                (storeAction.request as? UpdateResponse<*>)?.update?.version,
+                            )
+                            observeCommittedVersion(clock.timestamp)
+                        }
 
                         @Suppress("UNCHECKED_CAST")
                         when (storeAction.request) {

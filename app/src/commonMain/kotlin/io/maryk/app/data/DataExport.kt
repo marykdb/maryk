@@ -10,13 +10,16 @@ import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.IsChange
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.SetChange
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.ScanCursor
 import maryk.core.protobuf.WriteCache
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.file.File
 import maryk.json.JsonWriter
@@ -49,8 +52,9 @@ internal suspend fun exportRowDataToFolder(
     includeVersionHistory: Boolean = false,
 ) {
     if (includeVersionHistory) {
+        val snapshotVersion = dataStore.captureSnapshotVersion()
         val requestContext = buildRequestContext(model)
-        val change = loadFullChangesForKey(dataStore, model, key) ?: return
+        val change = loadFullChangesForKey(dataStore, model, key, snapshotVersion) ?: return
         val fileName = buildRowFileName(model.Meta.name, keyText, format, "versions")
         val path = joinExportPath(folder, fileName)
         when (format) {
@@ -80,16 +84,21 @@ internal suspend fun exportModelDataToFolder(
     format: DataExportFormat,
     folder: String,
     includeVersionHistory: Boolean = false,
+    snapshotVersion: ULong? = null,
 ) {
+    val effectiveSnapshotVersion = snapshotVersion ?: if (dataStore.keepAllVersions) {
+        dataStore.captureSnapshotVersion()
+    } else {
+        null
+    }
     if (includeVersionHistory) {
-        exportModelVersionedDataToFolder(dataStore, model, format, folder)
+        exportModelVersionedDataToFolder(dataStore, model, format, folder, effectiveSnapshotVersion)
     } else {
         val requestContext = buildRequestContext(model)
         val fileName = buildModelFileName(model.Meta.name, format)
         val path = joinExportPath(folder, fileName)
         val batchSize = 250u
-        var startKey: Key<IsRootDataModel>? = null
-        var includeStart = true
+        var cursor: ScanCursor? = null
         var hasAny = false
         var jsonFirst = true
 
@@ -102,9 +111,9 @@ internal suspend fun exportModelDataToFolder(
         while (true) {
             val response = dataStore.execute(
                 model.scan(
-                    startKey = startKey,
-                    includeStart = includeStart,
+                    cursor = cursor,
                     limit = batchSize,
+                    toVersion = effectiveSnapshotVersion,
                     filterSoftDeleted = true,
                     allowTableScan = true,
                 )
@@ -131,10 +140,7 @@ internal suspend fun exportModelDataToFolder(
                 }
                 hasAny = true
             }
-            val nextKey = response.values.last().key
-            if (response.values.size.toUInt() < batchSize) break
-            startKey = nextKey
-            includeStart = false
+            cursor = response.nextCursor ?: break
         }
 
         when (format) {
@@ -216,13 +222,13 @@ private suspend fun exportModelVersionedDataToFolder(
     model: IsRootDataModel,
     format: DataExportFormat,
     folder: String,
+    snapshotVersion: ULong?,
 ) {
     val requestContext = buildRequestContext(model)
     val fileName = buildModelFileName(model.Meta.name, format, "versions")
     val path = joinExportPath(folder, fileName)
     val batchSize = 250u
-    var startKey: Key<IsRootDataModel>? = null
-    var includeStart = true
+    var cursor: ScanCursor? = null
     var hasAny = false
     var jsonFirst = true
 
@@ -235,16 +241,16 @@ private suspend fun exportModelVersionedDataToFolder(
     while (true) {
         val response = dataStore.execute(
             model.scan(
-                startKey = startKey,
-                includeStart = includeStart,
+                cursor = cursor,
                 limit = batchSize,
-                filterSoftDeleted = true,
+                toVersion = snapshotVersion,
+                filterSoftDeleted = false,
                 allowTableScan = true,
             )
         )
         if (response.values.isEmpty()) break
         response.values.forEach { record ->
-            val change = loadFullChangesForKey(dataStore, model, record.key) ?: return@forEach
+            val change = loadFullChangesForKey(dataStore, model, record.key, snapshotVersion) ?: return@forEach
             when (format) {
                 DataExportFormat.JSON -> {
                     val json = serializeVersionedToJson(change, requestContext)
@@ -265,10 +271,7 @@ private suspend fun exportModelVersionedDataToFolder(
             }
             hasAny = true
         }
-        val nextKey = response.values.last().key
-        if (response.values.size.toUInt() < batchSize) break
-        startKey = nextKey
-        includeStart = false
+        cursor = response.nextCursor ?: break
     }
 
     when (format) {
@@ -288,53 +291,122 @@ private suspend fun loadFullChangesForKey(
     dataStore: IsDataStore,
     model: IsRootDataModel,
     key: Key<IsRootDataModel>,
+    toVersion: ULong? = null,
 ): DataObjectVersionedChange<IsRootDataModel>? {
-    val changes = mutableListOf<VersionedChanges>()
-    var fromVersion = 0uL
-    var sortingKey: Bytes? = null
-    val maxVersions = 1000u
+    val complete = loadCompleteChangesForKey(dataStore, model, key, toVersion) ?: return null
+    return complete.copy(
+        changes = complete.changes.mapNotNull(::sanitizeVersionedChanges),
+    )
+}
 
+internal suspend fun loadCompleteChangesForKey(
+    dataStore: IsDataStore,
+    model: IsRootDataModel,
+    key: Key<IsRootDataModel>,
+    toVersion: ULong? = null,
+): DataObjectVersionedChange<IsRootDataModel>? {
+    val changesByVersion = mutableMapOf<ULong, VersionedChanges>()
+    var sortingKey: Bytes? = null
+    var upperVersion = toVersion
     while (true) {
-        val requestMaxVersions = maxVersions
-        var effectiveMaxVersions = requestMaxVersions
         val response = try {
             dataStore.execute(
                 model.getChanges(
                     key,
-                    fromVersion = fromVersion,
-                    maxVersions = requestMaxVersions,
+                    toVersion = upperVersion,
+                    maxVersions = HISTORY_PAGE_SIZE,
                     filterSoftDeleted = false,
                 )
             )
         } catch (error: Throwable) {
             error.rethrowIfFatal()
-            effectiveMaxVersions = 1u
-            dataStore.execute(
-                model.getChanges(
-                    key,
-                    fromVersion = fromVersion,
-                    maxVersions = effectiveMaxVersions,
-                    filterSoftDeleted = false,
-                )
-            )
+            return loadCompleteChangesForwardOneAtATime(dataStore, model, key, toVersion)
         }
         val entry = response.changes.firstOrNull() ?: break
         if (sortingKey == null) sortingKey = entry.sortingKey
         if (entry.changes.isEmpty()) break
-        changes += entry.changes.mapNotNull(::sanitizeVersionedChanges)
-        if (entry.changes.size.toUInt() < effectiveMaxVersions) break
-        val lastVersion = entry.changes.last().version
-        if (lastVersion == ULong.MAX_VALUE) break
-        fromVersion = lastVersion + 1uL
+        val previousSize = changesByVersion.size
+        entry.changes.forEach { changesByVersion[it.version] = it }
+        val nonCreationChanges = entry.changes.filterNot { ObjectCreate in it.changes }
+        if (nonCreationChanges.size < HISTORY_PAGE_SIZE.toInt()) break
+
+        val oldestVersion = nonCreationChanges.first().version
+        if (upperVersion != null && oldestVersion >= upperVersion && changesByVersion.size == previousSize) break
+        upperVersion = oldestVersion
     }
 
-    if (changes.isEmpty()) return null
+    if (changesByVersion.isEmpty()) return null
+    replaceNormalizedCreation(dataStore, model, key, changesByVersion)
     return DataObjectVersionedChange(
         key = key,
         sortingKey = sortingKey,
-        changes = changes,
+        changes = changesByVersion.values.sortedBy { it.version },
     )
 }
+
+private suspend fun loadCompleteChangesForwardOneAtATime(
+    dataStore: IsDataStore,
+    model: IsRootDataModel,
+    key: Key<IsRootDataModel>,
+    toVersion: ULong?,
+): DataObjectVersionedChange<IsRootDataModel>? {
+    val changesByVersion = mutableMapOf<ULong, VersionedChanges>()
+    var sortingKey: Bytes? = null
+    var fromVersion = 0uL
+    while (true) {
+        val response = dataStore.execute(
+            model.getChanges(
+                key,
+                fromVersion = fromVersion,
+                toVersion = toVersion,
+                maxVersions = 1u,
+                filterSoftDeleted = false,
+            )
+        )
+        val entry = response.changes.firstOrNull() ?: break
+        if (sortingKey == null) sortingKey = entry.sortingKey
+        if (entry.changes.isEmpty()) break
+        val previousSize = changesByVersion.size
+        entry.changes.forEach { changesByVersion[it.version] = it }
+        val lastVersion = entry.changes.last().version
+        if (changesByVersion.size == previousSize || lastVersion == ULong.MAX_VALUE) break
+        fromVersion = lastVersion + 1uL
+    }
+    if (changesByVersion.isEmpty()) return null
+    replaceNormalizedCreation(dataStore, model, key, changesByVersion)
+    return DataObjectVersionedChange(
+        key = key,
+        sortingKey = sortingKey,
+        changes = changesByVersion.values.sortedBy { it.version },
+    )
+}
+
+private suspend fun replaceNormalizedCreation(
+    dataStore: IsDataStore,
+    model: IsRootDataModel,
+    key: Key<IsRootDataModel>,
+    changesByVersion: MutableMap<ULong, VersionedChanges>,
+) {
+    val creationVersion = changesByVersion.values
+        .firstOrNull { ObjectCreate in it.changes }
+        ?.version
+        ?: return
+    if (changesByVersion.values.none { ObjectCreate !in it.changes }) return
+    val values = dataStore.execute(
+        model.get(
+            key,
+            toVersion = creationVersion,
+            filterSoftDeleted = false,
+        )
+    ).values.singleOrNull()?.values
+        ?: return
+    changesByVersion[creationVersion] = VersionedChanges(
+        creationVersion,
+        listOf(ObjectCreate, *values.toChanges()),
+    )
+}
+
+private const val HISTORY_PAGE_SIZE = 1000u
 
 private fun sanitizeVersionedChanges(versionedChanges: VersionedChanges): VersionedChanges? {
     val sanitized = versionedChanges.changes.mapNotNull(::sanitizeChange)

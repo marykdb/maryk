@@ -54,7 +54,7 @@ abstract class AbstractDataStore(
     coroutineContext: CoroutineContext,
     protected val maxConcurrentReads: Int = 1,
     readWorkerCoroutineContext: CoroutineContext = coroutineContext,
-): IsDataStore, SnapshotVersionProvider, CoroutineScope {
+): IsDataStore, CoroutineScope {
     init {
         require(maxConcurrentReads > 0) { "maxConcurrentReads must be greater than zero" }
     }
@@ -71,19 +71,27 @@ abstract class AbstractDataStore(
     private val updateProcessorFailure = atomic<Throwable?>(null)
     private val pendingResponsesMutex = Mutex()
     private val pendingResponses = mutableSetOf<CompletableDeferred<*>>()
+    private val mutationBarrier = Mutex()
     private val committedVersion = atomic(HLC().timestamp)
 
     protected val storeActorHasStarted = CompletableDeferred<Unit>()
     /** StoreActor to send actions to.*/
     protected val storeChannel = Channel<StoreAction<*, *, *>>(capacity = 64)
 
-    final override suspend fun captureSnapshotVersion(): ULong =
-        committedVersion.value.let { if (it == ULong.MAX_VALUE) it else it + 1uL }
+    /** Reserve the exclusive upper boundary used by historic-change reads. */
+    protected suspend fun captureLocalSnapshotVersion(): ULong = mutationBarrier.withLock {
+        committedVersion.update { current -> if (current == ULong.MAX_VALUE) current else current + 1uL }
+        committedVersion.value
+    }
 
     /** Publish an upper mutation boundary before processing so snapshot capture cannot lag its response. */
     protected fun observeCommittedVersion(version: ULong) {
         committedVersion.update { current -> maxOf(current, version) }
     }
+
+    /** Generate a mutation version strictly beyond captured local snapshot boundaries. */
+    protected fun nextMutationClock(clock: HLC, observedVersion: ULong? = null): HLC =
+        clock.calculateMaxTimeStamp(HLC(maxOf(committedVersion.value, observedVersion ?: 0uL)))
 
     private val updateSharedFlowHasStarted = CompletableDeferred<Unit>()
     val updateSharedFlow: MutableSharedFlow<IsUpdateAction> = MutableSharedFlow(extraBufferCapacity = 64)
@@ -262,7 +270,9 @@ abstract class AbstractDataStore(
                 if (createReadContext == null) {
                     drainReads()
                 }
-                processAction(action, null)
+                mutationBarrier.withLock {
+                    processAction(action, null)
+                }
             }
         }
         drainReads()

@@ -140,6 +140,75 @@ class RequestExecutionTest {
             }
         }
     }
+
+    @Test
+    fun snapshotCaptureWaitsForInFlightMutation() {
+        runTest {
+            withContext(Dispatchers.Default) {
+                val store = SnapshotBarrierTestStore()
+                try {
+                    store.mutationVersion = store.captureSnapshotVersion() + 10uL
+                    val mutation = async {
+                        store.execute(
+                            SimpleMarykModel.add(
+                                SimpleMarykModel.create { value with "pending" }
+                            )
+                        )
+                    }
+                    store.mutationStarted.await()
+
+                    val snapshot = async { store.captureSnapshotVersion() }
+                    assertNull(withTimeoutOrNull(100.milliseconds) { snapshot.await() })
+
+                    store.releaseMutation.complete(Unit)
+                    mutation.await()
+                    assertTrue(snapshot.await() > store.mutationVersion)
+                } finally {
+                    if (!store.releaseMutation.isCompleted) {
+                        store.releaseMutation.complete(Unit)
+                    }
+                    store.close()
+                }
+            }
+        }
+    }
+}
+
+private class SnapshotBarrierTestStore : AbstractDataStore(
+    dataModelsById = mapOf(1u to SimpleMarykModel),
+    coroutineContext = Dispatchers.Default,
+), SnapshotVersionProvider {
+    override val keepAllVersions = true
+    override val keepUpdateHistoryIndex = false
+    override val supportsFuzzyQualifierFiltering = true
+    override val supportsSubReferenceFiltering = true
+
+    override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
+
+    var mutationVersion = 0uL
+    val mutationStarted = CompletableDeferred<Unit>()
+    val releaseMutation = CompletableDeferred<Unit>()
+
+    init {
+        startFlows()
+    }
+
+    override fun startFlows() {
+        super.startFlows()
+        launch {
+            storeActorHasStarted.complete(Unit)
+            processStoreActions { action ->
+                check(action.request is AddRequest<*>)
+                observeCommittedVersion(mutationVersion)
+                mutationStarted.complete(Unit)
+                releaseMutation.await()
+                @Suppress("UNCHECKED_CAST")
+                (action.response as CompletableDeferred<IsResponse>).complete(
+                    AddResponse(SimpleMarykModel, emptyList())
+                )
+            }
+        }
+    }
 }
 
 private class ConcurrentReadTestStore : AbstractDataStore(

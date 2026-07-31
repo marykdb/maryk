@@ -46,6 +46,7 @@ import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
 
@@ -62,7 +63,7 @@ class RemoteDataStore private constructor(
     override val keepUpdateHistoryIndex: Boolean,
     override val supportsFuzzyQualifierFiltering: Boolean,
     override val supportsSubReferenceFiltering: Boolean,
-) : IsDataStore {
+) : IsDataStore, SnapshotVersionProvider {
     private val definitionsMutex = Mutex()
 
     override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (id, model) ->
@@ -412,6 +413,22 @@ class RemoteDataStore private constructor(
         val remoteResponse = RemoteStoreCodec.decode(RemoteProcessResponse.Serializer, responseBytes, responseContext)
         @Suppress("UNCHECKED_CAST")
         return ProcessResponse(remoteResponse.version, remoteResponse.result as IsDataModelResponse<DM>)
+    }
+
+    override suspend fun captureSnapshotVersion(): ULong {
+        val response = httpClient.get(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
+            headers {
+                append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                appendBearerToken(bearerToken)
+            }
+        }
+        requireSuccess(response, "snapshot version")
+        requireContentType(response, RemoteStoreProtocol.contentType, "snapshot version")
+        return try {
+            RemoteStoreCodec.decodeVersion(readResponseBytes(response, "snapshot version"))
+        } catch (error: IllegalArgumentException) {
+            throw IllegalStateException("Remote store returned an invalid snapshot version", error)
+        }
     }
 
     override suspend fun close() {

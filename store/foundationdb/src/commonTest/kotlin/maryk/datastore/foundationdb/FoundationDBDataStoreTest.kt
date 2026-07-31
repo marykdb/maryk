@@ -7,6 +7,7 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
+import maryk.datastore.test.DataStoreBackupRoundTripTest
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.test.models.Log
@@ -18,6 +19,29 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
+    @Test
+    fun portableBackupRoundTrip() = runTest(timeout = 3.minutes) {
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "backup-source", Uuid.random().toString()),
+            dataModelsById = models,
+            keepAllVersions = true,
+        )
+        val target = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "backup-target", Uuid.random().toString()),
+            dataModelsById = models,
+            keepAllVersions = true,
+        )
+
+        try {
+            DataStoreBackupRoundTripTest(source, target, useAutomaticSnapshot = false)
+                .restoresCurrentValueAndCompleteHistory()
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
     @Test
     fun readContextKeepsOneReadVersionAcrossWrites() = runTest(timeout = 3.minutes) {
         val dataStore = FoundationDBDataStore.open(

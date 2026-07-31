@@ -129,9 +129,15 @@ Request requirements:
 - Request body max size is 16 MiB.
 
 - `GET /v1/info` → `RemoteStoreInfo` (definitions + model id map + capabilities)
+- `GET /v1/snapshot-version` → authoritative 8-byte point-in-time read boundary
 - `POST /v1/execute` → `Requests` in, length-prefixed response(s) out
 - `POST /v1/flow` → `Requests` (single fetch) in, stream of length-prefixed `UpdatesResponse`
 - `POST /v1/process-update` → `UpdateResponse` in, `ProcessResponse` out
+
+Point-in-time export and backup require `GET /v1/snapshot-version`. Upgrade the
+Remote client and server together before relying on that guarantee: a newer
+client intentionally fails closed when an older server lacks the endpoint rather
+than exporting pages from different points in time.
 
 Streaming format:
 - Each message is `length (4 bytes, big-endian)` + `ProtoBuf payload`.

@@ -125,6 +125,7 @@ import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
@@ -165,7 +166,7 @@ class RocksDBDataStore private constructor(
     coroutineContext = Dispatchers.IO,
     maxConcurrentReads = maxConcurrentReads,
     readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
-) {
+), SnapshotVersionProvider {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
@@ -183,6 +184,8 @@ class RocksDBDataStore private constructor(
 
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
+
+    override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
     private val ownRocksDBOptions: DBOptions? =
@@ -575,10 +578,10 @@ class RocksDBDataStore private constructor(
                     val cache = Cache()
                     try {
                         if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
-                            clock = when (val request = storeAction.request) {
-                                is UpdateResponse<*> -> clock.calculateMaxTimeStamp(HLC(request.update.version))
-                                else -> clock.calculateMaxTimeStamp()
-                            }
+                            clock = nextMutationClock(
+                                clock,
+                                (storeAction.request as? UpdateResponse<*>)?.update?.version,
+                            )
                             observeCommittedVersion(clock.timestamp)
                         }
 

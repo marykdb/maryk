@@ -8,11 +8,16 @@ import maryk.core.models.key
 import maryk.core.properties.definitions.number
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.changes.change
+import maryk.core.query.pairs.with
 import maryk.core.query.requests.GetChangesRequest
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
+import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
@@ -20,11 +25,52 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.memory.InMemoryDataStore
+import maryk.core.query.responses.statuses.AddSuccess
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BrowserStateHistoryTest {
+    @Test
+    fun loadAllChangesIncludesHistoryOlderThanMaxVersionsWindow() = runBlocking {
+        val store = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to HistoryModel),
+        )
+        try {
+            val add = store.execute(
+                HistoryModel.add(
+                    HistoryModel.create {
+                        id with 8u
+                        number with 2_000u
+                    }
+                )
+            )
+            val key = (add.statuses.single() as AddSuccess<HistoryModel>).key
+            repeat(1_001) { index ->
+                store.execute(
+                    HistoryModel.change(
+                        key.change(Change(HistoryModel { number::ref } with index.toUInt()))
+                    )
+                )
+            }
+
+            val history = loadAllChanges(store, HistoryModel, key)
+            assertEquals(1_002, history.size)
+            assertEquals(
+                2_000u,
+                history.first().changes
+                    .filterIsInstance<Change>()
+                    .flatMap { it.referenceValuePairs }
+                    .single { it.reference == HistoryModel { number::ref } }
+                    .value,
+            )
+        } finally {
+            store.close()
+        }
+    }
+
     @Test
     fun loadAllChangesFallsBackToSingleVersionRequest() {
         val values = HistoryModel.create {
@@ -93,7 +139,7 @@ class BrowserStateHistoryTest {
             loadAllChanges(store, HistoryModel, key)
         }
 
-        assertEquals(6, calls)
+        assertEquals(4, calls)
         assertEquals(2, changes.size)
         assertEquals(listOf(1uL, 2uL), changes.map { it.version })
         assertTrue(changes.all { it.changes.contains(ObjectCreate) })

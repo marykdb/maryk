@@ -45,11 +45,38 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.memory.InMemoryDataStore
+import maryk.datastore.shared.captureSnapshotVersion
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
+    @Test
+    fun capturesAuthoritativeRemoteSnapshotVersion() = runBlocking {
+        val store = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port")
+        )
+
+        try {
+            val add = remote.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-snapshot" })
+            )
+            val addVersion = assertIs<AddSuccess<*>>(add.statuses.single()).version
+
+            assertTrue(remote.captureSnapshotVersion() > addVersion)
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+            store.close()
+        }
+    }
+
     @Test
     fun remoteExecuteAndFlow() = runBlocking {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))

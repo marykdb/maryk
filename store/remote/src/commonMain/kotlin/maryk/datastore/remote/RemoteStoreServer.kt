@@ -34,6 +34,7 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.values.ObjectValues
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.rethrowIfFatal
 
 class RemoteStoreServer(
@@ -106,6 +107,16 @@ internal fun Application.remoteStoreModule(
                     MAX_FRAME_SIZE_BYTES,
                 )
                 call.respondBytes(bytes, ContentType.parse(RemoteStoreProtocol.contentType))
+            }
+        }
+
+        get(RemoteStoreProtocol.snapshotVersionPath) {
+            if (!call.requireAuthorization(config.bearerToken)) return@get
+            call.respondValidationErrors {
+                call.respondBytes(
+                    RemoteStoreCodec.encodeVersion(dataStore.captureSnapshotVersion()),
+                    ContentType.parse(RemoteStoreProtocol.contentType),
+                )
             }
         }
 

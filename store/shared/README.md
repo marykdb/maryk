@@ -16,6 +16,46 @@ Not intended as a standalone store.
   - Field encryption: AES-GCM
   - Deterministic sensitive lookup tokens: HMAC-SHA256
 - [Encryption key rotation](docs/encryption-key-rotation.md)
+- Portable point-in-time operations:
+  - `captureSnapshotVersion`, `backup`, and `restore`
+  - Versioned manifests, opaque cursor paging, bounded streaming chunks, and
+    restore through Maryk's normal replication path.
+  - Snapshot capture waits for an in-flight mutation before fixing the read
+    boundary. A backup is valid only after its writer completes successfully.
+  - Restore is streaming, not globally transactional. Restore into an empty
+    disposable store and publish it only after success.
+
+## Point-in-time backup and restore
+
+`backup` creates a portable logical backup: the manifest identifies the format,
+snapshot version, and models; each chunk contains complete versioned changes for
+one model. It is not a filesystem or engine-level backup.
+
+Requirements and operation:
+
+- Enable `keepAllVersions` before data is written. History cannot be recreated
+  later, and `backup` rejects stores without it.
+- Let `backup` capture the snapshot version, or provide one obtained from the
+  same cluster. Use that version for every page; do not mix snapshots.
+- A remote store needs a compatible server that exposes an authoritative
+  snapshot version. A newer client refuses an older server without that
+  capability rather than producing a mixed-time export.
+- A `DataStoreBackupWriter` must keep output private until `complete()` returns.
+  Use durable storage, integrity checks, encryption where needed, and an atomic
+  publish/rename step in the writer implementation.
+- Choose `batchSize` for memory and transport limits. It bounds records per
+  chunk, not the size of one record's complete history.
+- Backups include historic and soft-deleted data. Protect them as sensitive
+  production data and retain them according to the same policy.
+- Restore requires matching registered model names and major model versions.
+  Review minor/patch schema compatibility before restoring. By default it
+  refuses non-empty target models. The target must retain all versions so the
+  restored history is not silently collapsed to current state.
+- Restore validates creation history, ordering, and snapshot bounds before
+  applying each chunk, and rejects unexpected or incomplete backend responses.
+- Restore is streaming, so a failure can leave earlier chunks—and part of the
+  failing chunk—applied. Restore into a new disposable store, validate it, then
+  publish or switch to it only after success.
 
 ## Where to use
 

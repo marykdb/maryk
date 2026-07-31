@@ -124,6 +124,19 @@ For background, see the [Hybrid Logical Clocks paper](https://cse.buffalo.edu/te
 ## Operational notes
 
 - Enable `keepAllVersions` before you need history. It cannot reconstruct changes that were never retained.
+- Point-in-time export and portable logical backup use one captured version for
+  every scan page only when the store provides an authoritative snapshot boundary.
+  Stores without that capability reject the operation rather than exporting mixed
+  pages. Without historic retention, a current-state export can include concurrent
+  writes across pages instead.
+- A portable backup contains complete versioned changes, including soft-deleted
+  data. Keep its destination encrypted and access-controlled; writer
+  implementations should add integrity checks and publish only after completion.
+- Restore portable backups into an empty disposable store. Restore is streaming,
+  not globally transactional, so validate and switch to the restored store only
+  after it succeeds. Restore rejects a mismatched major model version; review
+  minor/patch schema compatibility before restoring. The target must also keep
+  all versions so restore preserves the backup's history.
 - Keep model IDs stable in `dataModelsById`; IDs are part of store identity.
 - Prefer `GetChanges` for one-object history and `ScanUpdates` for synchronization.
 - Use reference graphs with history requests to limit returned fields.

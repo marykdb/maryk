@@ -8,4 +8,5 @@ internal object RemoteStoreProtocol {
     const val executePath = "/v1/execute"
     const val flowPath = "/v1/flow"
     const val processUpdatePath = "/v1/process-update"
+    const val snapshotVersionPath = "/v1/snapshot-version"
 }

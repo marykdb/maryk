@@ -37,6 +37,7 @@ import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.test.DataStoreAddTest
+import maryk.datastore.test.DataStoreBackupRoundTripTest
 import maryk.datastore.test.DataStoreChangeComplexTest
 import maryk.datastore.test.DataStoreChangeTest
 import maryk.datastore.test.DataStoreChangeValidationTest
@@ -86,6 +87,31 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 class IndexedDbDataStoreTest {
+    @Test
+    fun portableBackupRoundTrip() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-backup-source-${Random.nextInt()}",
+            dataModelsById = models,
+            keepAllVersions = true,
+        )
+        val target = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-backup-target-${Random.nextInt()}",
+            dataModelsById = models,
+            keepAllVersions = true,
+        )
+
+        try {
+            DataStoreBackupRoundTripTest(source, target, useAutomaticSnapshot = false)
+                .restoresCurrentValueAndCompleteHistory()
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
     @Test
     fun reusesSharedAddGetScanTests() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()

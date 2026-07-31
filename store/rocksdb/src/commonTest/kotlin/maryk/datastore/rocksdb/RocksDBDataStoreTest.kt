@@ -12,6 +12,7 @@ import maryk.datastore.rocksdb.processors.helpers.createIndexKey
 import maryk.datastore.rocksdb.processors.processChange
 import maryk.datastore.test.UniqueModel
 import maryk.datastore.test.UniqueModel.email
+import maryk.datastore.test.DataStoreBackupRoundTripTest
 import maryk.datastore.test.assertStatusIs
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
@@ -36,6 +37,32 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RocksDBDataStoreTest {
+    @Test
+    fun portableBackupRoundTrip() = runTest {
+        val sourceFolder = createTestDBFolder("backup-source")
+        val targetFolder = createTestDBFolder("backup-target")
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = RocksDBDataStore.open(
+            relativePath = sourceFolder,
+            dataModelsById = models,
+            keepAllVersions = true,
+        )
+        val target = RocksDBDataStore.open(
+            relativePath = targetFolder,
+            dataModelsById = models,
+            keepAllVersions = true,
+        )
+
+        try {
+            DataStoreBackupRoundTripTest(source, target).restoresCurrentValueAndCompleteHistory()
+        } finally {
+            source.close()
+            target.close()
+            deleteFolder(sourceFolder)
+            deleteFolder(targetFolder)
+        }
+    }
+
     @Test
     fun opensWithNativeOptimisticTransactionSupport() = runTest {
         val folder = createTestDBFolder("optimistic-transaction-db")

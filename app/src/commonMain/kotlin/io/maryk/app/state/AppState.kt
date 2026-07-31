@@ -28,6 +28,7 @@ import io.maryk.app.data.exportRowDataToFolder
 import io.maryk.app.data.extensionsForImport
 import io.maryk.app.data.importDataFromFile
 import io.maryk.app.data.importVersionedDataFromFile
+import io.maryk.app.data.loadCompleteChangesForKey
 import io.maryk.app.data.parseValuesFromYaml
 import io.maryk.app.data.pickDirectory
 import io.maryk.app.data.pickFile
@@ -58,6 +59,7 @@ import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.ScanCursor as CoreScanCursor
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
@@ -67,6 +69,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
 import kotlin.time.Instant
@@ -177,7 +180,7 @@ class BrowserState(
     var pendingHardDelete by mutableStateOf(false)
         private set
 
-    private var scanCursor by mutableStateOf(ScanCursor())
+    private var scanCursor by mutableStateOf(ScanPageCursor())
 
     private val modelRowCounts = mutableStateMapOf<UInt, ModelRowCount>()
     private val orderFieldsByModel = mutableStateMapOf<UInt, String>()
@@ -238,7 +241,7 @@ class BrowserState(
         models = emptyList()
         selectedModelId = null
         scanResults = emptyList()
-        scanCursor = ScanCursor()
+        scanCursor = ScanPageCursor()
         recordDetails = null
         selectedModelField = null
         referenceBackTarget = null
@@ -555,7 +558,7 @@ class BrowserState(
 
     fun scanFromStart() {
         scanResults = emptyList()
-        scanCursor = ScanCursor()
+        scanCursor = ScanPageCursor()
         scanGeneration += 1
         loadNextPage(reset = true)
     }
@@ -977,11 +980,10 @@ class BrowserState(
                     return ScanPageResult.Error("Start key error: ${e.message ?: e::class.simpleName}")
                 }
             }
-        } else {
-            scanCursor.nextStartKey
-        }
+        } else null
 
         val includeStart = if (reset) scanConfig.includeStart else scanCursor.includeStart
+        val cursor = if (reset) null else scanCursor.nextCursor
         val toVersion = try {
             parseScanToVersion(scanConfig.toVersion)
         } catch (e: Throwable) {
@@ -1002,6 +1004,7 @@ class BrowserState(
                         toVersion = toVersion,
                         filterSoftDeleted = !scanConfig.includeDeleted,
                         allowTableScan = true,
+                        cursor = cursor,
                     )
                 )
             }
@@ -1024,12 +1027,11 @@ class BrowserState(
             }
             val filteredRows = if (scanConfig.includeDeleted) rows else rows.filterNot { it.isDeleted }
 
-            val endReached = response.values.size < limit
-            val nextKey = response.values.lastOrNull()?.key
+            val endReached = response.nextCursor == null
             ScanPageResult.Success(
                 rows = filteredRows,
-                cursor = ScanCursor(
-                    nextStartKey = nextKey,
+                cursor = ScanPageCursor(
+                    nextCursor = response.nextCursor,
                     includeStart = false,
                     endReached = endReached,
                 ),
@@ -1213,12 +1215,18 @@ class BrowserState(
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
+                    val snapshotVersion = if (connection.dataStore.keepAllVersions) {
+                        connection.dataStore.captureSnapshotVersion()
+                    } else {
+                        null
+                    }
                     exportModelDataToFolder(
                         dataStore = connection.dataStore,
                         model = model,
                         format = format,
                         folder = exportFolder,
                         includeVersionHistory = includeVersionHistory,
+                        snapshotVersion = snapshotVersion,
                     )
                 }
             }
@@ -1243,6 +1251,11 @@ class BrowserState(
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
+                    val snapshotVersion = if (connection.dataStore.keepAllVersions) {
+                        connection.dataStore.captureSnapshotVersion()
+                    } else {
+                        null
+                    }
                     connection.dataStore.dataModelsById.values.forEach { model ->
                         exportModelDataToFolder(
                             dataStore = connection.dataStore,
@@ -1250,6 +1263,7 @@ class BrowserState(
                             format = format,
                             folder = exportFolder,
                             includeVersionHistory = includeVersionHistory,
+                            snapshotVersion = snapshotVersion,
                         )
                     }
                 }
@@ -1446,7 +1460,7 @@ class BrowserState(
 
     private fun resetScan() {
         scanResults = emptyList()
-        scanCursor = ScanCursor()
+        scanCursor = ScanPageCursor()
         scanStatus = null
         scanGeneration += 1
     }
@@ -1584,47 +1598,11 @@ internal suspend fun loadAllChanges(
     dataStore: IsDataStore,
     model: IsRootDataModel,
     key: Key<IsRootDataModel>,
-): List<VersionedChanges> {
-    val result = mutableListOf<VersionedChanges>()
-    var fromVersion = 0uL
-    val maxVersions = 1000u
-    while (true) {
-        val requestMaxVersions = maxVersions
-        var effectiveMaxVersions = requestMaxVersions
-        val response = try {
-            dataStore.execute(
-                model.getChanges(
-                    key,
-                    fromVersion = fromVersion,
-                    maxVersions = requestMaxVersions,
-                    filterSoftDeleted = false,
-                )
-            )
-        } catch (error: Throwable) {
-            error.rethrowIfFatal()
-            effectiveMaxVersions = 1u
-            dataStore.execute(
-                model.getChanges(
-                    key,
-                    fromVersion = fromVersion,
-                    maxVersions = effectiveMaxVersions,
-                    filterSoftDeleted = false,
-                )
-            )
-        }
-        val entry = response.changes.firstOrNull() ?: break
-        if (entry.changes.isEmpty()) break
-        result += entry.changes
-        if (entry.changes.size.toUInt() < effectiveMaxVersions) break
-        val lastVersion = entry.changes.last().version
-        if (lastVersion == ULong.MAX_VALUE) break
-        fromVersion = lastVersion + 1uL
-    }
-    return result
-}
+): List<VersionedChanges> =
+    loadCompleteChangesForKey(dataStore, model, key)?.changes.orEmpty()
 
-private data class ScanCursor(
-    val nextStartKey: Key<IsRootDataModel>? = null,
+private data class ScanPageCursor(
+    val nextCursor: CoreScanCursor? = null,
     val includeStart: Boolean = true,
     val endReached: Boolean = false,
 )
@@ -1632,7 +1610,7 @@ private data class ScanCursor(
 private sealed class ScanPageResult {
     data class Success(
         val rows: List<ScanRow>,
-        val cursor: ScanCursor,
+        val cursor: ScanPageCursor,
         val message: String,
     ) : ScanPageResult()
 

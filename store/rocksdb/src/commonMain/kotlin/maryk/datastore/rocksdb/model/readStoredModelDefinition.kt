@@ -5,12 +5,12 @@ import maryk.core.extensions.bytes.decodeVarUInt
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsConversionContext
+import maryk.datastore.rocksdb.RocksDBBlockCache
 import maryk.datastore.rocksdb.TableType
 import maryk.datastore.rocksdb.metadata.readMetaFile
 import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
-import maryk.rocksdb.ColumnFamilyOptions
 import maryk.rocksdb.ComparatorOptions
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
@@ -39,6 +39,7 @@ fun readStoredModelDefinitionsFromPath(
     }
 
     val keySizesById = metas.mapValues { it.value.keySize }
+    val blockCache = RocksDBBlockCache()
 
     val descriptors = cfNames.map { name ->
         val type = name.firstOrNull()?.toInt()
@@ -48,16 +49,21 @@ fun readStoredModelDefinitionsFromPath(
             TableType.HistoricUnique.byte -> {
                 val id = name.decodeVarUInt(startIndex = 1) ?: 0u
                 val keySize = keySizesById[id] ?: 0
-                ColumnFamilyOptions().apply {
+                blockCache.createColumnFamilyOptions {
                     setComparator(VersionedComparator(ComparatorOptions(), keySize))
                 }
             }
-            else -> ColumnFamilyOptions()
+            else -> blockCache.createColumnFamilyOptions()
         }
         ColumnFamilyDescriptor(name, options)
     }
     val handles = mutableListOf<ColumnFamilyHandle>()
-    val db = openRocksDB(dbOptions, path, descriptors, handles)
+    val db = try {
+        openRocksDB(dbOptions, path, descriptors, handles)
+    } catch (throwable: Throwable) {
+        blockCache.close()
+        throw throwable
+    }
 
     try {
         val storedNamesById = metas.mapValues { it.value.name }
@@ -87,6 +93,7 @@ fun readStoredModelDefinitionsFromPath(
     } finally {
         handles.forEach { it.close() }
         db.close()
+        blockCache.close()
     }
 }
 

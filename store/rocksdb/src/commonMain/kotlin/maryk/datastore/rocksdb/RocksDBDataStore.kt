@@ -137,7 +137,6 @@ import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.TypeIndicator
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
-import maryk.rocksdb.ColumnFamilyOptions
 import maryk.rocksdb.ComparatorOptions
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.ReadOptions
@@ -188,6 +187,8 @@ class RocksDBDataStore private constructor(
 
     override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
+    private val blockCache = RocksDBBlockCache()
+
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
     private val ownRocksDBOptions: DBOptions? =
         if (rocksDBOptions == null) {
@@ -221,13 +222,18 @@ class RocksDBDataStore private constructor(
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
-        descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily))
+        descriptors.add(ColumnFamilyDescriptor(defaultColumnFamily, blockCache.createColumnFamilyOptions()))
         for ((index, db) in dataModelsById) {
             createColumnFamilyHandles(descriptors, index, db)
         }
 
         val handles = mutableListOf<ColumnFamilyHandle>()
-        this.db = openOptimisticTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, storePath, descriptors, handles)
+        this.db = try {
+            openOptimisticTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, storePath, descriptors, handles)
+        } catch (throwable: Throwable) {
+            blockCache.close()
+            throw throwable
+        }
 
         try {
             var handleIndex = 1
@@ -756,31 +762,31 @@ class RocksDBDataStore private constructor(
         val nameSize = tableIndex.calculateVarByteLength() + 1
 
         // Prefix set to key size for more optimal search.
-        val tableOptions = ColumnFamilyOptions().apply {
+        val tableOptions = blockCache.createColumnFamilyOptions {
             useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
         }
 
-        descriptors += Model.getDescriptor(tableIndex, nameSize)
-        descriptors += Keys.getDescriptor(tableIndex, nameSize)
+        descriptors += Model.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
+        descriptors += Keys.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
         descriptors += Table.getDescriptor(tableIndex, nameSize, tableOptions)
-        descriptors += Index.getDescriptor(tableIndex, nameSize)
-        descriptors += Unique.getDescriptor(tableIndex, nameSize)
+        descriptors += Index.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
+        descriptors += Unique.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
         if (keepUpdateHistoryIndex) {
-            descriptors += UpdateHistory.getDescriptor(tableIndex, nameSize)
+            descriptors += UpdateHistory.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
         }
 
         if (keepAllVersions) {
             // Prefix set to key size for more optimal search.
-            val tableOptionsHistoric = ColumnFamilyOptions().apply {
+            val tableOptionsHistoric = blockCache.createColumnFamilyOptions {
                 useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
                 setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
             }
 
-            val indexOptionsHistoric = ColumnFamilyOptions().apply {
+            val indexOptionsHistoric = blockCache.createColumnFamilyOptions {
                 setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
             }
 
-            val uniqueOptionsHistoric = ColumnFamilyOptions().apply {
+            val uniqueOptionsHistoric = blockCache.createColumnFamilyOptions {
                 setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
             }
 
@@ -810,6 +816,7 @@ class RocksDBDataStore private constructor(
             it.close()
         }
         db.close()
+        blockCache.close()
     }
 
     internal fun getColumnFamilies(dbIndex: UInt) =

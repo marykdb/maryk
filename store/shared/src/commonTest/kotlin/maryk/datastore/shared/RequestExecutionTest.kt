@@ -340,9 +340,9 @@ private class SnapshotReadTestStore : AbstractDataStore(
 
 private class WorkerIsolationTestStore : AbstractDataStore(
     dataModelsById = mapOf(1u to SimpleMarykModel),
-    coroutineContext = Dispatchers.IO,
+    coroutineContext = DISPATCHER,
     maxConcurrentReads = 1,
-    readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(1),
+    readWorkerCoroutineContext = DISPATCHER.limitedParallelism(1),
 ) {
     override val keepAllVersions = false
     override val keepUpdateHistoryIndex = false

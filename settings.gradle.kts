@@ -29,6 +29,7 @@ include(
     ":file",
     ":testmodels",
     ":generator",
+    ":generator:gradle-plugin",
     ":generator:jvmTest",
     ":store:test",
     ":store:shared",

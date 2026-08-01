@@ -15,7 +15,7 @@ import kotlin.test.assertTrue
 val generatedKotlinForSimpleDataModel = """
 package maryk.test.models
 
-import maryk.core.properties.RootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.string
 
 object SimpleMarykModel : RootDataModel<SimpleMarykModel>() {
@@ -33,7 +33,7 @@ package maryk.test.models
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import maryk.core.properties.RootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.DateDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition

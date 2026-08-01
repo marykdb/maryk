@@ -24,7 +24,7 @@ fun IsRootDataModel.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.properties.RootDataModel",
+        "maryk.core.models.RootDataModel",
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 

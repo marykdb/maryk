@@ -12,6 +12,10 @@ generator/jvmTest/gen
 .gradle
 .gradle-local/
 build/
+!generator/src/jvmMain/kotlin/maryk/generator/build/
+!generator/src/jvmMain/kotlin/maryk/generator/build/**
+!generator/src/jvmTest/kotlin/maryk/generator/build/
+!generator/src/jvmTest/kotlin/maryk/generator/build/**
 
 # Local test dependencies
 /store/foundationdb/bin/

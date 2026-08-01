@@ -39,13 +39,17 @@ Enable history only when the app needs `toVersion`, `getChanges`, `scanChanges`,
 - `getChanges`, `scanChanges`, and `scanUpdateHistory` over durable history rows.
 - Sensitive value encryption through the shared Maryk field encryption provider API.
 - Browser-native WebCrypto AES-GCM/HMAC-SHA256 provider for JS and WasmJS.
-- Metadata-backed startup migration with safe-add handling and index backfill.
+- Metadata-backed startup migration with safe-add handling, index backfill, and
+  persisted `Partial`/`Retry` resume state across database reopens.
 - JS and WasmJS test coverage through `fake-indexeddb`.
 
 ## Important Limits
 
 - IndexedDB transactions cannot safely wrap the whole suspend common request processor. Mutations are serialized with Web Locks when available, then written through native batched `readwrite` transactions.
-- Without Web Locks, mutation serialization is only in-process for the current JS context.
+- Without Web Locks, mutations use a renewable lease stored atomically in IndexedDB. `BroadcastChannel` wakes waiting tabs promptly; timed retries cover browsers without it. Every write batch checks the lease in its native transaction, fencing out expired owners.
+- A migration returning `Partial` pauses the open after persisting phase, attempt,
+  cursor, versions, and message. The next open resumes that phase through
+  `MigrationContext.previousState`.
 - Historic index scans process IndexedDB cursor pages, but still keep latest visible state per indexed row to handle historic tombstones correctly.
 - Browser quota, eviction, private browsing behavior, and blocked upgrades are browser operational concerns.
 

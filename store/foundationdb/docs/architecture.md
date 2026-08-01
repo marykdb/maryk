@@ -143,7 +143,8 @@ Filters compose (And/Or/Not) around primitives (Exists, Equals, Range, Regex, Va
 
 Soft deletes are enforced as an independent check.
 
-In the FDB engine, fuzzy and sub‑reference filtering are disabled by default; complex scans should prefer secondary indexes for performance and determinism.
+The FDB engine supports fuzzy qualifier and sub-reference filtering. Complex scans
+should still prefer secondary indexes for predictable performance.
 
 ## Indexes and Uniques
 

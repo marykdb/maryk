@@ -11,29 +11,45 @@ The example below collects and injects values to fetch the friends of two people
 ## Example: Fetching all data of the Friends of Two Persons
 
 ```kotlin
-Requests(
-    CollectRequest(
-        "collectedResponse",
-        Person.get(
-            Person.key("dR9gVdRcSPw2molM1AiOng"),
-            Person.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+val context = RequestContext(definitionsContext)
+val requests = Requests.create(context = context) {
+    this.requests -= listOf(
+        RequestType.Collect(
+            CollectRequest(
+                "collectedResponse",
+                Person.get(
+                    Person.key("dR9gVdRcSPw2molM1AiOng"),
+                    Person.key("Vc4WgX/mQHYCSEoLtfLSUQ")
+                )
+            )
+        ),
+        RequestType.Get(
+            // Injected requests stay as ObjectValues until the collected result is available.
+            GetRequest.create(context = context) {
+                from with Person
+                keys with Inject(
+                    "collectedResponse",
+                    ValuesResponse {
+                        values.atAny { values.refWithDM(Person) { friends } }
+                    }
+                )
+            }
         )
-    ),
-    // This get request needs to be defined as an ObjectValues object so the response can be injected later
-    GetRequest.create(context = context) {
-        from with Person
-        keys with Inject(
-            "collectedResponse",
-            // Reference to the friends within the Values of the response
-            ValuesResponse { values.atAny { values.refWithDM(Person) { friends } } }
-        )
-    }
-)
+    )
+}
+
+val responses = remote.execute(requests)
 ```
 
-First we send a `CollectRequest` to fetch two people and store the response as `collectedResponse`.
+Within the batch, `CollectRequest` fetches two people and stores the response as
+`collectedResponse`.
 
-Next we define a `GetRequest` to fetch their friends. `injectWith` pulls the friend references from `collectedResponse` and injects them into the new request.
+The following `GetRequest` fetches their friends. `Inject` pulls the friend
+references from `collectedResponse` and injects them into the new request.
+
+Batch responses are returned in request order. Execution stops at the first failure.
+The batch is not transactionally atomic: writes completed before a later failure
+remain committed.
 
 ## Conclusion
 

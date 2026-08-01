@@ -395,7 +395,10 @@ Remaining production constraints:
 - A true request-wide native IndexedDB transaction still needs a queued synchronous IndexedDB operation plan, not a coroutine wrapper around the current common processor.
 - Descending index-ordered `ScanChanges` still uses a broad lower index-prefix bound and filters/deduplicates in-query, though the upper side is bounded by the requested start sorting key.
 - Change-log payloads are Maryk protobuf rows. Creation history can still be reconstructed from durable snapshots if a legacy or failed row contains the fallback marker.
-- IndexedDB now has a local startup migration runtime. It handles safe adds, current/historic new-index backfill over real IndexedDB scans, and explicit migration hooks. It still does not implement RocksDB/FoundationDB-style leases, background continuation, persisted partial cursors, or cluster update logs.
+- IndexedDB now has a local startup migration runtime. It handles safe adds,
+  current/historic new-index backfill, explicit migration hooks, and persisted
+  `Partial`/`Retry` resume state. It does not implement background migration
+  continuation or cluster update logs.
 
 WasmJS note:
 

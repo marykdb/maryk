@@ -15,7 +15,14 @@ Not intended as a standalone store.
   - `maryk.datastore.shared.encryption.AesGcmHmacSha256EncryptionProvider`
   - Field encryption: AES-GCM
   - Deterministic sensitive lookup tokens: HMAC-SHA256
-- [Encryption key rotation](docs/encryption-key-rotation.md)
+- Additive key rotation:
+  - `KeyringFieldEncryptionProvider` writes versioned key-id envelopes and reads
+    active, previous, and legacy ciphertext.
+  - Deterministic-token candidate derivation and candidate-aware unique reads support
+    staged index-key rotation. Keep previous token keys configured until stored
+    unique indexes have been rebuilt with the active token key.
+  - `runReEncryptionBatch` provides a bounded, resumable adapter contract with a
+    versioned cursor/state record.
 - Portable point-in-time operations:
   - `captureSnapshotVersion`, `backup`, and `restore`
   - Versioned manifests, opaque cursor paging, bounded streaming chunks, and

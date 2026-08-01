@@ -6,7 +6,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -369,7 +368,7 @@ private class WorkerIsolationTestStore : AbstractDataStore(
                     is ScanRequest<*> -> {
                         check(readContext != null)
                         readStarted.complete(Unit)
-                        runBlocking { releaseRead.await() }
+                        releaseRead.await()
                         @Suppress("UNCHECKED_CAST")
                         (action.response as CompletableDeferred<IsResponse>).complete(
                             ValuesResponse(SimpleMarykModel, emptyList())

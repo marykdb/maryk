@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
@@ -572,6 +573,7 @@ class RemoteDataStore private constructor(
                                             if (sendResult.isFailure) {
                                                 return@execute
                                             }
+                                            yield()
                                             if (update.version == lastDeliveredVersion) {
                                                 deliveredAtLastVersion++
                                             } else {

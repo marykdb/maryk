@@ -141,7 +141,9 @@ class RequestContext(
     ) {
         if (!this.collectedLevels.isNullOrEmpty() && levelItem == this.collectedLevels!!.last()) {
             this.collectedLevels!!.removeAt(this.collectedLevels!!.size - 1)
-            this.collectedReferenceCreators?.dropLast(1)
+            if (!this.collectedReferenceCreators.isNullOrEmpty()) {
+                this.collectedReferenceCreators!!.removeAt(this.collectedReferenceCreators!!.size - 1)
+            }
         }
     }
 

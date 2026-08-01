@@ -9,6 +9,7 @@ import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Collect
 import maryk.core.query.responses.IsResponse
+import maryk.core.values.IsValueItems
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -52,6 +53,18 @@ data class CollectRequest<RQ : IsTransportableRequest<RP>, RP : IsResponse>(
             )
 
         override val Serializer = object: ObjectDataModelSerializer<CollectRequest<*, *>, Companion, RequestContext, RequestContext>(this) {
+            override fun createValues(
+                context: RequestContext?,
+                items: IsValueItems,
+            ): ObjectValues<AnyCollectRequest, Companion> {
+                val values = super.createValues(context, items)
+                if (context != null) {
+                    val collectRequest = invoke(values)
+                    context.addToCollect(collectRequest.name, collectRequest.request)
+                }
+                return values
+            }
+
             override fun writeObjectAsJson(
                 obj: CollectRequest<*, *>,
                 writer: IsJsonLikeWriter,

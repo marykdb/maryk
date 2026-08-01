@@ -19,25 +19,40 @@ import io.ktor.utils.io.readAvailable
 import io.ktor.utils.io.readFully
 import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.io.IOException
 import kotlinx.io.readByteArray
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
+import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.migration.MigrationMetrics
+import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.query.ContainsDefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
+import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
+import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
+import maryk.core.query.responses.AddResponse
+import maryk.core.query.responses.ChangeResponse
+import maryk.core.query.responses.ChangesResponse
+import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsDataModelResponse
 import maryk.core.query.responses.IsResponse
@@ -45,10 +60,19 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
+import maryk.core.properties.types.TypedValue
+import maryk.core.values.ObjectValues
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.SnapshotVersionProvider
+import maryk.datastore.shared.migration.MigrationAdmin
+import maryk.datastore.shared.migration.MigrationAdminSnapshot
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
+
+private data class BatchRequestDescriptor(
+    val responseModel: IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>,
+    val dataModel: IsRootDataModel,
+)
 
 class RemoteDataStore private constructor(
     private val httpClient: HttpClient,
@@ -58,12 +82,13 @@ class RemoteDataStore private constructor(
     private val sshTunnel: SshTunnel?,
     private val ownsClient: Boolean,
     private val bearerToken: String?,
+    private val flowRetryPolicy: RemoteFlowRetryPolicy,
     override val dataModelsById: Map<UInt, IsRootDataModel>,
     override val keepAllVersions: Boolean,
     override val keepUpdateHistoryIndex: Boolean,
     override val supportsFuzzyQualifierFiltering: Boolean,
     override val supportsSubReferenceFiltering: Boolean,
-) : IsDataStore, SnapshotVersionProvider {
+) : IsDataStore, MigrationAdmin, SnapshotVersionProvider {
     private val definitionsMutex = Mutex()
 
     override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (id, model) ->
@@ -124,6 +149,7 @@ class RemoteDataStore private constructor(
                     sshTunnel = tunnel,
                     ownsClient = ownsClient,
                     bearerToken = config.bearerToken,
+                    flowRetryPolicy = config.flowRetryPolicy,
                     dataModelsById = modelMap,
                     keepAllVersions = infoResult.info.keepAllVersions,
                     keepUpdateHistoryIndex = infoResult.info.keepUpdateHistoryIndex,
@@ -267,48 +293,174 @@ class RemoteDataStore private constructor(
     override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ,
     ): RP {
-        ensureDataModelReference(request.dataModel)
         val transportable = request as? IsTransportableRequest<*>
             ?: throw IllegalArgumentException("Request ${request::class.simpleName} is not transportable")
-        val context = RequestContext(definitionsContext, dataModel = request.dataModel)
-        val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(transportable), context, MAX_REQUEST_BODY_BYTES)
+        val responses = execute(Requests(transportable))
+        @Suppress("UNCHECKED_CAST")
+        return responses.single() as RP
+    }
+
+    /** Execute an ordered request batch in one remote round trip. */
+    suspend fun execute(requests: Requests): List<IsResponse> {
+        require(requests.requests.isNotEmpty()) { "Remote execute request list cannot be empty" }
+        val descriptors = requests.requests.map(::batchRequestDescriptor)
+        descriptors.forEach { ensureDataModelReference(it.dataModel) }
+
+        val context = RequestContext(definitionsContext, dataModel = descriptors.first().dataModel)
+        val payload = RemoteStoreCodec.encode(Requests.Serializer, requests, context, MAX_REQUEST_BODY_BYTES)
+        return executeEncodedBatch(payload, descriptors)
+    }
+
+    private suspend fun executeEncodedBatch(
+        payload: ByteArray,
+        descriptors: List<BatchRequestDescriptor>,
+    ): List<IsResponse> {
         val response = httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
             headers {
                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                append(
+                    RemoteStoreProtocol.executeProtocolHeader,
+                    RemoteStoreProtocol.batchExecuteProtocol,
+                )
                 appendBearerToken(bearerToken)
             }
             setBody(payload)
         }
         requireSuccess(response, "execute")
         requireContentType(response, RemoteStoreProtocol.contentType, "execute")
-        val responseBytes = readResponseBytes(response, "execute", MAX_RESPONSE_BODY_BYTES)
+        val responseBytes = readResponseBytes(response, "execute", MAX_BATCH_RESPONSE_BODY_BYTES)
         if (responseBytes.isEmpty()) {
             throw IllegalStateException("Remote store execute returned an empty payload")
         }
 
-        val lengthResult = RemoteStoreCodec.readLengthPrefix(responseBytes, 0)
-            ?: throw IllegalStateException("Missing response length prefix")
-        if (lengthResult.length < 0) {
-            throw IllegalStateException("Invalid response length prefix: ${lengthResult.length}")
+        return try {
+            decodeFramedBatchResponse(responseBytes, descriptors)
+        } catch (framingError: IllegalStateException) {
+            if (descriptors.size != 1 || responseBytes.size > MAX_FRAME_SIZE_BYTES) {
+                throw framingError
+            }
+            try {
+                listOf(decodeResponse(responseBytes, descriptors.single()))
+            } catch (_: IllegalStateException) {
+                throw framingError
+            }
         }
-        if (lengthResult.length == 0) {
-            throw IllegalStateException("Invalid response length prefix: 0")
+    }
+
+    private fun decodeFramedBatchResponse(
+        responseBytes: ByteArray,
+        descriptors: List<BatchRequestDescriptor>,
+    ): List<IsResponse> {
+        val responses = ArrayList<IsResponse>(descriptors.size)
+        var offset = 0
+        descriptors.forEachIndexed { index, descriptor ->
+            val lengthResult = RemoteStoreCodec.readLengthPrefix(responseBytes, offset)
+                ?: throw IllegalStateException("Missing response length prefix for batch item $index")
+            if (lengthResult.length < 0) {
+                throw IllegalStateException("Invalid response length prefix: ${lengthResult.length}")
+            }
+            if (lengthResult.length == 0) {
+                throw IllegalStateException("Invalid response length prefix: 0")
+            }
+            if (lengthResult.length > MAX_FRAME_SIZE_BYTES) {
+                throw IllegalStateException(
+                    "Response frame exceeds max size: ${lengthResult.length} > $MAX_FRAME_SIZE_BYTES"
+                )
+            }
+            val endIndex = lengthResult.nextOffset + lengthResult.length
+            if (endIndex > responseBytes.size) {
+                throw IllegalStateException("Response payload truncated for batch item $index")
+            }
+            responses += decodeResponse(
+                responseBytes.copyOfRange(lengthResult.nextOffset, endIndex),
+                descriptor,
+            )
+            offset = endIndex
         }
-        if (lengthResult.length > MAX_FRAME_SIZE_BYTES) {
-            throw IllegalStateException("Response frame exceeds max size: ${lengthResult.length} > $MAX_FRAME_SIZE_BYTES")
-        }
-        val endIndex = lengthResult.nextOffset + lengthResult.length
-        if (endIndex > responseBytes.size) {
-            throw IllegalStateException("Response payload truncated")
-        }
-        if (endIndex != responseBytes.size) {
+        if (offset != responseBytes.size) {
             throw IllegalStateException("Response contains trailing bytes after payload")
         }
-        val payloadBytes = responseBytes.copyOfRange(lengthResult.nextOffset, endIndex)
-        val responseContext = RequestContext(definitionsContext, dataModel = request.dataModel)
+        return responses
+    }
+
+    private fun decodeResponse(
+        payload: ByteArray,
+        descriptor: BatchRequestDescriptor,
+    ): IsResponse {
+        val responseContext = RequestContext(definitionsContext, dataModel = descriptor.dataModel)
         @Suppress("UNCHECKED_CAST")
-        return RemoteStoreCodec.decode(request.responseModel.Serializer, payloadBytes, responseContext) as RP
+        return RemoteStoreCodec.decode(
+            descriptor.responseModel.Serializer,
+            payload,
+            responseContext,
+        ) as IsResponse
+    }
+
+    /** Execute an ordered request batch containing unresolved Inject values. */
+    suspend fun execute(requests: ObjectValues<Requests, Requests.Companion>): List<IsResponse> {
+        @Suppress("UNCHECKED_CAST")
+        val typedRequests = requests.original(Requests.requests.index)
+            as? List<TypedValue<RequestType, Any>>
+            ?: throw IllegalArgumentException("Remote execute request list cannot be empty")
+        require(typedRequests.isNotEmpty()) { "Remote execute request list cannot be empty" }
+        val descriptors = typedRequests.map { typed ->
+            batchRequestDescriptor(typed.type, typed.value)
+        }
+        descriptors.forEach { ensureDataModelReference(it.dataModel) }
+        val context = requests.context
+            ?: RequestContext(definitionsContext, dataModel = descriptors.first().dataModel)
+        val payload = RemoteStoreCodec.encodeValues(
+            Requests.Serializer,
+            requests,
+            context,
+            MAX_REQUEST_BODY_BYTES,
+        )
+        return executeEncodedBatch(payload, descriptors)
+    }
+
+    private fun batchRequestDescriptor(request: IsTransportableRequest<*>): BatchRequestDescriptor {
+        val executableRequest = if (request is CollectRequest<*, *>) request.request else request
+        val storeRequest = executableRequest as? IsStoreRequest<*, *>
+            ?: throw IllegalArgumentException(
+                "Remote execute only accepts store requests or CollectRequest wrappers"
+            )
+        @Suppress("UNCHECKED_CAST")
+        return BatchRequestDescriptor(
+            executableRequest.responseModel as IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>,
+            storeRequest.dataModel,
+        )
+    }
+
+    private fun batchRequestDescriptor(type: RequestType, value: Any): BatchRequestDescriptor {
+        if (value is IsTransportableRequest<*>) {
+            return batchRequestDescriptor(value)
+        }
+        val values = value as? ObjectValues<*, *>
+            ?: throw IllegalArgumentException("Unsupported remote batch request value ${value::class.simpleName}")
+        if (type == RequestType.Collect) {
+            val collectRequest = values.toDataObject() as? IsTransportableRequest<*>
+                ?: throw IllegalArgumentException("Invalid CollectRequest in remote batch")
+            return batchRequestDescriptor(collectRequest)
+        }
+        val dataModel = when (val captured = values.original(1u)) {
+            is IsRootDataModel -> captured
+            is IsDataModelReference<*> -> captured.get() as? IsRootDataModel
+            else -> null
+        } ?: throw IllegalArgumentException("Remote batch request ${type.name} has no root data model")
+
+        @Suppress("UNCHECKED_CAST")
+        val responseModel = when (type) {
+            RequestType.Add -> AddResponse
+            RequestType.Change -> ChangeResponse
+            RequestType.Delete -> DeleteResponse
+            RequestType.Get, RequestType.Scan -> maryk.core.query.responses.ValuesResponse
+            RequestType.GetChanges, RequestType.ScanChanges -> ChangesResponse
+            RequestType.GetUpdates, RequestType.ScanUpdates, RequestType.ScanUpdateHistory -> UpdatesResponse
+            RequestType.Collect -> error("CollectRequest handled above")
+        } as IsTypedObjectDataModel<in IsResponse, *, RequestContext, RequestContext>
+
+        return BatchRequestDescriptor(responseModel, dataModel)
     }
 
     override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
@@ -321,59 +473,146 @@ class RemoteDataStore private constructor(
         val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(transportable), context, MAX_REQUEST_BODY_BYTES)
 
         return callbackFlow {
-            val statement = httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.flowPath)) {
-                headers {
-                    append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
-                    append(HttpHeaders.Accept, RemoteStoreProtocol.streamContentType)
-                    appendBearerToken(bearerToken)
-                }
-                setBody(payload)
-            }
-
             val job = launch(Dispatchers.Default) {
-                statement.execute { response ->
-                    requireSuccess(response, "flow")
-                    requireContentType(response, RemoteStoreProtocol.streamContentType, "flow")
-                    val channel = response.bodyAsChannel()
-                    val handle = RemoteFlowHandle(response, channel)
-                    listeners.add(handle)
-
+                val useFlowProtocolV2 = flowRetryPolicy.maxReconnectAttempts > 0u ||
+                    flowRetryPolicy.heartbeatTimeoutMillis != null
+                var reconnectAttempts = 0u
+                var reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
+                var lastDeliveredVersion: ULong? = null
+                var deliveredAtLastVersion = 0
+                while (true) {
                     try {
-                        val lengthBuffer = ByteArray(4)
-                        while (!channel.isClosedForRead) {
-                            val lengthResult = readFrameLength(channel, lengthBuffer) ?: break
-                            if (lengthResult.length < 0) {
-                                throw IllegalStateException("Invalid streamed response length prefix: ${lengthResult.length}")
-                            }
-                            if (lengthResult.length == 0) {
-                                throw IllegalStateException("Invalid streamed response length prefix: 0")
-                            }
-                            if (lengthResult.length > MAX_FRAME_SIZE_BYTES) {
-                                throw IllegalStateException("Streamed response frame exceeds max size: ${lengthResult.length} > $MAX_FRAME_SIZE_BYTES")
-                            }
-                            val messageBytes = ByteArray(lengthResult.length)
-                            readFramePayload(channel, messageBytes)
-                            val responseContext = RequestContext(definitionsContext, dataModel = request.dataModel)
-                            val updatesResponse = RemoteStoreCodec.decode(UpdatesResponse.Serializer, messageBytes, responseContext)
-                            if (updatesResponse.updates.isEmpty()) {
-                                throw IllegalStateException("Remote store flow returned empty update frame")
-                            }
-                            if (updatesResponse.dataModel.Meta.name != request.dataModel.Meta.name) {
-                                throw IllegalStateException(
-                                    "Remote store flow data model mismatch: expected `${request.dataModel.Meta.name}` but got `${updatesResponse.dataModel.Meta.name}`"
-                                )
-                            }
-                            updatesResponse.updates.forEach { update ->
-                                @Suppress("UNCHECKED_CAST")
-                                val sendResult = trySend(update as IsUpdateResponse<DM>)
-                                if (sendResult.isFailure) {
-                                    return@execute
+                        var receivedFrame = false
+                        val replayBoundaryVersion = lastDeliveredVersion.takeIf { reconnectAttempts > 0u }
+                        val replayBoundaryCount = deliveredAtLastVersion
+                        var replayedAtBoundary = 0
+                        var replayingInitialState = replayBoundaryVersion != null
+                        val statement = httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.flowPath)) {
+                            headers {
+                                append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                                append(HttpHeaders.Accept, RemoteStoreProtocol.streamContentType)
+                                appendBearerToken(bearerToken)
+                                if (useFlowProtocolV2) {
+                                    append(
+                                        RemoteStoreProtocol.flowProtocolHeader,
+                                        RemoteStoreProtocol.resumableFlowProtocol,
+                                    )
                                 }
                             }
+                            setBody(payload)
                         }
-                    } finally {
-                        handle.close()
-                        listeners.remove(handle)
+                        statement.execute { response ->
+                            requireSuccess(response, "flow")
+                            requireContentType(response, RemoteStoreProtocol.streamContentType, "flow")
+                            val channel = response.bodyAsChannel()
+                            val handle = RemoteFlowHandle(response, channel)
+                            listeners.add(handle)
+
+                            try {
+                                val lengthBuffer = ByteArray(4)
+                                while (!channel.isClosedForRead) {
+                                    val lengthResult = try {
+                                        val heartbeatTimeoutMillis = flowRetryPolicy.heartbeatTimeoutMillis
+                                        if (heartbeatTimeoutMillis == null) {
+                                            readFrameLength(channel, lengthBuffer)
+                                        } else {
+                                            withTimeout(heartbeatTimeoutMillis) {
+                                                readFrameLength(channel, lengthBuffer)
+                                            }
+                                        }
+                                    } catch (_: TimeoutCancellationException) {
+                                        throw RemoteFlowDisconnectedException(
+                                            "Remote store flow heartbeat timed out"
+                                        )
+                                    } ?: break
+                                    if (lengthResult.length < 0) {
+                                        throw IllegalStateException("Invalid streamed response length prefix: ${lengthResult.length}")
+                                    }
+                                    if (lengthResult.length == 0) {
+                                        if (useFlowProtocolV2) {
+                                            continue
+                                        }
+                                        throw IllegalStateException("Invalid streamed response length prefix: 0")
+                                    }
+                                    if (lengthResult.length > MAX_FRAME_SIZE_BYTES) {
+                                        throw IllegalStateException("Streamed response frame exceeds max size: ${lengthResult.length} > $MAX_FRAME_SIZE_BYTES")
+                                    }
+                                    val messageBytes = ByteArray(lengthResult.length)
+                                    readFramePayload(channel, messageBytes)
+                                    val responseContext = RequestContext(definitionsContext, dataModel = request.dataModel)
+                                    val updatesResponse = RemoteStoreCodec.decode(UpdatesResponse.Serializer, messageBytes, responseContext)
+                                    if (updatesResponse.updates.isEmpty()) {
+                                        throw IllegalStateException("Remote store flow returned empty update frame")
+                                    }
+                                    if (updatesResponse.dataModel.Meta.name != request.dataModel.Meta.name) {
+                                        throw IllegalStateException(
+                                            "Remote store flow data model mismatch: expected `${request.dataModel.Meta.name}` but got `${updatesResponse.dataModel.Meta.name}`"
+                                        )
+                                    }
+                                    updatesResponse.updates.forEach { update ->
+                                        val isRepeatedInitialState = if (replayingInitialState) {
+                                            when {
+                                                update.version < replayBoundaryVersion!! -> true
+                                                update.version == replayBoundaryVersion &&
+                                                    replayedAtBoundary < replayBoundaryCount -> {
+                                                    replayedAtBoundary++
+                                                    true
+                                                }
+                                                else -> {
+                                                    replayingInitialState = false
+                                                    false
+                                                }
+                                            }
+                                        } else {
+                                            false
+                                        }
+                                        if (!isRepeatedInitialState) {
+                                            @Suppress("UNCHECKED_CAST")
+                                            val sendResult = trySend(update as IsUpdateResponse<DM>)
+                                            if (sendResult.isFailure) {
+                                                return@execute
+                                            }
+                                            if (update.version == lastDeliveredVersion) {
+                                                deliveredAtLastVersion++
+                                            } else {
+                                                lastDeliveredVersion = update.version
+                                                deliveredAtLastVersion = 1
+                                            }
+                                        }
+                                    }
+                                    receivedFrame = true
+                                }
+                            } finally {
+                                handle.close()
+                                listeners.remove(handle)
+                            }
+                        }
+                        if (flowRetryPolicy.maxReconnectAttempts == 0u) {
+                            return@launch
+                        }
+                        throw RemoteFlowDisconnectedException(
+                            if (receivedFrame) {
+                                "Remote store flow disconnected"
+                            } else {
+                                "Remote store flow ended before its first update"
+                            }
+                        )
+                    } catch (error: Throwable) {
+                        if (error is CancellationException) throw error
+                        error.rethrowIfFatal()
+                        if (
+                            !isRetryableRemoteFlowFailure(error) ||
+                            reconnectAttempts >= flowRetryPolicy.maxReconnectAttempts
+                        ) {
+                            throw error
+                        }
+                        reconnectAttempts++
+                        if (reconnectDelayMillis > 0) {
+                            delay(reconnectDelayMillis)
+                        }
+                        reconnectDelayMillis = (
+                            reconnectDelayMillis.toDouble() * flowRetryPolicy.backoffMultiplier
+                        ).toLong().coerceAtMost(flowRetryPolicy.maxDelayMillis)
                     }
                 }
             }
@@ -431,6 +670,43 @@ class RemoteDataStore private constructor(
         }
     }
 
+    override suspend fun getMigrationStatuses(): Map<UInt, MigrationRuntimeStatus> =
+        executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Status)).statuses
+
+    override suspend fun getMigrationMetrics(): Map<UInt, MigrationMetrics> =
+        executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Status)).metrics
+
+    override suspend fun getMigrationSnapshot(): MigrationAdminSnapshot {
+        val response = executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Status))
+        return MigrationAdminSnapshot(response.statuses, response.metrics)
+    }
+
+    override suspend fun requestMigrationPause(modelId: UInt): Boolean =
+        executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Pause, modelId)).accepted == true
+
+    override suspend fun requestMigrationResume(modelId: UInt): Boolean =
+        executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Resume, modelId)).accepted == true
+
+    override suspend fun requestMigrationCancel(modelId: UInt, reason: String): Boolean =
+        executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Cancel, modelId, reason)).accepted == true
+
+    private suspend fun executeMigrationAdmin(request: RemoteMigrationRequest): RemoteMigrationResponse {
+        val response = httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.migrationsPath)) {
+            headers {
+                append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                appendBearerToken(bearerToken)
+            }
+            setBody(RemoteMigrationAdminCodec.encodeRequest(request))
+        }
+        requireSuccess(response, "migration administration")
+        requireContentType(response, RemoteStoreProtocol.contentType, "migration administration")
+        return RemoteMigrationAdminCodec.decodeResponse(
+            readResponseBytes(response, "migration administration"),
+            request.operation,
+        )
+    }
+
     override suspend fun close() {
         listeners.closeAll()
         sshTunnel?.close()
@@ -452,6 +728,9 @@ class RemoteDataStore private constructor(
         }
     }
 }
+
+internal fun isRetryableRemoteFlowFailure(error: Throwable): Boolean =
+    error is RemoteFlowDisconnectedException || error is IOException
 
 private fun HeadersBuilder.appendBearerToken(bearerToken: String?) {
     if (bearerToken != null) {
@@ -552,7 +831,7 @@ private suspend fun readResponseBytes(
 
 private const val MAX_FRAME_SIZE_BYTES = 16 * 1024 * 1024
 private const val MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024
-private const val MAX_RESPONSE_BODY_BYTES = MAX_FRAME_SIZE_BYTES + 4
+private const val MAX_BATCH_RESPONSE_BODY_BYTES = 64 * 1024 * 1024
 private const val MAX_ERROR_PREVIEW_BYTES = 4096
 
 private suspend fun readFrameLength(
@@ -566,7 +845,7 @@ private suspend fun readFrameLength(
             channel.readFully(lengthBuffer, read, lengthBuffer.size - read)
         }.getOrElse {
             it.rethrowIfFatal()
-            throw IllegalStateException("Stream ended while reading frame length prefix", it)
+            throw RemoteFlowDisconnectedException("Stream ended while reading frame length prefix", it)
         }
     }
     return RemoteStoreCodec.readLengthPrefix(lengthBuffer, 0)
@@ -580,6 +859,6 @@ private suspend fun readFramePayload(
         channel.readFully(payload, 0, payload.size)
     }.getOrElse {
         it.rethrowIfFatal()
-        throw IllegalStateException("Stream ended while reading frame payload", it)
+        throw RemoteFlowDisconnectedException("Stream ended while reading frame payload", it)
     }
 }

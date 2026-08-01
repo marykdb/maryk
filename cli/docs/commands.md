@@ -14,6 +14,7 @@
 - `undelete <model> <key> [--if-version <n>]` — restore a soft-deleted record.
 - `changes <model> <key> [options]` — show versioned changes for a record.
 - `scan <model> [options]` — browse records in a scrolling list.
+- `migrations [status|pause|resume|cancel]` — inspect or control managed migrations.
 
 ## Quick example
 
@@ -96,6 +97,19 @@ Options:
 When the output viewer is shown, `save` supports YAML/JSON/PROTO, plus Kotlin output:
 - `save <dir> --kotlin --package <name>` (generates Kotlin files)
 - `save <dir> --no-deps` (export without dependencies)
+
+## Migrations
+
+```text
+migrations status
+migrations pause <model>
+migrations resume <model>
+migrations cancel <model> [reason]
+```
+
+The command works with local RocksDB/FoundationDB stores and authenticated remote
+stores that expose migration administration. Status includes phase, attempt,
+estimated completion time, and counters when available.
 
 ## Add
 

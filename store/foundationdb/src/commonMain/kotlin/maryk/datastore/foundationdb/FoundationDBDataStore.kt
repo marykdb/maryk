@@ -110,11 +110,12 @@ import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
-import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
+import maryk.datastore.shared.migration.MigrationAdmin
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.runCatchingNonFatal
 import maryk.datastore.shared.updates.Update
 import maryk.foundationdb.Database
@@ -160,7 +161,7 @@ class FoundationDBDataStore private constructor(
     coroutineContext = Dispatchers.IO,
     maxConcurrentReads = maxConcurrentReads,
     readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
-) {
+), MigrationAdmin {
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
@@ -1365,6 +1366,17 @@ class FoundationDBDataStore private constructor(
     fun migrationMetrics(modelId: UInt): MigrationMetrics = migrationMetricsInternal(modelId)
 
     fun migrationMetrics(): Map<UInt, MigrationMetrics> = migrationMetricsInternal()
+
+    override suspend fun getMigrationStatuses(): Map<UInt, MigrationRuntimeStatus> = migrationStatuses()
+
+    override suspend fun getMigrationMetrics(): Map<UInt, MigrationMetrics> = migrationMetrics()
+
+    override suspend fun requestMigrationPause(modelId: UInt): Boolean = pauseMigration(modelId)
+
+    override suspend fun requestMigrationResume(modelId: UInt): Boolean = resumeMigration(modelId)
+
+    override suspend fun requestMigrationCancel(modelId: UInt, reason: String): Boolean =
+        cancelMigration(modelId, reason)
 
     suspend fun migrationAuditEvents(modelId: UInt, limit: Int = 100): List<MigrationAuditEvent> = migrationAuditEventsInternal(modelId, limit)
 

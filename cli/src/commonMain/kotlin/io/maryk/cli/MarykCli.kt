@@ -17,6 +17,7 @@ import io.maryk.cli.commands.GetCommand
 import io.maryk.cli.commands.HelpCommand
 import io.maryk.cli.commands.ListCommand
 import io.maryk.cli.commands.ModelCommand
+import io.maryk.cli.commands.MigrationsCommand
 import io.maryk.cli.commands.ScanCommand
 import io.maryk.cli.commands.AddCommand
 import io.maryk.cli.commands.ChangesCommand
@@ -448,6 +449,7 @@ private fun defaultRegistry(
                 ScanCommand(),
                 ListCommand(),
                 ModelCommand(),
+                MigrationsCommand(),
             )
             platformCommands().forEach { register(it) }
         }

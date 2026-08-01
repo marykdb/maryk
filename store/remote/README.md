@@ -39,6 +39,29 @@ server.start(
 )
 ```
 
+Programmatic deployments can replace the shared token with an identity provider
+and authorize each decoded operation by principal, request type, and model:
+
+```kotlin
+RemoteStoreServerConfig(
+    authenticator = RemoteStoreAuthenticator { authorizationHeader ->
+        identityProvider.authenticate(authorizationHeader)
+    },
+    authorizer = RemoteStoreAuthorizer { request ->
+        acl.allows(
+            principal = request.principal,
+            operation = request.operation,
+            requestType = request.requestType,
+            modelName = request.modelName,
+        )
+    },
+)
+```
+
+Denied add/change/delete requests return an `AuthFail` status per input object.
+Denied reads and unsupported update shapes return HTTP 403. Authentication failures
+return HTTP 401.
+
 FoundationDB:
 
 ```text
@@ -76,6 +99,7 @@ val remote = RemoteDataStore.connect(
     RemoteStoreConfig(
         baseUrl = "https://store.example.test",
         bearerToken = System.getenv("MARYK_BEARER_TOKEN"),
+        flowRetryPolicy = RemoteFlowRetryPolicy.Default,
     )
 )
 ```
@@ -85,6 +109,12 @@ Notes:
 - HTTP and HTTPS are supported. Never send a bearer token over an untrusted plain HTTP connection.
 - `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
 - For direct internet exposure, terminate TLS in a reverse proxy and forward to the loopback server.
+- Flow reconnect is opt-in to preserve legacy completion behavior. `Default` retries
+  five times with bounded exponential backoff. A reconnect obtains a fresh initial
+  state, skips a repeated initial version, then continues with later updates.
+- Set `heartbeatTimeoutMillis` when the client must reconnect stalled connections.
+  Protocol-v2 clients negotiate server heartbeat frames; legacy clients never
+  receive them.
 
 Use it like any other store:
 
@@ -92,6 +122,27 @@ Use it like any other store:
 val add = remote.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "haha" }))
 val get = remote.execute(SimpleMarykModel.get(add.statuses.first().key))
 ```
+
+Stores with managed migrations also expose the shared `MigrationAdmin` API through
+the remote client. The CLI command `migrations status|pause|resume|cancel` and the
+desktop Operations → Migrations dialog use the same authenticated endpoint.
+Authorization callbacks receive `RemoteStoreOperation.MigrationAdmin` and the
+target model name for control operations.
+
+Execute several ordered requests in one round trip:
+
+```kotlin
+val responses = remote.execute(
+    Requests(
+        SimpleMarykModel.add(firstValues),
+        SimpleMarykModel.add(secondValues),
+    )
+)
+```
+
+`Requests.create(context = ...)` also supports Collect & Inject batches containing
+unresolved `Inject` values. Responses preserve request order. Execution is fail-fast
+and is not transactionally atomic.
 
 ## SSH tunneling
 
@@ -127,12 +178,17 @@ Request requirements:
 - `Content-Type: application/x-maryk-protobuf` on all `POST` endpoints.
 - Empty request bodies are rejected.
 - Request body max size is 16 MiB.
+- Each response frame is limited to 16 MiB; a batched execute response is limited
+  to 64 MiB total.
 
 - `GET /v1/info` → `RemoteStoreInfo` (definitions + model id map + capabilities)
 - `GET /v1/snapshot-version` → authoritative 8-byte point-in-time read boundary
-- `POST /v1/execute` → `Requests` in, length-prefixed response(s) out
+- `POST /v1/execute` → `Requests` in. Legacy single-request clients receive one
+  raw ProtoBuf response; clients requesting `X-Maryk-Execute-Protocol: 2`
+  receive length-prefixed response frames and may send batches.
 - `POST /v1/flow` → `Requests` (single fetch) in, stream of length-prefixed `UpdatesResponse`
 - `POST /v1/process-update` → `UpdateResponse` in, `ProcessResponse` out
+- `POST /v1/admin/migrations` → versioned migration status/control payloads
 
 Point-in-time export and backup require `GET /v1/snapshot-version`. Upgrade the
 Remote client and server together before relying on that guarantee: a newer
@@ -141,7 +197,10 @@ than exporting pages from different points in time.
 
 Streaming format:
 - Each message is `length (4 bytes, big-endian)` + `ProtoBuf payload`.
-- Client rejects zero/negative lengths, truncated frames, trailing bytes, and frames larger than 16 MiB.
+- Legacy clients reject zero/negative lengths, truncated frames, trailing bytes,
+  and frames larger than 16 MiB.
+- Clients requesting `X-Maryk-Flow-Protocol: 2` accept zero-length heartbeat frames.
+  The payload frame format remains unchanged.
 
 ## When to use
 

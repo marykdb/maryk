@@ -6,27 +6,37 @@ import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.cio.CIO as ServerCIO
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
+import io.ktor.utils.io.readRemaining
 import java.net.Socket
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.readByteArray
 import maryk.core.models.key
+import maryk.core.models.migration.MigrationMetrics
+import maryk.core.models.migration.MigrationRuntimeState
+import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.Requests
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
+import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.memory.InMemoryDataStore
+import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.migration.MigrationAdmin
 import maryk.test.models.SimpleMarykModel
 
 class RemoteStoreServerTest {
@@ -46,6 +56,12 @@ class RemoteStoreServerTest {
         validateRemoteStoreServerBinding(
             "0.0.0.0",
             RemoteStoreServerConfig(bearerToken = "secret"),
+        )
+        validateRemoteStoreServerBinding(
+            "0.0.0.0",
+            RemoteStoreServerConfig(
+                authenticator = RemoteStoreAuthenticator { RemoteStorePrincipal("service") }
+            ),
         )
         validateRemoteStoreServerBinding(
             "0.0.0.0",
@@ -70,9 +86,11 @@ class RemoteStoreServerTest {
         withServer(RemoteStoreServerConfig(bearerToken = "secret")) { baseUrl, client ->
             listOf(
                 RemoteStoreProtocol.infoPath to false,
+                RemoteStoreProtocol.snapshotVersionPath to false,
                 RemoteStoreProtocol.executePath to true,
                 RemoteStoreProtocol.flowPath to true,
                 RemoteStoreProtocol.processUpdatePath to true,
+                RemoteStoreProtocol.migrationsPath to true,
             ).forEach { (path, post) ->
                 val missingResponse = if (post) client.post("$baseUrl$path") else client.get("$baseUrl$path")
                 assertEquals(HttpStatusCode.Unauthorized, missingResponse.status, path)
@@ -93,6 +111,89 @@ class RemoteStoreServerTest {
                 header(HttpHeaders.Authorization, "Bearer secret")
             }
             assertEquals(HttpStatusCode.OK, response.status)
+        }
+    }
+
+    @Test
+    fun migrationAdministrationRoundTripsThroughRemoteClient() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val adminStore = TestMigrationAdminStore(store)
+        val (server, port) = startTestServer { remoteStoreModule(adminStore) }
+        val client = HttpClient(CIO) { expectSuccess = false }
+        try {
+            val remote = RemoteDataStore.connect(
+                RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port", httpClient = client)
+            )
+            assertEquals(MigrationRuntimeState.Running, remote.getMigrationStatuses().getValue(1u).state)
+            assertEquals(2u, remote.getMigrationMetrics().getValue(1u).retries)
+            assertTrue(remote.requestMigrationPause(1u))
+            assertEquals(1u, adminStore.pausedModelId)
+            assertTrue(remote.requestMigrationResume(1u))
+            assertEquals(1u, adminStore.resumedModelId)
+            assertTrue(remote.requestMigrationCancel(1u, "operator maintenance"))
+            assertEquals(1u, adminStore.canceledModelId)
+            assertEquals("operator maintenance", adminStore.cancelReason)
+            remote.close()
+        } finally {
+            client.close()
+            server.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun migrationAdministrationHonorsAuthorizer() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val adminStore = TestMigrationAdminStore(store)
+        val (server, port) = startTestServer {
+            remoteStoreModule(
+                adminStore,
+                RemoteStoreServerConfig(
+                    authorizer = RemoteStoreAuthorizer { request ->
+                        request.operation == RemoteStoreOperation.Info
+                    },
+                ),
+            )
+        }
+        val client = HttpClient(CIO) { expectSuccess = false }
+        try {
+            val remote = RemoteDataStore.connect(
+                RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port", httpClient = client)
+            )
+            val error = assertFailsWith<IllegalStateException> {
+                remote.getMigrationSnapshot()
+            }
+            assertTrue(error.message.orEmpty().contains("HTTP 403"))
+            remote.close()
+        } finally {
+            client.close()
+            server.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun customAuthenticatorAndAuthorizerProtectInfo() = runBlocking {
+        val config = RemoteStoreServerConfig(
+            authenticator = RemoteStoreAuthenticator { header ->
+                if (header == "ApiKey accepted") RemoteStorePrincipal("reporter") else null
+            },
+            authorizer = RemoteStoreAuthorizer { request ->
+                request.principal.id == "reporter" &&
+                    request.operation == RemoteStoreOperation.Info
+            },
+        )
+        withServer(config) { baseUrl, client ->
+            assertEquals(
+                HttpStatusCode.Unauthorized,
+                client.get("$baseUrl${RemoteStoreProtocol.infoPath}").status,
+            )
+            assertEquals(
+                HttpStatusCode.OK,
+                client.get("$baseUrl${RemoteStoreProtocol.infoPath}") {
+                    header(HttpHeaders.Authorization, "ApiKey accepted")
+                }.status,
+            )
         }
     }
 
@@ -206,6 +307,37 @@ class RemoteStoreServerTest {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
                 setBody(multipleStoreRequestsPayload())
+            }
+            assertEquals(HttpStatusCode.OK, response.status)
+        }
+    }
+
+    @Test
+    fun executeKeepsLegacySingleResponseUnframed() = runBlocking {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(validExecutePayload())
+            }
+            assertEquals(HttpStatusCode.OK, response.status)
+            val payload = response.bodyAsChannel().readRemaining().readByteArray()
+            val decoded = RemoteStoreCodec.decode(
+                AddResponse.Serializer,
+                payload,
+                testRequestContext(),
+            )
+            assertEquals(1, decoded.statuses.size)
+        }
+    }
+
+    @Test
+    fun executeAcceptsCollectRequest() = runBlocking {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(collectStoreRequestPayload())
             }
             assertEquals(HttpStatusCode.OK, response.status)
         }
@@ -690,6 +822,37 @@ class RemoteStoreServerTest {
     }
 }
 
+private class TestMigrationAdminStore(
+    private val delegate: IsDataStore,
+) : IsDataStore by delegate, MigrationAdmin {
+    var pausedModelId: UInt? = null
+    var resumedModelId: UInt? = null
+    var canceledModelId: UInt? = null
+    var cancelReason: String? = null
+
+    override suspend fun getMigrationStatuses(): Map<UInt, MigrationRuntimeStatus> =
+        mapOf(1u to MigrationRuntimeStatus(MigrationRuntimeState.Running))
+
+    override suspend fun getMigrationMetrics(): Map<UInt, MigrationMetrics> =
+        mapOf(1u to MigrationMetrics(retries = 2u))
+
+    override suspend fun requestMigrationPause(modelId: UInt): Boolean {
+        pausedModelId = modelId
+        return true
+    }
+
+    override suspend fun requestMigrationResume(modelId: UInt): Boolean {
+        resumedModelId = modelId
+        return true
+    }
+
+    override suspend fun requestMigrationCancel(modelId: UInt, reason: String): Boolean {
+        canceledModelId = modelId
+        cancelReason = reason
+        return true
+    }
+}
+
 private suspend fun withServer(
     config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
     block: suspend (String, HttpClient) -> Unit,
@@ -752,6 +915,18 @@ private fun multipleStoreRequestsPayload(): ByteArray =
             listOf(
                 SimpleMarykModel.add(SimpleMarykModel.create { value with "a" }),
                 SimpleMarykModel.add(SimpleMarykModel.create { value with "b" }),
+            )
+        ),
+        testRequestContext(),
+    )
+
+private fun collectStoreRequestPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            CollectRequest(
+                "created",
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "collected" }),
             )
         ),
         testRequestContext(),

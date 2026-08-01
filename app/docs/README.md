@@ -75,6 +75,7 @@ Notes:
   - Center: data/model tabs.
   - Right: record inspector.
   - Top bar: connection info, actions, panel toggles.
+  - Operations menu: migration status, metrics, pause, resume, cancel, and refresh.
 
 ## Data browsing
 

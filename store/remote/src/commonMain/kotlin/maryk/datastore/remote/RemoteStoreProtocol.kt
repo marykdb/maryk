@@ -3,10 +3,15 @@ package maryk.datastore.remote
 internal object RemoteStoreProtocol {
     const val contentType = "application/x-maryk-protobuf"
     const val streamContentType = "application/x-maryk-protobuf-stream"
+    const val executeProtocolHeader = "X-Maryk-Execute-Protocol"
+    const val batchExecuteProtocol = "2"
+    const val flowProtocolHeader = "X-Maryk-Flow-Protocol"
+    const val resumableFlowProtocol = "2"
 
     const val infoPath = "/v1/info"
     const val executePath = "/v1/execute"
     const val flowPath = "/v1/flow"
     const val processUpdatePath = "/v1/process-update"
     const val snapshotVersionPath = "/v1/snapshot-version"
+    const val migrationsPath = "/v1/admin/migrations"
 }

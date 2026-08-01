@@ -126,12 +126,13 @@ import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
 import maryk.datastore.shared.SnapshotVersionProvider
-import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
+import maryk.datastore.shared.migration.MigrationAdmin
 import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.requestExecutionKind
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.TypeIndicator
 import maryk.rocksdb.ColumnFamilyDescriptor
@@ -166,7 +167,7 @@ class RocksDBDataStore private constructor(
     coroutineContext = Dispatchers.IO,
     maxConcurrentReads = maxConcurrentReads,
     readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
-), SnapshotVersionProvider {
+), MigrationAdmin, SnapshotVersionProvider {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
@@ -1122,6 +1123,17 @@ class RocksDBDataStore private constructor(
     fun migrationMetrics(modelId: UInt): MigrationMetrics = migrationMetricsInternal(modelId)
 
     fun migrationMetrics(): Map<UInt, MigrationMetrics> = migrationMetricsInternal()
+
+    override suspend fun getMigrationStatuses(): Map<UInt, MigrationRuntimeStatus> = migrationStatuses()
+
+    override suspend fun getMigrationMetrics(): Map<UInt, MigrationMetrics> = migrationMetrics()
+
+    override suspend fun requestMigrationPause(modelId: UInt): Boolean = pauseMigration(modelId)
+
+    override suspend fun requestMigrationResume(modelId: UInt): Boolean = resumeMigration(modelId)
+
+    override suspend fun requestMigrationCancel(modelId: UInt, reason: String): Boolean =
+        cancelMigration(modelId, reason)
 
     suspend fun migrationAuditEvents(modelId: UInt, limit: Int = 100): List<MigrationAuditEvent> = migrationAuditEventsInternal(modelId, limit)
 

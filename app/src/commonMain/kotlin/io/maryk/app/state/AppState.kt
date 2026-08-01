@@ -70,6 +70,8 @@ import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.captureSnapshotVersion
+import maryk.datastore.shared.migration.MigrationAdmin
+import maryk.datastore.shared.migration.MigrationAdminSnapshot
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
 import kotlin.time.Instant
@@ -151,6 +153,18 @@ class BrowserState(
         private set
 
     var lastActionMessage by mutableStateOf<String?>(null)
+        private set
+
+    var migrationDialogVisible by mutableStateOf(false)
+        private set
+
+    var migrationSnapshot by mutableStateOf<MigrationAdminSnapshot?>(null)
+        private set
+
+    var migrationStatusMessage by mutableStateOf<String?>(null)
+        private set
+
+    var isMigrationAdminWorking by mutableStateOf(false)
         private set
 
     var exportDialog by mutableStateOf<ExportDialogRequest?>(null)
@@ -1061,6 +1075,60 @@ class BrowserState(
     }
 
     fun modelRowCount(modelId: UInt): ModelRowCount? = modelRowCounts[modelId]
+
+    fun requestMigrationDialog() {
+        migrationDialogVisible = true
+        refreshMigrationAdmin()
+    }
+
+    fun closeMigrationDialog() {
+        migrationDialogVisible = false
+    }
+
+    fun refreshMigrationAdmin() {
+        val admin = activeConnection?.dataStore as? MigrationAdmin
+        if (admin == null) {
+            migrationSnapshot = null
+            migrationStatusMessage = "This store does not expose migration administration."
+            return
+        }
+        isMigrationAdminWorking = true
+        migrationStatusMessage = null
+        scope.launch {
+            runCatchingNonFatal {
+                admin.getMigrationSnapshot()
+            }.onSuccess {
+                migrationSnapshot = it
+            }.onFailure {
+                migrationStatusMessage = it.message ?: "Could not load migration state."
+            }
+            isMigrationAdminWorking = false
+        }
+    }
+
+    fun controlMigration(modelId: UInt, operation: String) {
+        val admin = activeConnection?.dataStore as? MigrationAdmin ?: return
+        isMigrationAdminWorking = true
+        migrationStatusMessage = null
+        scope.launch {
+            val result = runCatchingNonFatal {
+                when (operation) {
+                    "pause" -> admin.requestMigrationPause(modelId)
+                    "resume" -> admin.requestMigrationResume(modelId)
+                    "cancel" -> admin.requestMigrationCancel(modelId)
+                    else -> false
+                }
+            }
+            migrationStatusMessage = result.fold(
+                onSuccess = { accepted ->
+                    if (accepted) "Migration $operation accepted." else "Migration $operation is not applicable."
+                },
+                onFailure = { it.message ?: "Migration control failed." },
+            )
+            isMigrationAdminWorking = false
+            if (result.getOrNull() == true) refreshMigrationAdmin()
+        }
+    }
 
     fun requestExportAllDialog() {
         exportDialog = ExportDialogRequest(modelId = null)

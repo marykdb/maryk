@@ -260,6 +260,10 @@ fun Browser(
     if (state.showDeleteDialog) {
         DeleteDialog(state)
     }
+
+    if (state.migrationDialogVisible) {
+        MigrationAdminDialog(state)
+    }
 }
 
 internal fun shouldRestoreLastModel(
@@ -743,6 +747,82 @@ private fun DeleteDialog(state: BrowserState) {
         },
         dismissButton = {
             ModalSecondaryButton(label = "Cancel", onClick = { state.closeDeleteDialog() })
+        },
+    )
+}
+
+@Composable
+private fun MigrationAdminDialog(state: BrowserState) {
+    val snapshot = state.migrationSnapshot
+    val ids = snapshot?.let { (it.statuses.keys + it.metrics.keys).sorted() }.orEmpty()
+    AlertDialog(
+        onDismissRequest = { state.closeMigrationDialog() },
+        title = { Text("Migrations", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                when {
+                    state.isMigrationAdminWorking && snapshot == null ->
+                        Text("Loading migration state…", style = MaterialTheme.typography.bodySmall)
+                    ids.isEmpty() ->
+                        Text("No active or recorded migrations.", style = MaterialTheme.typography.bodySmall)
+                    else -> ids.forEach { modelId ->
+                        val modelName = state.models.firstOrNull { it.id == modelId }?.name ?: "model-$modelId"
+                        val status = snapshot?.statuses?.get(modelId)
+                        val metrics = snapshot?.metrics?.get(modelId)
+                        Surface(tonalElevation = 1.dp) {
+                            Column(
+                                modifier = Modifier.fillMaxWidth().padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Text("$modelName ($modelId)", style = MaterialTheme.typography.labelLarge)
+                                Text(
+                                    buildList {
+                                        status?.let {
+                                            add(it.state.name)
+                                            it.phase?.let { phase -> add(phase.name) }
+                                            it.attempt?.let { attempt -> add("attempt $attempt") }
+                                        }
+                                        metrics?.let {
+                                            add("${it.completed} completed")
+                                            if (it.failed > 0u) add("${it.failed} failed")
+                                            if (it.retries > 0u) add("${it.retries} retries")
+                                        }
+                                    }.joinToString(" • "),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    OutlinedButton(
+                                        onClick = { state.controlMigration(modelId, "pause") },
+                                        enabled = !state.isMigrationAdminWorking,
+                                    ) { Text("Pause") }
+                                    OutlinedButton(
+                                        onClick = { state.controlMigration(modelId, "resume") },
+                                        enabled = !state.isMigrationAdminWorking,
+                                    ) { Text("Resume") }
+                                    OutlinedButton(
+                                        onClick = { state.controlMigration(modelId, "cancel") },
+                                        enabled = !state.isMigrationAdminWorking,
+                                    ) { Text("Cancel") }
+                                }
+                            }
+                        }
+                    }
+                }
+                state.migrationStatusMessage?.let {
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        },
+        confirmButton = {
+            ModalPrimaryButton(
+                label = "Refresh",
+                onClick = { state.refreshMigrationAdmin() },
+                enabled = !state.isMigrationAdminWorking,
+            )
+        },
+        dismissButton = {
+            ModalSecondaryButton(label = "Close", onClick = { state.closeMigrationDialog() })
         },
     )
 }

@@ -14,10 +14,12 @@ import io.ktor.server.routing.routing
 import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
 import java.io.BufferedInputStream
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -25,14 +27,22 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.io.readByteArray
+import maryk.core.inject.Inject
 import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.types.invoke
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
+import maryk.core.query.requests.CollectRequest
+import maryk.core.query.requests.GetRequest
+import maryk.core.query.requests.RequestType
+import maryk.core.query.requests.Requests
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
 import maryk.core.query.responses.AddResponse
@@ -41,16 +51,25 @@ import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.properties.types.Key
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.AuthFail
 import maryk.datastore.memory.InMemoryDataStore
-import maryk.datastore.shared.captureSnapshotVersion
+import maryk.test.models.ReferencesModel
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
+    @Test
+    fun retryPolicyRecognizesTransportFailuresOnly() {
+        assertTrue(isRetryableRemoteFlowFailure(IOException("network down")))
+        assertTrue(isRetryableRemoteFlowFailure(RemoteFlowDisconnectedException("cut")))
+        assertEquals(false, isRetryableRemoteFlowFailure(IllegalStateException("invalid protocol")))
+    }
+
     @Test
     fun capturesAuthoritativeRemoteSnapshotVersion() = runBlocking {
         val store = InMemoryDataStore.open(
@@ -74,6 +93,155 @@ class RemoteDataStoreTest {
             remote.close()
             engine.stop(500, 500)
             store.close()
+        }
+    }
+
+    @Test
+    fun serverAuthorizerScopesByPrincipalModelAndAction() = runBlocking {
+        val decisions = mutableListOf<RemoteStoreAuthorizationRequest>()
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = RemoteStoreServer(store).start(
+            "127.0.0.1",
+            port,
+            wait = false,
+            config = RemoteStoreServerConfig(
+                bearerToken = "scoped-secret",
+                authorizer = RemoteStoreAuthorizer { request ->
+                    decisions.add(request)
+                    request.requestType != RequestType.Add
+                },
+            ),
+        )
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                bearerToken = "scoped-secret",
+            )
+        )
+
+        try {
+            val response = remote.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "denied" })
+            )
+            assertIs<AuthFail<*>>(response.statuses.single())
+            val decision = decisions.single { it.requestType == RequestType.Add }
+            assertEquals("bearer", decision.principal.id)
+            assertEquals(SimpleMarykModel.Meta.name, decision.modelName)
+            assertEquals(RemoteStoreOperation.Execute, decision.operation)
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun executeFlowReconnectsAndSkipsRepeatedInitialState() = runBlocking {
+        val connections = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            reconnectingFlowModule(connections)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 2u,
+                    initialDelayMillis = 0,
+                    maxDelayMillis = 0,
+                ),
+            )
+        )
+
+        try {
+            val updates = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(
+                    SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
+                ).take(3).toList()
+            }
+
+            assertEquals(listOf(1uL, 2uL, 3uL), updates.map { it.version })
+            assertEquals(2, connections.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun executeFlowKeepsNewUpdateAtReconnectBoundaryVersion() = runBlocking {
+        val connections = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            sameVersionReconnectFlowModule(connections)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 2u,
+                    initialDelayMillis = 0,
+                    maxDelayMillis = 0,
+                ),
+            )
+        )
+
+        try {
+            val updates = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(
+                    SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
+                ).take(3).toList()
+            }.map { it as OrderedKeysUpdate<SimpleMarykModel> }
+
+            assertEquals(listOf(1uL, 1uL, 2uL), updates.map { it.version })
+            assertEquals(listOf(1, 2, 3), updates.map { it.keys.single().bytes.last().toInt() })
+            assertEquals(2, connections.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun retryPolicyValidatesBounds() {
+        assertFailsWith<IllegalArgumentException> {
+            RemoteFlowRetryPolicy(initialDelayMillis = -1)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            RemoteFlowRetryPolicy(initialDelayMillis = 2, maxDelayMillis = 1)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            RemoteFlowRetryPolicy(backoffMultiplier = 0.5)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            RemoteFlowRetryPolicy(heartbeatTimeoutMillis = 0)
+        }
+    }
+
+    @Test
+    fun executeFlowProtocolV2AcceptsHeartbeatFrames() = runBlocking {
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            heartbeatThenUpdateFlowModule()
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                flowRetryPolicy = RemoteFlowRetryPolicy(heartbeatTimeoutMillis = 1_000),
+            )
+        )
+
+        try {
+            val update = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(
+                    SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
+                ).first()
+            }
+            assertEquals(3uL, update.version)
+        } finally {
+            remote.close()
+            server.stop(500, 500)
         }
     }
 
@@ -144,6 +312,104 @@ class RemoteDataStoreTest {
                 )
             )
             assertIs<AddResponse<*>>(processResponse.result)
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun remoteExecuteBatchReturnsEveryResponseInOrder() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            val responses = remote.execute(
+                Requests(
+                    SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-first" }),
+                    SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-second" }),
+                )
+            )
+
+            assertEquals(2, responses.size)
+            assertIs<AddResponse<*>>(responses[0])
+            assertIs<AddResponse<*>>(responses[1])
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun remoteExecuteBatchCollectsAndInjectsResponseValues() = runBlocking {
+        val store = InMemoryDataStore.open(
+            dataModelsById = mapOf(
+                1u to SimpleMarykModel,
+                2u to ReferencesModel,
+            )
+        )
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            val first = assertIs<AddSuccess<SimpleMarykModel>>(
+                remote.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-first" }))
+                    .statuses.single()
+            )
+            val second = assertIs<AddSuccess<SimpleMarykModel>>(
+                remote.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-second" }))
+                    .statuses.single()
+            )
+            val references = ReferencesModel.create {
+                this.references with listOf(first.key, second.key)
+            }
+            val referencesKey = assertIs<AddSuccess<ReferencesModel>>(
+                remote.execute(ReferencesModel.add(references)).statuses.single()
+            ).key
+
+            val context = RequestContext(
+                DefinitionsContext(
+                    mutableMapOf(
+                        SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel),
+                        ReferencesModel.Meta.name to DataModelReference(ReferencesModel),
+                    )
+                )
+            )
+            val injectedGet = GetRequest.create(context = context) {
+                from with SimpleMarykModel
+                keys with Inject(
+                    "referencedKeys",
+                    ValuesResponse {
+                        values.atAny {
+                            values.refWithDM(ReferencesModel) { this.references }
+                        }
+                    },
+                )
+            }
+
+            val requests = Requests.create(context = context) {
+                this.requests -= listOf(
+                    RequestType.Collect(
+                        CollectRequest("referencedKeys", ReferencesModel.get(referencesKey))
+                    ),
+                    RequestType.Get(injectedGet),
+                )
+            }
+            val responses = remote.execute(requests)
+
+            assertEquals(2, responses.size)
+            assertEquals(
+                setOf("ha-first", "ha-second"),
+                assertIs<ValuesResponse<SimpleMarykModel>>(responses[1])
+                    .values
+                    .map { it.values { value } }
+                    .toSet(),
+            )
         } finally {
             remote.close()
             engine.stop(500, 500)
@@ -575,6 +841,25 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun executeAcceptsLegacyUnframedSingleResponse() = runBlocking {
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            legacyExecuteModule()
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            val response = remote.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "legacy" })
+            )
+            assertIs<AddSuccess<*>>(response.statuses.single())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
     fun executeFailsOnZeroLengthPrefix() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -865,6 +1150,136 @@ class RemoteDataStoreTest {
     }
 }
 
+private fun Application.reconnectingFlowModule(connections: AtomicInteger) {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.flowPath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            val connection = connections.incrementAndGet()
+            call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                val context = RequestContext(
+                    definitionsContext = DefinitionsContext(
+                        dataModels = mutableMapOf(
+                            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                        )
+                    ),
+                    dataModel = SimpleMarykModel,
+                )
+                val key = SimpleMarykModel.key(ByteArray(16))
+                val updates = if (connection == 1) {
+                    listOf(
+                        OrderedKeysUpdate(listOf(key), 1uL),
+                        OrderedKeysUpdate(listOf(key), 2uL),
+                    )
+                } else {
+                    listOf(
+                        OrderedKeysUpdate(listOf(key), 1uL),
+                        OrderedKeysUpdate(listOf(key), 2uL),
+                        OrderedKeysUpdate(listOf(key), 3uL),
+                    )
+                }
+                for (update in updates) {
+                    val payload = RemoteStoreCodec.encode(
+                        UpdatesResponse.Serializer,
+                        UpdatesResponse(SimpleMarykModel, listOf(update)),
+                        context,
+                    )
+                    writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
+                    writeFully(payload)
+                    flush()
+                }
+            }
+        }
+    }
+}
+
+private fun Application.sameVersionReconnectFlowModule(connections: AtomicInteger) {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.flowPath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            val connection = connections.incrementAndGet()
+            call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                val context = RequestContext(
+                    definitionsContext = DefinitionsContext(
+                        dataModels = mutableMapOf(
+                            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                        )
+                    ),
+                    dataModel = SimpleMarykModel,
+                )
+                val updates = if (connection == 1) {
+                    listOf(OrderedKeysUpdate(listOf(keyEndingIn(1)), 1uL))
+                } else {
+                    listOf(
+                        OrderedKeysUpdate(listOf(keyEndingIn(1)), 1uL),
+                        OrderedKeysUpdate(listOf(keyEndingIn(2)), 1uL),
+                        OrderedKeysUpdate(listOf(keyEndingIn(3)), 2uL),
+                    )
+                }
+                for (update in updates) {
+                    val payload = RemoteStoreCodec.encode(
+                        UpdatesResponse.Serializer,
+                        UpdatesResponse(SimpleMarykModel, listOf(update)),
+                        context,
+                    )
+                    writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
+                    writeFully(payload)
+                    flush()
+                }
+            }
+        }
+    }
+}
+
+private fun keyEndingIn(value: Byte): Key<SimpleMarykModel> =
+    SimpleMarykModel.key(ByteArray(16).also { it[it.lastIndex] = value })
+
+private fun Application.heartbeatThenUpdateFlowModule() {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.flowPath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                writeFully(RemoteStoreCodec.lengthPrefix(0))
+                val context = RequestContext(
+                    definitionsContext = DefinitionsContext(
+                        dataModels = mutableMapOf(
+                            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                        )
+                    ),
+                    dataModel = SimpleMarykModel,
+                )
+                val payload = RemoteStoreCodec.encode(
+                    UpdatesResponse.Serializer,
+                    UpdatesResponse(
+                        SimpleMarykModel,
+                        listOf(
+                            OrderedKeysUpdate(
+                                listOf(SimpleMarykModel.key(ByteArray(16))),
+                                3uL,
+                            )
+                        ),
+                    ),
+                    context,
+                )
+                writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
+                writeFully(payload)
+                flush()
+            }
+        }
+    }
+}
+
 private fun Application.malformedExecuteModule() {
     val infoBytes = defaultInfoBytes()
 
@@ -892,6 +1307,43 @@ private fun Application.malformedExecuteModule() {
             val framed = RemoteStoreCodec.lengthPrefix(payload.size) + payload + byteArrayOf(0x01)
             call.respondBytes(
                 framed,
+                ContentType.parse(RemoteStoreProtocol.contentType),
+                HttpStatusCode.OK,
+            )
+        }
+    }
+}
+
+private fun Application.legacyExecuteModule() {
+    val infoBytes = defaultInfoBytes()
+
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.executePath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            val values = SimpleMarykModel.create { value with "legacy" }
+            val response = AddResponse(
+                dataModel = SimpleMarykModel,
+                statuses = listOf(
+                    AddSuccess(
+                        key = SimpleMarykModel.key(values),
+                        version = 1uL,
+                        changes = emptyList(),
+                    )
+                ),
+            )
+            val context = RequestContext(
+                definitionsContext = DefinitionsContext(
+                    dataModels = mutableMapOf(
+                        SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                    )
+                ),
+                dataModel = SimpleMarykModel,
+            )
+            call.respondBytes(
+                RemoteStoreCodec.encode(AddResponse.Serializer, response, context),
                 ContentType.parse(RemoteStoreProtocol.contentType),
                 HttpStatusCode.OK,
             )

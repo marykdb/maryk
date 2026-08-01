@@ -156,6 +156,13 @@ class HelpCommand : Command {
                 "  - Filter expressions use Maryk YAML tags (e.g. \"!Equals { field: value }\").",
                 "  - For performance, use --order on indexed properties.",
             )
+            "migrations" -> listOf(
+                "migrations [status]",
+                "migrations pause <model>",
+                "migrations resume <model>",
+                "migrations cancel <model> [reason]",
+                "Inspect progress and metrics or control a managed migration.",
+            )
             else -> null
         }
     }

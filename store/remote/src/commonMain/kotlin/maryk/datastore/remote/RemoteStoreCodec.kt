@@ -1,8 +1,10 @@
 package maryk.datastore.remote
 
 import maryk.core.models.serializers.IsObjectDataModelSerializer
+import maryk.core.models.IsObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.protobuf.WriteCache
+import maryk.core.values.ObjectValues
 import maryk.datastore.shared.rethrowIfFatal
 
 internal object RemoteStoreCodec {
@@ -32,11 +34,53 @@ internal object RemoteStoreCodec {
         return bytes
     }
 
+    fun <DO : Any, DM : IsObjectDataModel<DO>, CX : IsPropertyContext> encodeValues(
+        serializer: IsObjectDataModelSerializer<DO, DM, CX, CX>,
+        values: ObjectValues<DO, DM>,
+        context: CX?,
+        maxBytes: Int? = null,
+    ): ByteArray {
+        val cache = WriteCache()
+        val length = serializer.calculateProtoBufLength(values, cache, context)
+        if (length < 0) {
+            throw IllegalStateException("Proto payload length is negative: $length")
+        }
+        if (maxBytes != null && length > maxBytes) {
+            throw IllegalStateException("Proto payload exceeds max size: $length > $maxBytes")
+        }
+        val bytes = ByteArray(length)
+        var index = 0
+        serializer.writeProtoBuf(values, cache, { byte ->
+            if (index >= bytes.size) {
+                throw IllegalStateException(
+                    "Proto length mismatch: attempted to write past ${bytes.size} bytes."
+                )
+            }
+            bytes[index++] = byte
+        }, context)
+        check(index == bytes.size) { "Proto length mismatch: wrote $index of ${bytes.size} bytes." }
+        return bytes
+    }
+
     fun <DO : Any, CX : IsPropertyContext> decode(
         serializer: IsObjectDataModelSerializer<DO, *, CX, CX>,
         bytes: ByteArray,
         context: CX?,
     ): DO {
+        val values = decodeValues(serializer, bytes, context)
+        return try {
+            values.toDataObject()
+        } catch (error: Throwable) {
+            error.rethrowIfFatal()
+            throw IllegalStateException("Invalid proto payload or trailing bytes", error)
+        }
+    }
+
+    fun <DO : Any, DM : IsObjectDataModel<DO>, CX : IsPropertyContext> decodeValues(
+        serializer: IsObjectDataModelSerializer<DO, DM, CX, CX>,
+        bytes: ByteArray,
+        context: CX?,
+    ): ObjectValues<DO, DM> {
         var index = 0
         val values = try {
             serializer.readProtoBuf(bytes.size, { bytes[index++] }, context)
@@ -47,12 +91,7 @@ internal object RemoteStoreCodec {
         if (index != bytes.size) {
             throw IllegalStateException("Proto payload has trailing bytes: consumed=$index total=${bytes.size}")
         }
-        return try {
-            values.toDataObject()
-        } catch (error: Throwable) {
-            error.rethrowIfFatal()
-            throw IllegalStateException("Invalid proto payload or trailing bytes", error)
-        }
+        return values
     }
 
     fun lengthPrefix(length: Int): ByteArray {

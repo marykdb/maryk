@@ -168,6 +168,8 @@ Notes:
 ## Scan viewer
 
 The scan viewer shows one record per line, with a leading `>` for the selected row.
+Additional pages resume with the datastore-issued opaque cursor, so index-ordered
+paging stays stable when the previous boundary record changes.
 
 Navigation:
 - Up/Down: move the selection

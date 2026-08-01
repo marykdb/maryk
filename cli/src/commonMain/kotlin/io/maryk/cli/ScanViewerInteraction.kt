@@ -21,6 +21,7 @@ import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.ScanCursor
 import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
@@ -64,6 +65,7 @@ class ScanViewerInteraction(
     private var offset = 0
     private var nextStartKey: MarykKey<IsRootDataModel>? = startKey
     private var nextIncludeStart = includeStart
+    private var nextCursor: ScanCursor? = null
     private var endReached = false
     private var statusMessage: String? = null
     private var statusInPrompt = false
@@ -485,6 +487,7 @@ class ScanViewerInteraction(
         endReached = false
         nextStartKey = startKey
         nextIncludeStart = includeStart
+        nextCursor = null
         selectedIndex = 0
         offset = 0
         loadNextPage()
@@ -499,7 +502,7 @@ class ScanViewerInteraction(
         if (endReached) return false
         val limit = pageSize
         val request = dataModel.scan(
-            startKey = nextStartKey,
+            startKey = nextStartKey.takeIf { nextCursor == null },
             select = selectGraph,
             where = currentWhere,
             order = order,
@@ -508,6 +511,7 @@ class ScanViewerInteraction(
             toVersion = toVersion,
             filterSoftDeleted = filterSoftDeleted,
             allowTableScan = true,
+            cursor = nextCursor,
         )
         val response = try {
             runBlocking { dataStore.execute(request) }
@@ -533,10 +537,11 @@ class ScanViewerInteraction(
                 )
             )
         }
-        nextStartKey = response.values.last().key
+        nextStartKey = null
         nextIncludeStart = false
+        nextCursor = response.nextCursor
 
-        if (response.values.size.toUInt() < limit) {
+        if (response.nextCursor == null) {
             endReached = true
         }
         return true

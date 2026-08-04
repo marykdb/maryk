@@ -27,6 +27,8 @@ yarn install
 yarn dev
 ```
 
+`yarn dev` synchronizes generated documentation before Astro starts.
+
 Build:
 
 ```bash

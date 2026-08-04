@@ -3,8 +3,11 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "prebuild": "node scripts/sync-core-docs.mjs",
+    "sync": "node scripts/sync-core-docs.mjs",
+    "prebuild": "yarn sync",
+    "predev": "yarn sync",
     "dev": "astro dev",
+    "prestart": "yarn sync",
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",

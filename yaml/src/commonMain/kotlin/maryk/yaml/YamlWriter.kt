@@ -5,6 +5,7 @@ import maryk.json.IllegalJsonOperation
 import maryk.json.JsonEmbedType
 import maryk.json.JsonEmbedType.ComplexField
 import maryk.json.JsonEmbedType.Object
+import maryk.json.JsonType
 import maryk.json.JsonType.ARRAY_VALUE
 import maryk.json.JsonType.COMPLEX_FIELD_NAME_END
 import maryk.json.JsonType.COMPLEX_FIELD_NAME_START
@@ -234,7 +235,7 @@ class YamlWriter(
                         writer(renderedValue)
                     } else {
                         if (value.contains('\n')) {
-                            writeMultilineValue(value)
+                            writeMultilineValue(value, lastTypeBeforeOperation)
                         } else {
                             writer("$renderedValue\n")
                             this.prefixWasWritten = false
@@ -252,7 +253,7 @@ class YamlWriter(
                         writer(renderedValue)
                     } else {
                         if (value.contains('\n')) {
-                            writeMultilineValue(value)
+                            writeMultilineValue(value, lastTypeBeforeOperation)
                         } else {
                             if (lastTypeBeforeOperation == TAG) {
                                 writer("$renderedValue\n")
@@ -276,16 +277,18 @@ class YamlWriter(
         }
     }
 
-    private fun writeMultilineValue(value: String) {
-        val lastTypeBeforeOperation = this.lastType
-        val lines = value.split("\n")
+    private fun writeMultilineValue(value: String, lastTypeBeforeOperation: JsonType) {
+        val trailingNewlines = value.takeLastWhile { it == '\n' }.length
+        val lines = value.split("\n").dropLast(if (trailingNewlines > 1) 1 else 0)
+        val chompIndicator = when (trailingNewlines) {
+            0 -> "-"
+            1 -> ""
+            else -> "+"
+        }
+        val indentationIndicator = if (value.all { it.isWhitespace() }) "2" else ""
         when (typeStack.last()) {
             is Object -> {
-                if (lastTypeBeforeOperation == FIELD_NAME) {
-                    writer(" |")
-                } else {
-                    writer("|")
-                }
+                writer("|$chompIndicator$indentationIndicator")
                 writer("\n")
                 lines.forEach { line ->
                     writer("$prefix$spacing$line\n")
@@ -294,9 +297,9 @@ class YamlWriter(
             }
             is JsonEmbedType.Array -> {
                 if (lastTypeBeforeOperation == TAG) {
-                    writer(" |\n")
+                    writer("|$chompIndicator$indentationIndicator\n")
                 } else {
-                    writer("$prefixToWrite$arraySpacing|\n")
+                    writer("$prefixToWrite$arraySpacing|$chompIndicator$indentationIndicator\n")
                 }
                 lines.forEach { line ->
                     writer("$prefix$spacing$line\n")

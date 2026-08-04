@@ -29,7 +29,11 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
         // Read options and end at first line break
         readStartForOptionsAndReturnIndent("Literal |")
 
-        findAndSetStartingIndentation()
+        val startingIndentation = findAndSetStartingIndentation()
+        if (startingIndentation < this.indentCount!!) {
+            this.yamlReader.setUnclaimedIndenting(startingIndentation)
+            return this.createTokenAndClose()
+        }
 
         loop@ while (true) {
             when (this.lastChar) {
@@ -40,6 +44,9 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
                     var currentIndentCount = 0
                     whitespace@ while (this.lastChar.isWhitespace()) {
                         if (this.lastChar.isLineBreak()) {
+                            for (it in this.indentCount!! until currentIndentCount) {
+                                this.storedValue += ' '
+                            }
                             currentIndentCount = 0
                             this.foundLineBreaks++
                         } else {
@@ -110,9 +117,10 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
         read() // go past line break
 
         var currentIndentCount = 0
+        val blankLines = mutableListOf<Pair<Int, Char>>()
         while (this.lastChar.isWhitespace()) {
             if (this.lastChar.isLineBreak()) {
-                this.storedValue += this.lastChar
+                blankLines += currentIndentCount to this.lastChar
                 currentIndentCount = 0
             } else {
                 currentIndentCount++
@@ -125,12 +133,19 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
         if (this.indentCount == null) {
             this.indentCount = currentIndentCount
         } else if (this.indentCount!! > currentIndentCount) {
-            throw InvalidYamlContent("Expected a continuation of block")
-        } else {
-            if (currentIndentCount > this.indentCount!!) {
-                for (it in 0..currentIndentCount - this.indentCount!!) {
-                    this.storedValue += ' '
-                }
+            if (blankLines.isEmpty()) {
+                throw InvalidYamlContent("Expected a continuation of block")
+            }
+        }
+        blankLines.forEach { (indentCount, lineBreak) ->
+            for (it in this.indentCount!! until indentCount) {
+                this.storedValue += ' '
+            }
+            this.storedValue += lineBreak
+        }
+        if (currentIndentCount > this.indentCount!!) {
+            for (it in 0..currentIndentCount - this.indentCount!!) {
+                this.storedValue += ' '
             }
         }
         return currentIndentCount

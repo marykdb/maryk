@@ -72,6 +72,16 @@ class LiteralStringReaderTest {
     }
 
     @Test
+    fun preserveExactSurplusIndentWithPresetIndent() {
+        createYamlReader("""
+            | |2
+            |    test
+        """.trimMargin()).apply {
+            assertValue("  test\n")
+        }
+    }
+
+    @Test
     fun readWithStripChompIndent() {
         createYamlReader("""
             | |-

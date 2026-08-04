@@ -1,6 +1,7 @@
 package maryk.yaml
 
 import maryk.json.IllegalJsonOperation
+import maryk.json.ValueType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -163,7 +164,7 @@ internal class YamlWriterTest {
 
         assertEquals(
             """
-            note: |
+            note: |-
               Line one
               Line two
               Line three
@@ -187,13 +188,287 @@ internal class YamlWriterTest {
 
         assertEquals(
             """
-            - |
+            - |-
               Line one
               Line two
 
             """.trimIndent(),
             output
         )
+    }
+
+    @Test
+    fun preserveMultilineTrailingNewlinesInObjectFields() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject()
+                writeFieldName("strip")
+                writeValue("Line one\nLine two")
+                writeFieldName("clip")
+                writeValue("Line one\nLine two\n")
+                writeFieldName("keep")
+                writeValue("Line one\nLine two\n\n\n")
+                writeFieldName("after")
+                writeValue("preserved")
+                writeEndObject()
+            }
+        }
+
+        assertEquals(
+            "strip: |-\n  Line one\n  Line two\nclip: |\n  Line one\n  Line two\n  \nkeep: |+\n  Line one\n  Line two\n  \n  \nafter: preserved\n",
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("strip")
+            assertValue("Line one\nLine two")
+            assertFieldName("clip")
+            assertValue("Line one\nLine two\n")
+            assertFieldName("keep")
+            assertValue("Line one\nLine two\n\n\n")
+            assertFieldName("after")
+            assertValue("preserved")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun preserveMultilineTrailingNewlinesInArray() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartArray()
+                writeValue("Line one\nLine two")
+                writeValue("Line one\nLine two\n")
+                writeValue("Line one\nLine two\n\n\n")
+                writeValue("preserved")
+                writeEndArray()
+            }
+        }
+
+        assertEquals(
+            "- |-\n  Line one\n  Line two\n- |\n  Line one\n  Line two\n  \n- |+\n  Line one\n  Line two\n  \n  \n- preserved\n",
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartArray()
+            assertValue("Line one\nLine two")
+            assertValue("Line one\nLine two\n")
+            assertValue("Line one\nLine two\n\n\n")
+            assertValue("preserved")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun preserveWhitespaceOnlyMultilineObjectFields() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject()
+                writeFieldName("clip")
+                writeString("\n")
+                writeFieldName("keep")
+                writeString("\n\n")
+                writeFieldName("spaces")
+                writeString("  \n \n")
+                writeFieldName("after")
+                writeString("preserved")
+                writeEndObject()
+            }
+        }
+
+        assertEquals(
+            "clip: |2\n  \n  \nkeep: |+2\n  \n  \nspaces: |2\n    \n   \n  \nafter: preserved\n",
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("clip")
+            assertValue("\n")
+            assertFieldName("keep")
+            assertValue("\n\n")
+            assertFieldName("spaces")
+            assertValue("  \n \n")
+            assertFieldName("after")
+            assertValue("preserved")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun preserveWhitespaceOnlyMultilineArrayItems() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartArray()
+                writeString("\n")
+                writeString("\n\n")
+                writeString("  \n \n")
+                writeString("preserved")
+                writeEndArray()
+            }
+        }
+
+        assertEquals(
+            "- |2\n  \n  \n- |+2\n  \n  \n- |2\n    \n   \n  \n- preserved\n",
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartArray()
+            assertValue("\n")
+            assertValue("\n\n")
+            assertValue("  \n \n")
+            assertValue("preserved")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun preserveWhitespaceOnlyLinesInMultilineObjectFields() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject()
+                writeFieldName("internal")
+                writeString("a\n  \nb")
+                writeFieldName("leading")
+                writeString("\n  \ntext")
+                writeFieldName("trailing")
+                writeString("a\n \n")
+                writeFieldName("after")
+                writeString("preserved")
+                writeEndObject()
+            }
+        }
+
+        assertEquals(
+            "internal: |-\n  a\n    \n  b\nleading: |-\n  \n    \n  text\ntrailing: |\n  a\n   \n  \nafter: preserved\n",
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("internal")
+            assertValue("a\n  \nb")
+            assertFieldName("leading")
+            assertValue("\n  \ntext")
+            assertFieldName("trailing")
+            assertValue("a\n \n")
+            assertFieldName("after")
+            assertValue("preserved")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun preserveWhitespaceOnlyLinesInMultilineArrayItems() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartArray()
+                writeString("a\n  \nb")
+                writeString("\n  \ntext")
+                writeString("a\n \n")
+                writeString("preserved")
+                writeEndArray()
+            }
+        }
+
+        assertEquals(
+            "- |-\n  a\n    \n  b\n- |-\n  \n    \n  text\n- |\n  a\n   \n  \n- preserved\n",
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartArray()
+            assertValue("a\n  \nb")
+            assertValue("\n  \ntext")
+            assertValue("a\n \n")
+            assertValue("preserved")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun preserveLeadingAndInternalBlankLinesInNestedObject() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject()
+                writeFieldName("nested")
+                writeStartObject()
+                writeFieldName("note")
+                writeString("\nLine one\n\nLine two")
+                writeFieldName("after")
+                writeString("preserved")
+                writeEndObject()
+                writeFieldName("rootAfter")
+                writeString("preserved")
+                writeEndObject()
+            }
+        }
+
+        assertEquals(
+            "nested:\n  note: |-\n    \n    Line one\n    \n    Line two\n  after: preserved\nrootAfter: preserved\n",
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("nested")
+            assertStartObject()
+            assertFieldName("note")
+            assertValue("\nLine one\n\nLine two")
+            assertFieldName("after")
+            assertValue("preserved")
+            assertEndObject()
+            assertFieldName("rootAfter")
+            assertValue("preserved")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun preserveTaggedMultilineValuesInObjectsAndArrays() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject()
+                writeFieldName("tagged")
+                writeTag("!!str")
+                writeString("Object\nvalue\n")
+                writeFieldName("values")
+                writeStartArray()
+                writeTag("!!str")
+                writeString("Array\nvalue\n\n")
+                writeString("preserved")
+                writeEndArray()
+                writeEndObject()
+            }
+        }
+
+        assertEquals(
+            "tagged: !!str |\n  Object\n  value\n  \nvalues:\n- !!str |+\n  Array\n  value\n  \n- preserved\n",
+            output
+        )
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("tagged")
+            assertValue("Object\nvalue\n", ValueType.String)
+            assertFieldName("values")
+            assertStartArray()
+            assertValue("Array\nvalue\n\n", ValueType.String)
+            assertValue("preserved")
+            assertEndArray()
+            assertEndObject()
+            assertEndDocument()
+        }
     }
 
     @Test

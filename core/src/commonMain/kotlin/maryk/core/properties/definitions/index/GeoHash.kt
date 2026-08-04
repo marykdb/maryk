@@ -29,7 +29,9 @@ data class GeoHash(
     override val referenceStorageByteArray by lazy { Bytes(toReferenceStorageByteArray()) }
 
     init {
-        require(precisionBits in 1u..52u) { "Geohash precision must be within 1..52 bits" }
+        require(precisionBits in 8u..48u && precisionBits % 8u == 0u) {
+            "Geohash precision must be byte-aligned and within 8..48 bits"
+        }
     }
 
     override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> =
@@ -90,8 +92,8 @@ data class GeoHash(
             index = 2u,
             getter = GeoHash::precisionBits,
             type = UInt32,
-            minValue = 1u,
-            maxValue = 52u,
+            minValue = 8u,
+            maxValue = 48u,
             default = 32u,
         )
 

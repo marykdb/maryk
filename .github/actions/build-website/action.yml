@@ -1,0 +1,26 @@
+name: Build website
+description: Install locked website dependencies and build synchronized documentation
+
+inputs:
+  astro-arguments:
+    description: Arguments forwarded to Astro during the build
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node
+      uses: actions/setup-node@v4
+      with:
+        node-version: "22"
+        cache: yarn
+        cache-dependency-path: website/yarn.lock
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+      shell: bash
+      working-directory: website
+    - name: Build website
+      run: yarn build ${{ inputs.astro-arguments }}
+      shell: bash
+      working-directory: website

@@ -81,8 +81,14 @@ kotlin {
             binaries {
                 executable {
                     entryPoint = "io.maryk.cli.main"
+                    baseName = "maryk"
                     // Ensure libfdb_c is available and linked for native binaries
-                    val libOpts = listOf("-L$foundationDbLibDir", "-lfdb_c", "-rpath", foundationDbLibDir)
+                    val runtimeLibraryPath = when (family) {
+                        Family.OSX -> "@executable_path/../lib"
+                        Family.LINUX -> "\$ORIGIN/../lib"
+                        else -> error("Unsupported native CLI target family: $family")
+                    }
+                    val libOpts = listOf("-L$foundationDbLibDir", "-lfdb_c", "-Wl,-rpath,$runtimeLibraryPath")
                     linkTaskProvider.configure {
                         dependsOn(installFoundationDB)
                         linkerOpts(libOpts)
@@ -142,4 +148,51 @@ tasks.named<CreateStartScripts>("startScriptsForJvm") {
 
 tasks.named<Zip>("jvmDistZip") {
     archiveBaseName.set("maryk-cli")
+}
+
+private data class NativeCliBundle(
+    val target: String,
+    val platform: String,
+    val libraryName: String,
+)
+
+listOf(
+    NativeCliBundle("linuxX64", "linux-x64", "libfdb_c.so"),
+    NativeCliBundle("macosArm64", "macos-arm64", "libfdb_c.dylib"),
+).forEach { bundle ->
+    val targetTaskName = bundle.target.replaceFirstChar { it.uppercase() }
+    val executable = layout.buildDirectory.file("bin/${bundle.target}/releaseExecutable/maryk.kexe")
+    val library = foundationDbLibDirFile.resolve(bundle.libraryName)
+
+    tasks.register<Zip>("nativeDistZip$targetTaskName") {
+        group = "distribution"
+        description = "Packages the self-contained Maryk CLI for ${bundle.platform}."
+        dependsOn("linkReleaseExecutable$targetTaskName")
+        archiveFileName.set("maryk-cli-${project.version}-${bundle.platform}.zip")
+        destinationDirectory.set(layout.buildDirectory.dir("distributions"))
+        includeEmptyDirs = false
+
+        from(executable) {
+            into("maryk-cli-${bundle.platform}/bin")
+            rename { "maryk" }
+            filePermissions {
+                unix("rwxr-xr-x")
+            }
+        }
+        from(library) {
+            into("maryk-cli-${bundle.platform}/lib")
+        }
+        from(rootProject.layout.projectDirectory.file("LICENSE.txt")) {
+            into("maryk-cli-${bundle.platform}")
+        }
+
+        doFirst {
+            check(executable.get().asFile.isFile) {
+                "Native CLI executable was not produced: ${executable.get().asFile}"
+            }
+            check(library.isFile) {
+                "FoundationDB client library was not installed: $library"
+            }
+        }
+    }
 }

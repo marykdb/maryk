@@ -51,15 +51,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-latest
-            name: macOS DMG
-            gradle_task: :app:packageDmg
+          - os: macos-14
+            name: macOS arm64 DMG and CLI
+            gradle_task: :app:packageDmg :cli:nativeDistZipMacosArm64
+            cli_platform: macos-arm64
           - os: ubuntu-latest
             name: Linux DEB and CLI
-            gradle_task: :app:packageDeb :cli:jvmDistZip
+            gradle_task: :app:packageDeb :cli:nativeDistZipLinuxX64
+            cli_platform: linux-x64
           - os: windows-latest
             name: Windows MSI
             gradle_task: :app:packageMsi
+            cli_platform: ''
     runs-on: ${{ matrix.os }}
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
@@ -85,6 +88,14 @@ jobs:
       - name: Build distribution
         shell: bash
         run: ./gradlew :app:verifyDistributionVersion ${{ matrix.gradle_task }} -PreleaseTag="$RELEASE_TAG" --stacktrace --build-cache --no-parallel
+
+      - name: Smoke test native CLI bundle
+        if: matrix.cli_platform != ''
+        shell: bash
+        run: |
+          archive=$(find cli/build/distributions -maxdepth 1 -name "maryk-cli-*-${{ matrix.cli_platform }}.zip" -print -quit)
+          test -n "$archive"
+          bash cli/scripts/verify-native-bundle.sh "$archive" "${{ matrix.cli_platform }}"
 
       - name: Upload distribution
         uses: actions/upload-artifact@v4

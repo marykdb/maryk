@@ -66,7 +66,10 @@ internal fun <T : Any> setValueAtIndex(
             if (lastValue !is DataRecordValue<*> || lastValue.value != value) {
                 DataRecordValue(reference, value, version).also {
                     @Suppress("UNCHECKED_CAST")
-                    (matchedValue as DataRecordHistoricValues<T>).add(it)
+                    (matchedValue.copyForChange() as DataRecordHistoricValues<T>).let { historicValues ->
+                        (values as MutableList<DataRecordNode>)[valueIndex] = historicValues
+                        historicValues.add(it)
+                    }
                 }
             } else null
         }

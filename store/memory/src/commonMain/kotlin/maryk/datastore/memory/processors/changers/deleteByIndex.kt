@@ -36,7 +36,10 @@ internal fun <T : Any> deleteByIndex(
             is DataRecordHistoricValues<*> -> {
                 DeletedValue<T>(reference, version).also {
                     @Suppress("UNCHECKED_CAST")
-                    (matchedValue as DataRecordHistoricValues<T>).add(it)
+                    (matchedValue.copyForChange() as DataRecordHistoricValues<T>).let { historicValues ->
+                        values[valueIndex] = historicValues
+                        historicValues.add(it)
+                    }
                 }
             }
             is DeletedValue<*> -> matchedValue

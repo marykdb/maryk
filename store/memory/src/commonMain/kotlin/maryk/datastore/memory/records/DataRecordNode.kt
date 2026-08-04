@@ -39,6 +39,8 @@ internal class DataRecordHistoricValues<T : Any>(
     val history: List<IsDataRecordValue<T>>,
     internal var toAdd: IsDataRecordValue<T>? = null
 ) : DataRecordNode() {
+    fun copyForChange() = DataRecordHistoricValues(reference, history.toMutableList(), toAdd)
+
     fun add(node: IsDataRecordValue<T>) {
         toAdd = node
     }

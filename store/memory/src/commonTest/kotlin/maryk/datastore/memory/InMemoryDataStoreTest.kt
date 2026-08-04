@@ -32,6 +32,7 @@ import maryk.core.query.requests.scanChanges
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
@@ -40,7 +41,9 @@ import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.Check
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt32
@@ -62,6 +65,68 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class InMemoryDataStoreTest {
+    @Test
+    fun rejectedHistoricChangeDoesNotLeakOrCommitOnLaterRequest() = runTest {
+        val dataStore = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to SimpleMarykModel)
+        )
+        try {
+            val addStatus = dataStore.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "ha initial" })
+            ).statuses.single() as AddSuccess<SimpleMarykModel>
+
+            val committedChange = dataStore.execute(
+                SimpleMarykModel.change(
+                    addStatus.key.change(
+                        Change(SimpleMarykModel { value::ref } with "ha staged"),
+                        Change(SimpleMarykModel { value::ref } with "ha committed")
+                    )
+                )
+            ).statuses.single() as ChangeSuccess<SimpleMarykModel>
+
+            val failedChange = dataStore.execute(
+                SimpleMarykModel.change(
+                    addStatus.key.change(
+                        Change(SimpleMarykModel { value::ref } with "ha rejected"),
+                        Check(SimpleMarykModel { value::ref } with "ha wrong")
+                    )
+                )
+            ).statuses.single()
+            assertIs<ValidationFail<SimpleMarykModel>>(failedChange)
+
+            assertEquals(
+                "ha committed",
+                dataStore.execute(SimpleMarykModel.get(addStatus.key)).values.single().values { value }
+            )
+            assertEquals(
+                "ha initial",
+                dataStore.execute(
+                    SimpleMarykModel.get(addStatus.key, toVersion = addStatus.version)
+                ).values.single().values { value }
+            )
+
+            assertIs<ChangeSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.change(addStatus.key.change(ObjectSoftDeleteChange(false)))
+                ).statuses.single()
+            )
+
+            assertEquals(
+                "ha committed",
+                dataStore.execute(SimpleMarykModel.get(addStatus.key)).values.single().values { value }
+            )
+            assertEquals(
+                "ha committed",
+                dataStore.execute(
+                    SimpleMarykModel.get(addStatus.key, toVersion = committedChange.version)
+                ).values.single().values { value }
+            )
+        } finally {
+            dataStore.close()
+        }
+    }
+
     @Test
     fun uncollectedFlowDoesNotBlockWritesOrLaterListeners() = runTest(timeout = 10.seconds) {
         val dataStore = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))

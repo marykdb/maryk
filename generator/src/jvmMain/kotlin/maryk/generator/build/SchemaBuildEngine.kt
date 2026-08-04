@@ -112,7 +112,11 @@ object SchemaBuildEngine {
         allowRemovedModels: Boolean = false,
     ): CompatibilityReport {
         val current = load(currentSchemaFiles).associateBy { it.model.Meta.name }
-        val baseline = load(baselineSchemaFiles).associateBy { it.model.Meta.name }
+        val baseline = if (baselineSchemaFiles.isEmpty()) {
+            emptyMap()
+        } else {
+            load(baselineSchemaFiles).associateBy { it.model.Meta.name }
+        }
         val reasons = mutableListOf<String>()
 
         baseline.toSortedMap().forEach { (name, stored) ->

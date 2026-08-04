@@ -174,6 +174,21 @@ class MarykGeneratorPluginTest {
         assertEquals(TaskOutcome.SUCCESS, check.task(":marykCheckSchemaCompatibility")?.outcome)
     }
 
+    @Test
+    fun compatibilityAcceptsMissingDefaultBaselineForNewModels() {
+        val project = fixture()
+        project.resolve("src/main/maryk").createDirectories()
+            .resolve("person.yaml").writeText(schema("Person"))
+
+        val check = runner(project, "marykCheckSchemaCompatibility").build()
+
+        assertEquals(TaskOutcome.SUCCESS, check.task(":marykCheckSchemaCompatibility")?.outcome)
+        assertEquals(
+            "Maryk schemas are compatible\n",
+            project.resolve("build/reports/maryk/schema-compatibility.txt").readText(),
+        )
+    }
+
     private fun fixture(): Path {
         val project = createTempDirectory()
         project.resolve("settings.gradle.kts").writeText(

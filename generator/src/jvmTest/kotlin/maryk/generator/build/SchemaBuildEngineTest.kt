@@ -139,6 +139,39 @@ class SchemaBuildEngineTest {
         assertTrue(allowed.reasons.none { it.startsWith("Removed:") })
     }
 
+    @Test
+    fun acceptsEmptyCompatibilityBaselineForNewModels() {
+        val current = createTempDirectory()
+        val baseline = createTempDirectory()
+        current.resolve("person.yaml").writeText(schema("Person"))
+
+        val report = SchemaBuildEngine.checkCompatibility(
+            currentSchemaFiles = SchemaBuildEngine.discoverSchemas(listOf(current)),
+            baselineSchemaFiles = SchemaBuildEngine.discoverSchemas(listOf(baseline)),
+        )
+
+        assertTrue(report.isCompatible)
+        assertEquals(emptyList(), report.reasons)
+    }
+
+    @Test
+    fun rejectsEmptyCurrentSchemasDuringCompatibilityCheck() {
+        val baseline = createTempDirectory()
+        baseline.resolve("person.yaml").writeText(schema("Person"))
+
+        val exception = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.checkCompatibility(
+                currentSchemaFiles = emptyList(),
+                baselineSchemaFiles = SchemaBuildEngine.discoverSchemas(listOf(baseline)),
+            )
+        }
+
+        assertEquals(
+            "No Maryk schemas found; configure at least one .yaml, .yml, or .json schema",
+            exception.message,
+        )
+    }
+
     private fun schema(name: String, required: Boolean = true) = """
         name: $name
         ? 1: value

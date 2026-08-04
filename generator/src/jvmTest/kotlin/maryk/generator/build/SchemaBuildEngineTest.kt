@@ -9,7 +9,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
+import maryk.core.properties.definitions.ReferenceDefinition
 
 class SchemaBuildEngineTest {
     @Test
@@ -53,6 +55,45 @@ class SchemaBuildEngineTest {
             outputDirectory = output,
         )
         assertEquals(first, second.files.associate { it.fileName.toString() to it.readText() })
+    }
+
+    @Test
+    fun resolvesYamlForwardReferenceToJsonModel() {
+        val schemas = createTempDirectory()
+        schemas.resolve("a.yaml").writeText(referenceSchema("Alpha", "Beta"))
+        schemas.resolve("b.json").writeText(jsonSchema("Beta"))
+
+        val loaded = SchemaBuildEngine.load(SchemaBuildEngine.discoverSchemas(listOf(schemas)))
+        val byName = loaded.associateBy { it.model.Meta.name }
+
+        assertSame(byName.getValue("Beta").model, byName.getValue("Alpha").referenceDefinition().dataModel)
+    }
+
+    @Test
+    fun generatesMixedFormatMutualReferences() {
+        val schemas = createTempDirectory()
+        schemas.resolve("a.json").writeText(jsonReferenceSchema("Alpha", "Beta"))
+        schemas.resolve("b.yml").writeText(referenceSchema("Beta", "Alpha"))
+        val output = createTempDirectory()
+
+        val loaded = SchemaBuildEngine.load(SchemaBuildEngine.discoverSchemas(listOf(schemas)))
+        val byName = loaded.associateBy { it.model.Meta.name }
+        assertSame(byName.getValue("Beta").model, byName.getValue("Alpha").referenceDefinition().dataModel)
+        assertSame(byName.getValue("Alpha").model, byName.getValue("Beta").referenceDefinition().dataModel)
+
+        val result = SchemaBuildEngine.generate(
+            schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+            packageName = "example.generated",
+            outputDirectory = output,
+        )
+
+        assertEquals(listOf("Alpha.kt", "Beta.kt"), result.files.map { it.fileName.toString() })
+        val alphaSource = output.resolve("Alpha.kt").readText()
+        val betaSource = output.resolve("Beta.kt").readText()
+        assertTrue(alphaSource.contains("import maryk.core.properties.types.Key"))
+        assertTrue(alphaSource.contains("dataModel = { Beta }"))
+        assertTrue(betaSource.contains("import maryk.core.properties.types.Key"))
+        assertTrue(betaSource.contains("dataModel = { Alpha }"))
     }
 
     @Test
@@ -119,4 +160,33 @@ class SchemaBuildEngineTest {
           }]
         }
     """.trimIndent()
+
+    private fun referenceSchema(name: String, referenceName: String) = """
+        name: $name
+        ? 1: reference
+        : !Reference
+          required: false
+          final: false
+          unique: false
+          dataModel: $referenceName
+    """.trimIndent()
+
+    private fun jsonReferenceSchema(name: String, referenceName: String) = """
+        {
+          "name": "$name",
+          "properties": [{
+            "index": 1,
+            "name": "reference",
+            "definition": ["Reference", {
+              "required": false,
+              "final": false,
+              "unique": false,
+              "dataModel": "$referenceName"
+            }]
+          }]
+        }
+    """.trimIndent()
+
+    private fun LoadedSchema.referenceDefinition() =
+        model["reference"]!!.definition as ReferenceDefinition<*>
 }

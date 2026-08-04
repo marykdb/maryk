@@ -5,6 +5,8 @@ import maryk.json.JsonToken.FieldName
 import maryk.json.JsonToken.Stopped
 import maryk.json.JsonToken.Suspended
 import maryk.json.ValueType.Bool
+import maryk.json.ValueType.Float
+import maryk.json.ValueType.Int
 import maryk.json.ValueType.Null
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -337,6 +339,67 @@ internal class JsonReaderTest {
     }
 
     @Test
+    fun readsRootScalarsAtDefinitiveStringEndOfInput() {
+        assertRootValue("42", 42L, Int)
+        assertRootValue("-42", -42L, Int)
+        assertRootValue("1.25e-2", 0.0125, Float)
+        assertRootValue("true", true, Bool)
+        assertRootValue("false", false, Bool)
+        assertRootValue("null", null, Null)
+    }
+
+    @Test
+    fun readsRootScalarsWithTrailingWhitespaceAtDefinitiveStringEndOfInput() {
+        assertRootValue("42 \n\t", 42L, Int)
+        assertRootValue("-42 \n\t", -42L, Int)
+        assertRootValue("1.25e-2 \n\t", 0.0125, Float)
+        assertRootValue("true \n\t", true, Bool)
+        assertRootValue("false \n\t", false, Bool)
+        assertRootValue("null \n\t", null, Null)
+    }
+
+    @Test
+    fun readsScalarsInsideContainers() {
+        JsonReader("[42, -42, 1.25e-2, true, false, null]").apply {
+            assertStartArray()
+            assertValue(42L, Int)
+            assertValue(-42L, Int)
+            assertValue(0.0125, Float)
+            assertValue(true, Bool)
+            assertValue(false, Bool)
+            assertValue(null, Null)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun readsRootScalarsAtLambdaEndOfInput() {
+        assertLambdaRootValue("42", 42L, Int)
+        assertLambdaRootValue("true", true, Bool)
+        assertLambdaRootValue("false", false, Bool)
+        assertLambdaRootValue("null", null, Null)
+    }
+
+    @Test
+    fun suspendsIncompleteKeywordInsideDefinitiveContainer() {
+        JsonReader("[tru").apply {
+            assertStartArray()
+
+            assertIs<Suspended>(nextToken())
+        }
+    }
+
+    @Test
+    fun rejectsIncompleteRootScalarsFromDefinitiveStringInput() {
+        listOf("-", "1.", "1e", "tru", "nul", "42x").forEach { input ->
+            assertFailsWith<InvalidJsonContent> {
+                JsonReader(input).nextToken()
+            }
+        }
+    }
+
+    @Test
     fun readDoubleQuoteWithSpecialChars() {
         createJsonReader("""["te\"\b\f\n\t\\\/\r'"]""").apply {
             assertStartArray()
@@ -358,6 +421,27 @@ internal class JsonReaderTest {
             assertStartArray()
             assertValue("😍")
             assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    private fun assertRootValue(input: String, value: Any?, type: ValueType<*>) {
+        JsonReader(input).apply {
+            assertIs<JsonToken.Value<*>>(nextToken()).apply {
+                expect(value) { this.value }
+                expect(type) { this.type }
+            }
+            assertEndDocument()
+        }
+    }
+
+    private fun assertLambdaRootValue(input: String, value: Any?, type: ValueType<*>) {
+        var index = 0
+        JsonReader { input.getOrNull(index++) }.apply {
+            assertIs<JsonToken.Value<*>>(nextToken()).apply {
+                expect(value) { this.value }
+                expect(type) { this.type }
+            }
             assertEndDocument()
         }
     }

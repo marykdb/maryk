@@ -91,7 +91,7 @@ class JsonReader private constructor(
                         '{' -> startObject()
                         '[' -> startArray()
                         '"' -> readStringValue(this::constructJsonValueToken)
-                        else -> throwJsonException()
+                        else -> readValue(this::constructJsonValueToken)
                     }
                 }
                 is StartObject -> {
@@ -285,15 +285,25 @@ class JsonReader private constructor(
     }
 
     private fun readNumber(startedWithMinus: Boolean, currentTokenCreator: (value: Any?) -> JsonToken) {
+        var reachedDefinitiveRootEnd = false
+
         fun addAndAdvance() {
             storedValue += lastChar
-            read()
+            try {
+                read()
+            } catch (error: ExceptionWhileReadingJson) {
+                if (typeStack.isEmpty()) {
+                    reachedDefinitiveRootEnd = true
+                } else {
+                    throw error
+                }
+            }
         }
 
         // Read number
         do {
             addAndAdvance()
-        } while (lastChar.isDigit())
+        } while (!reachedDefinitiveRootEnd && lastChar.isDigit())
 
         // Number should contain at least one digit
         if (startedWithMinus && storedValue == "-") {
@@ -310,19 +320,19 @@ class JsonReader private constructor(
         }
 
         // Read fraction
-        val isFraction = if (lastChar == '.') {
+        val isFraction = if (!reachedDefinitiveRootEnd && lastChar == '.') {
             addAndAdvance()
             if (!lastChar.isDigit()) throwJsonException()
             do {
                 addAndAdvance()
-            } while (lastChar.isDigit())
+            } while (!reachedDefinitiveRootEnd && lastChar.isDigit())
             true
         } else {
             false
         }
 
         // read exponent
-        val isExponent = if (lastChar in arrayOf('e', 'E')) {
+        val isExponent = if (!reachedDefinitiveRootEnd && lastChar in arrayOf('e', 'E')) {
             addAndAdvance()
             if (lastChar in arrayOf('+', '-')) {
                 addAndAdvance()
@@ -330,7 +340,7 @@ class JsonReader private constructor(
             if (!lastChar.isDigit()) throwJsonException()
             do {
                 addAndAdvance()
-            } while (lastChar.isDigit())
+            } while (!reachedDefinitiveRootEnd && lastChar.isDigit())
             true
         } else {
             false
@@ -348,36 +358,47 @@ class JsonReader private constructor(
             throwJsonException()
         }
 
-        skipWhiteSpace()
+        if (!reachedDefinitiveRootEnd) {
+            try {
+                skipWhiteSpace()
+            } catch (error: ExceptionWhileReadingJson) {
+                if (typeStack.isNotEmpty()) {
+                    throw error
+                }
+            }
+            if (typeStack.isEmpty() && !lastChar.isWhitespace()) {
+                throwJsonException()
+            }
+        }
     }
 
     private fun readFalse(currentTokenCreator: (value: Any?) -> JsonToken) {
         for (it in "alse") {
-            read()
+            readKeywordCharacter()
             if (lastChar != it) {
                 throwJsonException()
             }
         }
         currentToken = currentTokenCreator(false)
 
-        readSkipWhitespace()
+        readAfterRootScalar()
     }
 
     private fun readTrue(currentTokenCreator: (value: Any?) -> JsonToken) {
         ("rue").forEach {
-            read()
+            readKeywordCharacter()
             if (lastChar != it) {
                 throwJsonException()
             }
         }
         currentToken = currentTokenCreator(true)
 
-        readSkipWhitespace()
+        readAfterRootScalar()
     }
 
     private fun readNullValue(currentTokenCreator: (value: String?) -> JsonToken) {
         for (it in "ull") {
-            read()
+            readKeywordCharacter()
             if (lastChar != it) {
                 throwJsonException()
             }
@@ -386,7 +407,32 @@ class JsonReader private constructor(
 
         currentToken = currentTokenCreator(null)
 
-        readSkipWhitespace()
+        readAfterRootScalar()
+    }
+
+    private fun readAfterRootScalar() {
+        try {
+            readSkipWhitespace()
+        } catch (error: ExceptionWhileReadingJson) {
+            if (typeStack.isEmpty()) {
+                return
+            }
+            throw error
+        }
+        if (typeStack.isEmpty()) {
+            throwJsonException()
+        }
+    }
+
+    private fun readKeywordCharacter() {
+        try {
+            read()
+        } catch (error: ExceptionWhileReadingJson) {
+            if (typeStack.isEmpty()) {
+                throwJsonException()
+            }
+            throw error
+        }
     }
 
     private fun readFieldName(skipInitialRead: Boolean = false) {

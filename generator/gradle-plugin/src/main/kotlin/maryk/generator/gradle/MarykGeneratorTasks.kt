@@ -1,6 +1,8 @@
 package maryk.generator.gradle
 
 import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.util.Comparator
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
@@ -99,19 +101,58 @@ abstract class MarykUpdateSchemaBaselineTask : DefaultTask() {
 
     @TaskAction
     fun update() {
-        val schemaFiles = SchemaBuildEngine.discoverSchemas(schemas.files.map { it.toPath() })
+        val schemaRoots = schemas.files.map { it.toPath().toAbsolutePath().normalize() }
+        val schemaFiles = SchemaBuildEngine.discoverSchemas(schemaRoots)
         SchemaBuildEngine.load(schemaFiles)
         val output = baselineDirectory.get().asFile.toPath()
-        if (Files.exists(output)) {
-            Files.walk(output).use { paths ->
-                paths.sorted(Comparator.reverseOrder()).forEach { path ->
-                    if (path != output) Files.deleteIfExists(path)
+        val outputParent = requireNotNull(output.parent) { "Maryk baseline directory must have a parent" }
+        outputParent.createDirectories()
+        val staged = Files.createTempDirectory(outputParent, ".${output.fileName}-")
+        try {
+            schemaFiles.forEach { source ->
+                val destination = staged.resolve(source.relativeToSchemaRoot(schemaRoots))
+                if (Files.exists(destination)) {
+                    throw SchemaBuildException("Maryk schemas have conflicting relative path ${staged.relativize(destination)}")
                 }
+                destination.parent.createDirectories()
+                Files.copy(source, destination)
             }
+            replaceDirectory(output, staged)
+        } finally {
+            if (Files.exists(staged)) deleteDirectory(staged)
         }
-        output.createDirectories()
-        schemaFiles.forEach { source ->
-            Files.copy(source, output.resolve(source.fileName))
+    }
+
+    private fun Path.relativeToSchemaRoot(schemaRoots: List<Path>): Path {
+        val absoluteSource = toAbsolutePath().normalize()
+        val root = schemaRoots
+            .filter { absoluteSource.startsWith(it) }
+            .maxByOrNull { it.nameCount }
+            ?: throw SchemaBuildException("Could not determine schema root for $absoluteSource")
+        return if (Files.isDirectory(root)) root.relativize(absoluteSource) else absoluteSource.fileName
+    }
+
+    private fun replaceDirectory(output: Path, staged: Path) {
+        val backup = output.resolveSibling(".${output.fileName}-backup-${System.nanoTime()}")
+        var movedOutput = false
+        try {
+            if (Files.exists(output)) {
+                Files.move(output, backup, ATOMIC_MOVE)
+                movedOutput = true
+            }
+            Files.move(staged, output, ATOMIC_MOVE)
+        } catch (failure: Exception) {
+            if (movedOutput && Files.notExists(output)) {
+                Files.move(backup, output, ATOMIC_MOVE)
+            }
+            throw failure
+        }
+        if (movedOutput) deleteDirectory(backup)
+    }
+
+    private fun deleteDirectory(directory: Path) {
+        Files.walk(directory).use { paths ->
+            paths.sorted(Comparator.reverseOrder()).forEach(Files::deleteIfExists)
         }
     }
 }

@@ -175,6 +175,52 @@ class MarykGeneratorPluginTest {
     }
 
     @Test
+    fun baselineUpdatePreservesNestedSchemaPaths() {
+        val project = fixture()
+        val schemas = project.resolve("schemas/current")
+        schemas.resolve("alpha/model.yaml").also {
+            it.parent.createDirectories()
+            it.writeText(schema("Alpha"))
+        }
+        schemas.resolve("beta/model.yaml").also {
+            it.parent.createDirectories()
+            it.writeText(schema("Beta"))
+        }
+        project.configureSchemas("schemas/current")
+
+        val update = runner(project, "marykUpdateSchemaBaseline").build()
+
+        assertEquals(TaskOutcome.SUCCESS, update.task(":marykUpdateSchemaBaseline")?.outcome)
+        assertEquals(schema("Alpha"), project.resolve("schemas/baseline/alpha/model.yaml").readText())
+        assertEquals(schema("Beta"), project.resolve("schemas/baseline/beta/model.yaml").readText())
+        val check = runner(project, "marykCheckSchemaCompatibility").build()
+        assertEquals(TaskOutcome.SUCCESS, check.task(":marykCheckSchemaCompatibility")?.outcome)
+    }
+
+    @Test
+    fun baselineUpdatePreservesExistingBaselineWhenSchemaRootsConflict() {
+        val project = fixture()
+        project.resolve("schemas/first/model.yaml").also {
+            it.parent.createDirectories()
+            it.writeText(schema("First"))
+        }
+        project.resolve("schemas/second/model.yaml").also {
+            it.parent.createDirectories()
+            it.writeText(schema("Second"))
+        }
+        val baseline = project.resolve("schemas/baseline/existing.yaml")
+        baseline.parent.createDirectories()
+        baseline.writeText(schema("Existing"))
+        project.configureSchemas("schemas/first", "schemas/second")
+
+        val failure = runner(project, "marykUpdateSchemaBaseline").buildAndFail()
+
+        assertTrue(failure.output.contains("conflicting relative path"))
+        assertEquals(schema("Existing"), baseline.readText())
+        assertFalse(project.resolve("schemas/baseline/model.yaml").exists())
+    }
+
+    @Test
     fun compatibilityAcceptsMissingDefaultBaselineForNewModels() {
         val project = fixture()
         project.resolve("src/main/maryk").createDirectories()
@@ -215,6 +261,21 @@ class MarykGeneratorPluginTest {
             """.trimIndent(),
         )
         return project
+    }
+
+    private fun Path.configureSchemas(vararg roots: String) {
+        resolve("build.gradle.kts").writeText(
+            """
+            plugins {
+                id("io.maryk.generator")
+            }
+
+            marykGenerator {
+                packageName.set("example.generated")
+                schemas.setFrom(${roots.joinToString { "\"$it\"" }})
+            }
+            """.trimIndent(),
+        )
     }
 
     private fun runner(project: Path, vararg arguments: String) = GradleRunner.create()

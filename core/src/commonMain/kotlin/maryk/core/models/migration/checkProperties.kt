@@ -23,8 +23,8 @@ internal fun IsStorableDataModel<*>.checkProperties(
 
     @Suppress("UNCHECKED_CAST")
     synchronizedIteration(
-        (this as BaseDataModel<Any>).iterator(),
-        (storedDataModel as BaseDataModel<Any>).iterator(),
+        (this as BaseDataModel<Any>).sortedBy { it.index }.iterator(),
+        (storedDataModel as BaseDataModel<Any>).sortedBy { it.index }.iterator(),
         { newValue, storedValue ->
             newValue.index compareTo storedValue.index
         },

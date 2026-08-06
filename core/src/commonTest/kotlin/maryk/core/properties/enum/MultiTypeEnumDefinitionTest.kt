@@ -83,4 +83,22 @@ class MultiTypeEnumDefinitionTest {
             )
         }
     }
+
+    @Test
+    fun reorderingCasesWithChangedDefinitionIsIncompatible() {
+        open class MultiTypeTestEnum<T: Any>(
+            index: UInt,
+            override val definition: IsUsableInMultiType<T, *>?
+        ) : IndexedEnumImpl<MultiTypeTestEnum<Any>>(index), MultiTypeEnum<T>
+
+        val storedFirst = MultiTypeTestEnum(1u, StringDefinition(regEx = "[a-z]+"))
+        val changedFirst = MultiTypeTestEnum(1u, StringDefinition(regEx = "[0-9]+"))
+        val second = MultiTypeTestEnum(2u, StringDefinition())
+
+        assertFalse {
+            MultiTypeEnumDefinition("Test", { listOf(second, changedFirst) }).compatibleWith(
+                MultiTypeEnumDefinition("Test", { listOf(storedFirst, second) })
+            )
+        }
+    }
 }

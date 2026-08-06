@@ -110,6 +110,11 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
         var compatible = super.compatibleWith(definition, checkedDataModelNames, addIncompatibilityReason)
 
         if (definition is AbstractIndexedEnumDefinition) {
+            val newCases = this.cases()
+            val storedCases = definition.cases()
+            this.check(newCases)
+            definition.check(storedCases)
+
             if (name != definition.name) {
                 addIncompatibilityReason?.invoke("Enum name $name is not the same as ${definition.name}")
                 compatible = false
@@ -125,11 +130,11 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
                 compatible = false
             }
 
-            val newIterator = this.cases().iterator()
-            val storedIterator = definition.cases().iterator()
+            val newIterator = newCases.sortedBy { it.index }.iterator()
+            val storedIterator = storedCases.sortedBy { it.index }.iterator()
 
-            var newProperty: E? = newIterator.next()
-            var storedProperty: IndexedEnum? = storedIterator.next()
+            var newProperty: E? = if (newIterator.hasNext()) newIterator.next() else null
+            var storedProperty: IndexedEnum? = if (storedIterator.hasNext()) storedIterator.next() else null
 
             /** Process new enum not present on stored model. */
             fun processNew() {

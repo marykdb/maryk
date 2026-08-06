@@ -31,16 +31,25 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     override fun getEmbeddedByIndex(index: UInt): Nothing? = null
 
     /** Check the enum values */
-    fun check() {
+    fun check() = check(this.cases.invoke())
+
+    /** Check [cases] from a single captured enum snapshot. */
+    fun check(cases: List<IndexedEnum>) {
+        val indices = mutableSetOf<UInt>()
+        cases.forEach { case ->
+            require(indices.add(case.index)) {
+                "Enum $name has duplicate index ${case.index} for option ${case.name}"
+            }
+        }
         this.reservedIndices?.let {
-            this.cases.invoke().forEach { case ->
+            cases.forEach { case ->
                 require(reservedIndices?.contains(case.index) != true) {
                     "Enum $name has ${case.index} defined in option ${case.name} while it is reserved"
                 }
             }
         }
         this.reservedNames?.let {
-            this.cases.invoke().forEach { case ->
+            cases.forEach { case ->
                 require(reservedNames?.contains(case.name) != true) {
                     "Enum $name has a reserved name defined ${case.name}"
                 }

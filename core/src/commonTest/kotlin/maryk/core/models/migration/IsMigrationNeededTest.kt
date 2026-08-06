@@ -1,9 +1,12 @@
 package maryk.core.models.migration
 
+import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationStatus.NeedsMigration
 import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.models.migration.MigrationStatus.OnlySafeAdds
 import maryk.core.models.migration.MigrationStatus.UpToDate
+import maryk.core.properties.definitions.boolean
+import maryk.core.properties.definitions.string
 import maryk.test.models.ModelMissingProperty
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
@@ -16,12 +19,42 @@ import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 
+private object StoredDeclarationOrderModel : RootDataModel<StoredDeclarationOrderModel>(name = "DeclarationOrderModel") {
+    val first by string(index = 1u)
+    val second by boolean(index = 2u)
+}
+
+private object ReorderedDeclarationOrderModel : RootDataModel<ReorderedDeclarationOrderModel>(name = "DeclarationOrderModel") {
+    val second by boolean(index = 2u)
+    val first by string(index = 1u)
+}
+
+private object ReorderedChangedDeclarationOrderModel : RootDataModel<ReorderedChangedDeclarationOrderModel>(name = "DeclarationOrderModel") {
+    val second by boolean(index = 2u)
+    val first by boolean(index = 1u)
+}
+
 class IsMigrationNeededTest {
     @Test
     fun migrationIsNotNeeded() {
         assertEquals(
             UpToDate,
             ModelV1.isMigrationNeeded(ModelV1)
+        )
+    }
+
+    @Test
+    fun reorderingPropertiesWithStableIndicesDoesNotNeedMigration() {
+        assertEquals(
+            UpToDate,
+            ReorderedDeclarationOrderModel.isMigrationNeeded(StoredDeclarationOrderModel)
+        )
+    }
+
+    @Test
+    fun reorderingPropertiesWithChangedDefinitionNeedsMigration() {
+        assertIs<NeedsMigration>(
+            ReorderedChangedDeclarationOrderModel.isMigrationNeeded(StoredDeclarationOrderModel)
         )
     }
 

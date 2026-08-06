@@ -49,6 +49,10 @@ internal class ListDefinitionTest {
         valueDefinition = NumberDefinition(type = UInt32)
     )
 
+    private val defBoolean = ListDefinition(
+        valueDefinition = BooleanDefinition()
+    )
+
     private val def64Int = ListDefinition(
         valueDefinition = NumberDefinition(type = Float64)
     )
@@ -145,6 +149,30 @@ internal class ListDefinitionTest {
         val asHex = "1209ebd504f712cfc6012a"
 
         this.testPackedTransportConversion(defVarInt, value, asHex, 2u)
+    }
+
+    @Test
+    fun readUnpackedVarIntValuesToCollection() {
+        val bytes = byteArrayOf(42, 127)
+        var index = 0
+        val values = mutableListOf<UInt>()
+
+        val first = defVarInt.readTransportBytes(-1, { bytes[index++] }, earlierValue = values)
+        val converted = defVarInt.readTransportBytes(-1, { bytes[index++] }, earlierValue = first)
+
+        expect(listOf(42u, 127u)) { converted }
+    }
+
+    @Test
+    fun readUnpackedBooleanValuesToCollection() {
+        val bytes = byteArrayOf(1, 0)
+        var index = 0
+        val values = mutableListOf<Boolean>()
+
+        val first = defBoolean.readTransportBytes(-1, { bytes[index++] }, earlierValue = values)
+        val converted = defBoolean.readTransportBytes(-1, { bytes[index++] }, earlierValue = first)
+
+        expect(listOf(true, false)) { converted }
     }
 
     @Test

@@ -346,6 +346,18 @@ internal class DataModelTest {
     }
 
     @Test
+    fun readUnpackedRepeatedVarIntValues() {
+        val bytes = "40064008".hexToByteArray()
+        var index = 0
+
+        val values = TestMarykModel.Serializer.readProtoBuf(bytes.size, reader = {
+            bytes[index++]
+        })
+
+        expect(listOf(3, 4)) { values { list } }
+    }
+
+    @Test
     fun skipReadingUnknownFields() {
         val bytes =
             "930408161205ffffffffff9404a20603686179a80608b00620b906400c70a3d70a3d72c80601d006028a07020105".hexToByteArray()

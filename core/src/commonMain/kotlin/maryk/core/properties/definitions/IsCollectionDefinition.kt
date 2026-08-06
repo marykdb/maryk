@@ -249,7 +249,7 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
     private fun isPacked(length: Int): Boolean {
         val vt = (this.valueDefinition as? IsValueDefinition<*, *>)?.wireType
         return when (vt) {
-            VAR_INT -> true
+            VAR_INT -> length >= 0
             BIT_32  -> length > 0 && length % (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize == 0
             BIT_64  -> length > 0 && length % (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize == 0
             else    -> false

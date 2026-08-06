@@ -25,6 +25,12 @@ class MultipleTest {
         )
     }
 
+    object NestedAnyOfModel : RootDataModel<NestedAnyOfModel>() {
+        val prefix by string(index = 1u, final = true)
+        val first by string(index = 2u, required = false, final = true)
+        val second by string(index = 3u, required = false, final = true)
+    }
+
     private val multiple = TestMarykModel.run {
         Multiple(
             UUIDv4Key,
@@ -114,5 +120,43 @@ class MultipleTest {
 
         val lengths = index.toStorageByteArraysForIndex(values).map { it.size }
         assertEquals(lengths.max(), index.calculateStorageByteLengthForIndex(values))
+    }
+
+    @Test
+    fun nestedMultipleSelectsLaterAnyOfValue() {
+        val nested = Multiple(
+            AnyOf(NestedAnyOfModel.first.ref(), NestedAnyOfModel.second.ref())
+        )
+        val index = Multiple(NestedAnyOfModel.prefix.ref(), nested)
+        val values = NestedAnyOfModel.create {
+            prefix with "prefix"
+            second with "second"
+        }
+
+        assertEquals(1, index.toStorageByteArraysForIndex(values).size)
+    }
+
+    @Test
+    fun anyOfFanoutKeepsBothExactEntries() {
+        val index = Multiple(
+            NestedAnyOfModel.prefix.ref(),
+            AnyOf(NestedAnyOfModel.first.ref(), NestedAnyOfModel.second.ref())
+        )
+        val values = NestedAnyOfModel.create {
+            prefix with "prefix"
+            first with "first"
+            second with "second"
+        }
+
+        val entries = index.toStorageByteArraysForIndex(values)
+
+        assertEquals(2, entries.size)
+        assertEquals(
+            listOf(
+                "70726566697866697273740506",
+                "7072656669787365636f6e640606",
+            ),
+            entries.map { it.toHexString() },
+        )
     }
 }

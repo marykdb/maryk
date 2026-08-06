@@ -1,16 +1,25 @@
 package maryk.core.models
 
 import maryk.core.base64.Base64Maryk
+import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.initByteArray
 import maryk.core.models.definitions.IsRootDataModelDefinition
-import maryk.core.properties.definitions.IsFixedStorageBytesEncodable
+import maryk.core.properties.definitions.index.GeoHash
+import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.Normalize
+import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.checkKeyDefinitionAndCountBytes
+import maryk.core.properties.definitions.index.normalizeStringForIndex
+import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.graph.IsPropRefGraphNode
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsFixedBytesPropertyReference
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.geoHashBits
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
+import maryk.core.values.IsValuesGetter
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ValueItems
 import maryk.core.values.Values
@@ -65,23 +74,54 @@ fun <DM : IsRootDataModel> DM.graph(
 
 /** Get Key based on [values] */
 fun <DM : IsRootDataModel> DM.key(values: Values<DM>): Key<DM> {
-    val bytes = ByteArray(this.Meta.keyByteSize)
-    var index = 0
-    when (val keyDef = this.Meta.keyDefinition) {
-        is Multiple -> {
-            keyDef.writeStorageBytes(values) {
-                bytes[index++] = it
-            }
-        }
-        is IsFixedBytesPropertyReference<out Any> -> {
-            val value = keyDef.getValue(values)
+    return Key(this.Meta.keyDefinition.toKeyStorageBytes(values, this.Meta.keyByteSize))
+}
 
-            @Suppress("UNCHECKED_CAST")
-            (keyDef as IsFixedStorageBytesEncodable<Any>).writeStorageBytes(value) {
-                bytes[index++] = it
-            }
+private fun IsIndexable.toKeyStorageBytes(
+    values: IsValuesGetter,
+    expectedByteSize: Int,
+): ByteArray = when (this) {
+    is Multiple -> encodeKeyBytes(expectedByteSize) { writer ->
+        references.forEach { reference ->
+            reference.toKeyStorageBytes(
+                values,
+                checkKeyDefinitionAndCountBytes(reference),
+            ).forEach(writer)
         }
     }
+    is Normalize -> {
+        val value = reference.getValueOrNull(values) ?: throw RequiredException(null)
+        encodeKeyBytes(expectedByteSize) { writer ->
+            writeStorageBytes(normalizeStringForIndex(value), writer)
+        }
+    }
+    is GeoHash -> {
+        val value = reference.getValueOrNull(values) ?: throw RequiredException(null)
+        encodeKeyBytes(expectedByteSize) { writer ->
+            value.geoHashBits(precisionBits).forEach(writer)
+        }
+    }
+    is Reversed<*> -> encodeKeyBytes(expectedByteSize) { writer ->
+        writeStorageBytes(values, writer)
+    }
+    is IsFixedBytesPropertyReference<*> -> encodeKeyBytes(expectedByteSize) { writer ->
+        writeStorageBytes(values, writer)
+    }
+    else -> throw TypeException("Unknown root key IsIndexable type: $this")
+}
 
-    return Key(bytes)
+private fun encodeKeyBytes(
+    expectedByteSize: Int,
+    encoder: ((Byte) -> Unit) -> Unit,
+): ByteArray {
+    val bytes = mutableListOf<Byte>()
+    encoder { bytes += it }
+
+    if (bytes.size != expectedByteSize) {
+        throw ParseException(
+            "Invalid runtime byte length for key. Expected $expectedByteSize instead of ${bytes.size}"
+        )
+    }
+
+    return bytes.toByteArray()
 }

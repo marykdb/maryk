@@ -4,6 +4,7 @@ import maryk.core.models.key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.pairs.with
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.test.models.SimpleMarykModel
@@ -102,6 +103,24 @@ internal class ProcessUpdateResponseTest {
     }
 
     @Test
+    fun testAdditionPreservesDeletionState() {
+        val addition = AdditionUpdate(
+            key = SimpleMarykModel.key("0ruQCs38S2QaByYof-IJgA"),
+            firstVersion = 3456uL,
+            version = 4567uL,
+            insertionIndex = 1,
+            values = SimpleMarykModel.create {
+                value with "v3"
+            },
+            isDeleted = true
+        )
+
+        val newItems = processUpdateResponse(addition, initialItems)
+
+        assertEquals(true, newItems[1].isDeleted)
+    }
+
+    @Test
     fun testChangeInPlace() {
         val newValue = "new value"
 
@@ -127,6 +146,47 @@ internal class ProcessUpdateResponseTest {
     }
 
     @Test
+    fun testChangeInPlacePreservesDeletionStateForNonSoftDeleteChange() {
+        val deletedItems = initialItems.map {
+            if (it.key == key2) it.copy(isDeleted = true) else it
+        }
+        val change = ChangeUpdate(
+            key = key2,
+            version = 4567uL,
+            index = 1,
+            changes = listOf(
+                Change(
+                    SimpleMarykModel { value::ref } with "new value"
+                )
+            )
+        )
+
+        val newItems = processUpdateResponse(change, deletedItems)
+
+        assertEquals(true, newItems[1].isDeleted)
+    }
+
+    @Test
+    fun testChangeInPlaceUsesLastSoftDeleteChange() {
+        val change = ChangeUpdate(
+            key = key2,
+            version = 4567uL,
+            index = 1,
+            changes = listOf(
+                ObjectSoftDeleteChange(true),
+                Change(
+                    SimpleMarykModel { value::ref } with "new value"
+                ),
+                ObjectSoftDeleteChange(false)
+            )
+        )
+
+        val newItems = processUpdateResponse(change, initialItems)
+
+        assertEquals(false, newItems[1].isDeleted)
+    }
+
+    @Test
     fun testChangeWithMove() {
         val newValue = "new value"
 
@@ -149,6 +209,44 @@ internal class ProcessUpdateResponseTest {
             assertEquals(key2, key)
             assertEquals(newValue, values { value })
         }
+    }
+
+    @Test
+    fun testChangeWithMovePreservesDeletionStateForNonSoftDeleteChange() {
+        val deletedItems = initialItems.map {
+            if (it.key == key2) it.copy(isDeleted = true) else it
+        }
+        val change = ChangeUpdate(
+            key = key2,
+            version = 4567uL,
+            index = 0,
+            changes = listOf(
+                Change(
+                    SimpleMarykModel { value::ref } with "new value"
+                )
+            )
+        )
+
+        val newItems = processUpdateResponse(change, deletedItems)
+
+        assertEquals(true, newItems[0].isDeleted)
+    }
+
+    @Test
+    fun testChangeWithMoveUsesLastSoftDeleteChange() {
+        val change = ChangeUpdate(
+            key = key2,
+            version = 4567uL,
+            index = 0,
+            changes = listOf(
+                ObjectSoftDeleteChange(false),
+                ObjectSoftDeleteChange(true)
+            )
+        )
+
+        val newItems = processUpdateResponse(change, initialItems)
+
+        assertEquals(true, newItems[0].isDeleted)
     }
 
     @Test

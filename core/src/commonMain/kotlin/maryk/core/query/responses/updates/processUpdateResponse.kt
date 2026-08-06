@@ -16,7 +16,7 @@ fun <DM: IsRootDataModel> processUpdateResponse(response: IsUpdateResponse<DM>, 
                     firstVersion = response.firstVersion,
                     lastVersion = response.version,
                     values = response.values,
-                    isDeleted = false
+                    isDeleted = response.isDeleted
                 )
             )
         }
@@ -25,13 +25,7 @@ fun <DM: IsRootDataModel> processUpdateResponse(response: IsUpdateResponse<DM>, 
                 previousResults.mapIndexed { index, value ->
                     when (index) {
                         response.index -> {
-                            ValuesWithMetaData(
-                                key = response.key,
-                                firstVersion = value.firstVersion,
-                                lastVersion = response.version,
-                                values = value.values.change(response.changes),
-                                isDeleted = response.changes.firstOrNull().let { it is ObjectSoftDeleteChange && it.isDeleted }
-                            )
+                            value.withChange(response)
                         }
                         else -> value
                     }
@@ -46,13 +40,7 @@ fun <DM: IsRootDataModel> processUpdateResponse(response: IsUpdateResponse<DM>, 
 
                     removeAt(oldIndex)
 
-                    add(response.index, ValuesWithMetaData(
-                        key = response.key,
-                        firstVersion = value.firstVersion,
-                        lastVersion = response.version,
-                        values = value.values.change(response.changes),
-                        isDeleted = response.changes.firstOrNull().let { it is ObjectSoftDeleteChange && it.isDeleted }
-                    ))
+                    add(response.index, value.withChange(response))
                 }
             }
         }
@@ -60,3 +48,12 @@ fun <DM: IsRootDataModel> processUpdateResponse(response: IsUpdateResponse<DM>, 
         is OrderedKeysUpdate<DM> -> previousResults
         else -> throw IllegalStateException("Unknown update response type: $response")
     }
+
+private fun <DM: IsRootDataModel> ValuesWithMetaData<DM>.withChange(response: ChangeUpdate<DM>) =
+    ValuesWithMetaData(
+        key = response.key,
+        firstVersion = firstVersion,
+        lastVersion = response.version,
+        values = values.change(response.changes),
+        isDeleted = response.changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: isDeleted
+    )

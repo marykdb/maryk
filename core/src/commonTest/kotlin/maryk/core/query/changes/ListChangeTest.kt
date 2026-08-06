@@ -6,12 +6,15 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.exceptions.InvalidSizeException
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.query.RequestContext
 import maryk.core.values.div
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class ListChangeTest {
@@ -125,5 +128,42 @@ class ListChangeTest {
                 )
             )
         }
+    }
+
+    @Test
+    fun validateAddedValuesAgainstListElementDefinition() {
+        val tooLong = "12345678901"
+        val exceptions = mutableListOf<ValidationException>()
+
+        ListChange(
+            TestMarykModel { listOfString::ref }.change(
+                addValuesAtIndex = mapOf(3u to tooLong),
+                addValuesToEnd = listOf(tooLong),
+                deleteValues = listOf(tooLong)
+            )
+        ).validate(exceptions::add)
+
+        assertEquals(2, exceptions.size)
+        assertEquals(
+            setOf("listOfString.@3", "listOfString.*"),
+            exceptions.map {
+                assertIs<InvalidSizeException>(it).reference!!.completeName
+            }.toSet()
+        )
+    }
+
+    @Test
+    fun validAndEmptyListChangesRemainValid() {
+        val validChange = ListChange(
+            TestMarykModel { listOfString::ref }.change(
+                addValuesAtIndex = mapOf(1u to "valid"),
+                addValuesToEnd = listOf("also valid"),
+                deleteValues = listOf("not present")
+            )
+        )
+        val emptyChange = ListChange(TestMarykModel { listOfString::ref }.change())
+
+        validChange.validate { error("valid list change failed validation: $it") }
+        emptyChange.validate { error("empty list change failed validation: $it") }
     }
 }

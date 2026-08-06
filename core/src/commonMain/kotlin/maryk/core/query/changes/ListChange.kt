@@ -4,12 +4,16 @@ import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.QueryModel
 import maryk.core.models.serializers.ReferenceMappedDataModelSerializer
+import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.CanContainListItemReference
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.IsPropertyReferenceForValues
 import maryk.core.properties.references.toListIndex
 import maryk.core.query.RequestContext
@@ -32,10 +36,33 @@ data class ListChange internal constructor(
     }
 
     override fun validate(addException: (e: ValidationException) -> Unit) {
-        val typedListValueChanges = listValueChanges.filterIsInstance<SetValueChanges<Any>>()
-        typedListValueChanges.forEach {
-            it.reference.comparablePropertyDefinition.validateWithRef(null, it.addValues) {
-                it.reference
+        listValueChanges.forEach { valueChange ->
+            @Suppress("UNCHECKED_CAST")
+            val listDefinition = valueChange.reference.comparablePropertyDefinition as IsListDefinition<Any, IsPropertyContext>
+
+            valueChange.addValuesAtIndex?.forEach { (index, value) ->
+                try {
+                    listDefinition.valueDefinition.validateWithRef(null, value) {
+                        @Suppress("UNCHECKED_CAST")
+                        listDefinition.itemRef(
+                            index,
+                            valueChange.reference as CanContainListItemReference<*, *, *>
+                        )
+                    }
+                } catch (e: ValidationException) {
+                    addException(e)
+                }
+            }
+
+            valueChange.addValuesToEnd?.forEach { value ->
+                try {
+                    listDefinition.valueDefinition.validateWithRef(null, value) {
+                        @Suppress("UNCHECKED_CAST")
+                        listDefinition.anyItemRef(valueChange.reference) as IsPropertyReference<Any, *, *>
+                    }
+                } catch (e: ValidationException) {
+                    addException(e)
+                }
             }
         }
     }

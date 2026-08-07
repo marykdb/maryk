@@ -76,7 +76,8 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
                 )
 
                 val newRecord = oldRecord.copy(
-                    values = newValues
+                    values = newValues,
+                    lastVersion = if (version > oldRecord.lastVersion) version else oldRecord.lastVersion
                 )
                 dataStore.records[index] = newRecord
             }

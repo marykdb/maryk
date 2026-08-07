@@ -92,6 +92,13 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
                         throw InvalidYamlContent("Invalid char $lastChar at this position")
                     }
                     '}' -> {
+                        if (this.state == KEY && this.fieldNames.isEmpty()) {
+                            this.state = STOP
+
+                            read()
+                            this.currentReader = this.parentReader
+                            return EndObject
+                        }
                         if (this.state != SEPARATOR) {
                             return this.jsonTokenCreator(null, false, tag, extraIndent)
                         }

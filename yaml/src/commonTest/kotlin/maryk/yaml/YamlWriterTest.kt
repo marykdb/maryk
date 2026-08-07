@@ -644,6 +644,31 @@ internal class YamlWriterTest {
     }
 
     @Test
+    fun keepNumericAndTimeMapKeysUnquoted() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartObject()
+                writeFieldName("12")
+                writeString("numeric")
+                writeFieldName("12:55")
+                writeString("time")
+                writeEndObject()
+            }
+        }
+
+        assertEquals("12: numeric\n12:55: time\n", output)
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("12")
+            assertValue("numeric")
+            assertFieldName("12:55")
+            assertValue("time")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun quoteFlowDelimitersAndEmbeddedQuotesRoundTrip() {
         val value = "value, it's]"
         val output = buildString {
@@ -695,6 +720,103 @@ internal class YamlWriterTest {
             """.trimIndent(),
             output
         )
+    }
+
+    @Test
+    fun writeEmptyObjectInNestedArrays() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartArray()
+                writeStartArray()
+                writeStartObject()
+                writeEndObject()
+                writeEndArray()
+                writeEndArray()
+            }
+        }
+
+        assertEquals("- - {}\n", output)
+    }
+
+    @Test
+    fun writeEmptyObjectAtRoot() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartObject()
+                writeEndObject()
+            }
+        }
+
+        assertEquals("{}", output)
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun writeEmptyObjectInArrayBeforeSibling() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartArray()
+                writeStartObject()
+                writeEndObject()
+                writeValue("next")
+                writeEndArray()
+            }
+        }
+
+        assertEquals("- {}\n- next\n", output)
+    }
+
+    @Test
+    fun writeTaggedEmptyObjectWithoutFlowMap() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartObject()
+                writeFieldName("map")
+                writeTag("!map")
+                writeStartObject()
+                writeEndObject()
+                writeEndObject()
+            }
+        }
+
+        assertEquals("map: !map\n", output)
+    }
+
+    @Test
+    fun writeEmptyObjectAsComplexMapKeyAndValue() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartObject()
+                writeStartComplexField()
+                writeStartObject()
+                writeEndObject()
+                writeEndComplexField()
+                writeStartObject()
+                writeEndObject()
+                writeEndObject()
+            }
+        }
+
+        assertEquals("? {}\n: {}\n", output)
+    }
+
+    @Test
+    fun writeEmptyObjectInsideCompactObject() {
+        val output = buildString {
+            YamlWriter(::append).apply {
+                writeStartObject(true)
+                writeFieldName("map")
+                writeStartObject()
+                writeEndObject()
+                writeEndObject()
+            }
+        }
+
+        assertEquals("{map: {}}\n", output)
     }
 
     @Test

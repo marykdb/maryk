@@ -60,9 +60,9 @@ class VersionedChangesTest {
             - !ObjectDelete
               isDeleted: true
             - !ListChange
-              list:
+              list: {}
             - !SetChange
-              set:
+              set: {}
             - !ObjectCreate
 
             """.trimIndent()

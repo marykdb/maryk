@@ -18,6 +18,7 @@ import maryk.test.models.Option
 import maryk.test.models.SimpleMarykTypeEnum.S3
 import maryk.test.models.TestMarykModel
 import maryk.test.models.TestValueObject
+import maryk.core.yaml.MarykYamlReader
 import maryk.yaml.YamlWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -302,6 +303,34 @@ internal class DataModelTest {
             """.trimIndent(),
             output
         )
+    }
+
+    @Test
+    fun roundTripsEmptyNonCompactMap() {
+        val values = TestMarykModel.create {
+            map with emptyMap()
+        }
+        val output = buildString {
+            TestMarykModel.Serializer.writeJson(values, YamlWriter(::append))
+        }
+        var index = 0
+
+        assertEquals(values, TestMarykModel.Serializer.readJson(MarykYamlReader { output.getOrNull(index++) }))
+        assertEquals("string: haha\nenum: V1(1)\nmap: {}\n", output)
+    }
+
+    @Test
+    fun roundTripsEmptyNonCompactEmbeddedValues() {
+        val values = TestMarykModel.create {
+            embeddedValues with {}
+        }
+        val output = buildString {
+            TestMarykModel.Serializer.writeJson(values, YamlWriter(::append))
+        }
+        var index = 0
+
+        assertEquals(values, TestMarykModel.Serializer.readJson(MarykYamlReader { output.getOrNull(index++) }))
+        assertEquals("string: haha\nenum: V1(1)\nembeddedValues: {}\n", output)
     }
 
     @Test

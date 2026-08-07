@@ -52,6 +52,8 @@ class YamlWriter(
     private var prefix: String = ""
     private var prefixWasWritten = false
     private var compactStartedAtLevel: Int? = null
+    private var pendingObjectStart = false
+    private var pendingObjectStartHasTag = false
 
     private val prefixToWrite: String
         get() = if (this.prefixWasWritten) {
@@ -70,7 +72,17 @@ class YamlWriter(
             return this.typeStack.lastOrNull()?.isSimple == true
         }
 
+    private fun writePendingObjectStart() {
+        if (this.pendingObjectStart) {
+            writer("\n")
+            this.prefixWasWritten = false
+            this.pendingObjectStart = false
+            this.pendingObjectStartHasTag = false
+        }
+    }
+
     override fun writeStartObject(isCompact: Boolean) {
+        writePendingObjectStart()
         if (isCompact || this.lastIsCompact) {
             if (this.lastType == FIELD_NAME
                 || this.lastType == TAG
@@ -91,8 +103,9 @@ class YamlWriter(
         } else {
             val prefixWasWrittenBefore = this.prefixWasWritten
             if (lastType == FIELD_NAME || lastType == TAG) {
-                writer("\n")
                 this.prefixWasWritten = false
+                this.pendingObjectStart = true
+                this.pendingObjectStartHasTag = lastType == TAG
             } else if (lastType == COMPLEX_FIELD_NAME_END) {
                 writer(" ")
             }
@@ -100,7 +113,7 @@ class YamlWriter(
             val lastEmbedType = this.typeStack.lastOrNull()
 
             // If starting object within array then add array field
-            if (lastEmbedType != null && lastEmbedType is JsonEmbedType.Array && !prefixWasWrittenBefore) {
+            if (lastEmbedType is JsonEmbedType.Array && (!prefixWasWrittenBefore || lastType == START_ARRAY)) {
                 writer("$prefixToWrite$arraySpacing")
                 this.prefixWasWritten = true
             }
@@ -122,6 +135,21 @@ class YamlWriter(
                 this.prefixWasWritten = false
             }
         } else {
+            if (this.lastType == START_OBJ) {
+                if (this.pendingObjectStart) {
+                    if (!this.pendingObjectStartHasTag) {
+                        writer(" {}")
+                    }
+                } else {
+                    writer("$prefixToWrite{}")
+                }
+                this.pendingObjectStart = false
+                this.pendingObjectStartHasTag = false
+                if (this.typeStack.size > 1) {
+                    writer("\n")
+                    this.prefixWasWritten = false
+                }
+            }
             super.writeEndObject()
             if (this.typeStack.isNotEmpty() && this.typeStack.last() !== ComplexField) {
                 prefix = prefix.removeSuffix(spacing)
@@ -130,6 +158,7 @@ class YamlWriter(
     }
 
     override fun writeStartArray(isCompact: Boolean) {
+        writePendingObjectStart()
         if (!this.lastIsCompact) {
             when (lastType) {
                 TAG -> {
@@ -197,8 +226,9 @@ class YamlWriter(
 
     /** Writes the field [name] for an object */
     override fun writeFieldName(name: String) {
+        writePendingObjectStart()
         val isCompact = this.lastIsCompact
-        val renderedName = sanitizeValue(name, quoteFlowDelimiters = isCompact)
+        val renderedName = sanitizeFieldName(name, quoteFlowDelimiters = isCompact)
         val lastType = this.lastType
 
         if (isCompact) {
@@ -219,6 +249,7 @@ class YamlWriter(
     override fun writeValue(value: String) = writeValueInternal(value, quoteStrings = false)
 
     private fun writeValueInternal(value: String, quoteStrings: Boolean) {
+        writePendingObjectStart()
         if (typeStack.isNotEmpty()) {
             val lastTypeBeforeOperation = this.lastType
             val renderedValue = if (quoteStrings) {
@@ -321,6 +352,7 @@ class YamlWriter(
 
     /** Writes a [tag] to YAML output */
     fun writeTag(tag: String) {
+        writePendingObjectStart()
         if (this.lastType == FIELD_NAME || this.lastType == COMPLEX_FIELD_NAME_END) {
             writer(" ")
         }
@@ -366,6 +398,7 @@ class YamlWriter(
     }
 
     fun writeStartComplexField() {
+        writePendingObjectStart()
         checkTypeIsAllowed(
             COMPLEX_FIELD_NAME_START,
             arrayOf(START_OBJ, START_ARRAY, OBJ_VALUE, END_OBJ, END_ARRAY)
@@ -380,6 +413,7 @@ class YamlWriter(
     }
 
     fun writeEndComplexField() {
+        writePendingObjectStart()
         checkTypeIsAllowed(
             COMPLEX_FIELD_NAME_END,
             arrayOf(END_OBJ, END_ARRAY, OBJ_VALUE)
@@ -399,6 +433,13 @@ class YamlWriter(
     /** If value contains yaml incompatible values it will be surrounded by quotes */
     private fun sanitizeValue(value: String, quoteFlowDelimiters: Boolean) =
         if (shouldQuote(value, quoteFlowDelimiters)) {
+            "'${value.replace("'", "''")}'"
+        } else {
+            value
+        }
+
+    private fun sanitizeFieldName(value: String, quoteFlowDelimiters: Boolean) =
+        if (shouldQuoteFieldName(value, quoteFlowDelimiters)) {
             "'${value.replace("'", "''")}'"
         } else {
             value
@@ -424,6 +465,17 @@ class YamlWriter(
         ) {
             return true
         }
+        return false
+    }
+
+    private fun shouldQuoteFieldName(value: String, quoteFlowDelimiters: Boolean): Boolean {
+        if (value.isEmpty() || value != value.trim()) return true
+        if (value == "---" || value == "...") return true
+        if (value.first() in indicatorStartChars) return true
+        if (value == "?") return true
+        if (value.startsWith("- ") || value.startsWith("? ") || value.startsWith(": ")) return true
+        if (value.contains('\n') || value.contains(": ") || value.contains(":\t") || value.contains(" #")) return true
+        if (quoteFlowDelimiters && value.matches(flowStructureRegex)) return true
         return false
     }
 }

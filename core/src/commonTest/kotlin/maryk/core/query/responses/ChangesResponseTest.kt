@@ -89,9 +89,9 @@ class ChangesResponseTest {
                 - !ObjectDelete
                   isDeleted: true
                 - !ListChange
-                  list:
+                  list: {}
                 - !SetChange
-                  set:
+                  set: {}
                 - !TypeChange
                   multi: S3
               - version: 319674127

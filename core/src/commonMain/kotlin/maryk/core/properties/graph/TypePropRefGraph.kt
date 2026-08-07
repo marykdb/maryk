@@ -164,11 +164,7 @@ data class TypePropRefGraph<
                 writer.writeFieldName(parentRef.completeName)
                 writer.writeStartObject()
                 val typeField = "*${obj.type.name}"
-                if (writer is maryk.yaml.YamlWriter) {
-                    writer.writeFieldName("'" + typeField + "'")
-                } else {
-                    writer.writeFieldName(typeField)
-                }
+                writer.writeFieldName(typeField)
                 writePropertiesToJson(obj.properties, writer, newContext)
                 writer.writeEndObject()
                 writer.writeEndObject()

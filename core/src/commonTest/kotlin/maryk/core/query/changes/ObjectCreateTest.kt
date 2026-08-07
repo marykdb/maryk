@@ -25,9 +25,7 @@ class ObjectCreateTest {
     @Test
     fun convertToYAMLAndBack() {
         expect(
-            """
-
-            """.trimIndent()
+            "{}"
         ) {
             checkYamlConversion(ObjectCreate, ObjectCreate.Model, { this.context })
         }

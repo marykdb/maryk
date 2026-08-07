@@ -91,7 +91,7 @@ class DataObjectChangeTest {
               list:
                 addValuesToEnd: [1, 2, 3]
             - !SetChange
-              set:
+              set: {}
             - !IncMapChange
               incMap:
                 addValues: [a, b]

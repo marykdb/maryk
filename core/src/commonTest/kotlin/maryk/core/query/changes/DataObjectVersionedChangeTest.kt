@@ -74,9 +74,9 @@ class DataObjectVersionedChangeTest {
               - !ObjectDelete
                 isDeleted: true
               - !ListChange
-                list:
+                list: {}
               - !SetChange
-                set:
+                set: {}
             - version: 319674127
               changes:
               - !ObjectCreate

@@ -10,7 +10,12 @@ import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.properties.definitions.fixedBytes
+import maryk.core.properties.definitions.string
+import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.Key
+import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Orders
@@ -21,18 +26,18 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
+import maryk.core.query.requests.getUpdates
 import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanUpdateHistory
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.query.responses.updates.AdditionUpdate
-import maryk.core.properties.definitions.string
-import maryk.core.properties.types.Bytes
-import maryk.core.properties.types.Key
-import maryk.core.properties.types.invoke
+import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
@@ -87,6 +92,77 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 class IndexedDbDataStoreTest {
+    @Test
+    fun getUpdatesReplaysHistoricChangesInsteadOfCurrentState() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val source = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-get-updates-history-source-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+        )
+        val target = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-get-updates-history-target-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+        )
+
+        try {
+            val initialValues = SimpleMarykModel.create { value with "haha-initial" }
+            val add = source.execute(SimpleMarykModel.add(initialValues))
+            val addStatus = assertStatusIs<AddSuccess<SimpleMarykModel>>(add.statuses.single())
+            val changedValue = "haha-changed"
+            val change = Change(SimpleMarykModel { value::ref } with changedValue)
+            val changeResponse = source.execute(SimpleMarykModel.change(addStatus.key.change(change)))
+            val changeStatus = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(changeResponse.statuses.single())
+            val deleteResponse = source.execute(SimpleMarykModel.delete(addStatus.key))
+            val deleteStatus = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(deleteResponse.statuses.single())
+            val missingKey = Key<SimpleMarykModel>(
+                ByteArray(SimpleMarykModel.Meta.keyByteSize) { 0xFF.toByte() }
+            )
+
+            val history = source.execute(
+                SimpleMarykModel.getUpdates(
+                    addStatus.key,
+                    missingKey,
+                    fromVersion = addStatus.version,
+                    toVersion = deleteStatus.version,
+                    maxVersions = 10u,
+                    filterSoftDeleted = false,
+                )
+            )
+
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(history.updates[0]).apply {
+                assertEquals(listOf(addStatus.key), keys)
+                assertEquals(deleteStatus.version, version)
+            }
+            assertIs<AdditionUpdate<SimpleMarykModel>>(history.updates[1]).apply {
+                assertEquals(addStatus.version, version)
+                assertEquals(addStatus.version, firstVersion)
+                assertEquals(initialValues, values)
+                assertFalse(isDeleted)
+            }
+            assertIs<ChangeUpdate<SimpleMarykModel>>(history.updates[2]).apply {
+                assertEquals(changeStatus.version, version)
+                assertEquals(listOf(change), changes)
+            }
+            assertIs<ChangeUpdate<SimpleMarykModel>>(history.updates[3]).apply {
+                assertEquals(deleteStatus.version, version)
+                assertEquals(listOf(ObjectSoftDeleteChange(true)), changes)
+            }
+
+            for (update in history.updates.drop(1)) {
+                target.processUpdate(UpdateResponse(SimpleMarykModel, update))
+            }
+            val replayed = target.execute(SimpleMarykModel.get(addStatus.key, filterSoftDeleted = false)).values.single()
+            assertEquals(SimpleMarykModel.create { value with changedValue }, replayed.values)
+            assertTrue(replayed.isDeleted)
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
     @Test
     fun portableBackupRoundTrip() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()

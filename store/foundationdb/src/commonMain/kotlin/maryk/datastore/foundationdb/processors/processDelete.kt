@@ -56,7 +56,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
     cache: Cache,
 ): IsDeleteResponseStatus<DM> = try {
     var updateToEmit: Update<DM>? = null
-    runTransaction { tr ->
+    runTransaction(dbIndex) { tr ->
         val keyBytes = key.bytes
         val exists = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
             ?.readHLCTimestampIfExact() != null

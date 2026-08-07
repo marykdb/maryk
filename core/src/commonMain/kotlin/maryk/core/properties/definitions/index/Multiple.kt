@@ -23,24 +23,27 @@ data class Multiple(
     /** Convenience method to set with each [reference] as separate argument */
     constructor(vararg reference: IsIndexable) : this(listOf(*reference))
 
-    override fun toStorageByteArraysForIndex(values: IsValuesGetter, key: ByteArray?): List<ByteArray> {
-        val subValues = references.map { it.toStorageByteArrays(values) }
-        if (subValues.any { it.isEmpty() }) {
-            return emptyList()
+    override fun toStorageByteArraysForIndex(values: IsValuesGetter, key: ByteArray?): List<ByteArray> =
+        buildList {
+            forEachStorageByteArrayForIndex(values, key, ::add)
         }
 
-        val selectedValues = arrayOfNulls<ByteArray>(subValues.size)
-        val partLengths = IntArray(subValues.size)
-        val results = mutableListOf<ByteArray>()
+    override fun forEachStorageByteArrayForIndex(
+        values: IsValuesGetter,
+        key: ByteArray?,
+        emit: (ByteArray) -> Unit
+    ) {
+        val selectedValues = arrayOfNulls<ByteArray>(references.size)
+        val partLengths = IntArray(references.size)
         val keySize = key?.size ?: 0
 
         fun appendCombination(depth: Int, valueBytesLength: Int, lengthBytesLength: Int) {
-            if (depth == subValues.size) {
+            if (depth == references.size) {
                 val totalLength = valueBytesLength
                     .checkedIndexByteLengthPlus(lengthBytesLength)
                     .checkedIndexByteLengthPlus(keySize)
 
-                results += ByteArray(totalLength).also { output ->
+                emit(ByteArray(totalLength).also { output ->
                     var writeIndex = 0
                     selectedValues.forEach { selectedValue ->
                         val bytes = selectedValue ?: return@forEach
@@ -53,11 +56,11 @@ data class Multiple(
                     }
 
                     key?.copyInto(output, writeIndex)
-                }
+                })
                 return
             }
 
-            for (option in subValues[depth]) {
+            references[depth].forEachStorageByteArray(values) { option ->
                 selectedValues[depth] = option
                 partLengths[depth] = option.size
                 appendCombination(
@@ -69,7 +72,6 @@ data class Multiple(
         }
 
         appendCombination(depth = 0, valueBytesLength = 0, lengthBytesLength = 0)
-        return results
     }
 
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int?): Int {
@@ -87,12 +89,25 @@ data class Multiple(
     }
 
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray?, writer: (byte: Byte) -> Unit) {
-        toStorageByteArraysForIndex(values, key).firstOrNull()?.forEach(writer)
+        var written = false
+        forEachStorageByteArrayForIndex(values, key) { bytes ->
+            if (!written) {
+                bytes.forEach(writer)
+                written = true
+            }
+        }
     }
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
         for (reference in references) {
-            reference.toStorageByteArrays(values).firstOrNull()?.forEach(writer) ?: return
+            var found = false
+            reference.forEachStorageByteArray(values) { bytes ->
+                if (!found) {
+                    bytes.forEach(writer)
+                    found = true
+                }
+            }
+            if (!found) return
         }
     }
 

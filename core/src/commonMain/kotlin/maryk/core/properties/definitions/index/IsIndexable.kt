@@ -40,6 +40,15 @@ interface IsIndexable {
         emptyList()
     }
 
+    /** Emits one ByteArray for every index entry without retaining all entries. */
+    fun forEachStorageByteArrayForIndex(
+        values: IsValuesGetter,
+        key: ByteArray? = null,
+        emit: (ByteArray) -> Unit
+    ) {
+        toStorageByteArraysForIndex(values, key).forEach(emit)
+    }
+
     /** Convert indexable value bytes without index key lengths */
     fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> = try {
         val bytes = mutableListOf<Byte>()
@@ -49,6 +58,11 @@ interface IsIndexable {
         emptyList()
     } catch (_: ParseException) {
         emptyList()
+    }
+
+    /** Emits value bytes without index key lengths without retaining all values. */
+    fun forEachStorageByteArray(values: IsValuesGetter, emit: (ByteArray) -> Unit) {
+        toStorageByteArrays(values).forEach(emit)
     }
 
     /** Calculate byte length for reference to this indexable */

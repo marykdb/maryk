@@ -35,7 +35,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
 
     getRequest.checkToVersion(keepAllVersions)
 
-    runReadTransaction(readContext) { tr ->
+    runReadTransaction(readContext, dbIndex) { tr ->
         keyWalk@ for (key in getRequest.keys) {
             val keyBytes = key.bytes
             val valuesWithMetaData = run {

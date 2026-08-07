@@ -33,7 +33,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
     val dbIndex = getDataModelId(getRequest.dataModel)
     val tableDirs = getTableDirs(dbIndex)
 
-    runReadTransaction(readContext) { tr ->
+    runReadTransaction(readContext, dbIndex) { tr ->
         keyWalk@ for (key in getRequest.keys) {
             val changes: DataObjectVersionedChange<DM>? = run {
                 val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, getRequest.toVersion)

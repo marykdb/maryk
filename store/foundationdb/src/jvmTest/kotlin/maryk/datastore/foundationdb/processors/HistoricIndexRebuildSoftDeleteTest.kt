@@ -3,21 +3,28 @@ package maryk.datastore.foundationdb.processors
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
 import maryk.core.query.filters.Equals
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.change
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
+import maryk.datastore.foundationdb.model.modelIndexRebuildScratchKey
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.foundationdb.Range
 import maryk.test.models.Option
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
@@ -57,7 +64,7 @@ class HistoricIndexRebuildSoftDeleteTest {
             }
 
             deleteCompleteIndexContents(store.tc, tableDirs, indexable)
-            walkDataRecordsAndFillIndex(store.tc, tableDirs, listOf(indexable))
+            walkDataRecordsAndFillIndex(store.tc, tableDirs, listOf(indexable), TestMarykModel)
 
             val currentScan = store.execute(
                 TestMarykModel.scan(
@@ -65,6 +72,7 @@ class HistoricIndexRebuildSoftDeleteTest {
                 )
             )
             assertEquals(0, currentScan.values.size)
+
         } finally {
             store.close()
         }
@@ -108,7 +116,7 @@ class HistoricIndexRebuildSoftDeleteTest {
             }
 
             deleteCompleteIndexContents(store.tc, tableDirs, indexable)
-            walkDataRecordsAndFillIndex(store.tc, tableDirs, listOf(indexable))
+            walkDataRecordsAndFillIndex(store.tc, tableDirs, listOf(indexable), TestMarykModel)
 
             val currentScan = store.execute(
                 TestMarykModel.scan(
@@ -116,6 +124,14 @@ class HistoricIndexRebuildSoftDeleteTest {
                 )
             )
             assertEquals(0, currentScan.values.size)
+
+            val historicScan = store.execute(
+                TestMarykModel.scan(
+                    where = Equals(TestMarykModel { int::ref } with 5),
+                    toVersion = addStatus.version,
+                )
+            )
+            assertEquals(1, historicScan.values.size)
         } finally {
             store.close()
         }
@@ -156,7 +172,7 @@ class HistoricIndexRebuildSoftDeleteTest {
             }
 
             deleteCompleteIndexContents(store.tc, tableDirs, indexable)
-            walkDataRecordsAndFillIndex(store.tc, tableDirs, listOf(indexable))
+            walkDataRecordsAndFillIndex(store.tc, tableDirs, listOf(indexable), TestMarykModel)
 
             val currentScan = store.execute(
                 TestMarykModel.scan(
@@ -204,7 +220,7 @@ class HistoricIndexRebuildSoftDeleteTest {
             val tableDirs = assertIs<HistoricTableDirectories>(store.getTableDirs(TestMarykModel))
 
             deleteCompleteIndexContents(store.tc, tableDirs, indexable)
-            walkDataRecordsAndFillIndex(store.tc, tableDirs, listOf(indexable))
+            walkDataRecordsAndFillIndex(store.tc, tableDirs, listOf(indexable), TestMarykModel)
 
             val postDelete = store.execute(
                 TestMarykModel.scan(
@@ -221,6 +237,59 @@ class HistoricIndexRebuildSoftDeleteTest {
                 )
             )
             assertEquals(1, preDelete.values.size)
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
+    fun rebuildsDeepHistoricChangesWithTinyScratchBatchesAndCleansScratch() = runTest(timeout = 3.minutes) {
+        val store = FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = listOf("maryk", "test", "historic-index-rebuild-deep", Uuid.random().toString()),
+            dataModelsById = mapOf(1u to TestMarykModel),
+            keepAllVersions = true,
+        )
+
+        try {
+            val add = assertIs<AddSuccess<TestMarykModel>>(
+                store.execute(TestMarykModel.add(TestMarykModel.create {
+                    int with 1
+                    uint with 1u
+                    double with 1.2
+                    dateTime with LocalDateTime(2024, 1, 1, 0, 0)
+                    bool with true
+                    enum with Option.V1
+                })).statuses.single()
+            )
+            repeat(40) { value ->
+                assertIs<ChangeSuccess<TestMarykModel>>(
+                    store.execute(
+                        TestMarykModel.change(
+                            add.key.change(Change(TestMarykModel { int::ref } with ((value % 5) + 2)))
+                        )
+                    ).statuses.single()
+                )
+            }
+
+            val indexable = TestMarykModel { int::ref }
+            val tableDirs = assertIs<HistoricTableDirectories>(store.getTableDirs(TestMarykModel))
+            deleteCompleteIndexContents(store.tc, tableDirs, indexable)
+            walkDataRecordsAndFillIndex(
+                store.tc, tableDirs, listOf(indexable), TestMarykModel,
+                rowsPerReadTransaction = 1,
+                bytesPerReadTransaction = 64,
+                mutationsPerWriteTransaction = 1,
+                bytesPerWriteTransaction = 64,
+            )
+
+            assertEquals(1, store.execute(
+                TestMarykModel.scan(where = Equals(TestMarykModel { int::ref } with 6))
+            ).values.size)
+            val scratchPrefix = packKey(tableDirs.modelPrefix, modelIndexRebuildScratchKey)
+            assertTrue(store.runTransaction { transaction ->
+                transaction.getRange(Range.startsWith(scratchPrefix)).asList().awaitResult().isEmpty()
+            })
         } finally {
             store.close()
         }

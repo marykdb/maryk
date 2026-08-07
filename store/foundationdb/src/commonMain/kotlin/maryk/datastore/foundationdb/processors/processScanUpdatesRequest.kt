@@ -248,7 +248,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
             )
         )
 
-    runReadTransaction(readContext) { tr ->
+    runReadTransaction(readContext, dbIndex) { tr ->
         // orderedKeys reconciliation
         scanRequest.orderedKeys?.let { orderedKeys ->
             val matchingKeysSet = matchingKeys.toHashSet()
@@ -333,7 +333,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
         packKey(historyPrefix, scanRequest.fromVersion.toReversedVersionBytes().nextByteInSameLength())
     }
     fun <T> runScanTransaction(block: (Transaction) -> T): T =
-        runReadTransaction(readContext) { tr ->
+        runReadTransaction(readContext, dbIndex) { tr ->
             block(tr)
         }
 
@@ -513,7 +513,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
         }
     }
 
-    runReadTransaction(readContext) { tr ->
+    runReadTransaction(readContext, dbIndex) { tr ->
         scanRequest.orderedKeys?.let { orderedKeys ->
             val matchingKeysSet = matchingKeys.toHashSet()
             val orderedKeysSet = orderedKeys.toHashSet()

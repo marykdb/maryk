@@ -36,13 +36,13 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
 ): DataFetchType {
+    val dataModelId = getDataModelId(scanRequest.dataModel)
     val transactionRunner = object : TransactionRunner {
         override fun <T> run(block: (Transaction) -> T): T =
-            runReadTransaction(readContext) { tr ->
+            runReadTransaction(readContext, dataModelId) { tr ->
                 block(tr)
             }
     }
-    val dataModelId = getDataModelId(scanRequest.dataModel)
     val continuation = (scanRequest as? ScanRequest<*>)?.resolveCursor()
     val keyScanRange = scanRequest.dataModel.createScanRange(
         scanRequest.where,

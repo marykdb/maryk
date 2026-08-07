@@ -37,6 +37,10 @@ data class GeoHash(
     override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> =
         reference.getValueOrNull(values)?.let { listOf(it.geoHashBits(precisionBits)) } ?: emptyList()
 
+    override fun forEachStorageByteArray(values: IsValuesGetter, emit: (ByteArray) -> Unit) {
+        reference.getValueOrNull(values)?.let { emit(it.geoHashBits(precisionBits)) }
+    }
+
     override fun calculateStorageByteLengthForIndex(values: IsValuesGetter, keySize: Int?): Int {
         if (reference.getValueOrNull(values) == null) return 0
         val valueLength = byteSize
@@ -44,14 +48,25 @@ data class GeoHash(
     }
 
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray?, writer: (Byte) -> Unit) {
-        val bytes = toStorageByteArrays(values).firstOrNull() ?: return
-        bytes.forEach(writer)
-        bytes.size.writeVarBytes(writer)
-        key?.forEach(writer)
+        var written = false
+        forEachStorageByteArray(values) { bytes ->
+            if (!written) {
+                bytes.forEach(writer)
+                bytes.size.writeVarBytes(writer)
+                key?.forEach(writer)
+                written = true
+            }
+        }
     }
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (Byte) -> Unit) {
-        toStorageByteArrays(values).firstOrNull()?.forEach(writer)
+        var written = false
+        forEachStorageByteArray(values) { bytes ->
+            if (!written) {
+                bytes.forEach(writer)
+                written = true
+            }
+        }
     }
 
     override fun calculateReferenceStorageByteLength() =

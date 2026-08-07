@@ -31,6 +31,19 @@ data class Normalize(
     override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> =
         normalizeValues(reference.toStorageByteArrays(values)).distinct()
 
+    override fun forEachStorageByteArray(values: IsValuesGetter, emit: (ByteArray) -> Unit) {
+        reference.forEachStorageByteArray(values) { bytes ->
+            var readIndex = 0
+            val normalizedValue = normalizeStringForIndex(
+                reference.readStorageBytes(bytes.size) { bytes[readIndex++] }
+            )
+            emit(ByteArray(reference.calculateStorageByteLength(normalizedValue)).also { byteArray ->
+                var writeIndex = 0
+                reference.writeStorageBytes(normalizedValue) { byteArray[writeIndex++] = it }
+            })
+        }
+    }
+
     private fun normalizeValues(values: List<ByteArray>): List<ByteArray> =
         values.map { bytes ->
             var readIndex = 0

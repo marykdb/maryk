@@ -33,6 +33,21 @@ data class Split(
     override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> =
         splitValues(referenceValues(values)).distinct()
 
+    override fun forEachStorageByteArray(values: IsValuesGetter, emit: (ByteArray) -> Unit) {
+        val source = when (reference) {
+            is Normalize -> reference.reference
+            else -> reference
+        }
+        source.forEachStorageByteArray(values) { bytes ->
+            reference.splitTokens(bytes, on).forEach { splitValue ->
+                emit(ByteArray(reference.calculateStorageByteLength(splitValue)).also { byteArray ->
+                    var writeIndex = 0
+                    reference.writeStorageBytes(splitValue) { byteArray[writeIndex++] = it }
+                })
+            }
+        }
+    }
+
     private fun referenceValues(values: IsValuesGetter) = when (reference) {
         is Normalize -> reference.reference.toStorageByteArrays(values)
         else -> reference.toStorageByteArrays(values)

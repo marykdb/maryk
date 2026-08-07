@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.model
 
 import maryk.foundationdb.TransactionContext
+import maryk.foundationdb.Transaction
 import maryk.core.definitions.Definitions
 import maryk.core.definitions.MarykPrimitive
 import maryk.core.models.IsRootDataModel
@@ -18,6 +19,20 @@ fun storeModelDefinition(
     model: ByteArray,
     dataModel: IsRootDataModel
 ) {
+    val definition = encodeModelDefinition(dataModel)
+    tc.run { tr ->
+        storeModelDefinition(tr, metadataPrefix, modelId, model, dataModel.Meta.name, definition)
+    }
+}
+
+internal data class EncodedModelDefinition(
+    val name: ByteArray,
+    val version: ByteArray,
+    val model: ByteArray,
+    val dependents: ByteArray?,
+)
+
+internal fun encodeModelDefinition(dataModel: IsRootDataModel): EncodedModelDefinition {
     val nameBytes = dataModel.Meta.name.encodeToByteArray()
     val versionBytes = dataModel.Meta.version.toByteArray()
 
@@ -44,15 +59,23 @@ fun storeModelDefinition(
         }
     } else null
 
-    val modelIdMetadataKey = packKey(metadataPrefix, modelId.toMetadataBytes())
+    return EncodedModelDefinition(nameBytes, versionBytes, modelBytes, dependentsBytes)
+}
 
-    tc.run { tr ->
-        ensureModelNameMapping(tr, modelIdMetadataKey, dataModel.Meta.name)
-        tr.set(packKey(model, modelNameKey), nameBytes)
-        tr.set(packKey(model, modelVersionKey), versionBytes)
-        tr.set(packKey(model, modelDefinitionKey), modelBytes)
-        if (dependentsBytes != null) {
-            tr.set(packKey(model, modelDependentsDefinitionKey), dependentsBytes)
-        }
+internal fun storeModelDefinition(
+    transaction: Transaction,
+    metadataPrefix: ByteArray,
+    modelId: UInt,
+    model: ByteArray,
+    modelName: String,
+    definition: EncodedModelDefinition,
+) {
+    val modelIdMetadataKey = packKey(metadataPrefix, modelId.toMetadataBytes())
+    ensureModelNameMapping(transaction, modelIdMetadataKey, modelName)
+    transaction.set(packKey(model, modelNameKey), definition.name)
+    transaction.set(packKey(model, modelVersionKey), definition.version)
+    transaction.set(packKey(model, modelDefinitionKey), definition.model)
+    if (definition.dependents != null) {
+        transaction.set(packKey(model, modelDependentsDefinitionKey), definition.dependents)
     }
 }

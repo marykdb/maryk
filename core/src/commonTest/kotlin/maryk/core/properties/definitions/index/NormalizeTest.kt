@@ -134,6 +134,29 @@ internal class NormalizeTest {
     }
 
     @Test
+    fun streamedNormalizeAndSplitEntriesEmitEveryToken() {
+        val index = AnyOf(
+            TokenModel.family.ref().normalize().split(Whitespace),
+            TokenModel { given.refToAny() }.normalize().split(Whitespace),
+        )
+        val values = TokenModel.create {
+            family with "van der Berg"
+            given with setOf("José María")
+        }
+        val entries = mutableListOf<ByteArray>()
+
+        index.forEachStorageByteArrayForIndex(values) { entries += it }
+
+        expect(listOf("berg", "der", "jose", "maria", "van")) {
+            entries.map { entry -> entry.copyOf(entry.size - 1).decodeToString() }.sorted()
+        }
+        assertEquals(
+            index.toStorageByteArraysForIndex(values).map { it.toHexString() },
+            entries.map { it.toHexString() },
+        )
+    }
+
+    @Test
     fun anyOfCalculateStorageByteLengthForIndexUsesLongestToken() {
         val values = TokenModel.create {
             family with "ab"

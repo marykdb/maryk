@@ -66,8 +66,17 @@ import maryk.datastore.foundationdb.metadata.readStoredModelNames
 import maryk.datastore.foundationdb.model.FoundationDBMigrationAuditLogStore
 import maryk.datastore.foundationdb.model.FoundationDBMigrationLease
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
+import maryk.datastore.foundationdb.model.FoundationDBSchemaState
+import maryk.datastore.foundationdb.model.FoundationDBSchemaFence
 import maryk.datastore.foundationdb.model.checkModelIfMigrationIsNeeded
+import maryk.datastore.foundationdb.model.beginModelSchemaRebuild
+import maryk.datastore.foundationdb.model.encodeModelDefinition
+import maryk.datastore.foundationdb.model.publishModelSchemaReady
+import maryk.datastore.foundationdb.model.readModelSchemaState
+import maryk.datastore.foundationdb.model.requireModelSchemaReady
+import maryk.datastore.foundationdb.model.requireModelSchemaRebuildOwner
 import maryk.datastore.foundationdb.model.modelUpdateHistoryBackfillCompleteKey
+import maryk.datastore.foundationdb.model.modelIndexRebuildScratchKey
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
 import maryk.datastore.foundationdb.processors.AnyChangeStoreAction
@@ -191,6 +200,8 @@ class FoundationDBDataStore private constructor(
     private lateinit var metadataDirectory: DirectorySubspace
     private lateinit var metadataPrefix: ByteArray
     internal val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
+    private val expectedSchemaEpochs = atomic<Map<UInt, ByteArray?>>(emptyMap())
+    private val schemaFenceReady = atomic(false)
 
     // Cluster HLC sync: store actor uses max(observedClusterHlc, local wall clock) when generating new versions.
     private val observedClusterHlc = atomic(0uL)
@@ -222,22 +233,43 @@ class FoundationDBDataStore private constructor(
         dataModelsById.mapValues { (_, model) -> collectUniqueReferences(model) }
 
     internal inline fun <T> runTransaction(
+        dataModelId: UInt? = null,
         crossinline block: (Transaction) -> T
     ): T {
         if (isClosing.value) throw CancellationException("Datastore closing")
         return tc.run { tr ->
+            dataModelId?.let { requireModelSchemaReady(tr, it) }
             block(tr)
         }
     }
 
+    private fun requireModelSchemaReady(transaction: Transaction, dataModelId: UInt) {
+        if (!schemaFenceReady.value) return
+        val tableDirectories = directoriesByDataModelIndex[dataModelId]
+            ?: throw StorageException("Unknown data model id $dataModelId")
+        transaction.requireModelSchemaReady(
+            tableDirectories.modelPrefix,
+            expectedSchemaEpochs.value[dataModelId],
+        )
+    }
+
     internal inline fun <T> runReadTransaction(
         readContext: FoundationDBReadContext,
+        dataModelId: UInt? = null,
         crossinline block: (Transaction) -> T,
     ): T {
         if (isClosing.value) throw CancellationException("Datastore closing")
+        // Check the current schema state before pinning an older read version. A
+        // pinned context from before a rebuild may still safely see the complete
+        // old index, but a context created during/after the transition must not
+        // read cleared or newly incompatible index rows.
+        dataModelId?.let { dataModelId ->
+            tc.run { transaction -> requireModelSchemaReady(transaction, dataModelId) }
+        }
         return tc.run { tr ->
             tr.options().setRetryLimit(0)
             tr.setReadVersion(readContext.readVersion)
+            dataModelId?.let { requireModelSchemaReady(tr, it) }
             block(tr)
         }
     }
@@ -268,6 +300,13 @@ class FoundationDBDataStore private constructor(
         for ((index, dataModel) in dataModelsById) {
             directoriesByDataModelIndex[index] = openTableDirs(dataModel.Meta.name, historic = keepAllVersions)
         }
+        expectedSchemaEpochs.value = tc.run { transaction ->
+            directoriesByDataModelIndex.mapValues { (_, tableDirectories) ->
+                (readModelSchemaState(transaction, tableDirectories.modelPrefix) as? FoundationDBSchemaState.Ready)
+                    ?.epoch
+            }
+        }
+        schemaFenceReady.value = true
 
         val conversionContext = DefinitionsConversionContext().apply {
             addDataModelReferences(dataModelsById.values)
@@ -315,20 +354,13 @@ class FoundationDBDataStore private constructor(
                         }
                     }
                     is OnlySafeAdds -> {
-                        // Conservatively (re)index all indexes defined on the new model
-                        dataModel.Meta.indexes?.let { idxs ->
-                            if (idxs.isNotEmpty()) {
-                                fillIndex(idxs, tableDirectories)
-                            }
-                        }
-                        storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
+                        publishSchemaTransition(index, dataModel, tableDirectories)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                         }
                     }
                     is NewIndicesOnExistingProperties -> {
-                        fillIndex(migrationStatus.indexesToIndex, tableDirectories)
-                        storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
+                        rebuildIndexesAndPublish(index, dataModel, migrationStatus.indexesToIndex, tableDirectories)
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                         }
@@ -354,14 +386,16 @@ class FoundationDBDataStore private constructor(
                             )
                         },
                         finalizeInBackground = { storedModel ->
-                            migrationStatus.indexesToIndex?.let { fillIndex(it, tableDirectories) }
-                            storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
+                            migrationStatus.indexesToIndex?.let {
+                                rebuildIndexesAndPublish(index, dataModel, it, tableDirectories)
+                            } ?: publishSchemaTransition(index, dataModel, tableDirectories)
                             ensureUpdateHistoryIndexReady(index, tableDirectories)
                             versionUpdateHandler?.invoke(this, storedModel, dataModel)
                         },
                         finalizeInStartup = {
-                            migrationStatus.indexesToIndex?.let { fillIndex(it, tableDirectories) }
-                            storeModelDefinition(tc, metadataPrefix, index, tableDirectories.modelPrefix, dataModel)
+                            migrationStatus.indexesToIndex?.let {
+                                rebuildIndexesAndPublish(index, dataModel, it, tableDirectories)
+                            } ?: publishSchemaTransition(index, dataModel, tableDirectories)
                             ensureUpdateHistoryIndexReady(index, tableDirectories)
                             scheduledVersionUpdateHandlers.add {
                                 versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
@@ -777,16 +811,65 @@ class FoundationDBDataStore private constructor(
         }
     }
 
-    /** Walk all current values in [tableDirectories] and fill [indexesToIndex] */
-    private fun fillIndex(
+    /**
+     * Fence cleanup, every rebuild write and publication behind one model-local
+     * epoch. A failed/cancelled rebuild deliberately leaves Rebuilding persisted
+     * so a later opener with the same target can take it over safely.
+     */
+    private fun rebuildIndexesAndPublish(
+        dataModelId: UInt,
+        dataModel: IsRootDataModel,
         indexesToIndex: List<IsIndexable>,
         tableDirectories: IsTableDirectories,
     ) {
-        for (indexable in indexesToIndex) {
-            deleteCompleteIndexContents(tc, tableDirectories, indexable)
+        val fence = beginModelSchemaRebuild(tc, tableDirectories.modelPrefix, dataModel)
+        val scratchPrefix = packKey(tableDirectories.modelPrefix, modelIndexRebuildScratchKey)
+        tc.run { transaction ->
+            transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
+            transaction.clear(Range.startsWith(scratchPrefix))
         }
+        indexesToIndex.forEach { indexable ->
+            deleteCompleteIndexContents(tc, tableDirectories, indexable) { transaction ->
+                transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
+            }
+        }
+        walkDataRecordsAndFillIndex(
+            tc = tc,
+            tableDirectories = tableDirectories,
+            indexesToIndex = indexesToIndex,
+            dataModel = dataModel,
+            decryptValue = this::decryptValueIfNeeded,
+            historicScratchPrefix = scratchPrefix,
+            verifyRebuildOwner = { transaction ->
+                transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
+            },
+        )
+        publishSchemaTransition(dataModelId, dataModel, tableDirectories, fence, scratchPrefix)
+    }
 
-        walkDataRecordsAndFillIndex(tc, tableDirectories, indexesToIndex)
+    private fun publishSchemaTransition(
+        dataModelId: UInt,
+        dataModel: IsRootDataModel,
+        tableDirectories: IsTableDirectories,
+        existingFence: FoundationDBSchemaFence? = null,
+        scratchPrefix: ByteArray? = null,
+    ) {
+        val fence = existingFence ?: beginModelSchemaRebuild(tc, tableDirectories.modelPrefix, dataModel)
+        val definition = encodeModelDefinition(dataModel)
+        tc.run { transaction ->
+            transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
+            storeModelDefinition(
+                transaction,
+                metadataPrefix,
+                dataModelId,
+                tableDirectories.modelPrefix,
+                dataModel.Meta.name,
+                definition,
+            )
+            transaction.publishModelSchemaReady(tableDirectories.modelPrefix, fence)
+            scratchPrefix?.let { transaction.clear(Range.startsWith(it)) }
+        }
+        expectedSchemaEpochs.value += dataModelId to fence.epoch
     }
 
     internal fun canUseUpdateHistoryIndex(dbIndex: UInt) =

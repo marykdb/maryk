@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
 import maryk.foundationdb.Range
+import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.datastore.foundationdb.HistoricTableDirectories
@@ -15,10 +16,12 @@ import maryk.datastore.foundationdb.processors.helpers.packKey
 internal fun deleteCompleteIndexContents(
     tc: TransactionContext,
     tableDirectories: IsTableDirectories,
-    indexable: IsIndexable
+    indexable: IsIndexable,
+    verifyOwnership: ((Transaction) -> Unit)? = null,
 ) {
     val indexRef = indexable.referenceStorageByteArray.bytes
     tc.run { tr ->
+        verifyOwnership?.invoke(tr)
         // Clear non-historic index entries for this index reference
         val nonHistoricPrefix = packKey(tableDirectories.indexPrefix, indexRef)
         tr.clear(Range.startsWith(nonHistoricPrefix))

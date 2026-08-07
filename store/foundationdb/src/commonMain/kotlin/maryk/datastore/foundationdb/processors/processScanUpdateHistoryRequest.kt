@@ -57,7 +57,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
         packKey(historyPrefix, scanRequest.fromVersion.toReversedVersionBytes().nextByteInSameLength())
     }
     fun <T> runScanTransaction(block: (Transaction) -> T): T =
-        runReadTransaction(readContext) { tr ->
+        runReadTransaction(readContext, dbIndex) { tr ->
             block(tr)
         }
 

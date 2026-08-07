@@ -25,6 +25,7 @@ import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.core.values.IsValuesGetter
+import maryk.core.values.IsStreamingValuesGetter
 
 /** Reference to map key [K] below any key contained in map referred by [parentReference] */
 class MapAnyKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal constructor(
@@ -112,6 +113,54 @@ class MapAnyKeyReference<K : Any, V : Any, CX : IsPropertyContext> internal cons
                 key?.copyInto(output, index)
             }
         }
+
+    override fun forEachStorageByteArray(values: IsValuesGetter, emit: (ByteArray) -> Unit) {
+        @Suppress("UNCHECKED_CAST")
+        val parent = parentReference as? AnyPropertyReference
+        val streamingGetter = values as? IsStreamingValuesGetter
+        if (parent != null && streamingGetter?.streamMapKeys(parent) { value ->
+                @Suppress("UNCHECKED_CAST")
+                emitStorageBytes(value as K, emit)
+            } == true
+        ) {
+            return
+        }
+
+        val valueBytes = LinkedHashSet<Bytes>()
+        for (value in getValuesOrNull(values) ?: return) {
+            val length = bytesDefinition.calculateStorageByteLength(value)
+            val output = ByteArray(length)
+            var index = 0
+            bytesDefinition.writeStorageBytes(value) { output[index++] = it }
+            valueBytes += Bytes(output)
+        }
+        valueBytes.forEach { emit(it.bytes) }
+    }
+
+    private fun emitStorageBytes(value: K, emit: (ByteArray) -> Unit) {
+        val length = bytesDefinition.calculateStorageByteLength(value)
+        emit(ByteArray(length).also { output ->
+            var index = 0
+            bytesDefinition.writeStorageBytes(value) { output[index++] = it }
+        })
+    }
+
+    override fun forEachStorageByteArrayForIndex(
+        values: IsValuesGetter,
+        key: ByteArray?,
+        emit: (ByteArray) -> Unit
+    ) {
+        forEachStorageByteArray(values) { valueBytes ->
+            val length = valueBytes.size
+            emit(ByteArray(length + length.calculateVarByteLength() + (key?.size ?: 0)).also { output ->
+                var index = 0
+                valueBytes.copyInto(output, index)
+                index += length
+                length.writeVarBytes { output[index++] = it }
+                key?.copyInto(output, index)
+            })
+        }
+    }
 
     override fun calculateStorageByteLength(value: K): Int =
         bytesDefinition.calculateStorageByteLength(value)

@@ -51,7 +51,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
     var lastResponseVersion = 0uL
     var insertionIndex = -1
 
-    this.runReadTransaction(readContext) { tr ->
+    this.runReadTransaction(readContext, dbIndex) { tr ->
         keyWalk@ for (key in getRequest.keys) {
             var getSingleValues: ((ULong?) -> ValuesWithMetaData<DM>?)? = null
             val result = run {

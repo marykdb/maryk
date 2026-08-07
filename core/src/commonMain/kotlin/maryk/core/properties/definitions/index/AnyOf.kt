@@ -10,6 +10,11 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.string
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.properties.references.MapAnyKeyReference
+import maryk.core.properties.references.SetAnyValueReference
+import maryk.core.properties.references.SimpleTypedValueReference
+import maryk.core.properties.references.ValueWithFixedBytesPropertyReference
+import maryk.core.properties.references.ValueWithFlexBytesPropertyReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.DefinitionsConversionContext
@@ -29,6 +34,22 @@ data class AnyOf(
 
     override fun toStorageByteArrays(values: IsValuesGetter): List<ByteArray> =
         references.flatMap { it.toStorageByteArrays(values) }.distinct()
+
+    override fun forEachStorageByteArray(values: IsValuesGetter, emit: (ByteArray) -> Unit) {
+        val legacyEmitted = mutableListOf<ByteArray>()
+        for (reference in references) {
+            if (reference.emitsFreshStorageByteArrays()) {
+                reference.forEachStorageByteArray(values, emit)
+            } else {
+                reference.forEachStorageByteArray(values) { bytes ->
+                    if (legacyEmitted.none { it === bytes }) {
+                        legacyEmitted += bytes
+                        emit(bytes)
+                    }
+                }
+            }
+        }
+    }
 
     override fun calculateReferenceStorageByteLength() =
         this.indexKeyPartType.index.calculateVarByteLength() + references.sumOf {
@@ -52,7 +73,13 @@ data class AnyOf(
         }?.plus(keySize ?: 0) ?: 0
 
     override fun writeStorageBytesForIndex(values: IsValuesGetter, key: ByteArray?, writer: (byte: Byte) -> Unit) {
-        toStorageByteArraysForIndex(values, key).firstOrNull()?.forEach(writer)
+        var written = false
+        forEachStorageByteArrayForIndex(values, key) { bytes ->
+            if (!written) {
+                bytes.forEach(writer)
+                written = true
+            }
+        }
     }
 
     override fun writeStorageBytes(values: IsValuesGetter, writer: (byte: Byte) -> Unit) {
@@ -96,6 +123,16 @@ data class AnyOf(
             references = values(2u)
         )
     }
+}
+
+private fun IsIndexablePropertyReference<String>.emitsFreshStorageByteArrays() = when (this) {
+    is ValueWithFixedBytesPropertyReference<*, *, *, *> -> true
+    is ValueWithFlexBytesPropertyReference<*, *, *, *> -> true
+    is SimpleTypedValueReference<*, *, *> -> true
+    is MapAnyKeyReference<*, *, *> -> true
+    is SetAnyValueReference<*, *> -> true
+    is Normalize, is Split, is Reversed<*>, is ReferenceToMax<*> -> true
+    else -> false
 }
 
 class AnyOfContext(

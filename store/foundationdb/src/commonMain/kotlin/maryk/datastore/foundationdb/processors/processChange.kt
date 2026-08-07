@@ -137,7 +137,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
     val result: IsChangeResponseStatus<DM> = try {
         var updateToEmit: Update<DM>? = null
 
-        runTransaction { tr ->
+        runTransaction(dataModelId) { tr ->
             val keyBytes = key.bytes
             val createdBytes = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
             if (createdBytes?.readHLCTimestampIfExact() == null) {

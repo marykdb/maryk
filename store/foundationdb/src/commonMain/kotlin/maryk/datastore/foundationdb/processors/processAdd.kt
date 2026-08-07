@@ -54,7 +54,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 
     var updateToEmit: Update<DM>? = null
 
-    runTransaction { tr ->
+    runTransaction(dataModelId) { tr ->
         val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
 
         val existing = tr.get(packedKey).awaitResult()

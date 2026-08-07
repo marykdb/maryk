@@ -25,6 +25,7 @@ class YamlWriter(
     private val spacing: String = "  "
     private val arraySpacing: String = "- "
     private val toSanitizeRegex = Regex("[\\[{]+.*|.*[#:\n]+.*")
+    private val flowStructureRegex = Regex(".*[\\[\\]{},].*")
     private val trueValues = setOf("True", "TRUE", "true")
     private val falseValues = setOf("False", "FALSE", "false")
     private val nullValues = setOf("~", "Null", "null", "NULL")
@@ -196,15 +197,17 @@ class YamlWriter(
 
     /** Writes the field [name] for an object */
     override fun writeFieldName(name: String) {
+        val isCompact = this.lastIsCompact
+        val renderedName = sanitizeValue(name, quoteFlowDelimiters = isCompact)
         val lastType = this.lastType
 
-        if (this.lastIsCompact) {
+        if (isCompact) {
             if (lastType != START_OBJ) {
                 writer(", ")
             }
-            writer("$name:")
+            writer("$renderedName:")
         } else {
-            writer("$prefixToWrite$name:")
+            writer("$prefixToWrite$renderedName:")
         }
         super.writeFieldName(name)
     }
@@ -218,7 +221,11 @@ class YamlWriter(
     private fun writeValueInternal(value: String, quoteStrings: Boolean) {
         if (typeStack.isNotEmpty()) {
             val lastTypeBeforeOperation = this.lastType
-            val renderedValue = if (quoteStrings) sanitizeValue(value) else value
+            val renderedValue = if (quoteStrings) {
+                sanitizeValue(value, quoteFlowDelimiters = this.lastIsCompact)
+            } else {
+                value
+            }
 
             if ((lastTypeBeforeOperation == TAG && value != "") || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
                 writer(" ")
@@ -390,19 +397,21 @@ class YamlWriter(
     }
 
     /** If value contains yaml incompatible values it will be surrounded by quotes */
-    private fun sanitizeValue(value: String) =
-        if (shouldQuote(value)) {
+    private fun sanitizeValue(value: String, quoteFlowDelimiters: Boolean) =
+        if (shouldQuote(value, quoteFlowDelimiters)) {
             "'${value.replace("'", "''")}'"
         } else {
             value
         }
 
-    private fun shouldQuote(value: String): Boolean {
+    private fun shouldQuote(value: String, quoteFlowDelimiters: Boolean): Boolean {
         if (value.isEmpty() || value != value.trim()) return true
         if (value == "---" || value == "...") return true
         if (value.first() in indicatorStartChars) return true
+        if (value == "?") return true
         if (value.startsWith("- ") || value.startsWith("? ") || value.startsWith(": ")) return true
         if (value.matches(toSanitizeRegex)) return true
+        if (quoteFlowDelimiters && value.matches(flowStructureRegex)) return true
         if (value in nullValues || value in trueValues || value in falseValues || value in nanValues) return true
         if (infinityRegEx.matches(value)) return true
         if (base2RegEx.matches(value)

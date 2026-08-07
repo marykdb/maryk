@@ -500,6 +500,173 @@ internal class YamlWriterTest {
     }
 
     @Test
+    fun quoteFlowDelimitersInCompactMapValues() {
+        listOf('[', ']', '{', '}', ',').forEach { delimiter ->
+            val value = "value$delimiter"
+            val output = buildString {
+                YamlWriter { append(it) }.apply {
+                    writeStartObject(true)
+                    writeFieldName("value")
+                    writeString(value)
+                    writeEndObject()
+                }
+            }
+
+            assertEquals("{value: '$value'}\n", output)
+
+            createYamlReader(output).apply {
+                assertStartObject()
+                assertFieldName("value")
+                assertValue(value)
+                assertEndObject()
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
+    fun quoteFlowDelimitersInCompactSequenceValues() {
+        listOf('[', ']', '{', '}', ',').forEach { delimiter ->
+            val value = "value$delimiter"
+            val output = buildString {
+                YamlWriter { append(it) }.apply {
+                    writeStartArray(true)
+                    writeString(value)
+                    writeEndArray()
+                }
+            }
+
+            assertEquals("['$value']\n", output)
+
+            createYamlReader(output).apply {
+                assertStartArray()
+                assertValue(value)
+                assertEndArray()
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
+    fun quoteFlowDelimitersInCompactMapKeys() {
+        listOf('[', ']', '{', '}', ',').forEach { delimiter ->
+            val key = "key$delimiter"
+            val output = buildString {
+                YamlWriter { append(it) }.apply {
+                    writeStartObject(true)
+                    writeFieldName(key)
+                    writeString("value")
+                    writeEndObject()
+                }
+            }
+
+            assertEquals("{'$key': value}\n", output)
+
+            createYamlReader(output).apply {
+                assertStartObject()
+                assertFieldName(key)
+                assertValue("value")
+                assertEndObject()
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
+    fun quoteFlowMapKeysWithEmbeddedQuotes() {
+        val key = "key, it's]"
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject(true)
+                writeFieldName(key)
+                writeString("value")
+                writeEndObject()
+            }
+        }
+
+        assertEquals("{'key, it''s]': value}\n", output)
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName(key)
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun quoteQuestionMarkInCompactMapKey() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject(true)
+                writeFieldName("?")
+                writeString("value")
+                writeEndObject()
+            }
+        }
+
+        assertEquals("{'?': value}\n", output)
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("?")
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun quoteQuestionMarkInBlockMapKey() {
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject()
+                writeFieldName("normal")
+                writeString("first")
+                writeFieldName("?")
+                writeString("value")
+                writeEndObject()
+            }
+        }
+
+        assertEquals("normal: first\n'?': value\n", output)
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("normal")
+            assertValue("first")
+            assertFieldName("?")
+            assertValue("value")
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun quoteFlowDelimitersAndEmbeddedQuotesRoundTrip() {
+        val value = "value, it's]"
+        val output = buildString {
+            YamlWriter { append(it) }.apply {
+                writeStartObject(true)
+                writeFieldName("value")
+                writeString(value)
+                writeEndObject()
+            }
+        }
+
+        assertEquals("{value: 'value, it''s]'}\n", output)
+
+        createYamlReader(output).apply {
+            assertStartObject()
+            assertFieldName("value")
+            assertValue(value)
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun writeYamlInDoubleArray() {
         val output = buildString {
             YamlWriter {

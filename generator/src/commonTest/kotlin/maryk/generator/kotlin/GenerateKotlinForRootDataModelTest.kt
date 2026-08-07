@@ -6,6 +6,7 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Measurement
 import maryk.test.models.Option
+import maryk.test.models.Person
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum
 import kotlin.test.Test
@@ -100,23 +101,31 @@ sealed class MarykEnumEmbedded(
 }
 
 object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
-    version = Version(2, 1)
-    keyDefinition = Multiple(
-        UUIDv4Key,
-        multiForKey.typeRef(),
-        booleanForKey.ref(),
-        Reversed(dateForKey.ref())
-    )
-    indexes = listOf(
-        number.ref(),
-        Reversed(dateTime.ref()),
-        Multiple(
-            booleanForKey.ref(),
-            multiForKey.typeRef()
-        ),
-        value.ref(subModel.ref())
-    ),
-    reservedIndices = listOf(99u)
+    version = Version(2, 1),
+    keyDefinition = {
+        CompleteMarykModel.run {
+            Multiple(
+                UUIDv4Key,
+                multiForKey.typeRef(),
+                booleanForKey.ref(),
+                Reversed(dateForKey.ref())
+            )
+        }
+    },
+    indexes = {
+        CompleteMarykModel.run {
+            listOf(
+                number.ref(),
+                Reversed(dateTime.ref()),
+                Multiple(
+                    booleanForKey.ref(),
+                    multiForKey.typeRef()
+                ),
+                value.ref(subModel.ref())
+            )
+        }
+    },
+    reservedIndices = listOf(99u),
     reservedNames = listOf("reserved")
 ) {
     val string by string(
@@ -423,6 +432,25 @@ class GenerateKotlinForRootDataModelTest {
     }
 
     @Test
+    fun generateKotlinForSingleIndexMetadataUsesDeferredLambda() {
+        val output = buildString {
+            Person.generateKotlin("maryk.test.models") {
+                append(it)
+            }
+        }
+
+        assertTrue(
+            output.contains(
+                """object Person : RootDataModel<Person>(
+    indexes = {
+        Person.run {
+            listOf("""
+            )
+        )
+        assertTrue(!output.contains(",,"))
+    }
+
+    @Test
     fun generateKotlinForSimpleTypedValueReferenceIndex() {
         val output = buildString {
             Measurement.generateKotlin("maryk.test.models") {
@@ -431,5 +459,8 @@ class GenerateKotlinForRootDataModelTest {
         }
 
         assertTrue(output.contains("simpleRefAtType MeasurementType.Number"))
+        assertTrue(output.contains("keyDefinition = {\n        Measurement.run {"))
+        assertTrue(output.contains("indexes = {\n        Measurement.run {"))
+        assertTrue(!output.contains(",,"))
     }
 }

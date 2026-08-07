@@ -41,7 +41,7 @@ fun IsRootDataModel.generateKotlin(
     val keyDefAsKotlin = if (Meta.keyDefinition != UUIDv4Key) {
         val keyDefs = Meta.keyDefinition.generateKotlin(packageName, Meta.name, addImport)
 
-        "keyDefinition = ${keyDefs.prependIndent().prependIndent().trimStart()}"
+        "keyDefinition = {\n            ${Meta.name}.run {\n${keyDefs.prependIndent("                ")}\n            }\n        }"
     } else null
 
     // Add indexes if they are not null
@@ -50,7 +50,8 @@ fun IsRootDataModel.generateKotlin(
         for (it in indexables) {
             output += it.generateKotlin(packageName, Meta.name, addImport)
         }
-        "indexes = listOf(\n${output.joinToString(",\n").prependIndent().prependIndent().prependIndent()}\n        ),"
+        val indexes = "listOf(\n${output.joinToString(",\n").prependIndent()}\n)"
+        "indexes = {\n            ${Meta.name}.run {\n${indexes.prependIndent("                ")}\n            }\n        }"
     }
 
     val reservedIndices = Meta.reservedIndices.let { indexes ->
@@ -73,7 +74,7 @@ fun IsRootDataModel.generateKotlin(
 
     val constructorParameters = arrayOf(versionAsKotlin, keyDefAsKotlin, indexesAsKotlin, reservedIndices, reservedNames)
         .filterNotNull()
-        .joinToString("\n        ")
+        .joinToString(",\n        ")
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """

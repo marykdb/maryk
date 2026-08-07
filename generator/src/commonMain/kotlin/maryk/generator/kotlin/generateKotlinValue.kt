@@ -11,6 +11,7 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.models.definitions.ValueDataModelDefinition
 import maryk.core.properties.definitions.EmbeddedValuesDefinition
 import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
@@ -104,11 +105,12 @@ internal fun generateKotlinValue(
     }
     is Set<*> -> {
         val setValues = value as Set<Any>
+        val valueDefinition = (definition as IsCollectionDefinition<*, *, *, *>).valueDefinition
         val kotlinStringValues = mutableSetOf<String>()
 
         for (v in setValues) {
             kotlinStringValues.add(
-                generateKotlinValue(definition, v, addImport)
+                generateKotlinValue(valueDefinition, v, addImport)
             )
         }
 
@@ -116,11 +118,12 @@ internal fun generateKotlinValue(
     }
     is List<*> -> {
         val listValues = value as List<Any>
+        val valueDefinition = (definition as IsCollectionDefinition<*, *, *, *>).valueDefinition
         val kotlinStringValues = mutableListOf<String>()
 
         for (v in listValues) {
             kotlinStringValues.add(
-                generateKotlinValue(definition, v, addImport)
+                generateKotlinValue(valueDefinition, v, addImport)
             )
         }
 

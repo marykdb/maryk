@@ -5,6 +5,7 @@ import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
+import maryk.core.properties.definitions.contextual.ContextualCollectionDefinition
 import maryk.core.properties.definitions.contextual.ContextualMapDefinition
 
 /** Describes the property definitions for translation to kotlin */
@@ -60,7 +61,10 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
                         output.add("""$propertyName = $it""")
                     }
                 } else {
-                    val defToSend = if (def is ContextualMapDefinition<*, *, *>) {
+                    val defToSend = if (
+                        def is ContextualMapDefinition<*, *, *> ||
+                        def is ContextualCollectionDefinition<*>
+                    ) {
                         @Suppress("UNCHECKED_CAST")
                         definition as IsPropertyDefinition<in Any>
                     } else {

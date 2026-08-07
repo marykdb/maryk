@@ -1,6 +1,14 @@
 package maryk.generator.kotlin
 
 import kotlinx.datetime.LocalDateTime
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.SetDefinition
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.set
 import maryk.generator.DecimalGeneratorModel
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
@@ -12,6 +20,91 @@ import maryk.test.models.SimpleMarykTypeEnum
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+
+private object NestedCollectionDefaults : RootDataModel<NestedCollectionDefaults>() {
+    val optionList by list(
+        index = 1u,
+        valueDefinition = EnumDefinition(enum = Option),
+        default = listOf(Option.V1)
+    )
+    val optionSet by set(
+        index = 2u,
+        valueDefinition = EnumDefinition(enum = Option),
+        default = setOf(Option.V1)
+    )
+    val mapWithOptionList by map(
+        index = 3u,
+        keyDefinition = StringDefinition(),
+        valueDefinition = ListDefinition(
+            valueDefinition = EnumDefinition(enum = Option)
+        ),
+        default = mapOf(
+            "filled" to listOf(Option.V1),
+            "empty" to emptyList()
+        )
+    )
+    val mapWithOptionSet by map(
+        index = 4u,
+        keyDefinition = StringDefinition(),
+        valueDefinition = SetDefinition(
+            valueDefinition = EnumDefinition(enum = Option)
+        ),
+        default = mapOf(
+            "filled" to setOf(Option.V1),
+            "empty" to emptySet()
+        )
+    )
+}
+
+private val generatedKotlinForNestedCollectionDefaults = """
+package maryk.test.models
+
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.SetDefinition
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.set
+
+object NestedCollectionDefaults : RootDataModel<NestedCollectionDefaults>() {
+    val optionList by list(
+        index = 1u,
+        valueDefinition = EnumDefinition(
+            enum = Option
+        ),
+        default = listOf(Option.V1)
+    )
+    val optionSet by set(
+        index = 2u,
+        valueDefinition = EnumDefinition(
+            enum = Option
+        ),
+        default = setOf(Option.V1)
+    )
+    val mapWithOptionList by map(
+        index = 3u,
+        keyDefinition = StringDefinition(),
+        valueDefinition = ListDefinition(
+            valueDefinition = EnumDefinition(
+                enum = Option
+            )
+        ),
+        default = mapOf("filled" to listOf(Option.V1), "empty" to listOf())
+    )
+    val mapWithOptionSet by map(
+        index = 4u,
+        keyDefinition = StringDefinition(),
+        valueDefinition = SetDefinition(
+            valueDefinition = EnumDefinition(
+                enum = Option
+            )
+        ),
+        default = mapOf("filled" to setOf(Option.V1), "empty" to setOf())
+    )
+}
+""".trimIndent()
 
 val generatedKotlinForSimpleDataModel = """
 package maryk.test.models
@@ -393,6 +486,17 @@ class GenerateKotlinForRootDataModelTest {
         }
 
         assertEquals(generatedKotlinForSimpleDataModel, output)
+    }
+
+    @Test
+    fun generateKotlinForNestedCollectionDefaults() {
+        val output = buildString {
+            NestedCollectionDefaults.generateKotlin("maryk.test.models") {
+                append(it)
+            }
+        }
+
+        assertEquals(generatedKotlinForNestedCollectionDefaults, output)
     }
 
     @Test

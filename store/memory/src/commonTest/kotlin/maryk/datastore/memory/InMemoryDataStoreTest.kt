@@ -45,6 +45,7 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.Check
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.numeric.UInt32
@@ -965,6 +966,49 @@ class InMemoryDataStoreTest {
                 ).statuses.single()
             )
             assertIs<AlreadyExistsException>(duplicate.exceptions.single())
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun getChangesKeepsDeletedPropertyAsNullChange() = runTest {
+        val dataStore = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to NullableUniqueModel)
+        )
+        try {
+            val addStatus = assertIs<AddSuccess<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.add(
+                        NullableUniqueModel.create { email with "deleted@example.com" }
+                    )
+                ).statuses.single()
+            )
+            val clearStatus = assertIs<ChangeSuccess<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.change(
+                        addStatus.key.change(
+                            Change(NullableUniqueModel { email::ref } with null)
+                        )
+                    )
+                ).statuses.single()
+            )
+
+            val changes = dataStore.execute(
+                NullableUniqueModel.getChanges(addStatus.key)
+            ).changes.single().changes
+
+            assertEquals(
+                listOf(
+                    VersionedChanges(addStatus.version, listOf(ObjectCreate)),
+                    VersionedChanges(
+                        clearStatus.version,
+                        listOf(Change(NullableUniqueModel { email::ref } with null))
+                    )
+                ),
+                changes
+            )
         } finally {
             dataStore.close()
         }

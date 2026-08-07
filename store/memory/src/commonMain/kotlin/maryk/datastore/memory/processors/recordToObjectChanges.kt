@@ -8,7 +8,6 @@ import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.datastore.memory.records.DataRecord
 import maryk.datastore.memory.records.DataRecordHistoricValues
-import maryk.datastore.memory.records.DataRecordNode
 import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DeletedValue
 
@@ -26,11 +25,6 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
     val changes = this.readStorageToChanges(
         getQualifier = { resultHandler ->
             valueIndex++
-
-            // skip deleted values
-            while (valueIndex < record.values.size && isDeletedNode(record.values[valueIndex])) {
-                valueIndex++
-            }
 
             if (valueIndex < record.values.size) {
                 val qualifier = record.values[valueIndex].reference
@@ -98,7 +92,3 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
         changes = changes
     )
 }
-
-/** Check if [node] is deleted */
-private fun isDeletedNode(node: DataRecordNode) =
-    node is DeletedValue<*> || (node is DataRecordHistoricValues<*> && node.history.last() is DeletedValue<*>)

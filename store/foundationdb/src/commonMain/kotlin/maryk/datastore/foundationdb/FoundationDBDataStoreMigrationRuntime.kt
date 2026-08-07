@@ -117,6 +117,9 @@ internal suspend fun FoundationDBDataStore.migrationAuditEventsInternal(modelId:
 
 internal suspend fun FoundationDBDataStore.awaitMigrationInternal(modelId: UInt) {
     pendingMigrationWaiters.value[modelId]?.await()
+    migrationStatusInternal(modelId).takeIf { it.state == MigrationRuntimeState.Failed }?.let { status ->
+        throw MigrationException(status.message ?: "Migration failed")
+    }
 }
 
 internal fun FoundationDBDataStore.ensurePendingMigrationWaiterInternal(modelId: UInt): CompletableDeferred<Unit> {

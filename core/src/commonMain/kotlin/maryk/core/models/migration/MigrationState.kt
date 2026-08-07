@@ -84,6 +84,9 @@ data class MigrationState(
     }
 
     fun toPersistedBytes(): ByteArray {
+        if (migrationId.isEmpty() || toVersion.isEmpty()) {
+            throw MigrationException("Migration state requires a migration id and target version")
+        }
         val stateLines = buildList {
             add("v=1")
             add("migrationId=${migrationId}")
@@ -95,10 +98,67 @@ data class MigrationState(
             add("cursor=${cursor?.let(Base64Maryk::encode) ?: ""}")
             add("message=${message?.encodeToByteArray()?.let(Base64Maryk::encode) ?: ""}")
         }
-        return stateLines.joinToString("\n").encodeToByteArray()
+        return encodePersistedState(stateLines)
+    }
+
+    /**
+     * Ensures persisted progress belongs to the migration currently being run before resuming it.
+     */
+    fun requireMatchingMigration(
+        migrationId: String,
+        fromVersion: String,
+        toVersion: String,
+    ) {
+        if (
+            this.migrationId != migrationId ||
+            this.fromVersion != fromVersion ||
+            this.toVersion != toVersion
+        ) {
+            throw MigrationException(
+                "Persisted migration state does not match the current migration: " +
+                    "expected $migrationId ($fromVersion -> $toVersion), " +
+                    "found ${this.migrationId} (${this.fromVersion} -> ${this.toVersion})"
+            )
+        }
     }
 
     companion object {
+        /**
+         * Decodes state that exists in a persistent store. A present state must never be ignored.
+         */
+        fun requireFromPersistedBytes(bytes: ByteArray): MigrationState {
+            if (bytes.size > maximumPersistedStateSize) {
+                throw malformedPersistedState()
+            }
+            val text = try {
+                bytes.decodeToString(throwOnInvalidSequence = true)
+            } catch (_: Exception) {
+                throw malformedPersistedState()
+            }
+            val entries = mutableMapOf<String, String>()
+            for (line in text.split('\n')) {
+                val separatorIndex = line.indexOf('=')
+                if (separatorIndex <= 0) {
+                    throw malformedPersistedState()
+                }
+                val key = line.substring(0, separatorIndex)
+                val value = line.substring(separatorIndex + 1)
+                if (
+                    key !in persistedFieldNames ||
+                    value.length > maximumPersistedFieldLength ||
+                    entries.put(key, value) != null
+                ) {
+                    throw malformedPersistedState()
+                }
+            }
+            if (entries.keys != persistedFieldNames) {
+                throw malformedPersistedState()
+            }
+            return fromPersistedEntries(entries)
+                ?.takeIf { it.migrationId.isNotEmpty() && it.toVersion.isNotEmpty() }
+                ?: throw malformedPersistedState()
+        }
+
         fun fromPersistedBytes(bytes: ByteArray): MigrationState? {
             val entries = bytes.decodeToString()
                 .lineSequence()
@@ -112,6 +172,10 @@ data class MigrationState(
                 }
                 .toMap()
 
+            return fromPersistedEntries(entries)
+        }
+
+        private fun fromPersistedEntries(entries: Map<String, String>): MigrationState? {
             if (entries["v"] != "1") return null
 
             val migrationId = entries["migrationId"] ?: return null
@@ -131,7 +195,7 @@ data class MigrationState(
             val message = if (messageEntry == null) {
                 null
             } else {
-                messageEntry.decodeBase64OrNull()?.decodeToString() ?: return null
+                messageEntry.decodeBase64OrNull()?.decodeUtf8OrNull() ?: return null
             }
 
             return MigrationState(
@@ -159,5 +223,41 @@ data class MigrationState(
             } catch (_: IllegalArgumentException) {
                 null
             }
+
+        private fun ByteArray.decodeUtf8OrNull(): String? =
+            try {
+                decodeToString(throwOnInvalidSequence = true)
+            } catch (_: Exception) {
+                null
+            }
+
+        private fun encodePersistedState(lines: List<String>): ByteArray {
+            if (lines.any { line -> line.substringAfter('=').length > maximumPersistedFieldLength }) {
+                throw MigrationException("Migration state contains a field too large to persist")
+            }
+            return lines.joinToString("\n").encodeToByteArray().also { bytes ->
+                if (bytes.size > maximumPersistedStateSize) {
+                    throw MigrationException("Migration state is too large to persist")
+                }
+            }
+        }
+
+        private val persistedFieldNames = setOf(
+            "v",
+            "migrationId",
+            "phase",
+            "status",
+            "attempt",
+            "from",
+            "to",
+            "cursor",
+            "message",
+        )
+
+        private const val maximumPersistedStateSize = 8 * 1024
+        private const val maximumPersistedFieldLength = 4 * 1024
+
+        private fun malformedPersistedState() =
+            MigrationException("Persisted migration state is malformed or uses an unsupported format")
     }
 }

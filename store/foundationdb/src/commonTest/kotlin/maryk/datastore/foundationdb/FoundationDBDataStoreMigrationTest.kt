@@ -18,8 +18,11 @@ import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
+import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.NoopMigrationLease
+import maryk.datastore.foundationdb.model.modelMigrationStateKey
+import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.reference
@@ -58,6 +61,63 @@ import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreMigrationTest {
     class CustomException : Error()
+
+    @Test
+    fun backgroundMigrationFailsPromptlyForInvalidPersistedState() = runTest(timeout = 3.minutes) {
+        val invalidStates = listOf(
+            "malformed" to "not migration state".encodeToByteArray(),
+            "mismatched" to MigrationState(
+                migrationId = "Model:1.0->2.0",
+                phase = MigrationPhase.Backfill,
+                status = MigrationStateStatus.Retry,
+                attempt = 1u,
+                fromVersion = "1.0",
+                toVersion = "2.0",
+            ).toPersistedBytes(),
+        )
+
+        for ((name, state) in invalidStates) {
+            val dirPath = listOf("maryk", "test", "fdb-migration-invalid-state-$name", Uuid.random().toString())
+            val initialStore = FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV1_1),
+            )
+            initialStore.runTransaction { transaction ->
+                transaction.set(packKey(initialStore.getTableDirs(1u).modelPrefix, modelMigrationStateKey), state)
+            }
+            initialStore.close()
+
+            val dataStore = FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationLease = NoopMigrationLease,
+                    migrationStartupBudgetMs = -1L,
+                    continueMigrationsInBackground = true,
+                    migrationHandler = { MigrationOutcome.Success },
+                )
+            )
+
+            try {
+                val failure = runCatching {
+                    withContext(Dispatchers.Default.limitedParallelism(1)) {
+                        withTimeout(5_000.milliseconds) {
+                            dataStore.awaitMigration(1u)
+                        }
+                    }
+                }.exceptionOrNull()
+
+                assertIs<MigrationException>(failure)
+                assertTrue(dataStore.pendingMigrations()[1u]?.contains("Persisted migration state") == true)
+            } finally {
+                dataStore.close()
+            }
+        }
+    }
 
     @Test
     fun testComplexMigrationCheckWithNoChange() = runTest(timeout = 3.minutes) {

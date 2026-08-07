@@ -117,6 +117,9 @@ internal suspend fun RocksDBDataStore.migrationAuditEventsInternal(modelId: UInt
 
 internal suspend fun RocksDBDataStore.awaitMigrationInternal(modelId: UInt) {
     pendingMigrationWaiters.value[modelId]?.await()
+    migrationStatusInternal(modelId).takeIf { it.state == MigrationRuntimeState.Failed }?.let { status ->
+        throw MigrationException(status.message ?: "Migration failed")
+    }
 }
 
 internal fun RocksDBDataStore.ensurePendingMigrationWaiterInternal(modelId: UInt): CompletableDeferred<Unit> {

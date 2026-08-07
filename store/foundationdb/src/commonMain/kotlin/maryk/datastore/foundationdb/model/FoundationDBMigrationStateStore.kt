@@ -16,7 +16,7 @@ internal class FoundationDBMigrationStateStore(
         val bytes = tc.run { tr ->
             tr.get(key).awaitResult()
         } ?: return null
-        return MigrationState.fromPersistedBytes(bytes)
+        return MigrationState.requireFromPersistedBytes(bytes)
     }
 
     override suspend fun write(modelId: UInt, state: MigrationState) {

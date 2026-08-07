@@ -12,7 +12,7 @@ internal class RocksDBMigrationStateStore(
     override suspend fun read(modelId: UInt): MigrationState? =
         modelColumnFamiliesById[modelId]
             ?.let { rocksDB.get(it, modelMigrationStateKey) }
-            ?.let(MigrationState::fromPersistedBytes)
+            ?.let(MigrationState::requireFromPersistedBytes)
 
     override suspend fun write(modelId: UInt, state: MigrationState) {
         modelColumnFamiliesById[modelId]?.let {

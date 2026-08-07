@@ -18,8 +18,10 @@ import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationRetryPolicy
 import maryk.core.models.migration.MigrationRuntimeState
+import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.NoopMigrationLease
+import maryk.datastore.rocksdb.model.modelMigrationStateKey
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.reference
@@ -59,6 +61,60 @@ import kotlin.time.Duration.Companion.milliseconds
 class RocksDBDataStoreMigrationTest {
 
     class CustomException : Error()
+
+    @Test
+    fun backgroundMigrationFailsPromptlyForInvalidPersistedState() = runTest {
+        val invalidStates = listOf(
+            "malformed" to "not migration state".encodeToByteArray(),
+            "mismatched" to MigrationState(
+                migrationId = "Model:1.0->2.0",
+                phase = MigrationPhase.Backfill,
+                status = MigrationStateStatus.Retry,
+                attempt = 1u,
+                fromVersion = "1.0",
+                toVersion = "2.0",
+            ).toPersistedBytes(),
+        )
+
+        for ((name, state) in invalidStates) {
+            val path = createTestDBFolder("migrationInvalidState$name")
+            val initialStore = RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV1_1),
+            )
+            initialStore.db.put(initialStore.getColumnFamilies(1u).model, modelMigrationStateKey, state)
+            initialStore.close()
+
+            val dataStore = RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationLease = NoopMigrationLease,
+                    migrationStartupBudgetMs = -1L,
+                    continueMigrationsInBackground = true,
+                    migrationHandler = { MigrationOutcome.Success },
+                )
+            )
+
+            try {
+                val failure = runCatching {
+                    withContext(Dispatchers.Default.limitedParallelism(1)) {
+                        withTimeout(1_000.milliseconds) {
+                            dataStore.awaitMigration(1u)
+                        }
+                    }
+                }.exceptionOrNull()
+
+                assertIs<MigrationException>(failure)
+                assertTrue(dataStore.pendingMigrations()[1u]?.contains("Persisted migration state") == true)
+            } finally {
+                dataStore.close()
+                deleteFolder(path)
+            }
+        }
+    }
 
     @Test
     fun testComplexMigrationCheckWithNoChange() = runTest {

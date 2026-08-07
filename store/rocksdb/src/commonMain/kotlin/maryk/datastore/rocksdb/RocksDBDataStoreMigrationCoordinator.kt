@@ -2,6 +2,7 @@ package maryk.datastore.rocksdb
 
 import kotlin.time.TimeMark
 import kotlinx.atomicfu.update
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import maryk.core.models.IsRootDataModel
@@ -89,6 +90,15 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
         migrationStateStore.write(index, state)
         updateMigrationRuntimeDetails(index, state)
     }
+
+    suspend fun readMigrationState(): MigrationState? =
+        migrationStateStore.read(index)?.also {
+            it.requireMatchingMigration(
+                migrationId = migrationId,
+                fromVersion = storedModel.Meta.version.toString(),
+                toVersion = dataModel.Meta.version.toString(),
+            )
+        }
 
     suspend fun executeStep(previousState: MigrationState?, attempt: UInt): Pair<MigrationPhase, MigrationOutcome> {
         val phase = previousState?.phase?.normalizedRuntimePhase() ?: MigrationPhase.Expand
@@ -185,7 +195,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                         delay(250.milliseconds)
                         continue
                     }
-                    val previousState = migrationStateStore.read(index)
+                    val previousState = readMigrationState()
                     val (attempt, step) = executeNextStep(previousState)
                     val (phase, outcome) = step
 
@@ -275,6 +285,11 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                         }
                     }
                 }
+            } catch (error: Throwable) {
+                if (error is CancellationException) throw error
+                val reason = "Migration failed in background for ${dataModel.Meta.name}: ${error.message ?: "unknown error"}"
+                pendingMigrationReasons.update { it + (index to reason) }
+                failPendingMigration(index, reason)
             } finally {
                 if (hasLease) {
                     effectiveMigrationLease.release(index, migrationId)
@@ -318,7 +333,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                 break
             }
 
-            val previousState = migrationStateStore.read(index)
+            val previousState = readMigrationState()
             val (attempt, step) = executeNextStep(previousState)
             val (phase, outcome) = step
 

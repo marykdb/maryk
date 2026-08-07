@@ -3,6 +3,7 @@ package maryk.core.models.migration
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -92,6 +93,141 @@ class MigrationStateTest {
         assertNull(MigrationState.fromPersistedBytes(stateWith("attempt=invalid")))
         assertNull(MigrationState.fromPersistedBytes(stateWith("cursor=!")))
         assertNull(MigrationState.fromPersistedBytes(stateWith("message=!")))
+    }
+
+    @Test
+    fun strictStateDecoderRejectsMalformedAndLegacyState() {
+        val validState = MigrationState(
+            migrationId = "Person:1.0.0->2.0.0",
+            phase = MigrationPhase.Backfill,
+            status = MigrationStateStatus.Running,
+            attempt = 3u,
+            fromVersion = "1.0.0",
+            toVersion = "2.0.0",
+        ).toPersistedBytes().decodeToString()
+
+        assertFailsWith<MigrationException> {
+            MigrationState.requireFromPersistedBytes("v=1\nmigrationId=Person:1.0.0->2.0.0".encodeToByteArray())
+        }
+        assertFailsWith<MigrationException> {
+            MigrationState.requireFromPersistedBytes("migrationId=Person:1.0.0->2.0.0".encodeToByteArray())
+        }
+        assertFailsWith<MigrationException> {
+            MigrationState.requireFromPersistedBytes("$validState\ninvalid".encodeToByteArray())
+        }
+        assertFailsWith<MigrationException> {
+            MigrationState.requireFromPersistedBytes("$validState\nmigrationId=Person:1.0.0->2.0.0".encodeToByteArray())
+        }
+    }
+
+    @Test
+    fun strictStateDecoderRejectsInvalidUtf8AndOversizedFields() {
+        val validState = MigrationState(
+            migrationId = "Person:1.0.0->2.0.0",
+            phase = MigrationPhase.Backfill,
+            status = MigrationStateStatus.Running,
+            attempt = 3u,
+            fromVersion = "1.0.0",
+            toVersion = "2.0.0",
+        ).toPersistedBytes()
+        val invalidUtf8 = validState.copyOf().also { bytes ->
+            bytes[bytes.indexOf('P'.code.toByte())] = 0xC3.toByte()
+        }
+
+        assertFailsWith<MigrationException> {
+            MigrationState.requireFromPersistedBytes(invalidUtf8)
+        }
+        assertFailsWith<MigrationException> {
+            MigrationState.requireFromPersistedBytes(
+                MigrationState(
+                    migrationId = "x".repeat(5 * 1024),
+                    phase = MigrationPhase.Backfill,
+                    status = MigrationStateStatus.Running,
+                    attempt = 3u,
+                    fromVersion = "1.0.0",
+                    toVersion = "2.0.0",
+                ).toPersistedBytes()
+            )
+        }
+    }
+
+    @Test
+    fun strictStateDecoderRejectsInvalidUtf8Message() {
+        val state = MigrationState(
+            migrationId = "Person:1.0.0->2.0.0",
+            phase = MigrationPhase.Backfill,
+            status = MigrationStateStatus.Running,
+            attempt = 3u,
+            fromVersion = "1.0.0",
+            toVersion = "2.0.0",
+        )
+        val invalidMessage = state.toPersistedBytes()
+            .decodeToString()
+            .replace("message=", "message=ww==")
+            .encodeToByteArray()
+
+        assertFailsWith<MigrationException> {
+            MigrationState.requireFromPersistedBytes(invalidMessage)
+        }
+    }
+
+    @Test
+    fun stateEncodingEnforcesTheSameMessageLimitAsStrictDecoding() {
+        val atLimit = MigrationState(
+            migrationId = "Person:1.0.0->2.0.0",
+            phase = MigrationPhase.Backfill,
+            status = MigrationStateStatus.Running,
+            attempt = 3u,
+            fromVersion = "1.0.0",
+            toVersion = "2.0.0",
+            message = "x".repeat(3_072),
+        )
+
+        assertEquals(atLimit, MigrationState.requireFromPersistedBytes(atLimit.toPersistedBytes()))
+        assertFailsWith<MigrationException> {
+            atLimit.copy(message = "x".repeat(3_073)).toPersistedBytes()
+        }
+    }
+
+    @Test
+    fun resumeStateRequiresMatchingMigrationIdentity() {
+        val state = MigrationState(
+            migrationId = "Person:1.0.0->2.0.0",
+            phase = MigrationPhase.Backfill,
+            status = MigrationStateStatus.Partial,
+            attempt = 3u,
+            fromVersion = "1.0.0",
+            toVersion = "2.0.0",
+            cursor = byteArrayOf(1, 2, 3),
+        )
+
+        state.requireMatchingMigration(
+            migrationId = "Person:1.0.0->2.0.0",
+            fromVersion = "1.0.0",
+            toVersion = "2.0.0",
+        )
+
+        assertFailsWith<MigrationException> {
+            state.requireMatchingMigration(
+                migrationId = "Person:2.0.0->3.0.0",
+                fromVersion = "2.0.0",
+                toVersion = "3.0.0",
+            )
+        }
+        assertFailsWith<MigrationException> {
+            state.requireMatchingMigration(
+                migrationId = "Person:1.0.0->2.0.0",
+                fromVersion = "0.9.0",
+                toVersion = "2.0.0",
+            )
+        }
+        assertFailsWith<MigrationException> {
+            state.requireMatchingMigration(
+                migrationId = "Person:1.0.0->2.0.0",
+                fromVersion = "1.0.0",
+                toVersion = "2.1.0",
+            )
+        }
     }
 
     @Test

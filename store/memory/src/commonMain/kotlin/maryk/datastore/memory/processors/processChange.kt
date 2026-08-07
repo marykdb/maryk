@@ -669,7 +669,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                 value.reference,
                 value.value,
                 version,
-                previousValue as Comparable<Any>
+                previousValue as? Comparable<Any>
             )
         }
 

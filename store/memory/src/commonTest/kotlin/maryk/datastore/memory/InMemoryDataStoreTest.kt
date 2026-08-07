@@ -14,6 +14,7 @@ import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.properties.definitions.index.UUIDv4Key
 import maryk.core.properties.definitions.number
+import maryk.core.properties.exceptions.AlreadyExistsException
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Orders
 import maryk.core.query.orders.ascending
@@ -50,6 +51,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
 import maryk.datastore.test.runDataStoreTestsIsolated
+import maryk.datastore.test.NullableUniqueModel
 import maryk.datastore.test.UniqueModel
 import maryk.test.models.AnyValueIncMapIndexModel
 import maryk.test.models.AnyValueSetIndexModel
@@ -848,6 +850,48 @@ class InMemoryDataStoreTest {
             )
 
             assertEquals(0, scanResponse.values.size)
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun optionalUniquePropertyCanBePopulatedAfterAdd() = runTest {
+        val dataStore = InMemoryDataStore.open(
+            dataModelsById = mapOf(1u to NullableUniqueModel)
+        )
+        try {
+            val key = assertIs<AddSuccess<NullableUniqueModel>>(
+                dataStore.execute(NullableUniqueModel.add(NullableUniqueModel.create { })).statuses.single()
+            ).key
+
+            assertIs<ChangeSuccess<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.change(
+                        key.change(
+                            Change(NullableUniqueModel { email::ref } with "first@example.com")
+                        )
+                    )
+                ).statuses.single()
+            )
+
+            assertEquals(
+                listOf(key),
+                dataStore.execute(
+                    NullableUniqueModel.scan(
+                        where = Equals(NullableUniqueModel { email::ref } with "first@example.com")
+                    )
+                ).values.map { it.key }
+            )
+
+            val duplicate = assertIs<ValidationFail<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.add(
+                        NullableUniqueModel.create { email with "first@example.com" }
+                    )
+                ).statuses.single()
+            )
+            assertIs<AlreadyExistsException>(duplicate.exceptions.single())
         } finally {
             dataStore.close()
         }

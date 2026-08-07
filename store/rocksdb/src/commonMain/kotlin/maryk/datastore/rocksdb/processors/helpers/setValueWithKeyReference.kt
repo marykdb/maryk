@@ -32,7 +32,7 @@ internal fun setValue(
 
         val valueBytes = if (value.size != valueLength) {
             ByteArray(valueLength).apply {
-                value.copyInto(valueWithVersion, 0, valueOffset, valueOffset + valueLength)
+                value.copyInto(this, 0, valueOffset, valueOffset + valueLength)
             }
         } else value
 

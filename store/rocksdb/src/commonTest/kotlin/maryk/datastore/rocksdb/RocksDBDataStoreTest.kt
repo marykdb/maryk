@@ -2,14 +2,20 @@ package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
+import maryk.core.extensions.bytes.invert
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.MultiTypeChange
+import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.change
+import maryk.core.properties.references.dsl.refAt
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.rocksdb.processors.helpers.createIndexKey
 import maryk.datastore.rocksdb.processors.processChange
+import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.test.UniqueModel
 import maryk.datastore.test.UniqueModel.email
 import maryk.datastore.test.DataStoreBackupRoundTripTest
@@ -24,6 +30,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
@@ -37,6 +44,68 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RocksDBDataStoreTest {
+    @Test
+    fun historicalListShiftPreservesPayload() = runTest {
+        val folder = createTestDBFolder("historical-list-shift")
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = mapOf(1u to TestMarykModel),
+            keepAllVersions = true,
+        )
+
+        try {
+            val addStatus = assertStatusIs<AddSuccess<TestMarykModel>>(
+                dataStore.execute(
+                    TestMarykModel.add(
+                        TestMarykModel.create {
+                            int with 1
+                            uint with 1u
+                            double with 1.0
+                            dateTime with LocalDateTime(2026, 8, 7, 0, 0)
+                            bool with false
+                            listOfString with listOf("first", "second")
+                        }
+                    )
+                ).statuses.single()
+            )
+            val shiftStatus = assertStatusIs<ChangeSuccess<TestMarykModel>>(
+                dataStore.execute(
+                    TestMarykModel.change(
+                        addStatus.key.change(
+                            Change(TestMarykModel { listOfString.refAt(0u) } with null)
+                        )
+                    )
+                ).statuses.single()
+            )
+
+            val shiftedReference = TestMarykModel { listOfString.refAt(0u) }.toStorageByteArray()
+            val shiftedKey = addStatus.key.bytes + shiftedReference
+            val columnFamilies = dataStore.getColumnFamilies(TestMarykModel) as HistoricTableColumnFamilies
+            val currentBytes = dataStore.db.get(columnFamilies.table, shiftedKey)!!
+            val historicKey = (shiftedKey + HLC.toStorageBytes(HLC(shiftStatus.version))).also {
+                it.invert(it.size - VERSION_BYTE_SIZE)
+            }
+
+            assertContentEquals(
+                currentBytes.copyOfRange(VERSION_BYTE_SIZE, currentBytes.size),
+                dataStore.db.get(columnFamilies.historic.table, historicKey),
+            )
+            assertEquals(
+                listOf("second"),
+                dataStore.execute(TestMarykModel.get(addStatus.key)).values.single().values { listOfString },
+            )
+            assertEquals(
+                listOf("second"),
+                dataStore.execute(
+                    TestMarykModel.get(addStatus.key, toVersion = shiftStatus.version)
+                ).values.single().values { listOfString },
+            )
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
     @Test
     fun portableBackupRoundTrip() = runTest {
         val sourceFolder = createTestDBFolder("backup-source")

@@ -85,6 +85,12 @@ import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
 
+private data class UniqueIndexChange(
+    val value: DataRecordValue<Comparable<Any>>?,
+    val reference: ByteArray,
+    val previousValue: Comparable<Any>?
+)
+
 /**
  * Apply [changes] to a specific object at [key] and record them as [version]
  */
@@ -147,7 +153,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             validationExceptions.add(ve)
         }
 
-        var uniquesToIndex: MutableMap<DataRecordValue<Comparable<Any>>, Any?>? = null
+        var uniqueIndexChanges: MutableList<UniqueIndexChange>? = null
 
         val newValueList = objectToChange.values.toMutableList()
 
@@ -204,6 +210,20 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                                 newValue = null,
                                                 refGetter = { reference }
                                             )
+
+                                            val definition = reference.comparablePropertyDefinition
+                                            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                                                @Suppress("UNCHECKED_CAST")
+                                                val comparableValue = previousValue as Comparable<Any>
+                                                when (uniqueIndexChanges) {
+                                                    null -> uniqueIndexChanges = mutableListOf(
+                                                        UniqueIndexChange(null, reference.toStorageByteArray(), comparableValue)
+                                                    )
+                                                    else -> uniqueIndexChanges?.add(
+                                                        UniqueIndexChange(null, reference.toStorageByteArray(), comparableValue)
+                                                    )
+                                                }
+                                            }
 
                                             // Extra validations based on reference type
                                             when (reference) {
@@ -453,9 +473,15 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                                             val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
                                             try {
                                                 dataStore.validateUniqueNotExists(comparableValue, objectToChange)
-                                                when (uniquesToIndex) {
-                                                    null -> uniquesToIndex = mutableMapOf(comparableValue to previousValue)
-                                                    else -> uniquesToIndex[comparableValue] = previousValue
+                                                @Suppress("UNCHECKED_CAST")
+                                                val previousComparableValue = previousValue as? Comparable<Any>
+                                                when (uniqueIndexChanges) {
+                                                    null -> uniqueIndexChanges = mutableListOf(
+                                                        UniqueIndexChange(comparableValue, comparableValue.reference, previousComparableValue)
+                                                    )
+                                                    else -> uniqueIndexChanges.add(
+                                                        UniqueIndexChange(comparableValue, comparableValue.reference, previousComparableValue)
+                                                    )
                                                 }
                                             } catch (e: UniqueException) {
                                                 // Only throw if key is not equal otherwise ignore as it is the same as existing key
@@ -662,15 +688,20 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             dataStore.addToUpdateHistory(version, objectToChange.key.bytes)
         }
 
-        uniquesToIndex?.forEach { (value, previousValue) ->
-            @Suppress("UNCHECKED_CAST")
-            dataStore.addToUniqueIndex(
-                objectToChange,
-                value.reference,
-                value.value,
-                version,
-                previousValue as? Comparable<Any>
-            )
+        uniqueIndexChanges?.forEach { indexChange ->
+            if (indexChange.value == null) {
+                indexChange.previousValue?.let {
+                    dataStore.removeFromUniqueIndex(objectToChange, indexChange.reference, it, version)
+                }
+            } else {
+                dataStore.addToUniqueIndex(
+                    objectToChange,
+                    indexChange.value.reference,
+                    indexChange.value.value,
+                    version,
+                    indexChange.previousValue
+                )
+            }
         }
 
         var indexUpdates: MutableList<IsIndexUpdate>? = null

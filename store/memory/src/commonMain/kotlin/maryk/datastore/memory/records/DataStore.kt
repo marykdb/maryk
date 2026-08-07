@@ -92,6 +92,16 @@ internal class DataStore<DM : IsRootDataModel>(
         index.addToIndex(record, value, version)
     }
 
+    /** Remove [record] from a unique index for its [previousValue]. */
+    internal fun removeFromUniqueIndex(
+        record: DataRecord<DM>,
+        indexName: ByteArray,
+        previousValue: Comparable<Any>,
+        version: HLC
+    ) {
+        getOrCreateUniqueIndex(indexName).removeFromIndex(record, previousValue, version, keepAllVersions)
+    }
+
     /** Remove [dataRecord] from all unique indexes and register removal below [version] */
     internal fun removeFromUniqueIndices(
         dataRecord: DataRecord<DM>,

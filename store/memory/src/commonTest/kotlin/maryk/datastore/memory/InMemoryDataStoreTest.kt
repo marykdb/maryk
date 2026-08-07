@@ -898,6 +898,79 @@ class InMemoryDataStoreTest {
     }
 
     @Test
+    fun clearingOptionalUniquePropertyReleasesItsValue() = runTest {
+        val dataStore = InMemoryDataStore.open(
+            dataModelsById = mapOf(1u to NullableUniqueModel)
+        )
+        try {
+            val firstKey = assertIs<AddSuccess<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.add(
+                        NullableUniqueModel.create { email with "released@example.com" }
+                    )
+                ).statuses.single()
+            ).key
+
+            assertIs<ChangeSuccess<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.change(
+                        firstKey.change(
+                            Change(NullableUniqueModel { email::ref } with null)
+                        )
+                    )
+                ).statuses.single()
+            )
+
+            assertEquals(
+                emptyList(),
+                dataStore.execute(
+                    NullableUniqueModel.scan(
+                        where = Equals(NullableUniqueModel { email::ref } with "released@example.com")
+                    )
+                ).values.map { it.key }
+            )
+
+            val secondKey = assertIs<AddSuccess<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.add(
+                        NullableUniqueModel.create { email with "released@example.com" }
+                    )
+                ).statuses.single()
+            ).key
+
+            assertIs<ChangeSuccess<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.change(
+                        firstKey.change(
+                            Change(NullableUniqueModel { email::ref } with null)
+                        )
+                    )
+                ).statuses.single()
+            )
+
+            assertEquals(
+                listOf(secondKey),
+                dataStore.execute(
+                    NullableUniqueModel.scan(
+                        where = Equals(NullableUniqueModel { email::ref } with "released@example.com")
+                    )
+                ).values.map { it.key }
+            )
+
+            val duplicate = assertIs<ValidationFail<NullableUniqueModel>>(
+                dataStore.execute(
+                    NullableUniqueModel.add(
+                        NullableUniqueModel.create { email with "released@example.com" }
+                    )
+                ).statuses.single()
+            )
+            assertIs<AlreadyExistsException>(duplicate.exceptions.single())
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun historicalGetPrefersArchivedRecordWhenKeyIsReused() = runTest(timeout = 1.minutes) {
         val key = SimpleMarykModel.key(validUuidV4Bytes(42))
         val dataStore = InMemoryDataStore.open(

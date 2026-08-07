@@ -9,6 +9,7 @@ import maryk.json.ValueType.Float
 import maryk.json.ValueType.Int
 import maryk.json.ValueType.Null
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
@@ -243,6 +244,446 @@ internal class JsonReaderTest {
             assertEndArray()
             assertEndDocument()
         }
+    }
+
+    @Test
+    fun resumesNumberSplitBeforeArrayEndWithoutDuplicateNesting() {
+        var input = "[1"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertIs<Suspended>(nextToken())
+
+            input += "]"
+
+            assertValue(1L, ValueType.Int)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesKeywordSplitBeforeArrayEndWithoutDuplicateNesting() {
+        var input = "[tru"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertIs<Suspended>(nextToken())
+
+            input += "e]"
+
+            assertValue(true, ValueType.Bool)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesObjectValueSplitBeforeObjectEndWithoutDuplicateNesting() {
+        var input = "{\"value\":1"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartObject()
+            assertFieldName("value")
+            assertIs<Suspended>(nextToken())
+
+            input += "}"
+
+            assertValue(1L, ValueType.Int)
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesFractionSplitBeforeArrayEnd() {
+        var input = "[1."
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertIs<Suspended>(nextToken())
+
+            input += "25]"
+
+            assertValue(1.25, ValueType.Float)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesStringEscapeSplitBeforeArrayEnd() {
+        var input = """["hello""" + "\\"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertIs<Suspended>(nextToken())
+
+            input += "n\"]"
+
+            assertValue("hello\n")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesNullKeywordSplitBeforeArrayEnd() {
+        var input = "[nul"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertIs<Suspended>(nextToken())
+
+            input += "l]"
+
+            assertValue(null, ValueType.Null)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesCompletedFieldNameBeforeValueChunk() {
+        var input = "{\"value\":"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartObject()
+            assertIs<Suspended>(nextToken())
+
+            input += "1}"
+
+            assertValue(1L, ValueType.Int)
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesCompletedStringBeforeArrayEnd() {
+        var input = "[\"value\""
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertIs<Suspended>(nextToken())
+
+            input += "]"
+
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesAtEveryChunkBoundary() {
+        val json = """{
+            "number" : -12.5e+2,
+            "flags" : [ true, false, null ],
+            "text" : "a\n\uD83D\uDE0D",
+            "nested" : { "empty" : [ ] }
+        }""".trimIndent()
+        val expected = collectTokenKeys(JsonReader(json))
+
+        for (split in 0..json.length) {
+            var input = json.substring(0, split)
+            var index = 0
+            val actualReader = JsonReader {
+                input.getOrNull(index)?.also { index++ }
+            }
+            val actual = mutableListOf<String>()
+
+            collectUntilStopped(actualReader, actual)
+            if (split < json.length) {
+                input += json.substring(split)
+                collectUntilStopped(actualReader, actual)
+            }
+
+            assertEquals(expected, actual, "split=$split")
+        }
+    }
+
+    @Test
+    fun resumesAcrossEveryCharacterChunk() {
+        val json = """{ "number" : -12.5e+2, "flags" : [ true, false, null ], "text" : "a\\n\\uD83D\\uDE0D" }"""
+        val expected = collectTokenKeys(JsonReader(json))
+        var input = ""
+        var index = 0
+        val reader = JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }
+        val actual = mutableListOf<String>()
+
+        json.forEachIndexed { chunkIndex, char ->
+            input += char
+            collectUntilStopped(reader, actual)
+            assertTrue(actual.none { it == "suspended" }, "chunk=$chunkIndex, input=$input")
+        }
+
+        assertEquals(expected, actual)
+    }
+
+    @Test
+    fun resumesStringAcrossMultipleChunks() {
+        var input = "[\"a"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertIs<Suspended>(nextToken())
+
+            input += "b"
+            assertIs<Suspended>(nextToken())
+
+            input += " c"
+            assertIs<Suspended>(nextToken())
+
+            input += "d\"]"
+            assertValue("ab cd")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun exposesPartialStringInSuspension() {
+        var input = "[\"hel"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertEquals("hel", assertIs<Suspended>(nextToken()).storedValue)
+
+            input += "lo\"]"
+            assertValue("hello")
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun exposesPartialNumberInSuspension() {
+        var input = "[12"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertEquals("12", assertIs<Suspended>(nextToken()).storedValue)
+
+            input += "]"
+            assertValue(12L, ValueType.Int)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun reportsLocationForInvalidStringCharacterAfterResume() {
+        var input = "[\n\"ab"
+        var index = 0
+        val reader = JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }
+
+        reader.assertStartArray()
+        assertIs<Suspended>(reader.nextToken())
+
+        input += "\n"
+
+        val error = assertFailsWith<InvalidJsonContent> {
+            reader.nextToken()
+        }
+        assertEquals(3, error.lineNumber)
+        assertEquals(0, error.columnNumber)
+        assertEquals(3, reader.lineNumber)
+        assertEquals(0, reader.columnNumber)
+    }
+
+    @Test
+    fun resumesCompletedFieldNameBeforeColonAcrossChunks() {
+        var input = "{\"hel"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartObject()
+            assertIs<Suspended>(nextToken())
+
+            input += "lo\""
+            assertIs<Suspended>(nextToken())
+
+            input += ":1}"
+            assertFieldName("hello")
+            assertValue(1L, ValueType.Int)
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesFieldNameAfterWhitespaceBeforeColon() {
+        var input = "{\"hel"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartObject()
+            assertIs<Suspended>(nextToken())
+
+            input += "lo\" "
+            assertIs<Suspended>(nextToken())
+
+            input += ":1}"
+            assertFieldName("hello")
+            assertValue(1L, ValueType.Int)
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesNumberAcrossMultipleChunks() {
+        var input = "[12"
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            assertIs<Suspended>(nextToken())
+
+            input += "34"
+            assertIs<Suspended>(nextToken())
+
+            input += "56"
+            assertIs<Suspended>(nextToken())
+
+            input += "]"
+            assertValue(123456L, ValueType.Int)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun preservesCompletedNumberInSuspensionBeforeArrayEnd() {
+        var input = "[1 "
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertStartArray()
+            val suspended = assertIs<Suspended>(nextToken())
+            assertEquals(1L, assertIs<JsonToken.Value<*>>(suspended.lastToken).value)
+
+            input += "]"
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun resumesWhitespaceBeforeArrayValueAcrossMultipleChunks() {
+        var input = "["
+        var index = 0
+
+        JsonReader {
+            input.getOrNull(index)?.also { index++ }
+        }.apply {
+            assertEquals(JsonToken.StartDocument, assertIs<Suspended>(nextToken()).lastToken)
+
+            input += " "
+            assertEquals(JsonToken.StartDocument, assertIs<Suspended>(nextToken()).lastToken)
+
+            input += "\n"
+            assertEquals(JsonToken.StartDocument, assertIs<Suspended>(nextToken()).lastToken)
+
+            input += "]"
+            assertStartArray()
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    private fun collectTokenKeys(reader: JsonReader): List<String> {
+        val tokens = mutableListOf<String>()
+        collectUntilStopped(reader, tokens)
+        return tokens
+    }
+
+    private fun collectUntilStopped(reader: JsonReader, tokens: MutableList<String>) {
+        while (true) {
+            when (val token = reader.nextToken()) {
+                is Suspended -> {
+                    val committedToken = token.lastToken
+                    if (
+                        committedToken !in setOf(
+                            JsonToken.StartDocument,
+                            JsonToken.ObjectSeparator,
+                            JsonToken.ArraySeparator,
+                        ) && tokens.lastOrNull() != tokenKey(committedToken)
+                    ) {
+                        tokens += tokenKey(committedToken)
+                    }
+                    return
+                }
+                is JsonToken.EndDocument -> {
+                    tokens += tokenKey(token)
+                    return
+                }
+                else -> tokens += tokenKey(token)
+            }
+        }
+    }
+
+    private fun tokenKey(token: JsonToken) = when (token) {
+        JsonToken.StartDocument -> "start"
+        is JsonToken.StartObject -> "start-object"
+        JsonToken.EndObject -> "end-object"
+        is JsonToken.FieldName -> "field:${token.value}"
+        JsonToken.ObjectSeparator -> "object-separator"
+        is JsonToken.Value<*> -> "value:${token.type}:${token.value}"
+        is JsonToken.StartArray -> "start-array"
+        JsonToken.ArraySeparator -> "array-separator"
+        JsonToken.EndArray -> "end-array"
+        JsonToken.EndDocument -> "end-document"
+        is JsonToken.Suspended -> "suspended"
+        is JsonToken.JsonException -> "exception:${token.e}"
+        JsonToken.StartComplexFieldName -> "start-complex-field-name"
+        JsonToken.EndComplexFieldName -> "end-complex-field-name"
+        else -> token.name
     }
 
     @Test

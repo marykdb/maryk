@@ -25,8 +25,30 @@ import maryk.lib.extensions.isLowerHexChar
 
 private val skipArray = setOf(ObjectSeparator, ArraySeparator, StartDocument)
 
-private enum class ReadMode {
-    STRING,
+private enum class StringReadMode {
+    VALUE,
+    FIELD_NAME,
+}
+
+private enum class NumberReadStage {
+    INTEGER_REQUIRED,
+    INTEGER_ZERO,
+    INTEGER,
+    FRACTION_REQUIRED,
+    FRACTION,
+    EXPONENT_SIGN_OR_DIGIT,
+    EXPONENT_REQUIRED,
+    EXPONENT,
+}
+
+private enum class WhitespaceReadResume {
+    RETURN_CURRENT,
+    NEXT_TOKEN,
+    READ_DOCUMENT,
+    FINISH_FIELD_NAME,
+    NUMBER_TRAILING,
+    FINISH_DOCUMENT,
+    ROOT_SCALAR,
 }
 
 private interface JsonCharReader {
@@ -74,8 +96,54 @@ class JsonReader private constructor(
     private val typeStack: MutableList<JsonComplexType> = mutableListOf()
     private var lastChar: Char = ' '
     private var resumedFromSuspension = false
-    private var suspendedReadMode: ReadMode? = null
-    private var suspendedStringSkipChar: SkipCharType = SkipCharType.None
+    private var readReplay: String? = null
+    private var readReplayIndex = 0
+    private var readAttempt: StringBuilder? = null
+    private var suspendedState: ReaderState? = null
+    private var suspendedReadReplay: String? = null
+    private var suspendedAfterToken: ReaderState? = null
+    private var suspendedStringRead: StringReadState? = null
+    private var suspendedNumberRead: NumberReadState? = null
+    private var suspendedFieldName: FieldName? = null
+    private var suspendedFieldNamePreviousToken: JsonToken? = null
+    private var suspendedWhitespaceRead: WhitespaceReadState? = null
+    private var fieldNameColonRead = false
+
+    private data class ReaderState(
+        val currentToken: JsonToken,
+        val storedValue: String?,
+        val typeStack: List<JsonComplexType>,
+        val lastChar: Char,
+        val columnNumber: Int,
+        val lineNumber: Int,
+        val fieldNameColonRead: Boolean,
+    )
+
+    private data class StringReadState(
+        val mode: StringReadMode,
+        val value: StringBuilder,
+        var skipChar: SkipCharType = SkipCharType.None,
+    )
+
+    private class NumberReadState {
+        val value = StringBuilder()
+        var stage = NumberReadStage.INTEGER
+        var isFloatingPoint = false
+
+        fun canFinish() = stage in setOf(
+            NumberReadStage.INTEGER_ZERO,
+            NumberReadStage.INTEGER,
+            NumberReadStage.FRACTION,
+            NumberReadStage.EXPONENT,
+        )
+    }
+
+    private class WhitespaceReadState(
+        val resume: WhitespaceReadResume,
+        var needsRead: Boolean,
+        var continuationToken: JsonToken? = null,
+        var lastToken: JsonToken? = null,
+    )
 
     override fun nextToken(): JsonToken {
         if (resumedFromSuspension) {
@@ -83,16 +151,14 @@ class JsonReader private constructor(
         } else {
             storedValue = ""
         }
+        val state = captureState()
+        val previousReadAttempt = readAttempt
+        readAttempt = StringBuilder()
         try {
             when (currentToken) {
                 StartDocument -> {
-                    lastChar = readSkipWhitespace()
-                    when (lastChar) {
-                        '{' -> startObject()
-                        '[' -> startArray()
-                        '"' -> readStringValue(this::constructJsonValueToken)
-                        else -> readValue(this::constructJsonValueToken)
-                    }
+                    lastChar = readSkipWhitespace(WhitespaceReadResume.READ_DOCUMENT)
+                    readDocumentValue()
                 }
                 is StartObject -> {
                     typeStack.add(OBJECT)
@@ -136,25 +202,53 @@ class JsonReader private constructor(
                     readValue(this::constructJsonValueToken)
                 }
                 is Suspended -> {
-                    (currentToken as Suspended).let {
-                        currentToken = it.lastToken
-                        storedValue = it.storedValue
+                    val whitespaceRead = suspendedWhitespaceRead
+                    if (whitespaceRead != null) {
+                        currentToken = whitespaceRead.continuationToken ?: (currentToken as Suspended).lastToken
+                        resumedFromSuspension = true
+                        continueWhitespaceRead()
+                        return resumeAfterWhitespace(whitespaceRead.resume)
                     }
-                    resumedFromSuspension = true
-                    readSkipWhitespace()
-                    if (suspendedReadMode == ReadMode.STRING) {
-                        suspendedReadMode = null
-                        when (currentToken) {
-                            StartDocument, is FieldName, is StartArray, ArraySeparator -> {
-                                readStringValue(this::constructJsonValueToken, skipInitialRead = true)
-                            }
-                            is StartObject, ObjectSeparator -> {
-                                readFieldName(skipInitialRead = true)
-                            }
-                            else -> throwJsonException()
-                        }
+                    if (suspendedStringRead != null) {
+                        currentToken = (currentToken as Suspended).lastToken
+                        resumedFromSuspension = true
+                        read()
+                        continueStringRead()
                         return if (currentToken in skipArray) nextToken() else currentToken
                     }
+                    if (suspendedNumberRead != null) {
+                        currentToken = (currentToken as Suspended).lastToken
+                        resumedFromSuspension = true
+                        continueNumberRead()
+                        return if (currentToken in skipArray) nextToken() else currentToken
+                    }
+                    if (suspendedFieldName != null) {
+                        currentToken = suspendedFieldName!!
+                        resumedFromSuspension = true
+                        continueFieldName()
+                        return if (currentToken in skipArray) nextToken() else currentToken
+                    }
+                    val suspendedAfterToken = this.suspendedAfterToken
+                    if (suspendedAfterToken != null) {
+                        this.suspendedAfterToken = null
+                        restore(suspendedAfterToken)
+                        try {
+                            readSkipWhitespace(WhitespaceReadResume.NEXT_TOKEN)
+                        } catch (_: ExceptionWhileReadingJson) {
+                            suspendedWhitespaceRead?.continuationToken = currentToken
+                            this.suspendedAfterToken = captureState()
+                            currentToken = Suspended(currentToken, storedValue)
+                            return currentToken
+                        }
+                        return nextToken()
+                    }
+                    val suspendedState = this.suspendedState ?: return currentToken
+                    restore(suspendedState)
+                    this.suspendedState = null
+                    readReplay = suspendedReadReplay
+                    readReplayIndex = 0
+                    suspendedReadReplay = null
+                    resumedFromSuspension = true
                     return nextToken()
                 }
                 is Stopped -> {
@@ -165,16 +259,88 @@ class JsonReader private constructor(
                 }
             }
         } catch (_: ExceptionWhileReadingJson) {
-            currentToken = Suspended(currentToken, storedValue)
+            val partialValue = storedValue
+            val stringRead = suspendedStringRead
+            val numberRead = suspendedNumberRead
+            val whitespaceRead = suspendedWhitespaceRead
+            if (whitespaceRead != null) {
+                whitespaceRead.continuationToken = currentToken
+                val lastToken = whitespaceRead.lastToken ?: if (
+                    whitespaceRead.resume == WhitespaceReadResume.NEXT_TOKEN ||
+                    whitespaceRead.resume == WhitespaceReadResume.ROOT_SCALAR ||
+                    whitespaceRead.resume == WhitespaceReadResume.NUMBER_TRAILING
+                ) {
+                    currentToken
+                } else {
+                    lastResumableToken(state.currentToken)
+                }
+                whitespaceRead.lastToken = lastToken
+                currentToken = Suspended(lastToken, partialValue)
+            } else if (stringRead != null) {
+                // Preserve the public suspension snapshot while retaining the mutable buffer for resumption.
+                currentToken = Suspended(currentToken, stringRead.value.toString())
+            } else if (numberRead != null) {
+                // Preserve the public suspension snapshot while retaining the mutable buffer for resumption.
+                currentToken = Suspended(currentToken, numberRead.value.toString())
+            } else if (currentToken is FieldName && !fieldNameColonRead) {
+                suspendedFieldName = currentToken as FieldName
+                currentToken = Suspended(suspendedFieldNamePreviousToken ?: state.currentToken, partialValue)
+            } else if (
+                currentToken !== state.currentToken &&
+                (currentToken is Value<*> || (currentToken is FieldName && fieldNameColonRead))
+            ) {
+                suspendedAfterToken = captureState()
+                suspendedState = null
+                suspendedReadReplay = null
+                readReplay = null
+                readReplayIndex = 0
+                currentToken = Suspended(suspendedAfterToken!!.currentToken, partialValue)
+            } else {
+                val remainingReplay = readReplay?.let { it.substring(readReplayIndex) }.orEmpty()
+                restore(state)
+                suspendedState = state
+                suspendedReadReplay = readAttempt?.toString() + remainingReplay
+                readReplay = null
+                readReplayIndex = 0
+                currentToken = Suspended(state.currentToken, partialValue)
+            }
         } catch (e: InvalidJsonContent) {
             currentToken = JsonException(e)
             e.columnNumber = this.columnNumber
             e.lineNumber = this.lineNumber
             throw e
+        } finally {
+            readAttempt = previousReadAttempt
         }
 
         return if (currentToken in skipArray) nextToken() else currentToken
     }
+
+    private fun restore(state: ReaderState) {
+        currentToken = state.currentToken
+        storedValue = state.storedValue
+        typeStack.clear()
+        typeStack.addAll(state.typeStack)
+        lastChar = state.lastChar
+        columnNumber = state.columnNumber
+        lineNumber = state.lineNumber
+        fieldNameColonRead = state.fieldNameColonRead
+    }
+
+    private fun lastResumableToken(token: JsonToken): JsonToken = when (token) {
+        is Suspended -> lastResumableToken(token.lastToken)
+        else -> token
+    }
+
+    private fun captureState() = ReaderState(
+        currentToken = currentToken,
+        storedValue = storedValue,
+        typeStack = typeStack.toList(),
+        lastChar = lastChar,
+        columnNumber = columnNumber,
+        lineNumber = lineNumber,
+        fieldNameColonRead = fieldNameColonRead,
+    )
 
     private fun constructJsonValueToken(it: Any?) =
         when (it) {
@@ -185,6 +351,15 @@ class JsonReader private constructor(
             is Long -> Value(it, ValueType.Int)
             else -> Value(it.toString(), ValueType.String)
         }
+
+    private fun readDocumentValue() {
+        when (lastChar) {
+            '{' -> startObject()
+            '[' -> startArray()
+            '"' -> readStringValue(StringReadMode.VALUE)
+            else -> readValue(this::constructJsonValueToken)
+        }
+    }
 
     override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
         val startDepth = typeStack.count()
@@ -200,7 +375,18 @@ class JsonReader private constructor(
     }
 
     private fun read() = try {
-        lastChar = reader.read()
+        val replay = readReplay
+        lastChar = if (replay != null && readReplayIndex < replay.length) {
+            replay[readReplayIndex++].also {
+                if (readReplayIndex == replay.length) {
+                    readReplay = null
+                    readReplayIndex = 0
+                }
+            }
+        } else {
+            reader.read()
+        }
+        readAttempt?.append(lastChar)
         if (lastChar.isLineBreak()) {
             lineNumber += 1
             columnNumber = 0
@@ -211,15 +397,50 @@ class JsonReader private constructor(
         throw ExceptionWhileReadingJson()
     }
 
-    private fun readSkipWhitespace(): Char {
-        read()
-        skipWhiteSpace()
+    private fun readSkipWhitespace(resume: WhitespaceReadResume = WhitespaceReadResume.RETURN_CURRENT): Char {
+        suspendedWhitespaceRead = WhitespaceReadState(resume, needsRead = true)
+        continueWhitespaceRead()
         return lastChar
     }
 
-    private fun skipWhiteSpace() {
+    private fun skipWhiteSpace(resume: WhitespaceReadResume = WhitespaceReadResume.RETURN_CURRENT) {
         if (lastChar.isWhitespace()) {
-            readSkipWhitespace() // continue reading
+            suspendedWhitespaceRead = WhitespaceReadState(resume, needsRead = false)
+            continueWhitespaceRead()
+        }
+    }
+
+    private fun continueWhitespaceRead() {
+        val whitespaceRead = suspendedWhitespaceRead ?: return
+        if (whitespaceRead.needsRead) {
+            read()
+            whitespaceRead.needsRead = false
+        }
+        while (lastChar.isWhitespace()) {
+            read()
+        }
+        suspendedWhitespaceRead = null
+    }
+
+    private fun resumeAfterWhitespace(resume: WhitespaceReadResume): JsonToken = when (resume) {
+        WhitespaceReadResume.RETURN_CURRENT -> currentToken
+        WhitespaceReadResume.NEXT_TOKEN -> nextToken()
+        WhitespaceReadResume.READ_DOCUMENT -> {
+            readDocumentValue()
+            if (currentToken in skipArray) nextToken() else currentToken
+        }
+        WhitespaceReadResume.FINISH_FIELD_NAME -> {
+            finishFieldName()
+            currentToken
+        }
+        WhitespaceReadResume.NUMBER_TRAILING -> {
+            validateNumberTrailingCharacter()
+            nextToken()
+        }
+        WhitespaceReadResume.FINISH_DOCUMENT -> throwJsonException()
+        WhitespaceReadResume.ROOT_SCALAR -> {
+            if (typeStack.isEmpty()) throwJsonException()
+            nextToken()
         }
     }
 
@@ -235,10 +456,10 @@ class JsonReader private constructor(
 
     private fun finishDocumentRead() {
         try {
-            read()
-            skipWhiteSpace()
+            readSkipWhitespace(WhitespaceReadResume.FINISH_DOCUMENT)
             throwJsonException()
         } catch (_: ExceptionWhileReadingJson) {
+            suspendedWhitespaceRead = null
             currentToken = EndDocument
         }
     }
@@ -247,7 +468,7 @@ class JsonReader private constructor(
         when (lastChar) {
             ',' -> {
                 currentToken = ArraySeparator
-                readSkipWhitespace()
+                readSkipWhitespace(WhitespaceReadResume.NEXT_TOKEN)
             }
             ']' -> endArray()
             else -> throwJsonException()
@@ -258,7 +479,7 @@ class JsonReader private constructor(
         when (lastChar) {
             ',' -> {
                 currentToken = ObjectSeparator
-                readSkipWhitespace()
+                readSkipWhitespace(WhitespaceReadResume.NEXT_TOKEN)
             }
             '}' -> endObject()
             else -> throwJsonException()
@@ -269,14 +490,14 @@ class JsonReader private constructor(
         when (this.lastChar) {
             '{' -> startObject()
             '[' -> startArray()
-            '"' -> readStringValue(currentTokenCreator)
-            '-' -> readNumber(true, currentTokenCreator)
+            '"' -> readStringValue(StringReadMode.VALUE)
+            '-' -> readNumber(true)
             'n' -> readNullValue(currentTokenCreator)
             't' -> readTrue(currentTokenCreator)
             'f' -> readFalse(currentTokenCreator)
             else -> {
                 if (this.lastChar.isDigit()) {
-                    readNumber(false, currentTokenCreator)
+                    readNumber(false)
                 } else {
                     throwJsonException()
                 }
@@ -284,91 +505,139 @@ class JsonReader private constructor(
         }
     }
 
-    private fun readNumber(startedWithMinus: Boolean, currentTokenCreator: (value: Any?) -> JsonToken) {
-        var reachedDefinitiveRootEnd = false
+    private fun readNumber(startedWithMinus: Boolean) {
+        suspendedNumberRead = NumberReadState().also { numberRead ->
+            when {
+                startedWithMinus -> {
+                    numberRead.value.append('-')
+                    numberRead.stage = NumberReadStage.INTEGER_REQUIRED
+                }
+                lastChar == '0' -> {
+                    numberRead.value.append(lastChar)
+                    numberRead.stage = NumberReadStage.INTEGER_ZERO
+                }
+                else -> numberRead.value.append(lastChar)
+            }
+        }
+        continueNumberRead()
+    }
 
-        fun addAndAdvance() {
-            storedValue += lastChar
+    private fun continueNumberRead() {
+        val numberRead = suspendedNumberRead ?: return
+        while (true) {
             try {
                 read()
             } catch (error: ExceptionWhileReadingJson) {
+                if (typeStack.isEmpty() && numberRead.canFinish()) {
+                    finishNumber(reachedDefinitiveRootEnd = true)
+                    return
+                }
                 if (typeStack.isEmpty()) {
-                    reachedDefinitiveRootEnd = true
-                } else {
-                    throw error
+                    throwJsonException()
+                }
+                throw error
+            }
+
+            when (numberRead.stage) {
+                NumberReadStage.INTEGER_REQUIRED -> when {
+                    lastChar == '0' -> {
+                        numberRead.value.append(lastChar)
+                        numberRead.stage = NumberReadStage.INTEGER_ZERO
+                    }
+                    lastChar.isDigit() -> {
+                        numberRead.value.append(lastChar)
+                        numberRead.stage = NumberReadStage.INTEGER
+                    }
+                    else -> throwJsonException()
+                }
+                NumberReadStage.INTEGER_ZERO -> when (lastChar) {
+                    '.' -> startFraction(numberRead)
+                    'e', 'E' -> startExponent(numberRead)
+                    else -> if (lastChar.isDigit()) throwJsonException() else finishNumber()
+                }
+                NumberReadStage.INTEGER -> when (lastChar) {
+                    '.' -> startFraction(numberRead)
+                    'e', 'E' -> startExponent(numberRead)
+                    else -> if (lastChar.isDigit()) numberRead.value.append(lastChar) else finishNumber()
+                }
+                NumberReadStage.FRACTION_REQUIRED -> {
+                    if (!lastChar.isDigit()) throwJsonException()
+                    numberRead.value.append(lastChar)
+                    numberRead.stage = NumberReadStage.FRACTION
+                }
+                NumberReadStage.FRACTION -> when (lastChar) {
+                    'e', 'E' -> startExponent(numberRead)
+                    else -> if (lastChar.isDigit()) numberRead.value.append(lastChar) else finishNumber()
+                }
+                NumberReadStage.EXPONENT_SIGN_OR_DIGIT -> when {
+                    lastChar in arrayOf('+', '-') -> {
+                        numberRead.value.append(lastChar)
+                        numberRead.stage = NumberReadStage.EXPONENT_REQUIRED
+                    }
+                    lastChar.isDigit() -> {
+                        numberRead.value.append(lastChar)
+                        numberRead.stage = NumberReadStage.EXPONENT
+                    }
+                    else -> throwJsonException()
+                }
+                NumberReadStage.EXPONENT_REQUIRED -> {
+                    if (!lastChar.isDigit()) throwJsonException()
+                    numberRead.value.append(lastChar)
+                    numberRead.stage = NumberReadStage.EXPONENT
+                }
+                NumberReadStage.EXPONENT -> {
+                    if (lastChar.isDigit()) numberRead.value.append(lastChar) else finishNumber()
                 }
             }
+
+            if (suspendedNumberRead == null) return
         }
+    }
 
-        // Read number
-        do {
-            addAndAdvance()
-        } while (!reachedDefinitiveRootEnd && lastChar.isDigit())
+    private fun startFraction(numberRead: NumberReadState) {
+        numberRead.value.append(lastChar)
+        numberRead.stage = NumberReadStage.FRACTION_REQUIRED
+        numberRead.isFloatingPoint = true
+    }
 
-        // Number should contain at least one digit
-        if (startedWithMinus && storedValue == "-") {
-            throwJsonException()
-        }
+    private fun startExponent(numberRead: NumberReadState) {
+        numberRead.value.append(lastChar)
+        numberRead.stage = NumberReadStage.EXPONENT_SIGN_OR_DIGIT
+        numberRead.isFloatingPoint = true
+    }
 
-        // Check if value starts with illegal 0
-        storedValue?.let {
-            if (startedWithMinus && it.length > 2 && it[1] == '0') {
-                throwJsonException()
-            } else if (it.length > 1 && it[0] == '0') {
-                throwJsonException()
-            }
-        }
-
-        // Read fraction
-        val isFraction = if (!reachedDefinitiveRootEnd && lastChar == '.') {
-            addAndAdvance()
-            if (!lastChar.isDigit()) throwJsonException()
-            do {
-                addAndAdvance()
-            } while (!reachedDefinitiveRootEnd && lastChar.isDigit())
-            true
-        } else {
-            false
-        }
-
-        // read exponent
-        val isExponent = if (!reachedDefinitiveRootEnd && lastChar in arrayOf('e', 'E')) {
-            addAndAdvance()
-            if (lastChar in arrayOf('+', '-')) {
-                addAndAdvance()
-            }
-            if (!lastChar.isDigit()) throwJsonException()
-            do {
-                addAndAdvance()
-            } while (!reachedDefinitiveRootEnd && lastChar.isDigit())
-            true
-        } else {
-            false
-        }
-
+    private fun finishNumber(reachedDefinitiveRootEnd: Boolean = false) {
+        val numberRead = suspendedNumberRead ?: return
+        val value = numberRead.value.toString()
         currentToken = try {
-            if (isExponent || isFraction) {
-                val double = storedValue!!.toDouble()
+            if (numberRead.isFloatingPoint) {
+                val double = value.toDouble()
                 if (!double.isFinite()) throwJsonException()
-                currentTokenCreator(double)
+                constructJsonValueToken(double)
             } else {
-                currentTokenCreator(storedValue!!.toLong())
+                constructJsonValueToken(value.toLong())
             }
         } catch (_: NumberFormatException) {
             throwJsonException()
         }
+        suspendedNumberRead = null
 
         if (!reachedDefinitiveRootEnd) {
             try {
-                skipWhiteSpace()
+                skipWhiteSpace(WhitespaceReadResume.NUMBER_TRAILING)
             } catch (error: ExceptionWhileReadingJson) {
                 if (typeStack.isNotEmpty()) {
                     throw error
                 }
+                suspendedWhitespaceRead = null
             }
-            if (typeStack.isEmpty() && !lastChar.isWhitespace()) {
-                throwJsonException()
-            }
+            validateNumberTrailingCharacter()
+        }
+    }
+
+    private fun validateNumberTrailingCharacter() {
+        if (typeStack.isEmpty() && !lastChar.isWhitespace()) {
+            throwJsonException()
         }
     }
 
@@ -412,9 +681,10 @@ class JsonReader private constructor(
 
     private fun readAfterRootScalar() {
         try {
-            readSkipWhitespace()
+            readSkipWhitespace(WhitespaceReadResume.ROOT_SCALAR)
         } catch (error: ExceptionWhileReadingJson) {
             if (typeStack.isEmpty()) {
+                suspendedWhitespaceRead = null
                 return
             }
             throw error
@@ -435,12 +705,25 @@ class JsonReader private constructor(
         }
     }
 
-    private fun readFieldName(skipInitialRead: Boolean = false) {
-        readStringValue({ FieldName(this.storedValue) }, skipInitialRead)
+    private fun readFieldName() {
+        fieldNameColonRead = false
+        suspendedFieldNamePreviousToken = currentToken
+        readStringValue(StringReadMode.FIELD_NAME)
+    }
+
+    private fun finishFieldName() {
         if (lastChar != ':') {
             throwJsonException()
         }
-        readSkipWhitespace()
+        fieldNameColonRead = true
+        suspendedFieldName = null
+        suspendedFieldNamePreviousToken = null
+        readSkipWhitespace(WhitespaceReadResume.NEXT_TOKEN)
+    }
+
+    private fun continueFieldName() {
+        readSkipWhitespace(WhitespaceReadResume.FINISH_FIELD_NAME)
+        finishFieldName()
     }
 
     private sealed class SkipCharType {
@@ -465,98 +748,105 @@ class JsonReader private constructor(
     }
 
     private fun readStringValue(
-        currentTokenCreator: (value: String?) -> JsonToken,
-        skipInitialRead: Boolean = false,
+        mode: StringReadMode,
     ) {
-        suspendedReadMode = ReadMode.STRING
-        var skipChar = if (skipInitialRead) suspendedStringSkipChar else SkipCharType.None
-        val valueBuilder = StringBuilder(storedValue.orEmpty())
-        try {
-            if (!skipInitialRead) read()
-            loop@ while (lastChar != '"' || skipChar == SkipCharType.StartNewEscaped) {
-                if (lastChar.isLineBreak()) {
-                    throwJsonException()
-                }
-                if (skipChar == SkipCharType.None && lastChar < ' ') {
-                    throwJsonException()
-                }
+        suspendedStringRead = StringReadState(mode, StringBuilder(storedValue.orEmpty()))
+        read()
+        continueStringRead()
+    }
 
-                fun addCharAndResetSkipChar(value: String): SkipCharType {
-                    valueBuilder.append(value)
-                    return SkipCharType.None
-                }
-
-                skipChar = when (skipChar) {
-                    SkipCharType.None -> when (lastChar) {
-                        '\\' -> SkipCharType.StartNewEscaped
-                        else -> addCharAndResetSkipChar("$lastChar")
-                    }
-                    SkipCharType.StartNewEscaped -> when (lastChar) {
-                        'b' -> addCharAndResetSkipChar("\b")
-                        '"' -> addCharAndResetSkipChar("\"")
-                        '\\' -> addCharAndResetSkipChar("\\")
-                        '/' -> addCharAndResetSkipChar("/")
-                        'f' -> addCharAndResetSkipChar("\u000C")
-                        'n' -> addCharAndResetSkipChar("\n")
-                        'r' -> addCharAndResetSkipChar("\r")
-                        't' -> addCharAndResetSkipChar("\t")
-                        'u' -> SkipCharType.UtfChar('u', 4)
-                        else -> throwJsonException()
-                    }
-                    is SkipCharType.UtfChar -> if (lastChar.lowercaseChar().isLowerHexChar()) {
-                        if (skipChar.addCharAndHasReachedEnd(lastChar)) {
-                            addCharAndResetSkipChar(skipChar.toCharString())
-                        } else {
-                            skipChar
-                        }
-                    } else {
-                        throwJsonException()
-                    }
-                }
-                read()
+    private fun continueStringRead() {
+        val stringRead = suspendedStringRead ?: return
+        while (lastChar != '"' || stringRead.skipChar == SkipCharType.StartNewEscaped) {
+            if (lastChar.isLineBreak()) {
+                throwJsonException()
             }
-        } catch (error: ExceptionWhileReadingJson) {
-            storedValue = valueBuilder.toString()
-            suspendedStringSkipChar = skipChar
-            throw error
+            val skipChar = stringRead.skipChar
+            if (skipChar == SkipCharType.None && lastChar < ' ') {
+                throwJsonException()
+            }
+
+            fun addCharAndResetSkipChar(value: String): SkipCharType {
+                stringRead.value.append(value)
+                return SkipCharType.None
+            }
+
+            stringRead.skipChar = when (skipChar) {
+                SkipCharType.None -> when (lastChar) {
+                    '\\' -> SkipCharType.StartNewEscaped
+                    else -> addCharAndResetSkipChar("$lastChar")
+                }
+                SkipCharType.StartNewEscaped -> when (lastChar) {
+                    'b' -> addCharAndResetSkipChar("\b")
+                    '"' -> addCharAndResetSkipChar("\"")
+                    '\\' -> addCharAndResetSkipChar("\\")
+                    '/' -> addCharAndResetSkipChar("/")
+                    'f' -> addCharAndResetSkipChar("\u000C")
+                    'n' -> addCharAndResetSkipChar("\n")
+                    'r' -> addCharAndResetSkipChar("\r")
+                    't' -> addCharAndResetSkipChar("\t")
+                    'u' -> SkipCharType.UtfChar('u', 4)
+                    else -> throwJsonException()
+                }
+                is SkipCharType.UtfChar -> if (lastChar.lowercaseChar().isLowerHexChar()) {
+                    if (skipChar.addCharAndHasReachedEnd(lastChar)) {
+                        addCharAndResetSkipChar(skipChar.toCharString())
+                    } else {
+                        skipChar
+                    }
+                } else {
+                    throwJsonException()
+                }
+            }
+            read()
         }
-        storedValue = valueBuilder.toString()
+        storedValue = stringRead.value.toString()
         if (storedValue!!.hasUnpairedSurrogates()) {
             throwJsonException()
         }
-        currentToken = currentTokenCreator(storedValue)
-        storedValue = ""
-        suspendedStringSkipChar = SkipCharType.None
-
-        if (typeStack.isNotEmpty()) {
-            readSkipWhitespace()
+        currentToken = when (stringRead.mode) {
+            StringReadMode.VALUE -> constructJsonValueToken(storedValue)
+            StringReadMode.FIELD_NAME -> FieldName(storedValue)
         }
-        suspendedReadMode = null
+        storedValue = ""
+        suspendedStringRead = null
+        if (typeStack.isNotEmpty()) {
+            readSkipWhitespace(
+                if (stringRead.mode == StringReadMode.FIELD_NAME) {
+                    WhitespaceReadResume.FINISH_FIELD_NAME
+                } else {
+                    WhitespaceReadResume.NEXT_TOKEN
+                }
+            )
+        }
+        if (stringRead.mode == StringReadMode.FIELD_NAME) {
+            finishFieldName()
+        }
     }
 
     private fun startObject() {
         currentToken = SimpleStartObject
-        readSkipWhitespace()
+        readSkipWhitespace(WhitespaceReadResume.RETURN_CURRENT)
     }
 
     private fun endObject() {
         typeStack.removeAt(typeStack.lastIndex)
         currentToken = EndObject
         if (typeStack.isNotEmpty()) {
-            readSkipWhitespace()
+            readSkipWhitespace(WhitespaceReadResume.RETURN_CURRENT)
         }
     }
 
     private fun startArray() {
         currentToken = SimpleStartArray
-        readSkipWhitespace()
+        readSkipWhitespace(WhitespaceReadResume.RETURN_CURRENT)
     }
 
     private fun endArray() {
         typeStack.removeAt(typeStack.lastIndex)
         currentToken = EndArray
         if (typeStack.isNotEmpty()) {
-            readSkipWhitespace()
+            readSkipWhitespace(WhitespaceReadResume.RETURN_CURRENT)
         }
     }
 

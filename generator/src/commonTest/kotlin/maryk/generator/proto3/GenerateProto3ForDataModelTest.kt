@@ -161,7 +161,7 @@ message CompleteMarykModel {
   repeated MapWithSetEntry mapWithSet = 23;
   repeated MapWithMapEntry mapWithMap = 24;
   map<uint64, EmbeddedMarykModel> incMap = 25;
-  int64 location = 26;
+  fixed64 location = 26;
 }
 """.trimIndent()
 

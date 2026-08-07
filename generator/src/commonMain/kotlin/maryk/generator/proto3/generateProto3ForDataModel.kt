@@ -110,7 +110,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is TimeDefinition -> "uint32"
         is DateDefinition -> "sint32"
         is DateTimeDefinition -> "int64"
-        is GeoPointDefinition -> "int64"
+        is GeoPointDefinition -> "fixed64"
         is NumberDefinition<*> -> when (this.type.type) {
             SInt8Type,
             SInt16Type,

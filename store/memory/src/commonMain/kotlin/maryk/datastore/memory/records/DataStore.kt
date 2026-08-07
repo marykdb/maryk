@@ -132,6 +132,31 @@ internal class DataStore<DM : IsRootDataModel>(
         }
     }
 
+    /** Validate that all current unique values in [values] are available for [dataRecord]. */
+    internal fun validateUniqueValuesNotExists(
+        dataRecord: DataRecord<DM>,
+        values: List<DataRecordNode>
+    ) {
+        for (indexValues in uniqueIndices) {
+            getValue<Comparable<Any>>(values, indexValues.indexReference)?.let { value ->
+                indexValues[value.value]?.let { existingRecord ->
+                    if (existingRecord.key != dataRecord.key) {
+                        throw UniqueException(indexValues.indexReference, existingRecord.key)
+                    }
+                }
+            }
+        }
+    }
+
+    /** Add all current unique values in [dataRecord] back to their indexes. */
+    internal fun addToUniqueIndices(dataRecord: DataRecord<DM>, version: HLC) {
+        for (indexValues in uniqueIndices) {
+            getValue<Comparable<Any>>(dataRecord.values, indexValues.indexReference)?.let { value ->
+                addToUniqueIndex(dataRecord, indexValues.indexReference, value.value, version)
+            }
+        }
+    }
+
     /** Get unique index for [indexReference] or create it if it does not exist. */
     internal fun getOrCreateIndex(indexReference: ByteArray): IndexValues<DM> {
         val i = indexes.binarySearch { it.indexReference compareTo indexReference }

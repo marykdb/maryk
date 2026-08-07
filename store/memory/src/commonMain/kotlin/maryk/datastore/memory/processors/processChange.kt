@@ -153,9 +153,19 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             validationExceptions.add(ve)
         }
 
+        fun addUniqueValidationFail(ue: UniqueException) {
+            var index = 0
+            val ref = dataModel.getPropertyReferenceByStorageBytes(
+                ue.reference.size,
+                { ue.reference[index++] }
+            )
+            addValidationFail(AlreadyExistsException(ref, ue.key))
+        }
+
         var uniqueIndexChanges: MutableList<UniqueIndexChange>? = null
 
         val newValueList = objectToChange.values.toMutableList()
+        val wasSoftDeleted = objectToChange.isDeleted(null)
 
         var isChanged = false
         val setChanged = { didChange: Boolean -> if (didChange) isChanged = true }
@@ -661,15 +671,16 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             } catch (e: ValidationException) {
                 addValidationFail(e)
             } catch (ue: UniqueException) {
-                var index = 0
-                val ref = dataModel.getPropertyReferenceByStorageBytes(
-                    ue.reference.size,
-                    { ue.reference[index++] }
-                )
+                addUniqueValidationFail(ue)
+            }
+        }
 
-                addValidationFail(
-                    AlreadyExistsException(ref, ue.key)
-                )
+        val isSoftDeleted = getValue<Boolean>(newValueList, objectSoftDeleteQualifier)?.value == true
+        if (wasSoftDeleted && !isSoftDeleted) {
+            try {
+                dataStore.validateUniqueValuesNotExists(objectToChange, newValueList)
+            } catch (ue: UniqueException) {
+                addUniqueValidationFail(ue)
             }
         }
 
@@ -688,19 +699,26 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             dataStore.addToUpdateHistory(version, objectToChange.key.bytes)
         }
 
-        uniqueIndexChanges?.forEach { indexChange ->
-            if (indexChange.value == null) {
-                indexChange.previousValue?.let {
-                    dataStore.removeFromUniqueIndex(objectToChange, indexChange.reference, it, version)
+        when {
+            !wasSoftDeleted && isSoftDeleted -> {
+                dataStore.removeFromUniqueIndices(objectToChange, version)
+            }
+            !isSoftDeleted -> {
+                uniqueIndexChanges?.forEach { indexChange ->
+                    if (indexChange.value == null) {
+                        indexChange.previousValue?.let {
+                            dataStore.removeFromUniqueIndex(objectToChange, indexChange.reference, it, version)
+                        }
+                    } else {
+                        dataStore.addToUniqueIndex(
+                            objectToChange,
+                            indexChange.value.reference,
+                            indexChange.value.value,
+                            version,
+                            indexChange.previousValue
+                        )
+                    }
                 }
-            } else {
-                dataStore.addToUniqueIndex(
-                    objectToChange,
-                    indexChange.value.reference,
-                    indexChange.value.value,
-                    version,
-                    indexChange.previousValue
-                )
             }
         }
 
@@ -714,14 +732,20 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
         // Apply the new values now all validations have been accepted
         objectToChange.values = newValueList
 
+        if (wasSoftDeleted && !isSoftDeleted) {
+            dataStore.addToUniqueIndices(objectToChange, version)
+        }
+
         // Process indexes
         dataModel.Meta.indexes?.forEachIndexed { index, it ->
             if (indexUpdates == null) {
                 indexUpdates = mutableListOf()
             }
 
-            val oldValues = oldIndexValues?.get(index).orEmpty()
-            val newValues = it.toStorageByteArraysForIndex(objectToChange, objectToChange.key.bytes)
+            val oldValues = if (wasSoftDeleted) emptyList() else oldIndexValues?.get(index).orEmpty()
+            val newValues = if (isSoftDeleted) emptyList() else {
+                it.toStorageByteArraysForIndex(objectToChange, objectToChange.key.bytes)
+            }
 
             val removed = oldValues.filter { oldValue ->
                 newValues.none { it.contentEquals(oldValue) }

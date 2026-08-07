@@ -971,6 +971,153 @@ class InMemoryDataStoreTest {
     }
 
     @Test
+    fun softDeleteChangeRemovesAndRestoresSecondaryIndex() = runTest {
+        val dataStore = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to Log)
+        )
+        try {
+            val key = assertIs<AddSuccess<Log>>(
+                dataStore.execute(
+                    Log.add(
+                        Log(
+                            message = "soft delete secondary index",
+                            severity = INFO,
+                            timestamp = LocalDateTime(2024, 1, 2, 3, 4, 5)
+                        )
+                    )
+                ).statuses.single()
+            ).key
+
+            assertIs<ChangeSuccess<Log>>(
+                dataStore.execute(Log.change(key.change(ObjectSoftDeleteChange(true)))).statuses.single()
+            )
+
+            assertEquals(
+                emptyList(),
+                dataStore.execute(
+                    Log.scan(
+                        where = Equals(Log.severity.ref() with INFO),
+                        order = Orders(Log { severity::ref }.ascending())
+                    )
+                ).values.map { it.key }
+            )
+            assertEquals(
+                listOf(key),
+                dataStore.execute(
+                    Log.scan(
+                        where = Equals(Log.severity.ref() with INFO),
+                        order = Orders(Log { severity::ref }.ascending()),
+                        filterSoftDeleted = false
+                    )
+                ).values.map { it.key }
+            )
+
+            assertIs<ChangeSuccess<Log>>(
+                dataStore.execute(Log.change(key.change(ObjectSoftDeleteChange(false)))).statuses.single()
+            )
+
+            assertEquals(
+                listOf(key),
+                dataStore.execute(
+                    Log.scan(
+                        where = Equals(Log.severity.ref() with INFO),
+                        order = Orders(Log { severity::ref }.ascending())
+                    )
+                ).values.map { it.key }
+            )
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun softDeleteChangeReleasesUniqueValueAndRestoreRejectsCollisionAtomically() = runTest {
+        val dataStore = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to UniqueModel)
+        )
+        try {
+            val firstKey = assertIs<AddSuccess<UniqueModel>>(
+                dataStore.execute(
+                    UniqueModel.add(UniqueModel.create { email with "soft-delete@example.com" })
+                ).statuses.single()
+            ).key
+
+            assertIs<ChangeSuccess<UniqueModel>>(
+                dataStore.execute(
+                    UniqueModel.change(firstKey.change(ObjectSoftDeleteChange(true)))
+                ).statuses.single()
+            )
+
+            assertEquals(
+                emptyList(),
+                dataStore.execute(
+                    UniqueModel.scan(
+                        where = Equals(UniqueModel { email::ref } with "soft-delete@example.com")
+                    )
+                ).values.map { it.key }
+            )
+            assertEquals(
+                listOf(firstKey),
+                dataStore.execute(
+                    UniqueModel.scan(
+                        where = Equals(UniqueModel { email::ref } with "soft-delete@example.com"),
+                        filterSoftDeleted = false
+                    )
+                ).values.map { it.key }
+            )
+
+            assertIs<ChangeSuccess<UniqueModel>>(
+                dataStore.execute(
+                    UniqueModel.change(firstKey.change(ObjectSoftDeleteChange(false)))
+                ).statuses.single()
+            )
+            val duplicateWhileRestored = assertIs<ValidationFail<UniqueModel>>(
+                dataStore.execute(
+                    UniqueModel.add(UniqueModel.create { email with "soft-delete@example.com" })
+                ).statuses.single()
+            )
+            assertIs<AlreadyExistsException>(duplicateWhileRestored.exceptions.single())
+
+            assertIs<ChangeSuccess<UniqueModel>>(
+                dataStore.execute(
+                    UniqueModel.change(firstKey.change(ObjectSoftDeleteChange(true)))
+                ).statuses.single()
+            )
+            val secondKey = assertIs<AddSuccess<UniqueModel>>(
+                dataStore.execute(
+                    UniqueModel.add(UniqueModel.create { email with "soft-delete@example.com" })
+                ).statuses.single()
+            ).key
+
+            val restoreCollision = assertIs<ValidationFail<UniqueModel>>(
+                dataStore.execute(
+                    UniqueModel.change(firstKey.change(ObjectSoftDeleteChange(false)))
+                ).statuses.single()
+            )
+            assertIs<AlreadyExistsException>(restoreCollision.exceptions.single())
+
+            assertEquals(
+                listOf(secondKey),
+                dataStore.execute(
+                    UniqueModel.scan(
+                        where = Equals(UniqueModel { email::ref } with "soft-delete@example.com")
+                    )
+                ).values.map { it.key }
+            )
+            assertEquals(
+                true,
+                dataStore.execute(
+                    UniqueModel.get(firstKey, filterSoftDeleted = false)
+                ).values.single().isDeleted
+            )
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun historicalGetPrefersArchivedRecordWhenKeyIsReused() = runTest(timeout = 1.minutes) {
         val key = SimpleMarykModel.key(validUuidV4Bytes(42))
         val dataStore = InMemoryDataStore.open(

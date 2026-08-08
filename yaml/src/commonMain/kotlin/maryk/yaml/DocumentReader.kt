@@ -118,6 +118,7 @@ internal class DocumentReader(
                 read()
                 this.readUntilToken(0)
             }
+            '\t' -> throw InvalidYamlContent("Tabs cannot be used for indentation")
             ' ' -> {
                 val indentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
 

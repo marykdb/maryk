@@ -30,3 +30,6 @@ class RemoteFlowDisconnectedException(
     message: String,
     cause: Throwable? = null,
 ) : IllegalStateException(message, cause)
+
+/** A remote flow could not deliver an update because its consumer is too slow. */
+class RemoteFlowBackpressureException(message: String) : IllegalStateException(message)

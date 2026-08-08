@@ -571,7 +571,10 @@ class RemoteDataStore private constructor(
                                             @Suppress("UNCHECKED_CAST")
                                             val sendResult = trySend(update as IsUpdateResponse<DM>)
                                             if (sendResult.isFailure) {
-                                                return@execute
+                                                sendResult.exceptionOrNull()?.let { throw it }
+                                                throw RemoteFlowBackpressureException(
+                                                    "Remote store flow terminated because collector backpressure prevented update delivery"
+                                                )
                                             }
                                             yield()
                                             if (update.version == lastDeliveredVersion) {

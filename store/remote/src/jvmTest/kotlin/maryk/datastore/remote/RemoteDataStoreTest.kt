@@ -26,6 +26,9 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.buffer
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -239,6 +242,31 @@ class RemoteDataStoreTest {
                 ).first()
             }
             assertEquals(3uL, update.version)
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun executeFlowFailsInsteadOfSilentlyDroppingWhenCollectorBackpressures() = runBlocking {
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            backpressuredFlowModule()
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            val exception = assertFailsWith<RemoteFlowBackpressureException> {
+                withTimeout(5_000.milliseconds) {
+                    remote.executeFlow(
+                        SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
+                    ).buffer(0).collect {
+                        delay(50)
+                    }
+                }
+            }
+            assertTrue(exception.message?.contains("backpressure") == true)
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -1274,6 +1302,41 @@ private fun Application.heartbeatThenUpdateFlowModule() {
                 )
                 writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
                 writeFully(payload)
+                flush()
+            }
+        }
+    }
+}
+
+private fun Application.backpressuredFlowModule() {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.flowPath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                val context = RequestContext(
+                    definitionsContext = DefinitionsContext(
+                        dataModels = mutableMapOf(
+                            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                        )
+                    ),
+                    dataModel = SimpleMarykModel,
+                )
+                repeat(128) { index ->
+                    val payload = RemoteStoreCodec.encode(
+                        UpdatesResponse.Serializer,
+                        UpdatesResponse(
+                            SimpleMarykModel,
+                            listOf(OrderedKeysUpdate(listOf(keyEndingIn(index.toByte())), index.toULong() + 1uL)),
+                        ),
+                        context,
+                    )
+                    writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
+                    writeFully(payload)
+                }
                 flush()
             }
         }

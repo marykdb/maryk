@@ -1,6 +1,7 @@
 package maryk.generator.build
 
 import java.nio.file.Files
+import java.nio.file.NoSuchFileException
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
@@ -55,6 +56,26 @@ class SchemaBuildEngineTest {
             outputDirectory = output,
         )
         assertEquals(first, second.files.associate { it.fileName.toString() to it.readText() })
+    }
+
+    @Test
+    fun preservesExistingOutputWhenWritingGeneratedFilesFails() {
+        val schemas = createTempDirectory()
+        schemas.resolve("alpha.yaml").writeText(schema("Alpha"))
+        schemas.resolve("broken.yaml").writeText(schema("Broken/Model"))
+        val output = createTempDirectory()
+        output.resolve("Existing.kt").writeText("existing")
+
+        assertFailsWith<NoSuchFileException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "example.generated",
+                outputDirectory = output,
+            )
+        }
+
+        assertEquals("existing", output.resolve("Existing.kt").readText())
+        assertFalse(Files.exists(output.resolve("Alpha.kt")))
     }
 
     @Test

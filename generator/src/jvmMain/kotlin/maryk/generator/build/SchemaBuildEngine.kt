@@ -2,6 +2,7 @@ package maryk.generator.build
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.util.Comparator
 import kotlin.io.path.extension
 import kotlin.io.path.isDirectory
@@ -98,12 +99,21 @@ object SchemaBuildEngine {
             "${schema.model.Meta.name}.kt" to source
         }.toSortedMap()
 
-        clearManagedDirectory(outputDirectory)
-        Files.createDirectories(outputDirectory)
-        val files = generated.map { (name, source) ->
-            outputDirectory.resolve(name).also { it.writeText(source) }
+        val absoluteOutputDirectory = outputDirectory.toAbsolutePath().normalize()
+        val parentDirectory = absoluteOutputDirectory.parent
+            ?: throw SchemaBuildException("Maryk generator output directory must have a parent")
+        Files.createDirectories(parentDirectory)
+        val stagingDirectory = Files.createTempDirectory(parentDirectory, ".maryk-generator-")
+        try {
+            generated.forEach { (name, source) ->
+                stagingDirectory.resolve(name).writeText(source)
+            }
+            replaceManagedDirectory(stagingDirectory, absoluteOutputDirectory)
+        } finally {
+            clearManagedDirectory(stagingDirectory)
+            Files.deleteIfExists(stagingDirectory)
         }
-        return GenerationResult(files)
+        return GenerationResult(generated.keys.map(outputDirectory::resolve))
     }
 
     fun checkCompatibility(
@@ -145,6 +155,35 @@ object SchemaBuildEngine {
         Files.walk(directory).use { paths ->
             paths.sorted(Comparator.reverseOrder()).forEach { path ->
                 if (path != directory) Files.deleteIfExists(path)
+            }
+        }
+    }
+
+    private fun replaceManagedDirectory(stagingDirectory: Path, outputDirectory: Path) {
+        if (Files.notExists(outputDirectory)) {
+            Files.move(stagingDirectory, outputDirectory, ATOMIC_MOVE)
+            return
+        }
+
+        val backupDirectory = Files.createTempDirectory(outputDirectory.parent, ".maryk-generator-backup-")
+        Files.delete(backupDirectory)
+        var hasBackup = false
+        try {
+            Files.move(outputDirectory, backupDirectory, ATOMIC_MOVE)
+            hasBackup = true
+            Files.move(stagingDirectory, outputDirectory, ATOMIC_MOVE)
+            clearManagedDirectory(backupDirectory)
+            Files.deleteIfExists(backupDirectory)
+        } catch (throwable: Throwable) {
+            if (hasBackup && Files.notExists(outputDirectory)) {
+                Files.move(backupDirectory, outputDirectory, ATOMIC_MOVE)
+                hasBackup = false
+            }
+            throw throwable
+        } finally {
+            if (hasBackup && Files.exists(backupDirectory)) {
+                clearManagedDirectory(backupDirectory)
+                Files.deleteIfExists(backupDirectory)
             }
         }
     }

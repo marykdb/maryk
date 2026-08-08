@@ -23,4 +23,21 @@ class SynchronizedIterationTest {
         assertContentEquals(listOf(1, 6), onlyLeft)
         assertContentEquals(listOf(3, 5), onlyRight)
     }
+
+    @Test
+    fun processesNullableValuesWithoutTreatingNullAsIterationEnd() {
+        val both = mutableListOf<Pair<Int?, Int?>>()
+        val onlyRight = mutableListOf<Int?>()
+
+        synchronizedIteration(
+            iterator1 = listOf<Int?>(null, 2).iterator(),
+            iterator2 = listOf<Int?>(null, 1, 2).iterator(),
+            comparator = compareBy(nullsFirst()) { it },
+            processBoth = { left, right -> both += left to right },
+            processOnlyOnIterator2 = { onlyRight += it },
+        )
+
+        assertContentEquals(listOf(null to null, 2 to 2), both)
+        assertContentEquals(listOf(1), onlyRight)
+    }
 }

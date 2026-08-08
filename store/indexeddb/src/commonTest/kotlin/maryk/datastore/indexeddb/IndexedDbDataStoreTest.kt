@@ -1,6 +1,8 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
@@ -19,6 +21,7 @@ import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Orders
+import maryk.core.query.orders.Order.Companion.descending as descendingOrder
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
@@ -29,6 +32,7 @@ import maryk.core.query.requests.get
 import maryk.core.query.requests.getUpdates
 import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanUpdateHistory
+import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
@@ -38,9 +42,15 @@ import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
+import maryk.core.query.responses.updates.RemovalReason.HardDelete
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
+import maryk.datastore.indexeddb.processors.createUpdateHistoryRowKey
+import maryk.datastore.indexeddb.processors.createHardDeleteHistoryRowKey
+import maryk.datastore.indexeddb.processors.hardDeleteHistoryRowReadObserver
+import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.test.DataStoreAddTest
 import maryk.datastore.test.DataStoreBackupRoundTripTest
 import maryk.datastore.test.DataStoreChangeComplexTest
@@ -70,7 +80,9 @@ import maryk.datastore.test.IsDataStoreTest
 import maryk.datastore.test.UniqueTest
 import maryk.datastore.test.assertStatusIs
 import maryk.datastore.test.dataModelsForTests
+import maryk.lib.extensions.compare.compareTo
 import maryk.test.models.CompleteMarykModel
+import maryk.test.models.AnyValueSetIndexModel
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
 import maryk.test.models.ModelV1
@@ -92,6 +104,755 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 class IndexedDbDataStoreTest {
+    @Test
+    fun scanUpdatesReplaysHardDeleteFromUpdateHistory() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val source = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-source-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepUpdateHistoryIndex = true,
+        )
+        val target = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-target-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+
+        try {
+            val values = SimpleMarykModel.create { value with "hard-delete" }
+            val add = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                source.execute(SimpleMarykModel.add(values)).statuses.single()
+            )
+            target.processUpdate(
+                UpdateResponse(
+                    SimpleMarykModel,
+                    AdditionUpdate(
+                        key = add.key,
+                        version = add.version,
+                        firstVersion = add.version,
+                        insertionIndex = 0,
+                        isDeleted = false,
+                        values = values,
+                    )
+                )
+            )
+            val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                source.execute(SimpleMarykModel.delete(add.key, hardDelete = true)).statuses.single()
+            )
+            val hardDeleteMarker = source.byteStore.scan("uh:1")
+                .single { (_, value) -> value.contentEquals(byteArrayOf(1)) }
+                .second
+            assertTrue(hardDeleteMarker.contentEquals(byteArrayOf(1)))
+
+            val updates = source.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = add.version,
+                    limit = 1u,
+                )
+            )
+
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(updates.updates[0]).apply {
+                assertEquals(emptyList(), keys)
+                assertEquals(delete.version, version)
+            }
+            val removal = assertIs<RemovalUpdate<SimpleMarykModel>>(updates.updates[1])
+            assertEquals(add.key, removal.key)
+            assertEquals(delete.version, removal.version)
+            assertEquals(HardDelete, removal.reason)
+
+            target.processUpdate(UpdateResponse(SimpleMarykModel, removal))
+            assertTrue(target.execute(SimpleMarykModel.get(add.key)).values.isEmpty())
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesReturnsHardDeleteWithinVersionBounds() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-bounds-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+
+        try {
+            val add = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha bounded hard-delete" })).statuses.single()
+            )
+            val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.delete(add.key, hardDelete = true)).statuses.single()
+            )
+
+            val updates = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    toVersion = delete.version,
+                    limit = 1u,
+                )
+            )
+
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(updates.updates[0]).apply {
+                assertEquals(emptyList(), keys)
+                assertEquals(delete.version, version)
+            }
+            assertIs<RemovalUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(add.key, key)
+                assertEquals(delete.version, version)
+                assertEquals(HardDelete, reason)
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesReturnsHardDeleteWithMultipleVersionsRequested() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-multi-version-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+
+        try {
+            val add = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha multi-version hard-delete" })).statuses.single()
+            )
+            val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.delete(add.key, hardDelete = true)).statuses.single()
+            )
+
+            val updates = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = add.version,
+                    toVersion = delete.version,
+                    maxVersions = 2u,
+                    limit = 1u,
+                )
+            )
+
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(updates.updates[0]).apply {
+                assertEquals(emptyList(), keys)
+                assertEquals(delete.version, version)
+            }
+            assertIs<RemovalUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(add.key, key)
+                assertEquals(delete.version, version)
+                assertEquals(HardDelete, reason)
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesReturnsHardDeleteForTrackedOrderedKey() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-ordered-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+
+        try {
+            val add = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha ordered hard-delete" })).statuses.single()
+            )
+            val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.delete(add.key, hardDelete = true)).statuses.single()
+            )
+
+            val updates = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = add.version,
+                    toVersion = delete.version,
+                    maxVersions = 2u,
+                    orderedKeys = listOf(add.key),
+                )
+            )
+
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(updates.updates[0]).apply {
+                assertEquals(emptyList(), keys)
+                assertEquals(delete.version, version)
+            }
+            assertIs<RemovalUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(add.key, key)
+                assertEquals(delete.version, version)
+                assertEquals(HardDelete, reason)
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesReplaysHardDeleteBeforeKeyReuse() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val source = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-reuse-source-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+        val target = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-reuse-target-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+        )
+        val historicalTarget = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-reuse-historical-target-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+        )
+
+        try {
+            val originalValues = SimpleMarykModel.create { value with "ha original" }
+            val original = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                source.execute(SimpleMarykModel.add(originalValues)).statuses.single()
+            )
+            val originalUpdate = AdditionUpdate(
+                key = original.key,
+                version = original.version,
+                firstVersion = original.version,
+                insertionIndex = 0,
+                isDeleted = false,
+                values = originalValues,
+            )
+            target.processUpdate(UpdateResponse(SimpleMarykModel, originalUpdate))
+            historicalTarget.processUpdate(UpdateResponse(SimpleMarykModel, originalUpdate))
+            val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                source.execute(SimpleMarykModel.delete(original.key, hardDelete = true)).statuses.single()
+            )
+            val replacementValues = SimpleMarykModel.create { value with "ha replacement" }
+            val replacement = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                source.execute(SimpleMarykModel.add(original.key to replacementValues)).statuses.single()
+            )
+
+            val updates = source.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    limit = 1u,
+                    maxVersions = 1u,
+                )
+            )
+
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(updates.updates[0]).apply {
+                assertEquals(listOf(original.key), keys)
+                assertEquals(replacement.version, version)
+            }
+            assertIs<RemovalUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(original.key, key)
+                assertEquals(delete.version, version)
+                assertEquals(HardDelete, reason)
+            }
+            assertIs<AdditionUpdate<SimpleMarykModel>>(updates.updates[2]).apply {
+                assertEquals(original.key, key)
+                assertEquals(replacement.version, version)
+                assertEquals(replacementValues, values)
+            }
+            updates.updates.drop(1).forEach { target.processUpdate(UpdateResponse(SimpleMarykModel, it)) }
+            assertEquals(replacementValues, target.execute(SimpleMarykModel.get(original.key)).values.single().values)
+
+            val historicalUpdates = source.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    toVersion = delete.version,
+                    limit = 1u,
+                    maxVersions = 2u,
+                )
+            )
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(historicalUpdates.updates[0]).apply {
+                assertEquals(emptyList(), keys)
+                assertEquals(delete.version, version)
+            }
+            assertIs<RemovalUpdate<SimpleMarykModel>>(historicalUpdates.updates[1]).apply {
+                assertEquals(original.key, key)
+                assertEquals(delete.version, version)
+                assertEquals(HardDelete, reason)
+            }
+            historicalTarget.processUpdate(UpdateResponse(SimpleMarykModel, historicalUpdates.updates[1]))
+            assertTrue(historicalTarget.execute(SimpleMarykModel.get(original.key)).values.isEmpty())
+
+            val secondDelete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                source.execute(SimpleMarykModel.delete(original.key, hardDelete = true)).statuses.single()
+            )
+            val deleteOnlyUpdates = source.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    limit = 1u,
+                    maxVersions = 1u,
+                )
+            )
+            assertEquals(2, deleteOnlyUpdates.updates.size)
+            assertIs<RemovalUpdate<SimpleMarykModel>>(deleteOnlyUpdates.updates[1]).apply {
+                assertEquals(original.key, key)
+                assertEquals(secondDelete.version, version)
+                assertEquals(HardDelete, reason)
+            }
+            target.processUpdate(UpdateResponse(SimpleMarykModel, deleteOnlyUpdates.updates[1]))
+            assertTrue(target.execute(SimpleMarykModel.get(original.key)).values.isEmpty())
+
+            val finalValues = SimpleMarykModel.create { value with "ha final replacement" }
+            val finalAdd = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                source.execute(SimpleMarykModel.add(original.key to finalValues)).statuses.single()
+            )
+            val latestCycleUpdates = source.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    limit = 1u,
+                    maxVersions = 2u,
+                )
+            )
+            assertEquals(3, latestCycleUpdates.updates.size)
+            assertIs<RemovalUpdate<SimpleMarykModel>>(latestCycleUpdates.updates[1]).apply {
+                assertEquals(secondDelete.version, version)
+            }
+            assertIs<AdditionUpdate<SimpleMarykModel>>(latestCycleUpdates.updates[2]).apply {
+                assertEquals(finalAdd.version, version)
+                assertEquals(finalValues, values)
+            }
+            latestCycleUpdates.updates.drop(1).forEach { target.processUpdate(UpdateResponse(SimpleMarykModel, it)) }
+            assertEquals(finalValues, target.execute(SimpleMarykModel.get(original.key)).values.single().values)
+
+            val historicalCycleUpdates = source.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    toVersion = delete.version,
+                    limit = 1u,
+                    maxVersions = 2u,
+                )
+            )
+            assertIs<RemovalUpdate<SimpleMarykModel>>(historicalCycleUpdates.updates[1]).apply {
+                assertEquals(delete.version, version)
+            }
+            val liveCycleUpdates = source.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    limit = 1u,
+                )
+            )
+            assertIs<RemovalUpdate<SimpleMarykModel>>(liveCycleUpdates.updates[1]).apply {
+                assertEquals(secondDelete.version, version)
+            }
+        } finally {
+            source.close()
+            target.close()
+            historicalTarget.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesLimitsHardDeletesWithCurrentCandidates() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-limit-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+
+        try {
+            val first = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha first hard-delete" })).statuses.single()
+            )
+            val second = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha second hard-delete" })).statuses.single()
+            )
+            val firstDelete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.delete(first.key, hardDelete = true)).statuses.single()
+            )
+            val secondDelete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.delete(second.key, hardDelete = true)).statuses.single()
+            )
+
+            val updates = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = firstDelete.version,
+                    limit = 1u,
+                    maxVersions = 2u,
+                )
+            )
+
+            val expected = listOf(first to firstDelete, second to secondDelete)
+                .minWith { firstCandidate, secondCandidate ->
+                    firstCandidate.first.key.bytes.compareTo(secondCandidate.first.key.bytes)
+                }
+
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(updates.updates[0]).apply {
+                assertEquals(emptyList(), keys)
+                assertEquals(expected.second.version, version)
+            }
+            assertEquals(2, updates.updates.size)
+            assertIs<RemovalUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(expected.first.key, key)
+                assertEquals(expected.second.version, version)
+                assertEquals(HardDelete, reason)
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesPaginatesHistoricHardDeletesInDescendingKeyOrder() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-scan-updates-hard-delete-history-pagination-${Random.nextInt()}"
+        val keyA = Key<SimpleMarykModel>(ByteArray(SimpleMarykModel.Meta.keyByteSize).also { it[it.lastIndex] = 1 })
+        val keyB = Key<SimpleMarykModel>(ByteArray(SimpleMarykModel.Meta.keyByteSize).also { it[it.lastIndex] = 2 })
+        val deleteVersionA = 17uL
+        val deleteVersionB = 31uL
+        val history = openIndexedDbByteStore(databaseName, setOf("meta", "uh:1", "hd:1", "hdk:1"))
+        history.writeBatch(
+            listOf(
+                IndexedDbWriteOperation.Put("hdk:1", createHardDeleteHistoryRowKey(keyA.bytes, deleteVersionA), byteArrayOf(1)),
+                IndexedDbWriteOperation.Put("hdk:1", createHardDeleteHistoryRowKey(keyB.bytes, deleteVersionB), byteArrayOf(1)),
+            )
+        )
+        history.close()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+        try {
+            val firstPage = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = 1uL,
+                    toVersion = deleteVersionB,
+                    startKey = keyB,
+                    order = descendingOrder,
+                    limit = 1u,
+                )
+            )
+            assertIs<RemovalUpdate<SimpleMarykModel>>(firstPage.updates[1]).apply {
+                assertEquals(keyB, key)
+                assertEquals(deleteVersionB, version)
+                assertEquals(HardDelete, reason)
+            }
+
+            val secondPage = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = 1uL,
+                    toVersion = deleteVersionB,
+                    startKey = keyB,
+                    includeStart = false,
+                    order = descendingOrder,
+                    limit = 1u,
+                )
+            )
+            assertIs<RemovalUpdate<SimpleMarykModel>>(secondPage.updates[1]).apply {
+                assertEquals(keyA, key)
+                assertEquals(deleteVersionA, version)
+                assertEquals(HardDelete, reason)
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesHistoricHardDeleteLimitDoesNotReadEveryVersionForOneKey() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-scan-updates-hard-delete-history-bounded-${Random.nextInt()}"
+        val key = Key<SimpleMarykModel>(ByteArray(SimpleMarykModel.Meta.keyByteSize) { 5 })
+        val history = openIndexedDbByteStore(databaseName, setOf("meta", "uh:1", "hd:1", "hdk:1"))
+        val latestVersion = 512uL
+        history.writeBatch(
+            (1uL..latestVersion).map { version ->
+                IndexedDbWriteOperation.Put("hdk:1", createHardDeleteHistoryRowKey(key.bytes, version), byteArrayOf(1))
+            }
+        )
+        history.close()
+
+        var hdkRowsRead = 0
+        hardDeleteHistoryRowReadObserver = { hdkRowsRead++ }
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        )
+        try {
+            val updates = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = 1uL,
+                    toVersion = latestVersion,
+                    limit = 1u,
+                )
+            )
+            assertIs<RemovalUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(key, this.key)
+                assertEquals(latestVersion, version)
+            }
+            assertTrue(hdkRowsRead <= 2, "Expected bounded hdk reads, got $hdkRowsRead")
+        } finally {
+            hardDeleteHistoryRowReadObserver = null
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesDoesNotEvaluateHardDeletesAgainstWhere() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-where-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepUpdateHistoryIndex = true,
+        )
+
+        try {
+            val add = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha filtered hard-delete" })).statuses.single()
+            )
+            val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.delete(add.key, hardDelete = true)).statuses.single()
+            )
+
+            val updates = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    where = Equals(SimpleMarykModel { value::ref } with "ha filtered hard-delete"),
+                    limit = 1u,
+                )
+            )
+
+            assertIs<OrderedKeysUpdate<SimpleMarykModel>>(updates.updates.single()).apply {
+                assertEquals(emptyList(), keys)
+                assertEquals(0uL, version)
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesTracksHardDeleteVersionForFilteredAndOrderedKeys() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-hard-delete-tracked-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepUpdateHistoryIndex = true,
+        )
+
+        try {
+            val add = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha tracked hard-delete" })).statuses.single()
+            )
+            val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.delete(add.key, hardDelete = true)).statuses.single()
+            )
+
+            val filteredUpdates = dataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = delete.version,
+                    where = Equals(SimpleMarykModel { value::ref } with "ha tracked hard-delete"),
+                    orderedKeys = listOf(add.key),
+                    limit = 1u,
+                )
+            )
+            assertIs<RemovalUpdate<SimpleMarykModel>>(filteredUpdates.updates[1]).apply {
+                assertEquals(add.key, key)
+                assertEquals(delete.version, version)
+                assertEquals(HardDelete, reason)
+            }
+
+            val indexedDataStore = IndexedDbDataStore.open(
+                databaseName = "maryk-indexeddb-scan-updates-hard-delete-indexed-${Random.nextInt()}",
+                dataModelsById = mapOf(1u to AnyValueSetIndexModel),
+                keepUpdateHistoryIndex = true,
+            )
+            try {
+                val indexedAdd = assertStatusIs<AddSuccess<AnyValueSetIndexModel>>(
+                    indexedDataStore.execute(
+                        AnyValueSetIndexModel.add(
+                            AnyValueSetIndexModel.create {
+                                name with "ha indexed hard-delete"
+                                setValues with setOf("hard-delete")
+                            }
+                        )
+                    ).statuses.single()
+                )
+                val indexedDelete = assertStatusIs<DeleteSuccess<AnyValueSetIndexModel>>(
+                    indexedDataStore.execute(AnyValueSetIndexModel.delete(indexedAdd.key, hardDelete = true)).statuses.single()
+                )
+                val orderedUpdates = indexedDataStore.execute(
+                    AnyValueSetIndexModel.scanUpdates(
+                        fromVersion = indexedDelete.version,
+                        order = AnyValueSetIndexModel { setValues.refToAny() }.ascending(),
+                        orderedKeys = listOf(indexedAdd.key),
+                        limit = 1u,
+                    )
+                )
+                assertIs<RemovalUpdate<AnyValueSetIndexModel>>(orderedUpdates.updates[1]).apply {
+                    assertEquals(indexedAdd.key, key)
+                    assertEquals(indexedDelete.version, version)
+                    assertEquals(HardDelete, reason)
+                }
+            } finally {
+                indexedDataStore.close()
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesBackfillsLegacyHardDeleteTombstoneAfterSchemaUpgrade() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-scan-updates-hard-delete-legacy-${Random.nextInt()}"
+        val deleteVersion = 42uL
+        val legacyKey = Key<SimpleMarykModel>(ByteArray(SimpleMarykModel.Meta.keyByteSize) { 1 })
+        val legacyHistory = openIndexedDbByteStore(databaseName, setOf("meta", "uh:1"))
+        legacyHistory.put("uh:1", createUpdateHistoryRowKey(deleteVersion, legacyKey.bytes), byteArrayOf(1))
+        legacyHistory.close()
+
+        val upgradedDataStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepUpdateHistoryIndex = true,
+        )
+        try {
+            val updates = upgradedDataStore.execute(
+                SimpleMarykModel.scanUpdates(
+                    fromVersion = deleteVersion,
+                    limit = 1u,
+                )
+            )
+            assertIs<RemovalUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(legacyKey, key)
+                assertEquals(deleteVersion, version)
+                assertEquals(HardDelete, reason)
+            }
+            assertTrue(upgradedDataStore.byteStore.get("hd:1", legacyKey.bytes)?.contentEquals(deleteVersion.toBigEndianBytes()) == true)
+            assertTrue(upgradedDataStore.byteStore.get("meta", "hard-delete-history:1".encodeToByteArray()) != null)
+        } finally {
+            upgradedDataStore.close()
+        }
+    }
+
+    @Test
+    fun hardDeleteTombstoneMigrationRefreshesNewerLegacyVersionAndIsIdempotentOnReopen() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-hard-delete-migration-version-${Random.nextInt()}"
+        val key = Key<SimpleMarykModel>(ByteArray(SimpleMarykModel.Meta.keyByteSize) { 3 })
+        val existingVersion = 9uL
+        val legacyVersion = 13uL
+        val legacyHistory = openIndexedDbByteStore(databaseName, setOf("meta", "uh:1", "hd:1", "hdk:1"))
+        legacyHistory.writeBatch(
+            listOf(
+                IndexedDbWriteOperation.Put("uh:1", createUpdateHistoryRowKey(legacyVersion, key.bytes), byteArrayOf(1)),
+                IndexedDbWriteOperation.Put("hd:1", key.bytes, existingVersion.toBigEndianBytes()),
+            )
+        )
+        legacyHistory.close()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepUpdateHistoryIndex = true,
+        )
+        try {
+            assertTrue(dataStore.byteStore.get("hd:1", key.bytes)?.contentEquals(legacyVersion.toBigEndianBytes()) == true)
+            val firstHistoryRows = dataStore.byteStore.scan("hdk:1").map { it.first }
+            assertEquals(1, firstHistoryRows.size)
+            assertTrue(firstHistoryRows.single().contentEquals(createHardDeleteHistoryRowKey(key.bytes, legacyVersion)))
+            assertTrue(dataStore.byteStore.get("meta", "hard-delete-history:1".encodeToByteArray()) != null)
+        } finally {
+            dataStore.close()
+        }
+
+        val reopened = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+            keepUpdateHistoryIndex = true,
+        )
+        try {
+            assertTrue(reopened.byteStore.get("hd:1", key.bytes)?.contentEquals(legacyVersion.toBigEndianBytes()) == true)
+            val reopenedHistoryRows = reopened.byteStore.scan("hdk:1").map { it.first }
+            assertEquals(1, reopenedHistoryRows.size)
+            assertTrue(reopenedHistoryRows.single().contentEquals(createHardDeleteHistoryRowKey(key.bytes, legacyVersion)))
+            assertTrue(reopened.byteStore.get("meta", "hard-delete-history:1".encodeToByteArray()) != null)
+        } finally {
+            reopened.close()
+        }
+    }
+
+    @Test
+    fun hardDeleteTombstoneMigrationDoesNotRegressNativeDeleteWrittenAfterLegacyScan() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-hard-delete-migration-race-${Random.nextInt()}"
+        val key = Key<SimpleMarykModel>(ByteArray(SimpleMarykModel.Meta.keyByteSize) { 4 })
+        val legacyVersion = 2uL
+        val nativeVersion = 4uL
+        val legacyHistory = openIndexedDbByteStore(databaseName, setOf("meta", "uh:1", "hd:1", "hdk:1"))
+        legacyHistory.put("uh:1", createUpdateHistoryRowKey(legacyVersion, key.bytes), byteArrayOf(1))
+        legacyHistory.close()
+
+        val migrationReachedWrite = CompletableDeferred<Unit>()
+        val continueMigration = CompletableDeferred<Unit>()
+        hardDeleteTombstoneMigrationBeforeWrite = { _, _, _ ->
+            migrationReachedWrite.complete(Unit)
+            continueMigration.await()
+        }
+        var migratedDataStore: IndexedDbDataStore? = null
+        try {
+            val migration = async {
+                IndexedDbDataStore.open(
+                    databaseName = databaseName,
+                    dataModelsById = mapOf(1u to SimpleMarykModel),
+                    keepUpdateHistoryIndex = true,
+                )
+            }
+            migrationReachedWrite.await()
+
+            val nativeWriter = openIndexedDbByteStore(databaseName, setOf("meta", "uh:1", "hd:1", "hdk:1"))
+            try {
+                nativeWriter.transaction(setOf("hd:1", "hdk:1"), IndexedDbTransactionMode.READWRITE) { store ->
+                    store.writeBatch(
+                        listOf(
+                            IndexedDbWriteOperation.Put("hd:1", key.bytes, nativeVersion.toBigEndianBytes()),
+                            IndexedDbWriteOperation.Put("hdk:1", createHardDeleteHistoryRowKey(key.bytes, nativeVersion), byteArrayOf(1)),
+                        )
+                    )
+                }
+            } finally {
+                nativeWriter.close()
+            }
+
+            continueMigration.complete(Unit)
+            migratedDataStore = migration.await()
+            assertTrue(migratedDataStore.byteStore.get("hd:1", key.bytes)?.contentEquals(nativeVersion.toBigEndianBytes()) == true)
+            val historyRows = migratedDataStore.byteStore.scan("hdk:1").map { it.first }
+            assertEquals(2, historyRows.size)
+            assertTrue(historyRows[0].contentEquals(createHardDeleteHistoryRowKey(key.bytes, nativeVersion)))
+            assertTrue(historyRows[1].contentEquals(createHardDeleteHistoryRowKey(key.bytes, legacyVersion)))
+            assertTrue(migratedDataStore.byteStore.get("meta", "hard-delete-history:1".encodeToByteArray()) != null)
+        } finally {
+            hardDeleteTombstoneMigrationBeforeWrite = null
+            if (!continueMigration.isCompleted) continueMigration.complete(Unit)
+            migratedDataStore?.close()
+        }
+    }
+
     @Test
     fun getUpdatesReplaysHistoricChangesInsteadOfCurrentState() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()

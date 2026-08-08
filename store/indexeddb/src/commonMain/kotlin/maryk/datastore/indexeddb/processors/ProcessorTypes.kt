@@ -50,7 +50,7 @@ internal data class ScanUpdateRows<DM : IsRootDataModel>(
 )
 
 internal fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
-    order == null && startKey == null && includeStart && fromVersion == 0uL && toVersion == null && maxVersions == 1u
+    order == null && startKey == null && includeStart && maxVersions == 1u
 
 internal data class CurrentStateStoragePlan(
     val tableRows: List<Pair<ByteArray, ByteArray>>,
@@ -97,6 +97,9 @@ internal fun IndexedDbDataStore.modelWriteStoreNames(
     add(changeStoreName)
     if (keepUpdateHistoryIndex) {
         add(updateHistoryStoreName)
+        val modelId = updateHistoryStoreName.substringAfter(':')
+        add("hd:$modelId")
+        add("hdk:$modelId")
     }
     if (keepAllVersions) {
         add(historicTableStoreName)

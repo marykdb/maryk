@@ -49,7 +49,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
         if (toVersion != null && version > toVersion) return@scanInBatches true
 
         val keyBytes = rowKey.copyOfRange(rowKey.size - request.dataModel.Meta.keyByteSize, rowKey.size)
-        if (rowValue.size == 1 && rowValue[0] == 1.toByte()) {
+        if (rowValue.isHardDeleteTombstone()) {
             if (request.where == null) {
                 updates += RemovalUpdate(
                     key = request.dataModel.key(keyBytes),
@@ -134,4 +134,3 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
         )
     )
 }
-

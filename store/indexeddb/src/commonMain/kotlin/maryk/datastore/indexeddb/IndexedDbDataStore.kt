@@ -35,6 +35,7 @@ import maryk.datastore.indexeddb.processors.ScanUpdateHistoryStoreAction
 import maryk.datastore.indexeddb.processors.ScanUpdatesStoreAction
 import maryk.datastore.indexeddb.processors.addHistoricIndexRows
 import maryk.datastore.indexeddb.processors.createIndexKeyPrefix
+import maryk.datastore.indexeddb.processors.createHardDeleteHistoryRowKey
 import maryk.datastore.indexeddb.processors.createStoragePlan
 import maryk.datastore.indexeddb.processors.decodeCurrentSnapshotRecord
 import maryk.datastore.indexeddb.processors.decodeHistoricSnapshot
@@ -50,7 +51,11 @@ import maryk.datastore.indexeddb.processors.processScanUpdateHistoryRequest
 import maryk.datastore.indexeddb.processors.processScanUpdatesRequest
 import maryk.datastore.indexeddb.processors.processUpdateResponse
 import maryk.datastore.indexeddb.processors.put
+import maryk.datastore.indexeddb.processors.isHardDeleteTombstone
+import maryk.datastore.indexeddb.processors.readInvertedVersion
+import maryk.datastore.indexeddb.processors.readTrailingVersion
 import maryk.datastore.indexeddb.processors.readTrailingInvertedVersion
+import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
 import maryk.datastore.shared.RequestExecutionKind
@@ -60,6 +65,8 @@ import maryk.datastore.shared.requestExecutionKind
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchesRangePart
 
+internal var hardDeleteTombstoneMigrationBeforeWrite: (suspend (UInt, ByteArray, ULong) -> Unit)? = null
+
 class IndexedDbDataStore private constructor(
     internal val byteStore: IndexedDbByteStore,
     override val keepAllVersions: Boolean = false,
@@ -67,8 +74,38 @@ class IndexedDbDataStore private constructor(
     dataModelsById: Map<UInt, IsRootDataModel>,
     internal val sensitiveFields: IndexedDbSensitiveFieldSupport,
 ) : AbstractDataStore(dataModelsById, DISPATCHER) {
+    private val indexedDbModelsById = dataModelsById
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
+
+    private suspend fun migrateHardDeleteTombstones() {
+        if (!keepUpdateHistoryIndex) return
+        for (modelId in dataModelsById.keys) {
+            val markerKey = "hard-delete-history:$modelId".encodeToByteArray()
+            if (byteStore.get("meta", markerKey) != null) continue
+
+            byteStore.scanInBatches("uh:$modelId", targetLimit = UInt.MAX_VALUE) { rowKey, rowValue ->
+                if (!rowValue.isHardDeleteTombstone()) return@scanInBatches true
+                val version = rowKey.readInvertedVersion()
+                val keyBytes = rowKey.copyOfRange(rowKey.size - indexedDbModelsById.getValue(modelId).Meta.keyByteSize, rowKey.size)
+                hardDeleteTombstoneMigrationBeforeWrite?.invoke(modelId, keyBytes, version)
+                byteStore.transaction(
+                    setOf("hd:$modelId", "hdk:$modelId"),
+                    IndexedDbTransactionMode.READWRITE,
+                ) { store ->
+                    val operations = mutableListOf<IndexedDbWriteOperation>()
+                    operations += IndexedDbWriteOperation.Put("hdk:$modelId", createHardDeleteHistoryRowKey(keyBytes, version), byteArrayOf(1))
+                    val current = store.get("hd:$modelId", keyBytes)?.readTrailingVersion()
+                    if (current == null || version > current) {
+                        operations += IndexedDbWriteOperation.Put("hd:$modelId", keyBytes, version.toBigEndianBytes())
+                    }
+                    store.writeBatch(operations)
+                }
+                true
+            }
+            byteStore.put("meta", markerKey, byteArrayOf(1))
+        }
+    }
 
     init {
         startFlows()
@@ -287,6 +324,8 @@ class IndexedDbDataStore private constructor(
                     }
                     if (keepUpdateHistoryIndex) {
                         add("uh:$modelId")
+                        add("hd:$modelId")
+                        add("hdk:$modelId")
                     }
                 }
             }
@@ -313,6 +352,7 @@ class IndexedDbDataStore private constructor(
                     migrationConfiguration = migrationConfiguration,
                     versionUpdateHandler = versionUpdateHandler,
                 )
+                dataStore.migrateHardDeleteTombstones()
                 dataStore
             } catch (error: Throwable) {
                 dataStore.close()

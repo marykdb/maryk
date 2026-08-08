@@ -95,6 +95,9 @@ internal fun ByteArray.readTrailingVersion(): ULong {
 
 internal val unserializableChangeLogMarker = byteArrayOf(0)
 
+internal fun ByteArray.isHardDeleteTombstone() =
+    size == 1 && this[0] == 1.toByte()
+
 internal fun ByteArray.isUnserializableChangeLogMarker() =
     size == unserializableChangeLogMarker.size && contentEquals(unserializableChangeLogMarker)
 
@@ -156,4 +159,3 @@ internal fun ULong.toBigEndianBytes(): ByteArray {
     }
     return bytes
 }
-

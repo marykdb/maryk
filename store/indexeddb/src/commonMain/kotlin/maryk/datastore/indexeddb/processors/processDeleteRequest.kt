@@ -29,6 +29,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
     val uniqueStoreName = "u:$modelId"
     val changeStoreName = "c:$modelId"
     val updateHistoryStoreName = "uh:$modelId"
+    val hardDeleteStoreName = "hd:$modelId"
+    val hardDeleteHistoryStoreName = "hdk:$modelId"
     val historicTableStoreName = "ht:$modelId"
     val historicIndexStoreName = "hi:$modelId"
     val historicUniqueStoreName = "hu:$modelId"
@@ -99,6 +101,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
                 }
                 if (keepUpdateHistoryIndex) {
                     operations.put(updateHistoryStoreName, createUpdateHistoryRowKey(version.timestamp, key.bytes), byteArrayOf(1))
+                    operations.put(hardDeleteStoreName, key.bytes, version.timestamp.toBigEndianBytes())
+                    operations.put(hardDeleteHistoryStoreName, createHardDeleteHistoryRowKey(key.bytes, version.timestamp), byteArrayOf(1))
                 }
             } else {
                 operations.put(

@@ -63,7 +63,7 @@ internal fun generateKotlinValue(
         "${value.toLong()}u"
     }
     is ULong -> {
-        "${value.toLong()}uL"
+        "${value}uL"
     }
     is LocalTime -> {
         when {

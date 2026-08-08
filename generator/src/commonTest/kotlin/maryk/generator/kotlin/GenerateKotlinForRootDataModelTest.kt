@@ -522,6 +522,14 @@ class GenerateKotlinForRootDataModelTest {
     }
 
     @Test
+    fun generateULongDefaultsWithoutSignedConversion() {
+        assertEquals(
+            "18446744073709551615uL",
+            generateKotlinValue(SimpleMarykModel.value.definition, ULong.MAX_VALUE, {})
+        )
+    }
+
+    @Test
     fun generateKotlinForCompleteModel() {
         val generationContext = GenerationContext(
             enums = mutableListOf(MarykTypeEnum, Option, SimpleMarykTypeEnum)

@@ -66,7 +66,7 @@ private object PosixSshTunnelFactory : SshTunnelFactory {
             "-o",
             "ExitOnForwardFailure=yes",
             "-L",
-            "$localPort:${target.host}:${target.port}",
+            "$localPort:${target.host.forSshForwarding()}:${target.port}",
         )
 
         if (config.port != 22) {
@@ -131,6 +131,9 @@ private object PosixSshTunnelFactory : SshTunnelFactory {
         }
     }
 }
+
+private fun String.forSshForwarding(): String =
+    if (':' in this && !startsWith("[")) "[$this]" else this
 
 @OptIn(UnsafeNumber::class)
 private fun waitForLocalPort(pid: Int, localPort: Int) {

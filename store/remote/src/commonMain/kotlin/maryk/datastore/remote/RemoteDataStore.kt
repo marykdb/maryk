@@ -20,6 +20,7 @@ import io.ktor.utils.io.readFully
 import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.cancel
@@ -127,6 +128,9 @@ class RemoteDataStore private constructor(
             return try {
                 val effectiveUrl = if (config.ssh != null) {
                     validateSshConfig(config.ssh)
+                    require(baseUrl.protocol != URLProtocol.HTTPS) {
+                        "SSH tunneling over HTTPS is not supported because local forwarding cannot preserve TLS authority validation"
+                    }
                     val target = resolveSshTarget(baseUrl, config.ssh)
                     val factory = config.sshTunnelFactory
                         ?: throw IllegalArgumentException("SSH tunnel factory is not available on this platform")
@@ -214,12 +218,12 @@ class RemoteDataStore private constructor(
         }
 
         private suspend fun fetchInfo(client: HttpClient, baseUrl: Url, bearerToken: String?): InfoResult {
-            val response = client.get(buildUrl(baseUrl, RemoteStoreProtocol.infoPath)) {
+            val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { client.get(buildUrl(baseUrl, RemoteStoreProtocol.infoPath)) {
                 headers {
                     append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
                     appendBearerToken(bearerToken)
                 }
-            }
+            } }
             requireSuccess(response, "info")
             requireContentType(response, RemoteStoreProtocol.contentType, "info")
             val bytes = readResponseBytes(response, "info")
@@ -316,7 +320,7 @@ class RemoteDataStore private constructor(
         payload: ByteArray,
         descriptors: List<BatchRequestDescriptor>,
     ): List<IsResponse> {
-        val response = httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
+        val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
             headers {
                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
@@ -327,7 +331,7 @@ class RemoteDataStore private constructor(
                 appendBearerToken(bearerToken)
             }
             setBody(payload)
-        }
+        } }
         requireSuccess(response, "execute")
         requireContentType(response, RemoteStoreProtocol.contentType, "execute")
         val responseBytes = readResponseBytes(response, "execute", MAX_BATCH_RESPONSE_BODY_BYTES)
@@ -621,8 +625,10 @@ class RemoteDataStore private constructor(
                     }
                 }
             }
+            listeners.add(job)
 
             job.invokeOnCompletion { cause ->
+                launch { listeners.remove(job) }
                 close(cause)
             }
 
@@ -638,14 +644,14 @@ class RemoteDataStore private constructor(
         ensureDataModelReference(updateResponse.dataModel)
         val context = RequestContext(definitionsContext, dataModel = updateResponse.dataModel)
         val payload = RemoteStoreCodec.encode(UpdateResponse.Serializer, updateResponse, context, MAX_REQUEST_BODY_BYTES)
-        val response = httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.processUpdatePath)) {
+        val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.processUpdatePath)) {
             headers {
                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
                 appendBearerToken(bearerToken)
             }
             setBody(payload)
-        }
+        } }
         requireSuccess(response, "process-update")
         requireContentType(response, RemoteStoreProtocol.contentType, "process-update")
         val responseBytes = readResponseBytes(response, "process-update")
@@ -660,12 +666,12 @@ class RemoteDataStore private constructor(
     }
 
     override suspend fun captureSnapshotVersion(): ULong {
-        val response = httpClient.get(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
+        val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.get(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
             headers {
                 append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
                 appendBearerToken(bearerToken)
             }
-        }
+        } }
         requireSuccess(response, "snapshot version")
         requireContentType(response, RemoteStoreProtocol.contentType, "snapshot version")
         return try {
@@ -696,14 +702,14 @@ class RemoteDataStore private constructor(
         executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Cancel, modelId, reason)).accepted == true
 
     private suspend fun executeMigrationAdmin(request: RemoteMigrationRequest): RemoteMigrationResponse {
-        val response = httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.migrationsPath)) {
+        val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.migrationsPath)) {
             headers {
                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
                 append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
                 appendBearerToken(bearerToken)
             }
             setBody(RemoteMigrationAdminCodec.encodeRequest(request))
-        }
+        } }
         requireSuccess(response, "migration administration")
         requireContentType(response, RemoteStoreProtocol.contentType, "migration administration")
         return RemoteMigrationAdminCodec.decodeResponse(
@@ -713,7 +719,7 @@ class RemoteDataStore private constructor(
     }
 
     override suspend fun close() {
-        listeners.closeAll()
+        listeners.close()
         sshTunnel?.close()
         if (ownsClient) {
             httpClient.close()
@@ -746,10 +752,20 @@ private fun HeadersBuilder.appendBearerToken(bearerToken: String?) {
 private class RemoteListenerRegistry {
     private val mutex = Mutex()
     private val listeners = mutableSetOf<RemoteFlowHandle>()
+    private val jobs = mutableSetOf<Job>()
+    private var closed = false
 
-    suspend fun add(handle: RemoteFlowHandle) = mutex.withLock { listeners.add(handle) }
+    suspend fun add(handle: RemoteFlowHandle) = mutex.withLock {
+        if (closed) handle.close() else listeners.add(handle)
+    }
 
     suspend fun remove(handle: RemoteFlowHandle) = mutex.withLock { listeners.remove(handle) }
+
+    suspend fun add(job: Job) = mutex.withLock {
+        if (closed) job.cancel() else jobs.add(job)
+    }
+
+    suspend fun remove(job: Job) = mutex.withLock { jobs.remove(job) }
 
     suspend fun closeAll() {
         val snapshot = mutex.withLock {
@@ -758,6 +774,19 @@ private class RemoteListenerRegistry {
             handles
         }
         snapshot.forEach { it.close() }
+    }
+
+    suspend fun close() {
+        val (handles, flowJobs) = mutex.withLock {
+            closed = true
+            val handles = listeners.toList()
+            val flowJobs = jobs.toList()
+            listeners.clear()
+            jobs.clear()
+            handles to flowJobs
+        }
+        handles.forEach { it.close() }
+        flowJobs.forEach { it.cancel() }
     }
 }
 
@@ -836,6 +865,7 @@ private suspend fun readResponseBytes(
 
 private const val MAX_FRAME_SIZE_BYTES = 16 * 1024 * 1024
 private const val MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024
+private const val NON_FLOW_REQUEST_TIMEOUT_MILLIS = 30_000L
 private const val MAX_BATCH_RESPONSE_BODY_BYTES = 64 * 1024 * 1024
 private const val MAX_ERROR_PREVIEW_BYTES = 4096
 

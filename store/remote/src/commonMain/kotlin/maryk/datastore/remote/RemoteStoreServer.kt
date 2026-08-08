@@ -416,7 +416,7 @@ internal fun Application.remoteStoreModule(
                     !call.authorize(
                         config = config,
                         principal = principal,
-                        operation = RemoteStoreOperation.MigrationAdmin,
+                        operation = request.operation.toAuthorizationOperation(),
                         modelName = modelName,
                     )
                 ) return@respondValidationErrors
@@ -446,6 +446,13 @@ internal fun Application.remoteStoreModule(
             }
         }
     }
+}
+
+private fun RemoteMigrationOperation.toAuthorizationOperation(): RemoteStoreOperation = when (this) {
+    RemoteMigrationOperation.Status -> RemoteStoreOperation.MigrationStatus
+    RemoteMigrationOperation.Pause -> RemoteStoreOperation.MigrationPause
+    RemoteMigrationOperation.Resume -> RemoteStoreOperation.MigrationResume
+    RemoteMigrationOperation.Cancel -> RemoteStoreOperation.MigrationCancel
 }
 
 private fun RemoteMigrationRequest.requireModelId(): UInt =

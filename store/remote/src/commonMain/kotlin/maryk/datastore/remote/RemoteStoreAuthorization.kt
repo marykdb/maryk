@@ -14,7 +14,10 @@ enum class RemoteStoreOperation {
     Flow,
     ProcessUpdate,
     SnapshotVersion,
-    MigrationAdmin,
+    MigrationStatus,
+    MigrationPause,
+    MigrationResume,
+    MigrationCancel,
 }
 
 data class RemoteStoreAuthorizationRequest(

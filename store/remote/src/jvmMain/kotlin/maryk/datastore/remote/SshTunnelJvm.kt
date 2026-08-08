@@ -47,7 +47,7 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
             "-o",
             "ExitOnForwardFailure=yes",
             "-L",
-            "$localPort:${target.host}:${target.port}",
+            "$localPort:${target.host.forSshForwarding()}:${target.port}",
         )
 
         if (config.port != 22) {
@@ -108,6 +108,9 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
         }
     }
 }
+
+private fun String.forSshForwarding(): String =
+    if (':' in this && !startsWith("[")) "[$this]" else this
 
 private class ProcessSshTunnel(
     private val process: Process,

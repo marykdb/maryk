@@ -150,7 +150,8 @@ class RemoteStoreServerTest {
                 adminStore,
                 RemoteStoreServerConfig(
                     authorizer = RemoteStoreAuthorizer { request ->
-                        request.operation == RemoteStoreOperation.Info
+                        request.operation == RemoteStoreOperation.Info ||
+                            request.operation == RemoteStoreOperation.MigrationStatus
                     },
                 ),
             )
@@ -160,8 +161,9 @@ class RemoteStoreServerTest {
             val remote = RemoteDataStore.connect(
                 RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port", httpClient = client)
             )
+            assertEquals(MigrationRuntimeState.Running, remote.getMigrationSnapshot().statuses.getValue(1u).state)
             val error = assertFailsWith<IllegalStateException> {
-                remote.getMigrationSnapshot()
+                remote.requestMigrationPause(1u)
             }
             assertTrue(error.message.orEmpty().contains("HTTP 403"))
             remote.close()

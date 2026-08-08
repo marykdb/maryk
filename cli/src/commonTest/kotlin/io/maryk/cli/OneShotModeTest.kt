@@ -110,6 +110,26 @@ class OneShotModeTest {
         assertNull(state.currentConnection)
     }
 
+    @Test
+    fun runOneShotMatchesCommandsIgnoringCase() {
+        val state = CliState()
+        val registry = CommandRegistry(state, FakeEnvironment())
+        val listCommand = CapturingCommand("list")
+        registry.register(listCommand)
+
+        val exitCode = runOneShot(
+            registry,
+            OneShotOptions(
+                store = null,
+                connectArgs = emptyList(),
+                commandLine = "LIST",
+            ),
+        )
+
+        assertEquals(0, exitCode)
+        assertTrue(listCommand.called)
+    }
+
     private class FakeEnvironment : CliEnvironment {
         override fun resolveDirectory(path: String): DirectoryResolution =
             DirectoryResolution.Success(path)

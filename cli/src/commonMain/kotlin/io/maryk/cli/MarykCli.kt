@@ -574,7 +574,7 @@ internal fun runOneShot(
             }
         }
 
-        val commandName = tokens.first()
+        val commandName = tokens.first().lowercase()
         val result = registry.execute(commandName, tokens.drop(1))
         result.lines.forEach(::println)
 

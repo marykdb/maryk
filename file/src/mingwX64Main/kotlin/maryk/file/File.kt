@@ -5,6 +5,7 @@ import kotlinx.cinterop.addressOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
+import kotlinx.cinterop.readValue
 import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.windows.CloseHandle
@@ -29,12 +30,11 @@ import platform.windows.MoveFileExW
 import platform.windows.OPEN_ALWAYS
 import platform.windows.OPEN_EXISTING
 import platform.windows.ReadFile
-import platform.windows.SetFilePointer
+import platform.windows.SetFilePointerEx
 import platform.windows.WriteFile
 
 private const val maxFileSize = Int.MAX_VALUE.toLong()
 private const val invalidFileAttributes = UInt.MAX_VALUE
-private const val invalidSetFilePointer = UInt.MAX_VALUE
 
 private fun isDirectory(path: String): Boolean {
     val attributes = GetFileAttributesW(path)
@@ -92,6 +92,13 @@ private fun fileSize(handle: HANDLE?): Long? {
         val li = alloc<LARGE_INTEGER>()
         if (GetFileSizeEx(handle, li.ptr) != 0) li.QuadPart else null
     }
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun seekToEnd(handle: HANDLE?): Boolean = memScoped {
+    val distance = alloc<LARGE_INTEGER>()
+    distance.QuadPart = 0
+    SetFilePointerEx(handle, distance.readValue(), null, FILE_END.toUInt()) != 0
 }
 
 actual object File {
@@ -222,7 +229,7 @@ actual object File {
             throw IllegalStateException("Could not open file for appending: $path (${GetLastError()})")
         }
         try {
-            if (SetFilePointer(handle, 0, null, FILE_END.toUInt()) == invalidSetFilePointer) {
+            if (!seekToEnd(handle)) {
                 throw IllegalStateException("Could not seek to end of file for appending: $path (${GetLastError()})")
             }
             val bytes = contents.encodeToByteArray()

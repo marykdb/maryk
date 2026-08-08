@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb.processors
 
 import maryk.core.clock.HLC
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.UpdateResponse
@@ -19,6 +20,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdditio
     val dataModel = storeAction.request.dataModel
     val update = storeAction.request.update as AdditionUpdate<DM>
 
+    if (update.firstVersion != update.version) {
+        throw RequestException("Cannot process an AdditionUpdate with a version different than the first version. Use a query for changes to properly process changes into a data store")
+    }
+
     val tableDirs = getTableDirs(getDataModelId(dataModel))
 
     val status = processAdd(
@@ -36,4 +41,3 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdditio
         )
     )
 }
-

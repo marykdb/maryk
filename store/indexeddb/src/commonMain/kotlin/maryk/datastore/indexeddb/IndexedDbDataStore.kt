@@ -59,6 +59,7 @@ import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
 import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.requestExecutionKind
@@ -74,10 +75,12 @@ class IndexedDbDataStore private constructor(
     override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
     internal val sensitiveFields: IndexedDbSensitiveFieldSupport,
-) : AbstractDataStore(dataModelsById, DISPATCHER) {
+) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider {
     private val indexedDbModelsById = dataModelsById
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
+
+    override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
     internal suspend fun emitIndexedDbUpdate(update: Update<out IsRootDataModel>) {
         emitFlowUpdate(update)

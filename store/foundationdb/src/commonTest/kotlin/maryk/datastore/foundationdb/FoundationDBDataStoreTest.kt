@@ -10,8 +10,11 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDateTime
+import maryk.core.exceptions.RequestException
+import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.statuses.AddSuccess
@@ -24,12 +27,44 @@ import maryk.test.models.Log
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
+    @Test
+    fun rejectsReplicatedAdditionWithDifferentFirstVersion() = runTest(timeout = 3.minutes) {
+        val store = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "invalid-addition-update", Uuid.random().toString()),
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+        val values = SimpleMarykModel.create { value with "invalid replicated addition" }
+
+        try {
+            assertFailsWith<RequestException> {
+                store.processUpdate(
+                    UpdateResponse(
+                        SimpleMarykModel,
+                        AdditionUpdate(
+                            key = Key(ByteArray(16)),
+                            version = 2uL,
+                            firstVersion = 1uL,
+                            insertionIndex = 0,
+                            isDeleted = false,
+                            values = values,
+                        )
+                    )
+                )
+            }
+            assertTrue(store.execute(SimpleMarykModel.scan(allowTableScan = true)).values.isEmpty())
+        } finally {
+            store.close()
+        }
+    }
+
     @Test
     fun localUpdateEmissionCompletesBeforeMutationResponse() = runTest(timeout = 3.minutes) {
         withContext(Dispatchers.Default) {
@@ -92,7 +127,7 @@ class FoundationDBDataStoreTest {
         )
 
         try {
-            DataStoreBackupRoundTripTest(source, target, useAutomaticSnapshot = false)
+            DataStoreBackupRoundTripTest(source, target, useAutomaticSnapshot = true)
                 .restoresCurrentValueAndCompleteHistory()
         } finally {
             source.close()

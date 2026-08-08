@@ -7,10 +7,12 @@ import maryk.core.models.IsTypedDataModel
 import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.ProtoBuf
@@ -148,6 +150,9 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
             val valueMap = MutableValueItems()
             reader.nextToken()
             walkJsonToRead(reader, valueMap, context)
+            if (reader.currentToken is JsonToken.Suspended) {
+                throw IllegalJsonOperation("JSON input ended before the object was complete")
+            }
 
             valueMap
         } else {
@@ -426,12 +431,18 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
     }
 
     private fun IsPropertyDefinition<*>.acceptsProtoBufWireType(wireType: WireType): Boolean = when (this) {
-        is IsCollectionDefinition<*, *, *, *> -> when (val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
+        is IsCollectionDefinition<*, *, *, *> -> when (val valueDefinition = valueDefinition) {
+            is IsMultiTypeDefinition<*, *, *> -> true
+            is IsContextualEncodable<*, *> -> true
+            else -> when (val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
             VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == valueWireType
             else -> wireType == LENGTH_DELIMITED
+            }
         }
+        is IsMultiTypeDefinition<*, *, *> -> true
+        is IsContextualEncodable<*, *> -> true
         is IsValueDefinition<*, *> -> wireType == this.wireType
-        else -> wireType == LENGTH_DELIMITED
+        else -> true // Polymorphic definitions select their wire type from the encoded value.
     }
 
     /**

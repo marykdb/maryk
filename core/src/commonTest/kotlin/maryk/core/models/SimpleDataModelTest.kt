@@ -4,6 +4,7 @@ import maryk.core.protobuf.WriteCache
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WireType.VAR_INT
+import maryk.json.IllegalJsonOperation
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.exceptions.ParseException
@@ -191,6 +192,16 @@ internal class SimpleDataModelTest {
         }
         assertFailsWith<Throwable> {
             SimpleMarykModel.Serializer.readJson("""{"value":"haas"} trailing""")
+        }
+    }
+
+    @Test
+    fun callbackJsonReaderRejectsTruncatedUnknownField() {
+        var index = 0
+        val reader = JsonReader { "{\"unknown\":".getOrNull(index++) }
+
+        assertFailsWith<IllegalJsonOperation> {
+            SimpleMarykModel.Serializer.readJson(reader)
         }
     }
 

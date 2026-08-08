@@ -38,11 +38,11 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
     }
 
     return """
-    sealed class ${this.name}<T: Any>(
+    sealed class ${this.name.kotlinIdentifier()}<T: Any>(
         index: UInt,
         override val definition: IsUsableInMultiType<T, *>?,
         alternativeNames: Set<String>? = null
-    ) : IndexedEnumImpl<${this.name}<Any>>(index, alternativeNames), MultiTypeEnum<T> {
+    ) : IndexedEnumImpl<${this.name.kotlinIdentifier()}<Any>>(index, alternativeNames), MultiTypeEnum<T> {
         ${@Suppress("UNCHECKED_CAST") (this.cases() as List<MultiTypeEnum<Any>>).joinToString("") { case ->
             val alternativeNames = case.alternativeNames?.let { altNames ->
                 ",\n    setOf(${altNames.joinToString(", ") { it.kotlinStringLiteral() } })"
@@ -53,14 +53,14 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
             addImport("maryk.core.properties.definitions.${definitionDescriptor.className}")
             definitionDescriptor.getImports(definition).forEach(addImport)
             val propertyDefinition = definitionDescriptor.definitionToKotlin(definition, addImport).prependIndent().trimStart(' ')
-            "object ${case.name}: ${this.name}<${definitionDescriptor.kotlinTypeName(definition)}>(${case.index}u,$propertyDefinition$alternativeNames\n)\n"
+            "object ${case.name.kotlinIdentifier()}: ${this.name.kotlinIdentifier()}<${definitionDescriptor.kotlinTypeName(definition)}>(${case.index}u,$propertyDefinition$alternativeNames\n)\n"
         }.prependIndent().prependIndent().trimStart()}
-        class Unknown${this.name}(index: UInt, override val name: String): ${this.name}<Any>(index, null)
+        class ${"Unknown${this.name}".kotlinIdentifier()}(index: UInt, override val name: String): ${this.name.kotlinIdentifier()}<Any>(index, null)
 
-        companion object : MultiTypeEnumDefinition<${this.name}<out Any>>(
-            ${this.name}::class,
-            values = { listOf(${this.cases().joinToString(", ") { it.name }}) },$reservedIndices$reservedNames
-            unknownCreator = ::Unknown${this.name}
+        companion object : MultiTypeEnumDefinition<${this.name.kotlinIdentifier()}<out Any>>(
+            ${this.name.kotlinIdentifier()}::class,
+            values = { listOf(${this.cases().joinToString(", ") { it.name.kotlinIdentifier() }}) },$reservedIndices$reservedNames
+            unknownCreator = ::${"Unknown${this.name}".kotlinIdentifier()}
         )
     }
     """.trimIndent()

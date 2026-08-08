@@ -8,7 +8,11 @@ import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.incrementingMap
+import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.set
+import maryk.core.properties.definitions.string
+import maryk.core.properties.types.numeric.UInt32
 import maryk.generator.DecimalGeneratorModel
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
@@ -54,6 +58,23 @@ private object NestedCollectionDefaults : RootDataModel<NestedCollectionDefaults
             "empty" to emptySet()
         )
     )
+}
+
+private object `bad-model` : RootDataModel<`bad-model`>() {
+    val `when` by string(index = 1u)
+}
+
+private object IncMapOnly : RootDataModel<IncMapOnly>() {
+    val values by incrementingMap(
+        index = 1u,
+        keyNumberDescriptor = UInt32,
+        valueDefinition = StringDefinition()
+    )
+}
+
+private object SharedInlineEnum : RootDataModel<SharedInlineEnum>() {
+    val first by enum(index = 1u, enum = Option)
+    val second by enum(index = 2u, enum = Option)
 }
 
 private val generatedKotlinForNestedCollectionDefaults = """
@@ -462,6 +483,16 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
 
 class GenerateKotlinForRootDataModelTest {
     @Test
+    fun escapesInvalidModelAndPropertyIdentifiers() {
+        val output = buildString {
+            `bad-model`.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertTrue(output.contains("object `bad-model` : RootDataModel<`bad-model`>"))
+        assertTrue(output.contains("val `when` by string("))
+    }
+
+    @Test
     fun generateKotlinForDecimalProperty() {
         val output = buildString {
             DecimalGeneratorModel.generateKotlin("maryk.test.models") {
@@ -500,6 +531,24 @@ class GenerateKotlinForRootDataModelTest {
     }
 
     @Test
+    fun generatesSharedInlineEnumOnce() {
+        val output = buildString {
+            SharedInlineEnum.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertEquals(1, Regex("sealed class Option").findAll(output).count())
+    }
+
+    @Test
+    fun importsNumericDescriptorForIncrementingMap() {
+        val output = buildString {
+            IncMapOnly.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertTrue(output.contains("import maryk.core.properties.types.numeric.UInt32"))
+    }
+
+    @Test
     fun escapeGeneratedStringValues() {
         val value = "quote \" slash \\ newline \n dollar ${'$'}"
 
@@ -526,6 +575,14 @@ class GenerateKotlinForRootDataModelTest {
         assertEquals(
             "18446744073709551615uL",
             generateKotlinValue(SimpleMarykModel.value.definition, ULong.MAX_VALUE, {})
+        )
+    }
+
+    @Test
+    fun generateFloatDefaultsWithFloatSuffix() {
+        assertEquals(
+            "1.5f",
+            generateKotlinValue(SimpleMarykModel.value.definition, 1.5f, {})
         )
     }
 

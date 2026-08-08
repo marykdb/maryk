@@ -34,22 +34,22 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
     }
 
     return """
-    sealed class ${this.name}(
+    sealed class ${this.name.kotlinIdentifier()}(
         index: UInt,
         alternativeNames: Set<String>? = null
-    ) : IndexedEnumImpl<${this.name}>(index, alternativeNames) {
+    ) : IndexedEnumImpl<${this.name.kotlinIdentifier()}>(index, alternativeNames) {
         ${this.cases().joinToString("") { case ->
         val alternativeNames = case.alternativeNames?.let {
                 ", setOf(${it.joinToString(", ") { name -> name.kotlinStringLiteral() } })"
             } ?: ""
-            "object ${case.name}: ${this.name}(${case.index}u$alternativeNames)\n"
+            "object ${case.name.kotlinIdentifier()}: ${this.name.kotlinIdentifier()}(${case.index}u$alternativeNames)\n"
         }.prependIndent().prependIndent().trimStart()}
-        class Unknown${this.name}(index: UInt, override val name: String): ${this.name}(index)
+        class ${"Unknown${this.name}".kotlinIdentifier()}(index: UInt, override val name: String): ${this.name.kotlinIdentifier()}(index)
 
-        companion object : IndexedEnumDefinition<${this.name}>(
-            ${this.name}::class,
-            values = { arrayOf(${this.cases().joinToString(", ") { it.name }}) },$reservedIndices$reservedNames
-            unknownCreator = ::Unknown${this.name}
+        companion object : IndexedEnumDefinition<${this.name.kotlinIdentifier()}>(
+            ${this.name.kotlinIdentifier()}::class,
+            values = { arrayOf(${this.cases().joinToString(", ") { it.name.kotlinIdentifier() }}) },$reservedIndices$reservedNames
+            unknownCreator = ::${"Unknown${this.name}".kotlinIdentifier()}
         )
     }
     """.trimIndent()

@@ -12,7 +12,7 @@ fun DataModel<*>.generateKotlin(
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
-    val enumKotlinDefinitions = mutableListOf<String>()
+    val enumKotlinDefinitions = mutableSetOf<String>()
     val propertiesKotlin = generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
@@ -36,7 +36,7 @@ fun DataModel<*>.generateKotlin(
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """
-    object ${Meta.name} : DataModel<${Meta.name}>($constructorParameters) {
+    object ${Meta.name.kotlinIdentifier()} : DataModel<${Meta.name.kotlinIdentifier()}>($constructorParameters) {
         ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()

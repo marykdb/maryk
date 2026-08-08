@@ -56,11 +56,11 @@ internal fun IsTypedDataModel<*>.generateKotlin(
 
         propertiesKotlin.add(
             KotlinForProperty(
-                name = propertyDefinitionWrapper.name,
+                name = propertyDefinitionWrapper.name.kotlinIdentifier(),
                 wrapName = kotlinDescriptor.wrapFunctionName,
                 index = propertyDefinitionWrapper.index,
                 altNames = propertyDefinitionWrapper.alternativeNames,
-                value = "${propertyDefinitionWrapper.name}$nativeTypeName$default",
+                value = "${propertyDefinitionWrapper.name.kotlinIdentifier()}$nativeTypeName$default",
                 definition = kotlinDescriptor.definitionToKotlinFields(definition, addImport),
                 invoke = "values(${propertyDefinitionWrapper.index}u)"
             )

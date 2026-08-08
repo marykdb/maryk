@@ -163,6 +163,20 @@ private val definitionNamesMap = mapOf(
             }
         ),
         propertyNameOverride = mapOf("keyDefinition" to "keyNumberDescriptor"),
+        imports = {
+            when (it.keyNumberDescriptor.type) {
+                UInt8Type -> uInt8Imports
+                UInt16Type -> uInt16Imports
+                UInt32Type -> uInt32Imports
+                UInt64Type -> uInt64Imports
+                SInt8Type -> sInt8Imports
+                SInt16Type -> sInt16Imports
+                SInt32Type -> sInt32Imports
+                SInt64Type -> sInt64Imports
+                Float32Type -> float32Imports
+                Float64Type -> float64Imports
+            }
+        },
         definitionModel = IncrementingMapDefinition.Model,
     ),
     PropertyDefinitionType.List to PropertyDefinitionKotlinDescriptor(

@@ -14,19 +14,19 @@ fun IsValueDataModel<*, *>.generateKotlin(
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 
-    val enumKotlinDefinitions = mutableListOf<String>()
+    val enumKotlinDefinitions = mutableSetOf<String>()
     val propertiesKotlin = generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 
     val code = """
-    data class ${Meta.name}(
+    data class ${Meta.name.kotlinIdentifier()}(
         ${propertiesKotlin.generateObjectValuesForProperties().prependIndent().prependIndent().trimStart()}
     ) : ValueDataObject(toBytes(${propertiesKotlin.generatePropertyNamesForConstructor()})) {
-        companion object : ValueDataModel<${Meta.name}, Companion>(${Meta.name}::class) {
-            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = Meta.name, addImport = addImport).prependIndent().trimStart()}
+        companion object : ValueDataModel<${Meta.name.kotlinIdentifier()}, Companion>(${Meta.name.kotlinIdentifier()}::class) {
+            ${propertiesKotlin.generateDefinitionsForObjectProperties(modelName = Meta.name.kotlinIdentifier(), addImport = addImport).prependIndent().trimStart()}
 
-            override fun invoke(values: ObjectValues<${Meta.name}, Companion>) = ${Meta.name}(
+            override fun invoke(values: ObjectValues<${Meta.name.kotlinIdentifier()}, Companion>) = ${Meta.name.kotlinIdentifier()}(
                 ${propertiesKotlin.generateInvokesForProperties().prependIndent().prependIndent().prependIndent().trimStart()}
             )
         }

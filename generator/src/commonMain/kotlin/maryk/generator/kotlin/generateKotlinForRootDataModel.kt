@@ -41,7 +41,7 @@ fun IsRootDataModel.generateKotlin(
     val keyDefAsKotlin = if (Meta.keyDefinition != UUIDv4Key) {
         val keyDefs = Meta.keyDefinition.generateKotlin(packageName, Meta.name, addImport)
 
-        "keyDefinition = {\n            ${Meta.name}.run {\n${keyDefs.prependIndent("                ")}\n            }\n        }"
+        "keyDefinition = {\n            ${Meta.name.kotlinIdentifier()}.run {\n${keyDefs.prependIndent("                ")}\n            }\n        }"
     } else null
 
     // Add indexes if they are not null
@@ -51,7 +51,7 @@ fun IsRootDataModel.generateKotlin(
             output += it.generateKotlin(packageName, Meta.name, addImport)
         }
         val indexes = "listOf(\n${output.joinToString(",\n").prependIndent()}\n)"
-        "indexes = {\n            ${Meta.name}.run {\n${indexes.prependIndent("                ")}\n            }\n        }"
+        "indexes = {\n            ${Meta.name.kotlinIdentifier()}.run {\n${indexes.prependIndent("                ")}\n            }\n        }"
     }
 
     val reservedIndices = Meta.reservedIndices.let { indexes ->
@@ -67,7 +67,7 @@ fun IsRootDataModel.generateKotlin(
         }
     }
 
-    val enumKotlinDefinitions = mutableListOf<String>()
+    val enumKotlinDefinitions = mutableSetOf<String>()
     val propertiesKotlin = this.generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
@@ -78,7 +78,7 @@ fun IsRootDataModel.generateKotlin(
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
 
     val code = """
-    object ${Meta.name} : RootDataModel<${Meta.name}>($constructorParameters) {
+    object ${Meta.name.kotlinIdentifier()} : RootDataModel<${Meta.name.kotlinIdentifier()}>($constructorParameters) {
         ${propertiesKotlin.generateDefinitionsForProperties(addImport).trimStart()}
     }
     """.trimIndent()
@@ -153,7 +153,7 @@ private fun IsPropertyReferenceForValues<*, *, *, *>.generateRef(
             it.propertyDefinition.let { propDef ->
                 if (propDef is IsEmbeddedDefinition<*>) {
                     val embedModelName = (propDef.dataModel as IsStorableDataModel<*>).Meta.name
-                    addImport("$packageName.$embedModelName.Properties.${this.name}")
+                    addImport("$packageName.$embedModelName.Properties.${this.name.kotlinIdentifier()}")
                 }
             }
 
@@ -161,9 +161,9 @@ private fun IsPropertyReferenceForValues<*, *, *, *>.generateRef(
         }
     }
     if (parent.isEmpty()) {
-        addImport("$packageName.$modelName.Properties.${this.name}")
+        addImport("$packageName.$modelName.Properties.${this.name.kotlinIdentifier()}")
     }
-    return "${this.name}.$refFunction($parent)"
+    return "${this.name.kotlinIdentifier()}.$refFunction($parent)"
 }
 
 private fun SimpleTypedValueReference<*, *, *>.generateKotlin(

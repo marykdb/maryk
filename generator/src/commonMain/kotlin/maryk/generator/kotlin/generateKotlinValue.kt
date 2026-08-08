@@ -65,6 +65,7 @@ internal fun generateKotlinValue(
     is ULong -> {
         "${value}uL"
     }
+    is Float -> "${value}f"
     is LocalTime -> {
         when {
             value.nanosecond != 0 -> "LocalTime(${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"

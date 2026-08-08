@@ -9,7 +9,7 @@ package maryk.generator.kotlin
 internal fun writeKotlinFile(
     packageName: String,
     importsToAdd: MutableSet<String>,
-    enumKotlinDefinitions: MutableList<String>?,
+    enumKotlinDefinitions: Collection<String>?,
     code: String,
     writer: (String) -> Unit
 ) {

@@ -97,7 +97,6 @@ import maryk.datastore.rocksdb.processors.AnyScanStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanUpdateHistoryStoreAction
 import maryk.datastore.rocksdb.processors.AnyScanUpdatesStoreAction
 import maryk.datastore.rocksdb.processors.EMPTY_ARRAY
-import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.rocksdb.processors.processAddRequest
 import maryk.datastore.rocksdb.processors.processAdditionUpdate
@@ -135,7 +134,6 @@ import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.TypeIndicator
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
-import maryk.rocksdb.ComparatorOptions
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.OptimisticTransactionDB
@@ -229,6 +227,7 @@ class RocksDBDataStore private constructor(
         this.db = try {
             openOptimisticTransactionDB(rocksDBOptions ?: ownRocksDBOptions!!, storePath, descriptors, handles)
         } catch (throwable: Throwable) {
+            ownRocksDBOptions?.close()
             blockCache.close()
             throw throwable
         }
@@ -780,15 +779,15 @@ class RocksDBDataStore private constructor(
             // Prefix set to key size for more optimal search.
             val tableOptionsHistoric = blockCache.createColumnFamilyOptions {
                 useFixedLengthPrefixExtractor(db.Meta.keyByteSize)
-                setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
+                setComparator(blockCache.createVersionedComparator(db.Meta.keyByteSize))
             }
 
             val indexOptionsHistoric = blockCache.createColumnFamilyOptions {
-                setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
+                setComparator(blockCache.createVersionedComparator(db.Meta.keyByteSize))
             }
 
             val uniqueOptionsHistoric = blockCache.createColumnFamilyOptions {
-                setComparator(VersionedComparator(ComparatorOptions(), db.Meta.keyByteSize))
+                setComparator(blockCache.createVersionedComparator(db.Meta.keyByteSize))
             }
 
             descriptors += HistoricTable.getDescriptor(tableIndex, nameSize, tableOptionsHistoric)
@@ -808,16 +807,15 @@ class RocksDBDataStore private constructor(
     fun closeResources() {
         if (resourcesClosed.getAndSet(true)) return
 
-        ownRocksDBOptions?.close()
-        defaultWriteOptions.close()
-        defaultReadOptions.close()
-        sequentialReadOptions.close()
-
         columnFamilyHandlesByDataModelIndex.values.forEach {
             it.close()
         }
         db.close()
         blockCache.close()
+        defaultWriteOptions.close()
+        defaultReadOptions.close()
+        sequentialReadOptions.close()
+        ownRocksDBOptions?.close()
     }
 
     internal fun getColumnFamilies(dbIndex: UInt) =

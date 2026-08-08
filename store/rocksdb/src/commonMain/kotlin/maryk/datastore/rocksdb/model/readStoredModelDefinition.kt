@@ -8,10 +8,8 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.rocksdb.RocksDBBlockCache
 import maryk.datastore.rocksdb.TableType
 import maryk.datastore.rocksdb.metadata.readMetaFile
-import maryk.datastore.rocksdb.processors.VersionedComparator
 import maryk.rocksdb.ColumnFamilyDescriptor
 import maryk.rocksdb.ColumnFamilyHandle
-import maryk.rocksdb.ComparatorOptions
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.Options
 import maryk.rocksdb.RocksDB
@@ -24,76 +22,84 @@ import maryk.rocksdb.openRocksDB
  */
 fun readStoredModelDefinitionsFromPath(
     path: String,
-    listOptions: Options = Options(),
-    dbOptions: DBOptions = DBOptions(),
+    listOptions: Options? = null,
+    dbOptions: DBOptions? = null,
 ): Map<UInt, RootDataModel<*>> {
-    val listedNames = listColumnFamilies(listOptions, path)
-    if (listedNames.isEmpty()) return emptyMap()
-
-    val metas = readMetaFile(path)
-
-    val defaultName = "default".encodeToByteArray()
-    val cfNames = buildList {
-        listedNames.firstOrNull { it.contentEquals(defaultName) }?.let { add(it) }
-        listedNames.forEach { if (!it.contentEquals(defaultName)) add(it) }
-    }
-
-    val keySizesById = metas.mapValues { it.value.keySize }
-    val blockCache = RocksDBBlockCache()
-
-    val descriptors = cfNames.map { name ->
-        val type = name.firstOrNull()?.toInt()
-        val options = when (type?.toByte()) {
-            TableType.HistoricTable.byte,
-            TableType.HistoricIndex.byte,
-            TableType.HistoricUnique.byte -> {
-                val id = name.decodeVarUInt(startIndex = 1) ?: 0u
-                val keySize = keySizesById[id] ?: 0
-                blockCache.createColumnFamilyOptions {
-                    setComparator(VersionedComparator(ComparatorOptions(), keySize))
-                }
-            }
-            else -> blockCache.createColumnFamilyOptions()
-        }
-        ColumnFamilyDescriptor(name, options)
-    }
-    val handles = mutableListOf<ColumnFamilyHandle>()
-    val db = try {
-        openRocksDB(dbOptions, path, descriptors, handles)
-    } catch (throwable: Throwable) {
-        blockCache.close()
-        throw throwable
-    }
+    val effectiveListOptions = listOptions ?: Options()
+    val effectiveDbOptions = dbOptions ?: DBOptions()
 
     try {
-        val storedNamesById = metas.mapValues { it.value.name }
+        val listedNames = listColumnFamilies(effectiveListOptions, path)
+        if (listedNames.isEmpty()) return emptyMap()
 
-        val conversionContext = DefinitionsConversionContext()
-        val storedModelsById = mutableMapOf<UInt, RootDataModel<*>>()
+        val metas = readMetaFile(path)
 
-        cfNames.forEachIndexed { index, name ->
-            if (name.isEmpty() || name[0] != TableType.Model.byte) return@forEachIndexed
-            val id = name.decodeVarUInt(startIndex = 1) ?: return@forEachIndexed
-            val modelHandle = handles[index]
-            val storedModel = readStoredModelDefinition(db, modelHandle, conversionContext)
-            if (storedModel != null) {
-                storedModelsById[id] = storedModel
-            } else {
-                // debug aid: keep blank entry for visibility when debugging issues reading models
-                // storedModelsById[id] = null intentionally not set
-            }
+        val defaultName = "default".encodeToByteArray()
+        val cfNames = buildList {
+            listedNames.firstOrNull { it.contentEquals(defaultName) }?.let { add(it) }
+            listedNames.forEach { if (!it.contentEquals(defaultName)) add(it) }
         }
 
-        // If metadata exists, keep only ids present there (for consistency) but fall back to discovered ones otherwise
-        return if (storedNamesById.isNotEmpty()) {
-            storedModelsById.filterKeys { storedNamesById.containsKey(it) }
-        } else {
-            storedModelsById
+        val keySizesById = metas.mapValues { it.value.keySize }
+        val blockCache = RocksDBBlockCache()
+
+        val descriptors = cfNames.map { name ->
+            val type = name.firstOrNull()?.toInt()
+            val options = when (type?.toByte()) {
+                TableType.HistoricTable.byte,
+                TableType.HistoricIndex.byte,
+                TableType.HistoricUnique.byte -> {
+                    val id = name.decodeVarUInt(startIndex = 1) ?: 0u
+                    val keySize = keySizesById[id] ?: 0
+                    blockCache.createColumnFamilyOptions {
+                        setComparator(blockCache.createVersionedComparator(keySize))
+                    }
+                }
+                else -> blockCache.createColumnFamilyOptions()
+            }
+            ColumnFamilyDescriptor(name, options)
+        }
+        val handles = mutableListOf<ColumnFamilyHandle>()
+        val db = try {
+            openRocksDB(effectiveDbOptions, path, descriptors, handles)
+        } catch (throwable: Throwable) {
+            blockCache.close()
+            throw throwable
+        }
+
+        try {
+            val storedNamesById = metas.mapValues { it.value.name }
+
+            val conversionContext = DefinitionsConversionContext()
+            val storedModelsById = mutableMapOf<UInt, RootDataModel<*>>()
+
+            cfNames.forEachIndexed { index, name ->
+                if (name.isEmpty() || name[0] != TableType.Model.byte) return@forEachIndexed
+                val id = name.decodeVarUInt(startIndex = 1) ?: return@forEachIndexed
+                val modelHandle = handles[index]
+                val storedModel = readStoredModelDefinition(db, modelHandle, conversionContext)
+                if (storedModel != null) {
+                    storedModelsById[id] = storedModel
+                } else {
+                    // debug aid: keep blank entry for visibility when debugging issues reading models
+                    // storedModelsById[id] = null intentionally not set
+                }
+            }
+
+            // If metadata exists, keep only ids present there (for consistency) but fall back to discovered ones otherwise
+            return if (storedNamesById.isNotEmpty()) {
+                storedModelsById.filterKeys { storedNamesById.containsKey(it) }
+            } else {
+                storedModelsById
+            }
+        } finally {
+            handles.forEach { it.close() }
+            db.close()
+            blockCache.close()
         }
     } finally {
-        handles.forEach { it.close() }
-        db.close()
-        blockCache.close()
+        if (listOptions == null) effectiveListOptions.close()
+        if (dbOptions == null) effectiveDbOptions.close()
     }
 }
 

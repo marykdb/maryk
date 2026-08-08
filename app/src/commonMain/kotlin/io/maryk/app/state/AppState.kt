@@ -131,8 +131,18 @@ class BrowserState(
 
     private var timeTravelVersion by mutableStateOf<ULong?>(null)
 
+    var timeTravelInputError by mutableStateOf<String?>(null)
+        private set
+
+    private var aggregationGeneration = 0
+
+    private var modelCountGeneration = 0
+
     fun currentTimeTravelVersion(): ULong? {
-        return if (timeTravelEnabled) timeTravelVersion else null
+        if (!timeTravelEnabled) return null
+        return checkNotNull(timeTravelVersion) {
+            timeTravelInputError ?: "Time travel error: enter a valid date and time."
+        }
     }
 
     var recordDetails by mutableStateOf<RecordDetails?>(null)
@@ -225,9 +235,7 @@ class BrowserState(
                     refreshModelCounts(result.connection.dataStore)
                     aggregationConfigByModel.clear()
                     aggregationConfig = AggregationConfig()
-                    aggregationResult = null
-                    aggregationStatus = null
-                    isAggregating = false
+                    invalidateAggregations()
                     selectedModelId = models.firstOrNull()?.id
                     resetScan()
                     scanStatus = if (models.isEmpty()) {
@@ -266,9 +274,8 @@ class BrowserState(
         filterTextByModel.clear()
         aggregationConfigByModel.clear()
         aggregationConfig = AggregationConfig()
-        aggregationResult = null
-        aggregationStatus = null
-        isAggregating = false
+        invalidateAggregations()
+        modelCountGeneration += 1
         historyChanges = emptyList()
         lastActionMessage = "Disconnected."
     }
@@ -289,8 +296,7 @@ class BrowserState(
             filterText = filterTextByModel[modelId].orEmpty(),
         )
         aggregationConfig = aggregationConfigByModel[modelId] ?: AggregationConfig()
-        aggregationResult = null
-        aggregationStatus = null
+        invalidateAggregations()
         scanFromStart()
     }
 
@@ -347,6 +353,11 @@ class BrowserState(
     }
 
     fun runAggregations() {
+        timeTravelInputError?.let { error ->
+            aggregationResult = null
+            aggregationStatus = error
+            return
+        }
         val connection = activeConnection ?: return
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return
         val config = aggregationConfig
@@ -375,6 +386,8 @@ class BrowserState(
         }
 
         val limit = config.limit.coerceIn(1, 10_000)
+        val toVersion = currentTimeTravelVersion()
+        val requestGeneration = ++aggregationGeneration
         isWorking = true
         isAggregating = true
         aggregationStatus = "Running aggregation..."
@@ -387,9 +400,11 @@ class BrowserState(
                         filterSoftDeleted = !scanConfig.includeDeleted,
                         aggregations = aggregations,
                         allowTableScan = true,
+                        toVersion = toVersion,
                     ).let { connection.dataStore.execute(it) }
                 }
             }
+            if (requestGeneration != aggregationGeneration) return@launch
             if (result.isSuccess) {
                 val response = result.getOrNull()
                 aggregationResult = response?.aggregations
@@ -503,10 +518,29 @@ class BrowserState(
 
     private fun updateTimeTravelVersion() {
         timeTravelVersion = if (timeTravelEnabled) parseTimeTravelVersion(timeTravelDate, timeTravelTime) else null
+        timeTravelInputError = if (timeTravelEnabled && timeTravelVersion == null) {
+            "Time travel error: enter a valid date and time."
+        } else {
+            null
+        }
         scanConfig = scanConfig.copy(
             toVersion = if (timeTravelEnabled) timeTravelVersion?.toString().orEmpty() else ""
         )
+        if (timeTravelInputError != null) {
+            scanResults = emptyList()
+            scanCursor = ScanPageCursor()
+            scanGeneration += 1
+            scanStatus = timeTravelInputError
+            invalidateAggregations(timeTravelInputError)
+            modelCountGeneration += 1
+            modelRowCounts.clear()
+            return
+        }
+        invalidateAggregations()
+        modelCountGeneration += 1
+        modelRowCounts.clear()
         scanFromStart()
+        activeConnection?.let { refreshModelCounts(it.dataStore) }
         refreshRecord()
     }
 
@@ -571,6 +605,7 @@ class BrowserState(
     }
 
     fun scanFromStart() {
+        if (hasInvalidTimeTravelInput()) return
         scanResults = emptyList()
         scanCursor = ScanPageCursor()
         scanGeneration += 1
@@ -590,6 +625,7 @@ class BrowserState(
     }
 
     fun openRecord(row: ScanRow) {
+        if (hasInvalidTimeTravelInput()) return
         val connection = activeConnection ?: return
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return
         val toVersion = if (timeTravelEnabled) timeTravelVersion else null
@@ -848,6 +884,7 @@ class BrowserState(
     }
 
     private fun refreshRecord() {
+        if (hasInvalidTimeTravelInput()) return
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
         val toVersion = if (timeTravelEnabled) timeTravelVersion else null
@@ -898,13 +935,15 @@ class BrowserState(
     }
 
     private fun loadHistory() {
+        if (hasInvalidTimeTravelInput()) return
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
         val requestGeneration = recordLoadGeneration
+        val toVersion = currentTimeTravelVersion()
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
-                    loadAllChanges(connection.dataStore, details.model, details.key)
+                    loadAllChanges(connection.dataStore, details.model, details.key, toVersion)
                 }
             }
             if (requestGeneration != recordLoadGeneration) return@launch
@@ -917,6 +956,7 @@ class BrowserState(
     }
 
     private fun loadNextPage(reset: Boolean) {
+        if (hasInvalidTimeTravelInput()) return
         val connection = activeConnection ?: return
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return
         if (scanCursor.endReached && !reset) return
@@ -1481,14 +1521,17 @@ class BrowserState(
     }
 
     private fun refreshModelCounts(dataStore: IsDataStore) {
+        if (timeTravelInputError != null) return
         val modelsSnapshot = models.toList()
         modelRowCounts.clear()
+        val requestGeneration = ++modelCountGeneration
+        val toVersion = currentTimeTravelVersion()
         scope.launch {
             modelsSnapshot.forEach { entry ->
                 val count = withContext(Dispatchers.IO) {
-                    fetchModelRowCount(dataStore, entry.id)
+                    fetchModelRowCount(dataStore, entry.id, toVersion)
                 }
-                if (count != null) {
+                if (requestGeneration == modelCountGeneration && count != null) {
                     modelRowCounts[entry.id] = count
                 }
             }
@@ -1498,6 +1541,7 @@ class BrowserState(
     private suspend fun fetchModelRowCount(
         dataStore: IsDataStore,
         modelId: UInt,
+        toVersion: ULong?,
     ): ModelRowCount? {
         val dataModel = dataStore.dataModelsById[modelId] ?: return null
         return try {
@@ -1506,6 +1550,7 @@ class BrowserState(
                     limit = 101u,
                     filterSoftDeleted = true,
                     allowTableScan = true,
+                    toVersion = toVersion,
                 )
             )
             val size = response.values.size
@@ -1531,6 +1576,22 @@ class BrowserState(
         scanCursor = ScanPageCursor()
         scanStatus = null
         scanGeneration += 1
+    }
+
+    private fun hasInvalidTimeTravelInput(): Boolean {
+        val error = timeTravelInputError ?: return false
+        scanResults = emptyList()
+        scanCursor = ScanPageCursor()
+        scanStatus = error
+        return true
+    }
+
+    private fun invalidateAggregations(status: String? = null) {
+        aggregationGeneration += 1
+        aggregationResult = null
+        aggregationStatus = status
+        if (isAggregating) isWorking = false
+        isAggregating = false
     }
 
     private fun invalidateRecordLoadRequests() {
@@ -1666,8 +1727,9 @@ internal suspend fun loadAllChanges(
     dataStore: IsDataStore,
     model: IsRootDataModel,
     key: Key<IsRootDataModel>,
+    toVersion: ULong? = null,
 ): List<VersionedChanges> =
-    loadCompleteChangesForKey(dataStore, model, key)?.changes.orEmpty()
+    loadCompleteChangesForKey(dataStore, model, key, toVersion)?.changes.orEmpty()
 
 private data class ScanPageCursor(
     val nextCursor: CoreScanCursor? = null,

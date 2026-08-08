@@ -1,5 +1,8 @@
 package io.maryk.app.state
 
+import io.maryk.app.config.StoreConnector
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -20,5 +23,20 @@ class AppStateScanConfigTest {
                 parseScanToVersion(value)
             }
         }
+    }
+
+    @Test
+    fun invalidTimeTravelInputDoesNotResolveToLiveVersion() {
+        val state = BrowserState(StoreConnector(), CoroutineScope(SupervisorJob()))
+
+        state.updateTimeTravelEnabled(true)
+        state.updateTimeTravelDate("not-a-date")
+
+        assertEquals("Time travel error: enter a valid date and time.", state.timeTravelInputError)
+        assertEquals("Time travel error: enter a valid date and time.", state.scanStatus)
+        val error = assertFailsWith<IllegalStateException> {
+            state.currentTimeTravelVersion()
+        }
+        assertEquals("Time travel error: enter a valid date and time.", error.message)
     }
 }

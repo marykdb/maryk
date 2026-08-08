@@ -135,6 +135,7 @@ fun AppScaffold(
                     TimeTravelBar(
                         dateValue = state.timeTravelDate,
                         timeValue = state.timeTravelTime,
+                        errorMessage = state.timeTravelInputError,
                         onDateChange = state::updateTimeTravelDate,
                         onTimeChange = state::updateTimeTravelTime,
                         onClose = { state.updateTimeTravelEnabled(false) },
@@ -238,6 +239,7 @@ private fun StoreChrome(
 private fun TimeTravelBar(
     dateValue: String,
     timeValue: String,
+    errorMessage: String?,
     onDateChange: (String) -> Unit,
     onTimeChange: (String) -> Unit,
     onClose: () -> Unit,
@@ -273,6 +275,13 @@ private fun TimeTravelBar(
                 onValueChange = onTimeChange,
                 modifier = Modifier.width(90.dp),
             )
+            errorMessage?.let { message ->
+                Text(
+                    text = message,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
             Spacer(modifier = Modifier.weight(1f))
             IconButton(onClick = onClose, modifier = Modifier.size(28.dp).handPointer()) {
                 Icon(

@@ -105,10 +105,16 @@ internal fun ReferenceEditor(
     var tooltipLoading by remember(path, text, state.activeConnection) { mutableStateOf(false) }
     var tooltipError by remember(path, text, state.activeConnection) { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(text, state.activeConnection) {
+    LaunchedEffect(text, state.activeConnection, state.timeTravelEnabled, state.timeTravelDate, state.timeTravelTime) {
         if (text.isBlank()) {
             tooltipLoading = false
             tooltipError = "No reference."
+            tooltipPreview = null
+            return@LaunchedEffect
+        }
+        state.timeTravelInputError?.let { error ->
+            tooltipLoading = false
+            tooltipError = error
             tooltipPreview = null
             return@LaunchedEffect
         }
@@ -146,9 +152,15 @@ internal fun ReferenceEditor(
         }
     }
 
-    LaunchedEffect(showInfoDialog, text, state.activeConnection) {
+    LaunchedEffect(showInfoDialog, text, state.activeConnection, state.timeTravelEnabled, state.timeTravelDate, state.timeTravelTime) {
         if (!showInfoDialog) {
             infoLoading = false
+            return@LaunchedEffect
+        }
+        state.timeTravelInputError?.let { error ->
+            infoLoading = false
+            infoError = error
+            infoDetails = null
             return@LaunchedEffect
         }
         if (text.isBlank()) {
@@ -442,7 +454,13 @@ private fun ReferencePickerDialog(
         }
     }
 
-    LaunchedEffect(dataModel, state.activeConnection, selectedSort, sortDescending) {
+    LaunchedEffect(dataModel, state.activeConnection, selectedSort, sortDescending, state.timeTravelEnabled, state.timeTravelDate, state.timeTravelTime) {
+        state.timeTravelInputError?.let { error ->
+            loading = false
+            loadError = error
+            rows = emptyList()
+            return@LaunchedEffect
+        }
         val connection = state.activeConnection ?: run {
             loading = false
             loadError = "No connection."
@@ -450,6 +468,7 @@ private fun ReferencePickerDialog(
         }
         loading = true
         loadError = null
+        val toVersion = state.currentTimeTravelVersion()
         val result = runCatching {
             val orderTokens = selectedSort?.orderPaths?.map { path ->
                 if (sortDescending) "-$path" else path
@@ -461,6 +480,7 @@ private fun ReferencePickerDialog(
                     filterSoftDeleted = true,
                     order = order,
                     allowTableScan = true,
+                    toVersion = toVersion,
                 )
             )
             response.values.map { valuesWithMeta ->

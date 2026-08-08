@@ -540,7 +540,12 @@ private fun ReferenceValue(
 ) {
     var preview by remember(reference.keyText, reference.modelName, state.activeConnection) { mutableStateOf<String?>(null) }
     var loading by remember(reference.keyText, reference.modelName, state.activeConnection) { mutableStateOf(false) }
-    LaunchedEffect(reference.keyText, reference.modelName, state.activeConnection) {
+    LaunchedEffect(reference.keyText, reference.modelName, state.activeConnection, state.timeTravelEnabled, state.timeTravelDate, state.timeTravelTime) {
+        state.timeTravelInputError?.let { error ->
+            loading = false
+            preview = error
+            return@LaunchedEffect
+        }
         val connection = state.activeConnection ?: return@LaunchedEffect
         val (_, dataModel) = state.resolveModelByName(reference.modelName) ?: return@LaunchedEffect
         val toVersion = state.currentTimeTravelVersion()

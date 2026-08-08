@@ -24,6 +24,8 @@ import platform.windows.GetFileSizeEx
 import platform.windows.HANDLE
 import platform.windows.INVALID_HANDLE_VALUE
 import platform.windows.LARGE_INTEGER
+import platform.windows.MOVEFILE_REPLACE_EXISTING
+import platform.windows.MoveFileExW
 import platform.windows.OPEN_ALWAYS
 import platform.windows.OPEN_EXISTING
 import platform.windows.ReadFile
@@ -227,6 +229,12 @@ actual object File {
             writeAll(handle, bytes)
         } finally {
             CloseHandle(handle)
+        }
+    }
+
+    actual fun moveReplace(sourcePath: String, destinationPath: String) {
+        check(MoveFileExW(sourcePath, destinationPath, MOVEFILE_REPLACE_EXISTING.toUInt()) != 0) {
+            "Could not replace $destinationPath with $sourcePath (${GetLastError()})"
         }
     }
 

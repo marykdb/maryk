@@ -23,6 +23,7 @@ import platform.posix.errno
 import platform.posix.mkdir
 import platform.posix.open
 import platform.posix.read
+import platform.posix.rename
 import platform.posix.stat
 import platform.posix.write
 
@@ -136,6 +137,13 @@ actual object File {
             writeAll(fd, bytes)
         } finally {
             close(fd)
+        }
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun moveReplace(sourcePath: String, destinationPath: String) {
+        check(rename(sourcePath, destinationPath) == 0) {
+            "Could not replace $destinationPath with $sourcePath"
         }
     }
 

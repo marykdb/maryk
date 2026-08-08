@@ -33,9 +33,55 @@ import maryk.datastore.memory.InMemoryDataStore
 import java.nio.file.Files
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DataExportVersionHistoryTest {
+    @Test
+    fun failedModelExportPreservesExistingDestination() = runBlocking {
+        val store = object : IsDataStore {
+            override val dataModelsById: Map<UInt, IsRootDataModel> = mapOf(1u to ExportHistoryModel)
+            override val dataModelIdsByString = mapOf(ExportHistoryModel.Meta.name to 1u)
+            override val keepAllVersions = false
+            override val keepUpdateHistoryIndex = false
+            override val supportsFuzzyQualifierFiltering = false
+            override val supportsSubReferenceFiltering = false
+
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP = throw IllegalStateException("Source scan failed")
+
+            override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
+                request: RQ,
+            ): Flow<IsUpdateResponse<DM>> = throw NotImplementedError("Not used")
+
+            override suspend fun <DM : IsRootDataModel> processUpdate(
+                updateResponse: UpdateResponse<DM>,
+            ): ProcessResponse<DM> = throw NotImplementedError("Not used")
+
+            override suspend fun close() = Unit
+            override suspend fun closeAllListeners() = Unit
+        }
+        val folder = Files.createTempDirectory("maryk-export-preserve-destination-")
+        val destination = folder.resolve("${ExportHistoryModel.Meta.name}.data.json")
+        try {
+            Files.writeString(destination, "existing export\n")
+
+            assertFailsWith<IllegalStateException> {
+                exportModelDataToFolder(
+                    dataStore = store,
+                    model = ExportHistoryModel,
+                    format = DataExportFormat.JSON,
+                    folder = folder.toString(),
+                )
+            }
+
+            assertEquals("existing export\n", Files.readString(destination))
+        } finally {
+            folder.toFile().deleteRecursively()
+        }
+    }
+
     @Test
     fun completeHistoryRestoresCreationValuesAfterNormalizedChangePage() = runBlocking {
         val initialValues = ExportHistoryModel.create {

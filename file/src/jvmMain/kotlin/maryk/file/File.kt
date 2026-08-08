@@ -1,6 +1,11 @@
 package maryk.file
 
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption.ATOMIC_MOVE
+import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
 private const val maxFileSize = Int.MAX_VALUE.toLong()
 
@@ -37,6 +42,14 @@ actual object File {
         val file = File(path)
         file.parentFile?.mkdirs()
         file.appendText(contents)
+    }
+
+    actual fun moveReplace(sourcePath: String, destinationPath: String) {
+        try {
+            Files.move(Path.of(sourcePath), Path.of(destinationPath), ATOMIC_MOVE, REPLACE_EXISTING)
+        } catch (_: AtomicMoveNotSupportedException) {
+            Files.move(Path.of(sourcePath), Path.of(destinationPath), REPLACE_EXISTING)
+        }
     }
 
     actual fun delete(path: String): Boolean = File(path).delete()

@@ -26,6 +26,7 @@ import maryk.json.JsonWriter
 import maryk.core.properties.references.SetReference
 import maryk.core.query.pairs.ReferenceValuePair
 import maryk.yaml.YamlWriter
+import kotlin.uuid.Uuid
 
 enum class DataExportFormat(
     val label: String,
@@ -57,10 +58,12 @@ internal suspend fun exportRowDataToFolder(
         val change = loadFullChangesForKey(dataStore, model, key, snapshotVersion) ?: return
         val fileName = buildRowFileName(model.Meta.name, keyText, format, "versions")
         val path = joinExportPath(folder, fileName)
-        when (format) {
-            DataExportFormat.JSON -> File.writeText(path, serializeVersionedToJson(change, requestContext))
-            DataExportFormat.YAML -> File.writeText(path, serializeVersionedToYaml(change, requestContext))
-            DataExportFormat.PROTO -> File.writeBytes(path, serializeVersionedToProto(change, requestContext))
+        exportToTemporaryPath(path) { temporaryPath ->
+            when (format) {
+                DataExportFormat.JSON -> File.writeText(temporaryPath, serializeVersionedToJson(change, requestContext))
+                DataExportFormat.YAML -> File.writeText(temporaryPath, serializeVersionedToYaml(change, requestContext))
+                DataExportFormat.PROTO -> File.writeBytes(temporaryPath, serializeVersionedToProto(change, requestContext))
+            }
         }
     } else {
         val response = dataStore.execute(
@@ -70,10 +73,12 @@ internal suspend fun exportRowDataToFolder(
         val fileName = buildRowFileName(model.Meta.name, keyText, format)
         val path = joinExportPath(folder, fileName)
         val requestContext = buildRequestContext(model)
-        when (format) {
-            DataExportFormat.JSON -> File.writeText(path, serializeRecordToJson(record, requestContext))
-            DataExportFormat.YAML -> File.writeText(path, serializeRecordToYaml(record, requestContext))
-            DataExportFormat.PROTO -> File.writeBytes(path, serializeRecordToProto(record, requestContext))
+        exportToTemporaryPath(path) { temporaryPath ->
+            when (format) {
+                DataExportFormat.JSON -> File.writeText(temporaryPath, serializeRecordToJson(record, requestContext))
+                DataExportFormat.YAML -> File.writeText(temporaryPath, serializeRecordToYaml(record, requestContext))
+                DataExportFormat.PROTO -> File.writeBytes(temporaryPath, serializeRecordToProto(record, requestContext))
+            }
         }
     }
 }
@@ -97,62 +102,64 @@ internal suspend fun exportModelDataToFolder(
         val requestContext = buildRequestContext(model)
         val fileName = buildModelFileName(model.Meta.name, format)
         val path = joinExportPath(folder, fileName)
-        val batchSize = 250u
-        var cursor: ScanCursor? = null
-        var hasAny = false
-        var jsonFirst = true
+        exportToTemporaryPath(path) { temporaryPath ->
+            val batchSize = 250u
+            var cursor: ScanCursor? = null
+            var hasAny = false
+            var jsonFirst = true
 
-        when (format) {
-            DataExportFormat.JSON -> File.writeText(path, "[\n")
-            DataExportFormat.YAML -> File.writeText(path, "")
-            DataExportFormat.PROTO -> File.writeBytes(path, ByteArray(0))
-        }
+            when (format) {
+                DataExportFormat.JSON -> File.writeText(temporaryPath, "[\n")
+                DataExportFormat.YAML -> File.writeText(temporaryPath, "")
+                DataExportFormat.PROTO -> File.writeBytes(temporaryPath, ByteArray(0))
+            }
 
-        while (true) {
-            val response = dataStore.execute(
-                model.scan(
-                    cursor = cursor,
-                    limit = batchSize,
-                    toVersion = effectiveSnapshotVersion,
-                    filterSoftDeleted = true,
-                    allowTableScan = true,
+            while (true) {
+                val response = dataStore.execute(
+                    model.scan(
+                        cursor = cursor,
+                        limit = batchSize,
+                        toVersion = effectiveSnapshotVersion,
+                        filterSoftDeleted = true,
+                        allowTableScan = true,
+                    )
                 )
-            )
-            if (response.values.isEmpty()) break
-            response.values.forEach { record ->
-                when (format) {
-                    DataExportFormat.JSON -> {
-                        val json = serializeRecordToJson(record, requestContext)
-                        val prefix = if (jsonFirst) "" else ",\n"
-                        File.appendText(path, prefix + json)
-                        jsonFirst = false
+                if (response.values.isEmpty()) break
+                response.values.forEach { record ->
+                    when (format) {
+                        DataExportFormat.JSON -> {
+                            val json = serializeRecordToJson(record, requestContext)
+                            val prefix = if (jsonFirst) "" else ",\n"
+                            File.appendText(temporaryPath, prefix + json)
+                            jsonFirst = false
+                        }
+                        DataExportFormat.YAML -> {
+                            val yaml = serializeRecordToYaml(record, requestContext)
+                            val prefix = if (hasAny) "\n---\n" else "---\n"
+                            File.appendText(temporaryPath, prefix + yaml)
+                        }
+                        DataExportFormat.PROTO -> {
+                            val bytes = serializeRecordToProto(record, requestContext)
+                            appendBytes(temporaryPath, bytes.size.toVarBytes())
+                            appendBytes(temporaryPath, bytes)
+                        }
                     }
-                    DataExportFormat.YAML -> {
-                        val yaml = serializeRecordToYaml(record, requestContext)
-                        val prefix = if (hasAny) "\n---\n" else "---\n"
-                        File.appendText(path, prefix + yaml)
-                    }
-                    DataExportFormat.PROTO -> {
-                        val bytes = serializeRecordToProto(record, requestContext)
-                        appendBytes(path, bytes.size.toVarBytes())
-                        appendBytes(path, bytes)
-                    }
+                    hasAny = true
                 }
-                hasAny = true
+                cursor = response.nextCursor ?: break
             }
-            cursor = response.nextCursor ?: break
-        }
 
-        when (format) {
-            DataExportFormat.JSON -> File.appendText(path, "\n]\n")
-            DataExportFormat.YAML -> {
-                if (!hasAny) {
-                    File.writeText(path, "[]\n")
-                } else {
-                    File.appendText(path, "\n")
+            when (format) {
+                DataExportFormat.JSON -> File.appendText(temporaryPath, "\n]\n")
+                DataExportFormat.YAML -> {
+                    if (!hasAny) {
+                        File.writeText(temporaryPath, "[]\n")
+                    } else {
+                        File.appendText(temporaryPath, "\n")
+                    }
                 }
+                DataExportFormat.PROTO -> Unit
             }
-            DataExportFormat.PROTO -> Unit
         }
     }
 }
@@ -227,63 +234,78 @@ private suspend fun exportModelVersionedDataToFolder(
     val requestContext = buildRequestContext(model)
     val fileName = buildModelFileName(model.Meta.name, format, "versions")
     val path = joinExportPath(folder, fileName)
-    val batchSize = 250u
-    var cursor: ScanCursor? = null
-    var hasAny = false
-    var jsonFirst = true
+    exportToTemporaryPath(path) { temporaryPath ->
+        val batchSize = 250u
+        var cursor: ScanCursor? = null
+        var hasAny = false
+        var jsonFirst = true
 
-    when (format) {
-        DataExportFormat.JSON -> File.writeText(path, "[\n")
-        DataExportFormat.YAML -> File.writeText(path, "")
-        DataExportFormat.PROTO -> File.writeBytes(path, ByteArray(0))
-    }
+        when (format) {
+            DataExportFormat.JSON -> File.writeText(temporaryPath, "[\n")
+            DataExportFormat.YAML -> File.writeText(temporaryPath, "")
+            DataExportFormat.PROTO -> File.writeBytes(temporaryPath, ByteArray(0))
+        }
 
-    while (true) {
-        val response = dataStore.execute(
-            model.scan(
-                cursor = cursor,
-                limit = batchSize,
-                toVersion = snapshotVersion,
-                filterSoftDeleted = false,
-                allowTableScan = true,
+        while (true) {
+            val response = dataStore.execute(
+                model.scan(
+                    cursor = cursor,
+                    limit = batchSize,
+                    toVersion = snapshotVersion,
+                    filterSoftDeleted = false,
+                    allowTableScan = true,
+                )
             )
-        )
-        if (response.values.isEmpty()) break
-        response.values.forEach { record ->
-            val change = loadFullChangesForKey(dataStore, model, record.key, snapshotVersion) ?: return@forEach
-            when (format) {
-                DataExportFormat.JSON -> {
-                    val json = serializeVersionedToJson(change, requestContext)
-                    val prefix = if (jsonFirst) "" else ",\n"
-                    File.appendText(path, prefix + json)
-                    jsonFirst = false
+            if (response.values.isEmpty()) break
+            response.values.forEach { record ->
+                val change = loadFullChangesForKey(dataStore, model, record.key, snapshotVersion) ?: return@forEach
+                when (format) {
+                    DataExportFormat.JSON -> {
+                        val json = serializeVersionedToJson(change, requestContext)
+                        val prefix = if (jsonFirst) "" else ",\n"
+                        File.appendText(temporaryPath, prefix + json)
+                        jsonFirst = false
+                    }
+                    DataExportFormat.YAML -> {
+                        val yaml = serializeVersionedToYaml(change, requestContext)
+                        val prefix = if (hasAny) "\n---\n" else "---\n"
+                        File.appendText(temporaryPath, prefix + yaml)
+                    }
+                    DataExportFormat.PROTO -> {
+                        val bytes = serializeVersionedToProto(change, requestContext)
+                        appendBytes(temporaryPath, bytes.size.toVarBytes())
+                        appendBytes(temporaryPath, bytes)
+                    }
                 }
-                DataExportFormat.YAML -> {
-                    val yaml = serializeVersionedToYaml(change, requestContext)
-                    val prefix = if (hasAny) "\n---\n" else "---\n"
-                    File.appendText(path, prefix + yaml)
-                }
-                DataExportFormat.PROTO -> {
-                    val bytes = serializeVersionedToProto(change, requestContext)
-                    appendBytes(path, bytes.size.toVarBytes())
-                    appendBytes(path, bytes)
-                }
+                hasAny = true
             }
-            hasAny = true
+            cursor = response.nextCursor ?: break
         }
-        cursor = response.nextCursor ?: break
-    }
 
-    when (format) {
-        DataExportFormat.JSON -> File.appendText(path, "\n]\n")
-        DataExportFormat.YAML -> {
-            if (!hasAny) {
-                File.writeText(path, "[]\n")
-            } else {
-                File.appendText(path, "\n")
+        when (format) {
+            DataExportFormat.JSON -> File.appendText(temporaryPath, "\n]\n")
+            DataExportFormat.YAML -> {
+                if (!hasAny) {
+                    File.writeText(temporaryPath, "[]\n")
+                } else {
+                    File.appendText(temporaryPath, "\n")
+                }
             }
+            DataExportFormat.PROTO -> Unit
         }
-        DataExportFormat.PROTO -> Unit
+    }
+}
+
+private suspend fun exportToTemporaryPath(
+    path: String,
+    write: suspend (temporaryPath: String) -> Unit,
+) {
+    val temporaryPath = "$path.${Uuid.random()}.tmp"
+    try {
+        write(temporaryPath)
+        File.moveReplace(temporaryPath, path)
+    } finally {
+        File.delete(temporaryPath)
     }
 }
 

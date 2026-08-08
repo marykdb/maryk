@@ -12,5 +12,6 @@ expect object File {
     fun writeText(path: String, contents: String)
     fun writeBytes(path: String, contents: ByteArray)
     fun appendText(path: String, contents: String)
+    fun moveReplace(sourcePath: String, destinationPath: String)
     fun delete(path: String): Boolean
 }

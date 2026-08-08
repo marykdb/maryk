@@ -184,6 +184,7 @@ Notes:
   - each node runs a background HLC syncer (independent from update listeners) which watches heads and refreshes `max(hlc_max/*, hlc/*)` to keep local version generation safely at/above cluster floor.
 - `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId` should be stable per node/process across restarts. Changing it creates a fresh cursor (possible duplicate delivery for up to retention) and a new HLC marker key.
 - Log keys include `modelId` early, so consumers can range-scan only the models they care about.
+- Upgrading from the legacy HLC-ordered cluster log to the commit-ordered log is a coordinated operation: stop or quiesce every reader and writer, upgrade all binaries, then restart them. Consumers drain persisted legacy entries before storing a one-way commit-ordered cursor. Do not run mixed old/new binaries or roll back after that cursor is stored; old binaries cannot enforce or understand the transition.
 
 Observability:
 - `FoundationDBDataStore.getClusterUpdateLogStats()` exposes tail/GC counters, HLC sync counters/backoff, last activity timestamps, observed cluster HLC, and active listener counts per model.

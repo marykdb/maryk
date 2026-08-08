@@ -4,12 +4,17 @@ import maryk.core.clock.HLC
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with
+import maryk.foundationdb.tuple.Tuple
+import maryk.foundationdb.tuple.Versionstamp
+import maryk.lib.bytes.combineToByteArray
+import maryk.lib.extensions.compare.compareTo
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ClusterUpdateLogCodecTest {
     private val modelId = 2u
@@ -73,6 +78,108 @@ class ClusterUpdateLogCodecTest {
 
         assertNotNull(decoded)
         assertEquals(update, decoded.update)
+    }
+
+    @Test
+    fun v2LogKeysFollowCommitOrderWhenHlcDecreases() {
+        val log = newLog()
+        val key = Bytes(ByteArray(16) { 1 })
+        val earlierCommit = log.buildLogKey(
+            modelId = modelId,
+            update = ClusterLogDeletion(key, version = 20uL, hardDelete = false),
+            versionstamp = Versionstamp.complete(transactionVersion(41L)),
+        )
+        val laterCommit = log.buildLogKey(
+            modelId = modelId,
+            update = ClusterLogDeletion(key, version = 10uL, hardDelete = false),
+            versionstamp = Versionstamp.complete(transactionVersion(42L)),
+        )
+
+        assertTrue(earlierCommit < laterCommit)
+    }
+
+    @Test
+    fun v2EntryExposesCommitVersionAndCursorCanAdvanceToLaterCommit() {
+        val log = newLog()
+        val key = Bytes(ByteArray(16) { 2 })
+        val update = ClusterLogDeletion(key, version = 10uL, hardDelete = true)
+        val firstKey = log.buildLogKey(
+            modelId = modelId,
+            update = update,
+            versionstamp = Versionstamp.complete(transactionVersion(41L)),
+        )
+        val laterKey = log.buildLogKey(
+            modelId = modelId,
+            update = update,
+            versionstamp = Versionstamp.complete(transactionVersion(42L)),
+        )
+        val decoded = log.decodeEntry(
+            key = firstKey,
+            value = log.encodeValue(modelId, update, SimpleMarykModel),
+        )
+
+        assertNotNull(decoded)
+        assertEquals(41L, decoded.commitVersion)
+        assertTrue(combineCursorSuccessor(firstKey) < laterKey)
+    }
+
+    @Test
+    fun legacyEntryExposesCommitVersionForMixedFormatOrdering() {
+        val log = newLog()
+        val key = Bytes(ByteArray(16) { 3 })
+        val update = ClusterLogDeletion(key, version = 10uL, hardDelete = false)
+        val legacyKey = combineToByteArray(
+            byteArrayOf(1, 2, 3),
+            Tuple.from(
+                0,
+                modelId.toLong(),
+                ByteArray(8),
+                key.bytes,
+                "node-a".encodeToByteArray(),
+                Versionstamp.complete(transactionVersion(1L)),
+            ).pack(),
+        )
+        val decoded = log.decodeEntry(
+            key = legacyKey,
+            value = log.encodeValue(modelId, update, SimpleMarykModel),
+        )
+
+        assertNotNull(decoded)
+        assertEquals(1L, decoded.commitVersion)
+    }
+
+    @Test
+    fun malformedV2CursorIsRejectedInsteadOfRewound() {
+        val malformedCursor = Tuple.from(
+            "cluster-log-cursor-v2",
+            "not-a-key",
+            null,
+            byteArrayOf(1),
+            false,
+        ).pack()
+
+        assertFailsWith<IllegalArgumentException> {
+            newLog().cursorIsBeforeCutoff(0, modelId, malformedCursor, cutoff = 10uL)
+        }
+    }
+
+    @Test
+    fun foreignShardCursorIsRejectedInsteadOfScanningAnotherRange() {
+        val foreignLegacyKey = combineToByteArray(
+            byteArrayOf(1, 2, 3),
+            Tuple.from(1, modelId.toLong(), ByteArray(8)).pack(),
+        )
+        val foreignCursor = Tuple.from(
+            "cluster-log-cursor-v2",
+            foreignLegacyKey,
+            null,
+            null,
+            false,
+        ).pack()
+
+        assertFailsWith<IllegalArgumentException> {
+            newLog().cursorIsBeforeCutoff(0, modelId, foreignCursor, cutoff = 10uL)
+        }
     }
 
     @Test
@@ -172,4 +279,12 @@ class ClusterUpdateLogCodecTest {
             )
         }
     }
+
+    private fun transactionVersion(version: Long): ByteArray = ByteArray(10).also { bytes ->
+        for (index in 0 until Long.SIZE_BYTES) {
+            bytes[index] = (version ushr ((Long.SIZE_BYTES - index - 1) * Byte.SIZE_BITS)).toByte()
+        }
+    }
+
+    private fun combineCursorSuccessor(cursor: ByteArray): ByteArray = cursor + byteArrayOf(0)
 }

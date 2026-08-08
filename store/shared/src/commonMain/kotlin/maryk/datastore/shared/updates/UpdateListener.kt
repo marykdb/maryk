@@ -34,21 +34,21 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
     private val closed = CompletableDeferred<Unit>()
 
     val matchingKeys: AtomicRef<List<Key<DM>>>
-    private val lastResponseVersion: ULong
+    internal val responseVersion: ULong
 
     init {
         when (response) {
             is UpdatesResponse<DM> -> {
                 matchingKeys = atomic((response.updates.firstOrNull() as? OrderedKeysUpdate<DM>)?.keys ?: listOf())
-                lastResponseVersion = (response.updates.firstOrNull() as? OrderedKeysUpdate<DM>)?.version ?: 0uL
+                responseVersion = response.updates.maxOfOrNull { it.version } ?: 0uL
             }
             is ValuesResponse<DM> -> {
                 matchingKeys = atomic(response.values.map { it.key })
-                lastResponseVersion = response.values.maxByOrNull { it.lastVersion }?.lastVersion ?: 0uL
+                responseVersion = response.values.maxByOrNull { it.lastVersion }?.lastVersion ?: 0uL
             }
             is ChangesResponse<DM> -> {
                 matchingKeys = atomic(response.changes.map { it.key })
-                lastResponseVersion = response.changes.fold(0uL) { acc, value ->
+                responseVersion = response.changes.fold(0uL) { acc, value ->
                     maxOf(acc, value.changes.maxByOrNull { it.version }?.version ?: 0uL)
                 }
             }
@@ -105,13 +105,13 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
             }
             is ValuesResponse<DM> -> send(
                 InitialValuesUpdate(
-                    version = lastResponseVersion,
+                    version = responseVersion,
                     values = response.values
                 )
             )
             is ChangesResponse<DM> -> send(
                 InitialChangesUpdate(
-                    version = lastResponseVersion,
+                    version = responseVersion,
                     changes = response.changes
                 )
             )

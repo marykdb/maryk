@@ -62,6 +62,7 @@ import maryk.datastore.shared.RequestExecutionKind
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.requestExecutionKind
+import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchesRangePart
 
@@ -77,6 +78,10 @@ class IndexedDbDataStore private constructor(
     private val indexedDbModelsById = dataModelsById
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
+
+    internal suspend fun emitIndexedDbUpdate(update: Update<out IsRootDataModel>) {
+        emitFlowUpdate(update)
+    }
 
     private suspend fun migrateHardDeleteTombstones() {
         if (!keepUpdateHistoryIndex) return

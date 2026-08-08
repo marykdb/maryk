@@ -214,7 +214,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     version = version.timestamp,
                     changes = materializedChanges.generatedChanges.ifEmpty { null }
                 )
-                updateSharedFlow.emit(
+                emitIndexedDbUpdate(
                     Update.Change(
                         request.dataModel,
                         objectChange.key,

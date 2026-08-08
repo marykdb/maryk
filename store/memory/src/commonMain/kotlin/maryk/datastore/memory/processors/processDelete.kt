@@ -1,6 +1,5 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.types.Key
@@ -9,7 +8,7 @@ import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.datastore.memory.processors.changers.setValueAtIndex
 import maryk.datastore.memory.records.DataStore
-import maryk.datastore.shared.updates.IsUpdateAction
+import maryk.datastore.shared.updates.FlowUpdateEmitter
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.extensions.compare.compareTo
 
@@ -22,7 +21,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
     key: Key<DM>,
     version: HLC,
     hardDelete: Boolean,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
+    updateSharedFlow: FlowUpdateEmitter
 ) : IsDeleteResponseStatus<DM> {
     val index = dataStore.records.binarySearch { it.key compareTo key }
 
@@ -84,7 +83,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
 
             dataStore.addToUpdateHistory(version, key.bytes, hardDelete)
 
-            updateSharedFlow.emit(
+            updateSharedFlow(
                 Deletion(dataModel, key, version.timestamp, hardDelete)
             )
             DeleteSuccess(version.timestamp)

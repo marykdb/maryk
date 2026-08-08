@@ -109,11 +109,11 @@ class InMemoryDataStore private constructor(
                         @Suppress("UNCHECKED_CAST")
                         when (storeAction.request) {
                             is AddRequest<*> ->
-                                processAddRequest(clock, storeAction as AnyAddStoreAction, dataStoreFetcher, updateSharedFlow)
+                                processAddRequest(clock, storeAction as AnyAddStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
                             is ChangeRequest<*> ->
-                                processChangeRequest(clock, storeAction as AnyChangeStoreAction, dataStoreFetcher, updateSharedFlow)
+                                processChangeRequest(clock, storeAction as AnyChangeStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
                             is DeleteRequest<*> ->
-                                processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, dataStoreFetcher, updateSharedFlow)
+                                processDeleteRequest(clock, storeAction as AnyDeleteStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
                             is GetRequest<*> ->
                                 processGetRequest(storeAction as AnyGetStoreAction, dataStoreFetcher)
                             is GetChangesRequest<*> ->
@@ -129,10 +129,10 @@ class InMemoryDataStore private constructor(
                             is ScanUpdatesRequest<*> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, dataStoreFetcher)
                             is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
-                                is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
-                                is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
-                                is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
-                                is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher, updateSharedFlow)
+                                is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
+                                is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
+                                is RemovalUpdate<*> -> processDeleteUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
+                                is InitialChangesUpdate<*> -> processInitialChangesUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
                                 is InitialValuesUpdate<*> -> throw RequestException("Cannot process Values requests into data store since they do not contain all version information, do a changes request")
                                 is OrderedKeysUpdate<*> -> throw RequestException("Cannot process Update requests into data store since they do not contain all change information, do a changes request")
                                 else -> throw TypeException("Unknown update type $update for datastore processing")

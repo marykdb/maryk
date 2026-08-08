@@ -1,9 +1,19 @@
 package maryk.datastore.foundationdb
 
+import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDateTime
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scan
+import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
@@ -14,11 +24,59 @@ import maryk.test.models.Log
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
+    @Test
+    fun localUpdateEmissionCompletesBeforeMutationResponse() = runTest(timeout = 3.minutes) {
+        withContext(Dispatchers.Default) {
+            val dataStore = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = listOf("maryk", "test", "delayed-flow-update", Uuid.random().toString()),
+                dataModelsById = mapOf(1u to SimpleMarykModel),
+            )
+            val emissionStarted = CompletableDeferred<Unit>()
+            val releaseEmission = CompletableDeferred<Unit>()
+            val delayFirstEmission = atomic(true)
+            try {
+                dataStore.beforeUpdateEmission.value = {
+                    if (delayFirstEmission.getAndSet(false)) {
+                        emissionStarted.complete(Unit)
+                        releaseEmission.await()
+                    }
+                }
+                val initialValues = SimpleMarykModel.create { value with "happy initial snapshot" }
+                val firstAdd = async {
+                    dataStore.execute(SimpleMarykModel.add(initialValues))
+                }
+                withTimeout(10_000) { emissionStarted.await() }
+                assertFalse(firstAdd.isCompleted)
+                releaseEmission.complete(Unit)
+                assertIs<AddSuccess<SimpleMarykModel>>(firstAdd.await().statuses.single())
+
+                val flow = dataStore.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                dataStore.execute(
+                    SimpleMarykModel.add(SimpleMarykModel.create { value with "happy after snapshot" })
+                )
+
+                val responses = withTimeout(10_000) { flow.take(2).toList() }
+                assertIs<InitialValuesUpdate<SimpleMarykModel>>(responses[0]).also {
+                    assertEquals("happy initial snapshot", it.values.single().values { value })
+                }
+                assertIs<AdditionUpdate<SimpleMarykModel>>(responses[1]).also {
+                    assertEquals("happy after snapshot", it.values { value })
+                }
+            } finally {
+                dataStore.beforeUpdateEmission.value = null
+                releaseEmission.complete(Unit)
+                dataStore.close()
+            }
+        }
+    }
+
     @Test
     fun portableBackupRoundTrip() = runTest(timeout = 3.minutes) {
         val models = mapOf(1u to SimpleMarykModel)

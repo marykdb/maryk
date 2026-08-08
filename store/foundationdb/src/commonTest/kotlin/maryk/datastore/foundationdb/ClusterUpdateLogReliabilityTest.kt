@@ -6,10 +6,14 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
+import maryk.core.properties.types.Bytes
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.datastore.foundationdb.clusterlog.ClusterLogDeletion
+import maryk.datastore.foundationdb.clusterlog.ClusterUpdateLog
 import maryk.datastore.test.dataModelsForTests
+import maryk.foundationdb.MutationType
 import maryk.test.models.Log
 import maryk.test.models.Severity.INFO
 import kotlin.test.Test
@@ -21,6 +25,187 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 class ClusterUpdateLogReliabilityTest {
+    @Test
+    fun clusterLogCursorUsesCommitOrderWhenHlcDecreases() = runBlocking {
+        val root = listOf("maryk", "test", "cluster-log", "commit-order", Uuid.random().toString())
+        val writer = FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = root,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "writer-${Uuid.random()}",
+            )
+        )
+        val reader = FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = root,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "reader-${Uuid.random()}",
+            )
+        )
+
+        try {
+            val modelId = 4u
+            val key = Bytes(ByteArray(16) { 7 })
+            val writerLog = writer.clusterUpdateLog ?: error("Cluster log must be enabled")
+            writer.runTransaction { tr ->
+                for (version in listOf(10uL, 20uL, 30uL)) {
+                    val legacyUpdate = ClusterLogDeletion(key, version = version, hardDelete = false)
+                    tr.mutate(
+                        MutationType.SET_VERSIONSTAMPED_KEY,
+                        writerLog.buildLegacyLogKey(modelId, legacyUpdate),
+                        writerLog.encodeValue(modelId, legacyUpdate, Log),
+                    )
+                }
+            }
+            for (version in listOf(40uL, 5uL, 6uL)) {
+                writer.runTransaction { tr ->
+                    writerLog.append(tr, modelId, ClusterLogDeletion(key, version = version, hardDelete = false))
+                }
+            }
+
+            val readerLog = reader.clusterUpdateLog ?: error("Cluster log must be enabled")
+            var populatedShard = -1
+            var first: ClusterUpdateLog.TailResult? = null
+            for (shard in 0 until 64) {
+                val tail = reader.runTransaction { tr ->
+                    readerLog.tailOnce(tr, shard, modelId, cursorKey = null, limit = 1)
+                }
+                if (tail.decoded.isNotEmpty()) {
+                    populatedShard = shard
+                    first = tail
+                    break
+                }
+            }
+
+            val firstTail = assertNotNull(first)
+            assertEquals(listOf(10uL), firstTail.decoded.map { it.update.version })
+            reader.runTransaction { tr ->
+                readerLog.writeCursorKey(tr, populatedShard, modelId, assertNotNull(firstTail.lastKey))
+            }
+            val resumedMidDrain = reader.runTransaction { tr ->
+                readerLog.readCursorKey(tr, populatedShard, modelId)
+            }
+            val secondTail = reader.runTransaction { tr ->
+                readerLog.tailOnce(
+                    tr,
+                    populatedShard,
+                    modelId,
+                    cursorKey = assertNotNull(resumedMidDrain),
+                    limit = 1,
+                )
+            }
+            assertEquals(listOf(20uL), secondTail.decoded.map { it.update.version })
+            val thirdTail = reader.runTransaction { tr ->
+                readerLog.tailOnce(
+                    tr,
+                    populatedShard,
+                    modelId,
+                    cursorKey = assertNotNull(secondTail.lastKey),
+                    limit = 1,
+                )
+            }
+            assertEquals(listOf(30uL), thirdTail.decoded.map { it.update.version })
+
+            val activation = reader.runTransaction { tr ->
+                readerLog.tailOnce(
+                    tr,
+                    populatedShard,
+                    modelId,
+                    cursorKey = assertNotNull(thirdTail.lastKey),
+                    limit = 1,
+                )
+            }
+            assertTrue(activation.decoded.isEmpty())
+            reader.runTransaction { tr ->
+                readerLog.writeCursorKey(tr, populatedShard, modelId, assertNotNull(activation.lastKey))
+            }
+            val resumedV2Cursor = reader.runTransaction { tr ->
+                readerLog.readCursorKey(tr, populatedShard, modelId)
+            }
+            val v2Tail = reader.runTransaction { tr ->
+                readerLog.tailOnce(
+                    tr,
+                    populatedShard,
+                    modelId,
+                    cursorKey = assertNotNull(resumedV2Cursor),
+                    limit = 10,
+                )
+            }
+            assertEquals(listOf(40uL, 5uL, 6uL), v2Tail.decoded.map { it.update.version })
+            assertTrue(v2Tail.decoded.zipWithNext().all { (firstUpdate, secondUpdate) ->
+                assertNotNull(firstUpdate.commitVersion) < assertNotNull(secondUpdate.commitVersion)
+            })
+            val noDuplicate = reader.runTransaction { tr ->
+                readerLog.tailOnce(
+                    tr,
+                    populatedShard,
+                    modelId,
+                    cursorKey = assertNotNull(v2Tail.lastKey),
+                    limit = 10,
+                )
+            }
+            assertTrue(noDuplicate.decoded.isEmpty())
+
+            var cutoffCursor = readerLog.initialCursorAtOrAfter(populatedShard, modelId, cutoff = 15uL)
+            val retainedLegacy = reader.runTransaction { tr ->
+                readerLog.tailOnce(
+                    tr,
+                    populatedShard,
+                    modelId,
+                    cursorKey = cutoffCursor,
+                    limit = 10,
+                )
+            }
+            assertEquals(listOf(20uL, 30uL), retainedLegacy.decoded.map { it.update.version })
+            cutoffCursor = assertNotNull(retainedLegacy.lastKey)
+            val cutoffActivation = reader.runTransaction { tr ->
+                readerLog.tailOnce(tr, populatedShard, modelId, cutoffCursor, limit = 10)
+            }
+            cutoffCursor = assertNotNull(cutoffActivation.lastKey)
+            val retainedV2 = reader.runTransaction { tr ->
+                readerLog.tailOnce(tr, populatedShard, modelId, cutoffCursor, limit = 10)
+            }
+            assertEquals(listOf(40uL), retainedV2.decoded.map { it.update.version })
+
+            var gcTransactions = 0
+            var hasMore: Boolean
+            do {
+                hasMore = reader.runTransaction { tr ->
+                    readerLog.clearBefore(
+                        tr,
+                        populatedShard,
+                        modelId,
+                        cutoff = 15uL,
+                        limit = 10,
+                        maxAffectedKeyBytes = 1,
+                    )
+                }
+                gcTransactions++
+            } while (hasMore)
+            assertEquals(2, gcTransactions)
+            val afterGcLegacy = reader.runTransaction { tr ->
+                readerLog.tailOnce(tr, populatedShard, modelId, cursorKey = null, limit = 10)
+            }
+            assertEquals(listOf(20uL, 30uL), afterGcLegacy.decoded.map { it.update.version })
+            val afterGcActivation = reader.runTransaction { tr ->
+                readerLog.tailOnce(tr, populatedShard, modelId, assertNotNull(afterGcLegacy.lastKey), limit = 10)
+            }
+            val afterGcV2 = reader.runTransaction { tr ->
+                readerLog.tailOnce(tr, populatedShard, modelId, assertNotNull(afterGcActivation.lastKey), limit = 10)
+            }
+            assertEquals(listOf(40uL), afterGcV2.decoded.map { it.update.version })
+        } finally {
+            reader.close()
+            writer.close()
+        }
+    }
+
     @Test
     fun clusterHlcSyncMaintainsCrossNodeMonotonicWrites() = runBlocking {
         val root = listOf("maryk", "test", "hlc-reliability", "monotonic", Uuid.random().toString())

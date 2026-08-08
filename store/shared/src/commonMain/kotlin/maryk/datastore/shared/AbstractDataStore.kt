@@ -37,12 +37,19 @@ import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
-import maryk.datastore.shared.updates.AddUpdateListenerAction
+import maryk.datastore.shared.updates.ActivatePendingUpdateListenerAction
+import maryk.datastore.shared.updates.FlowSnapshotBoundary
+import maryk.datastore.shared.updates.FlowUpdate
 import maryk.datastore.shared.updates.IsUpdateAction
+import maryk.datastore.shared.updates.PendingUpdateListener
+import maryk.datastore.shared.updates.AddPendingUpdateListenerAction
 import maryk.datastore.shared.updates.RemoveAllUpdateListenersAction
+import maryk.datastore.shared.updates.RemovePendingUpdateListenerAction
 import maryk.datastore.shared.updates.RemoveUpdateListenerAction
+import maryk.datastore.shared.updates.SetPendingListenerBoundaryAction
 import maryk.datastore.shared.updates.UpdateListenerForGet
 import maryk.datastore.shared.updates.UpdateListenerForScan
+import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.startProcessUpdateFlow
 import kotlin.coroutines.CoroutineContext
 
@@ -61,6 +68,7 @@ abstract class AbstractDataStore(
 
     override val coroutineContext = coroutineContext + SupervisorJob() + CoroutineName("MarykDataStore")
     private val readCoroutineContext = readWorkerCoroutineContext
+    private val localEmissionSequence = atomic(0L)
 
     private val dataModelRegistry = validatedDataModelRegistry(dataModelsById)
     final override val dataModelsById = dataModelRegistry.dataModelsById
@@ -94,11 +102,13 @@ abstract class AbstractDataStore(
         clock.calculateMaxTimeStamp(HLC(maxOf(committedVersion.value, observedVersion ?: 0uL)))
 
     private val updateSharedFlowHasStarted = CompletableDeferred<Unit>()
-    val updateSharedFlow: MutableSharedFlow<IsUpdateAction> = MutableSharedFlow(extraBufferCapacity = 64)
+    private val mutableUpdateSharedFlow: MutableSharedFlow<IsUpdateAction> =
+        MutableSharedFlow(extraBufferCapacity = 64)
+    val updateSharedFlow: Flow<IsUpdateAction> get() = mutableUpdateSharedFlow
 
     open fun startFlows() {
         this.launch {
-            startProcessUpdateFlow(updateSharedFlow, updateSharedFlowHasStarted) { error ->
+            startProcessUpdateFlow(mutableUpdateSharedFlow, updateSharedFlowHasStarted) { error ->
                 updateProcessorFailure.value = error
                 failPendingResponses(error)
             }
@@ -110,7 +120,7 @@ abstract class AbstractDataStore(
         if (!initIsDone.value) {
             storeActorHasStarted.await()
             updateSharedFlowHasStarted.await()
-            updateSharedFlow.subscriptionCount.first { it > 0 }
+            mutableUpdateSharedFlow.subscriptionCount.first { it > 0 }
             initIsDone.value = true
         }
         ensureOpen()
@@ -181,31 +191,133 @@ abstract class AbstractDataStore(
         val dataModelId = getDataModelId(request.dataModel)
         assertModelReady(dataModelId)
 
-        val response = execute(request)
-
-        val listener = request.createUpdateListener(response)
-        val listenerAdded = CompletableDeferred<Unit>()
-
-        awaitPendingResponse(listenerAdded) {
-            updateSharedFlow.emit(AddUpdateListenerAction(dataModelId, listener, listenerAdded))
-        }
-        onUpdateListenerAdded(dataModelId)
-
-        return listener.getFlow().onCompletion {
-            if (isClosed.value) return@onCompletion
-
-            val listenerRemoved = CompletableDeferred<Unit>()
-            awaitPendingResponse(listenerRemoved) {
-                updateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
+        val pendingListener = PendingUpdateListener()
+        var listenerAddedToStore = false
+        try {
+            val response = CompletableDeferred<RP>()
+            val snapshotBoundary = CompletableDeferred<FlowSnapshotBoundary>()
+            trackPendingResponse(response)
+            val initialResponse = try {
+                storeChannel.send(
+                    StoreAction(
+                        request = request,
+                        response = response,
+                        onBeforeReadContext = {
+                            val pendingListenerAdded = CompletableDeferred<Unit>()
+                            awaitPendingResponse(pendingListenerAdded) {
+                                mutableUpdateSharedFlow.emit(
+                                    AddPendingUpdateListenerAction(
+                                        dataModelId,
+                                        pendingListener,
+                                        pendingListenerAdded,
+                                    )
+                                )
+                            }
+                        },
+                        onFlowSnapshotBoundary = { boundary ->
+                            val boundarySet = CompletableDeferred<Unit>()
+                            awaitPendingResponse(boundarySet) {
+                                mutableUpdateSharedFlow.emit(
+                                    SetPendingListenerBoundaryAction(
+                                        dataModelId,
+                                        pendingListener,
+                                        boundary,
+                                        boundarySet,
+                                    )
+                                )
+                            }
+                            snapshotBoundary.complete(boundary)
+                        },
+                    )
+                )
+                response.await()
+            } finally {
+                untrackPendingResponse(response)
             }
-            onUpdateListenerRemoved(dataModelId)
+            val boundary = snapshotBoundary.await()
+            val listener = request.createUpdateListener(initialResponse)
+            val listenerActivated = CompletableDeferred<Unit>()
+            awaitPendingResponse(listenerActivated) {
+                mutableUpdateSharedFlow.emit(
+                    ActivatePendingUpdateListenerAction(
+                        dataModelId,
+                        pendingListener,
+                        listener,
+                        boundary,
+                        listenerActivated,
+                    ) {
+                        onUpdateListenerActivatedBeforeCompletion(dataModelId)
+                    }
+                )
+            }
+            onUpdateListenerAdded(dataModelId)
+            listenerAddedToStore = true
+
+            return listener.getFlow().onCompletion {
+                if (isClosed.value) return@onCompletion
+
+                withContext(NonCancellable) {
+                    if (isClosed.value) return@withContext
+
+                    val listenerRemoved = CompletableDeferred<Unit>()
+                    awaitPendingResponse(listenerRemoved) {
+                        mutableUpdateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
+                    }
+                    onUpdateListenerRemoved(dataModelId)
+                }
+            }
+        } catch (error: Throwable) {
+            withContext(NonCancellable) {
+                if (!isClosed.value) {
+                    val listenerRemoved = CompletableDeferred<Unit>()
+                    awaitPendingResponse(listenerRemoved) {
+                        mutableUpdateSharedFlow.emit(RemovePendingUpdateListenerAction(dataModelId, pendingListener, listenerRemoved))
+                    }
+                    if (listenerAddedToStore) {
+                        onUpdateListenerRemoved(dataModelId)
+                    }
+                }
+            }
+            throw error
         }
     }
 
     protected open fun onUpdateListenerAdded(dataModelId: UInt) {}
+    protected open suspend fun onUpdateListenerActivatedBeforeCompletion(dataModelId: UInt) {}
     protected open fun onUpdateListenerRemoved(dataModelId: UInt) {}
     protected open fun onAllUpdateListenersRemoved() {}
     protected open fun assertModelReady(dataModelId: UInt) {}
+
+    /** Allocate an update position before its backend publishes it to the listener actor. */
+    protected fun prepareFlowUpdate(
+        update: Update<out IsRootDataModel>,
+        foundationDbCommitVersion: Long? = null,
+    ): FlowUpdate {
+        @Suppress("UNCHECKED_CAST")
+        val rootUpdate = update as Update<IsRootDataModel>
+        return FlowUpdate(
+            update = rootUpdate,
+            localEmissionSequence = localEmissionSequence.incrementAndGet(),
+            foundationDbCommitVersion = foundationDbCommitVersion,
+        )
+    }
+
+    protected suspend fun emitFlowUpdate(
+        update: Update<out IsRootDataModel>,
+        foundationDbCommitVersion: Long? = null,
+    ) {
+        mutableUpdateSharedFlow.emit(prepareFlowUpdate(update, foundationDbCommitVersion))
+    }
+
+    protected suspend fun emitFlowUpdate(update: FlowUpdate) {
+        mutableUpdateSharedFlow.emit(update)
+    }
+
+    protected fun createFlowSnapshotBoundary(foundationDbReadVersion: Long? = null) =
+        FlowSnapshotBoundary(
+            localEmissionSequence = localEmissionSequence.value,
+            foundationDbReadVersion = foundationDbReadVersion,
+        )
 
     /** Consume store actions with bounded reads and write exclusion. */
     protected suspend fun processStoreActions(
@@ -224,6 +336,9 @@ abstract class AbstractDataStore(
     protected suspend fun <ReadContext : Any> processStoreActions(
         createReadContext: (suspend () -> ReadContext)?,
         closeReadContext: suspend (ReadContext) -> Unit,
+        createFlowSnapshotBoundary: (ReadContext?) -> FlowSnapshotBoundary = {
+            this@AbstractDataStore.createFlowSnapshotBoundary()
+        },
         processAction: suspend (StoreAction<*, *, *>, ReadContext?) -> Unit,
     ) {
         val readSemaphore = Semaphore(maxConcurrentReads)
@@ -238,6 +353,17 @@ abstract class AbstractDataStore(
             readJobs.removeAll { it.isCompleted }
             if (action.request.requestExecutionKind == RequestExecutionKind.Read) {
                 readSemaphore.acquire()
+                try {
+                    action.onBeforeReadContext?.invoke()
+                } catch (e: CancellationException) {
+                    readSemaphore.release()
+                    throw e
+                } catch (e: Throwable) {
+                    readSemaphore.release()
+                    e.rethrowIfFatal()
+                    action.response.completeExceptionally(e)
+                    continue
+                }
                 val readContext = try {
                     createReadContext?.invoke()
                 } catch (e: CancellationException) {
@@ -247,6 +373,23 @@ abstract class AbstractDataStore(
                     readSemaphore.release()
                     e.rethrowIfFatal()
                     action.response.completeExceptionally(e)
+                    continue
+                }
+                try {
+                    action.onFlowSnapshotBoundary?.invoke(createFlowSnapshotBoundary(readContext))
+                } catch (e: Throwable) {
+                    e.rethrowIfFatal()
+                    action.response.completeExceptionally(e)
+                    if (readContext != null) {
+                        try {
+                            withContext(NonCancellable) {
+                                closeReadContext(readContext)
+                            }
+                        } catch (closeError: Throwable) {
+                            closeError.rethrowIfFatal()
+                        }
+                    }
+                    readSemaphore.release()
                     continue
                 }
                 readJobs += launch(readCoroutineContext) {
@@ -297,7 +440,7 @@ abstract class AbstractDataStore(
 
         val listenersRemoved = CompletableDeferred<Unit>()
         awaitPendingResponse(listenersRemoved) {
-            updateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
+            mutableUpdateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
         }
         onAllUpdateListenersRemoved()
     }

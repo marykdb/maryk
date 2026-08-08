@@ -1,6 +1,5 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.ChangeRequest
@@ -8,7 +7,7 @@ import maryk.core.query.responses.ChangeResponse
 import maryk.core.query.responses.statuses.IsChangeResponseStatus
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.IsUpdateAction
+import maryk.datastore.shared.updates.FlowUpdateEmitter
 
 internal typealias ChangeStoreAction<DM> = StoreAction<DM, ChangeRequest<DM>, ChangeResponse<DM>>
 internal typealias AnyChangeStoreAction = ChangeStoreAction<IsRootDataModel>
@@ -18,7 +17,7 @@ internal suspend fun <DM : IsRootDataModel> processChangeRequest(
     version: HLC,
     storeAction: ChangeStoreAction<DM>,
     dataStoreFetcher: IsStoreFetcher<DM>,
-    updateFlow: MutableSharedFlow<IsUpdateAction>
+    updateFlow: FlowUpdateEmitter
 ) {
     val changeRequest = storeAction.request
 

@@ -1,6 +1,5 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.requests.DeleteRequest
@@ -10,7 +9,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.rethrowIfFatal
-import maryk.datastore.shared.updates.IsUpdateAction
+import maryk.datastore.shared.updates.FlowUpdateEmitter
 
 internal typealias DeleteStoreAction<DM> = StoreAction<DM, DeleteRequest<DM>, DeleteResponse<DM>>
 internal typealias AnyDeleteStoreAction = DeleteStoreAction<IsRootDataModel>
@@ -22,7 +21,7 @@ internal suspend fun <DM : IsRootDataModel> processDeleteRequest(
     version: HLC,
     storeAction: DeleteStoreAction<DM>,
     dataStoreFetcher: IsStoreFetcher<DM>,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
+    updateSharedFlow: FlowUpdateEmitter
 ) {
     val deleteRequest = storeAction.request
     val statuses = ArrayList<IsDeleteResponseStatus<DM>>(deleteRequest.keys.size.coerceAtLeast(4))

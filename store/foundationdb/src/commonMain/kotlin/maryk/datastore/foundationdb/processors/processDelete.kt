@@ -46,7 +46,7 @@ import maryk.foundationdb.Transaction
 import maryk.foundationdb.Range as FDBRange
 
 /** Process the deletion of the value at [key]/[version] from FoundationDB */
-internal fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
+internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
     tableDirs: IsTableDirectories,
     dataModel: DM,
     key: Key<DM>,

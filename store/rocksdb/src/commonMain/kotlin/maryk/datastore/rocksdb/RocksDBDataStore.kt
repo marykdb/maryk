@@ -6,8 +6,6 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
@@ -581,6 +579,9 @@ class RocksDBDataStore private constructor(
                 processStoreActions(
                     createReadContext = ::createReadContext,
                     closeReadContext = RocksDBReadContext::close,
+                    createFlowSnapshotBoundary = {
+                        this@RocksDBDataStore.createFlowSnapshotBoundary()
+                    },
                 ) { storeAction, readContext ->
                     val cache = Cache()
                     try {
@@ -878,12 +879,12 @@ class RocksDBDataStore private constructor(
 
     internal suspend fun emitUpdate(updateToEmit: Update<*>?) {
         if (updateToEmit != null) {
-            updateSharedFlow.emit(updateToEmit)
+            emitFlowUpdate(updateToEmit)
         }
     }
 
     internal suspend fun emitUpdates(updatesToEmit: List<Update<*>>) {
-        updateSharedFlow.emitAll(updatesToEmit.asFlow())
+        updatesToEmit.forEach { emitFlowUpdate(it) }
     }
 
     internal fun encryptValueIfSensitive(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {

@@ -1,6 +1,5 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
@@ -81,7 +80,7 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.DeletedValue
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.rethrowIfFatal
-import maryk.datastore.shared.updates.IsUpdateAction
+import maryk.datastore.shared.updates.FlowUpdateEmitter
 import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
 
@@ -101,7 +100,7 @@ internal suspend fun <DM : IsRootDataModel> processChange(
     lastVersion: ULong?,
     changes: List<IsChange>,
     version: HLC,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
+    updateSharedFlow: FlowUpdateEmitter
 ): IsChangeResponseStatus<DM> {
     val index = dataStore.records.binarySearch { it.key compareTo key }
 
@@ -141,7 +140,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
     changes: List<IsChange>,
     version: HLC,
     keepAllVersions: Boolean,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
+    updateSharedFlow: FlowUpdateEmitter
 ): IsChangeResponseStatus<DM> {
     try {
         var validationExceptions: MutableList<ValidationException>? = null
@@ -777,7 +776,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             }
         }
 
-        updateSharedFlow.emit(
+        updateSharedFlow(
             Update.Change(dataModel, objectToChange.key, version.timestamp, changes + outChanges)
         )
 

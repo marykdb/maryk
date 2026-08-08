@@ -1,6 +1,5 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.writeToStorage
@@ -22,7 +21,7 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.rethrowIfFatal
-import maryk.datastore.shared.updates.IsUpdateAction
+import maryk.datastore.shared.updates.FlowUpdateEmitter
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.extensions.compare.compareTo
 
@@ -32,7 +31,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
     key: Key<DM>,
     version: HLC,
     objectToAdd: Values<DM>,
-    updateSharedFlow: MutableSharedFlow<IsUpdateAction>
+    updateSharedFlow: FlowUpdateEmitter
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()
 
@@ -92,7 +91,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
 
         val changes = listOf<IsChange>()
 
-        updateSharedFlow.emit(
+        updateSharedFlow(
             Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
         )
 

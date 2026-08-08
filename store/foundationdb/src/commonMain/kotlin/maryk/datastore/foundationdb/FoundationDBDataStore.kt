@@ -566,7 +566,7 @@ class FoundationDBDataStore private constructor(
                             } else {
                                 // For lazily activated models, start from retention cutoff (not "now") to avoid
                                 // missing writes which landed before this shard cursor got initialized.
-                                val cutoffCursor = log.minimalKeyAtOrAfter(
+                                val cutoffCursor = log.initialCursorAtOrAfter(
                                     shard,
                                     modelId,
                                     ClusterUpdateLog.cutoffTimestamp(clusterUpdateLogConfiguration.clusterUpdateLogRetention)
@@ -579,7 +579,7 @@ class FoundationDBDataStore private constructor(
                         }
                         val cursorKey = cursors[i]?.let { existing ->
                             if (log.cursorIsBeforeCutoff(shard, modelId, existing, cutoff)) {
-                                val advanced = log.minimalKeyAtOrAfter(shard, modelId, cutoff)
+                                val advanced = log.advanceCursorToCutoff(shard, modelId, existing, cutoff)
                                 cursors[i] = advanced
                                 runTransaction { tr ->
                                     log.writeCursorKey(tr, shard, modelId, advanced)
@@ -603,7 +603,10 @@ class FoundationDBDataStore private constructor(
                             val model = dataModelsById[decoded.header.modelId] ?: continue
                             observedClusterHlc.value = maxOf(observedClusterHlc.value, decoded.update.version)
                             clusterLogDecodedUpdates.incrementAndGet()
-                            updateSharedFlow.emit(decoded.toInternalUpdate(model))
+                            emitFlowUpdate(
+                                decoded.toInternalUpdate(model),
+                                foundationDbCommitVersion = decoded.commitVersion,
+                            )
                         }
                         if (tail.decoded.isNotEmpty()) {
                             clusterLogLastDecodedAtMs.value = HLC().toPhysicalUnixTime().toLong()
@@ -654,22 +657,21 @@ class FoundationDBDataStore private constructor(
             // Retention GC. Clears by HLC timestamp from key.
             this.launch(updateDispatcher) {
                 val shardCount = clusterUpdateLogConfiguration.clusterUpdateLogShardCount
-                val batch = 8
+                val batchSize = minOf(clusterUpdateLogConfiguration.clusterUpdateLogBatchSize, 128)
                 val modelIds = dataModelsById.keys.sorted()
                 while (isActive) {
                     try {
                         val cutoff = ClusterUpdateLog.cutoffTimestamp(clusterUpdateLogConfiguration.clusterUpdateLogRetention)
-                        var shard = 0
-                        while (shard < shardCount) {
-                            val end = minOf(shard + batch, shardCount)
-                            runTransaction { tr ->
-                                for (s in shard until end) {
-                                    for (modelId in modelIds) {
-                                        log.clearBefore(tr, s, modelId, cutoff)
+                        retentionScan@ for (shard in 0 until shardCount) {
+                            for (modelId in modelIds) {
+                                if (!isActive) break@retentionScan
+                                var hasMore: Boolean
+                                do {
+                                    hasMore = runTransaction { tr ->
+                                        log.clearBefore(tr, shard, modelId, cutoff, batchSize)
                                     }
-                                }
+                                } while (hasMore && isActive)
                             }
-                            shard = end
                         }
                         clusterLogGcRuns.incrementAndGet()
                         delay(5.minutes)
@@ -741,6 +743,9 @@ class FoundationDBDataStore private constructor(
                 processStoreActions(
                     createReadContext = ::createReadContext,
                     closeReadContext = {},
+                    createFlowSnapshotBoundary = { readContext ->
+                        this@FoundationDBDataStore.createFlowSnapshotBoundary(readContext?.readVersion)
+                    },
                 ) { storeAction, readContext ->
                     val cache = Cache()
                     try {
@@ -1031,14 +1036,13 @@ class FoundationDBDataStore private constructor(
         readStoredModelNames(tc, metadataPrefix)
 
     internal var clusterUpdateLog: ClusterUpdateLog? = null
+    internal val beforeUpdateEmission = atomic<(suspend () -> Unit)?>(null)
 
-    internal fun emitUpdate(update: Update<*>?) {
+    internal suspend fun emitUpdate(update: Update<*>?) {
         if (update == null) return
-        launch(updateDispatcher) {
-            updateSharedFlow.emit(
-                update
-            )
-        }
+        val flowUpdate = prepareFlowUpdate(update)
+        beforeUpdateEmission.value?.invoke()
+        emitFlowUpdate(flowUpdate)
     }
 
     override suspend fun close() {

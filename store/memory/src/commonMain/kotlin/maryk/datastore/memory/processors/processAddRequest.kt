@@ -1,6 +1,5 @@
 package maryk.datastore.memory.processors
 
-import kotlinx.coroutines.flow.MutableSharedFlow
 import maryk.core.clock.HLC
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
@@ -9,7 +8,7 @@ import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.datastore.memory.IsStoreFetcher
 import maryk.datastore.shared.StoreAction
-import maryk.datastore.shared.updates.IsUpdateAction
+import maryk.datastore.shared.updates.FlowUpdateEmitter
 
 internal typealias AddStoreAction<DM> = StoreAction<DM, AddRequest<DM>, AddResponse<DM>>
 internal typealias AnyAddStoreAction = AddStoreAction<IsRootDataModel>
@@ -19,7 +18,7 @@ internal suspend fun <DM : IsRootDataModel> processAddRequest(
     version: HLC,
     storeAction: StoreAction<DM, AddRequest<DM>, AddResponse<DM>>,
     dataStoreFetcher: IsStoreFetcher<DM>,
-    updateFlow: MutableSharedFlow<IsUpdateAction>
+    updateFlow: FlowUpdateEmitter
 ) {
     val addRequest = storeAction.request
     val statuses = ArrayList<IsAddResponseStatus<DM>>(addRequest.objects.size.coerceAtLeast(4))

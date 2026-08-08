@@ -42,7 +42,7 @@ import maryk.datastore.shared.updates.Update
 import maryk.datastore.foundationdb.clusterlog.ClusterLogAddition
 import maryk.core.properties.types.Bytes
 
-internal fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
+internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     tableDirs: IsTableDirectories,
     dataModel: DM,
     key: Key<DM>,

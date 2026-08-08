@@ -21,8 +21,11 @@ import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.get
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.values.Values
@@ -185,6 +188,195 @@ class ProcessUpdateActorTest {
     }
 
     @Test
+    fun pendingUpdateHistoryInitialVersionIsNotReplayedButLaterUpdateIsProcessed() = runTest {
+        val key = SimpleMarykModel.key(ByteArray(16))
+        val values = SimpleMarykModel.create { value with "value" }
+        var processCount = 0
+        val initialUpdate = AdditionUpdate(
+            key = key,
+            version = 10uL,
+            firstVersion = 10uL,
+            insertionIndex = 0,
+            isDeleted = false,
+            values = values,
+        )
+        val listener = CountingUpdateListener(
+            key = key,
+            values = values,
+            response = UpdatesResponse(
+                dataModel = SimpleMarykModel,
+                updates = listOf(initialUpdate),
+                dataFetchType = FetchByUpdateHistoryIndex(),
+            ),
+        ) {
+            processCount++
+        }
+        assertEquals(10uL, listener.responseVersion)
+
+        val pendingListener = PendingUpdateListener()
+        val listenerRemoved = CompletableDeferred<Unit>()
+        val flow = flow {
+            emit(AddPendingUpdateListenerAction(1u, pendingListener))
+            emit(FlowUpdate(Update.Addition(SimpleMarykModel, key, 10uL, values), 10L))
+            emit(
+                ActivatePendingUpdateListenerAction(
+                    1u,
+                    pendingListener,
+                    listener,
+                    FlowSnapshotBoundary(localEmissionSequence = 10L),
+                )
+            )
+            emit(FlowUpdate(Update.Addition(SimpleMarykModel, key, 11uL, values), 11L))
+            yield()
+            emit(RemoveUpdateListenerAction(1u, listener, listenerRemoved))
+        }
+
+        TestDataStore.startProcessUpdateFlow(flow, CompletableDeferred())
+
+        assertEquals(Unit, listenerRemoved.await())
+        assertEquals(1, processCount)
+    }
+
+    @Test
+    fun pendingFoundationDbUpdateVisibleAtSnapshotCursorIsNotReplayed() = runTest {
+        val key = SimpleMarykModel.key(ByteArray(16))
+        val values = SimpleMarykModel.create { value with "value" }
+        var processCount = 0
+        val listener = CountingUpdateListener(key, values) { processCount++ }
+        val pendingListener = PendingUpdateListener()
+        val listenerRemoved = CompletableDeferred<Unit>()
+        val flow = flow {
+            emit(AddPendingUpdateListenerAction(1u, pendingListener))
+            emit(
+                FlowUpdate(
+                    Update.Deletion(SimpleMarykModel, key, 3uL, isHardDelete = false),
+                    localEmissionSequence = 2L,
+                    foundationDbCommitVersion = 42L,
+                )
+            )
+            emit(
+                ActivatePendingUpdateListenerAction(
+                    1u,
+                    pendingListener,
+                    listener,
+                    FlowSnapshotBoundary(localEmissionSequence = 1L, foundationDbReadVersion = 42L),
+                )
+            )
+            emit(
+                FlowUpdate(
+                    Update.Deletion(SimpleMarykModel, key, 4uL, isHardDelete = false),
+                    localEmissionSequence = 0L,
+                    foundationDbCommitVersion = 43L,
+                )
+            )
+            yield()
+            emit(RemoveUpdateListenerAction(1u, listener, listenerRemoved))
+        }
+
+        TestDataStore.startProcessUpdateFlow(flow, CompletableDeferred())
+
+        assertEquals(Unit, listenerRemoved.await())
+        assertEquals(1, processCount)
+    }
+
+    @Test
+    fun pendingBoundaryDiscardsVisibleUpdatesBeforeTheyOverflow() = runTest {
+        val key = SimpleMarykModel.key(ByteArray(16))
+        val values = SimpleMarykModel.create { value with "value" }
+        var processCount = 0
+        val listener = CountingUpdateListener(key, values) { processCount++ }
+        val pendingListener = PendingUpdateListener()
+        val listenerActivated = CompletableDeferred<Unit>()
+        val listenerRemoved = CompletableDeferred<Unit>()
+        val flow = flow {
+            emit(AddPendingUpdateListenerAction(1u, pendingListener))
+            emit(
+                SetPendingListenerBoundaryAction(
+                    1u,
+                    pendingListener,
+                    FlowSnapshotBoundary(localEmissionSequence = 10L),
+                )
+            )
+            repeat(UPDATE_LISTENER_MAILBOX_CAPACITY + 1) {
+                emit(FlowUpdate(Update.Addition(SimpleMarykModel, key, 1uL, values), 10L))
+            }
+            emit(
+                ActivatePendingUpdateListenerAction(
+                    1u,
+                    pendingListener,
+                    listener,
+                    FlowSnapshotBoundary(localEmissionSequence = 10L),
+                    listenerActivated,
+                )
+            )
+            emit(FlowUpdate(Update.Addition(SimpleMarykModel, key, 2uL, values), 11L))
+            yield()
+            emit(RemoveUpdateListenerAction(1u, listener, listenerRemoved))
+        }
+
+        TestDataStore.startProcessUpdateFlow(flow, CompletableDeferred())
+
+        assertEquals(Unit, listenerActivated.await())
+        assertEquals(Unit, listenerRemoved.await())
+        assertEquals(1, processCount)
+    }
+
+    @Test
+    fun activeListenerProcessesOutOfOrderLowerVersionForAnotherKey() = runTest {
+        val key = SimpleMarykModel.key(ByteArray(16))
+        val unrelatedKey = SimpleMarykModel.key(ByteArray(16) { 1 })
+        val values = SimpleMarykModel.create { value with "value" }
+        var processCount = 0
+        val listener = CountingUpdateListener(
+            key = key,
+            values = values,
+            response = UpdatesResponse(
+                dataModel = SimpleMarykModel,
+                updates = listOf(
+                    AdditionUpdate(key, 10uL, 10uL, 0, isDeleted = false, values = values)
+                ),
+                dataFetchType = FetchByUpdateHistoryIndex(),
+            ),
+        ) {
+            processCount++
+        }
+        val listenerRemoved = CompletableDeferred<Unit>()
+        val flow = flow {
+            emit(AddUpdateListenerAction(1u, listener))
+            emit(Update.Addition(SimpleMarykModel, unrelatedKey, 5uL, values))
+            yield()
+            emit(RemoveUpdateListenerAction(1u, listener, listenerRemoved))
+        }
+
+        TestDataStore.startProcessUpdateFlow(flow, CompletableDeferred())
+
+        assertEquals(Unit, listenerRemoved.await())
+        assertEquals(1, processCount)
+    }
+
+    @Test
+    fun pendingRemovalAlsoRemovesItsActivatedListener() = runTest {
+        val key = SimpleMarykModel.key(ByteArray(16))
+        val values = SimpleMarykModel.create { value with "value" }
+        var processCount = 0
+        val listener = CountingUpdateListener(key, values) { processCount++ }
+        val pendingListener = PendingUpdateListener()
+        val listenerRemoved = CompletableDeferred<Unit>()
+        val flow = flow {
+            emit(AddPendingUpdateListenerAction(1u, pendingListener))
+            emit(ActivatePendingUpdateListenerAction(1u, pendingListener, listener))
+            emit(RemovePendingUpdateListenerAction(1u, pendingListener, listenerRemoved))
+            emit(Update.Addition(SimpleMarykModel, key, 1uL, values))
+            yield()
+        }
+
+        TestDataStore.startProcessUpdateFlow(flow, CompletableDeferred())
+
+        assertEquals(Unit, listenerRemoved.await())
+        assertEquals(0, processCount)
+    }
+
+    @Test
     fun blockedListenerOverflowsWithoutBlockingHealthyListener() = runTest {
         val key = SimpleMarykModel.key(ByteArray(16))
         val values = SimpleMarykModel.create {
@@ -202,7 +394,7 @@ class ProcessUpdateActorTest {
             emit(AddUpdateListenerAction(1u, blockedListener, blockedAdded))
             emit(AddUpdateListenerAction(1u, healthyListener, healthyAdded))
             repeat(70) { index ->
-                emit(Update.Addition(SimpleMarykModel, key, index.toULong(), values))
+                emit(Update.Addition(SimpleMarykModel, key, (index + 1).toULong(), values))
                 yield()
             }
             emit(RemoveUpdateListenerAction(1u, healthyListener, healthyRemoved))
@@ -280,8 +472,8 @@ class ProcessUpdateActorTest {
                 ValuesWithMetaData(
                     key = key,
                     values = values,
-                    firstVersion = 1uL,
-                    lastVersion = 1uL,
+                    firstVersion = 0uL,
+                    lastVersion = 0uL,
                     isDeleted = false
                 )
             )
@@ -305,21 +497,22 @@ class ProcessUpdateActorTest {
     private class CountingUpdateListener(
         key: Key<SimpleMarykModel>,
         values: Values<SimpleMarykModel>,
-        private val onProcess: () -> Unit = {},
-    ) : UpdateListener<SimpleMarykModel, IsFlowRequest<SimpleMarykModel, *>>(
-        request = SimpleMarykModel.get(key),
-        response = ValuesResponse(
+        response: IsDataResponse<SimpleMarykModel> = ValuesResponse(
             dataModel = SimpleMarykModel,
             values = listOf(
                 ValuesWithMetaData(
                     key = key,
                     values = values,
-                    firstVersion = 1uL,
-                    lastVersion = 1uL,
+                    firstVersion = 0uL,
+                    lastVersion = 0uL,
                     isDeleted = false
                 )
             )
-        )
+        ),
+        private val onProcess: () -> Unit = {},
+    ) : UpdateListener<SimpleMarykModel, IsFlowRequest<SimpleMarykModel, *>>(
+        request = SimpleMarykModel.get(key),
+        response = response,
     ) {
         override suspend fun process(
             update: Update<SimpleMarykModel>,
@@ -347,8 +540,8 @@ class ProcessUpdateActorTest {
                 ValuesWithMetaData(
                     key = key,
                     values = values,
-                    firstVersion = 1uL,
-                    lastVersion = 1uL,
+                    firstVersion = 0uL,
+                    lastVersion = 0uL,
                     isDeleted = false
                 )
             )
@@ -382,8 +575,8 @@ class ProcessUpdateActorTest {
                 ValuesWithMetaData(
                     key = key,
                     values = values,
-                    firstVersion = 1uL,
-                    lastVersion = 1uL,
+                    firstVersion = 0uL,
+                    lastVersion = 0uL,
                     isDeleted = false
                 )
             )

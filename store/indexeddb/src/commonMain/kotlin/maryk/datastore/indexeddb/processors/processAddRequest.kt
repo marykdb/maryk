@@ -153,7 +153,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
 
                 byteStore.writeBatch(operations)
                 statuses += AddSuccess(key, version.timestamp, emptyList())
-                updateSharedFlow.emit(
+                emitIndexedDbUpdate(
                     Update.Addition(request.dataModel, key, version.timestamp, values)
                 )
             }

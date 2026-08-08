@@ -138,7 +138,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
 
             byteStore.writeBatch(operations)
             statuses += DeleteSuccess(version.timestamp)
-            updateSharedFlow.emit(
+            emitIndexedDbUpdate(
                 Update.Deletion(request.dataModel, key, version.timestamp, request.hardDelete)
             )
         }

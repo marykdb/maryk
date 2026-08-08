@@ -9,7 +9,7 @@ Built with Compose Multiplatform.
 - Model catalog + schema inspection.
 - Record scan/filter/sort + pinned columns.
 - Record inspector (data tree, YAML, history/diff).
-- Form editor + raw YAML editor.
+- Typed form editor.
 - Import/export for schemas and data.
 
 ## Run

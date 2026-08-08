@@ -1,6 +1,9 @@
 package maryk.datastore.indexeddb
 
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import maryk.lib.bytes.combineToByteArray
@@ -252,6 +255,128 @@ class IndexedDbByteStoreTest {
         } finally {
             first.close()
             second.close()
+        }
+    }
+
+    @Test
+    fun fallbackLeaseWritesAndCleansUpWithoutWebLocks() = runTest {
+        installIndexedDbForTests()
+
+        withoutWebLocks {
+            val store = openIndexedDbByteStore(
+                databaseName = "maryk-indexeddb-fallback-lease-test-${Random.nextInt()}",
+                objectStoreNames = setOf("rows"),
+            )
+
+            try {
+                store.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) { transactionStore ->
+                    transactionStore.put("rows", byteArrayOf(1), byteArrayOf(10))
+                }
+
+                assertContentEquals(byteArrayOf(10), store.get("rows", byteArrayOf(1)))
+                assertTrue(store.scan("__maryk_write_lease").isEmpty())
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun fallbackLeaseHandlesThrowingWebLocksGetterAndRestoresIt() = runTest {
+        installIndexedDbForTests()
+        val hadWebLocks = webLocksAvailableForTests()
+
+        withThrowingWebLocks {
+            val store = openIndexedDbByteStore(
+                databaseName = "maryk-indexeddb-throwing-lease-test-${Random.nextInt()}",
+                objectStoreNames = setOf("rows"),
+            )
+
+            try {
+                store.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) { transactionStore ->
+                    transactionStore.put("rows", byteArrayOf(1), byteArrayOf(10))
+                }
+                assertContentEquals(byteArrayOf(10), store.get("rows", byteArrayOf(1)))
+                assertTrue(store.scan("__maryk_write_lease").isEmpty())
+            } finally {
+                store.close()
+            }
+        }
+
+        assertEquals(hadWebLocks, webLocksAvailableForTests())
+    }
+
+    @Test
+    fun cancellingFallbackWaitDoesNotLeaveLeaseBehind() = runTest {
+        installIndexedDbForTests()
+
+        withoutWebLocks {
+            val databaseName = "maryk-indexeddb-cancelled-lease-test-${Random.nextInt()}"
+            val first = openIndexedDbByteStore(databaseName, setOf("rows"))
+            val second = openIndexedDbByteStore(databaseName, setOf("rows"))
+            val events = mutableListOf<String>()
+
+            try {
+                val firstJob = async {
+                    first.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) {
+                        events += "first-start"
+                        delay(1_000)
+                    }
+                }
+                while ("first-start" !in events) delay(1)
+
+                val cancelledJob = async {
+                    second.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) { transactionStore ->
+                        transactionStore.put("rows", byteArrayOf(2), byteArrayOf(20))
+                    }
+                }
+                delay(20)
+                cancelledJob.cancelAndJoin()
+                firstJob.cancelAndJoin()
+
+                second.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) { transactionStore ->
+                    transactionStore.put("rows", byteArrayOf(3), byteArrayOf(30))
+                }
+                assertContentEquals(byteArrayOf(30), second.get("rows", byteArrayOf(3)))
+                assertTrue(second.scan("__maryk_write_lease").isEmpty())
+            } finally {
+                first.close()
+                second.close()
+            }
+        }
+    }
+
+    @Test
+    fun cancellingAfterFallbackAcquireReleasesLeaseBeforeHandoff() = runTest {
+        installIndexedDbForTests()
+
+        withoutWebLocks {
+            val databaseName = "maryk-indexeddb-cancelled-handoff-test-${Random.nextInt()}"
+            val first = openIndexedDbByteStore(databaseName, setOf("rows"))
+            val second = openIndexedDbByteStore(databaseName, setOf("rows"))
+            lateinit var cancelledJob: Job
+
+            try {
+                setLeaseAcquisitionHandoffHookForTests { cancelledJob.cancel() }
+                cancelledJob = async(start = CoroutineStart.LAZY) {
+                    second.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) { transactionStore ->
+                        transactionStore.put("rows", byteArrayOf(2), byteArrayOf(20))
+                    }
+                }
+                cancelledJob.start()
+                cancelledJob.cancelAndJoin()
+                setLeaseAcquisitionHandoffHookForTests(null)
+
+                first.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) { transactionStore ->
+                    transactionStore.put("rows", byteArrayOf(3), byteArrayOf(30))
+                }
+                assertContentEquals(byteArrayOf(30), first.get("rows", byteArrayOf(3)))
+                assertTrue(first.scan("__maryk_write_lease").isEmpty())
+            } finally {
+                setLeaseAcquisitionHandoffHookForTests(null)
+                first.close()
+                second.close()
+            }
         }
     }
 

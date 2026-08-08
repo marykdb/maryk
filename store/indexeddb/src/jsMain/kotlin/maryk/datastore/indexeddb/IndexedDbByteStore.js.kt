@@ -424,8 +424,16 @@ private suspend fun <T> withBrowserWriteLock(
                 }
                 continuation.invokeOnCancellation { blockJob.cancel() }
             },
-            onError = { message ->
-                continuation.resumeWithException(IllegalStateException(message))
+            onError = {
+                if (!continuation.isActive) return@requestWebLock
+                val fallbackJob = CoroutineScope(continuation.context).launch {
+                    try {
+                        continuation.resume(withIndexedDbWriteLease(database, databaseName, lockName, block))
+                    } catch (cause: Throwable) {
+                        continuation.resumeWithException(cause)
+                    }
+                }
+                continuation.invokeOnCancellation { fallbackJob.cancel() }
             },
         )
     }
@@ -472,27 +480,67 @@ private suspend fun tryAcquireWriteLease(
     database: dynamic,
     lockName: String,
     ownerId: String,
-): Boolean = awaitLeaseTransaction { onComplete, onError ->
-    acquireOrRenewWriteLease(database, lockName, ownerId, true, onComplete, onError)
-}
+): Boolean = awaitLeaseTransaction(
+    start = { onComplete, onError, onCancel ->
+        acquireOrRenewWriteLease(database, lockName, ownerId, true, onComplete, onError, onCancel)
+    },
+    onLateAcquire = {
+        try {
+            releaseIndexedDbWriteLease(database, lockName, ownerId, {}, {})
+        } catch (_: Throwable) {
+            // Best effort: cancellation may close the database concurrently.
+        }
+    },
+)
 
 private suspend fun renewWriteLease(
     database: dynamic,
     lockName: String,
     ownerId: String,
-): Boolean = awaitLeaseTransaction { onComplete, onError ->
-    acquireOrRenewWriteLease(database, lockName, ownerId, false, onComplete, onError)
-}
+): Boolean = awaitLeaseTransaction(
+    start = { onComplete, onError, onCancel ->
+        acquireOrRenewWriteLease(database, lockName, ownerId, false, onComplete, onError, onCancel)
+    },
+)
 
 private suspend fun awaitLeaseTransaction(
-    start: ((Boolean) -> Unit, (String) -> Unit) -> Unit,
+    start: ((Boolean) -> Unit, (String) -> Unit, (() -> Unit) -> Unit) -> Unit,
+    onLateAcquire: () -> Unit = {},
 ): Boolean = suspendCancellableCoroutine { continuation ->
+    var cancelTransaction: (() -> Unit)? = null
+    var transactionCompleted = false
+    var acquired = false
+    var lateAcquireHandled = false
+    fun releaseLateAcquire() {
+        if (!lateAcquireHandled) {
+            lateAcquireHandled = true
+            onLateAcquire()
+        }
+    }
+    continuation.invokeOnCancellation {
+        cancelTransaction?.invoke()
+        if (transactionCompleted && acquired) releaseLateAcquire()
+    }
     start(
-        { acquired -> if (continuation.isActive) continuation.resume(acquired) },
+        { didAcquire ->
+            transactionCompleted = true
+            acquired = didAcquire
+            if (continuation.isActive) {
+                continuation.resume(didAcquire) { _, _, _ ->
+                    if (didAcquire) releaseLateAcquire()
+                }
+            } else if (didAcquire) {
+                releaseLateAcquire()
+            }
+        },
         { message ->
             if (continuation.isActive) {
                 continuation.resumeWithException(IllegalStateException(message))
             }
+        },
+        { cancel ->
+            cancelTransaction = cancel
+            if (!continuation.isActive) cancel()
         },
     )
 }
@@ -504,14 +552,20 @@ private fun acquireOrRenewWriteLease(
     allowExpiredOwner: Boolean,
     onComplete: (Boolean) -> Unit,
     onError: (String) -> Unit,
+    onCancel: (() -> Unit) -> Unit,
 ) {
+    // Raw JS blocks can capture function locals, but not top-level Kotlin constants.
+    // Keep the store name in a local so generated JS does not resolve an undefined
+    // `writeLeaseStoreName` global when the Web Locks fallback is used.
+    val leaseStoreName = writeLeaseStoreName
     val leaseDurationMillis = writeLeaseDurationMillis
+    val handoffHook = indexedDbLeaseAcquisitionHandoffHook
     js(
         """
         let completed = false;
         let acquired = false;
-        const transaction = database.transaction([writeLeaseStoreName], "readwrite");
-        const store = transaction.objectStore(writeLeaseStoreName);
+        const transaction = database.transaction([leaseStoreName], "readwrite");
+        const store = transaction.objectStore(leaseStoreName);
         const request = store.get(lockName);
         request.onsuccess = () => {
             const now = Date.now();
@@ -534,6 +588,7 @@ private fun acquireOrRenewWriteLease(
         transaction.oncomplete = () => {
             if (!completed) {
                 completed = true;
+                if (acquired && handoffHook) handoffHook();
                 onComplete(acquired);
             }
         };
@@ -547,6 +602,13 @@ private fun acquireOrRenewWriteLease(
                 ? transaction.error.message
                 : "IndexedDB write lease transaction aborted"
         );
+        onCancel(() => {
+            completed = true;
+            try {
+                transaction.abort();
+            } catch (_) {
+            }
+        });
         """
     )
 }
@@ -576,11 +638,13 @@ private fun releaseIndexedDbWriteLease(
     onComplete: () -> Unit,
     onError: (String) -> Unit,
 ) {
+    // See acquireOrRenewWriteLease: raw JS may only reference function locals.
+    val leaseStoreName = writeLeaseStoreName
     js(
         """
         let completed = false;
-        const transaction = database.transaction([writeLeaseStoreName], "readwrite");
-        const store = transaction.objectStore(writeLeaseStoreName);
+        const transaction = database.transaction([leaseStoreName], "readwrite");
+        const store = transaction.objectStore(leaseStoreName);
         const request = store.get(lockName);
         request.onsuccess = () => {
             if (request.result && request.result.ownerId === ownerId) {
@@ -674,8 +738,22 @@ private const val writeLeaseDurationMillis = 30_000
 private const val writeLeaseRenewIntervalMillis = 10_000L
 private const val writeLeaseRetryMillis = 100
 
+internal var indexedDbLeaseAcquisitionHandoffHook: (() -> Unit)? = null
+
 private fun hasWebLocks(): Boolean =
-    js("!!(typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request)").unsafeCast<Boolean>()
+    js(
+        """
+        (function() {
+            try {
+                return typeof navigator !== "undefined" &&
+                    !!navigator.locks &&
+                    typeof navigator.locks.request === "function";
+            } catch (_) {
+                return false;
+            }
+        })()
+        """
+    ).unsafeCast<Boolean>()
 
 private fun requestWebLock(
     lockName: String,
@@ -684,11 +762,19 @@ private fun requestWebLock(
 ) {
     js(
         """
-        navigator.locks.request(lockName, { mode: "exclusive" }, () => new Promise((resolve) => {
-            onAcquired(resolve);
-        })).catch((error) => {
+        try {
+            const locks = navigator.locks;
+            if (!locks || typeof locks.request !== "function") {
+                throw new Error("Web Locks API is unavailable");
+            }
+            locks.request(lockName, { mode: "exclusive" }, () => new Promise((resolve) => {
+                onAcquired(resolve);
+            })).catch((error) => {
+                onError(error && error.message ? error.message : "Could not acquire IndexedDB write lock");
+            });
+        } catch (error) {
             onError(error && error.message ? error.message : "Could not acquire IndexedDB write lock");
-        });
+        }
         """
     )
 }

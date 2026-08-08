@@ -571,8 +571,16 @@ private suspend fun <T> withBrowserWriteLock(
                 }
                 continuation.invokeOnCancellation { blockJob.cancel() }
             },
-            onError = { message ->
-                continuation.resumeWithException(IllegalStateException(message))
+            onError = {
+                if (!continuation.isActive) return@requestWebLock
+                val fallbackJob = CoroutineScope(continuation.context).launch {
+                    try {
+                        continuation.resume(withIndexedDbWriteLease(database, databaseName, lockName, block))
+                    } catch (cause: Throwable) {
+                        continuation.resumeWithException(cause)
+                    }
+                }
+                continuation.invokeOnCancellation { fallbackJob.cancel() }
             },
         )
     }
@@ -619,45 +627,89 @@ private suspend fun tryAcquireWriteLease(
     database: JsAny,
     lockName: String,
     ownerId: String,
-): Boolean = awaitLeaseTransaction { onComplete, onError ->
-    acquireOrRenewWriteLease(
-        database,
-        writeLeaseStoreName,
-        lockName,
-        ownerId,
-        true,
-        writeLeaseDurationMillis,
-        onComplete,
-        onError,
-    )
-}
+): Boolean = awaitLeaseTransaction(
+    start = { onComplete, onError, onCancel ->
+        acquireOrRenewWriteLease(
+            database,
+            writeLeaseStoreName,
+            lockName,
+            ownerId,
+            true,
+            writeLeaseDurationMillis,
+            onComplete,
+            onError,
+            onCancel,
+            indexedDbLeaseAcquisitionHandoffHook,
+        )
+    },
+    onLateAcquire = {
+        try {
+            releaseIndexedDbWriteLease(database, writeLeaseStoreName, lockName, ownerId, {}, {})
+        } catch (_: Throwable) {
+            // Best effort: cancellation may close the database concurrently.
+        }
+    },
+)
 
 private suspend fun renewWriteLease(
     database: JsAny,
     lockName: String,
     ownerId: String,
-): Boolean = awaitLeaseTransaction { onComplete, onError ->
-    acquireOrRenewWriteLease(
-        database,
-        writeLeaseStoreName,
-        lockName,
-        ownerId,
-        false,
-        writeLeaseDurationMillis,
-        onComplete,
-        onError,
-    )
-}
+): Boolean = awaitLeaseTransaction(
+    start = { onComplete, onError, onCancel ->
+        acquireOrRenewWriteLease(
+            database,
+            writeLeaseStoreName,
+            lockName,
+            ownerId,
+            false,
+            writeLeaseDurationMillis,
+            onComplete,
+            onError,
+            onCancel,
+            indexedDbLeaseAcquisitionHandoffHook,
+        )
+    },
+)
 
 private suspend fun awaitLeaseTransaction(
-    start: ((Boolean) -> Unit, (String) -> Unit) -> Unit,
+    start: ((Boolean) -> Unit, (String) -> Unit, (() -> Unit) -> Unit) -> Unit,
+    onLateAcquire: () -> Unit = {},
 ): Boolean = suspendCancellableCoroutine { continuation ->
+    var cancelTransaction: (() -> Unit)? = null
+    var transactionCompleted = false
+    var acquired = false
+    var lateAcquireHandled = false
+    fun releaseLateAcquire() {
+        if (!lateAcquireHandled) {
+            lateAcquireHandled = true
+            onLateAcquire()
+        }
+    }
+    continuation.invokeOnCancellation {
+        cancelTransaction?.invoke()
+        if (transactionCompleted && acquired) releaseLateAcquire()
+    }
     start(
-        { acquired -> if (continuation.isActive) continuation.resume(acquired) },
+        { didAcquire ->
+            transactionCompleted = true
+            acquired = didAcquire
+            if (continuation.isActive) {
+                continuation.resume(didAcquire) { _, _, _ ->
+                    if (didAcquire) releaseLateAcquire()
+                }
+            } else if (didAcquire) {
+                releaseLateAcquire()
+            }
+        },
         { message ->
             if (continuation.isActive) {
                 continuation.resumeWithException(IllegalStateException(message))
             }
+        },
+        { cancel ->
+            cancelTransaction = cancel
+            if (!continuation.isActive) cancel()
         },
     )
 }
@@ -671,6 +723,8 @@ private fun acquireOrRenewWriteLease(
     leaseDurationMillis: Int,
     onComplete: (Boolean) -> Unit,
     onError: (String) -> Unit,
+    onCancel: (() -> Unit) -> Unit,
+    handoffHook: (() -> Unit)?,
 ): Unit {
     js(
         """
@@ -700,6 +754,7 @@ private fun acquireOrRenewWriteLease(
         transaction.oncomplete = () => {
             if (!completed) {
                 completed = true;
+                if (acquired && handoffHook) handoffHook();
                 onComplete(acquired);
             }
         };
@@ -709,6 +764,13 @@ private fun acquireOrRenewWriteLease(
         transaction.onabort = () => fail(
             transaction.error?.message ?? "IndexedDB write lease transaction aborted"
         );
+        onCancel(() => {
+            completed = true;
+            try {
+                transaction.abort();
+            } catch (_) {
+            }
+        });
         """
     )
 }
@@ -836,8 +898,22 @@ private const val writeLeaseDurationMillis = 30_000
 private const val writeLeaseRenewIntervalMillis = 10_000L
 private const val writeLeaseRetryMillis = 100
 
+internal var indexedDbLeaseAcquisitionHandoffHook: (() -> Unit)? = null
+
 private fun hasWebLocks(): Boolean =
-    js("!!(typeof navigator !== 'undefined' && navigator.locks && navigator.locks.request)")
+    js(
+        """
+        (function() {
+            try {
+                return typeof navigator !== "undefined" &&
+                    !!navigator.locks &&
+                    typeof navigator.locks.request === "function";
+            } catch (_) {
+                return false;
+            }
+        })()
+        """
+    )
 
 private fun requestWebLock(
     lockName: String,
@@ -846,11 +922,19 @@ private fun requestWebLock(
 ) {
     js(
         """
-        navigator.locks.request(lockName, { mode: "exclusive" }, () => new Promise((resolve) => {
-            onAcquired(resolve);
-        })).catch((error) => {
+        try {
+            const locks = navigator.locks;
+            if (!locks || typeof locks.request !== "function") {
+                throw new Error("Web Locks API is unavailable");
+            }
+            locks.request(lockName, { mode: "exclusive" }, () => new Promise((resolve) => {
+                onAcquired(resolve);
+            })).catch((error) => {
+                onError(error && error.message ? error.message : "Could not acquire IndexedDB write lock");
+            });
+        } catch (error) {
             onError(error && error.message ? error.message : "Could not acquire IndexedDB write lock");
-        });
+        }
         """
     )
 }

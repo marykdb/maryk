@@ -15,6 +15,7 @@ class JsonWriter(
     private val colonSpace = if (pretty) ": " else ":"
 
     override fun writeStartObject(isCompact: Boolean) {
+        checkRootValueAllowed()
         writeCommaIfNeeded()
         super.writeStartObject(isCompact)
         writer("{")
@@ -28,6 +29,7 @@ class JsonWriter(
     }
 
     override fun writeStartArray(isCompact: Boolean) {
+        checkRootValueAllowed()
         writeCommaIfNeeded()
         super.writeStartArray(isCompact)
         writer("[")
@@ -51,6 +53,16 @@ class JsonWriter(
     /** Writes a string value including quotes */
     override fun writeString(value: String) = writeValue("\"${escapeJson(value)}\"")
 
+    override fun writeDouble(double: Double) {
+        requireFinite(double)
+        writeValue(double.toString())
+    }
+
+    override fun writeFloat(float: Float) {
+        requireFinite(float)
+        writeValue(float.toString())
+    }
+
     /** Writes a value excluding quotes */
     override fun writeValue(value: String) = if (typeStack.isNotEmpty()) {
         when (typeStack.last()) {
@@ -68,7 +80,26 @@ class JsonWriter(
             }
         }
     } else {
+        checkTypeIsAllowed(JsonType.OBJ_VALUE, arrayOf(JsonType.START))
         writer(value)
+    }
+
+    private fun checkRootValueAllowed() {
+        if (typeStack.isEmpty() && lastType != JsonType.START) {
+            throw IllegalJsonOperation("Multiple JSON root values are not allowed")
+        }
+    }
+
+    private fun requireFinite(value: Double) {
+        if (value.isNaN() || value.isInfinite()) {
+            throw IllegalJsonOperation("JSON numbers must be finite")
+        }
+    }
+
+    private fun requireFinite(value: Float) {
+        if (value.isNaN() || value.isInfinite()) {
+            throw IllegalJsonOperation("JSON numbers must be finite")
+        }
     }
 
     private fun writeCommaIfNeeded() {
@@ -86,7 +117,9 @@ class JsonWriter(
     private fun escapeJson(value: String): String {
         if (value.isEmpty()) return value
         val builder = StringBuilder(value.length + 8)
-        value.forEach { char ->
+        var index = 0
+        while (index < value.length) {
+            val char = value[index]
             when (char) {
                 '\\' -> builder.append("\\\\")
                 '"' -> builder.append("\\\"")
@@ -96,7 +129,15 @@ class JsonWriter(
                 '\r' -> builder.append("\\r")
                 '\t' -> builder.append("\\t")
                 else -> {
-                    if (char < ' ') {
+                    if (char.isHighSurrogate()) {
+                        if (value.getOrNull(index + 1)?.isLowSurrogate() != true) {
+                            throw IllegalJsonOperation("JSON strings cannot contain lone UTF-16 surrogates")
+                        }
+                        builder.append(char)
+                        builder.append(value[++index])
+                    } else if (char.isLowSurrogate()) {
+                        throw IllegalJsonOperation("JSON strings cannot contain lone UTF-16 surrogates")
+                    } else if (char < ' ') {
                         builder.append("\\u")
                         val hex = char.code.toString(16).padStart(4, '0')
                         builder.append(hex)
@@ -105,6 +146,7 @@ class JsonWriter(
                     }
                 }
             }
+            index++
         }
         return builder.toString()
     }

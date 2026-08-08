@@ -72,6 +72,30 @@ internal class JsonWriterTest {
         )
     }
 
+    @Test
+    fun rejectsNonFiniteNumbers() {
+        val writer = JsonWriter {}
+
+        assertFailsWith<IllegalJsonOperation> { writer.writeDouble(Double.NaN) }
+        assertFailsWith<IllegalJsonOperation> { writer.writeFloat(Float.POSITIVE_INFINITY) }
+    }
+
+    @Test
+    fun rejectsMultipleRootValues() {
+        val writer = JsonWriter {}
+        writer.writeInt(1)
+
+        assertFailsWith<IllegalJsonOperation> { writer.writeInt(2) }
+    }
+
+    @Test
+    fun rejectsLoneSurrogates() {
+        val writer = JsonWriter {}
+
+        assertFailsWith<IllegalJsonOperation> { writer.writeString("\uD800") }
+        assertFailsWith<IllegalJsonOperation> { writer.writeString("\uDC00") }
+    }
+
     private fun writeJson(writer: IsJsonLikeWriter) {
         writer.apply {
             writeStartArray()

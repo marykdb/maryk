@@ -40,6 +40,14 @@ data class ValueRange<T : Comparable<T>>(
     }
 
     companion object : QueryModel<ValueRange<*>, Companion>() {
+
+        private class SerializedComparable : Comparable<SerializedComparable> {
+            override fun compareTo(other: SerializedComparable) = 0
+        }
+
+        @Suppress("UNCHECKED_CAST")
+        private fun <T> Any.asSerializedType(): T = this as T
+
         val from by contextual(
             index = 1u,
             getter = ValueRange<*>::from,
@@ -69,8 +77,8 @@ data class ValueRange<T : Comparable<T>>(
 
         override fun invoke(values: ObjectValues<ValueRange<*>, Companion>): ValueRange<*> =
             ValueRange(
-                from = values<Comparable<Any>>(1u),
-                to = values(2u),
+                from = values<Any>(1u).asSerializedType<SerializedComparable>(),
+                to = values<Any>(2u).asSerializedType<SerializedComparable>(),
                 inclusiveFrom = values(3u),
                 inclusiveTo = values(4u)
             )

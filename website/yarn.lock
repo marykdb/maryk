@@ -108,7 +108,7 @@
     unist-util-visit-parents "^6.0.2"
     vfile "^6.0.3"
 
-"@astrojs/markdown-satteri@0.3.5", "@astrojs/markdown-satteri@^0.3.2":
+"@astrojs/markdown-satteri@0.3.5", "@astrojs/markdown-satteri@^0.3.5":
   version "0.3.5"
   resolved "https://registry.yarnpkg.com/@astrojs/markdown-satteri/-/markdown-satteri-0.3.5.tgz#7d73002106592c6c6a57aadb9bc8d00116a6fba2"
   integrity sha512-CvWVEFAbay7YO+i9SaqDJubipA5ckiVB89QWoMJ5XC0m5CtFg8JwZ7Kau6X9sYY7FZURH0w2l03ISH2jOS/RDQ==
@@ -119,7 +119,7 @@
     hast-util-from-html "^2.0.3"
     satteri "^0.9.1"
 
-"@astrojs/mdx@^7.0.0":
+"@astrojs/mdx@^7.0.5":
   version "7.0.5"
   resolved "https://registry.yarnpkg.com/@astrojs/mdx/-/mdx-7.0.5.tgz#4d74851130f8d1c6ee69d31effb61efa8dce7533"
   integrity sha512-wEM/HH1RiEntyPVagdiF+yArzfcYLKBB0C1RZspVidKZ97rRMbaqP1Nbl/GR0sJs8zwaceqxRymw8aOKKJRdYw==
@@ -146,7 +146,7 @@
   dependencies:
     prismjs "^1.30.0"
 
-"@astrojs/sitemap@^3.7.2":
+"@astrojs/sitemap@^3.7.3":
   version "3.7.3"
   resolved "https://registry.yarnpkg.com/@astrojs/sitemap/-/sitemap-3.7.3.tgz#f6eed62e414fef334146b853d7c56fe626994cf8"
   integrity sha512-f8euLVsyeAmAkSm/1M2Kb8sL8byQmfgbvBNaHFItCheTj/IpiJYSEWVcqDHZ/yEHxiS7+w87mQkzwZaPHmk5GA==
@@ -155,14 +155,14 @@
     stream-replace-string "^2.0.0"
     zod "^4.3.6"
 
-"@astrojs/starlight@0.41.5":
-  version "0.41.5"
-  resolved "https://registry.yarnpkg.com/@astrojs/starlight/-/starlight-0.41.5.tgz#95dce40743851eee2a715e731596ee63f09b16c8"
-  integrity sha512-BNkyysByeqk9cXGNnd1fC1+kc9rrllo1Df/XD34wQg/I5HUX1Bc+F91aTktg17sapQs+mafzWSRgmURRyCNLKA==
+"@astrojs/starlight@0.41.7":
+  version "0.41.7"
+  resolved "https://registry.yarnpkg.com/@astrojs/starlight/-/starlight-0.41.7.tgz#d508ae90d7da3696024c59dd032c3da211d3e78c"
+  integrity sha512-579VJuZgo20UpNQPm9EIez5W3DFSrD16uiV2YX6rUlpLtjgKSdnc69TxVTZXn4AtI2B731TI2qhW1O3K+vwtrQ==
   dependencies:
-    "@astrojs/markdown-satteri" "^0.3.2"
-    "@astrojs/mdx" "^7.0.0"
-    "@astrojs/sitemap" "^3.7.2"
+    "@astrojs/markdown-satteri" "^0.3.5"
+    "@astrojs/mdx" "^7.0.5"
+    "@astrojs/sitemap" "^3.7.3"
     "@pagefind/default-ui" "^1.3.0"
     "@types/hast" "^3.0.4"
     "@types/js-yaml" "^4.0.9"

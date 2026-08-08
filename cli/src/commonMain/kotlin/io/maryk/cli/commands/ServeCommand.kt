@@ -6,11 +6,23 @@ import io.maryk.cli.StoreType
 import maryk.datastore.remote.RemoteStoreServer
 import maryk.datastore.remote.RemoteStoreServerConfig
 import maryk.datastore.remote.validateRemoteStoreServerBinding
+import maryk.datastore.shared.rethrowIfFatal
 import maryk.file.File
 
 class ServeCommand(
     private val rocksDbConnector: RocksDbConnector = DefaultRocksDbConnector,
     private val foundationDbConnector: FoundationDbConnector = DefaultFoundationDbConnector,
+    private val serverStarter: (RemoteStoreServer, String, Int, Boolean, String?) -> Unit = { server, host, port, allowInsecureRemoteBinding, bearerToken ->
+        server.start(
+            host,
+            port,
+            wait = true,
+            config = RemoteStoreServerConfig(
+                allowInsecureRemoteBinding = allowInsecureRemoteBinding,
+                bearerToken = bearerToken,
+            ),
+        )
+    },
 ) : Command {
     override val name: String = "serve"
     override val description: String = "Serve a Maryk store over HTTP using a small Ktor service."
@@ -59,16 +71,16 @@ class ServeCommand(
         println("Press Ctrl+C to stop.")
 
         return try {
-            server.start(
-                options.host,
-                options.port,
-                wait = true,
-                config = RemoteStoreServerConfig(
-                    allowInsecureRemoteBinding = options.allowInsecureRemoteBinding,
-                    bearerToken = options.bearerToken,
-                ),
-            )
-            CommandResult(lines = listOf("Server stopped."))
+            try {
+                serverStarter(server, options.host, options.port, options.allowInsecureRemoteBinding, options.bearerToken)
+                CommandResult(lines = listOf("Server stopped."))
+            } catch (e: Throwable) {
+                e.rethrowIfFatal()
+                CommandResult(
+                    lines = listOf("Serve failed: ${e.message ?: e::class.simpleName}"),
+                    isError = true,
+                )
+            }
         } finally {
             connection.close()
         }

@@ -160,6 +160,19 @@ class ScanCommandTest {
     }
 
     @Test
+    fun oneShotScanReportsDataStoreFailure() {
+        val state = connectedStateWithFailingScan().apply { isOneShotMode = true }
+
+        val result = ScanCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel"),
+        )
+
+        assertTrue(result.isError)
+        assertEquals(listOf("Scan failed: boom"), result.lines)
+    }
+
+    @Test
     fun interactiveUndeleteReportsDataStoreFailure() {
         val state = connectedStateWithFailingUndelete()
 

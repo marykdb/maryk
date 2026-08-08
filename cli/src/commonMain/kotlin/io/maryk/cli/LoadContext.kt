@@ -174,8 +174,13 @@ data class LoadContext(
     }
 
     fun refreshView(): RefreshResult {
-        val response = runBlocking {
-            dataStore.execute(dataModel.get(key, filterSoftDeleted = !includeDeleted))
+        val response = try {
+            runBlocking {
+                dataStore.execute(dataModel.get(key, filterSoftDeleted = !includeDeleted))
+            }
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            return RefreshResult.Error("View refresh failed: ${e.message ?: e::class.simpleName}")
         }
 
         val valuesWithMetaData = response.values.firstOrNull()

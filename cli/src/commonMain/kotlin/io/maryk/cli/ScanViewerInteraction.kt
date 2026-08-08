@@ -17,6 +17,7 @@ import maryk.core.query.filters.And
 import maryk.core.query.filters.IsFilter
 import maryk.core.query.orders.IsOrder
 import maryk.core.query.changes.ObjectSoftDeleteChange
+import io.maryk.cli.formatDeleteResult
 import maryk.core.query.changes.change
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
@@ -293,12 +294,8 @@ class ScanViewerInteraction(
             is RefreshResult.Success -> {
                 val deleteContext = DeleteContext(label) { hardDelete ->
                     val request = dataModel.delete(row.key, hardDelete = hardDelete)
-                    runBlocking { dataStore.execute(request) }
-                    if (hardDelete) {
-                        listOf("Hard deleted $label.")
-                    } else {
-                        listOf("Deleted $label.")
-                    }
+                    val response = runBlocking { dataStore.execute(request) }
+                    formatDeleteResult(response, label, hardDelete)
                 }
                 val viewer = OutputViewerInteraction(
                     lines = refresh.lines,
@@ -678,6 +675,8 @@ class ScanViewerInteraction(
         return lines
     }
 
+    internal fun failureMessage(): String? = statusMessage?.takeIf { it.startsWith("Scan failed:") }
+
     private fun currentRow(): ScanRow? = rows.getOrNull(selectedIndex)
 
     private fun currentRowLabel(): String =
@@ -692,12 +691,8 @@ class ScanViewerInteraction(
                 val label = "${dataModel.Meta.name} ${row.key}"
                 val message = try {
                     val request = dataModel.delete(row.key, hardDelete = pendingHardDelete)
-                    runBlocking { dataStore.execute(request) }
-                    if (pendingHardDelete) {
-                        "Hard deleted $label."
-                    } else {
-                        "Deleted $label."
-                    }
+                    val response = runBlocking { dataStore.execute(request) }
+                    formatDeleteResult(response, label, pendingHardDelete).single()
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()
                     "Delete failed: ${e.message ?: e::class.simpleName}"

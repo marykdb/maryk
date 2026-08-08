@@ -131,7 +131,9 @@ class ScanCommand : Command {
         )
 
         return if (context.state.isOneShotMode) {
-            CommandResult(lines = interaction.snapshotLines(includeHeader = true, includeFooter = false))
+            interaction.failureMessage()?.let { failure ->
+                CommandResult(lines = listOf(failure), isError = true)
+            } ?: CommandResult(lines = interaction.snapshotLines(includeHeader = true, includeFooter = false))
         } else {
             context.state.startInteraction(interaction)
             CommandResult(lines = emptyList())

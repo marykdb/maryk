@@ -15,15 +15,13 @@ internal object CommandLineParser {
 
         var inQuotes = false
         var quoteChar = '"'
-        var escaping = false
-
-        input.forEach { char ->
+        var index = 0
+        while (index < input.length) {
+            val char = input[index]
             when {
-                escaping -> {
-                    current.append(char)
-                    escaping = false
+                char == '\\' && inQuotes && input.getOrNull(index + 1) in setOf(quoteChar, '\\') -> {
+                    current.append(input[++index])
                 }
-                char == '\\' -> escaping = true
                 inQuotes && char == quoteChar -> inQuotes = false
                 inQuotes -> current.append(char)
                 char == '"' || char == '\'' -> {
@@ -38,10 +36,7 @@ internal object CommandLineParser {
                 }
                 else -> current.append(char)
             }
-        }
-
-        if (escaping) {
-            return ParseResult.Error("Command ended with an unfinished escape (trailing \\).")
+            index++
         }
 
         if (inQuotes) {

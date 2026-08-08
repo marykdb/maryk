@@ -3,6 +3,7 @@ package io.maryk.cli.commands
 import io.maryk.cli.CliEnvironment
 import io.maryk.cli.CliState
 import io.maryk.cli.DirectoryResolution
+import io.maryk.cli.RocksDbStoreConnection
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -10,6 +11,27 @@ import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class ServeCommandTest {
+    @Test
+    fun reportsServerStartFailureAndClosesStore() {
+        val store = FakeDataStore()
+        val command = ServeCommand(
+            rocksDbConnector = RocksDbConnector {
+                ConnectCommand.RocksDbConnectionOutcome.Success(RocksDbStoreConnection("/data", store))
+            },
+            serverStarter = { _, _, _, _, _ -> throw IllegalStateException("bind boom") },
+        )
+        val state = CliState()
+
+        val result = command.execute(
+            CommandContext(CommandRegistry(state, TestServeEnvironment), state, TestServeEnvironment),
+            listOf("rocksdb", "--dir", "/data"),
+        )
+
+        assertTrue(result.isError)
+        assertEquals(listOf("Serve failed: bind boom"), result.lines)
+        assertTrue(store.closed)
+    }
+
     @Test
     fun rejectsUnauthenticatedPublicBindBeforeOpeningStore() {
         var connectorCalled = false

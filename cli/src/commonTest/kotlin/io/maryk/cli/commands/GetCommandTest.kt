@@ -8,9 +8,12 @@ import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.GetRequest
+import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.DeleteResponse
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.values.Values
 import maryk.test.models.SimpleMarykModel
 import maryk.yaml.YamlWriter
@@ -174,6 +177,37 @@ class GetCommandTest {
                 "----- Data -----",
             ) + yamlLines + listOf("----- End of record: SimpleMarykModel $keyString -----"),
             result.lines,
+        )
+    }
+
+    @Test
+    fun deleteReportsPerRecordFailure() {
+        val values = SimpleMarykModel.create { value with "hello" }
+        val key = SimpleMarykModel.key(values)
+        val store = object : FakeDataStore(dataModelsById = mapOf(1u to SimpleMarykModel)) {
+            @Suppress("UNCHECKED_CAST")
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(request: RQ): RP = when (request) {
+                is GetRequest<*> -> ValuesResponse(
+                    dataModel = SimpleMarykModel,
+                    values = listOf(ValuesWithMetaData(key, values, 1uL, 1uL, false)),
+                ) as RP
+                is DeleteRequest<*> -> DeleteResponse(
+                    dataModel = SimpleMarykModel,
+                    statuses = listOf(DoesNotExist(key)),
+                ) as RP
+                else -> error("Unexpected request")
+            }
+        }
+        val state = CliState().apply { replaceConnection(RocksDbStoreConnection("/data/store", store)) }
+
+        val result = GetCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel", key.toString()),
+        )
+
+        assertEquals(
+            listOf("Delete failed: SimpleMarykModel $key does not exist."),
+            requireNotNull(result.deleteContext).onDelete(false),
         )
     }
 

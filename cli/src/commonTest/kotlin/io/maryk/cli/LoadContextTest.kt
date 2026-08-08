@@ -19,9 +19,28 @@ import maryk.yaml.YamlWriter
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class LoadContextTest {
+    @Test
+    fun refreshReportsDataStoreFailure() {
+        val values = SimpleMarykModel.create { value with "value" }
+        val context = LoadContext(
+            label = "SimpleMarykModel ${SimpleMarykModel.key(values)}",
+            dataModel = SimpleMarykModel,
+            key = SimpleMarykModel.key(values),
+            dataStore = object : FakeDataStore() {
+                override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(request: RQ): RP =
+                    throw IllegalStateException("refresh boom")
+            },
+        )
+
+        val result = assertIs<RefreshResult.Error>(context.refreshView())
+
+        assertEquals("View refresh failed: refresh boom", result.message)
+    }
+
     @Test
     fun loadsYamlAndAppliesChange() {
         val values = SimpleMarykModel.create {

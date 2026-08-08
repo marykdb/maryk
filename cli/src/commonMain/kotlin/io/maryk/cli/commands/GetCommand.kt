@@ -17,6 +17,7 @@ import maryk.core.values.ObjectValues
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import io.maryk.cli.DeleteContext
+import io.maryk.cli.formatDeleteResult
 import io.maryk.cli.LoadContext
 import io.maryk.cli.RecordSubcommandResult
 import io.maryk.cli.SaveContext
@@ -115,12 +116,8 @@ class GetCommand : Command {
             label = "${dataModel.Meta.name} $keyToken",
         ) { hardDelete ->
             val request = dataModel.delete(key, hardDelete = hardDelete)
-            runBlocking { dataStore.execute(request) }
-            if (hardDelete) {
-                listOf("Hard deleted ${dataModel.Meta.name} $keyToken.")
-            } else {
-                listOf("Deleted ${dataModel.Meta.name} $keyToken.")
-            }
+            val response = runBlocking { dataStore.execute(request) }
+            formatDeleteResult(response, "${dataModel.Meta.name} $keyToken", hardDelete)
         }
 
         if (subcommandTokens.isNotEmpty()) {

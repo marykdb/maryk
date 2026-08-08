@@ -261,6 +261,9 @@ internal class YamlReaderImpl(
     internal fun skipEmptyLinesAndCommentsAndCountIndents(): Int {
         var currentIndentCount = 0
         while (this.lastChar.isWhitespace()) {
+            if (this.lastChar == '\t') {
+                throw InvalidYamlContent("Tabs cannot be used for indentation")
+            }
             if (this.lastChar.isLineBreak()) {
                 currentIndentCount = 0
             } else {

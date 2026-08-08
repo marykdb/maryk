@@ -28,7 +28,7 @@ internal class AnchorRecorder(
 internal fun IsYamlCharReader.anchorReader(onDone: () -> JsonToken): JsonToken {
     val anchor = buildString {
         read() // Skip the '&' character
-        while (!lastChar.isWhitespace()) {
+        while (!lastChar.isWhitespace() && lastChar !in charArrayOf(',', '[', ']', '{', '}')) {
             append(lastChar)
             read()
         }

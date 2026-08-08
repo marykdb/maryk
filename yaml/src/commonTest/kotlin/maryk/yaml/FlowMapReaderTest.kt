@@ -5,6 +5,16 @@ import kotlin.test.Test
 
 class FlowMapReaderTest {
     @Test
+    fun rejectsRepeatedFlowMapCommas() {
+        createYamlReader("{first: value,, second: value}").apply {
+            assertStartObject()
+            assertFieldName("first")
+            assertValue("value")
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
     fun readsEmptyFlowMapWithoutField() {
         createYamlReader("{}").apply {
             assertStartObject()

@@ -4,6 +4,14 @@ import kotlin.test.Test
 
 class FlowSequenceReaderTest {
     @Test
+    fun rejectsRepeatedFlowSequenceCommas() {
+        createYamlReader("[first,, second]").apply {
+            assertStartArray()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
     fun readSequenceItems() {
         createYamlReader("""
             |     - ["test1", "test2", 'test3']

@@ -5,6 +5,17 @@ import kotlin.test.Test
 
 class AnchorAndAliasReaderTest {
     @Test
+    fun readsAnchorBeforeFlowSequenceEnd() {
+        createYamlReader("[&anchor, *anchor]").apply {
+            assertStartArray()
+            assertValue(null, ValueType.Null)
+            assertValue(null, ValueType.Null)
+            assertEndArray()
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun doesNotResolveAnchorsFromPreviousDocument() {
         createYamlReader("--- &anchor value\n--- *anchor").apply {
             assertValue("value")

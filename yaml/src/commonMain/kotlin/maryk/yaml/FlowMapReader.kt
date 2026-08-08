@@ -81,6 +81,9 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
                         }
 
                         read()
+                        if (this.lastChar == ',') {
+                            throw InvalidYamlContent("Cannot have repeated commas in a flow map")
+                        }
                         this.readUntilToken(extraIndent)
                     }
                     ':' -> {

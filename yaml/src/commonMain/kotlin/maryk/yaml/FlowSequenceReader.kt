@@ -74,7 +74,14 @@ internal class FlowSequenceReader<out P: IsYamlCharWithIndentsReader>(
                     '{' -> this.flowMapReader(tag, 0).let(this::checkComplexFieldAndReturn)
                     '[' -> this.flowSequenceReader(tag, 0).let(this::checkComplexFieldAndReturn)
                     '!' -> this.tagReader { this.readUntilToken(extraIndent, it) }
-                    '&' -> this.anchorReader { this.readUntilToken(extraIndent, tag) }
+                    '&' -> this.anchorReader {
+                        if (this.lastChar == ',' || this.lastChar == ']') {
+                            this.state = VALUE_START
+                            createYamlValueToken(null, tag, false)
+                        } else {
+                            this.readUntilToken(extraIndent, tag)
+                        }
+                    }
                     '*' -> this.aliasReader(FLOW_SEQUENCE)
                     '-' -> {
                         read()
@@ -89,6 +96,9 @@ internal class FlowSequenceReader<out P: IsYamlCharWithIndentsReader>(
                             this.jsonTokenCreator(null, false, null, 0)
                         } else {
                             read()
+                            if (this.lastChar == ',') {
+                                throw InvalidYamlContent("Cannot have repeated commas in a flow sequence")
+                            }
                             tokenReturner(tag) {
                                 this.readUntilToken(0)
                             }

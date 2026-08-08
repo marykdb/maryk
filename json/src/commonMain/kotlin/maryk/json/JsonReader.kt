@@ -404,7 +404,7 @@ class JsonReader private constructor(
     }
 
     private fun skipWhiteSpace(resume: WhitespaceReadResume = WhitespaceReadResume.RETURN_CURRENT) {
-        if (lastChar.isWhitespace()) {
+        if (lastChar.isJsonWhitespace()) {
             suspendedWhitespaceRead = WhitespaceReadState(resume, needsRead = false)
             continueWhitespaceRead()
         }
@@ -416,7 +416,7 @@ class JsonReader private constructor(
             read()
             whitespaceRead.needsRead = false
         }
-        while (lastChar.isWhitespace()) {
+        while (lastChar.isJsonWhitespace()) {
             read()
         }
         suspendedWhitespaceRead = null
@@ -636,7 +636,7 @@ class JsonReader private constructor(
     }
 
     private fun validateNumberTrailingCharacter() {
-        if (typeStack.isEmpty() && !lastChar.isWhitespace()) {
+        if (typeStack.isEmpty() && !lastChar.isJsonWhitespace()) {
             throwJsonException()
         }
     }
@@ -872,3 +872,5 @@ private fun String.hasUnpairedSurrogates(): Boolean {
     }
     return false
 }
+
+private fun Char.isJsonWhitespace() = this == ' ' || this == '\t' || this == '\n' || this == '\r'

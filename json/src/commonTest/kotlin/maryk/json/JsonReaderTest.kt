@@ -800,6 +800,19 @@ internal class JsonReaderTest {
     }
 
     @Test
+    fun rejectsWhitespaceOutsideTheJsonSpecification() {
+        listOf("\u000B42", "42\u000C", "[\u00A01]").forEach { input ->
+            assertFailsWith<InvalidJsonContent>(input) {
+                JsonReader(input).apply {
+                    do {
+                        nextToken()
+                    } while (currentToken !is Stopped)
+                }
+            }
+        }
+    }
+
+    @Test
     fun readsScalarsInsideContainers() {
         JsonReader("[42, -42, 1.25e-2, true, false, null]").apply {
             assertStartArray()

@@ -878,9 +878,7 @@ private fun String.firstNonWhitespaceChar(): Char? = firstOrNull { !it.isWhitesp
 
 private fun detectProtoScope(bytes: ByteArray): DataImportScope {
     val frameCount = countLengthPrefixedFrames(bytes) ?: return DataImportScope.SINGLE
-    // A single valid frame is ambiguous with regular protobuf payload bytes.
-    // Prefer SINGLE unless at least two framed records are present.
-    return if (frameCount > 1) DataImportScope.MULTIPLE else DataImportScope.SINGLE
+    return if (frameCount > 0) DataImportScope.MULTIPLE else DataImportScope.SINGLE
 }
 
 private fun countLengthPrefixedFrames(bytes: ByteArray): Int? {

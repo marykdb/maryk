@@ -193,6 +193,7 @@ internal class YamlReaderImpl(
             }
 
             when (currentToken) {
+                StartDocument -> this.storedAnchors.clear()
                 is StartObject, is StartArray -> this.tokenDepth++
                 is EndObject, is EndArray -> this.tokenDepth--
                 is MergeFieldName -> {
@@ -235,7 +236,11 @@ internal class YamlReaderImpl(
 
             for (it in this.anchorReaders) {
                 it.recordToken(currentToken, this.tokenDepth) { anchor, tokens ->
-                    this.storedAnchors[anchor.trim()] = tokens
+                    val name = anchor.trim()
+                    if (name in this.storedAnchors) {
+                        throw InvalidYamlContent("Duplicate anchor &$name")
+                    }
+                    this.storedAnchors[name] = tokens
                     this.anchorReadersToRemove.add(it)
                 }
             }

@@ -5,6 +5,15 @@ import kotlin.test.Test
 
 class FlowMapReaderTest {
     @Test
+    fun readsEmptyFlowMapWithoutField() {
+        createYamlReader("{}").apply {
+            assertStartObject()
+            assertEndObject()
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun readMapItems() {
         createYamlReader("""
         |     - {"key0",-key1: "value1", 'key2': 'value2'}

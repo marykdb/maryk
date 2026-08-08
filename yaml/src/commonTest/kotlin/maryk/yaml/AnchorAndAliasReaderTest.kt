@@ -5,6 +5,24 @@ import kotlin.test.Test
 
 class AnchorAndAliasReaderTest {
     @Test
+    fun doesNotResolveAnchorsFromPreviousDocument() {
+        createYamlReader("--- &anchor value\n--- *anchor").apply {
+            assertValue("value")
+            assertStartDocument()
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun rejectsDuplicateAnchorsInDocument() {
+        createYamlReader("[&anchor first, &anchor second]").apply {
+            assertStartArray()
+            assertValue("first")
+            assertInvalidYaml()
+        }
+    }
+
+    @Test
     fun anchorsWithValue() {
         createYamlReader("""
         |  - &array alfa

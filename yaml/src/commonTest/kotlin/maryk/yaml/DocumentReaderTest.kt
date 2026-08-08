@@ -137,6 +137,14 @@ class DocumentReaderTest {
     }
 
     @Test
+    fun readsNegativeRootScalarAsNumber() {
+        createYamlReader("-2").apply {
+            assertValue(-2, ValueType.Int)
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun readDoubleDash() {
         createYamlReader("""
         |-- test

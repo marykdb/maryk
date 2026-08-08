@@ -79,7 +79,9 @@ internal class DocumentReader(
                             it.readUntilToken(0, tag)
                         }
                     }
-                    else -> plainStringReader("-")
+                    else -> this.plainStringReader("-", null, NORMAL, 0) { value, isPlainString, tagg, _ ->
+                        createYamlValueToken(value, tagg, isPlainString)
+                    }
                 }
             }
             '.' -> {

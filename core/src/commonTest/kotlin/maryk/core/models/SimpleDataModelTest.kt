@@ -3,6 +3,7 @@ package maryk.core.models
 import maryk.core.protobuf.WriteCache
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.lib.exceptions.ParseException
@@ -149,6 +150,18 @@ internal class SimpleDataModelTest {
 
         assertFailsWith<ParseException> {
             SimpleMarykModel.Serializer.readProtoBuf(unknownField.size, unknownField::read)
+        }
+    }
+
+    @Test
+    fun rejectsKnownProtoBufFieldWithUnexpectedWireType() {
+        val bytes = ByteCollector()
+        bytes.reserve(2)
+        ProtoBuf.writeKey(1u, VAR_INT, bytes::write)
+        bytes.write(1)
+
+        assertFailsWith<ParseException> {
+            SimpleMarykModel.Serializer.readProtoBuf(bytes.size, bytes::read)
         }
     }
 

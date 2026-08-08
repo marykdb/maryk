@@ -8,11 +8,18 @@ import maryk.core.models.IsValuesDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsCollectionDefinition
 import maryk.core.properties.definitions.IsEmbeddedObjectDefinition
+import maryk.core.properties.definitions.IsPropertyDefinition
+import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.ProtoBufKey
+import maryk.core.protobuf.WireType
+import maryk.core.protobuf.WireType.BIT_32
+import maryk.core.protobuf.WireType.BIT_64
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.protobuf.addProtoByteLength
@@ -393,6 +400,9 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         if (propertyDefinition == null) {
             skipUnknownField(key, byteReader, remainingLength)
         } else {
+            if (!propertyDefinition.acceptsProtoBufWireType(key.wireType)) {
+                throw ParseException("Unexpected wire type ${key.wireType} for property '${dataObjectPropertyDefinition.name}'")
+            }
             val valueLength = readProtoBufValueLength(key, byteReader, remainingLength)
             values[key.tag] =
                 when (propertyDefinition) {
@@ -413,6 +423,15 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
                     dataObjectPropertyDefinition.capture(context, it)
                 }
         }
+    }
+
+    private fun IsPropertyDefinition<*>.acceptsProtoBufWireType(wireType: WireType): Boolean = when (this) {
+        is IsCollectionDefinition<*, *, *, *> -> when (val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
+            VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == valueWireType
+            else -> wireType == LENGTH_DELIMITED
+        }
+        is IsValueDefinition<*, *> -> wireType == this.wireType
+        else -> wireType == LENGTH_DELIMITED
     }
 
     /**

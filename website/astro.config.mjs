@@ -1,5 +1,6 @@
 // @ts-check
 import {defineConfig, passthroughImageService} from 'astro/config';
+import {unified} from '@astrojs/markdown-remark';
 import starlight from '@astrojs/starlight';
 import remarkGfm from 'remark-gfm';
 import {fileURLToPath} from 'node:url';
@@ -13,7 +14,7 @@ export default defineConfig({
         service: passthroughImageService(),
     },
     markdown: {
-        remarkPlugins: [remarkGfm],
+        processor: unified({remarkPlugins: [remarkGfm]}),
     },
     vite: {
         resolve: {

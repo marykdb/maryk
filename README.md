@@ -103,6 +103,8 @@ See [store/README.md](store/README.md) for the decision guide.
 
 ## Repository Development
 
+Requires JDK 21. Confirm with `java -version` before running Gradle.
+
 Useful commands:
 
 ```bash

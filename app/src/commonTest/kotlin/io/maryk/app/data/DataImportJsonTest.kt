@@ -5,8 +5,14 @@ import maryk.json.JsonToken
 import kotlin.test.Test
 import kotlin.test.assertFails
 import kotlin.test.assertIs
+import kotlin.test.assertEquals
 
 class DataImportJsonTest {
+    @Test
+    fun recognizesEmptyYamlCollectionAsNoRecords() {
+        assertEquals(emptyList(), splitYamlDocuments("[]\n"))
+    }
+
     @Test
     fun acceptsWhitespaceAfterJsonRecords() {
         val reader = readerAfterEmptyArray("[ ] \n")

@@ -518,9 +518,12 @@ private val windowsReservedFileNames = setOf(
 )
 
 internal fun sanitizeFilePart(value: String): String {
-    val normalized = value
-        .trim()
-        .replace(Regex("[^A-Za-z0-9._-]"), "_")
+    val encoded = buildString {
+        value.trim().forEach { char ->
+            append(if (char.isAsciiFileNameCharacter()) char.toString() else "_${char.code.toString(16)}_")
+        }
+    }
+    val normalized = encoded
         .trim('.')
         .ifBlank { "data" }
 
@@ -530,10 +533,30 @@ internal fun sanitizeFilePart(value: String): String {
         normalized
     }
 
-    return reservedSafe
-        .take(MAX_FILE_PART_LENGTH)
+    val disambiguated = if (value.isNotEmpty() && reservedSafe != value) {
+        "$reservedSafe-${value.fileNameHash()}"
+    } else {
+        reservedSafe
+    }
+
+    return disambiguated
+        .take(MAX_FILE_PART_LENGTH - if (disambiguated.length > MAX_FILE_PART_LENGTH) 17 else 0)
         .trimEnd('.')
         .ifBlank { "data" }
+        .let { shortened ->
+            if (disambiguated.length > MAX_FILE_PART_LENGTH) "$shortened-${value.fileNameHash()}" else shortened
+        }
+}
+
+private fun Char.isAsciiFileNameCharacter(): Boolean =
+    this in 'A'..'Z' || this in 'a'..'z' || this in '0'..'9' || this == '.' || this == '_' || this == '-'
+
+private fun String.fileNameHash(): String {
+    var hash = 0xcbf29ce484222325uL
+    forEach { char ->
+        hash = (hash xor char.code.toULong()) * 0x100000001b3uL
+    }
+    return hash.toString(16)
 }
 
 internal fun joinExportPath(folder: String, name: String): String {

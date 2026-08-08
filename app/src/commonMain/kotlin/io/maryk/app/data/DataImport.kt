@@ -251,9 +251,9 @@ private suspend fun readYamlRecords(
     }
 }
 
-private fun splitYamlDocuments(content: String): List<String> {
+internal fun splitYamlDocuments(content: String): List<String> {
     val trimmed = content.trim()
-    if (trimmed.isEmpty()) return emptyList()
+    if (trimmed.isEmpty() || trimmed == "[]") return emptyList()
     val raw = trimmed.split(Regex("(?m)^---\\s*$"))
     return raw.map { it.trim() }.filter { it.isNotEmpty() }
 }

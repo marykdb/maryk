@@ -6,12 +6,26 @@ import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.types.numeric.UInt32
+import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RecordEditorComponentHelpersTest {
+    @Test
+    fun loadReferencePickerPagesIncludesCandidatesBeyondFirstPage() = runBlocking {
+        val rows = loadReferencePickerPages<String, Int> { cursor ->
+            when (cursor) {
+                null -> ReferencePickerPage((1..50).toList(), "second")
+                "second" -> ReferencePickerPage(listOf(51), null)
+                else -> error("Unexpected cursor: $cursor")
+            }
+        }
+
+        assertEquals((1..51).toList(), rows)
+    }
+
     @Test
     fun shouldUseMultilineTextEditorForLargeStrings() {
         val large = StringDefinition(maxSize = 500u)

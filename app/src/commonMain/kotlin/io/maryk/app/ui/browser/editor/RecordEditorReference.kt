@@ -75,6 +75,7 @@ import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
+import maryk.core.query.requests.ScanCursor
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
 
@@ -474,29 +475,35 @@ private fun ReferencePickerDialog(
                 if (sortDescending) "-$path" else path
             }.orEmpty()
             val order = if (orderTokens.isEmpty()) null else ScanQueryParser.parseOrder(dataModel, orderTokens)
-            val response = connection.dataStore.execute(
-                dataModel.scan(
-                    limit = 50u,
-                    filterSoftDeleted = true,
-                    order = order,
-                    allowTableScan = true,
-                    toVersion = toVersion,
+            loadReferencePickerPages<ScanCursor, ScanRow> { cursor ->
+                val response = connection.dataStore.execute(
+                    dataModel.scan(
+                        cursor = cursor,
+                        limit = REFERENCE_PICKER_PAGE_SIZE,
+                        filterSoftDeleted = true,
+                        order = order,
+                        allowTableScan = true,
+                        toVersion = toVersion,
+                    )
                 )
-            )
-            response.values.map { valuesWithMeta ->
-                ScanRow(
-                    key = valuesWithMeta.key,
-                    keyText = valuesWithMeta.key.toString(),
-                    values = valuesWithMeta.values,
-                    isDeleted = valuesWithMeta.isDeleted,
-                    lastVersion = valuesWithMeta.lastVersion,
-                    summary = buildSummary(
-                        dataModel = dataModel,
-                        values = valuesWithMeta.values,
-                        displayFields = emptyList(),
-                        requestContext = buildRequestContext(dataModel),
-                        maxChars = 160,
-                    ),
+                ReferencePickerPage(
+                    values = response.values.map { valuesWithMeta ->
+                        ScanRow(
+                            key = valuesWithMeta.key,
+                            keyText = valuesWithMeta.key.toString(),
+                            values = valuesWithMeta.values,
+                            isDeleted = valuesWithMeta.isDeleted,
+                            lastVersion = valuesWithMeta.lastVersion,
+                            summary = buildSummary(
+                                dataModel = dataModel,
+                                values = valuesWithMeta.values,
+                                displayFields = emptyList(),
+                                requestContext = buildRequestContext(dataModel),
+                                maxChars = 160,
+                            ),
+                        )
+                    },
+                    nextCursor = response.nextCursor,
                 )
             }
         }.onFailure { it.rethrowIfFatal() }
@@ -628,6 +635,26 @@ private data class PickerSortOption(
     val label: String,
     val orderPaths: List<String>,
 )
+
+private const val REFERENCE_PICKER_PAGE_SIZE = 250u
+
+internal data class ReferencePickerPage<Cursor, Value>(
+    val values: List<Value>,
+    val nextCursor: Cursor?,
+)
+
+internal suspend fun <Cursor, Value> loadReferencePickerPages(
+    loadPage: suspend (Cursor?) -> ReferencePickerPage<Cursor, Value>,
+): List<Value> {
+    val rows = mutableListOf<Value>()
+    var cursor: Cursor? = null
+    do {
+        val page = loadPage(cursor)
+        rows += page.values
+        cursor = page.nextCursor
+    } while (cursor != null)
+    return rows
+}
 
 private fun buildPickerSortOptions(dataModel: IsRootDataModel): List<PickerSortOption> {
     val options = mutableListOf<PickerSortOption>()

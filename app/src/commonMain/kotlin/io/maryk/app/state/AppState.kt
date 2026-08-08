@@ -64,7 +64,10 @@ import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.AlreadyExists
 import maryk.core.query.responses.statuses.AuthFail
+import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsAddResponseStatus
+import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
@@ -820,14 +823,11 @@ class BrowserState(
             val result = withContext(Dispatchers.IO) {
                 try {
                     val request = details.model.delete(details.key, hardDelete = hardDelete)
-                    connection.dataStore.execute(request)
-                    ApplyResult(
-                        if (hardDelete) {
-                            "Hard deleted ${details.model.Meta.name} ${details.keyText}."
-                        } else {
-                            "Deleted ${details.model.Meta.name} ${details.keyText}."
-                        },
-                        success = true,
+                    val response = connection.dataStore.execute(request)
+                    formatDeleteStatus(
+                        label = "${details.model.Meta.name} ${details.keyText}",
+                        hardDelete = hardDelete,
+                        status = response.statuses.firstOrNull(),
                     )
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()
@@ -858,14 +858,11 @@ class BrowserState(
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 try {
-                    connection.dataStore.execute(dataModel.delete(row.key, hardDelete = hardDelete))
-                    ApplyResult(
-                        if (hardDelete) {
-                            "Hard deleted ${dataModel.Meta.name} ${row.keyText}."
-                        } else {
-                            "Deleted ${dataModel.Meta.name} ${row.keyText}."
-                        },
-                        success = true,
+                    val response = connection.dataStore.execute(dataModel.delete(row.key, hardDelete = hardDelete))
+                    formatDeleteStatus(
+                        label = "${dataModel.Meta.name} ${row.keyText}",
+                        hardDelete = hardDelete,
+                        status = response.statuses.firstOrNull(),
                     )
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()
@@ -1625,6 +1622,26 @@ private fun formatAddStatus(
         is AuthFail -> ApplyResult("Add failed: authorization error.", success = false)
         is ServerFail -> ApplyResult("Add failed: ${status.reason}", success = false)
         else -> ApplyResult("Add failed: ${status.statusType}.", success = false)
+    }
+}
+
+internal fun formatDeleteStatus(
+    label: String,
+    hardDelete: Boolean,
+    status: IsDeleteResponseStatus<IsRootDataModel>?,
+): ApplyResult {
+    if (status == null) {
+        return ApplyResult("Delete failed: no response status for $label.", success = false)
+    }
+    return when (status) {
+        is DeleteSuccess -> ApplyResult(
+            "${if (hardDelete) "Hard deleted" else "Deleted"} $label (version ${status.version}).",
+            success = true,
+        )
+        is DoesNotExist -> ApplyResult("Delete failed: $label does not exist.", success = false)
+        is AuthFail -> ApplyResult("Delete failed: authorization error.", success = false)
+        is ServerFail -> ApplyResult("Delete failed: ${status.reason}", success = false)
+        else -> ApplyResult("Delete failed: ${status.statusType}.", success = false)
     }
 }
 

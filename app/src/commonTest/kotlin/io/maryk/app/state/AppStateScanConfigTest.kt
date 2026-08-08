@@ -3,6 +3,8 @@ package io.maryk.app.state
 import io.maryk.app.config.StoreConnector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
+import maryk.core.models.IsRootDataModel
+import maryk.core.query.responses.statuses.ServerFail
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -38,5 +40,17 @@ class AppStateScanConfigTest {
             state.currentTimeTravelVersion()
         }
         assertEquals("Time travel error: enter a valid date and time.", error.message)
+    }
+
+    @Test
+    fun deleteStatusReportsPerRecordFailure() {
+        val result = formatDeleteStatus(
+            label = "Example abc",
+            hardDelete = false,
+            status = ServerFail<IsRootDataModel>("version mismatch"),
+        )
+
+        assertEquals("Delete failed: version mismatch", result.message)
+        assertEquals(false, result.success)
     }
 }

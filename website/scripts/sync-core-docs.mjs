@@ -8,10 +8,7 @@ const siteRoot = resolve(__dirname, '..');
 const repoRoot = resolve(siteRoot, '..');
 const coreDocs = resolve(repoRoot, 'core', 'docs');
 
-// Clean Astro cache to avoid stale references after renames
-try { rmSync(resolve(siteRoot, '.astro'), { recursive: true, force: true }); } catch {}
-
-const map = [
+export const map = [
   // Core concepts
   ['src/content/docs/data-modeling/datamodels.mdx', 'datamodel.md'],
   ['src/content/docs/data-modeling/data-design.mdx', 'data-design.md'],
@@ -76,7 +73,7 @@ const map = [
   ['src/content/docs/app.mdx', '../app/docs/README.md'],
 ];
 
-  function rewriteLinks(md, prefix) {
+export function rewriteLinks(md, prefix) {
     let out = md;
     const withPrefix = (path) => `(${prefix}${path})`;
     const propertiesPrefix = `(${prefix}data-modeling/properties/`;
@@ -180,23 +177,32 @@ const map = [
   return out;
 }
 
-const removedTargets = [
+export const removedTargets = [
   'src/content/docs/stores/indexeddb/operations.mdx',
   'src/content/docs/stores/indexeddb/migrations-encryption-testing.mdx',
 ];
 
-for (const targetRel of removedTargets) {
-  const target = resolve(siteRoot, targetRel);
-  if (existsSync(target)) unlinkSync(target);
-}
+export function syncDocs({
+  siteRoot,
+  repoRoot,
+  coreDocs,
+  map,
+  removedTargets,
+}) {
+  // Clean Astro cache to avoid stale references after renames.
+  rmSync(resolve(siteRoot, '.astro'), { recursive: true, force: true });
 
-for (const [targetRel, srcRel] of map) {
-  const target = resolve(siteRoot, targetRel);
-  const targetMd = target.replace(/\.mdx$/, '.md');
-  const src = srcRel.startsWith('../')
-    ? resolve(repoRoot, srcRel.slice(3))
-    : resolve(coreDocs, srcRel);
-  try {
+  for (const targetRel of removedTargets) {
+    const target = resolve(siteRoot, targetRel);
+    if (existsSync(target)) unlinkSync(target);
+  }
+
+  for (const [targetRel, srcRel] of map) {
+    const target = resolve(siteRoot, targetRel);
+    const targetMd = target.replace(/\.mdx$/, '.md');
+    const src = srcRel.startsWith('../')
+      ? resolve(repoRoot, srcRel.slice(3))
+      : resolve(coreDocs, srcRel);
     let srcMd = readFileSync(src, 'utf8');
     // Extract title from source H1 if present
     const m = srcMd.match(/^#\s+(.+)$/m);
@@ -229,18 +235,13 @@ for (const [targetRel, srcRel] of map) {
     }
     md = lines.join('\n');
     const out = `${fm}\n${md.trim()}\n`;
-    // Ensure parent folders exist
-    import('node:fs').then(({ mkdirSync }) => {
-      const dir = dirname(target);
-      mkdirSync(dir, { recursive: true });
-      writeFileSync(target, out, 'utf8');
-    }).catch(() => {
-      // Fallback: try write directly
-      writeFileSync(target, out, 'utf8');
-    });
-    if (existsSync(targetMd)) { try { unlinkSync(targetMd); } catch {} }
+    mkdirSync(dirname(target), { recursive: true });
+    writeFileSync(target, out, 'utf8');
+    if (existsSync(targetMd)) unlinkSync(targetMd);
     console.log(`Inlined: ${srcRel} -> ${target.replace(siteRoot + '/', '')}`);
-  } catch (e) {
-    console.warn(`Skip ${targetRel}: ${e.message}`);
   }
+}
+
+if (resolve(process.argv[1]) === __filename) {
+  syncDocs({ siteRoot, repoRoot, coreDocs, map, removedTargets });
 }

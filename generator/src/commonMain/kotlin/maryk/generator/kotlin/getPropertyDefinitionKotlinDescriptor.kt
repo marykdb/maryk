@@ -130,6 +130,9 @@ private val definitionNamesMap = mapOf(
         wrapFunctionName = "fixedBytes",
         kotlinTypeName = { "Bytes" },
         definitionModel = FixedBytesDefinition.Model,
+        propertyValueOverride = mapOf(
+            "byteSize" to { _, value, _ -> value.toString() }
+        ),
     ),
     PropertyDefinitionType.FlexBytes to PropertyDefinitionKotlinDescriptor(
         className = "FlexBytesDefinition",
@@ -265,6 +268,17 @@ private val definitionNamesMap = mapOf(
             }
         },
         definitionModel = NumberDefinition.Model,
+        propertyValueOverride = mapOf(
+            "minValue" to { definition, value, _ ->
+                generateKotlinNumberValue(definition as NumberDefinition<*>, value)
+            },
+            "maxValue" to { definition, value, _ ->
+                generateKotlinNumberValue(definition as NumberDefinition<*>, value)
+            },
+            "default" to { definition, value, _ ->
+                generateKotlinNumberValue(definition as NumberDefinition<*>, value)
+            }
+        ),
     ),
     PropertyDefinitionType.Reference to PropertyDefinitionKotlinDescriptor(
         className = "ReferenceDefinition",

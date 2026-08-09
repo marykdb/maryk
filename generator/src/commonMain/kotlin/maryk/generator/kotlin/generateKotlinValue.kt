@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.contextual.ContextualModelReferenceDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
@@ -30,8 +31,14 @@ import maryk.core.properties.types.GeoPoint
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
+import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
+import maryk.core.properties.types.numeric.SInt64
+import maryk.core.properties.types.numeric.UInt8
+import maryk.core.properties.types.numeric.UInt16
+import maryk.core.properties.types.numeric.UInt32
+import maryk.core.properties.types.numeric.UInt64
 import maryk.core.values.ValuesImpl
 
 @Suppress("UNCHECKED_CAST")
@@ -111,7 +118,7 @@ internal fun generateKotlinValue(
 
         for (v in setValues) {
             kotlinStringValues.add(
-                generateKotlinValue(valueDefinition, v, addImport)
+                generateKotlinDefinitionValue(valueDefinition, v, addImport)
             )
         }
 
@@ -124,7 +131,7 @@ internal fun generateKotlinValue(
 
         for (v in listValues) {
             kotlinStringValues.add(
-                generateKotlinValue(valueDefinition, v, addImport)
+                generateKotlinDefinitionValue(valueDefinition, v, addImport)
             )
         }
 
@@ -137,7 +144,7 @@ internal fun generateKotlinValue(
 
         for (v in mapValues) {
             kotlinStringValues.add(
-                "${generateKotlinValue(mapDefinition.keyDefinition, v.key, addImport)} to ${generateKotlinValue(
+                "${generateKotlinDefinitionValue(mapDefinition.keyDefinition, v.key, addImport)} to ${generateKotlinDefinitionValue(
                     mapDefinition.valueDefinition,
                     v.value,
                     addImport
@@ -205,6 +212,24 @@ internal fun generateKotlinValue(
     }
 }
 
+internal fun generateKotlinNumberValue(definition: NumberDefinition<*>, value: Any): String = when (definition.type) {
+    Float32 -> "${value}f"
+    SInt64 -> "${value}L"
+    UInt8 -> "${value}.toUByte()"
+    UInt16 -> "${value}.toUShort()"
+    UInt32 -> "${value}u"
+    UInt64 -> "${value}uL"
+    else -> value.toString()
+}
+
+private fun generateKotlinDefinitionValue(
+    definition: IsPropertyDefinition<out Any>,
+    value: Any,
+    addImport: (String) -> Unit
+) = (definition as? NumberDefinition<*>)?.let { numberDefinition ->
+    generateKotlinNumberValue(numberDefinition, value)
+} ?: generateKotlinValue(definition, value, addImport)
+
 private fun IsValueDataModel<*, *>.generateKotlinValue(value: Any, addImport: (String) -> Unit): String {
     val values = mutableListOf<String>()
 
@@ -212,7 +237,8 @@ private fun IsValueDataModel<*, *>.generateKotlinValue(value: Any, addImport: (S
         @Suppress("UNCHECKED_CAST")
         val wrapper = property as AnyDefinitionWrapper
         property.getter(value)?.let {
-            values.add("${property.name} = ${generateKotlinValue(wrapper.definition, it, addImport)}")
+            val kotlinValue = generateKotlinDefinitionValue(wrapper.definition, it, addImport)
+            values.add("${property.name} = $kotlinValue")
         }
     }
 

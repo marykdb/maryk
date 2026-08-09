@@ -6,6 +6,7 @@ import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.HasDefaultValueDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
 
 internal fun IsTypedDataModel<*>.generateKotlin(
@@ -41,7 +42,10 @@ internal fun IsTypedDataModel<*>.generateKotlin(
         }
 
         val default = if (definition is HasDefaultValueDefinition<*> && definition.default != null) {
-            " = ${generateKotlinValue(definition, definition.default as Any, addImport)}"
+            val kotlinValue = (definition as? NumberDefinition<*>)?.let { numberDefinition ->
+                generateKotlinNumberValue(numberDefinition, definition.default as Any)
+            } ?: generateKotlinValue(definition, definition.default as Any, addImport)
+            " = $kotlinValue"
         } else if (!definition.required) {
             "? = null"
         } else {

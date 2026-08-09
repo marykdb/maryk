@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalDateTime
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.EnumDefinition
 import maryk.core.properties.definitions.ListDefinition
+import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.list
@@ -12,6 +13,8 @@ import maryk.core.properties.definitions.incrementingMap
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
+import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.generator.DecimalGeneratorModel
 import maryk.test.models.CompleteMarykModel
@@ -21,6 +24,7 @@ import maryk.test.models.Option
 import maryk.test.models.Person
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum
+import maryk.test.models.ValueMarykObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -583,6 +587,26 @@ class GenerateKotlinForRootDataModelTest {
         assertEquals(
             "1.5f",
             generateKotlinValue(SimpleMarykModel.value.definition, 1.5f, {})
+        )
+    }
+
+    @Test
+    fun generateNumberDefaultsFromTheirDescriptors() {
+        assertEquals(
+            "5",
+            generateKotlinNumberValue(NumberDefinition(type = SInt32), 5)
+        )
+        assertEquals(
+            "1.5f",
+            generateKotlinNumberValue(NumberDefinition(type = Float32), 1.5f)
+        )
+        assertEquals(
+            "5u",
+            generateKotlinNumberValue(NumberDefinition(type = UInt32), 5u)
+        )
+        assertEquals(
+            "5",
+            generateKotlinNumberValue(ValueMarykObject.int.definition, 5)
         )
     }
 

@@ -49,6 +49,8 @@ class DataRecordMalformedQualifierTest {
     fun setReadSkipsMalformedQualifier() {
         val record = TestMarykModel.createDataRecord(
             TestMarykModel.create {
+                uint with 1u
+                bool with false
                 set with setOf(LocalDate(2018, 9, 9))
             }
         )

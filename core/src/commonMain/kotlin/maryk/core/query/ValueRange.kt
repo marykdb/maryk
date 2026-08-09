@@ -46,7 +46,17 @@ data class ValueRange<T : Comparable<T>>(
         }
 
         @Suppress("UNCHECKED_CAST")
-        private fun <T> Any.asSerializedType(): T = this as T
+        private fun <T : Comparable<T>> createValueRange(
+            from: Any,
+            to: Any,
+            inclusiveFrom: Boolean,
+            inclusiveTo: Boolean,
+        ) = ValueRange(
+            from = from as T,
+            to = to as T,
+            inclusiveFrom = inclusiveFrom,
+            inclusiveTo = inclusiveTo,
+        )
 
         val from by contextual(
             index = 1u,
@@ -76,11 +86,11 @@ data class ValueRange<T : Comparable<T>>(
         val inclusiveTo by boolean(4u, default = true, getter = ValueRange<*>::inclusiveTo)
 
         override fun invoke(values: ObjectValues<ValueRange<*>, Companion>): ValueRange<*> =
-            ValueRange(
-                from = values<Any>(1u).asSerializedType<SerializedComparable>(),
-                to = values<Any>(2u).asSerializedType<SerializedComparable>(),
+            createValueRange<SerializedComparable>(
+                from = values(1u),
+                to = values(2u),
                 inclusiveFrom = values(3u),
-                inclusiveTo = values(4u)
+                inclusiveTo = values(4u),
             )
 
         override val Serializer = object: ObjectDataModelSerializer<ValueRange<*>, Companion, RequestContext, RequestContext>(this) {

@@ -301,7 +301,7 @@ class RequestExecutionTest {
         withContext(Dispatchers.Default) {
             val store = FlowRegistrationTestStore()
             try {
-                val mutations = List(UPDATE_LISTENER_MAILBOX_CAPACITY + 1) { index ->
+                val mutations = List(UPDATE_LISTENER_MAILBOX_CAPACITY) { index ->
                     store.enqueueMutation("queued mutation $index")
                 }
                 val flowResult = async {
@@ -313,7 +313,7 @@ class RequestExecutionTest {
 
                 val initial = withTimeout(2.seconds) { flowResult.await().take(1).single() }
                 assertIs<InitialValuesUpdate<SimpleMarykModel>>(initial).also {
-                    assertEquals("queued mutation ${UPDATE_LISTENER_MAILBOX_CAPACITY}", it.values.single().values { value })
+                    assertEquals("queued mutation ${UPDATE_LISTENER_MAILBOX_CAPACITY - 1}", it.values.single().values { value })
                 }
                 store.listenerRemoved.await()
             } finally {

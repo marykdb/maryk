@@ -488,6 +488,7 @@ class RemoteDataStore private constructor(
                 while (true) {
                     try {
                         var receivedFrame = false
+                        var deliveredUpdate = false
                         val replayBoundaryVersion = lastDeliveredVersion.takeIf { reconnectAttempts > 0u }
                         val replayBoundaryCount = deliveredAtLastVersion
                         var replayedAtBoundary = 0
@@ -587,6 +588,7 @@ class RemoteDataStore private constructor(
                                                 lastDeliveredVersion = update.version
                                                 deliveredAtLastVersion = 1
                                             }
+                                            deliveredUpdate = true
                                         }
                                     }
                                     receivedFrame = true
@@ -595,6 +597,10 @@ class RemoteDataStore private constructor(
                                 handle.close()
                                 listeners.remove(handle)
                             }
+                        }
+                        if (deliveredUpdate) {
+                            reconnectAttempts = 0u
+                            reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
                         }
                         if (flowRetryPolicy.maxReconnectAttempts == 0u) {
                             return@launch
@@ -768,12 +774,15 @@ private class RemoteListenerRegistry {
     suspend fun remove(job: Job) = mutex.withLock { jobs.remove(job) }
 
     suspend fun closeAll() {
-        val snapshot = mutex.withLock {
+        val (handles, flowJobs) = mutex.withLock {
             val handles = listeners.toList()
+            val flowJobs = jobs.toList()
             listeners.clear()
-            handles
+            jobs.clear()
+            handles to flowJobs
         }
-        snapshot.forEach { it.close() }
+        flowJobs.forEach { it.cancel() }
+        handles.forEach { it.close() }
     }
 
     suspend fun close() {

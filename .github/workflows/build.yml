@@ -29,13 +29,13 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            gradle_task: "macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test iosSimulatorArm64Test jvmTest"
+            gradle_task: "macosArm64Test tvosSimulatorArm64Test watchosSimulatorArm64Test iosSimulatorArm64Test compileKotlinIosArm64 compileKotlinIosX64 compileKotlinTvosArm64 compileKotlinWatchosArm32 compileKotlinWatchosArm64 compileKotlinWatchosDeviceArm64 jvmTest"
             job_name: macOS Apple Arm tests
           - os: macos-26-intel
             gradle_task: "macosX64Test"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest
-            gradle_task: linuxX64Test wasmJsTest jsTest jvmTest :generator:jvmTest:test :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
+            gradle_task: linuxX64Test compileKotlinLinuxArm64 wasmJsTest jsTest jvmTest :generator:jvmTest:test :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
             job_name: Linux JVM/JS tests
           - os: windows-latest
             gradle_task: mingwX64Test :core:jvmTest
@@ -150,7 +150,7 @@ jobs:
           emulator-boot-timeout: 900
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew testAndroidHostTest connectedAndroidDeviceTest --stacktrace --build-cache --no-parallel
+          script: ./gradlew testAndroidHostTest connectedAndroidDeviceTest compileKotlinAndroidNativeArm32 compileKotlinAndroidNativeArm64 compileKotlinAndroidNativeX86 compileKotlinAndroidNativeX64 --stacktrace --build-cache --no-parallel
 
       - name: Upload Android test reports
         if: always()

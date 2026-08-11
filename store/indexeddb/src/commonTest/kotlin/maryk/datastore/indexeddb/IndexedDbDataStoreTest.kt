@@ -2,7 +2,14 @@ package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
@@ -15,6 +22,7 @@ import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.Version
 import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectSoftDeleteChange
@@ -48,6 +56,7 @@ import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.indexeddb.processors.createUpdateHistoryRowKey
+import maryk.datastore.indexeddb.processors.createChangeLogRowKey
 import maryk.datastore.indexeddb.processors.createHardDeleteHistoryRowKey
 import maryk.datastore.indexeddb.processors.createHistoricVersionedRowKey
 import maryk.datastore.indexeddb.processors.createUniqueRowKey
@@ -826,22 +835,30 @@ class IndexedDbDataStoreTest {
             }
             migrationReachedWrite.await()
 
-            val nativeWriter = openIndexedDbByteStore(databaseName, setOf("meta", "uh:1", "hd:1", "hdk:1"))
-            try {
-                nativeWriter.transaction(setOf("hd:1", "hdk:1"), IndexedDbTransactionMode.READWRITE) { store ->
-                    store.writeBatch(
-                        listOf(
-                            IndexedDbWriteOperation.Put("hd:1", key.bytes, nativeVersion.toBigEndianBytes()),
-                            IndexedDbWriteOperation.Put("hdk:1", createHardDeleteHistoryRowKey(key.bytes, nativeVersion), byteArrayOf(1)),
+            val nativeWrite = async {
+                val nativeWriter = openIndexedDbByteStore(databaseName, setOf("meta", "uh:1", "hd:1", "hdk:1"))
+                try {
+                    nativeWriter.transaction(setOf("hd:1", "hdk:1"), IndexedDbTransactionMode.READWRITE) { store ->
+                        store.writeBatch(
+                            listOf(
+                                IndexedDbWriteOperation.Put("hd:1", key.bytes, nativeVersion.toBigEndianBytes()),
+                                IndexedDbWriteOperation.Put("hdk:1", createHardDeleteHistoryRowKey(key.bytes, nativeVersion), byteArrayOf(1)),
+                            )
                         )
-                    )
+                    }
+                } finally {
+                    nativeWriter.close()
                 }
-            } finally {
-                nativeWriter.close()
             }
+            var nativeWriteWaits = 0
+            while (!nativeWrite.isCompleted && nativeWriteWaits++ < 1_000) {
+                delay(1)
+            }
+            assertFalse(nativeWrite.isCompleted)
 
             continueMigration.complete(Unit)
             migratedDataStore = migration.await()
+            nativeWrite.await()
             assertTrue(migratedDataStore.byteStore.get("hd:1", key.bytes)?.contentEquals(nativeVersion.toBigEndianBytes()) == true)
             val historyRows = migratedDataStore.byteStore.scan("hdk:1").map { it.first }
             assertEquals(2, historyRows.size)
@@ -923,6 +940,150 @@ class IndexedDbDataStoreTest {
         } finally {
             source.close()
             target.close()
+        }
+    }
+
+    @Test
+    fun getUpdatesReconstructsMarkerOnlyCreationFromUnchangedCurrentState() = runTest {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-get-updates-marker-current-${Random.nextInt()}",
+            dataModelsById = mapOf(2u to SimpleMarykModel),
+        )
+        try {
+            val values = SimpleMarykModel.create { value with "haha-marker-current" }
+            val add = assertIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(values)).statuses.single()
+            )
+            dataStore.byteStore.put(
+                "c:2",
+                createChangeLogRowKey(add.key.bytes, add.version),
+                byteArrayOf(0),
+            )
+
+            val updates = dataStore.execute(
+                SimpleMarykModel.getUpdates(
+                    add.key,
+                    fromVersion = add.version,
+                )
+            )
+
+            assertIs<AdditionUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(add.key, key)
+                assertEquals(add.version, version)
+                assertEquals(values, this.values)
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun getUpdatesRejectsMarkerOnlyCreationWhenCurrentStateHasChanged() = runTest {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-get-updates-marker-changed-${Random.nextInt()}",
+            dataModelsById = mapOf(2u to SimpleMarykModel),
+        )
+        try {
+            val add = assertIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.add(SimpleMarykModel.create { value with "haha-marker-original" })
+                ).statuses.single()
+            )
+            dataStore.byteStore.put(
+                "c:2",
+                createChangeLogRowKey(add.key.bytes, add.version),
+                byteArrayOf(0),
+            )
+            assertIs<ChangeSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.change(
+                        add.key.change(Change(SimpleMarykModel { value::ref } with "haha-marker-changed"))
+                    )
+                ).statuses.single()
+            )
+
+            assertFailsWith<RequestException> {
+                dataStore.execute(
+                    SimpleMarykModel.getUpdates(
+                        add.key,
+                        fromVersion = add.version,
+                    )
+                )
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesReconstructsMarkerOnlyCreationFromUnchangedCurrentState() = runTest {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-marker-current-${Random.nextInt()}",
+            dataModelsById = mapOf(2u to SimpleMarykModel),
+        )
+        try {
+            val values = SimpleMarykModel.create { value with "haha-scan-marker-current" }
+            val add = assertIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.add(values)).statuses.single()
+            )
+            dataStore.byteStore.put(
+                "c:2",
+                createChangeLogRowKey(add.key.bytes, add.version),
+                byteArrayOf(0),
+            )
+
+            val updates = dataStore.execute(
+                SimpleMarykModel.scanUpdates(fromVersion = add.version)
+            )
+
+            assertIs<AdditionUpdate<SimpleMarykModel>>(updates.updates[1]).apply {
+                assertEquals(add.key, key)
+                assertEquals(add.version, version)
+                assertEquals(values, this.values)
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanUpdatesRejectsMarkerOnlyCreationWhenCurrentStateHasChanged() = runTest {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-scan-updates-marker-changed-${Random.nextInt()}",
+            dataModelsById = mapOf(2u to SimpleMarykModel),
+        )
+        try {
+            val add = assertIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.add(SimpleMarykModel.create { value with "haha-scan-marker-original" })
+                ).statuses.single()
+            )
+            dataStore.byteStore.put(
+                "c:2",
+                createChangeLogRowKey(add.key.bytes, add.version),
+                byteArrayOf(0),
+            )
+            assertIs<ChangeSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.change(
+                        add.key.change(Change(SimpleMarykModel { value::ref } with "haha-scan-marker-changed"))
+                    )
+                ).statuses.single()
+            )
+
+            assertFailsWith<RequestException> {
+                dataStore.execute(SimpleMarykModel.scanUpdates(fromVersion = add.version))
+            }
+        } finally {
+            dataStore.close()
         }
     }
 
@@ -1408,6 +1569,192 @@ class IndexedDbDataStoreTest {
             dataModelsById = mapOf(1u to ModelV2),
         ).close()
     }
+
+    @Test
+    fun migrationStateSurvivesVersionUpdateFailureUntilModelDefinitionIsStored() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-migration-finalization-${Random.nextInt()}"
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV1),
+        ).close()
+
+        assertFailsWith<IllegalStateException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Success },
+                ),
+                versionUpdateHandler = { _, _, _ -> throw IllegalStateException("checkpoint failure") },
+            )
+        }
+
+        var resumedStateStatus: MigrationStateStatus? = null
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationContractHandler = {
+                    resumedStateStatus = it.previousState?.status
+                    MigrationOutcome.Success
+                },
+            ),
+        ).close()
+
+        assertEquals(MigrationStateStatus.Running, resumedStateStatus)
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV2),
+        ).close()
+    }
+
+    @Test
+    fun startupMigrationHoldsCrossTabWriteLeaseUntilReady() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        withoutWebLocks {
+            val databaseName = "maryk-indexeddb-migration-write-lease-${Random.nextInt()}"
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV1),
+            ).close()
+
+            val concurrentWriter = openIndexedDbByteStore(databaseName, setOf("meta"))
+            val migrationStarted = CompletableDeferred<Unit>()
+            val continueMigration = CompletableDeferred<Unit>()
+            var migratedStore: IndexedDbDataStore? = null
+            try {
+                val migration = async {
+                    IndexedDbDataStore.open(
+                        databaseName = databaseName,
+                        dataModelsById = mapOf(1u to ModelV2),
+                        migrationConfiguration = MigrationConfiguration(
+                            migrationHandler = {
+                                migrationStarted.complete(Unit)
+                                continueMigration.await()
+                                MigrationOutcome.Success
+                            },
+                        ),
+                    )
+                }
+                migrationStarted.await()
+
+                val write = async {
+                    concurrentWriter.transaction(setOf("meta"), IndexedDbTransactionMode.READWRITE) { store ->
+                        store.put("meta", byteArrayOf(99), byteArrayOf(42))
+                    }
+                }
+                var writeWaits = 0
+                while (!write.isCompleted && writeWaits++ < 1_000) {
+                    delay(1)
+                }
+                assertFalse(write.isCompleted)
+
+                continueMigration.complete(Unit)
+                migratedStore = migration.await()
+                write.await()
+                assertTrue(concurrentWriter.get("meta", byteArrayOf(99))?.contentEquals(byteArrayOf(42)) == true)
+            } finally {
+                if (!continueMigration.isCompleted) continueMigration.complete(Unit)
+                migratedStore?.close()
+                concurrentWriter.close()
+            }
+        }
+    }
+
+    @Test
+    fun cancellingStartupMigrationStopsReentrantMutationBeforeReleasingWriteLease() =
+        runTest(timeout = indexedDbLongTestTimeout) {
+            installIndexedDbForTests()
+
+            withoutWebLocks {
+                val databaseName = "maryk-indexeddb-migration-cancellation-${Random.nextInt()}"
+                IndexedDbDataStore.open(
+                    databaseName = databaseName,
+                    dataModelsById = mapOf(1u to CancellationMigrationV1),
+                    fieldEncryptionProvider = XorFieldEncryptionProvider(),
+                ).close()
+
+                val encryptionStarted = CompletableDeferred<Unit>()
+                val releaseEncryption = CompletableDeferred<Unit>()
+                val cancellationCleanupStarted = CompletableDeferred<Unit>()
+                val finishCancellationCleanup = CompletableDeferred<Unit>()
+                val encryptionProvider = CancellationBlockingFieldEncryptionProvider(
+                    encryptionStarted = encryptionStarted,
+                    releaseEncryption = releaseEncryption,
+                    cancellationCleanupStarted = cancellationCleanupStarted,
+                    finishCancellationCleanup = finishCancellationCleanup,
+                )
+                var callbackStore: IndexedDbDataStore? = null
+                val migration = async {
+                    IndexedDbDataStore.open(
+                        databaseName = databaseName,
+                        dataModelsById = mapOf(1u to CancellationMigrationV2),
+                        fieldEncryptionProvider = encryptionProvider,
+                        migrationConfiguration = MigrationConfiguration(
+                            migrationHandler = { context ->
+                                callbackStore = context.store
+                                context.store.execute(
+                                    CancellationMigrationV2.add(
+                                        CancellationMigrationV2.create {
+                                            id with Bytes(ByteArray(16) { 7 })
+                                            secret with "late startup write"
+                                            requiredValue with "required"
+                                        }
+                                    )
+                                )
+                                MigrationOutcome.Success
+                            },
+                        ),
+                    )
+                }
+                encryptionStarted.await()
+
+                val competingStore = openIndexedDbByteStore(databaseName, setOf("meta"))
+                var competingWrite: Deferred<Unit>? = null
+                try {
+                    migration.cancel()
+                    competingWrite = async {
+                        competingStore.transaction(setOf("meta"), IndexedDbTransactionMode.READWRITE) { store ->
+                            store.put("meta", byteArrayOf(101), byteArrayOf(42))
+                        }
+                    }
+
+                    var waits = 0
+                    while (
+                        !cancellationCleanupStarted.isCompleted &&
+                        !competingWrite.isCompleted &&
+                        waits++ < 1_000
+                    ) {
+                        delay(1)
+                    }
+
+                    assertTrue(cancellationCleanupStarted.isCompleted)
+
+                    var writeWaits = 0
+                    while (!competingWrite.isCompleted && writeWaits++ < 1_000) {
+                        delay(1)
+                    }
+                    assertFalse(competingWrite.isCompleted)
+
+                    finishCancellationCleanup.complete(Unit)
+                    assertFailsWith<CancellationException> { migration.await() }
+                    competingWrite.await()
+                    assertTrue(competingStore.get("meta", byteArrayOf(101))?.contentEquals(byteArrayOf(42)) == true)
+                } finally {
+                    releaseEncryption.complete(Unit)
+                    finishCancellationCleanup.complete(Unit)
+                    withContext(NonCancellable) {
+                        migration.join()
+                        competingWrite?.cancel()
+                        callbackStore?.close()
+                        competingStore.close()
+                    }
+                }
+            }
+        }
 
     @Test
     fun openRejectsUnboundedMigrationRetry() = runTest {
@@ -2030,6 +2377,52 @@ private class XorFieldEncryptionProvider : FieldEncryptionProvider {
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }
+}
+
+private class CancellationBlockingFieldEncryptionProvider(
+    private val encryptionStarted: CompletableDeferred<Unit>,
+    private val releaseEncryption: CompletableDeferred<Unit>,
+    private val cancellationCleanupStarted: CompletableDeferred<Unit>,
+    private val finishCancellationCleanup: CompletableDeferred<Unit>,
+) : FieldEncryptionProvider {
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray {
+        encryptionStarted.complete(Unit)
+        try {
+            releaseEncryption.await()
+        } finally {
+            if (!currentCoroutineContext().isActive) {
+                withContext(NonCancellable) {
+                    cancellationCleanupStarted.complete(Unit)
+                    finishCancellationCleanup.await()
+                }
+            }
+        }
+        return value.copyOfRange(offset, offset + length)
+    }
+
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
+        value.copyOfRange(offset, offset + length)
+}
+
+private object CancellationMigrationV1 : RootDataModel<CancellationMigrationV1>(
+    name = "CancellationMigrationModel",
+    version = Version(1),
+    keyDefinition = { CancellationMigrationV1.id.ref() },
+    minimumKeyScanByteRange = 0u,
+) {
+    val id by fixedBytes(1u, byteSize = 16, final = true)
+    val secret by string(2u, sensitive = true)
+}
+
+private object CancellationMigrationV2 : RootDataModel<CancellationMigrationV2>(
+    name = "CancellationMigrationModel",
+    version = Version(2),
+    keyDefinition = { CancellationMigrationV2.id.ref() },
+    minimumKeyScanByteRange = 0u,
+) {
+    val id by fixedBytes(1u, byteSize = 16, final = true)
+    val secret by string(2u, sensitive = true)
+    val requiredValue by string(3u, required = true)
 }
 
 private class XorWithTokenFieldEncryptionProvider :

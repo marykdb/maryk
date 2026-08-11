@@ -31,6 +31,12 @@ internal actual suspend fun openPlatformIndexedDbByteStore(
     return BrowserIndexedDbByteStore(database, databaseName, "maryk-indexeddb:$databaseName")
 }
 
+internal actual suspend fun <T> IndexedDbByteStore.withStartupWriteLock(
+    block: suspend (IndexedDbByteStore) -> T,
+): T = coroutineScope {
+    (this@withStartupWriteLock as BrowserIndexedDbByteStore).withStartupWriteLock(block)
+}
+
 private suspend fun openDatabase(
     databaseName: String,
     objectStoreNames: Set<String>,
@@ -72,13 +78,28 @@ private class BrowserIndexedDbByteStore(
     private val lockName: String,
 ) : IndexedDbByteStore {
     private var activeLeaseOwnerId: String? = null
+    private var startupWriteScopeActive = false
+
+    suspend fun <T> withStartupWriteLock(block: suspend (IndexedDbByteStore) -> T): T =
+        withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
+            activeLeaseOwnerId = leaseOwnerId
+            startupWriteScopeActive = true
+            try {
+                block(this)
+            } finally {
+                startupWriteScopeActive = false
+                activeLeaseOwnerId = null
+            }
+        }
 
     override suspend fun <T> transaction(
         storeNames: Set<String>,
         mode: IndexedDbTransactionMode,
         block: suspend (IndexedDbByteStore) -> T,
     ): T =
-        if (mode == IndexedDbTransactionMode.READWRITE) {
+        if (mode == IndexedDbTransactionMode.READWRITE && startupWriteScopeActive) {
+            block(this)
+        } else if (mode == IndexedDbTransactionMode.READWRITE) {
             withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
                 activeLeaseOwnerId = leaseOwnerId
                 try {

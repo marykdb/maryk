@@ -123,7 +123,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
         val versionedChanges = byteStore.readChangeLog(
             dataModel = request.dataModel,
             changeStoreName = changeStoreName,
-            historicTableStoreName = historicTableStoreName,
+            historicTableStoreName = historicTableStoreName.takeIf { keepAllVersions },
+            currentRecord = record.takeUnless { keepAllVersions },
             keyBytes = record.key.bytes,
             fromVersion = request.fromVersion,
             toVersion = request.toVersion,

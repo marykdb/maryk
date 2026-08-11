@@ -2,7 +2,9 @@ package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
 import maryk.core.models.IsRootDataModel
@@ -304,6 +306,11 @@ class IndexedDbDataStore private constructor(
         cancelAndJoinDataStoreScope()
     }
 
+    private suspend fun stopFailedStartupWork() {
+        if (!startClosingDataStore()) return
+        cancelAndJoinDataStoreScope()
+    }
+
     companion object {
         suspend fun open(
             databaseName: String,
@@ -352,18 +359,30 @@ class IndexedDbDataStore private constructor(
             )
 
             return try {
-                byteStore.migrateStoreMetadata(
-                    dataStore = dataStore,
-                    keepAllVersions = keepAllVersions,
-                    keepUpdateHistoryIndex = keepUpdateHistoryIndex,
-                    dataModelsById = dataModelsById,
-                    migrationConfiguration = migrationConfiguration,
-                    versionUpdateHandler = versionUpdateHandler,
-                )
-                dataStore.migrateHardDeleteTombstones()
+                byteStore.withStartupWriteLock {
+                    try {
+                        byteStore.migrateStoreMetadata(
+                            dataStore = dataStore,
+                            keepAllVersions = keepAllVersions,
+                            keepUpdateHistoryIndex = keepUpdateHistoryIndex,
+                            dataModelsById = dataModelsById,
+                            migrationConfiguration = migrationConfiguration,
+                            versionUpdateHandler = versionUpdateHandler,
+                        )
+                        dataStore.migrateHardDeleteTombstones()
+                    } catch (error: Throwable) {
+                        withContext(NonCancellable) {
+                            dataStore.stopFailedStartupWork()
+                        }
+                        throw error
+                    }
+                }
                 dataStore
             } catch (error: Throwable) {
-                dataStore.close()
+                withContext(NonCancellable) {
+                    dataStore.stopFailedStartupWork()
+                    byteStore.close()
+                }
                 throw error
             }
         }

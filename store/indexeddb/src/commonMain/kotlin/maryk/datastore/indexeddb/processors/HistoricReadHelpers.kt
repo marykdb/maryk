@@ -1,5 +1,6 @@
 package maryk.datastore.indexeddb.processors
 
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.emptyValues
 import maryk.core.models.key
@@ -37,6 +38,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
     dataModel: DM,
     changeStoreName: String,
     historicTableStoreName: String?,
+    currentRecord: ValuesWithMetaData<DM>? = null,
     keyBytes: ByteArray,
     fromVersion: ULong,
     toVersion: ULong?,
@@ -52,12 +54,19 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
     for ((rowKey, rowValue) in rows) {
         if (rowValue.isUnserializableChangeLogMarker()) {
             val version = rowKey.readTrailingVersion()
+            if (version < fromVersion || (toVersion != null && version > toVersion)) continue
             val historicRecord = historicTableStoreName?.let {
                 readHistoricRecord(dataModel, it, keyBytes, version, select, decryptValue)
             }
-            if (historicRecord?.firstVersion == version) {
-                creationChanges += historicRecord.toCreationChanges(fromVersion, toVersion, select)
+            val reconstructableRecord = historicRecord?.takeIf {
+                it.firstVersion == version && it.lastVersion == version
             }
+                ?: currentRecord?.takeIf { it.firstVersion == version && it.lastVersion == version }
+                ?: throw RequestException(
+                    "Cannot reconstruct IndexedDB change-log marker for ${dataModel.Meta.name} " +
+                        "at version $version without an exact stored snapshot"
+                )
+            creationChanges += reconstructableRecord.toCreationChanges(fromVersion, toVersion, select)
             continue
         }
 

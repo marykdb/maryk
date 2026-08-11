@@ -160,6 +160,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetUpdates
             dataModel = request.dataModel,
             changeStoreName = changeStoreName,
             historicTableStoreName = historicTableStoreName.takeIf { keepAllVersions },
+            currentRecord = record.takeUnless { keepAllVersions },
             keyBytes = key.bytes,
             fromVersion = request.fromVersion,
             toVersion = request.toVersion,

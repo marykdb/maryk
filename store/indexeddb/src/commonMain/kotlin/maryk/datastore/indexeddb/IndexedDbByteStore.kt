@@ -78,3 +78,8 @@ internal expect suspend fun openPlatformIndexedDbByteStore(
     objectStoreNames: Set<String>,
     version: Int,
 ): IndexedDbByteStore
+
+/** Serialize all startup migrations before this store is exposed to callers. */
+internal expect suspend fun <T> IndexedDbByteStore.withStartupWriteLock(
+    block: suspend (IndexedDbByteStore) -> T,
+): T

@@ -124,7 +124,7 @@ internal suspend fun IndexedDbByteStore.migrateStoreMetadata(
                         )
                         versionUpdateHandler?.invoke(dataStore, storedModel, dataModel)
                         status.indexesToIndex?.let { dataStore.backfillIndexRows(dataModel, it) }
-                        storeModelDefinition(modelId, dataModel)
+                        storeModelDefinition(modelId, dataModel, completeMigration = true)
                     }
                 }
             }
@@ -223,9 +223,7 @@ private suspend fun IndexedDbByteStore.runMigration(
             when (outcome) {
                 MigrationOutcome.Success -> {
                     val nextPhase = phase.nextRuntimePhaseOrNull()
-                    if (nextPhase == null) {
-                        delete("meta", migrationStateMetadataKey(modelId))
-                    } else {
+                    if (nextPhase != null) {
                         MigrationState(
                             migrationId = migrationId,
                             phase = nextPhase,
@@ -341,6 +339,7 @@ private suspend fun IndexedDbByteStore.readStoredModelDefinition(
 private suspend fun IndexedDbByteStore.storeModelDefinition(
     modelId: UInt,
     dataModel: IsRootDataModel,
+    completeMigration: Boolean = false,
 ) {
     val context = DefinitionsConversionContext()
     val modelCache = WriteCache()
@@ -367,6 +366,9 @@ private suspend fun IndexedDbByteStore.storeModelDefinition(
         operations += IndexedDbWriteOperation.Put("meta", modelDependentsMetadataKey(modelId), dependentsBytes)
     } else {
         operations += IndexedDbWriteOperation.Delete("meta", modelDependentsMetadataKey(modelId))
+    }
+    if (completeMigration) {
+        operations += IndexedDbWriteOperation.Delete("meta", migrationStateMetadataKey(modelId))
     }
     writeBatch(operations)
 }

@@ -34,7 +34,11 @@ jobs:
         run: |
           TAG="$RELEASE_TAG"
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-            gh release view "$TAG" --json isDraft --jq 'select(.isDraft == false)' >/dev/null
+            is_draft=$(gh release view "$TAG" --json isDraft --jq '.isDraft')
+            if [[ "$is_draft" != "false" ]]; then
+              echo "Release $TAG is still a draft" >&2
+              exit 1
+            fi
           fi
           TAG_SHA=$(git rev-list -n 1 "$TAG")
           ACTUAL_SHA=$(git rev-parse HEAD)
@@ -96,6 +100,158 @@ jobs:
           archive=$(find cli/build/distributions -maxdepth 1 -name "maryk-cli-*-${{ matrix.cli_platform }}.zip" -print -quit)
           test -n "$archive"
           bash cli/scripts/verify-native-bundle.sh "$archive" "${{ matrix.cli_platform }}"
+
+      - name: Smoke test packaged macOS app
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dmg=$(find app/build/compose/binaries/main/dmg -maxdepth 1 -name '*.dmg' -print -quit)
+          test -n "$dmg"
+
+          mount_point=$(mktemp -d)
+          smoke_home=$(mktemp -d)
+          smoke_log="$RUNNER_TEMP/maryk-macos-smoke.log"
+          app_pid=''
+          mounted=false
+          cleanup() {
+            if [[ -n "$app_pid" ]] && kill -0 "$app_pid" 2>/dev/null; then
+              kill "$app_pid" 2>/dev/null || true
+              for _ in {1..5}; do
+                kill -0 "$app_pid" 2>/dev/null || break
+                sleep 1
+              done
+              kill -9 "$app_pid" 2>/dev/null || true
+              wait "$app_pid" 2>/dev/null || true
+            fi
+            if [[ "$mounted" == true ]]; then
+              hdiutil detach "$mount_point" -force >/dev/null || true
+            fi
+            rm -rf -- "$smoke_home"
+            rmdir "$mount_point" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          hdiutil attach "$dmg" -nobrowse -readonly -mountpoint "$mount_point"
+          mounted=true
+          app=$(find "$mount_point" -maxdepth 1 -name '*.app' -print -quit)
+          test -n "$app"
+          executable_name=$(plutil -extract CFBundleExecutable raw -o - "$app/Contents/Info.plist")
+          executable="$app/Contents/MacOS/$executable_name"
+          test -x "$executable"
+
+          HOME="$smoke_home" "$executable" >"$smoke_log" 2>&1 &
+          app_pid=$!
+          for _ in {1..10}; do
+            sleep 1
+            if ! kill -0 "$app_pid" 2>/dev/null; then
+              status=0
+              wait "$app_pid" || status=$?
+              cat "$smoke_log" >&2
+              echo "Packaged macOS app exited during startup with status $status" >&2
+              exit 1
+            fi
+          done
+          echo "Packaged macOS app remained alive for 10 seconds"
+
+      - name: Smoke test packaged Linux app
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          deb=$(find app/build/compose/binaries/main/deb -maxdepth 1 -name '*.deb' -print -quit)
+          test -n "$deb"
+          dpkg-deb --info "$deb"
+          dpkg-deb --contents "$deb"
+
+          package_name=$(dpkg-deb --field "$deb" Package)
+          [[ "$package_name" =~ ^[a-z0-9][a-z0-9+.-]*$ ]]
+          smoke_home=$(mktemp -d)
+          smoke_log="$RUNNER_TEMP/maryk-linux-smoke.log"
+          install_attempted=false
+          cleanup() {
+            if [[ "$install_attempted" == true ]]; then
+              sudo dpkg --purge "$package_name" >/dev/null || true
+            fi
+            rm -rf -- "$smoke_home"
+          }
+          trap cleanup EXIT
+
+          install_attempted=true
+          sudo dpkg --install "$deb"
+          launcher=$(dpkg-query --listfiles "$package_name" | awk '/\/bin\/[^/]+$/ { print; exit }')
+          test -x "$launcher"
+
+          status=0
+          HOME="$smoke_home" timeout --signal=TERM --kill-after=5s 10s xvfb-run -a "$launcher" >"$smoke_log" 2>&1 || status=$?
+          if [[ "$status" -ne 124 ]]; then
+            cat "$smoke_log" >&2
+            echo "Packaged Linux app exited during startup with status $status" >&2
+            exit 1
+          fi
+          echo "Packaged Linux app remained alive for 10 seconds"
+
+      - name: Smoke test packaged Windows app
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $msi = Get-ChildItem 'app/build/compose/binaries/main/msi' -Filter '*.msi' | Select-Object -First 1
+          if (-not $msi) {
+            throw 'No MSI package found'
+          }
+
+          $installRoot = Join-Path $env:RUNNER_TEMP 'maryk-msi-smoke'
+          $installLog = Join-Path $env:RUNNER_TEMP 'maryk-msi-install.log'
+          $stdoutLog = Join-Path $env:RUNNER_TEMP 'maryk-windows-smoke.stdout.log'
+          $stderrLog = Join-Path $env:RUNNER_TEMP 'maryk-windows-smoke.stderr.log'
+          $smokeProfile = Join-Path $env:RUNNER_TEMP 'maryk-windows-smoke-profile'
+          $appProcess = $null
+          $installAttempted = $false
+          try {
+            $installAttempted = $true
+            $installArgs = "/i `"$($msi.FullName)`" /qn /norestart INSTALLDIR=`"$installRoot`" /L*v `"$installLog`""
+            $installer = Start-Process msiexec.exe -ArgumentList $installArgs -Wait -PassThru
+            if ($installer.ExitCode -notin @(0, 3010)) {
+              Get-Content $installLog -ErrorAction SilentlyContinue
+              throw "MSI install failed with exit code $($installer.ExitCode)"
+            }
+
+            $searchRoots = @($installRoot, (Join-Path $env:ProgramFiles 'Maryk')) | Where-Object { Test-Path $_ }
+            $executable = $searchRoots |
+              ForEach-Object { Get-ChildItem $_ -Filter 'Maryk.exe' -File -Recurse -ErrorAction SilentlyContinue } |
+              Select-Object -First 1
+            if (-not $executable) {
+              throw 'Installed Maryk.exe not found'
+            }
+
+            $env:USERPROFILE = $smokeProfile
+            $env:APPDATA = Join-Path $smokeProfile 'AppData/Roaming'
+            $env:LOCALAPPDATA = Join-Path $smokeProfile 'AppData/Local'
+            New-Item $env:APPDATA, $env:LOCALAPPDATA -ItemType Directory -Force | Out-Null
+            $appProcess = Start-Process $executable.FullName -WorkingDirectory $executable.DirectoryName -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog -PassThru
+            Start-Sleep -Seconds 10
+            if ($appProcess.HasExited) {
+              Get-Content $stdoutLog -ErrorAction SilentlyContinue
+              Get-Content $stderrLog -ErrorAction SilentlyContinue
+              throw "Packaged Windows app exited during startup with status $($appProcess.ExitCode)"
+            }
+            Write-Output 'Packaged Windows app remained alive for 10 seconds'
+          }
+          finally {
+            if ($appProcess -and -not $appProcess.HasExited) {
+              taskkill.exe /PID $($appProcess.Id) /T /F | Out-Null
+            }
+            if ($installAttempted) {
+              $uninstallArgs = "/x `"$($msi.FullName)`" /qn /norestart"
+              $uninstaller = Start-Process msiexec.exe -ArgumentList $uninstallArgs -Wait -PassThru
+              if ($uninstaller.ExitCode -notin @(0, 1605, 3010)) {
+                Write-Warning "MSI cleanup failed with exit code $($uninstaller.ExitCode)"
+              }
+            }
+            Remove-Item $installRoot -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item $smokeProfile -Recurse -Force -ErrorAction SilentlyContinue
+          }
 
       - name: Upload distribution
         uses: actions/upload-artifact@v4

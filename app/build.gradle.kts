@@ -138,8 +138,8 @@ tasks.register("verifyDistributionVersion") {
             check('-' !in rootProject.version.toString()) {
                 "Release version must not be a snapshot: ${rootProject.version}"
             }
-            check(tag == "v$releaseVersion") {
-                "Release tag $tag must match project version v$releaseVersion"
+            check(tag == releaseVersion) {
+                "Release tag $tag must match project version $releaseVersion"
             }
         }
     }

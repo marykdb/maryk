@@ -16,6 +16,7 @@ import maryk.lib.exceptions.ParseException
 import kotlin.random.Random
 
 /** Definition for a byte array with fixed length */
+@Suppress("DEPRECATION")
 data class FixedBytesDefinition(
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -27,6 +28,7 @@ data class FixedBytesDefinition(
 ) :
     IsComparableDefinition<Bytes, IsPropertyContext>,
     IsRandomizableDefinition<Bytes>,
+    IsNumericDefinition<Bytes>,
     IsSerializableFixedBytesEncodable<Bytes, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<Bytes>,
     HasDefaultValueDefinition<Bytes> {

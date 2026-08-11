@@ -25,6 +25,7 @@ import maryk.lib.exceptions.ParseException
 import kotlin.experimental.xor
 
 /** Definition for Number properties */
+@Suppress("DEPRECATION")
 data class NumberDefinition<T : Comparable<T>>(
     override val required: Boolean = true,
     override val final: Boolean = false,
@@ -37,6 +38,7 @@ data class NumberDefinition<T : Comparable<T>>(
 ) :
     IsArithmeticDefinition<T>,
     IsRandomizableDefinition<T>,
+    IsNumericDefinition<T>,
     IsReversibleStorageDefinition,
     IsSerializableFixedBytesEncodable<T, IsPropertyContext>,
     IsTransportablePropertyDefinitionType<T>,
@@ -115,7 +117,7 @@ data class NumberDefinition<T : Comparable<T>>(
                 writer.writeString(stringValue)
             }
         }
-        SInt64 -> super.writeJsonValue(value, writer, context)
+        SInt64 -> super<IsArithmeticDefinition>.writeJsonValue(value, writer, context)
         else -> {
             writer.writeValue(
                 this.asString(value)

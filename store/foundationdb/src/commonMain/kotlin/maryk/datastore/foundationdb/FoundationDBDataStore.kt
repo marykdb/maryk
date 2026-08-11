@@ -1036,6 +1036,7 @@ class FoundationDBDataStore private constructor(
         readStoredModelNames(tc, metadataPrefix)
 
     internal var clusterUpdateLog: ClusterUpdateLog? = null
+    internal val afterDeleteUpdatePrepared = atomic<((Transaction) -> Unit)?>(null)
     internal val beforeUpdateEmission = atomic<(suspend () -> Unit)?>(null)
 
     internal suspend fun emitUpdate(update: Update<*>?) {

@@ -263,6 +263,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         }
 
         updateToEmit = Update.Deletion(dataModel, key, version.timestamp, hardDelete)
+        afterDeleteUpdatePrepared.value?.invoke(tr)
 
         clusterUpdateLog?.append(
             tr = tr,
@@ -271,8 +272,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         )
 
         DeleteSuccess(version.timestamp)
-    }.also {
-        emitUpdate(updateToEmit)
+    }.also { status ->
+        if (status is DeleteSuccess<*>) {
+            emitUpdate(updateToEmit)
+        }
     }
 } catch (e: Throwable) {
     e.rethrowIfFatal()

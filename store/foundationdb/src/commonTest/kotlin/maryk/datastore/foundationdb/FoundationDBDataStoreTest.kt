@@ -6,18 +6,22 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.datastore.shared.DataStoreBackupChunk
 import maryk.datastore.shared.DataStoreBackupManifest
 import maryk.datastore.shared.DataStoreBackupWriter
@@ -35,11 +39,47 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
+    @Test
+    fun abortedDeleteAttemptDoesNotEmitDeletion() = runTest(timeout = 3.minutes) {
+        withContext(Dispatchers.Default) {
+            val store = FoundationDBDataStore.open(
+                directoryPath = listOf("maryk", "test", "aborted-delete-emission", Uuid.random().toString()),
+                dataModelsById = mapOf(1u to SimpleMarykModel),
+            )
+            try {
+                val key = assertIs<AddSuccess<SimpleMarykModel>>(
+                    store.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "happy delete" })).statuses.single()
+                ).key
+                val updates = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true)).produceIn(this)
+                try {
+                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(withTimeout(10_000) { updates.receive() })
+
+                    store.afterDeleteUpdatePrepared.value = {
+                        store.runTransaction { conflictingTransaction ->
+                            conflictingTransaction.clear(packKey(store.getTableDirs(SimpleMarykModel).keysPrefix, key.bytes))
+                        }
+                    }
+
+                    assertIs<DoesNotExist<SimpleMarykModel>>(
+                        store.execute(SimpleMarykModel.delete(key, hardDelete = true)).statuses.single()
+                    )
+                    assertNull(withTimeoutOrNull(500) { updates.receive() })
+                } finally {
+                    updates.cancel()
+                }
+            } finally {
+                store.afterDeleteUpdatePrepared.value = null
+                store.close()
+            }
+        }
+    }
+
     @Test
     fun rejectsReplicatedAdditionWithDifferentFirstVersion() = runTest(timeout = 3.minutes) {
         val store = FoundationDBDataStore.open(

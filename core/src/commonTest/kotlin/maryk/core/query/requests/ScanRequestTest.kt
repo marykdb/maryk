@@ -24,7 +24,9 @@ import maryk.core.properties.definitions.index.UUIDv7Key
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.RequestContext
+import maryk.test.models.Measurement
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.TestMarykModel
 import maryk.test.requests.scanMaxRequest
 import maryk.test.requests.scanOrdersRequest
 import maryk.test.requests.scanRequest
@@ -336,6 +338,26 @@ class ScanRequestTest {
         assertFailsWith<RequestException> {
             CursorFanOutLayoutB.scan(cursor = cursor).resolveCursor()
         }
+    }
+
+    @Test
+    fun cursorSupportsMultiTypeReferenceInKeyLayout() {
+        val request = Measurement.scan()
+        val key = Measurement.key(ByteArray(Measurement.Meta.keyByteSize))
+        val cursor = request.createCursor(key, orderKey = null)
+        val continuation = assertNotNull(request.copy(cursor = cursor).resolveCursor())
+
+        assertContentEquals(key.bytes, continuation.key.bytes)
+    }
+
+    @Test
+    fun cursorSupportsMultiTypeReferenceInSecondaryIndexLayout() {
+        val request = TestMarykModel.scan()
+        val key = TestMarykModel.key(ByteArray(TestMarykModel.Meta.keyByteSize))
+        val cursor = request.createCursor(key, orderKey = null)
+        val continuation = assertNotNull(request.copy(cursor = cursor).resolveCursor())
+
+        assertContentEquals(key.bytes, continuation.key.bytes)
     }
 
     @Test

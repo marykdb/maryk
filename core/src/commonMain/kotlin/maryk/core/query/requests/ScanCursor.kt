@@ -30,6 +30,7 @@ import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.MapAnyKeyReference
 import maryk.core.properties.references.SetAnyValueReference
+import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WriteCache
@@ -205,6 +206,10 @@ private fun ScanLayoutEncoder.writeIndexLayout(
             indexable.mapDefinition.keyDefinition,
             traversal,
         )
+        is TypeReference<*, *, *> -> {
+            writeUInt(TYPE_REFERENCE_LAYOUT)
+            writeUInt(indexable.propertyDefinition.byteSize.toUInt())
+        }
         is IsPropertyReference<*, *, *> -> writePropertyLayout(indexable, traversal)
         else -> when (indexable.indexKeyPartType) {
             IndexKeyPartType.UUIDv4, IndexKeyPartType.UUIDv7 -> Unit
@@ -457,5 +462,6 @@ private const val CURSOR_HEADER_SIZE = 4 + 1 + 2 + ULong.SIZE_BYTES * 2 + 2 + In
 private const val SCAN_LAYOUT_FINGERPRINT_VERSION: Byte = 1
 private const val LAYOUT_CYCLE: Byte = 0
 private const val LAYOUT_VALUE: Byte = 1
+private const val TYPE_REFERENCE_LAYOUT: UInt = 0u
 private const val FNV_OFFSET_BASIS = 14695981039346656037uL
 private const val FNV_PRIME = 1099511628211uL

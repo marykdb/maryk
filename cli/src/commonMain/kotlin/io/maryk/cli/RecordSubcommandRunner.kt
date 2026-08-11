@@ -136,13 +136,20 @@ internal fun runRecordSubcommand(
                 is DeleteOptionsResult.Error -> RecordSubcommandResult.Error("Delete failed: ${parseResult.message}")
                 is DeleteOptionsResult.Success -> {
                     val deleteOptions = parseResult.options
-                    val lines = try {
+                    val result = try {
                         resolvedDeleteContext.onDelete(deleteOptions.hardDelete)
                     } catch (e: Throwable) {
                         e.rethrowIfFatal()
-                        listOf("Delete failed: ${e.message ?: e::class.simpleName}")
+                        DeleteResult(
+                            lines = listOf("Delete failed: ${e.message ?: e::class.simpleName}"),
+                            isError = true,
+                        )
                     }
-                    RecordSubcommandResult.Success(lines)
+                    if (result.isError) {
+                        RecordSubcommandResult.Error(result.lines.single())
+                    } else {
+                        RecordSubcommandResult.Success(result.lines)
+                    }
                 }
             }
         }

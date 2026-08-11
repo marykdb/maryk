@@ -451,14 +451,17 @@ class OutputViewerInteraction(
         return when (input.lowercase()) {
             "yes", "y" -> {
                 pendingDelete = false
-                val lines = try {
+                val result = try {
                     resolvedDeleteContext.onDelete(pendingHardDelete)
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()
-                    listOf("Delete failed: ${e.message ?: e::class.simpleName}")
+                    DeleteResult(
+                        lines = listOf("Delete failed: ${e.message ?: e::class.simpleName}"),
+                        isError = true,
+                    )
                 }
                 pendingHardDelete = false
-                InteractionResult.Stay(lines = lines)
+                InteractionResult.Stay(lines = result.lines)
             }
             "no", "n", "cancel" -> {
                 pendingDelete = false

@@ -5,6 +5,20 @@ import io.maryk.cli.commands.CommandContext
 import io.maryk.cli.commands.CommandRegistry
 import io.maryk.cli.commands.CommandResult
 import io.maryk.cli.commands.FakeDataStore
+import io.maryk.cli.commands.GetCommand
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.key
+import maryk.core.properties.types.Key
+import maryk.core.query.ValuesWithMetaData
+import maryk.core.query.requests.DeleteRequest
+import maryk.core.query.requests.GetRequest
+import maryk.core.query.requests.IsStoreRequest
+import maryk.core.query.responses.DeleteResponse
+import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.statuses.DoesNotExist
+import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -130,6 +144,16 @@ class OneShotModeTest {
         assertTrue(listCommand.called)
     }
 
+    @Test
+    fun runOneShotReturnsDeleteFailureAndSuccessExitCodes() {
+        assertEquals(1, runOneShotDelete { key ->
+            DeleteResponse(SimpleMarykModel, listOf(DoesNotExist(key)))
+        })
+        assertEquals(0, runOneShotDelete {
+            DeleteResponse(SimpleMarykModel, listOf(DeleteSuccess(1uL)))
+        })
+    }
+
     private class FakeEnvironment : CliEnvironment {
         override fun resolveDirectory(path: String): DirectoryResolution =
             DirectoryResolution.Success(path)
@@ -190,5 +214,38 @@ class OneShotModeTest {
 
         override fun onInput(input: String): InteractionResult =
             InteractionResult.Complete(listOf("done"))
+    }
+
+    private fun runOneShotDelete(
+        deleteResponse: (Key<SimpleMarykModel>) -> DeleteResponse<SimpleMarykModel>,
+    ): Int {
+        val values = SimpleMarykModel.create { value with "hello" }
+        val key = SimpleMarykModel.key(values)
+        val store = object : FakeDataStore(dataModelsById = mapOf(1u to SimpleMarykModel)) {
+            @Suppress("UNCHECKED_CAST")
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(request: RQ): RP = when (request) {
+                is GetRequest<*> -> ValuesResponse(
+                    dataModel = SimpleMarykModel,
+                    values = listOf(ValuesWithMetaData(key, values, 1uL, 1uL, false)),
+                ) as RP
+                is DeleteRequest<*> -> deleteResponse(key) as RP
+                else -> error("Unexpected request")
+            }
+        }
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+        val registry = CommandRegistry(state, FakeEnvironment()).apply {
+            register(GetCommand())
+        }
+
+        return runOneShot(
+            registry,
+            OneShotOptions(
+                store = null,
+                connectArgs = emptyList(),
+                commandLine = "get SimpleMarykModel $key delete",
+            ),
+        )
     }
 }

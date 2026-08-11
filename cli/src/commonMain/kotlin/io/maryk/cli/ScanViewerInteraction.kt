@@ -692,7 +692,7 @@ class ScanViewerInteraction(
                 val message = try {
                     val request = dataModel.delete(row.key, hardDelete = pendingHardDelete)
                     val response = runBlocking { dataStore.execute(request) }
-                    formatDeleteResult(response, label, pendingHardDelete).single()
+                    formatDeleteResult(response, label, pendingHardDelete).lines.single()
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()
                     "Delete failed: ${e.message ?: e::class.simpleName}"

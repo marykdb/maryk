@@ -19,7 +19,9 @@ import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.clusterlog.ClusterLogDeletion
+import maryk.datastore.foundationdb.processors.helpers.ByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.asByteArrayKey
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.encodeZeroFreeUsing01
 import maryk.datastore.foundationdb.processors.helpers.getValue
@@ -167,10 +169,6 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                                 }
                             }
                         }
-
-                        if (hardDelete && tableDirs is HistoricTableDirectories) {
-                            deleteHistoricUniqueEntriesForKey(tr, tableDirs, uniqueRef, key.bytes)
-                        }
                     }
                 }
             }
@@ -184,6 +182,23 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                         key.bytes,
                         versionBytes
                     )
+                }
+
+                if (tableDirs is HistoricTableDirectories) {
+                    val historicUniqueReferences = mutableListOf<ByteArray>()
+                    for (reference in getUniqueIndices(dbIndex, tableDirs.uniquePrefix)) {
+                        collectHistoricUniqueReferencesForHistoricalValues(
+                            tr,
+                            tableDirs,
+                            dbIndex,
+                            key.bytes,
+                            reference,
+                            historicUniqueReferences,
+                        )
+                    }
+                    for (uniqueRef in distinctHistoricUniqueReferences(historicUniqueReferences)) {
+                        deleteHistoricUniqueEntriesForKey(tr, tableDirs, uniqueRef, key.bytes)
+                    }
                 }
             }
         }
@@ -303,4 +318,37 @@ private fun deleteHistoricUniqueEntriesForKey(
             tr.clear(historicEntry.key)
         }
     }
+}
+
+private fun FoundationDBDataStore.collectHistoricUniqueReferencesForHistoricalValues(
+    tr: Transaction,
+    tableDirs: HistoricTableDirectories,
+    dbIndex: UInt,
+    key: ByteArray,
+    reference: ByteArray,
+    historicUniqueReferences: MutableList<ByteArray>,
+) {
+    val prefix = packKey(tableDirs.historicTablePrefix, key, encodeZeroFreeUsing01(reference))
+    val iterator = tr.getRange(FDBRange.startsWith(prefix)).iterator()
+    while (iterator.hasNext()) {
+        val historicValue = iterator.nextBlocking().value
+        val uniqueValues = withDecryptedValueIfNeeded(historicValue) { value, offset, length ->
+            mapUniqueValueByteCandidates(
+                dbIndex,
+                reference,
+                value.copyOfRange(offset, offset + length),
+            )
+        }
+        for (uniqueValue in uniqueValues) {
+            historicUniqueReferences += combineToByteArray(reference, uniqueValue)
+        }
+    }
+}
+
+internal fun distinctHistoricUniqueReferences(references: Iterable<ByteArray>): List<ByteArray> {
+    val referencesByContent = LinkedHashMap<ByteArrayKey, ByteArray>()
+    for (reference in references) {
+        referencesByContent.getOrPut(reference.asByteArrayKey(copy = true)) { reference }
+    }
+    return referencesByContent.values.toList()
 }

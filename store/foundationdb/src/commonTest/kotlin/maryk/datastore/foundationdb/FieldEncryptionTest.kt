@@ -7,22 +7,29 @@ import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
+import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.distinctHistoricUniqueReferences
 import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.shared.TypeIndicator
 import maryk.foundationdb.Range as FDBRange
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -240,6 +247,107 @@ class FieldEncryptionTest {
             }
         }
     }
+
+    @Test
+    fun hardDeleteRemovesHistoricTokensForChangedSensitiveUniqueValueWithoutErasingOtherOwnerHistory() {
+        runBlocking {
+            val store = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = listOf("maryk", "test", "field-encryption-unique-hard-delete-changed", Uuid.random().toString()),
+                dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+                keepAllVersions = true,
+                fieldEncryptionProvider = XorWithTokenFieldEncryptionProvider(),
+            )
+            try {
+                val otherKey = assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    store.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 1 }), "old-secret"))
+                    ).statuses.single()
+                ).key
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    store.execute(SensitiveUniqueRecord.delete(otherKey)).statuses.single()
+                )
+                val targetKey = assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    store.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 2 }), "old-secret"))
+                    ).statuses.single()
+                ).key
+                assertIs<ChangeSuccess<SensitiveUniqueRecord>>(
+                    store.execute(
+                        SensitiveUniqueRecord.change(
+                            targetKey.change(Change(SensitiveUniqueRecord { secret::ref } with "new-secret"))
+                        )
+                    ).statuses.single()
+                )
+
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    store.execute(SensitiveUniqueRecord.delete(targetKey, hardDelete = true)).statuses.single()
+                )
+                val historicOwners = store.historicUniqueOwners(904u)
+                assertTrue(historicOwners.any { it.contentEquals(otherKey.bytes) })
+                assertFalse(historicOwners.any { it.contentEquals(targetKey.bytes) })
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun hardDeleteDeduplicatesRepeatedHistoricValuesAndDuplicateRetainedTokens() {
+        runBlocking {
+            val store = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = listOf("maryk", "test", "field-encryption-unique-hard-delete-deduplicate", Uuid.random().toString()),
+                dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+                keepAllVersions = true,
+                fieldEncryptionProvider = DuplicateRetainedTokenFieldEncryptionProvider(),
+            )
+            try {
+                val otherKey = assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    store.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 1 }), "other"))
+                    ).statuses.single()
+                ).key
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    store.execute(SensitiveUniqueRecord.delete(otherKey)).statuses.single()
+                )
+                val targetKey = assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    store.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 2 }), "first"))
+                    ).statuses.single()
+                ).key
+                for (value in listOf("second", "first", "second", "first")) {
+                    assertIs<ChangeSuccess<SensitiveUniqueRecord>>(
+                        store.execute(
+                            SensitiveUniqueRecord.change(
+                                targetKey.change(Change(SensitiveUniqueRecord { secret::ref } with value))
+                            )
+                        ).statuses.single()
+                    )
+                }
+
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    store.execute(SensitiveUniqueRecord.delete(targetKey, hardDelete = true)).statuses.single()
+                )
+                val historicOwners = store.historicUniqueOwners(904u)
+                assertTrue(historicOwners.any { it.contentEquals(otherKey.bytes) })
+                assertFalse(historicOwners.any { it.contentEquals(targetKey.bytes) })
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun distinctHistoricUniqueReferencesKeepsEachReferenceTokenCandidateOnce() {
+        val first = byteArrayOf(3, 1)
+        val second = byteArrayOf(3, 2)
+        val distinct = distinctHistoricUniqueReferences(listOf(first, second, first.copyOf(), second.copyOf(), first.copyOf()))
+
+        assertEquals(2, distinct.size)
+        assertContentEquals(first, distinct[0])
+        assertContentEquals(second, distinct[1])
+    }
 }
 
 private suspend fun FoundationDBDataStore.historicUniqueOwners(modelId: UInt): List<ByteArray> {
@@ -312,6 +420,37 @@ private class RotatingTokenFieldEncryptionProvider(
     ): List<ByteArray> = (listOf(activeToken) + previousTokens)
         .distinct()
         .map { token -> ByteArray(16) { token.toByte() } }
+
+    private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
+        ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }
+}
+
+private class DuplicateRetainedTokenFieldEncryptionProvider :
+    FieldEncryptionProvider,
+    SensitiveIndexTokenProvider {
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun deriveDeterministicToken(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray = ByteArray(16) { 1 }
+
+    override suspend fun deriveDeterministicTokenCandidates(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): List<ByteArray> = listOf(
+        ByteArray(16) { 1 },
+        ByteArray(16) { 2 },
+        ByteArray(16) { 1 },
+        ByteArray(16) { 2 },
+    )
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }

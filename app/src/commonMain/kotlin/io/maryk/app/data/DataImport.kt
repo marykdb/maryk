@@ -296,13 +296,12 @@ private suspend fun readProtoRecords(
     val bytes = readImportBytes(path)
     when (scope) {
         DataImportScope.SINGLE -> {
-            val values = readProtoPayload(
+            val values = readSingleProtoPayloadOrFrame(
                 bytes = bytes,
-                start = 0,
-                length = bytes.size,
                 label = "record",
-            ) { reader ->
-                ValuesWithMetaData.Serializer.readProtoBuf(bytes.size, reader = reader, context = requestContext)
+                validate = ::validateProtoRecord,
+            ) { length, reader ->
+                ValuesWithMetaData.Serializer.readProtoBuf(length, reader = reader, context = requestContext)
             }
             onRecord(values)
         }
@@ -394,14 +393,13 @@ private suspend fun readVersionedProtoRecords(
     val bytes = readImportBytes(path)
     when (scope) {
         DataImportScope.SINGLE -> {
-            val values = readProtoPayload(
+            val values = readSingleProtoPayloadOrFrame(
                 bytes = bytes,
-                start = 0,
-                length = bytes.size,
                 label = "versioned record",
-            ) { reader ->
+                validate = ::validateVersionedProtoRecord,
+            ) { length, reader ->
                 DataObjectVersionedChange.Serializer.readProtoBuf(
-                    bytes.size,
+                    length,
                     reader = reader,
                     context = requestContext
                 )
@@ -480,25 +478,84 @@ private fun detectVersionedYaml(path: String, requestContext: RequestContext): B
 
 private fun detectVersionedProto(path: String, requestContext: RequestContext): Boolean {
     val bytes = readImportBytesOrNull(path) ?: return false
-    val read = readVarInt(bytes, 0)
-    val (length, offset) = if (read != null && read.value > 0 && read.value <= bytes.size - read.bytesRead) {
-        read.value to read.bytesRead
-    } else {
-        bytes.size to 0
+    if (isValidVersionedProtoPayload(bytes, 0, bytes.size, requestContext)) {
+        return true
     }
-    return runCatching {
-        readProtoPayload(
-            bytes = bytes,
-            start = offset,
-            length = length,
-            label = "versioned record",
-        ) { reader ->
-            DataObjectVersionedChange.Serializer.readProtoBuf(length, reader = reader, context = requestContext)
-        }
-        true
+
+    val frame = runCatching {
+        readLengthPrefixedFrame(bytes, 0)
     }.onFailure {
         it.rethrowIfFatal()
-    }.getOrDefault(false)
+    }.getOrNull() ?: return false
+
+    return isValidVersionedProtoPayload(bytes, frame.start, frame.length, requestContext)
+}
+
+private fun isValidVersionedProtoPayload(
+    bytes: ByteArray,
+    start: Int,
+    length: Int,
+    requestContext: RequestContext,
+): Boolean = runCatching {
+    val values = readProtoPayload(
+        bytes = bytes,
+        start = start,
+        length = length,
+        label = "versioned record",
+    ) { reader ->
+        DataObjectVersionedChange.Serializer.readProtoBuf(length, reader = reader, context = requestContext)
+    }
+    validateVersionedProtoRecord(values)
+    true
+}.onFailure {
+    it.rethrowIfFatal()
+}.getOrDefault(false)
+
+private inline fun <T> readSingleProtoPayloadOrFrame(
+    bytes: ByteArray,
+    label: String,
+    validate: (T) -> Unit,
+    read: (length: Int, reader: () -> Byte) -> T,
+): T {
+    val unframed = runCatching {
+        readProtoPayload(
+            bytes = bytes,
+            start = 0,
+            length = bytes.size,
+            label = label,
+        ) { reader ->
+            read(bytes.size, reader)
+        }.also(validate)
+    }.onFailure {
+        it.rethrowIfFatal()
+    }
+    return unframed.getOrElse { unframedError ->
+        val frame = runCatching {
+            readLengthPrefixedFrame(bytes, 0)
+        }.onFailure {
+            it.rethrowIfFatal()
+        }.getOrElse {
+            throw unframedError
+        }
+        if (frame.end != bytes.size) {
+            throw unframedError
+        }
+        readProtoPayload(bytes, frame.start, frame.length, "framed $label") { reader ->
+            read(frame.length, reader)
+        }.also(validate)
+    }
+}
+
+private fun validateProtoRecord(
+    values: ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>,
+) {
+    ValuesWithMetaData(values)
+}
+
+private fun validateVersionedProtoRecord(
+    values: ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>,
+) {
+    DataObjectVersionedChange(values)
 }
 
 private suspend fun applyVersionedRecord(
@@ -878,7 +935,7 @@ private fun String.firstNonWhitespaceChar(): Char? = firstOrNull { !it.isWhitesp
 
 private fun detectProtoScope(bytes: ByteArray): DataImportScope {
     val frameCount = countLengthPrefixedFrames(bytes) ?: return DataImportScope.SINGLE
-    return if (frameCount > 0) DataImportScope.MULTIPLE else DataImportScope.SINGLE
+    return if (frameCount > 1) DataImportScope.MULTIPLE else DataImportScope.SINGLE
 }
 
 private fun countLengthPrefixedFrames(bytes: ByteArray): Int? {

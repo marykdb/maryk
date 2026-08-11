@@ -6,6 +6,7 @@ import maryk.core.models.asValues
 import maryk.core.models.key
 import maryk.core.extensions.bytes.toVarBytes
 import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.string
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
@@ -18,8 +19,96 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class DataImportProtoScopeTest {
+    @Test
+    fun detectsAndImportsUnframedVersionedProtoExport() = runBlocking {
+        val source = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to ProtoScopeModel),
+        )
+        val destination = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to ProtoScopeModel),
+        )
+        val folder = Files.createTempDirectory("maryk-import-unframed-versioned-export-")
+        try {
+            val values = ProtoScopeModel.create {
+                id with 7u
+                number with 42u
+            }
+            val key = ProtoScopeModel.key(values)
+            source.execute(ProtoScopeModel.add(values))
+
+            exportRowDataToFolder(
+                dataStore = source,
+                model = ProtoScopeModel,
+                key = key,
+                keyText = "7",
+                format = DataExportFormat.PROTO,
+                folder = folder.toString(),
+                includeVersionHistory = true,
+            )
+
+            val path = folder.resolve("${ProtoScopeModel.Meta.name}.7.versions.proto")
+            val requestContext = buildRequestContext(ProtoScopeModel)
+            val scope = detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO)
+
+            assertEquals(10, Files.readAllBytes(path).first().toInt())
+            assertEquals(DataImportScope.SINGLE, scope)
+            assertTrue(detectVersionedImport(path.toString(), DataExportFormat.PROTO, requestContext))
+            assertEquals(
+                ImportResult(imported = 1, failed = 0),
+                importVersionedDataFromFile(
+                    dataStore = destination,
+                    model = ProtoScopeModel,
+                    format = DataExportFormat.PROTO,
+                    scope = scope,
+                    path = path.toString(),
+                ),
+            )
+        } finally {
+            source.close()
+            destination.close()
+            folder.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun importsAmbiguousUnframedProtoRecordAsSingleScope() = runBlocking {
+        val destination = InMemoryDataStore.open(dataModelsById = mapOf(1u to AmbiguousProtoScopeModel))
+        val ambiguousRecord = byteArrayOf(
+            40, 0,
+            10, 4, 0, 0, 0, 7,
+            18, 27, 8, 7, 16, 42, 26, 21,
+            97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
+            24, 1, 32, 1,
+        )
+        val path = Files.createTempFile("maryk-import-ambiguous-unframed-", ".proto")
+        try {
+            Files.write(path, ambiguousRecord)
+            assertEquals(ambiguousRecord.size - 1, ambiguousRecord.first().toInt())
+
+            val scope = detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO)
+
+            assertEquals(DataImportScope.SINGLE, scope)
+            assertEquals(
+                ImportResult(imported = 1, failed = 0),
+                importDataFromFile(
+                    dataStore = destination,
+                    model = AmbiguousProtoScopeModel,
+                    format = DataExportFormat.PROTO,
+                    scope = scope,
+                    path = path.toString(),
+                ),
+            )
+        } finally {
+            destination.close()
+            Files.deleteIfExists(path)
+        }
+    }
+
     @Test
     fun importOneRecordFramedProtoExport() = runBlocking {
         val source = InMemoryDataStore.open(dataModelsById = mapOf(1u to ProtoScopeModel))
@@ -52,7 +141,7 @@ class DataImportProtoScopeTest {
                 path = path.toString(),
             )
 
-            assertEquals(DataImportScope.MULTIPLE, scope)
+            assertEquals(DataImportScope.SINGLE, scope)
             assertEquals(ImportResult(imported = 1, failed = 0), result)
         } finally {
             source.close()
@@ -93,7 +182,7 @@ class DataImportProtoScopeTest {
             val path = folder.resolve("${ProtoScopeModel.Meta.name}.data.versions.proto")
             val requestContext = buildRequestContext(ProtoScopeModel)
             val scope = detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO)
-            assertEquals(DataImportScope.MULTIPLE, scope)
+            assertEquals(DataImportScope.SINGLE, scope)
             assertEquals(
                 true,
                 detectVersionedImport(path.toString(), DataExportFormat.PROTO, requestContext),
@@ -172,7 +261,7 @@ class DataImportProtoScopeTest {
     }
 
     @Test
-    fun detectOneFramedProtoRecordAsMultipleScope() {
+    fun detectOneFramedProtoRecordAsSingleScope() {
         val values = ProtoScopeModel.create {
             id with 7u
             number with 42u
@@ -192,7 +281,7 @@ class DataImportProtoScopeTest {
         try {
             Files.write(path, framed)
             assertEquals(
-                DataImportScope.MULTIPLE,
+                DataImportScope.SINGLE,
                 detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO),
             )
         } finally {
@@ -296,4 +385,14 @@ private object ProtoScopeModel : RootDataModel<ProtoScopeModel>(
 ) {
     val id by number(index = 1u, type = UInt32, final = true)
     val number by number(index = 2u, type = UInt32)
+}
+
+private object AmbiguousProtoScopeModel : RootDataModel<AmbiguousProtoScopeModel>(
+    keyDefinition = {
+        AmbiguousProtoScopeModel.run { id.ref() }
+    },
+) {
+    val id by number(index = 1u, type = UInt32, final = true)
+    val number by number(index = 2u, type = UInt32)
+    val label by string(index = 3u)
 }

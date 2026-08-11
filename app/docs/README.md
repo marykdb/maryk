@@ -114,6 +114,9 @@ The form editor provides:
 
 - Schema export: JSON, YAML, Proto, Kotlin.
 - Data export: row/model/all.
+  - In time-travel mode, row exports read the selected version boundary. Row
+    history exports use that boundary directly; otherwise they capture a
+    snapshot when the store supports it.
   - With historical retention and an authoritative snapshot provider,
     row/model/all history exports and model/all current-state exports capture a
     point-in-time version before paging. Otherwise the app refuses a

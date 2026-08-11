@@ -51,9 +51,10 @@ internal suspend fun exportRowDataToFolder(
     format: DataExportFormat,
     folder: String,
     includeVersionHistory: Boolean = false,
+    toVersion: ULong? = null,
 ) {
     if (includeVersionHistory) {
-        val snapshotVersion = dataStore.captureSnapshotVersion()
+        val snapshotVersion = toVersion ?: dataStore.captureSnapshotVersion()
         val requestContext = buildRequestContext(model)
         val change = loadFullChangesForKey(dataStore, model, key, snapshotVersion) ?: return
         val fileName = buildRowFileName(model.Meta.name, keyText, format, "versions")
@@ -67,7 +68,7 @@ internal suspend fun exportRowDataToFolder(
         }
     } else {
         val response = dataStore.execute(
-            model.get(key, filterSoftDeleted = false)
+            model.get(key, toVersion = toVersion, filterSoftDeleted = false)
         )
         val record = response.values.firstOrNull() ?: return
         val fileName = buildRowFileName(model.Meta.name, keyText, format)

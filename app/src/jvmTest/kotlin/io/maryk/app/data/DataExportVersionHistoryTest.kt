@@ -38,6 +38,133 @@ import kotlin.test.assertTrue
 
 class DataExportVersionHistoryTest {
     @Test
+    fun currentStateRowExportUsesExplicitVersionForEveryFormat() = runBlocking {
+        val values = ExportHistoryModel.create {
+            id with 5u
+            number with 12u
+        }
+        val key = ExportHistoryModel.key(values)
+        val requestedToVersions = mutableListOf<ULong?>()
+        val store = object : IsDataStore {
+            override val dataModelsById: Map<UInt, IsRootDataModel> = mapOf(1u to ExportHistoryModel)
+            override val dataModelIdsByString = mapOf(ExportHistoryModel.Meta.name to 1u)
+            override val keepAllVersions = true
+            override val keepUpdateHistoryIndex = false
+            override val supportsFuzzyQualifierFiltering = false
+            override val supportsSubReferenceFiltering = false
+
+            @Suppress("UNCHECKED_CAST")
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP {
+                check(request is GetRequest<*>)
+                requestedToVersions += request.toVersion
+                check(!request.filterSoftDeleted)
+                return ValuesResponse(
+                    dataModel = request.dataModel,
+                    values = listOf(
+                        ValuesWithMetaData(key, values, 1uL, 77uL, isDeleted = false),
+                    ) as List<ValuesWithMetaData<DM>>,
+                ) as RP
+            }
+
+            override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
+                request: RQ,
+            ): Flow<IsUpdateResponse<DM>> = throw NotImplementedError("Not used")
+
+            override suspend fun <DM : IsRootDataModel> processUpdate(
+                updateResponse: UpdateResponse<DM>,
+            ): ProcessResponse<DM> = throw NotImplementedError("Not used")
+
+            override suspend fun close() = Unit
+            override suspend fun closeAllListeners() = Unit
+        }
+        val folder = Files.createTempDirectory("maryk-export-row-version-")
+        try {
+            DataExportFormat.entries.forEach { format ->
+                exportRowDataToFolder(
+                    dataStore = store,
+                    model = ExportHistoryModel,
+                    key = key,
+                    keyText = "5",
+                    format = format,
+                    folder = folder.toString(),
+                    toVersion = 77uL,
+                )
+            }
+
+            assertEquals(listOf<ULong?>(77uL, 77uL, 77uL), requestedToVersions)
+        } finally {
+            folder.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun versionedRowExportUsesExplicitVersionWithoutCapturingSnapshot() = runBlocking {
+        val values = ExportHistoryModel.create {
+            id with 6u
+            number with 11u
+        }
+        val key = ExportHistoryModel.key(values)
+        var requestedToVersion: ULong? = null
+        val store = object : IsDataStore, SnapshotVersionProvider {
+            override val dataModelsById: Map<UInt, IsRootDataModel> = mapOf(1u to ExportHistoryModel)
+            override val dataModelIdsByString: Map<String, UInt> = mapOf(ExportHistoryModel.Meta.name to 1u)
+            override val keepAllVersions = true
+            override val keepUpdateHistoryIndex = false
+            override val supportsFuzzyQualifierFiltering = false
+            override val supportsSubReferenceFiltering = false
+
+            override suspend fun captureSnapshotVersion(): ULong = error("Explicit boundary must not capture a snapshot")
+
+            @Suppress("UNCHECKED_CAST")
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP {
+                check(request is GetChangesRequest<*>)
+                requestedToVersion = request.toVersion
+                return ChangesResponse(
+                    dataModel = request.dataModel,
+                    changes = listOf(
+                        DataObjectVersionedChange(
+                            key = key,
+                            changes = listOf(VersionedChanges(77uL, listOf(ObjectCreate))),
+                        )
+                    ),
+                ) as RP
+            }
+
+            override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
+                request: RQ,
+            ): Flow<IsUpdateResponse<DM>> = throw NotImplementedError("Not used")
+
+            override suspend fun <DM : IsRootDataModel> processUpdate(
+                updateResponse: UpdateResponse<DM>,
+            ): ProcessResponse<DM> = throw NotImplementedError("Not used")
+
+            override suspend fun close() = Unit
+            override suspend fun closeAllListeners() = Unit
+        }
+        val folder = Files.createTempDirectory("maryk-export-row-history-version-")
+        try {
+            exportRowDataToFolder(
+                dataStore = store,
+                model = ExportHistoryModel,
+                key = key,
+                keyText = "6",
+                format = DataExportFormat.YAML,
+                folder = folder.toString(),
+                includeVersionHistory = true,
+                toVersion = 77uL,
+            )
+
+            assertEquals(77uL, requestedToVersion)
+        } finally {
+            folder.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
     fun failedModelExportPreservesExistingDestination() = runBlocking {
         val store = object : IsDataStore {
             override val dataModelsById: Map<UInt, IsRootDataModel> = mapOf(1u to ExportHistoryModel)

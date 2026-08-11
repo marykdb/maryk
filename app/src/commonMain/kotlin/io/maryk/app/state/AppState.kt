@@ -1278,8 +1278,10 @@ class BrowserState(
         format: DataExportFormat,
         includeVersionHistory: Boolean = false,
     ) {
+        if (hasInvalidTimeTravelInput()) return
         val connection = activeConnection ?: return
         val model = connection.dataStore.dataModelsById[modelId] ?: return
+        val toVersion = currentTimeTravelVersion()
         val folder = pickDirectory("Export ${model.Meta.name} row") ?: return
         isWorking = true
         exportToastMessage = null
@@ -1294,6 +1296,7 @@ class BrowserState(
                         format = format,
                         folder = folder,
                         includeVersionHistory = includeVersionHistory,
+                        toVersion = toVersion,
                     )
                 }
             }

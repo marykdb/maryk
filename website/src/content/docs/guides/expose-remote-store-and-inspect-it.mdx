@@ -27,7 +27,10 @@ maryk --exec "serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cl
 
 `serve` does not need `--connect` in one-shot mode. It blocks until stopped.
 
-Remote serving has no built-in auth or TLS. Bind to `127.0.0.1` unless you are behind SSH tunneling or another trusted boundary.
+Loopback serving needs no authentication. Non-loopback binds require a bearer
+token (or the explicit unsafe `--allow-insecure-remote-binding` opt-in). Bearer
+authentication does not encrypt traffic; terminate TLS or use SSH tunneling
+outside localhost.
 
 ## Use a config file
 
@@ -36,6 +39,7 @@ store: rocksdb
 dir: ./data
 host: 127.0.0.1
 port: 8210
+bearer-token: replace-with-a-secret
 ```
 
 ```text
@@ -61,7 +65,10 @@ The App stores saved configs in `~/.maryk/app/stores.conf`.
 
 ```kotlin
 val remote = RemoteDataStore.connect(
-    RemoteStoreConfig(baseUrl = "http://127.0.0.1:8210")
+    RemoteStoreConfig(
+        baseUrl = "https://store.example.test",
+        bearerToken = System.getenv("MARYK_BEARER_TOKEN"),
+    )
 )
 
 val records = remote.execute(
@@ -70,6 +77,10 @@ val records = remote.execute(
 ```
 
 `RemoteDataStore.connect` is `suspend`. The remote client implements `IsDataStore`, so normal `execute(...)` code works.
+
+Deploy the remote client and server together before using batched execute
+requests. Mixed execute-protocol generations are not a supported batch
+compatibility target; legacy single-request framing is only a transition aid.
 
 ## Use SSH when crossing machines
 

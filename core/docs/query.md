@@ -205,6 +205,11 @@ index pagination does not need to re-read the boundary record. It is bound to th
 model and query; changing the filter, order, selection, or historical version rejects
 the cursor. `startKey` remains supported for direct boundaries and legacy clients,
 but cannot be combined with `cursor`.
+The cursor also carries a fingerprint of the root-key and secondary-index storage
+layouts. A cursor created before a key or secondary-index layout change is rejected
+even when the model name and query are unchanged; start a fresh scan after the
+storage-layout migration. Changes to validation, defaults, or unindexed properties
+remain compatible.
 For multi-entry indexes, cursor paging emits each record once through its first
 eligible entry in the requested direction.
 Aggregations apply to the current page; combine page results in the application

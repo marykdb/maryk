@@ -119,6 +119,14 @@ export default defineConfig({
                     items: [
                         {label: 'Overview', slug: 'stores'},
                         {
+                            label: 'Shared store',
+                            collapsed: true,
+                            items: [
+                                {label: 'Overview', slug: 'stores/shared'},
+                                {label: 'Encryption key rotation', slug: 'stores/shared/encryption-key-rotation'},
+                            ],
+                        },
+                        {
                             label: 'Memory Store',
                             collapsed: true,
                             items: [

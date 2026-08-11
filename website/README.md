@@ -9,6 +9,7 @@ Part of this site is generated from repository docs before every build. Other pa
 - Source of truth:
   - `core/docs/**`
   - `store/**/README.md` and `store/**/docs/**`
+  - `store/rocksdb/documentation/**`
   - `cli/docs/commands.md`
   - `app/docs/README.md`
 - Sync script: `scripts/sync-core-docs.mjs`

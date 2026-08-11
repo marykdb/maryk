@@ -125,14 +125,17 @@ property; holes, multipolygons, stored shapes, and shape-to-shape relations are
 not supported. A compatible GeoHash index uses the polygon bounds for candidate
 scanning and exact point-in-polygon matching removes false positives.
 
-Precision ranges from 1 through 52 bits. Planning uses byte-aligned prefixes,
-reducing precision until no more than 256 candidate cells are scanned, then
-applies the exact spatial predicate. Geohash order is cell order, not distance
-or nearest-neighbour order. Without a compatible index, spatial filters follow
-the normal `allowTableScan` policy.
+`GeoHash` index precision is byte-aligned: use 8, 16, 24, 32, 40, or 48 bits.
+Planning uses prefixes at that precision, reducing precision in 8-bit steps until
+no more than 256 candidate cells are scanned, then applies the exact spatial
+predicate. Geohash order is cell order, not distance or nearest-neighbour order.
+Without a compatible index, spatial filters follow the normal `allowTableScan`
+policy.
 
-Precision below 8 bits cannot form a byte-aligned prefix, so it scans the full
-geohash index rather than narrowing candidates.
+The lower-level `GeoPoint.geoHashBits` helper accepts any precision from 1 through
+52 bits and zeroes unused low bits in its final byte. That helper range is broader
+than the persisted `GeoHash` index contract; non-byte-aligned values cannot be used
+as an index definition.
 
 ## Storage Byte representation
 The values are encoded as 2 integers in full format each taking 4 bytes for a total

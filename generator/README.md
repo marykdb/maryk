@@ -57,7 +57,7 @@ compatibility baseline:
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.4.0" // or Android/Kotlin Multiplatform
+    kotlin("jvm") version "2.4.10" // or Android/Kotlin Multiplatform
     id("io.maryk.generator") version "<maryk-version>"
 }
 

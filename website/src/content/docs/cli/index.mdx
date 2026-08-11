@@ -33,11 +33,19 @@ Expose a local store over HTTP:
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
 serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
+serve rocksdb --dir ./data --host 0.0.0.0 --bearer-token replace-with-a-secret
 ```
 
 You can also pass `--config` with key/value config. See [CLI commands](./commands/) for details.
 
-Remote serving has no built-in auth or TLS. Bind to localhost or use SSH tunneling.
+The interactive CLI treats the token argument literally; it does not expand shell
+syntax such as `$MARYK_BEARER_TOKEN`. Replace the placeholder or use a protected
+config/launcher when supplying a real secret.
+
+Loopback serving needs no authentication. Non-loopback binds require
+`--bearer-token` or the explicit unsafe `--allow-insecure-remote-binding` opt-in.
+Bearer authentication does not encrypt traffic; use TLS termination or SSH
+tunneling outside localhost.
 
 ## Browse
 

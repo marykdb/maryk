@@ -52,6 +52,8 @@ export const map = [
 
   // Stores
   ['src/content/docs/stores/index.mdx', '../store/README.md'],
+  ['src/content/docs/stores/shared.mdx', '../store/shared/README.md'],
+  ['src/content/docs/stores/shared/encryption-key-rotation.mdx', '../store/shared/docs/encryption-key-rotation.md'],
   ['src/content/docs/stores/memory.mdx', '../store/memory/README.md'],
   ['src/content/docs/stores/indexeddb.mdx', '../store/indexeddb/README.md'],
   ['src/content/docs/stores/indexeddb/architecture.mdx', '../store/indexeddb/docs/architecture.md'],
@@ -105,6 +107,7 @@ export function rewriteLinks(md, prefix) {
     ['(serialization/yaml.md)', withPrefix('serialization/yaml/')],
     ['(serialization/json.md)', withPrefix('serialization/json/')],
     ['(properties/types/multiType.md)', withPrefix('data-modeling/properties/types/multi-type/')],
+    ['(decimal.md)', withPrefix('data-modeling/properties/types/decimal/')],
     ['(types/multiType.md)', withPrefix('data-modeling/properties/types/multi-type/')],
     ['(types/fixedBytes.md)', withPrefix('data-modeling/properties/types/fixedbytes/')],
     ['(types/flexBytes.md)', withPrefix('data-modeling/properties/types/flexbytes/')],
@@ -137,6 +140,9 @@ export function rewriteLinks(md, prefix) {
     ['(documentation/migrations.md)', withPrefix('stores/rocksdb/migrations/')],
     ['(./migrations.md)', '(../migrations/)'],
     ['(../remote/README.md)', '(../remote/)'],
+    ['(../memory/README.md)', withPrefix('stores/memory/')],
+    ['(../rocksdb/README.md)', withPrefix('stores/rocksdb/')],
+    ['(../foundationdb/README.md)', withPrefix('stores/foundationdb/')],
     ['(./remote/README.md)', '(./remote/)'],
     // Map code links to GitHub full URLs (main branch)
     ['(src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)', '(https://github.com/marykdb/maryk/tree/main/store/foundationdb/src/commonMain/kotlin/maryk/datastore/foundationdb/processors/helpers/)'],

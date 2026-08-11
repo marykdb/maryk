@@ -195,6 +195,12 @@ Remote client and server together before relying on that guarantee: a newer
 client intentionally fails closed when an older server lacks the endpoint rather
 than exporting pages from different points in time.
 
+Remote execute protocol changes require a matched client and server deployment.
+Upgrade both together before using `X-Maryk-Execute-Protocol: 2` batches or
+relying on their framed response contract. Mixed protocol generations are not a
+supported batch compatibility target; keep legacy single-request framing only as
+a transition aid.
+
 Streaming format:
 - Each message is `length (4 bytes, big-endian)` + `ProtoBuf payload`.
 - Legacy clients reject zero/negative lengths, truncated frames, trailing bytes,

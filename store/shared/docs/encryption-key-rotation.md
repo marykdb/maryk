@@ -26,4 +26,7 @@ the oldest stored data is known to have been migrated.
 
 The generic re-encryption loop deliberately does not provide transaction or
 cursor persistence itself: the datastore integration owns atomicity, ordering,
-and durable job state.
+and durable job state. It is not a turnkey atomic re-encryption operation: run
+one backend at a time, persist state after every batch, and make writes idempotent
+so a crash can safely replay the current batch. Keep the retained providers and
+token keys configured while historic rows and unique indexes are being rebuilt.

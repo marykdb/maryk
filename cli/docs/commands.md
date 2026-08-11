@@ -56,7 +56,7 @@ Serve a local store over HTTP (Ktor):
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
 serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
-serve rocksdb --dir ./data --host 0.0.0.0 --bearer-token "$MARYK_BEARER_TOKEN"
+serve rocksdb --dir ./data --host 0.0.0.0 --bearer-token replace-with-a-secret
 ```
 
 Config file:
@@ -72,6 +72,10 @@ bearer-token: replace-with-a-secret
 ```text
 serve --config ./serve.conf
 ```
+
+The interactive CLI treats the token argument literally; it does not expand shell
+syntax such as `$MARYK_BEARER_TOKEN`. Replace the placeholder or use a protected
+config/launcher when supplying a real secret.
 
 Notes:
 - Uses ProtoBuf `Requests`/responses over HTTP.

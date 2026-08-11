@@ -32,6 +32,23 @@ Not intended as a standalone store.
   - Restore is streaming, not globally transactional. Restore into an empty
     disposable store and publish it only after success.
 
+## Encryption rotation constraints
+
+Key rotation is an additive, per-store operation. The shared
+`runReEncryptionBatch` loop coordinates bounded reads and invokes integration-
+supplied write/state callbacks. The backend must provide idempotent writes and
+durable state; the helper does not make payloads, historic rows, or deterministic
+unique-index rows atomic across a store or across engines. Persist state after each
+batch and design retries to replay a batch safely.
+
+Keep the previous token keys and the legacy payload provider configured until all
+encrypted payloads, historic rows, and deterministic unique-index rows have been
+re-encrypted or rebuilt. FoundationDB, RocksDB, and IndexedDB identify existing
+unique rows before removing or historicizing retained-token entries; a row owned
+by another key is left untouched. Run each backend's migration under its own
+durable transaction/job boundary rather than treating rotation as a turnkey
+cross-store transaction.
+
 ## Point-in-time backup and restore
 
 `backup` creates a portable logical backup: the manifest identifies the format,

@@ -119,7 +119,6 @@ import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
-import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
@@ -171,11 +170,9 @@ class FoundationDBDataStore private constructor(
     coroutineContext = Dispatchers.IO,
     maxConcurrentReads = maxConcurrentReads,
     readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
-), MigrationAdmin, SnapshotVersionProvider {
+), MigrationAdmin {
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
-
-    override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
     internal val tc: TransactionContext = db
 

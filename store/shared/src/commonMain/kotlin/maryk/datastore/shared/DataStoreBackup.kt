@@ -68,7 +68,10 @@ suspend fun IsDataStore.captureSnapshotVersion(): ULong {
         throw RequestException("Point-in-time snapshots require keepAllVersions")
     }
     val provider = this as? SnapshotVersionProvider
-        ?: throw RequestException("Data store does not provide an authoritative snapshot version")
+        ?: throw RequestException(
+            "Data store does not provide an authoritative snapshot version; " +
+                "pass an explicit cluster-authoritative snapshotVersion"
+        )
     return provider.captureSnapshotVersion()
 }
 

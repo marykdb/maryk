@@ -18,6 +18,10 @@ import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.datastore.shared.DataStoreBackupChunk
+import maryk.datastore.shared.DataStoreBackupManifest
+import maryk.datastore.shared.DataStoreBackupWriter
+import maryk.datastore.shared.backup
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
 import maryk.datastore.test.DataStoreBackupRoundTripTest
@@ -26,6 +30,7 @@ import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.test.models.Log
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -127,11 +132,41 @@ class FoundationDBDataStoreTest {
         )
 
         try {
-            DataStoreBackupRoundTripTest(source, target, useAutomaticSnapshot = true)
+            DataStoreBackupRoundTripTest(source, target, useAutomaticSnapshot = false)
                 .restoresCurrentValueAndCompleteHistory()
         } finally {
             source.close()
             target.close()
+        }
+    }
+
+    @Test
+    fun automaticBackupRejectsProcessLocalSnapshotAcrossWriters() = runTest(timeout = 3.minutes) {
+        val directoryPath = listOf("maryk", "test", "backup-multi-writer", Uuid.random().toString())
+        val models = mapOf(1u to SimpleMarykModel)
+        val firstWriter = FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            dataModelsById = models,
+            keepAllVersions = true,
+        )
+        val secondWriter = FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            dataModelsById = models,
+            keepAllVersions = true,
+        )
+
+        try {
+            secondWriter.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "written by another process" })
+            )
+
+            val exception = assertFailsWith<RequestException> {
+                firstWriter.backup(UnusedBackupWriter)
+            }
+            assertContains(exception.message.orEmpty(), "explicit cluster-authoritative snapshotVersion")
+        } finally {
+            secondWriter.close()
+            firstWriter.close()
         }
     }
 
@@ -262,4 +297,10 @@ class FoundationDBDataStoreTest {
             dataStore.close()
         }
     }
+}
+
+private object UnusedBackupWriter : DataStoreBackupWriter {
+    override suspend fun begin(manifest: DataStoreBackupManifest) = Unit
+    override suspend fun write(chunk: DataStoreBackupChunk) = Unit
+    override suspend fun complete() = Unit
 }

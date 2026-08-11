@@ -10,7 +10,6 @@ data class RemoteStoreConfig(
     val httpClient: HttpClient? = null,
     val bearerToken: String? = null,
     val flowRetryPolicy: RemoteFlowRetryPolicy = RemoteFlowRetryPolicy.Disabled,
-    val allowInsecureBearerTransport: Boolean = false,
 )
 
 /** Security policy for exposing a remote store server. */

@@ -72,6 +72,31 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
     @Test
+    fun preservesLegacyRemoteStoreConfigConstructorAndConnectEntryPoint() {
+        val legacyConstructor = RemoteStoreConfig::class.java.constructors.singleOrNull { constructor ->
+            constructor.parameterTypes.contentEquals(
+                arrayOf(
+                    String::class.java,
+                    RemoteSshConfig::class.java,
+                    SshTunnelFactory::class.java,
+                    HttpClient::class.java,
+                    String::class.java,
+                    RemoteFlowRetryPolicy::class.java,
+                )
+            )
+        }
+
+        assertNotNull(legacyConstructor)
+        assertTrue(
+            RemoteDataStore.Companion::class.java.declaredMethods.any { method ->
+                method.name == "connect" &&
+                    method.parameterTypes.size == 2 &&
+                    method.parameterTypes.first() == RemoteStoreConfig::class.java
+            }
+        )
+    }
+
+    @Test
     fun connectRejectsBearerTokenOverPublicHttpBeforeNetworkIo() = runBlocking {
         val client = HttpClient(MockEngine) {
             engine {
@@ -114,9 +139,9 @@ class RemoteDataStoreTest {
                     RemoteStoreConfig(
                         baseUrl = "http://store.example.test:8210",
                         bearerToken = "secret",
-                        allowInsecureBearerTransport = true,
                         httpClient = client,
-                    )
+                    ),
+                    allowInsecureBearerTransport = true,
                 )
             }
 

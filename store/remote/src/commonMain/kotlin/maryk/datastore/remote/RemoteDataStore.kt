@@ -98,7 +98,13 @@ class RemoteDataStore private constructor(
     }.toMap()
 
     companion object {
-        suspend fun connect(config: RemoteStoreConfig): RemoteDataStore {
+        suspend fun connect(config: RemoteStoreConfig): RemoteDataStore =
+            connect(config, allowInsecureBearerTransport = false)
+
+        suspend fun connect(
+            config: RemoteStoreConfig,
+            allowInsecureBearerTransport: Boolean,
+        ): RemoteDataStore {
             if (config.bearerToken != null && config.bearerToken.isBlank()) {
                 throw IllegalArgumentException("Remote store bearer token cannot be blank.")
             }
@@ -146,7 +152,7 @@ class RemoteDataStore private constructor(
                     config.bearerToken != null &&
                     effectiveUrl.protocol == URLProtocol.HTTP &&
                     !effectiveUrl.host.isLoopbackRemoteHost() &&
-                    !config.allowInsecureBearerTransport
+                    !allowInsecureBearerTransport
                 ) {
                     throw IllegalArgumentException(
                         "Remote store refuses a bearer token over public plaintext HTTP; " +

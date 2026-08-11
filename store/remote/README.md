@@ -106,7 +106,7 @@ val remote = RemoteDataStore.connect(
 
 Notes:
 - `RemoteDataStore.connect` is `suspend`; call it from a coroutine.
-- HTTP and HTTPS are supported. A bearer token over public plain HTTP is rejected by default before network I/O. Loopback HTTP and SSH tunnel connections remain allowed; `allowInsecureBearerTransport = true` is the deliberate unsafe opt-in for a public plaintext connection.
+- HTTP and HTTPS are supported. A bearer token over public plain HTTP is rejected by default before network I/O. Loopback HTTP and SSH tunnel connections remain allowed; passing `allowInsecureBearerTransport = true` to the two-argument `RemoteDataStore.connect` overload is the deliberate unsafe opt-in for a public plaintext connection.
 - `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
 - For direct internet exposure, terminate TLS in a reverse proxy and forward to the loopback server.
 - Flow reconnect is opt-in to preserve legacy completion behavior. `Default` retries

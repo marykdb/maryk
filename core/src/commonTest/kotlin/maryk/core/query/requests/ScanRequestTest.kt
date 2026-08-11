@@ -4,8 +4,25 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.RequestException
+import maryk.core.models.DataModel
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.key
+import maryk.core.models.definitions.DataModelDefinition
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.fixedBytes
+import maryk.core.properties.definitions.map
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.set
+import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.index.AnyOf
+import maryk.core.properties.definitions.index.UUIDv4Key
+import maryk.core.properties.definitions.index.UUIDv7Key
+import maryk.core.properties.types.numeric.SInt32
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.scanMaxRequest
@@ -17,6 +34,166 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.expect
+
+private object CursorUuid4Model : RootDataModel<CursorUuid4Model>(
+    name = "CursorLayoutModel",
+    keyDefinition = { UUIDv4Key },
+)
+
+private object CursorUuid7Model : RootDataModel<CursorUuid7Model>(
+    name = "CursorLayoutModel",
+    keyDefinition = { UUIDv7Key },
+)
+
+private object CursorSameLayoutA : RootDataModel<CursorSameLayoutA>(
+    name = "CursorSameLayoutModel",
+    keyDefinition = { UUIDv4Key },
+) {
+    val label by string(index = 1u, maxSize = 20u, default = "first")
+}
+
+private object CursorSameLayoutB : RootDataModel<CursorSameLayoutB>(
+    name = "CursorSameLayoutModel",
+    keyDefinition = { UUIDv4Key },
+) {
+    val label by string(index = 1u, maxSize = 40u, default = "second")
+}
+
+private object CursorDeclarationOrderA : RootDataModel<CursorDeclarationOrderA>(
+    name = "CursorDeclarationOrderModel",
+    keyDefinition = { CursorDeclarationOrderA.identifier.ref() },
+) {
+    val identifier by fixedBytes(index = 1u, byteSize = 4, final = true)
+    val label by string(index = 2u)
+}
+
+private object CursorDeclarationOrderB : RootDataModel<CursorDeclarationOrderB>(
+    name = "CursorDeclarationOrderModel",
+    keyDefinition = { CursorDeclarationOrderB.identifier.ref() },
+) {
+    val label by string(index = 2u)
+    val identifier by fixedBytes(index = 1u, byteSize = 4, final = true)
+}
+
+private object CursorNestedSignedModel : DataModel<CursorNestedSignedModel>(
+    meta = { DataModelDefinition(name = "CursorNestedModel") },
+) {
+    val value by number(index = 1u, type = SInt32)
+}
+
+private object CursorNestedUnsignedModel : DataModel<CursorNestedUnsignedModel>(
+    meta = { DataModelDefinition(name = "CursorNestedModel") },
+) {
+    val value by number(index = 1u, type = UInt32)
+}
+
+private object CursorNestedIndexA : RootDataModel<CursorNestedIndexA>(
+    name = "CursorNestedIndexModel",
+    indexes = {
+        listOf(CursorNestedIndexA { nested { value::ref } })
+    },
+) {
+    val nested by embed(index = 1u, dataModel = { CursorNestedSignedModel })
+}
+
+private object CursorNestedIndexB : RootDataModel<CursorNestedIndexB>(
+    name = "CursorNestedIndexModel",
+    indexes = {
+        listOf(CursorNestedIndexB { nested { value::ref } })
+    },
+) {
+    val nested by embed(index = 1u, dataModel = { CursorNestedUnsignedModel })
+}
+
+private object CursorIndexOrderA : RootDataModel<CursorIndexOrderA>(
+    name = "CursorIndexOrderModel",
+    indexes = {
+        listOf(
+            CursorIndexOrderA { first::ref },
+            CursorIndexOrderA { second::ref },
+        )
+    },
+) {
+    val first by number(index = 1u, type = SInt32)
+    val second by string(index = 2u)
+}
+
+private object CursorIndexOrderB : RootDataModel<CursorIndexOrderB>(
+    name = "CursorIndexOrderModel",
+    indexes = {
+        listOf(
+            CursorIndexOrderB { second::ref },
+            CursorIndexOrderB { first::ref },
+        )
+    },
+) {
+    val first by number(index = 1u, type = SInt32)
+    val second by string(index = 2u)
+}
+
+private class DelegatingCursorModel(
+    delegate: IsRootDataModel,
+) : IsRootDataModel by delegate
+
+private object CursorFanOutModel : RootDataModel<CursorFanOutModel>(
+    indexes = {
+        listOf(
+            CursorFanOutModel { setValues.refToAny() },
+            CursorFanOutModel { mapValues.refToAnyKey() },
+        )
+    },
+) {
+    val setValues by set(
+        index = 1u,
+        valueDefinition = StringDefinition(),
+    )
+    val mapValues by map(
+        index = 2u,
+        keyDefinition = StringDefinition(),
+        valueDefinition = StringDefinition(),
+    )
+}
+
+private object CursorAnyOfFanOutModel : RootDataModel<CursorAnyOfFanOutModel>(
+    indexes = {
+        listOf(
+            AnyOf(
+                CursorAnyOfFanOutModel { setValues.refToAny() },
+                CursorAnyOfFanOutModel { mapValues.refToAnyKey() },
+            )
+        )
+    },
+) {
+    val setValues by set(
+        index = 1u,
+        valueDefinition = StringDefinition(),
+    )
+    val mapValues by map(
+        index = 2u,
+        keyDefinition = StringDefinition(),
+        valueDefinition = StringDefinition(),
+    )
+}
+
+private object CursorFanOutLayoutA : RootDataModel<CursorFanOutLayoutA>(
+    name = "CursorFanOutLayoutModel",
+    indexes = { listOf(CursorFanOutLayoutA { values.refToAny() }) },
+) {
+    val values by set(
+        index = 1u,
+        valueDefinition = NumberDefinition(type = SInt32),
+    )
+}
+
+private object CursorFanOutLayoutB : RootDataModel<CursorFanOutLayoutB>(
+    name = "CursorFanOutLayoutModel",
+    indexes = { listOf(CursorFanOutLayoutB { values.refToAny() }) },
+) {
+    val values by set(
+        index = 1u,
+        valueDefinition = NumberDefinition(type = UInt32),
+    )
+}
 
 class ScanRequestTest {
     private val context = RequestContext(mapOf(
@@ -57,6 +234,107 @@ class ScanRequestTest {
         }
         assertFailsWith<RequestException> {
             request.copy(startKey = key)
+        }
+    }
+
+    @Test
+    fun cursorIsRejectedWhenSameNamedModelKeyLayoutChanges() {
+        val originalRequest = CursorUuid4Model.scan()
+        val cursor = originalRequest.createCursor(
+            CursorUuid4Model.key(ByteArray(CursorUuid4Model.Meta.keyByteSize)),
+            orderKey = null,
+        )
+        val migratedRequest = CursorUuid7Model.scan(cursor = cursor)
+
+        assertFailsWith<RequestException> {
+            migratedRequest.resolveCursor()
+        }
+    }
+
+    @Test
+    fun cursorIsAcceptedAcrossIndependentModelsWithSameScanLayout() {
+        val originalRequest = CursorSameLayoutA.scan()
+        val key = CursorSameLayoutA.key(ByteArray(CursorSameLayoutA.Meta.keyByteSize))
+        val cursor = originalRequest.createCursor(key, orderKey = null)
+        val continuation = assertNotNull(CursorSameLayoutB.scan(cursor = cursor).resolveCursor())
+
+        assertContentEquals(key.bytes, continuation.key.bytes)
+    }
+
+    @Test
+    fun cursorIsAcceptedWhenUnrelatedPropertiesAreReordered() {
+        val originalRequest = CursorDeclarationOrderA.scan()
+        val key = CursorDeclarationOrderA.key(byteArrayOf(1, 2, 3, 4))
+        val cursor = originalRequest.createCursor(key, orderKey = null)
+        val continuation = assertNotNull(CursorDeclarationOrderB.scan(cursor = cursor).resolveCursor())
+
+        assertContentEquals(key.bytes, continuation.key.bytes)
+    }
+
+    @Test
+    fun cursorIsRejectedWhenNestedSecondaryIndexLeafEncodingChanges() {
+        val originalRequest = CursorNestedIndexA.scan()
+        val cursor = originalRequest.createCursor(
+            CursorNestedIndexA.key(ByteArray(CursorNestedIndexA.Meta.keyByteSize)),
+            orderKey = byteArrayOf(1, 2, 3, 4),
+        )
+
+        assertFailsWith<RequestException> {
+            CursorNestedIndexB.scan(cursor = cursor).resolveCursor()
+        }
+    }
+
+    @Test
+    fun cursorIsAcceptedWhenSecondaryIndexesAreReordered() {
+        val originalRequest = CursorIndexOrderA.scan()
+        val key = CursorIndexOrderA.key(ByteArray(CursorIndexOrderA.Meta.keyByteSize))
+        val cursor = originalRequest.createCursor(key, orderKey = null)
+        val continuation = assertNotNull(CursorIndexOrderB.scan(cursor = cursor).resolveCursor())
+
+        assertContentEquals(key.bytes, continuation.key.bytes)
+    }
+
+    @Test
+    fun cursorSupportsGenericRootDataModelImplementations() {
+        val model = DelegatingCursorModel(CursorSameLayoutA)
+        val request = model.scan()
+        val key = model.key(ByteArray(model.Meta.keyByteSize))
+        val cursor = request.createCursor(key, orderKey = null)
+        val continuation = assertNotNull(request.copy(cursor = cursor).resolveCursor())
+
+        assertContentEquals(key.bytes, continuation.key.bytes)
+    }
+
+    @Test
+    fun cursorSupportsSetValueAndMapKeyFanOutIndexes() {
+        val request = CursorFanOutModel.scan()
+        val key = CursorFanOutModel.key(ByteArray(CursorFanOutModel.Meta.keyByteSize))
+        val cursor = request.createCursor(key, orderKey = null)
+        val continuation = assertNotNull(request.copy(cursor = cursor).resolveCursor())
+
+        assertContentEquals(key.bytes, continuation.key.bytes)
+    }
+
+    @Test
+    fun cursorSupportsFanOutReferencesInsideAnyOf() {
+        val request = CursorAnyOfFanOutModel.scan()
+        val key = CursorAnyOfFanOutModel.key(ByteArray(CursorAnyOfFanOutModel.Meta.keyByteSize))
+        val cursor = request.createCursor(key, orderKey = null)
+        val continuation = assertNotNull(request.copy(cursor = cursor).resolveCursor())
+
+        assertContentEquals(key.bytes, continuation.key.bytes)
+    }
+
+    @Test
+    fun cursorRejectsChangedSetFanOutValueEncoding() {
+        val originalRequest = CursorFanOutLayoutA.scan()
+        val cursor = originalRequest.createCursor(
+            CursorFanOutLayoutA.key(ByteArray(CursorFanOutLayoutA.Meta.keyByteSize)),
+            orderKey = null,
+        )
+
+        assertFailsWith<RequestException> {
+            CursorFanOutLayoutB.scan(cursor = cursor).resolveCursor()
         }
     }
 

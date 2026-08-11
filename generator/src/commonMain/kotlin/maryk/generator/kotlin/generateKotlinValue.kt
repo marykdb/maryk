@@ -58,7 +58,7 @@ internal fun generateKotlinValue(
     }
     is IndexedEnum -> {
         val enumDefinition = definition as EnumDefinition<*>
-        "${enumDefinition.enum.name}.${value.name}"
+        "${enumDefinition.enum.name.kotlinIdentifier()}.${value.name.kotlinIdentifier()}"
     }
     is UByte -> {
         "${value.toInt()}.toUByte()"
@@ -90,8 +90,8 @@ internal fun generateKotlinValue(
         }
     }
     is LocalDate -> "LocalDate(${value.year}, ${value.month.number}, ${value.day})"
-    is IsIndexedEnumDefinition<*> -> value.name
-    is ValueDataModelDefinition -> value.name
+    is IsIndexedEnumDefinition<*> -> value.name.kotlinIdentifier()
+    is ValueDataModelDefinition -> value.name.kotlinIdentifier()
     is Key<*> -> """Key("$value")"""
     is Bytes -> {
         addImport("maryk.core.properties.types.Bytes")
@@ -172,7 +172,7 @@ internal fun generateKotlinValue(
         val valueDefinition = (value.type as MultiTypeEnum<Any>).definition
 
         val valueAsString = generateKotlinValue(valueDefinition as IsPropertyDefinition<Any>, value.value, addImport)
-        "TypedValue(${multiTypeDefinition.typeEnum.name}.${value.type.name}, $valueAsString)"
+        "TypedValue(${multiTypeDefinition.typeEnum.name.kotlinIdentifier()}.${value.type.name.kotlinIdentifier()}, $valueAsString)"
     }
     is NumberDescriptor<*> -> {
         value.type.name
@@ -195,9 +195,9 @@ internal fun generateKotlinValue(
                     (value as? () -> DataModelReference<IsDataModel>)?.invoke()?.get?.invoke()
                 ) {
                     is IsValuesDataModel ->
-                        """{ ${model.Meta.name} }"""
+                        """{ ${model.Meta.name.kotlinIdentifier()} }"""
                     is IsValueDataModel<*, *> ->
-                        model.Meta.name
+                        model.Meta.name.kotlinIdentifier()
                     else ->
                         throw TypeException("NamedDataModel $model has to be a function which returns a DataModelReference or IsValuesDataModel or IsValueDataModel")
                 }
@@ -238,14 +238,14 @@ private fun IsValueDataModel<*, *>.generateKotlinValue(value: Any, addImport: (S
         val wrapper = property as AnyDefinitionWrapper
         property.getter(value)?.let {
             val kotlinValue = generateKotlinDefinitionValue(wrapper.definition, it, addImport)
-            values.add("${property.name} = $kotlinValue")
+            values.add("${property.name.kotlinIdentifier()} = $kotlinValue")
         }
     }
 
     return if (values.isEmpty()) {
-        "${this.Meta.name}()"
+        "${this.Meta.name.kotlinIdentifier()}()"
     } else {
-        "${this.Meta.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
+        "${this.Meta.name.kotlinIdentifier()}(\n${values.joinToString(",\n").prependIndent()}\n)"
     }
 }
 
@@ -254,13 +254,13 @@ private fun IsValuesDataModel.generateKotlinValue(value: ValuesImpl, addImport: 
 
     for (property in this) {
         value.original(property.index)?.let {
-            values.add("${property.name} = ${generateKotlinValue(property.definition, it, addImport)}")
+            values.add("${property.name.kotlinIdentifier()} = ${generateKotlinValue(property.definition, it, addImport)}")
         }
     }
 
     return if (values.isEmpty()) {
-        "${this.Meta.name}()"
+        "${this.Meta.name.kotlinIdentifier()}()"
     } else {
-        "${this.Meta.name}(\n${values.joinToString(",\n").prependIndent()}\n)"
+        "${this.Meta.name.kotlinIdentifier()}(\n${values.joinToString(",\n").prependIndent()}\n)"
     }
 }

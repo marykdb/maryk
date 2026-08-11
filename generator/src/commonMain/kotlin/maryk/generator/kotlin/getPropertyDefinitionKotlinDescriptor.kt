@@ -97,20 +97,20 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Enum to PropertyDefinitionKotlinDescriptor(
         className = "EnumDefinition",
         wrapFunctionName = "enum",
-        kotlinTypeName = { it.enum.name },
+        kotlinTypeName = { it.enum.name.kotlinIdentifier() },
         definitionModel = EnumDefinition.Model,
         propertyValueOverride = mapOf(
             "maxValue" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
-                "${enumDefinition.enum.name}.${(value as IndexedEnum).name}"
+                "${enumDefinition.enum.name.kotlinIdentifier()}.${(value as IndexedEnum).name.kotlinIdentifier()}"
             },
             "minValue" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
-                "${enumDefinition.enum.name}.${(value as IndexedEnum).name}"
+                "${enumDefinition.enum.name.kotlinIdentifier()}.${(value as IndexedEnum).name.kotlinIdentifier()}"
             },
             "default" to { definition, value, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
-                "${enumDefinition.enum.name}.${(value as IndexedEnum).name}"
+                "${enumDefinition.enum.name.kotlinIdentifier()}.${(value as IndexedEnum).name.kotlinIdentifier()}"
             },
             "values" to { _, _, _ ->
                 null
@@ -118,7 +118,7 @@ private val definitionNamesMap = mapOf(
             "name" to { definition, _, _ ->
                 val enumDefinition = definition as EnumDefinition<*>
 
-                enumDefinition.enum.name
+                enumDefinition.enum.name.kotlinIdentifier()
             }
         ),
         propertyNameOverride = mapOf(
@@ -210,7 +210,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.MultiType to PropertyDefinitionKotlinDescriptor(
         className = "MultiTypeDefinition",
         wrapFunctionName = "multiType",
-        kotlinTypeName = { "TypedValue<${it.typeEnum.name}<out Any>, Any>" },
+        kotlinTypeName = { "TypedValue<${it.typeEnum.name.kotlinIdentifier()}<out Any>, Any>" },
         definitionModel = MultiTypeDefinition.Model,
         imports = { multiTypeImports },
         propertyValueOverride = mapOf(
@@ -218,7 +218,7 @@ private val definitionNamesMap = mapOf(
                 val multiTypeDefinition =
                     definition as MultiTypeDefinition<*, *>
 
-                val typeName = multiTypeDefinition.typeEnum.name
+                val typeName = multiTypeDefinition.typeEnum.name.kotlinIdentifier()
 
                 val typeValues = mutableListOf<String>()
 
@@ -226,7 +226,7 @@ private val definitionNamesMap = mapOf(
                     val value = type.definition as IsTransportablePropertyDefinitionType<*>
                     val valueDefinition = value.getKotlinDescriptor()
                     val valueAsString = valueDefinition.definitionToKotlin(value) {}.trimStart()
-                    typeValues.add("$typeName.${type.name} to $valueAsString")
+                    typeValues.add("$typeName.${type.name.kotlinIdentifier()} to $valueAsString")
                 }
 
                 val types = typeValues.joinToString(",\n").prependIndent()
@@ -283,7 +283,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Reference to PropertyDefinitionKotlinDescriptor(
         className = "ReferenceDefinition",
         wrapFunctionName = "reference",
-        kotlinTypeName = { "Key<${it.dataModel.Meta.name}>" },
+        kotlinTypeName = { "Key<${it.dataModel.Meta.name.kotlinIdentifier()}>" },
         imports = { keyImports },
         definitionModel = ReferenceDefinition.Model,
     ),
@@ -309,7 +309,7 @@ private val definitionNamesMap = mapOf(
         wrapFunctionName = "embed",
         kotlinTypeName = {
             val modelName = it.dataModel.Meta.name
-            "Values<$modelName, $modelName.Properties>"
+            "Values<${modelName.kotlinIdentifier()}, ${modelName.kotlinIdentifier()}.Properties>"
         },
         imports = { valuesImports },
         definitionModel = EmbeddedValuesDefinition.Model,
@@ -327,7 +327,7 @@ private val definitionNamesMap = mapOf(
     PropertyDefinitionType.Value to PropertyDefinitionKotlinDescriptor(
         className = "ValueObjectDefinition",
         wrapFunctionName = "valueObject",
-        kotlinTypeName = { it.dataModel.Meta.name },
+        kotlinTypeName = { it.dataModel.Meta.name.kotlinIdentifier() },
         definitionModel = ValueObjectDefinition.Model,
         propertyValueOverride = mapOf(
             "default" to generateKotlinValueWithDefinition,

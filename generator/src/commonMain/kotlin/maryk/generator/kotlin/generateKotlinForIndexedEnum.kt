@@ -48,7 +48,7 @@ fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): S
 
         companion object : IndexedEnumDefinition<${this.name.kotlinIdentifier()}>(
             ${this.name.kotlinIdentifier()}::class,
-            values = { arrayOf(${this.cases().joinToString(", ") { it.name.kotlinIdentifier() }}) },$reservedIndices$reservedNames
+            values = { listOf(${this.cases().joinToString(", ") { it.name.kotlinIdentifier() }}) },$reservedIndices$reservedNames
             unknownCreator = ::${"Unknown${this.name}".kotlinIdentifier()}
         )
     }

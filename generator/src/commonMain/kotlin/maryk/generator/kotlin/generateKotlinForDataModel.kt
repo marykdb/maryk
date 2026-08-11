@@ -8,7 +8,7 @@ fun DataModel<*>.generateKotlin(
     writer: (String) -> Unit
 ) {
     val importsToAdd = mutableSetOf(
-        "maryk.core.properties.DataModel",
+        "maryk.core.models.DataModel",
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }
 

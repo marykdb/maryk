@@ -1,7 +1,6 @@
 package maryk.generator.build
 
 import java.nio.file.Files
-import java.nio.file.NoSuchFileException
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
@@ -66,7 +65,7 @@ class SchemaBuildEngineTest {
         val output = createTempDirectory()
         output.resolve("Existing.kt").writeText("existing")
 
-        assertFailsWith<NoSuchFileException> {
+        assertFailsWith<SchemaBuildException> {
             SchemaBuildEngine.generate(
                 schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
                 packageName = "example.generated",
@@ -76,6 +75,46 @@ class SchemaBuildEngineTest {
 
         assertEquals("existing", output.resolve("Existing.kt").readText())
         assertFalse(Files.exists(output.resolve("Alpha.kt")))
+    }
+
+    @Test
+    fun rejectsModelNamesThatCouldEscapeTheGenerationStagingDirectory() {
+        for (unsafeName in listOf(
+            "../X",
+            "nested/X",
+            "nested\\X",
+            "C:\\generated\\X",
+            "\\\\server\\share\\X",
+            "/tmp/maryk-generator-escaped/X",
+            "Trailing.",
+            "Trailing ",
+            "CON",
+            "nul",
+            "COM1",
+            "lpt9",
+            "control\u007f",
+            "control\u009f",
+        )) {
+            val schemas = createTempDirectory()
+            schemas.resolve("model.json").writeText(jsonSchema(unsafeName))
+            val output = createTempDirectory()
+            output.resolve("Existing.kt").writeText("existing")
+
+            try {
+                val exception = assertFailsWith<SchemaBuildException> {
+                    SchemaBuildEngine.generate(
+                        schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                        packageName = "example.generated",
+                        outputDirectory = output,
+                    )
+                }
+
+                assertTrue(exception.message.orEmpty().contains(unsafeName))
+                assertEquals("existing", output.resolve("Existing.kt").readText())
+            } finally {
+                Files.deleteIfExists(output.parent.resolve("X.kt"))
+            }
+        }
     }
 
     @Test
@@ -200,9 +239,20 @@ class SchemaBuildEngineTest {
           required: $required
     """.trimIndent()
 
-    private fun jsonSchema(name: String) = """
+    private fun jsonSchema(name: String): String {
+        val escapedName = buildString {
+            for (character in name) {
+                when (character) {
+                    '\\' -> append("\\\\")
+                    '"' -> append("\\\"")
+                    in '\u0000'..'\u001f', in '\u007f'..'\u009f' -> append("\\u${character.code.toString(16).padStart(4, '0')}")
+                    else -> append(character)
+                }
+            }
+        }
+        return """
         {
-          "name": "$name",
+          "name": "$escapedName",
           "properties": [{
             "index": 1,
             "name": "value",
@@ -214,6 +264,7 @@ class SchemaBuildEngineTest {
           }]
         }
     """.trimIndent()
+    }
 
     private fun referenceSchema(name: String, referenceName: String) = """
         name: $name

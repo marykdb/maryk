@@ -22,5 +22,10 @@ kotlin {
                 implementation(projects.testmodels)
             }
         }
+        jvmTest {
+            dependencies {
+                implementation(libs.kotlin.compiler.embeddable)
+            }
+        }
     }
 }

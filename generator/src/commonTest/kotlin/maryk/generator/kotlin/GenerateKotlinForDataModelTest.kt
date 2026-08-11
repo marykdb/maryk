@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 val generatedKotlinForDataModel = """
 package maryk.test.models
 
-import maryk.core.properties.DataModel
+import maryk.core.models.DataModel
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.string
 import maryk.core.values.Values

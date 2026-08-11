@@ -11,8 +11,11 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.incrementingMap
 import maryk.core.properties.definitions.enum
+import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.set
 import maryk.core.properties.definitions.string
+import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
@@ -27,6 +30,7 @@ import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.ValueMarykObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 private object NestedCollectionDefaults : RootDataModel<NestedCollectionDefaults>() {
@@ -66,6 +70,30 @@ private object NestedCollectionDefaults : RootDataModel<NestedCollectionDefaults
 
 private object `bad-model` : RootDataModel<`bad-model`>() {
     val `when` by string(index = 1u)
+}
+
+internal object `catch` : RootDataModel<`catch`>() {
+    val `finally` by string(index = 1u)
+    val `import` by string(index = 2u)
+    val `by` by string(index = 3u)
+    val `when` by string(index = 4u)
+}
+
+private object KeywordReference : RootDataModel<KeywordReference>() {
+    val target by reference(index = 1u, dataModel = { `catch` })
+}
+
+internal sealed class `when`(index: UInt) : IndexedEnumImpl<`when`>(index) {
+    object `finally` : `when`(1u)
+
+    companion object : IndexedEnumDefinition<`when`>(
+        `when`::class,
+        values = { listOf(`finally`) },
+    )
+}
+
+private object KeywordEnumModel : RootDataModel<KeywordEnumModel>() {
+    val kind by enum(index = 1u, enum = `when`, default = `when`.`finally`)
 }
 
 private object IncMapOnly : RootDataModel<IncMapOnly>() {
@@ -193,13 +221,6 @@ import maryk.core.properties.types.Version
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.values.Values
-import maryk.test.models.CompleteMarykModel.Properties.booleanForKey
-import maryk.test.models.CompleteMarykModel.Properties.dateForKey
-import maryk.test.models.CompleteMarykModel.Properties.dateTime
-import maryk.test.models.CompleteMarykModel.Properties.multiForKey
-import maryk.test.models.CompleteMarykModel.Properties.number
-import maryk.test.models.CompleteMarykModel.Properties.subModel
-import maryk.test.models.SimpleMarykModel.Properties.value
 
 sealed class MarykEnumEmbedded(
     index: UInt,
@@ -213,7 +234,7 @@ sealed class MarykEnumEmbedded(
 
     companion object : IndexedEnumDefinition<MarykEnumEmbedded>(
         MarykEnumEmbedded::class,
-        values = { arrayOf(E1, E2, E3) },
+        values = { listOf(E1, E2, E3) },
         unknownCreator = ::UnknownMarykEnumEmbedded
     )
 }
@@ -239,7 +260,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
                     booleanForKey.ref(),
                     multiForKey.typeRef()
                 ),
-                value.ref(subModel.ref())
+                SimpleMarykModel.value.ref(subModel.ref())
             )
         }
     },
@@ -486,6 +507,47 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
 """.trimIndent()
 
 class GenerateKotlinForRootDataModelTest {
+    @Test
+    fun escapesTheKotlinTypeofKeyword() {
+        assertEquals("`typeof`", "typeof".kotlinIdentifier())
+    }
+
+    @Test
+    fun rejectsAnEmptyKotlinIdentifier() {
+        assertFailsWith<IllegalArgumentException> {
+            "".kotlinIdentifier()
+        }
+    }
+
+    @Test
+    fun rendersContextualKeywordsAndHyphenatedNamesInDeclarationsAndReferences() {
+        val output = buildString {
+            `catch`.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertEquals("`catch`", "catch".kotlinIdentifier())
+        assertEquals("`finally`", "finally".kotlinIdentifier())
+        assertEquals("`import`", "import".kotlinIdentifier())
+        assertEquals("`by`", "by".kotlinIdentifier())
+        assertEquals("`when`", "when".kotlinIdentifier())
+        assertEquals("`bad-model`", "bad-model".kotlinIdentifier())
+        assertTrue(output.contains("object `catch` : RootDataModel<`catch`>"))
+        assertTrue(output.contains("val `finally` by string("))
+        assertTrue(output.contains("val `import` by string("))
+        assertTrue(output.contains("val `by` by string("))
+
+        val referenceOutput = buildString {
+            KeywordReference.generateKotlin("maryk.test.models") { append(it) }
+        }
+        assertTrue(referenceOutput.contains("dataModel = { `catch` }"))
+
+        val enumOutput = buildString {
+            KeywordEnumModel.generateKotlin("maryk.test.models") { append(it) }
+        }
+        assertTrue(enumOutput.contains("enum = `when`"))
+        assertTrue(enumOutput.contains("default = `when`.`finally`"))
+    }
+
     @Test
     fun escapesInvalidModelAndPropertyIdentifiers() {
         val output = buildString {

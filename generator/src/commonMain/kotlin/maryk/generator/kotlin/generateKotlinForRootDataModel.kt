@@ -105,24 +105,24 @@ private fun IsIndexable.generateKotlin(
     is TypeReference<*, *, *> -> {
         val typeId = this
         val parentReference = (typeId.parentReference as IsPropertyReferenceForValues<*, *, *, *>)
-        parentReference.generateRef(packageName, name, addImport, refFunction = "typeRef")
+        parentReference.generateRef(refFunction = "typeRef")
     }
     is Reversed<*> -> {
         addImport("maryk.core.properties.definitions.index.Reversed")
-        "Reversed(${this.reference.generateRef(packageName, name, addImport)})"
+        "Reversed(${this.reference.generateRef()})"
     }
     is ReferenceToMax<*> -> {
         addImport("maryk.core.properties.definitions.index.ReferenceToMax")
-        "ReferenceToMax(${this.reference.generateRef(packageName, name, addImport)})"
+        "ReferenceToMax(${this.reference.generateRef()})"
     }
     is ValueWithFixedBytesPropertyReference<*, *, *, *> -> {
-        generateRef(packageName, name, addImport)
+        generateRef()
     }
     is ValueWithFlexBytesPropertyReference<*, *, *, *> -> {
-        generateRef(packageName, name, addImport)
+        generateRef()
     }
     is SimpleTypedValueReference<*, *, *> -> {
-        generateKotlin(packageName, name, addImport)
+        generateKotlin(name)
     }
     is Multiple -> {
         addImport("maryk.core.properties.definitions.index.Multiple")
@@ -137,55 +137,43 @@ private fun IsIndexable.generateKotlin(
     else -> throw TypeException("Unknown IsIndexable type: $this")
 }
 
-/**
- * Generate reference variable for indexable using [packageName] and [modelName] for [addImport]
- * [refFunction] can be overridden for other types of ref
- */
+/** Generate reference variable for an indexable. [refFunction] can be overridden for other reference types. */
 private fun IsPropertyReferenceForValues<*, *, *, *>.generateRef(
-    packageName: String,
-    modelName: String,
-    addImport: (String) -> Unit,
     refFunction: String = "ref"
 ): String {
-    var parent = ""
-    this.parentReference?.let {
-        if (it is IsPropertyReferenceForValues<*, *, *, *>) {
-            it.propertyDefinition.let { propDef ->
-                if (propDef is IsEmbeddedDefinition<*>) {
-                    val embedModelName = (propDef.dataModel as IsStorableDataModel<*>).Meta.name
-                    addImport("$packageName.$embedModelName.Properties.${this.name.kotlinIdentifier()}")
-                }
-            }
-
-            parent = it.generateRef(packageName, modelName, addImport)
-        }
+    val parentReference = this.parentReference as? IsPropertyReferenceForValues<*, *, *, *>
+    val parent = parentReference?.generateRef().orEmpty()
+    val propertyOwner = (parentReference?.propertyDefinition as? IsEmbeddedDefinition<*>)
+        ?.dataModel
+        ?.let { it as IsStorableDataModel<*> }
+        ?.Meta
+        ?.name
+    val property = if (propertyOwner == null) {
+        this.name.kotlinIdentifier()
+    } else {
+        "${propertyOwner.kotlinIdentifier()}.${this.name.kotlinIdentifier()}"
     }
-    if (parent.isEmpty()) {
-        addImport("$packageName.$modelName.Properties.${this.name.kotlinIdentifier()}")
-    }
-    return "${this.name.kotlinIdentifier()}.$refFunction($parent)"
+    return "$property.$refFunction($parent)"
 }
 
 private fun SimpleTypedValueReference<*, *, *>.generateKotlin(
-    packageName: String,
     modelName: String,
-    addImport: (String) -> Unit
 ): String {
     val parentRef = this.parentReference as? IsPropertyReferenceForValues<*, *, *, *>
         ?: throw TypeException("SimpleTypedValueReference is missing a parent reference: $this")
-    parentRef.generateRef(packageName, modelName, addImport)
+    parentRef.generateRef()
 
     val multiTypeDefinition = parentRef.propertyDefinition as? IsMultiTypeDefinition<*, *, *>
         ?: throw TypeException("SimpleTypedValueReference parent is not a multi type definition: $parentRef")
 
-    val typeEnumName = multiTypeDefinition.typeEnum.name
-    val typeName = this.type.name
+    val typeEnumName = multiTypeDefinition.typeEnum.name.kotlinIdentifier()
+    val typeName = this.type.name.kotlinIdentifier()
     val segments = parentRef.completeName.split(".")
 
-    var expression = "${segments.last()} simpleRefAtType $typeEnumName.$typeName"
+    var expression = "${segments.last().kotlinIdentifier()} simpleRefAtType $typeEnumName.$typeName"
     for (segment in segments.dropLast(1).asReversed()) {
-        expression = "$segment { $expression }"
+        expression = "${segment.kotlinIdentifier()} { $expression }"
     }
 
-    return "$modelName { $expression }"
+    return "${modelName.kotlinIdentifier()} { $expression }"
 }

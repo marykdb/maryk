@@ -36,6 +36,11 @@ data class LoadedSchema(
 
 object SchemaBuildEngine {
     private val supportedExtensions = setOf("yaml", "yml", "json")
+    private val windowsReservedFileBaseNames = setOf(
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    )
 
     fun discoverSchemas(roots: Iterable<Path>): List<Path> =
         roots.flatMap { root ->
@@ -94,9 +99,10 @@ object SchemaBuildEngine {
         require(packageName.isNotBlank()) { "Maryk generator packageName must not be blank" }
         val loaded = load(schemaFiles)
         val generated = loaded.associate { schema ->
+            val fileName = generatedFileName(schema.model.Meta.name)
             var source = ""
             schema.model.generateKotlin(packageName) { source = it }
-            "${schema.model.Meta.name}.kt" to source
+            fileName to source
         }.toSortedMap()
 
         val absoluteOutputDirectory = outputDirectory.toAbsolutePath().normalize()
@@ -149,6 +155,22 @@ object SchemaBuildEngine {
 
     private fun isSchema(path: Path): Boolean =
         path.extension.lowercase() in supportedExtensions
+
+    private fun generatedFileName(modelName: String): String {
+        val fileName = "$modelName.kt"
+        if (
+            modelName.endsWith('.') ||
+            modelName.endsWith(' ') ||
+            modelName.substringBefore('.').trimEnd('.', ' ').uppercase() in windowsReservedFileBaseNames ||
+            fileName.any {
+                it == '/' || it == '\\' || it == ':' || it == '<' || it == '>' || it == '"' ||
+                    it == '|' || it == '?' || it == '*' || it.code in 0..31 || it.code in 127..159
+            }
+        ) {
+            throw SchemaBuildException("Invalid generated Kotlin filename for model $modelName")
+        }
+        return fileName
+    }
 
     private fun clearManagedDirectory(directory: Path) {
         if (Files.notExists(directory)) return

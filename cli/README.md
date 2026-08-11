@@ -40,7 +40,7 @@ Expose a local store via a lightweight Ktor server:
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
 serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
-serve rocksdb --dir ./data --host 0.0.0.0 --bearer-token replace-with-a-secret
+serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token replace-with-a-secret
 serve --config ./serve.conf
 ```
 
@@ -58,8 +58,8 @@ Note: `serve` works in JVM and native desktop binaries.
 The interactive CLI treats the token argument literally; it does not expand shell
 syntax such as `$MARYK_BEARER_TOKEN`. Replace the placeholder or use a protected
 config/launcher when supplying a real secret.
-Non-loopback binds require bearer authentication unless `--allow-insecure-remote-binding` is explicitly supplied.
-Use TLS termination or SSH tunneling because bearer authentication does not encrypt traffic.
+Non-loopback plaintext binds require the explicit unsafe `--allow-insecure-remote-binding` opt-in, even with bearer authentication.
+Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling; bearer authentication does not encrypt traffic.
 
 ## Development Notes
 

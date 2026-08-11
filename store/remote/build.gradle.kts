@@ -31,6 +31,7 @@ kotlin {
         }
         getByName("jvmTest") {
             dependencies {
+                implementation(libs.ktor.client.mock)
             }
         }
     }

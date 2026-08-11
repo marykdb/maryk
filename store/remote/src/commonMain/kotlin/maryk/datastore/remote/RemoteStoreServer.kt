@@ -99,22 +99,12 @@ fun validateRemoteStoreServerBinding(host: String, config: RemoteStoreServerConf
     require(config.flowHeartbeatMillis == null || config.flowHeartbeatMillis > 0) {
         "Remote Store flow heartbeat interval must be positive"
     }
-    if (
-        !host.isLoopbackHost() &&
-        config.bearerToken == null &&
-        config.authenticator == null &&
-        !config.allowInsecureRemoteBinding
-    ) {
+    if (!host.isLoopbackRemoteHost() && !config.allowInsecureRemoteBinding) {
         throw IllegalArgumentException(
-            "Remote Store refuses an unauthenticated non-loopback bind; configure a bearer token " +
+            "Remote Store refuses a non-loopback plaintext bind; use a loopback bind behind TLS or SSH, " +
                 "or explicitly allow insecure remote binding"
         )
     }
-}
-
-private fun String.isLoopbackHost(): Boolean = when (lowercase()) {
-    "localhost", "127.0.0.1", "::1", "[::1]", "0:0:0:0:0:0:0:1" -> true
-    else -> false
 }
 
 internal fun Application.remoteStoreModule(

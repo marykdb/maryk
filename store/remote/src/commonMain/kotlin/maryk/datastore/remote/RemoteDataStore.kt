@@ -142,6 +142,17 @@ class RemoteDataStore private constructor(
                 } else {
                     baseUrl
                 }
+                if (
+                    config.bearerToken != null &&
+                    effectiveUrl.protocol == URLProtocol.HTTP &&
+                    !effectiveUrl.host.isLoopbackRemoteHost() &&
+                    !config.allowInsecureBearerTransport
+                ) {
+                    throw IllegalArgumentException(
+                        "Remote store refuses a bearer token over public plaintext HTTP; " +
+                            "use HTTPS, an SSH tunnel, or explicitly allow insecure bearer transport."
+                    )
+                }
 
                 val infoResult = fetchInfo(client, effectiveUrl, config.bearerToken)
                 val modelMap = buildModelMap(infoResult.info, infoResult.definitionsContext)

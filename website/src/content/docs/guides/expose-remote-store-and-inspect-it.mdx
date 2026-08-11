@@ -27,10 +27,10 @@ maryk --exec "serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cl
 
 `serve` does not need `--connect` in one-shot mode. It blocks until stopped.
 
-Loopback serving needs no authentication. Non-loopback binds require a bearer
-token (or the explicit unsafe `--allow-insecure-remote-binding` opt-in). Bearer
-authentication does not encrypt traffic; terminate TLS or use SSH tunneling
-outside localhost.
+Loopback serving needs no authentication. Any non-loopback plaintext bind,
+including one protected by a bearer token, requires the explicit unsafe
+`--allow-insecure-remote-binding` opt-in. Bearer authentication does not encrypt
+traffic; keep Maryk loopback-bound behind TLS termination or use SSH tunneling.
 
 ## Use a config file
 
@@ -77,6 +77,9 @@ val records = remote.execute(
 ```
 
 `RemoteDataStore.connect` is `suspend`. The remote client implements `IsDataStore`, so normal `execute(...)` code works.
+It rejects a bearer token over public `http://` by default before any request is
+made. Use HTTPS, SSH tunneling, or loopback HTTP. `allowInsecureBearerTransport = true`
+is available only for a deliberate public plaintext exception.
 
 Deploy the remote client and server together before using batched execute
 requests. Mixed execute-protocol generations are not a supported batch
@@ -135,7 +138,7 @@ Before editing remote data:
 
 ## Checklist
 
-- Server binds to loopback unless protected.
+- Server binds to loopback unless explicitly allowed to use plaintext remotely.
 - No raw HTTP endpoint is exposed publicly.
 - App Remote URL matches the served endpoint or tunnel.
 - Store model IDs match the expected app/server build.

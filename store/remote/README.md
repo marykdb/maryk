@@ -28,11 +28,11 @@ val server = RemoteStoreServer(dataStore)
 server.start(host = "127.0.0.1", port = 8210, wait = true)
 ```
 
-Non-loopback binds require authentication or an explicit insecure opt-in:
+Non-loopback plaintext binds require an explicit insecure opt-in, even when authentication is configured. Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling:
 
 ```kotlin
 server.start(
-    host = "0.0.0.0",
+    host = "127.0.0.1",
     port = 8210,
     wait = true,
     config = RemoteStoreServerConfig(bearerToken = System.getenv("MARYK_BEARER_TOKEN")),
@@ -90,7 +90,7 @@ Accepted config keys:
 - `host`: bind host (default `127.0.0.1`)
 - `port`: bind port (default `8210`)
 - `bearer-token`: optional bearer credential required by every endpoint
-- `allow-insecure-remote-binding`: explicit opt-in for an unauthenticated non-loopback bind
+- `allow-insecure-remote-binding`: explicit unsafe opt-in for any non-loopback plaintext bind, including bearer or custom authentication
 
 ## Connect as a client
 
@@ -106,7 +106,7 @@ val remote = RemoteDataStore.connect(
 
 Notes:
 - `RemoteDataStore.connect` is `suspend`; call it from a coroutine.
-- HTTP and HTTPS are supported. Never send a bearer token over an untrusted plain HTTP connection.
+- HTTP and HTTPS are supported. A bearer token over public plain HTTP is rejected by default before network I/O. Loopback HTTP and SSH tunnel connections remain allowed; `allowInsecureBearerTransport = true` is the deliberate unsafe opt-in for a public plaintext connection.
 - `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
 - For direct internet exposure, terminate TLS in a reverse proxy and forward to the loopback server.
 - Flow reconnect is opt-in to preserve legacy completion behavior. `Default` retries

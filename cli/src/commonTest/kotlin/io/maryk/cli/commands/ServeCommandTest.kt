@@ -55,6 +55,27 @@ class ServeCommandTest {
     }
 
     @Test
+    fun rejectsBearerProtectedPublicBindBeforeOpeningStore() {
+        var connectorCalled = false
+        val command = ServeCommand(
+            rocksDbConnector = RocksDbConnector {
+                connectorCalled = true
+                error("Connector should not be called for invalid server configuration")
+            }
+        )
+        val state = CliState()
+        val registry = CommandRegistry(state, TestServeEnvironment)
+        val result = command.execute(
+            CommandContext(registry, state, TestServeEnvironment),
+            listOf("rocksdb", "--dir", "/data", "--host", "0.0.0.0", "--bearer-token", "secret"),
+        )
+
+        assertTrue(result.isError)
+        assertTrue(result.lines.first().contains("plaintext"))
+        assertFalse(connectorCalled)
+    }
+
+    @Test
     fun parsesBearerTokenAndInsecureOptIn() {
         val result = assertIs<ServeParseResult.Success>(
             parseServeOptions(

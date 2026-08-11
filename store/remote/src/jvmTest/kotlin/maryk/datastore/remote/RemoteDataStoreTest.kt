@@ -1,5 +1,7 @@
 package maryk.datastore.remote
 
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.mock.MockEngine
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -69,6 +71,96 @@ import maryk.test.models.TestMarykModel
 import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
+    @Test
+    fun connectRejectsBearerTokenOverPublicHttpBeforeNetworkIo() = runBlocking {
+        val client = HttpClient(MockEngine) {
+            engine {
+                addHandler {
+                    error("Bearer transport validation must run before network I/O")
+                }
+            }
+        }
+
+        try {
+            val exception = assertFailsWith<IllegalArgumentException> {
+                RemoteDataStore.connect(
+                    RemoteStoreConfig(
+                        baseUrl = "http://store.example.test:8210",
+                        bearerToken = "secret",
+                        httpClient = client,
+                    )
+                )
+            }
+
+            assertTrue(exception.message.orEmpty().contains("plaintext"))
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun connectAllowsPublicHttpBearerWithExplicitInsecureOptIn() = runBlocking {
+        val client = HttpClient(MockEngine) {
+            engine {
+                addHandler {
+                    error("Explicit insecure bearer transport opt-in reached the HTTP client")
+                }
+            }
+        }
+
+        try {
+            val exception = assertFailsWith<IllegalStateException> {
+                RemoteDataStore.connect(
+                    RemoteStoreConfig(
+                        baseUrl = "http://store.example.test:8210",
+                        bearerToken = "secret",
+                        allowInsecureBearerTransport = true,
+                        httpClient = client,
+                    )
+                )
+            }
+
+            assertEquals("Explicit insecure bearer transport opt-in reached the HTTP client", exception.message)
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun connectAllowsBearerTransportForHttpsAndLoopbackHttpUrls() = runBlocking {
+        val client = HttpClient(MockEngine) {
+            engine {
+                addHandler {
+                    error("Allowed bearer transport reached the HTTP client")
+                }
+            }
+        }
+
+        try {
+            listOf(
+                "https://store.example.test:8210",
+                "http://localhost:8210",
+                "http://127.0.0.1:8210",
+                "http://[::1]:8210",
+                "http://[0:0:0:0:0:0:0:1]:8210",
+            ).forEach { baseUrl ->
+                val exception = assertFailsWith<IllegalStateException>(baseUrl) {
+                    RemoteDataStore.connect(
+                        RemoteStoreConfig(
+                            baseUrl = baseUrl,
+                            bearerToken = "secret",
+                            httpClient = client,
+                        )
+                    )
+                }
+
+                assertEquals("Allowed bearer transport reached the HTTP client", exception.message, baseUrl)
+            }
+        } finally {
+            client.close()
+        }
+    }
+
     @Test
     fun retryPolicyRecognizesTransportFailuresOnly() {
         assertTrue(isRetryableRemoteFlowFailure(IOException("network down")))
@@ -817,6 +909,7 @@ class RemoteDataStoreTest {
                 RemoteDataStore.connect(
                     RemoteStoreConfig(
                         baseUrl = "http://remote.example:1234",
+                        bearerToken = "secret",
                         ssh = RemoteSshConfig(host = "ssh.example"),
                         sshTunnelFactory = { _, _ ->
                             object : SshTunnel {

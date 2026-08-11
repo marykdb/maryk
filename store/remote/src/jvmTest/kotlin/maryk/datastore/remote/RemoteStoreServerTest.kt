@@ -50,19 +50,28 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun acceptsLoopbackOrProtectedPublicBinding() {
-        validateRemoteStoreServerBinding("127.0.0.1", RemoteStoreServerConfig())
-        validateRemoteStoreServerBinding("localhost", RemoteStoreServerConfig())
-        validateRemoteStoreServerBinding(
-            "0.0.0.0",
+    fun rejectsProtectedPublicBindingWithoutExplicitInsecureOptIn() {
+        listOf(
             RemoteStoreServerConfig(bearerToken = "secret"),
-        )
-        validateRemoteStoreServerBinding(
-            "0.0.0.0",
             RemoteStoreServerConfig(
                 authenticator = RemoteStoreAuthenticator { RemoteStorePrincipal("service") }
             ),
-        )
+        ).forEach { config ->
+            val exception = assertFailsWith<IllegalArgumentException> {
+                validateRemoteStoreServerBinding("0.0.0.0", config)
+            }
+
+            assertTrue(exception.message.orEmpty().contains("plaintext"))
+        }
+    }
+
+    @Test
+    fun acceptsLoopbackOrExplicitPublicInsecureOptIn() {
+        validateRemoteStoreServerBinding("127.0.0.1", RemoteStoreServerConfig())
+        validateRemoteStoreServerBinding("localhost", RemoteStoreServerConfig())
+        validateRemoteStoreServerBinding("::1", RemoteStoreServerConfig())
+        validateRemoteStoreServerBinding("[::1]", RemoteStoreServerConfig())
+        validateRemoteStoreServerBinding("0:0:0:0:0:0:0:1", RemoteStoreServerConfig())
         validateRemoteStoreServerBinding(
             "0.0.0.0",
             RemoteStoreServerConfig(allowInsecureRemoteBinding = true),

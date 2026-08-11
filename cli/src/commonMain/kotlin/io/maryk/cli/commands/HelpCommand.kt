@@ -69,7 +69,7 @@ class HelpCommand : Command {
                 "  serve --config <file>",
                 "Notes:",
                 "  - Config files support key/value (`key=value`) and YAML-style (`key: value`) entries.",
-                "  - Non-loopback binds require bearer authentication or --allow-insecure-remote-binding.",
+                "  - Non-loopback plaintext binds require --allow-insecure-remote-binding, even with bearer authentication.",
                 "  - Use TLS termination or SSH tunneling to encrypt remote traffic.",
             )
             "disconnect" -> listOf(

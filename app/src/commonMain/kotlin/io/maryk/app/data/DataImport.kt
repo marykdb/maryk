@@ -172,7 +172,11 @@ internal fun detectImportFormatFromPath(path: String): DataExportFormat? {
     return if (first == '{' || first == '[') DataExportFormat.JSON else DataExportFormat.YAML
 }
 
-internal fun detectImportScopeFromPath(path: String, format: DataExportFormat): DataImportScope {
+internal fun detectImportScopeFromPath(
+    path: String,
+    format: DataExportFormat,
+    requestContext: RequestContext? = null,
+): DataImportScope {
     return when (format) {
         DataExportFormat.JSON -> {
             val content = readImportTextOrNull(path) ?: return DataImportScope.SINGLE
@@ -186,7 +190,7 @@ internal fun detectImportScopeFromPath(path: String, format: DataExportFormat): 
         }
         DataExportFormat.PROTO -> {
             val bytes = readImportBytesOrNull(path) ?: return DataImportScope.SINGLE
-            detectProtoScope(bytes)
+            detectProtoScope(bytes, requestContext)
         }
     }
 }
@@ -506,6 +510,26 @@ private fun isValidVersionedProtoPayload(
         DataObjectVersionedChange.Serializer.readProtoBuf(length, reader = reader, context = requestContext)
     }
     validateVersionedProtoRecord(values)
+    true
+}.onFailure {
+    it.rethrowIfFatal()
+}.getOrDefault(false)
+
+private fun isValidProtoRecordPayload(
+    bytes: ByteArray,
+    start: Int,
+    length: Int,
+    requestContext: RequestContext,
+): Boolean = runCatching {
+    val values = readProtoPayload(
+        bytes = bytes,
+        start = start,
+        length = length,
+        label = "record",
+    ) { reader ->
+        ValuesWithMetaData.Serializer.readProtoBuf(length, reader = reader, context = requestContext)
+    }
+    validateProtoRecord(values)
     true
 }.onFailure {
     it.rethrowIfFatal()
@@ -933,9 +957,17 @@ internal inline fun <T> readProtoPayload(
 
 private fun String.firstNonWhitespaceChar(): Char? = firstOrNull { !it.isWhitespace() }
 
-private fun detectProtoScope(bytes: ByteArray): DataImportScope {
+private fun detectProtoScope(bytes: ByteArray, requestContext: RequestContext?): DataImportScope {
     val frameCount = countLengthPrefixedFrames(bytes) ?: return DataImportScope.SINGLE
-    return if (frameCount > 1) DataImportScope.MULTIPLE else DataImportScope.SINGLE
+    if (frameCount <= 1 || requestContext == null) return DataImportScope.SINGLE
+    return if (
+        isValidProtoRecordPayload(bytes, 0, bytes.size, requestContext) ||
+        isValidVersionedProtoPayload(bytes, 0, bytes.size, requestContext)
+    ) {
+        DataImportScope.SINGLE
+    } else {
+        DataImportScope.MULTIPLE
+    }
 }
 
 private fun countLengthPrefixedFrames(bytes: ByteArray): Int? {

@@ -1403,13 +1403,14 @@ class BrowserState(
                         DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
                         dataModel = model,
                     )
+                    val detectedScope = detectImportScopeFromPath(filePath, format, context)
                     val versioned = detectVersionedImport(filePath, format, context)
                     if (versioned) {
                         importVersionedDataFromFile(
                             dataStore = connection.dataStore,
                             model = model,
                             format = format,
-                            scope = importScope,
+                            scope = detectedScope,
                             path = filePath,
                         )
                     } else {
@@ -1417,7 +1418,7 @@ class BrowserState(
                             dataStore = connection.dataStore,
                             model = model,
                             format = format,
-                            scope = importScope,
+                            scope = detectedScope,
                             path = filePath,
                         )
                     }

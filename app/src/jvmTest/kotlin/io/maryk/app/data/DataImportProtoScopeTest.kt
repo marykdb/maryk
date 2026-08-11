@@ -79,18 +79,23 @@ class DataImportProtoScopeTest {
     fun importsAmbiguousUnframedProtoRecordAsSingleScope() = runBlocking {
         val destination = InMemoryDataStore.open(dataModelsById = mapOf(1u to AmbiguousProtoScopeModel))
         val ambiguousRecord = byteArrayOf(
-            40, 0,
             10, 4, 0, 0, 0, 7,
-            18, 27, 8, 7, 16, 42, 26, 21,
+            18, 27, 8, 7, 16, 29, 26, 21,
             97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97, 97,
-            24, 1, 32, 1,
+            24, 1, 32, 1, 40, 0,
         )
         val path = Files.createTempFile("maryk-import-ambiguous-unframed-", ".proto")
         try {
             Files.write(path, ambiguousRecord)
-            assertEquals(ambiguousRecord.size - 1, ambiguousRecord.first().toInt())
+            assertEquals(41, ambiguousRecord.size)
+            assertEquals(10, ambiguousRecord.first().toInt())
+            assertEquals(29, ambiguousRecord[11].toInt())
 
-            val scope = detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO)
+            val scope = detectImportScopeFromPath(
+                path.toString(),
+                DataExportFormat.PROTO,
+                buildRequestContext(AmbiguousProtoScopeModel),
+            )
 
             assertEquals(DataImportScope.SINGLE, scope)
             assertEquals(
@@ -253,7 +258,7 @@ class DataImportProtoScopeTest {
             Files.write(path, framed)
             assertEquals(
                 DataImportScope.MULTIPLE,
-                detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO),
+                detectImportScopeFromPath(path.toString(), DataExportFormat.PROTO, requestContext),
             )
         } finally {
             Files.deleteIfExists(path)

@@ -118,6 +118,75 @@ class SchemaBuildEngineTest {
     }
 
     @Test
+    fun rejectsModelNamesThatCannotBeRenderedAsJvmKotlinIdentifiers() {
+        for (forbiddenCharacter in listOf('.', ';', '[', ']', '/', '<', '>', ':', '\\')) {
+            val name = "Invalid${forbiddenCharacter}Model"
+            val schemas = createTempDirectory()
+            schemas.resolve("model.json").writeText(jsonSchema(name))
+            val output = createTempDirectory()
+            output.resolve("Existing.kt").writeText("existing")
+
+            val exception = assertFailsWith<SchemaBuildException> {
+                SchemaBuildEngine.generate(
+                    schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                    packageName = "example.generated",
+                    outputDirectory = output,
+                )
+            }
+
+            assertTrue(exception.message.orEmpty().contains(name))
+            assertEquals("existing", output.resolve("Existing.kt").readText())
+        }
+    }
+
+    @Test
+    fun rejectsOutputFileNamesThatCollideOnCaseInsensitiveFileSystems() {
+        val schemas = createTempDirectory()
+        schemas.resolve("client.json").writeText(jsonSchema("Client"))
+        schemas.resolve("client-lower.json").writeText(jsonSchema("client"))
+        val output = createTempDirectory()
+        output.resolve("Existing.kt").writeText("existing")
+
+        val exception = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "example.generated",
+                outputDirectory = output,
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("Client.kt"))
+        assertTrue(exception.message.orEmpty().contains("client.kt"))
+        assertEquals("existing", output.resolve("Existing.kt").readText())
+    }
+
+    @Test
+    fun rejectsOutputFileNamesThatCollideUnderUnicodeCaseFoldingAndNormalization() {
+        for ((firstName, secondName) in listOf(
+            "SigmaΣ" to "Sigmaς",
+            "Café" to "Cafe\u0301",
+        )) {
+            val schemas = createTempDirectory()
+            schemas.resolve("first.json").writeText(jsonSchema(firstName))
+            schemas.resolve("second.json").writeText(jsonSchema(secondName))
+            val output = createTempDirectory()
+            output.resolve("Existing.kt").writeText("existing")
+
+            val exception = assertFailsWith<SchemaBuildException> {
+                SchemaBuildEngine.generate(
+                    schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                    packageName = "example.generated",
+                    outputDirectory = output,
+                )
+            }
+
+            assertTrue(exception.message.orEmpty().contains("$firstName.kt"))
+            assertTrue(exception.message.orEmpty().contains("$secondName.kt"))
+            assertEquals("existing", output.resolve("Existing.kt").readText())
+        }
+    }
+
+    @Test
     fun resolvesYamlForwardReferenceToJsonModel() {
         val schemas = createTempDirectory()
         schemas.resolve("a.yaml").writeText(referenceSchema("Alpha", "Beta"))

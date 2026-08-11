@@ -520,6 +520,15 @@ class GenerateKotlinForRootDataModelTest {
     }
 
     @Test
+    fun rejectsCharactersForbiddenInEscapedJvmKotlinIdentifiers() {
+        for (forbiddenCharacter in listOf('.', ';', '[', ']', '/', '<', '>', ':', '\\')) {
+            assertFailsWith<IllegalArgumentException> {
+                "invalid${forbiddenCharacter}name".kotlinIdentifier()
+            }
+        }
+    }
+
+    @Test
     fun rendersContextualKeywordsAndHyphenatedNamesInDeclarationsAndReferences() {
         val output = buildString {
             `catch`.generateKotlin("maryk.test.models") { append(it) }

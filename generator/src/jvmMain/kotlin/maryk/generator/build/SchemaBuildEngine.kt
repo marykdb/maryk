@@ -3,7 +3,9 @@ package maryk.generator.build
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
+import java.text.Normalizer
 import java.util.Comparator
+import java.util.Locale
 import kotlin.io.path.extension
 import kotlin.io.path.isDirectory
 import kotlin.io.path.readText
@@ -98,10 +100,29 @@ object SchemaBuildEngine {
     ): GenerationResult {
         require(packageName.isNotBlank()) { "Maryk generator packageName must not be blank" }
         val loaded = load(schemaFiles)
-        val generated = loaded.associate { schema ->
-            val fileName = generatedFileName(schema.model.Meta.name)
+        val generatedFileNames = loaded.map { schema ->
+            schema to generatedFileName(schema.model.Meta.name)
+        }
+        generatedFileNames
+            .groupBy { (_, fileName) -> caseInsensitiveNormalizedFileName(fileName) }
+            .values
+            .firstOrNull { it.size > 1 }
+            ?.let { collisions ->
+                throw SchemaBuildException(
+                    "Generated Kotlin filenames collide on case-insensitive file systems: " +
+                        collisions.joinToString { (_, fileName) -> fileName },
+                )
+            }
+        val generated = generatedFileNames.associate { (schema, fileName) ->
             var source = ""
-            schema.model.generateKotlin(packageName) { source = it }
+            try {
+                schema.model.generateKotlin(packageName) { source = it }
+            } catch (exception: IllegalArgumentException) {
+                throw SchemaBuildException(
+                    "Could not generate Kotlin for model ${schema.model.Meta.name}: ${exception.message}",
+                    exception,
+                )
+            }
             fileName to source
         }.toSortedMap()
 
@@ -171,6 +192,12 @@ object SchemaBuildEngine {
         }
         return fileName
     }
+
+    private fun caseInsensitiveNormalizedFileName(fileName: String): String =
+        Normalizer.normalize(
+            Normalizer.normalize(fileName, Normalizer.Form.NFD).uppercase(Locale.ROOT),
+            Normalizer.Form.NFD,
+        )
 
     private fun clearManagedDirectory(directory: Path) {
         if (Files.notExists(directory)) return

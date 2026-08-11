@@ -7,8 +7,11 @@ private val kotlinKeywords = setOf(
     "receiver", "setparam", "typeof", "where",
 )
 
+private val escapedKotlinIdentifierForbiddenCharacters = setOf('.', ';', '[', ']', '/', '<', '>', ':', '\\')
+
 internal fun String.kotlinIdentifier(): String {
     require(isNotEmpty()) { "Kotlin identifiers cannot be empty" }
     require(none { it == '`' || it == '\r' || it == '\n' }) { "Kotlin identifiers cannot contain backticks or line breaks: $this" }
+    require(none { it in escapedKotlinIdentifierForbiddenCharacters }) { "Kotlin identifiers contain JVM-forbidden characters: $this" }
     return if (matches(Regex("[A-Za-z_][A-Za-z0-9_]*")) && this !in kotlinKeywords) this else "`$this`"
 }

@@ -9,8 +9,11 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.createTestDBFolder
@@ -165,6 +168,118 @@ class RocksDBSensitivePropertiesTest {
             deleteFolder(folder)
         }
     }
+
+    @Test
+    fun softDeleteRemovesRetainedSensitiveUniqueRotationToken() = runTest {
+        val folder = createTestDBFolder("sensitive-rocks-unique-rotation")
+        try {
+            val oldStore = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = false,
+                dataModelsById = mapOf(2u to SensitiveUniqueRocksModel),
+                fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(1),
+            )
+            val key = try {
+                assertIs<AddSuccess<SensitiveUniqueRocksModel>>(
+                    oldStore.execute(
+                        SensitiveUniqueRocksModel.add(SensitiveUniqueRocksModel(Bytes(ByteArray(16) { 1 }), "same-secret"))
+                    ).statuses.single()
+                ).key
+            } finally {
+                oldStore.close()
+            }
+
+            val rotatedStore = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = false,
+                dataModelsById = mapOf(2u to SensitiveUniqueRocksModel),
+                fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(2, listOf(1)),
+            )
+            try {
+                assertIs<DeleteSuccess<SensitiveUniqueRocksModel>>(
+                    rotatedStore.execute(SensitiveUniqueRocksModel.delete(key)).statuses.single()
+                )
+                assertIs<AddSuccess<SensitiveUniqueRocksModel>>(
+                    rotatedStore.execute(
+                        SensitiveUniqueRocksModel.add(SensitiveUniqueRocksModel(Bytes(ByteArray(16) { 2 }), "same-secret"))
+                    ).statuses.single()
+                )
+            } finally {
+                rotatedStore.close()
+            }
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun hardDeleteRemovesRetainedTokenHistoryAfterSoftDeleteWithoutErasingReusedTokenHistory() = runTest {
+        val folder = createTestDBFolder("sensitive-rocks-unique-hard-delete-rotation")
+        try {
+            val oldStore = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = true,
+                dataModelsById = mapOf(2u to SensitiveUniqueRocksModel),
+                fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(1),
+            )
+            val otherKey: Key<SensitiveUniqueRocksModel>
+            val targetKey: Key<SensitiveUniqueRocksModel>
+            try {
+                otherKey = assertIs<AddSuccess<SensitiveUniqueRocksModel>>(
+                    oldStore.execute(
+                        SensitiveUniqueRocksModel.add(SensitiveUniqueRocksModel(Bytes(ByteArray(16) { 1 }), "same-secret"))
+                    ).statuses.single()
+                ).key
+                assertIs<DeleteSuccess<SensitiveUniqueRocksModel>>(
+                    oldStore.execute(SensitiveUniqueRocksModel.delete(otherKey)).statuses.single()
+                )
+                targetKey = assertIs<AddSuccess<SensitiveUniqueRocksModel>>(
+                    oldStore.execute(
+                        SensitiveUniqueRocksModel.add(SensitiveUniqueRocksModel(Bytes(ByteArray(16) { 2 }), "same-secret"))
+                    ).statuses.single()
+                ).key
+                assertIs<DeleteSuccess<SensitiveUniqueRocksModel>>(
+                    oldStore.execute(SensitiveUniqueRocksModel.delete(targetKey)).statuses.single()
+                )
+            } finally {
+                oldStore.close()
+            }
+
+            val rotatedStore = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = true,
+                dataModelsById = mapOf(2u to SensitiveUniqueRocksModel),
+                fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(2, listOf(1)),
+            )
+            try {
+                assertIs<DeleteSuccess<SensitiveUniqueRocksModel>>(
+                    rotatedStore.execute(SensitiveUniqueRocksModel.delete(targetKey, hardDelete = true)).statuses.single()
+                )
+                val historicOwners = rotatedStore.historicUniqueOwners(2u)
+                assertTrue(historicOwners.any { it.contentEquals(otherKey.bytes) })
+                assertFalse(historicOwners.any { it.contentEquals(targetKey.bytes) })
+            } finally {
+                rotatedStore.close()
+            }
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+}
+
+private fun RocksDBDataStore.historicUniqueOwners(modelId: UInt): List<ByteArray> {
+    val columnFamilies = getColumnFamilies(modelId) as HistoricTableColumnFamilies
+    return DBAccessor(this).use { accessor ->
+        accessor.getIterator(defaultReadOptions, columnFamilies.historic.unique).use { iterator ->
+            buildList {
+                iterator.seekToFirst()
+                while (iterator.isValid()) {
+                    add(iterator.value())
+                    iterator.next()
+                }
+            }
+        }
+    }
 }
 
 private class XorFieldEncryptionProvider : FieldEncryptionProvider {
@@ -216,6 +331,35 @@ private class XorWithTokenFieldEncryptionProvider :
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { i -> (value[offset + i].toInt() xor 0x5A).toByte() }
+}
+
+private class RotatingTokenFieldEncryptionProvider(
+    private val activeToken: Int,
+    private val previousTokens: List<Int> = emptyList(),
+) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun deriveDeterministicToken(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray = ByteArray(16) { activeToken.toByte() }
+
+    override suspend fun deriveDeterministicTokenCandidates(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): List<ByteArray> = (listOf(activeToken) + previousTokens)
+        .distinct()
+        .map { token -> ByteArray(16) { token.toByte() } }
+
+    private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
+        ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }
 }
 
 object SensitiveRocksModel : RootDataModel<SensitiveRocksModel>(

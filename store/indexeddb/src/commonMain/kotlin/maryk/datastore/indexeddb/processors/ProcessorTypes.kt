@@ -63,6 +63,7 @@ internal data class IndexedDbUniqueRow(
     val keyBytes: ByteArray,
     val qualifier: ByteArray,
     val candidateKeys: List<ByteArray>,
+    val existingKeys: List<ByteArray> = listOf(uniqueKey),
 )
 
 internal data class MaterializedChanges(

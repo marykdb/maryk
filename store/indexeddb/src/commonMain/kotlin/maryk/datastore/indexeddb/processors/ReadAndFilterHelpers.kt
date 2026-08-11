@@ -90,7 +90,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectCurrentUni
     dataModel: DM,
     modelId: UInt,
     tableStoreName: String,
+    uniqueStoreName: String,
     keyBytes: ByteArray,
+    uniqueStore: IndexedDbByteStore = byteStore,
 ): List<IndexedDbUniqueRow> {
     val rows = mutableListOf<IndexedDbUniqueRow>()
     for ((rowKey, rowValue) in scanTableRows(tableStoreName, keyBytes)) {
@@ -105,11 +107,15 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectCurrentUni
             val encodedValue = sensitiveFields.decryptValueIfNeeded(rowValue)
             val uniqueKeys = sensitiveFields.mapUniqueValueByteCandidates(modelId, qualifier, encodedValue)
                 .map { uniqueValue -> createUniqueRowKey(qualifier, uniqueValue) }
+            val existingKeys = uniqueKeys.filter { candidateKey ->
+                uniqueStore.get(uniqueStoreName, candidateKey)?.contentEquals(keyBytes) == true
+            }
             rows += IndexedDbUniqueRow(
                 uniqueKey = uniqueKeys.first(),
                 keyBytes = keyBytes,
                 qualifier = qualifier,
                 candidateKeys = uniqueKeys,
+                existingKeys = existingKeys,
             )
         }
     }

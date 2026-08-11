@@ -123,7 +123,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 validateUniqueRows(request.dataModel, keyBytes, uniqueStoreName, storagePlan.uniqueRows)
 
                 val oldIndexRows = collectCurrentIndexRows(request.dataModel, keyBytes)
-                val oldUniqueRows = collectCurrentUniqueRows(request.dataModel, modelId, tableStoreName, keyBytes)
+                val oldUniqueRows = collectCurrentUniqueRows(
+                    request.dataModel,
+                    modelId,
+                    tableStoreName,
+                    uniqueStoreName,
+                    keyBytes,
+                    byteStore,
+                )
                 val oldTableRows = scanTableRows(tableStoreName, keyBytes)
                 val indexChanges = buildList {
                     request.dataModel.Meta.indexes?.forEach { index ->

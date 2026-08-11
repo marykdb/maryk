@@ -139,25 +139,37 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     val value = kv.value
                     // Stored as (version || value)
                     requireVersionedValue(value)
-                    val uniqueValue = withDecryptedValueIfNeeded(
+                    val uniqueValues = withDecryptedValueIfNeeded(
                         value,
                         VERSION_BYTE_SIZE,
                         value.size - VERSION_BYTE_SIZE
                     ) { plainValue, offset, length ->
-                        mapUniqueValueBytes(dbIndex, reference, plainValue, offset, length)
+                        mapUniqueValueByteCandidates(
+                            dbIndex,
+                            reference,
+                            plainValue.copyOfRange(offset, offset + length),
+                        )
                     }
-                    val uniqueRef = combineToByteArray(reference, uniqueValue)
+                    for (uniqueValue in uniqueValues) {
+                        val uniqueRef = combineToByteArray(reference, uniqueValue)
+                        val uniqueKey = packKey(tableDirs.uniquePrefix, uniqueRef)
+                        val storedValue = tr.get(uniqueKey).awaitResult()
+                        val belongsToKey = storedValue?.let {
+                            it.size == VERSION_BYTE_SIZE + key.bytes.size &&
+                                it.matchesRangePart(VERSION_BYTE_SIZE, key.bytes)
+                        } == true
+                        if (belongsToKey) {
+                            tr.clear(uniqueKey)
 
-                    // Delete current unique entry
-                    tr.clear(packKey(tableDirs.uniquePrefix, uniqueRef))
+                            if (tableDirs is HistoricTableDirectories) {
+                                if (!hardDelete) {
+                                    writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
+                                }
+                            }
+                        }
 
-                    if (tableDirs is HistoricTableDirectories) {
-                        if (hardDelete) {
-                            val historicPrefix = packKey(tableDirs.historicUniquePrefix, encodeZeroFreeUsing01(uniqueRef))
-                            tr.clear(FDBRange.startsWith(historicPrefix))
-                        } else {
-                            // For soft delete, append a historic tombstone so history reflects the change
-                            writeHistoricUnique(tr, tableDirs, key.bytes, uniqueRef, versionBytes)
+                        if (hardDelete && tableDirs is HistoricTableDirectories) {
+                            deleteHistoricUniqueEntriesForKey(tr, tableDirs, uniqueRef, key.bytes)
                         }
                     }
                 }
@@ -273,6 +285,22 @@ private fun deleteCurrentUniqueIndexEntryForKey(
             val uniqueRef = kv.key.copyOfRange(tableDirs.uniquePrefix.size, kv.key.size)
             writeHistoricUnique(tr, tableDirs, key, uniqueRef, versionBytes)
             break
+        }
+    }
+}
+
+private fun deleteHistoricUniqueEntriesForKey(
+    tr: Transaction,
+    tableDirs: HistoricTableDirectories,
+    uniqueRef: ByteArray,
+    key: ByteArray,
+) {
+    val prefix = packKey(tableDirs.historicUniquePrefix, encodeZeroFreeUsing01(uniqueRef))
+    val iterator = tr.getRange(FDBRange.startsWith(prefix)).iterator()
+    while (iterator.hasNext()) {
+        val historicEntry = iterator.nextBlocking()
+        if (historicEntry.value.contentEquals(key)) {
+            tr.clear(historicEntry.key)
         }
     }
 }

@@ -6,22 +6,28 @@ import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Bytes
+import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
+import maryk.core.query.requests.delete
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.nextBlocking
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.shared.TypeIndicator
+import maryk.foundationdb.Range as FDBRange
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 class FieldEncryptionTest {
@@ -137,6 +143,115 @@ class FieldEncryptionTest {
             }
         }
     }
+
+    @Test
+    fun softDeleteRemovesRetainedSensitiveUniqueRotationToken() {
+        runBlocking {
+            val directoryPath = listOf("maryk", "test", "field-encryption-unique-rotation", Uuid.random().toString())
+            val oldStore = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = directoryPath,
+                dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+                keepAllVersions = false,
+                fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(1),
+            )
+            val key = try {
+                assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    oldStore.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 1 }), "same-secret"))
+                    ).statuses.single()
+                ).key
+            } finally {
+                oldStore.close()
+            }
+
+            val rotatedStore = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = directoryPath,
+                dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+                keepAllVersions = false,
+                fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(2, listOf(1)),
+            )
+            try {
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    rotatedStore.execute(SensitiveUniqueRecord.delete(key)).statuses.single()
+                )
+                assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    rotatedStore.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 2 }), "same-secret"))
+                    ).statuses.single()
+                )
+            } finally {
+                rotatedStore.close()
+            }
+        }
+    }
+
+    @Test
+    fun hardDeleteRemovesRetainedTokenHistoryAfterSoftDeleteWithoutErasingReusedTokenHistory() {
+        runBlocking {
+            val directoryPath = listOf("maryk", "test", "field-encryption-unique-hard-delete-rotation", Uuid.random().toString())
+            val oldStore = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = directoryPath,
+                dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+                keepAllVersions = true,
+                fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(1),
+            )
+            val otherKey: Key<SensitiveUniqueRecord>
+            val targetKey: Key<SensitiveUniqueRecord>
+            try {
+                otherKey = assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    oldStore.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 1 }), "same-secret"))
+                    ).statuses.single()
+                ).key
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    oldStore.execute(SensitiveUniqueRecord.delete(otherKey)).statuses.single()
+                )
+                targetKey = assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    oldStore.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 2 }), "same-secret"))
+                    ).statuses.single()
+                ).key
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    oldStore.execute(SensitiveUniqueRecord.delete(targetKey)).statuses.single()
+                )
+            } finally {
+                oldStore.close()
+            }
+
+            val rotatedStore = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = directoryPath,
+                dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+                keepAllVersions = true,
+                fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(2, listOf(1)),
+            )
+            try {
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    rotatedStore.execute(SensitiveUniqueRecord.delete(targetKey, hardDelete = true)).statuses.single()
+                )
+                val historicOwners = rotatedStore.historicUniqueOwners(904u)
+                assertTrue(historicOwners.any { it.contentEquals(otherKey.bytes) })
+                assertFalse(historicOwners.any { it.contentEquals(targetKey.bytes) })
+            } finally {
+                rotatedStore.close()
+            }
+        }
+    }
+}
+
+private suspend fun FoundationDBDataStore.historicUniqueOwners(modelId: UInt): List<ByteArray> {
+    val tableDirs = getTableDirs(modelId) as HistoricTableDirectories
+    return runTransaction { tr ->
+        buildList {
+            val iterator = tr.getRange(FDBRange.startsWith(tableDirs.historicUniquePrefix)).iterator()
+            while (iterator.hasNext()) {
+                add(iterator.nextBlocking().value)
+            }
+        }
+    }
 }
 
 private class XorFieldEncryptionProvider : FieldEncryptionProvider {
@@ -171,6 +286,35 @@ private class XorWithTokenFieldEncryptionProvider :
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { i -> (value[offset + i].toInt() xor 0x5A).toByte() }
+}
+
+private class RotatingTokenFieldEncryptionProvider(
+    private val activeToken: Int,
+    private val previousTokens: List<Int> = emptyList(),
+) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun deriveDeterministicToken(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray = ByteArray(16) { activeToken.toByte() }
+
+    override suspend fun deriveDeterministicTokenCandidates(
+        modelId: UInt,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): List<ByteArray> = (listOf(activeToken) + previousTokens)
+        .distinct()
+        .map { token -> ByteArray(16) { token.toByte() } }
+
+    private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
+        ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }
 }
 
 object SensitiveRecord : RootDataModel<SensitiveRecord>(

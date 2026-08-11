@@ -65,7 +65,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
                 emptyList()
             }
             val oldIndexRows = collectCurrentIndexRows(request.dataModel, key.bytes)
-            val oldUniqueRows = collectCurrentUniqueRows(request.dataModel, modelId, tableStoreName, key.bytes)
+            val oldUniqueRows = collectCurrentUniqueRows(
+                request.dataModel,
+                modelId,
+                tableStoreName,
+                uniqueStoreName,
+                key.bytes,
+                byteStore,
+            )
             val operations = mutableListOf<IndexedDbWriteOperation>()
             for (indexRow in oldIndexRows) {
                 operations.delete(indexStoreName, indexRow)

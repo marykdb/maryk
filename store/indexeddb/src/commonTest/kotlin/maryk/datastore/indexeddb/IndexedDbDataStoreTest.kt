@@ -49,6 +49,8 @@ import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.indexeddb.processors.createUpdateHistoryRowKey
 import maryk.datastore.indexeddb.processors.createHardDeleteHistoryRowKey
+import maryk.datastore.indexeddb.processors.createHistoricVersionedRowKey
+import maryk.datastore.indexeddb.processors.createUniqueRowKey
 import maryk.datastore.indexeddb.processors.hardDeleteHistoryRowReadObserver
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.test.DataStoreAddTest
@@ -1791,6 +1793,69 @@ class IndexedDbDataStoreTest {
             assertIs<AddSuccess<SensitiveUniqueRecord>>(result)
         } finally {
             previousKeyStore.close()
+        }
+    }
+
+    @Test
+    fun softDeleteRemovesRetainedSensitiveUniqueTokenAndHistoriesOnlyItsExistingRow() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-encryption-rotation-delete-${Random.nextInt()}"
+        val oldStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+            keepAllVersions = true,
+            fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(1),
+        )
+        val key = try {
+            assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                oldStore.execute(
+                    SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 1 }), "same-secret"))
+                ).statuses.single()
+            ).key
+        } finally {
+            oldStore.close()
+        }
+
+        val rotatedStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+            keepAllVersions = true,
+            fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(2, listOf(1)),
+        )
+        val deleteVersion = try {
+            assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                rotatedStore.execute(SensitiveUniqueRecord.delete(key)).statuses.single()
+            ).version
+        } finally {
+            rotatedStore.close()
+        }
+
+        val historicUniqueStore = openIndexedDbByteStore(databaseName, setOf("hu:904"))
+        try {
+            val reference = SensitiveUniqueRecord.secret.ref().toStorageByteArray()
+            val retainedTokenKey = createUniqueRowKey(reference, ByteArray(16) { 1 })
+            val activeTokenKey = createUniqueRowKey(reference, ByteArray(16) { 2 })
+            assertNotNull(historicUniqueStore.get("hu:904", createHistoricVersionedRowKey(retainedTokenKey, deleteVersion)))
+            assertEquals(null, historicUniqueStore.get("hu:904", createHistoricVersionedRowKey(activeTokenKey, deleteVersion)))
+        } finally {
+            historicUniqueStore.close()
+        }
+
+        val replacementStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+            keepAllVersions = true,
+            fieldEncryptionProvider = RotatingTokenFieldEncryptionProvider(2, listOf(1)),
+        )
+        try {
+            assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                replacementStore.execute(
+                    SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 2 }), "same-secret"))
+                ).statuses.single()
+            )
+        } finally {
+            replacementStore.close()
         }
     }
 

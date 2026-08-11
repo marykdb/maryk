@@ -110,8 +110,9 @@ Notes:
 - `baseUrl` must not contain query params, fragments, user info, or leading/trailing whitespace.
 - For direct internet exposure, terminate TLS in a reverse proxy and forward to the loopback server.
 - Flow reconnect is opt-in to preserve legacy completion behavior. `Default` retries
-  five times with bounded exponential backoff. A reconnect obtains a fresh initial
-  state, skips a repeated initial version, then continues with later updates.
+  five times with bounded exponential backoff. A reconnect obtains a fresh state and
+  delivers it at least once: it can repeat updates, and consumers must handle duplicates.
+  It does not provide durable or exactly-once replay.
 - Set `heartbeatTimeoutMillis` when the client must reconnect stalled connections.
   Protocol-v2 clients negotiate server heartbeat frames; legacy clients never
   receive them.

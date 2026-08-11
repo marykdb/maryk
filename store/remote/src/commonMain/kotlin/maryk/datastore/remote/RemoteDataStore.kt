@@ -483,16 +483,10 @@ class RemoteDataStore private constructor(
                     flowRetryPolicy.heartbeatTimeoutMillis != null
                 var reconnectAttempts = 0u
                 var reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
-                var lastDeliveredVersion: ULong? = null
-                var deliveredAtLastVersion = 0
                 while (true) {
                     try {
                         var receivedFrame = false
                         var deliveredUpdate = false
-                        val replayBoundaryVersion = lastDeliveredVersion.takeIf { reconnectAttempts > 0u }
-                        val replayBoundaryCount = deliveredAtLastVersion
-                        var replayedAtBoundary = 0
-                        var replayingInitialState = replayBoundaryVersion != null
                         val statement = httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.flowPath)) {
                             headers {
                                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -556,40 +550,16 @@ class RemoteDataStore private constructor(
                                         )
                                     }
                                     updatesResponse.updates.forEach { update ->
-                                        val isRepeatedInitialState = if (replayingInitialState) {
-                                            when {
-                                                update.version < replayBoundaryVersion!! -> true
-                                                update.version == replayBoundaryVersion &&
-                                                    replayedAtBoundary < replayBoundaryCount -> {
-                                                    replayedAtBoundary++
-                                                    true
-                                                }
-                                                else -> {
-                                                    replayingInitialState = false
-                                                    false
-                                                }
-                                            }
-                                        } else {
-                                            false
+                                        @Suppress("UNCHECKED_CAST")
+                                        val sendResult = trySend(update as IsUpdateResponse<DM>)
+                                        if (sendResult.isFailure) {
+                                            sendResult.exceptionOrNull()?.let { throw it }
+                                            throw RemoteFlowBackpressureException(
+                                                "Remote store flow terminated because collector backpressure prevented update delivery"
+                                            )
                                         }
-                                        if (!isRepeatedInitialState) {
-                                            @Suppress("UNCHECKED_CAST")
-                                            val sendResult = trySend(update as IsUpdateResponse<DM>)
-                                            if (sendResult.isFailure) {
-                                                sendResult.exceptionOrNull()?.let { throw it }
-                                                throw RemoteFlowBackpressureException(
-                                                    "Remote store flow terminated because collector backpressure prevented update delivery"
-                                                )
-                                            }
-                                            yield()
-                                            if (update.version == lastDeliveredVersion) {
-                                                deliveredAtLastVersion++
-                                            } else {
-                                                lastDeliveredVersion = update.version
-                                                deliveredAtLastVersion = 1
-                                            }
-                                            deliveredUpdate = true
-                                        }
+                                        yield()
+                                        deliveredUpdate = true
                                     }
                                     receivedFrame = true
                                 }

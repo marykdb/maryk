@@ -143,7 +143,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowReconnectsAndSkipsRepeatedInitialState() = runBlocking {
+    fun executeFlowReconnectsWithAtLeastOnceInitialState() = runBlocking {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -167,7 +167,7 @@ class RemoteDataStoreTest {
                 ).take(3).toList()
             }
 
-            assertEquals(listOf(1uL, 2uL, 3uL), updates.map { it.version })
+            assertEquals(listOf(1uL, 2uL, 1uL), updates.map { it.version })
             assertEquals(2, connections.get())
         } finally {
             remote.close()
@@ -180,7 +180,7 @@ class RemoteDataStoreTest {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
-            progressOnEachConnectionFlowModule(connections)
+            progressOnEachConnectionFlowModule(connections, keepConnectionOpenAt = 3)
         }.start(wait = false)
         val remote = RemoteDataStore.connect(
             RemoteStoreConfig(
@@ -247,7 +247,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowKeepsNewUpdateAtReconnectBoundaryVersion() = runBlocking {
+    fun executeFlowDeliversAtLeastOnceUpdatesAtReconnectBoundary() = runBlocking {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -271,8 +271,42 @@ class RemoteDataStoreTest {
                 ).take(3).toList()
             }.map { it as OrderedKeysUpdate<SimpleMarykModel> }
 
-            assertEquals(listOf(1uL, 1uL, 2uL), updates.map { it.version })
-            assertEquals(listOf(1, 2, 3), updates.map { it.keys.single().bytes.last().toInt() })
+            assertEquals(listOf(1uL, 1uL, 1uL), updates.map { it.version })
+            assertEquals(listOf(1, 1, 2), updates.map { it.keys.single().bytes.last().toInt() })
+            assertEquals(2, connections.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun executeFlowDeliversLowerHlcUpdateAfterReconnect() = runBlocking {
+        val connections = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            lowerHlcReconnectFlowModule(connections)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 2u,
+                    initialDelayMillis = 0,
+                    maxDelayMillis = 0,
+                ),
+            )
+        )
+
+        try {
+            val updates = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(
+                    SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
+                ).take(3).toList()
+            }.map { it as OrderedKeysUpdate<SimpleMarykModel> }
+
+            assertEquals(listOf(40uL, 40uL, 5uL), updates.map { it.version })
+            assertEquals(listOf(1, 1, 2), updates.map { it.keys.single().bytes.last().toInt() })
             assertEquals(2, connections.get())
         } finally {
             remote.close()
@@ -1298,7 +1332,10 @@ private fun Application.reconnectingFlowModule(connections: AtomicInteger) {
     }
 }
 
-private fun Application.progressOnEachConnectionFlowModule(connections: AtomicInteger) {
+private fun Application.progressOnEachConnectionFlowModule(
+    connections: AtomicInteger,
+    keepConnectionOpenAt: Int? = null,
+) {
     val infoBytes = defaultInfoBytes()
     routing {
         get(RemoteStoreProtocol.infoPath) {
@@ -1327,6 +1364,9 @@ private fun Application.progressOnEachConnectionFlowModule(connections: AtomicIn
                 writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
                 writeFully(payload)
                 flush()
+                if (connection == keepConnectionOpenAt) {
+                    awaitCancellation()
+                }
             }
         }
     }
@@ -1377,6 +1417,47 @@ private fun Application.sameVersionReconnectFlowModule(connections: AtomicIntege
                         OrderedKeysUpdate(listOf(keyEndingIn(1)), 1uL),
                         OrderedKeysUpdate(listOf(keyEndingIn(2)), 1uL),
                         OrderedKeysUpdate(listOf(keyEndingIn(3)), 2uL),
+                    )
+                }
+                for (update in updates) {
+                    val payload = RemoteStoreCodec.encode(
+                        UpdatesResponse.Serializer,
+                        UpdatesResponse(SimpleMarykModel, listOf(update)),
+                        context,
+                    )
+                    writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
+                    writeFully(payload)
+                    flush()
+                }
+            }
+        }
+    }
+}
+
+private fun Application.lowerHlcReconnectFlowModule(connections: AtomicInteger) {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.flowPath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            val connection = connections.incrementAndGet()
+            call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                val context = RequestContext(
+                    definitionsContext = DefinitionsContext(
+                        dataModels = mutableMapOf(
+                            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                        )
+                    ),
+                    dataModel = SimpleMarykModel,
+                )
+                val updates = if (connection == 1) {
+                    listOf(OrderedKeysUpdate(listOf(keyEndingIn(1)), 40uL))
+                } else {
+                    listOf(
+                        OrderedKeysUpdate(listOf(keyEndingIn(1)), 40uL),
+                        OrderedKeysUpdate(listOf(keyEndingIn(2)), 5uL),
                     )
                 }
                 for (update in updates) {

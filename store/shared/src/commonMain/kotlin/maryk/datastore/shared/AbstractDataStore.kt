@@ -15,6 +15,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -187,98 +188,105 @@ abstract class AbstractDataStore(
         }
 
         waitForInit()
+        assertModelReady(getDataModelId(request.dataModel))
 
-        val dataModelId = getDataModelId(request.dataModel)
-        assertModelReady(dataModelId)
+        return flow {
+            waitForInit()
 
-        val pendingListener = PendingUpdateListener()
-        var listenerAddedToStore = false
-        try {
-            val response = CompletableDeferred<RP>()
-            val snapshotBoundary = CompletableDeferred<FlowSnapshotBoundary>()
-            trackPendingResponse(response)
-            val initialResponse = try {
-                storeChannel.send(
-                    StoreAction(
-                        request = request,
-                        response = response,
-                        onBeforeReadContext = {
-                            val pendingListenerAdded = CompletableDeferred<Unit>()
-                            awaitPendingResponse(pendingListenerAdded) {
-                                mutableUpdateSharedFlow.emit(
-                                    AddPendingUpdateListenerAction(
-                                        dataModelId,
-                                        pendingListener,
-                                        pendingListenerAdded,
+            val dataModelId = getDataModelId(request.dataModel)
+            assertModelReady(dataModelId)
+
+            val pendingListener = PendingUpdateListener()
+            var listenerAddedToStore = false
+            var listenerCleanupComplete = false
+            try {
+                val response = CompletableDeferred<RP>()
+                val snapshotBoundary = CompletableDeferred<FlowSnapshotBoundary>()
+                trackPendingResponse(response)
+                val initialResponse = try {
+                    storeChannel.send(
+                        StoreAction(
+                            request = request,
+                            response = response,
+                            onBeforeReadContext = {
+                                val pendingListenerAdded = CompletableDeferred<Unit>()
+                                awaitPendingResponse(pendingListenerAdded) {
+                                    mutableUpdateSharedFlow.emit(
+                                        AddPendingUpdateListenerAction(
+                                            dataModelId,
+                                            pendingListener,
+                                            pendingListenerAdded,
+                                        )
                                     )
-                                )
-                            }
-                        },
-                        onFlowSnapshotBoundary = { boundary ->
-                            val boundarySet = CompletableDeferred<Unit>()
-                            awaitPendingResponse(boundarySet) {
-                                mutableUpdateSharedFlow.emit(
-                                    SetPendingListenerBoundaryAction(
-                                        dataModelId,
-                                        pendingListener,
-                                        boundary,
-                                        boundarySet,
+                                }
+                            },
+                            onFlowSnapshotBoundary = { boundary ->
+                                val boundarySet = CompletableDeferred<Unit>()
+                                awaitPendingResponse(boundarySet) {
+                                    mutableUpdateSharedFlow.emit(
+                                        SetPendingListenerBoundaryAction(
+                                            dataModelId,
+                                            pendingListener,
+                                            boundary,
+                                            boundarySet,
+                                        )
                                     )
-                                )
-                            }
-                            snapshotBoundary.complete(boundary)
-                        },
+                                }
+                                snapshotBoundary.complete(boundary)
+                            },
+                        )
                     )
-                )
-                response.await()
-            } finally {
-                untrackPendingResponse(response)
-            }
-            val boundary = snapshotBoundary.await()
-            val listener = request.createUpdateListener(initialResponse)
-            val listenerActivated = CompletableDeferred<Unit>()
-            awaitPendingResponse(listenerActivated) {
-                mutableUpdateSharedFlow.emit(
-                    ActivatePendingUpdateListenerAction(
-                        dataModelId,
-                        pendingListener,
-                        listener,
-                        boundary,
-                        listenerActivated,
-                    ) {
-                        onUpdateListenerActivatedBeforeCompletion(dataModelId)
-                    }
-                )
-            }
-            onUpdateListenerAdded(dataModelId)
-            listenerAddedToStore = true
-
-            return listener.getFlow().onCompletion {
-                if (isClosed.value) return@onCompletion
-
-                withContext(NonCancellable) {
-                    if (isClosed.value) return@withContext
-
-                    val listenerRemoved = CompletableDeferred<Unit>()
-                    awaitPendingResponse(listenerRemoved) {
-                        mutableUpdateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
-                    }
-                    onUpdateListenerRemoved(dataModelId)
+                    response.await()
+                } finally {
+                    untrackPendingResponse(response)
                 }
-            }
-        } catch (error: Throwable) {
-            withContext(NonCancellable) {
-                if (!isClosed.value) {
-                    val listenerRemoved = CompletableDeferred<Unit>()
-                    awaitPendingResponse(listenerRemoved) {
-                        mutableUpdateSharedFlow.emit(RemovePendingUpdateListenerAction(dataModelId, pendingListener, listenerRemoved))
-                    }
-                    if (listenerAddedToStore) {
+                val boundary = snapshotBoundary.await()
+                val listener = request.createUpdateListener(initialResponse)
+                val listenerActivated = CompletableDeferred<Unit>()
+                awaitPendingResponse(listenerActivated) {
+                    mutableUpdateSharedFlow.emit(
+                        ActivatePendingUpdateListenerAction(
+                            dataModelId,
+                            pendingListener,
+                            listener,
+                            boundary,
+                            listenerActivated,
+                        ) {
+                            onUpdateListenerActivatedBeforeCompletion(dataModelId)
+                        }
+                    )
+                }
+                onUpdateListenerAdded(dataModelId)
+                listenerAddedToStore = true
+
+                listener.getFlow().onCompletion {
+                    if (isClosed.value) return@onCompletion
+
+                    withContext(NonCancellable) {
+                        if (isClosed.value) return@withContext
+
+                        val listenerRemoved = CompletableDeferred<Unit>()
+                        awaitPendingResponse(listenerRemoved) {
+                            mutableUpdateSharedFlow.emit(RemoveUpdateListenerAction(dataModelId, listener, listenerRemoved))
+                        }
                         onUpdateListenerRemoved(dataModelId)
+                        listenerCleanupComplete = true
+                    }
+                }.collect { emit(it) }
+            } catch (error: Throwable) {
+                withContext(NonCancellable) {
+                    if (!isClosed.value && !listenerCleanupComplete) {
+                        val listenerRemoved = CompletableDeferred<Unit>()
+                        awaitPendingResponse(listenerRemoved) {
+                            mutableUpdateSharedFlow.emit(RemovePendingUpdateListenerAction(dataModelId, pendingListener, listenerRemoved))
+                        }
+                        if (listenerAddedToStore) {
+                            onUpdateListenerRemoved(dataModelId)
+                        }
                     }
                 }
+                throw error
             }
-            throw error
         }
     }
 

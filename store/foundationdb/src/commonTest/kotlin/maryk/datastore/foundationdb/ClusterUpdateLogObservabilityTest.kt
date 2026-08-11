@@ -1,6 +1,10 @@
 package maryk.datastore.foundationdb
 
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDateTime
@@ -36,17 +40,27 @@ class ClusterUpdateLogObservabilityTest {
         )
 
         try {
-            val flow = store.executeFlow(Log.scanUpdates(fromVersion = 0uL))
-            assertNotNull(flow)
+            val initialReceived = CompletableDeferred<Unit>()
+            val collector = launch {
+                store.executeFlow(Log.scanUpdates(fromVersion = 0uL)).collect {
+                    initialReceived.complete(Unit)
+                }
+            }
+            try {
+                withTimeout(10_000.milliseconds) { initialReceived.await() }
 
-            waitForStat("listener registration before close") {
-                val stats = store.getClusterUpdateLogStats()
-                stats != null && (stats.activeListenerCountsByModelId[4u] ?: 0) > 0
+                waitForStat("listener registration before close") {
+                    val stats = store.getClusterUpdateLogStats()
+                    stats != null && (stats.activeListenerCountsByModelId[4u] ?: 0) > 0
+                }
+            } finally {
+                withTimeout(10_000.milliseconds) {
+                    store.close()
+                }
+                collector.cancelAndJoin()
             }
         } finally {
-            withTimeout(10_000.milliseconds) {
-                store.close()
-            }
+            store.close()
         }
     }
 
@@ -104,37 +118,43 @@ class ClusterUpdateLogObservabilityTest {
             assertTrue(withoutListeners.tailErrors >= 0)
             assertTrue(withoutListeners.gcErrors >= 0)
 
-            val updateFlow = store.executeFlow(
-                Log.scanUpdates(fromVersion = 0uL)
-            )
-            // Keep reference alive for flow lifecycle; listener is registered inside executeFlow.
-            assertNotNull(updateFlow)
-
-            waitForStat("listener registration") {
-                val stats = store.getClusterUpdateLogStats()
-                stats != null && (stats.activeListenerCountsByModelId[modelId] ?: 0) > 0
+            val initialReceived = CompletableDeferred<Unit>()
+            val collector = launch {
+                store.executeFlow(Log.scanUpdates(fromVersion = 0uL)).collect {
+                    initialReceived.complete(Unit)
+                }
             }
+            withTimeout(10_000.milliseconds) { initialReceived.await() }
 
-            store.execute(
-                Log.add(
-                    Log(message = "with-listener", severity = INFO, timestamp = LocalDateTime(2026, 1, 1, 10, 0, 1))
-                )
-            ).statuses.forEach { assertIs<AddSuccess<Log>>(it) }
-            delay(300.milliseconds)
+            try {
+                waitForStat("listener registration") {
+                    val stats = store.getClusterUpdateLogStats()
+                    stats != null && (stats.activeListenerCountsByModelId[modelId] ?: 0) > 0
+                }
 
-            val withListeners = store.getClusterUpdateLogStats()
-            assertNotNull(withListeners)
-            assertTrue(withListeners.tailTransactions >= withoutListeners.tailTransactions)
-            assertTrue(withListeners.decodedUpdates >= withoutListeners.decodedUpdates)
-            assertTrue(withListeners.currentBackoffMs >= 0)
-            assertTrue((withListeners.activeListenerCountsByModelId[modelId] ?: 0) > 0)
+                store.execute(
+                    Log.add(
+                        Log(message = "with-listener", severity = INFO, timestamp = LocalDateTime(2026, 1, 1, 10, 0, 1))
+                    )
+                ).statuses.forEach { assertIs<AddSuccess<Log>>(it) }
+                delay(300.milliseconds)
 
-            store.closeAllListeners()
-            delay(50.milliseconds)
+                val withListeners = store.getClusterUpdateLogStats()
+                assertNotNull(withListeners)
+                assertTrue(withListeners.tailTransactions >= withoutListeners.tailTransactions)
+                assertTrue(withListeners.decodedUpdates >= withoutListeners.decodedUpdates)
+                assertTrue(withListeners.currentBackoffMs >= 0)
+                assertTrue((withListeners.activeListenerCountsByModelId[modelId] ?: 0) > 0)
 
-            val afterClose = store.getClusterUpdateLogStats()
-            assertNotNull(afterClose)
-            assertEquals(0, afterClose.activeListenerCountsByModelId[modelId] ?: 0)
+                store.closeAllListeners()
+                delay(50.milliseconds)
+
+                val afterClose = store.getClusterUpdateLogStats()
+                assertNotNull(afterClose)
+                assertEquals(0, afterClose.activeListenerCountsByModelId[modelId] ?: 0)
+            } finally {
+                collector.cancelAndJoin()
+            }
         } finally {
             store.close()
         }
@@ -153,27 +173,42 @@ class ClusterUpdateLogObservabilityTest {
             )
         )
         try {
-            val logFlow1 = store.executeFlow(Log.scanUpdates(fromVersion = 0uL))
-            val logFlow2 = store.executeFlow(Log.scan())
-            val modelFlow = store.executeFlow(TestMarykModel.scan())
-            assertNotNull(logFlow1)
-            assertNotNull(logFlow2)
-            assertNotNull(modelFlow)
-
-            waitForStat("multi listener registration") {
-                val stats = store.getClusterUpdateLogStats()
-                stats != null &&
-                    (stats.activeListenerCountsByModelId[4u] ?: 0) == 2 &&
-                    (stats.activeListenerCountsByModelId[1u] ?: 0) == 1
+            val logInitial1 = CompletableDeferred<Unit>()
+            val logInitial2 = CompletableDeferred<Unit>()
+            val modelInitial = CompletableDeferred<Unit>()
+            val logCollector1 = launch {
+                store.executeFlow(Log.scanUpdates(fromVersion = 0uL)).collect { logInitial1.complete(Unit) }
             }
+            val logCollector2 = launch {
+                store.executeFlow(Log.scan()).collect { logInitial2.complete(Unit) }
+            }
+            val modelCollector = launch {
+                store.executeFlow(TestMarykModel.scan()).collect { modelInitial.complete(Unit) }
+            }
+            withTimeout(10_000.milliseconds) { logInitial1.await() }
+            withTimeout(10_000.milliseconds) { logInitial2.await() }
+            withTimeout(10_000.milliseconds) { modelInitial.await() }
 
-            store.closeAllListeners()
-            delay(50.milliseconds)
+            try {
+                waitForStat("multi listener registration") {
+                    val stats = store.getClusterUpdateLogStats()
+                    stats != null &&
+                        (stats.activeListenerCountsByModelId[4u] ?: 0) == 2 &&
+                        (stats.activeListenerCountsByModelId[1u] ?: 0) == 1
+                }
 
-            val afterClose = store.getClusterUpdateLogStats()
-            assertNotNull(afterClose)
-            assertEquals(0, afterClose.activeListenerCountsByModelId[4u] ?: 0)
-            assertEquals(0, afterClose.activeListenerCountsByModelId[1u] ?: 0)
+                store.closeAllListeners()
+                delay(50.milliseconds)
+
+                val afterClose = store.getClusterUpdateLogStats()
+                assertNotNull(afterClose)
+                assertEquals(0, afterClose.activeListenerCountsByModelId[4u] ?: 0)
+                assertEquals(0, afterClose.activeListenerCountsByModelId[1u] ?: 0)
+            } finally {
+                logCollector1.cancelAndJoin()
+                logCollector2.cancelAndJoin()
+                modelCollector.cancelAndJoin()
+            }
         } finally {
             store.close()
         }

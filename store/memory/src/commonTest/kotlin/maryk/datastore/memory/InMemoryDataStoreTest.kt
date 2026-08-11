@@ -1515,12 +1515,18 @@ class InMemoryDataStoreTest {
         val key = SimpleMarykModel.key(ByteArray(16))
         dataStore.execute(SimpleMarykModel.add(key to SimpleMarykModel.create { value with "flow close" }))
 
-        val flow = dataStore.executeFlow(SimpleMarykModel.getUpdates(key))
+        val flow = dataStore.executeFlow(SimpleMarykModel.get(key))
+        val responses = Channel<IsUpdateResponse<SimpleMarykModel>>(1)
         val collector = launch {
-            flow.collect()
+            flow.collect(responses::send)
         }
 
         try {
+            assertIs<InitialValuesUpdate<SimpleMarykModel>>(
+                withContext(Dispatchers.Default.limitedParallelism(1)) {
+                    withTimeout(1.seconds) { responses.receive() }
+                }
+            )
             dataStore.close()
             collector.cancelAndJoin()
         } finally {

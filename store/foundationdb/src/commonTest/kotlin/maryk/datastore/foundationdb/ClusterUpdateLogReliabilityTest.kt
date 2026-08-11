@@ -2,8 +2,13 @@ package maryk.datastore.foundationdb
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
 import maryk.core.properties.types.Bytes
@@ -422,7 +427,13 @@ class ClusterUpdateLogReliabilityTest {
 
         try {
             // Activate model listener so tail loop reads this model/shards.
-            reader.executeFlow(Log.scanUpdates(fromVersion = 0uL))
+            val initialReceived = CompletableDeferred<Unit>()
+            val collector = launch {
+                reader.executeFlow(Log.scanUpdates(fromVersion = 0uL)).collect {
+                    initialReceived.complete(Unit)
+                }
+            }
+            withTimeout(10_000.milliseconds) { initialReceived.await() }
 
             waitForReliabilityStat("reader listener registered") {
                 val stats = reader.getClusterUpdateLogStats()
@@ -442,6 +453,7 @@ class ClusterUpdateLogReliabilityTest {
                 stats != null && stats.observedClusterHlc >= valid && stats.decodedUpdates > 0
             }
         } finally {
+            reader.closeAllListeners()
             reader.close()
             writer.close()
         }
@@ -511,7 +523,13 @@ class ClusterUpdateLogReliabilityTest {
         )
 
         try {
-            reader.executeFlow(Log.scanUpdates(fromVersion = 0uL))
+            val firstInitial = CompletableDeferred<Unit>()
+            val firstCollector = launch {
+                reader.executeFlow(Log.scanUpdates(fromVersion = 0uL)).collect {
+                    firstInitial.complete(Unit)
+                }
+            }
+            withTimeout(10_000.milliseconds) { firstInitial.await() }
             waitForReliabilityStat("reader listener active") {
                 val stats = reader.getClusterUpdateLogStats()
                 stats != null && (stats.activeListenerCountsByModelId[4u] ?: 0) > 0
@@ -523,6 +541,7 @@ class ClusterUpdateLogReliabilityTest {
                 stats != null && stats.observedClusterHlc >= first && stats.decodedUpdates > 0
             }
             reader.close()
+            firstCollector.cancelAndJoin()
 
             // Simulate restart/rollback of consumer progress to force replay in retention window.
             reader = FoundationDBDataStore.open(
@@ -555,13 +574,20 @@ class ClusterUpdateLogReliabilityTest {
                     clusterUpdateLogConsumerId = readerConsumerId,
                 )
             )
-            reader.executeFlow(Log.scanUpdates(fromVersion = 0uL))
+            val restartedInitial = CompletableDeferred<Unit>()
+            val restartedCollector = launch {
+                reader.executeFlow(Log.scanUpdates(fromVersion = 0uL)).collect {
+                    restartedInitial.complete(Unit)
+                }
+            }
+            withTimeout(10_000.milliseconds) { restartedInitial.await() }
 
             val second = writer.addLog("dup-second", 2)
             waitForReliabilityStat("decoded updates reflect replay + new update") {
                 val stats = reader.getClusterUpdateLogStats()
                 stats != null && stats.observedClusterHlc >= second && stats.decodedUpdates >= 2
             }
+            restartedCollector.cancelAndJoin()
         } finally {
             reader.close()
             writer.close()

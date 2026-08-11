@@ -4,8 +4,6 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -137,17 +135,23 @@ class FoundationDBDataStoreTest {
                 releaseEmission.complete(Unit)
                 assertIs<AddSuccess<SimpleMarykModel>>(firstAdd.await().statuses.single())
 
-                val flow = dataStore.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
-                dataStore.execute(
-                    SimpleMarykModel.add(SimpleMarykModel.create { value with "happy after snapshot" })
-                )
+                val updates = dataStore.executeFlow(
+                    SimpleMarykModel.scan(allowTableScan = true)
+                ).produceIn(this)
+                try {
+                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(withTimeout(10_000) { updates.receive() }).also {
+                        assertEquals("happy initial snapshot", it.values.single().values { value })
+                    }
 
-                val responses = withTimeout(10_000) { flow.take(2).toList() }
-                assertIs<InitialValuesUpdate<SimpleMarykModel>>(responses[0]).also {
-                    assertEquals("happy initial snapshot", it.values.single().values { value })
-                }
-                assertIs<AdditionUpdate<SimpleMarykModel>>(responses[1]).also {
-                    assertEquals("happy after snapshot", it.values { value })
+                    dataStore.execute(
+                        SimpleMarykModel.add(SimpleMarykModel.create { value with "happy after snapshot" })
+                    )
+
+                    assertIs<AdditionUpdate<SimpleMarykModel>>(withTimeout(10_000) { updates.receive() }).also {
+                        assertEquals("happy after snapshot", it.values { value })
+                    }
+                } finally {
+                    updates.cancel()
                 }
             } finally {
                 dataStore.beforeUpdateEmission.value = null

@@ -207,8 +207,9 @@ class RequestExecutionTest {
             withContext(Dispatchers.Default) {
                 val store = FlowRegistrationTestStore()
                 try {
-                    val flowResult = async {
-                        store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                    val flow = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                    val responses = async {
+                        flow.take(2).toList()
                     }
                     store.initialReadStarted.await()
 
@@ -216,15 +217,13 @@ class RequestExecutionTest {
                     store.mutationPublished.await()
 
                     store.releaseInitialRead.complete(Unit)
-                    val responses = withTimeout(2.seconds) {
-                        flowResult.await().take(2).toList()
-                    }
+                    val updates = withTimeout(2.seconds) { responses.await() }
                     mutation.await()
 
-                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(responses[0]).also {
+                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(updates[0]).also {
                         assertTrue(it.values.isEmpty())
                     }
-                    assertIs<AdditionUpdate<SimpleMarykModel>>(responses[1]).also {
+                    assertIs<AdditionUpdate<SimpleMarykModel>>(updates[1]).also {
                         assertEquals("added during registration", it.values { value })
                     }
                 } finally {
@@ -244,20 +243,21 @@ class RequestExecutionTest {
                     emitSnapshotUpdateBeforeResponse = true
                 }
                 try {
-                    val flowResult = async {
-                        store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                    val flow = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                    val responses = async {
+                        flow.take(2).toList()
                     }
                     store.initialReadStarted.await()
                     store.releaseInitialRead.complete(Unit)
-                    val flow = flowResult.await()
+                    store.listenerAdded.await()
 
                     store.enqueueMutation("after snapshot").await()
-                    val responses = withTimeout(2.seconds) { flow.take(2).toList() }
+                    val updates = withTimeout(2.seconds) { responses.await() }
 
-                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(responses[0]).also {
+                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(updates[0]).also {
                         assertEquals("already in snapshot", it.values.single().values { value })
                     }
-                    assertIs<AdditionUpdate<SimpleMarykModel>>(responses[1]).also {
+                    assertIs<AdditionUpdate<SimpleMarykModel>>(updates[1]).also {
                         assertEquals(2uL, it.version)
                         assertEquals("after snapshot", it.values { value })
                     }
@@ -276,15 +276,15 @@ class RequestExecutionTest {
                 val store = FlowRegistrationTestStore()
                 try {
                     val queuedMutation = store.enqueueMutation("before snapshot")
-                    val flowResult = async {
-                        store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                    val flow = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                    val initial = async {
+                        flow.take(1).single()
                     }
                     queuedMutation.await()
                     store.initialReadStarted.await()
                     store.releaseInitialRead.complete(Unit)
 
-                    val initial = flowResult.await().take(1).single()
-                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(initial).also {
+                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(initial.await()).also {
                         assertEquals("before snapshot", it.values.single().values { value })
                     }
                     store.listenerRemoved.await()
@@ -304,15 +304,15 @@ class RequestExecutionTest {
                 val mutations = List(UPDATE_LISTENER_MAILBOX_CAPACITY) { index ->
                     store.enqueueMutation("queued mutation $index")
                 }
-                val flowResult = async {
-                    store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                val flow = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                val initial = async {
+                    flow.take(1).single()
                 }
                 mutations.forEach { it.await() }
                 store.initialReadStarted.await()
                 store.releaseInitialRead.complete(Unit)
 
-                val initial = withTimeout(2.seconds) { flowResult.await().take(1).single() }
-                assertIs<InitialValuesUpdate<SimpleMarykModel>>(initial).also {
+                assertIs<InitialValuesUpdate<SimpleMarykModel>>(withTimeout(2.seconds) { initial.await() }).also {
                     assertEquals("queued mutation ${UPDATE_LISTENER_MAILBOX_CAPACITY - 1}", it.values.single().values { value })
                 }
                 store.listenerRemoved.await()
@@ -330,16 +330,17 @@ class RequestExecutionTest {
                 val store = FlowRegistrationTestStore().apply { pauseActivation = true }
                 try {
                     supervisorScope {
-                        val flowResult = async {
-                            store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                        val flow = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                        val collector = launch {
+                            flow.collect()
                         }
                         store.initialReadStarted.await()
                         store.releaseInitialRead.complete(Unit)
                         store.activationStarted.await()
 
-                        flowResult.cancel()
+                        collector.cancel()
                         store.releaseActivation.complete(Unit)
-                        flowResult.join()
+                        collector.join()
                         store.cleanupAfterActivation.await()
                     }
                 } finally {
@@ -358,8 +359,9 @@ class RequestExecutionTest {
                 val store = FlowRegistrationTestStore()
                 try {
                     supervisorScope {
-                        val flowResult = async {
-                            store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                        val flow = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true))
+                        val collector = async {
+                            flow.collect()
                         }
                         store.initialReadStarted.await()
 
@@ -369,7 +371,7 @@ class RequestExecutionTest {
                         store.releaseInitialRead.complete(Unit)
 
                         assertFailsWith<IllegalStateException> {
-                            withTimeout(2.seconds) { flowResult.await() }
+                            withTimeout(2.seconds) { collector.await() }
                         }
                     }
                     assertFalse(store.listenerRemoved.isCompleted)
@@ -394,6 +396,7 @@ private class FlowRegistrationTestStore : AbstractDataStore(
     val initialReadStarted = CompletableDeferred<Unit>()
     val releaseInitialRead = CompletableDeferred<Unit>()
     val mutationPublished = CompletableDeferred<Unit>()
+    val listenerAdded = CompletableDeferred<Unit>()
     val listenerRemoved = CompletableDeferred<Unit>()
     val activationStarted = CompletableDeferred<Unit>()
     val releaseActivation = CompletableDeferred<Unit>()
@@ -495,6 +498,10 @@ private class FlowRegistrationTestStore : AbstractDataStore(
 
     override fun onUpdateListenerRemoved(dataModelId: UInt) {
         listenerRemoved.complete(Unit)
+    }
+
+    override fun onUpdateListenerAdded(dataModelId: UInt) {
+        listenerAdded.complete(Unit)
     }
 
     override suspend fun onUpdateListenerActivatedBeforeCompletion(dataModelId: UInt) {

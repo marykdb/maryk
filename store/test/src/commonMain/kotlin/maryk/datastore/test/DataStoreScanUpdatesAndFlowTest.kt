@@ -110,6 +110,7 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeLimitedScanValuesAsFlowIgnoresAddAfterWindow" to ::executeLimitedScanValuesAsFlowIgnoresAddAfterWindow,
         "executeScanValuesAsFlowRequest" to ::executeScanValuesAsFlowRequest,
         "uncollectedFlowDoesNotBlockWritesOrLaterListeners" to ::uncollectedFlowDoesNotBlockWritesOrLaterListeners,
+        "returnedFlowGivesConcurrentCollectorsIndependentListeners" to ::returnedFlowGivesConcurrentCollectorsIndependentListeners,
         "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill" to ::executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
         "executeScanUpdatesAsFlowRequest" to ::executeScanUpdatesAsFlowRequest,
@@ -180,6 +181,65 @@ class DataStoreScanUpdatesAndFlowTest(
                 dataStore.executeFlow(TestMarykModel.scan(allowTableScan = true))
                 dataStore.closeAllListeners()
             }
+        }
+    }
+
+    private suspend fun returnedFlowGivesConcurrentCollectorsIndependentListeners() = coroutineScope {
+        val flow = dataStore.executeFlow(TestMarykModel.scan(allowTableScan = true))
+        val firstResponses = Channel<IsUpdateResponse<TestMarykModel>>(3)
+        val secondResponses = Channel<IsUpdateResponse<TestMarykModel>>(3)
+        val firstCollector = launch { flow.collect(firstResponses::send) }
+        val secondCollector = launch { flow.collect(secondResponses::send) }
+
+        suspend fun receive(responseChannel: Channel<IsUpdateResponse<TestMarykModel>>) =
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5.seconds) { responseChannel.receive() }
+            }
+
+        try {
+            assertIs<InitialValuesUpdate<*>>(receive(firstResponses))
+            assertIs<InitialValuesUpdate<*>>(receive(secondResponses))
+
+            val firstLiveValue = TestMarykModel.create {
+                string with "ha live collector 1"
+                int with 0
+                uint with 1_100_000u
+                bool with true
+                double with 0.0
+                dateTime with LocalDateTime(2026, 7, 9, 0, 0)
+            }
+            dataStore.execute(TestMarykModel.add(firstLiveValue)).also {
+                testKeys += assertStatusIs<AddSuccess<TestMarykModel>>(it.statuses.single()).key
+            }
+
+            assertIs<AdditionUpdate<*>>(receive(firstResponses)).also {
+                assertEquals(firstLiveValue, it.values)
+            }
+            assertIs<AdditionUpdate<*>>(receive(secondResponses)).also {
+                assertEquals(firstLiveValue, it.values)
+            }
+
+            firstCollector.cancelAndJoin()
+
+            val secondLiveValue = TestMarykModel.create {
+                string with "ha live collector 2"
+                int with 0
+                uint with 1_100_001u
+                bool with true
+                double with 0.0
+                dateTime with LocalDateTime(2026, 7, 9, 0, 0)
+            }
+            dataStore.execute(TestMarykModel.add(secondLiveValue)).also {
+                testKeys += assertStatusIs<AddSuccess<TestMarykModel>>(it.statuses.single()).key
+            }
+
+            assertIs<AdditionUpdate<*>>(receive(secondResponses)).also {
+                assertEquals(secondLiveValue, it.values)
+            }
+        } finally {
+            firstCollector.cancelAndJoin()
+            secondCollector.cancelAndJoin()
+            dataStore.closeAllListeners()
         }
     }
 

@@ -17,10 +17,15 @@ import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType.END_GROUP
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WireType.START_GROUP
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
+import maryk.core.query.filters.FilterType
+import maryk.core.query.filters.mapOfFilterDefinitions
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
 import maryk.test.models.EmbeddedMarykModel
@@ -51,6 +56,13 @@ internal class MultiTypeDefinitionTest {
         typeEnum = MarykTypeEnum,
         default = T1( "test"),
     )
+
+    private val nestedDef = InternalMultiTypeDefinition(
+        typeEnum = FilterType,
+        definitionMap = mapOfFilterDefinitions
+    )
+
+    private val nestedListDef = ListDefinition(valueDefinition = nestedDef)
 
     private val defWrapper = MultiTypeDefinitionWrapper<MarykTypeEnum<out Any>, Any, Any, DefinitionsConversionContext, Any>(
         1u, "multi", def
@@ -178,6 +190,53 @@ internal class MultiTypeDefinitionTest {
 
         assertFailsWith<ParseException> {
             def.readTransportBytes(bc.size, bc::read, context, null)
+        }
+    }
+
+    @Test
+    fun rejectsSubtypeWireTypesThatDoNotMatchTheirDefinitions() {
+        val numberWithLengthDelimitedWireType = ByteCollector().apply {
+            reserve(3)
+            ProtoBuf.writeKey(T2.index, LENGTH_DELIMITED, ::write)
+            write(1)
+            write(0)
+        }
+        val stringWithVarIntWireType = ByteCollector().apply {
+            reserve(2)
+            ProtoBuf.writeKey(T1.index, VAR_INT, ::write)
+            write(0)
+        }
+
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(numberWithLengthDelimitedWireType.size, numberWithLengthDelimitedWireType::read, context, null)
+        }
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(stringWithVarIntWireType.size, stringWithVarIntWireType::read, context, null)
+        }
+
+        val groupedString = ByteCollector().apply {
+            reserve(2)
+            ProtoBuf.writeKey(T1.index, START_GROUP, ::write)
+            ProtoBuf.writeKey(T1.index, END_GROUP, ::write)
+        }
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(groupedString.size, groupedString::read, context, null)
+        }
+    }
+
+    @Test
+    fun rejectsNonDelimitedNestedMultiTypeWireTypes() {
+        assertTrue(nestedDef.acceptsProtoBufWireType(LENGTH_DELIMITED, null))
+        assertFalse(nestedDef.acceptsProtoBufWireType(VAR_INT, null))
+        assertFalse(nestedListDef.acceptsProtoBufWireType(VAR_INT, null))
+
+        val nestedWithVarIntWireType = ByteCollector().apply {
+            reserve(2)
+            ProtoBuf.writeKey(FilterType.And.index, VAR_INT, ::write)
+            write(0)
+        }
+        assertFailsWith<ParseException> {
+            nestedDef.readTransportBytes(nestedWithVarIntWireType.size, nestedWithVarIntWireType::read)
         }
     }
 

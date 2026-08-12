@@ -19,6 +19,7 @@ jobs:
     name: Verify release provenance
     runs-on: ubuntu-latest
     permissions:
+      actions: read
       contents: read
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
@@ -27,7 +28,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           ref: ${{ env.RELEASE_TAG }}
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Verify published release and version
         shell: bash
@@ -46,6 +47,7 @@ jobs:
             echo "Checked out $ACTUAL_SHA, but tag $TAG resolves to $TAG_SHA" >&2
             exit 1
           fi
+          EXPECTED_SHA="$ACTUAL_SHA" bash .github/scripts/verify-build-provenance.sh
           ./gradlew :app:verifyDistributionVersion -PreleaseTag="$TAG" --no-daemon
 
   distributions:

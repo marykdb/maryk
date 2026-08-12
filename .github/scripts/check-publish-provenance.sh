@@ -4,6 +4,7 @@ set -euo pipefail
 publish_workflow=.github/workflows/publish.yml
 release_workflow=.github/workflows/release-installers.yml
 app_build=app/build.gradle.kts
+build_verifier=.github/scripts/verify-build-provenance.sh
 
 check_required() {
   local workflow=$1
@@ -16,14 +17,29 @@ check_required() {
   done
 }
 
-check_required "$publish_workflow" 'github.event.workflow_run.head_sha' 'ref: ${{ env.EXPECTED_REF }}' 'git rev-parse "${EXPECTED_REF}^{commit}"' 'publish-provenance.txt'
+check_required "$build_verifier" \
+  'git merge-base --is-ancestor "$actual_sha" origin/main' \
+  'actions/workflows/build.yml/runs?branch=main&event=push&status=completed&head_sha=$actual_sha' \
+  'select(.conclusion == "success")' \
+  ': "${GH_TOKEN:?GH_TOKEN must be set}"' \
+  'MARYK_BUILD_RUN_ID'
+
+check_required "$publish_workflow" \
+  'github.event.workflow_run.head_sha' \
+  'ref: ${{ env.EXPECTED_REF }}' \
+  'actions: read' \
+  'GH_TOKEN: ${{ github.token }}' \
+  'bash .github/scripts/verify-build-provenance.sh' \
+  'build_run_id=$MARYK_BUILD_RUN_ID'
 
 check_required "$release_workflow" \
   'types: [published]' \
   'description: Existing release tag to build and attach' \
   'ref: ${{ env.RELEASE_TAG }}' \
+  'actions: read' \
   'is_draft=$(gh release view "$TAG" --json isDraft --jq '\''.isDraft'\'')' \
   'if [[ "$is_draft" != "false" ]]; then' \
+  'EXPECTED_SHA="$ACTUAL_SHA" bash .github/scripts/verify-build-provenance.sh' \
   ':app:verifyDistributionVersion' \
   '-PreleaseTag="$RELEASE_TAG"' \
   'Smoke test packaged macOS app' \

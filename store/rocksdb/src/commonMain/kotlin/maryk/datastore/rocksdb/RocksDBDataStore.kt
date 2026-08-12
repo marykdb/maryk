@@ -13,6 +13,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarByteLength
+import maryk.core.extensions.bytes.decodeVarUInt
 import maryk.core.extensions.bytes.toByteArray
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValuesDataModel
@@ -137,8 +138,10 @@ import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.DBOptions
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.OptimisticTransactionDB
+import maryk.rocksdb.Options
 import maryk.rocksdb.WriteOptions
 import maryk.rocksdb.defaultColumnFamily
+import maryk.rocksdb.listColumnFamilies
 import maryk.rocksdb.openOptimisticTransactionDB
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.recyclableByteArray
@@ -164,6 +167,7 @@ class RocksDBDataStore private constructor(
     readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
 ), MigrationAdmin, SnapshotVersionProvider {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
+    private var retainedColumnFamilyHandles: List<ColumnFamilyHandle> = emptyList()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
     private val resourcesClosed = atomic(false)
@@ -222,6 +226,7 @@ class RocksDBDataStore private constructor(
         for ((index, db) in dataModelsById) {
             createColumnFamilyHandles(descriptors, index, db)
         }
+        addRetainedColumnFamilyDescriptors(descriptors)
 
         val handles = mutableListOf<ColumnFamilyHandle>()
         this.db = try {
@@ -265,6 +270,7 @@ class RocksDBDataStore private constructor(
                     )
                 }
             }
+            retainedColumnFamilyHandles = handles.drop(handleIndex)
 
             validateStoredIndexKeyFormat()
         } catch (e: Throwable) {
@@ -796,6 +802,48 @@ class RocksDBDataStore private constructor(
         }
     }
 
+    /**
+     * RocksDB requires descriptors for every persisted column family at open time. Keep handles for
+     * models or history modes no longer configured so callers can explicitly migrate or remove them.
+     */
+    private fun addRetainedColumnFamilyDescriptors(descriptors: MutableList<ColumnFamilyDescriptor>) {
+        if (storeMeta.models.isEmpty()) return
+
+        val configuredNames = buildList {
+            add(defaultColumnFamily)
+            dataModelsById.keys.forEach { modelId ->
+                TableType.entries.forEach { tableType ->
+                    if (tableType != UpdateHistory || keepUpdateHistoryIndex) {
+                        if (tableType !in setOf(HistoricTable, HistoricIndex, HistoricUnique) || keepAllVersions) {
+                            add(tableType.getName(modelId))
+                        }
+                    }
+                }
+            }
+        }
+        val options = Options()
+        val persistedNames = try {
+            listColumnFamilies(options, storePath)
+        } finally {
+            options.close()
+        }
+
+        persistedNames
+            .filter { persistedName -> configuredNames.none { it.contentEquals(persistedName) } }
+            .forEach { name ->
+                val tableType = name.firstOrNull()?.let { TableType.entries.firstOrNull { type -> type.byte == it } }
+                val modelId = name.decodeVarUInt(startIndex = 1)
+                val keySize = modelId?.let { storeMeta.models[it]?.keySize }
+                val columnFamilyOptions = when (tableType) {
+                    HistoricTable, HistoricIndex, HistoricUnique -> blockCache.createColumnFamilyOptions {
+                        setComparator(blockCache.createVersionedComparator(keySize ?: 0))
+                    }
+                    else -> blockCache.createColumnFamilyOptions()
+                }
+                descriptors += ColumnFamilyDescriptor(name, columnFamilyOptions)
+            }
+    }
+
     override suspend fun close() {
         cancelPendingMigrations("Datastore closing")
 
@@ -810,6 +858,7 @@ class RocksDBDataStore private constructor(
         columnFamilyHandlesByDataModelIndex.values.forEach {
             it.close()
         }
+        retainedColumnFamilyHandles.forEach { it.close() }
         db.close()
         blockCache.close()
         defaultWriteOptions.close()

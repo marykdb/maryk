@@ -45,6 +45,46 @@ import kotlin.test.assertTrue
 
 class RocksDBDataStoreTest {
     @Test
+    fun reopenKeepsColumnFamiliesForRemovedModels() = runTest {
+        val folder = createTestDBFolder("removed-model-column-families")
+        RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+        ).close()
+
+        try {
+            RocksDBDataStore.open(
+                relativePath = folder,
+                dataModelsById = mapOf(1u to TestMarykModel),
+            ).close()
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun reopenKeepsColumnFamiliesForDisabledHistory() = runTest {
+        val folder = createTestDBFolder("disabled-history-column-families")
+        RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = mapOf(1u to TestMarykModel),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+        ).close()
+
+        try {
+            RocksDBDataStore.open(
+                relativePath = folder,
+                dataModelsById = mapOf(1u to TestMarykModel),
+                keepAllVersions = false,
+                keepUpdateHistoryIndex = false,
+            ).close()
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
     fun historicalListShiftPreservesPayload() = runTest {
         val folder = createTestDBFolder("historical-list-shift")
         val dataStore = RocksDBDataStore.open(

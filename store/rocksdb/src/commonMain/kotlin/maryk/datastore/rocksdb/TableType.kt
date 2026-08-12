@@ -17,13 +17,16 @@ internal enum class TableType(
     HistoricUnique(8),
     UpdateHistory(9);
 
-    fun getDescriptor(tableIndex: UInt, nameSize: Int, options: ColumnFamilyOptions? = null): ColumnFamilyDescriptor {
-        var index = 0
-        val name = ByteArray(nameSize)
-        val writer: (Byte) -> Unit = { name[index++] = it }
+    fun getName(tableIndex: UInt): ByteArray {
+        val name = ByteArray(6)
+        name[0] = byte
+        var index = 1
+        tableIndex.writeVarBytes { name[index++] = it }
+        return name.copyOf(index)
+    }
 
-        writer(this.byte)
-        tableIndex.writeVarBytes(writer)
+    fun getDescriptor(tableIndex: UInt, nameSize: Int, options: ColumnFamilyOptions? = null): ColumnFamilyDescriptor {
+        val name = getName(tableIndex)
 
         return options?.let {
             ColumnFamilyDescriptor(name, it)

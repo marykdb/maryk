@@ -83,7 +83,9 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                             mapUniqueValueByteCandidates(
                                 dbIndex,
                                 reference,
-                                plainValue.copyOfRange(offset, offset + length),
+                                plainValue,
+                                offset,
+                                length,
                             )
                         }
 

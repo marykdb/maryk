@@ -332,6 +332,84 @@ class RocksDBSensitivePropertiesTest {
     }
 
     @Test
+    fun deletingSensitiveUniqueValueDerivesTokenFromDecryptedValueWithoutCopying() = runTest {
+        val folder = createTestDBFolder("sensitive-rocks-unique-delete-range")
+        val encryptionProvider = XorWithTokenFieldEncryptionProvider()
+        try {
+            val store = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = false,
+                dataModelsById = mapOf(2u to SensitiveUniqueRocksModel),
+                fieldEncryptionProvider = encryptionProvider,
+            )
+            try {
+                val key = assertIs<AddSuccess<SensitiveUniqueRocksModel>>(
+                    store.execute(
+                        SensitiveUniqueRocksModel.add(
+                            SensitiveUniqueRocksModel(Bytes(ByteArray(16) { 1 }), "secret")
+                        )
+                    ).statuses.single()
+                ).key
+                encryptionProvider.clearTracking()
+
+                assertIs<DeleteSuccess<SensitiveUniqueRocksModel>>(
+                    store.execute(SensitiveUniqueRocksModel.delete(key)).statuses.single()
+                )
+
+                assertTrue(encryptionProvider.decryptedValues.isNotEmpty())
+                assertTrue(encryptionProvider.tokenInputs.any { tokenInput ->
+                    encryptionProvider.decryptedValues.any { decryptedValue -> decryptedValue === tokenInput }
+                })
+            } finally {
+                store.close()
+            }
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun sensitiveUniqueCandidateMappingPreservesProvidedRange() = runTest {
+        val folder = createTestDBFolder("sensitive-rocks-unique-candidate-range")
+        val encryptionProvider = XorWithTokenFieldEncryptionProvider()
+        try {
+            val store = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = false,
+                dataModelsById = mapOf(2u to SensitiveUniqueRocksModel),
+                fieldEncryptionProvider = encryptionProvider,
+            )
+            try {
+                val reference = SensitiveUniqueRocksModel.secret.ref().toStorageByteArray()
+                val value = SensitiveUniqueRocksModel.secret.definition.toStorageBytes(
+                    "secret",
+                    TypeIndicator.NoTypeIndicator.byte,
+                )
+                val paddedValue = byteArrayOf(1, 2) + value + byteArrayOf(3)
+                val directToken = store.mapUniqueValueByteCandidates(2u, reference, value).single()
+                encryptionProvider.clearTracking()
+
+                val rangedToken = store.mapUniqueValueByteCandidates(
+                    2u,
+                    reference,
+                    paddedValue,
+                    offset = 2,
+                    length = value.size,
+                ).single()
+
+                assertContentEquals(directToken, rangedToken)
+                assertEquals(listOf(2), encryptionProvider.tokenOffsets)
+                assertEquals(listOf(value.size), encryptionProvider.tokenLengths)
+                assertTrue(encryptionProvider.tokenInputs.single() === paddedValue)
+            } finally {
+                store.close()
+            }
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
     fun softDeleteRemovesRetainedSensitiveUniqueRotationToken() = runTest {
         val folder = createTestDBFolder("sensitive-rocks-unique-rotation")
         try {
@@ -494,11 +572,20 @@ private class XorWithTokenFieldEncryptionProvider :
     ContextualFieldEncryptionProvider,
     SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
-    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    val decryptedValues = mutableListOf<ByteArray>()
+    val tokenInputs = mutableListOf<ByteArray>()
+    val tokenOffsets = mutableListOf<Int>()
+    val tokenLengths = mutableListOf<Int>()
+
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length).also(decryptedValues::add)
     override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = encrypt(value, offset, length)
     override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = decrypt(value, offset, length)
 
     override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray, offset: Int, length: Int): ByteArray {
+        tokenInputs += value
+        tokenOffsets += offset
+        tokenLengths += length
         val token = ByteArray(16)
         var i = 0
         for (b in reference) {
@@ -512,6 +599,13 @@ private class XorWithTokenFieldEncryptionProvider :
         }
         token[0] = (token[0].toInt() xor modelId.toInt()).toByte()
         return token
+    }
+
+    fun clearTracking() {
+        decryptedValues.clear()
+        tokenInputs.clear()
+        tokenOffsets.clear()
+        tokenLengths.clear()
     }
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =

@@ -317,6 +317,44 @@ class FieldEncryptionTest {
     }
 
     @Test
+    fun deletingSensitiveUniqueValuePassesDecryptedRangeToTokenProvider() {
+        runBlocking {
+            val encryptionProvider = XorWithTokenFieldEncryptionProvider()
+            val store = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = listOf("maryk", "test", "field-encryption-unique-delete-range", Uuid.random().toString()),
+                dataModelsById = mapOf(904u to SensitiveUniqueRecord),
+                keepAllVersions = false,
+                fieldEncryptionProvider = encryptionProvider,
+            )
+            try {
+                val key = assertIs<AddSuccess<SensitiveUniqueRecord>>(
+                    store.execute(
+                        SensitiveUniqueRecord.add(SensitiveUniqueRecord(Bytes(ByteArray(16) { 1 }), "secret"))
+                    ).statuses.single()
+                ).key
+                encryptionProvider.clearTracking()
+
+                assertIs<DeleteSuccess<SensitiveUniqueRecord>>(
+                    store.execute(SensitiveUniqueRecord.delete(key)).statuses.single()
+                )
+
+                assertTrue(encryptionProvider.decryptedValues.isNotEmpty())
+                assertTrue(encryptionProvider.tokenInputs.any { tokenInput ->
+                    encryptionProvider.decryptedValues.any { decryptedValue -> decryptedValue === tokenInput }
+                })
+                assertEquals(listOf(0), encryptionProvider.tokenOffsets)
+                assertEquals(
+                    listOf(SensitiveUniqueRecord.secret.definition.toStorageBytes("secret", TypeIndicator.NoTypeIndicator.byte).size),
+                    encryptionProvider.tokenLengths,
+                )
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
     fun softDeleteRemovesRetainedSensitiveUniqueRotationToken() {
         runBlocking {
             val directoryPath = listOf("maryk", "test", "field-encryption-unique-rotation", Uuid.random().toString())
@@ -542,12 +580,21 @@ private class XorWithTokenFieldEncryptionProvider :
     ContextualFieldEncryptionProvider,
     SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
-    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    val decryptedValues = mutableListOf<ByteArray>()
+    val tokenInputs = mutableListOf<ByteArray>()
+    val tokenOffsets = mutableListOf<Int>()
+    val tokenLengths = mutableListOf<Int>()
+
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length).also(decryptedValues::add)
 
     override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
 
     override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray, offset: Int, length: Int): ByteArray {
+        tokenInputs += value
+        tokenOffsets += offset
+        tokenLengths += length
         val token = ByteArray(16)
         var i = 0
         for (b in reference) {
@@ -561,6 +608,13 @@ private class XorWithTokenFieldEncryptionProvider :
         }
         token[0] = (token[0].toInt() xor modelId.toInt()).toByte()
         return token
+    }
+
+    fun clearTracking() {
+        decryptedValues.clear()
+        tokenInputs.clear()
+        tokenOffsets.clear()
+        tokenLengths.clear()
     }
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =

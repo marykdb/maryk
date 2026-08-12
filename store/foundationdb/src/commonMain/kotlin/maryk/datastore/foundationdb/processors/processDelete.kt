@@ -152,7 +152,9 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                         mapUniqueValueByteCandidates(
                             dbIndex,
                             reference,
-                            plainValue.copyOfRange(offset, offset + length),
+                            plainValue,
+                            offset,
+                            length,
                         )
                     }
                     for (uniqueValue in uniqueValues) {
@@ -342,7 +344,9 @@ private fun FoundationDBDataStore.collectHistoricUniqueReferencesForHistoricalVa
             mapUniqueValueByteCandidates(
                 dbIndex,
                 reference,
-                value.copyOfRange(offset, offset + length),
+                value,
+                offset,
+                length,
             )
         }
         for (uniqueValue in uniqueValues) {

@@ -143,11 +143,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
                 }
             }
 
-            byteStore.writeBatch(operations)
+            val update = Update.Deletion(request.dataModel, key, version.timestamp, request.hardDelete)
+            commitIndexedDbUpdate(operations, update)
             statuses += DeleteSuccess(version.timestamp)
-            emitIndexedDbUpdate(
-                Update.Deletion(request.dataModel, key, version.timestamp, request.hardDelete)
-            )
         }
     }
 

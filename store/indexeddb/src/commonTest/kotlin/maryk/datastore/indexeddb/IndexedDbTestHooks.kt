@@ -21,6 +21,13 @@ internal expect suspend fun <T> withThrowingWebLocksPlatform(block: suspend () -
 
 internal expect fun webLocksAvailableForTests(): Boolean
 
+internal expect suspend fun <T> withFixedWallClockForTests(
+    epochMillis: Double,
+    block: suspend () -> T,
+): T
+
+internal expect suspend fun <T> withoutBroadcastChannelForTests(block: suspend () -> T): T
+
 internal expect fun setLeaseAcquisitionHandoffHookForTests(hook: (() -> Unit)?)
 
 internal expect fun setOpenResumeHookForTests(hook: (() -> Unit)?)

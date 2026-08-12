@@ -157,6 +157,13 @@ internal suspend fun IsDataStore.startProcessUpdateFlow(
                     registrations.forEach { it.join() }
                     update.completion?.complete(Unit)
                 }
+                is FailAllUpdateListenersAction -> {
+                    val registrations = updateListeners.values.flatten()
+                    updateListeners.clear()
+                    registrations.forEach { it.cancel(update.cause) }
+                    registrations.forEach { it.join() }
+                    update.completion?.complete(Unit)
+                }
                 else -> throw RuntimeException("Unknown update listener action: $update")
             }
         }
@@ -223,9 +230,9 @@ private class ActiveListenerRegistration(
     override fun matches(listener: Any) = originalListener === listener
 
     override fun cancel(cause: Throwable?) {
-        job.cancel()
-        updates.close()
         listener.close(cause)
+        updates.close(cause)
+        if (cause == null) job.cancel()
     }
 
     override suspend fun join() = job.join()

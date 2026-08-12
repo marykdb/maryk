@@ -43,6 +43,18 @@ interface IndexedDbByteStore {
         limit: UInt = UInt.MAX_VALUE,
     ): List<Pair<ByteArray, ByteArray>>
 
+    /** Register a lightweight wake-up for commits made by another browser context. */
+    fun setExternalCommitListener(listener: (() -> Unit)?) = Unit
+
+    /** Wake other browser contexts after the durable commit journal was advanced. */
+    fun signalCommittedUpdate() = Unit
+
+    /** Stable random identity for this open browser context. */
+    fun contextId(): String = ""
+
+    /** Browser wall clock used only for expiring abandoned journal consumers. */
+    fun currentEpochMillis(): ULong = 0uL
+
     suspend fun close()
 }
 

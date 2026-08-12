@@ -115,13 +115,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                 for ((rowKey, encodedValue) in tableRows) {
                     operations.put(tableStoreName, rowKey, encodedValue)
                 }
+                val currentSnapshot = encodeCurrentSnapshot(
+                    IndexedDbRecordMeta(version.timestamp, version.timestamp, false),
+                    tableRows.map { (rowKey, rowValue) -> tableQualifierFromRowKey(rowKey, key.bytes) to rowValue },
+                )
                 operations.put(
                     keyStoreName,
                     key.bytes,
-                    encodeCurrentSnapshot(
-                        IndexedDbRecordMeta(version.timestamp, version.timestamp, false),
-                        tableRows.map { (rowKey, rowValue) -> tableQualifierFromRowKey(rowKey, key.bytes) to rowValue },
-                    )
+                    currentSnapshot,
                 )
                 for (indexRow in indexRows) {
                     operations.put(indexStoreName, indexRow, key.bytes)
@@ -151,11 +152,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                     operations.put(updateHistoryStoreName, createUpdateHistoryRowKey(version.timestamp, key.bytes), changePayload)
                 }
 
-                byteStore.writeBatch(operations)
+                val update = Update.Addition(request.dataModel, key, version.timestamp, values)
+                commitIndexedDbUpdate(operations, update, currentSnapshot)
                 statuses += AddSuccess(key, version.timestamp, emptyList())
-                emitIndexedDbUpdate(
-                    Update.Addition(request.dataModel, key, version.timestamp, values)
-                )
             }
         } catch (e: ValidationUmbrellaException) {
             statuses += ValidationFail(e)

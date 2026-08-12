@@ -41,6 +41,7 @@ import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.shared.updates.ActivatePendingUpdateListenerAction
 import maryk.datastore.shared.updates.FlowSnapshotBoundary
 import maryk.datastore.shared.updates.FlowUpdate
+import maryk.datastore.shared.updates.FailAllUpdateListenersAction
 import maryk.datastore.shared.updates.IsUpdateAction
 import maryk.datastore.shared.updates.PendingUpdateListener
 import maryk.datastore.shared.updates.AddPendingUpdateListenerAction
@@ -294,6 +295,7 @@ abstract class AbstractDataStore(
     protected open suspend fun onUpdateListenerActivatedBeforeCompletion(dataModelId: UInt) {}
     protected open fun onUpdateListenerRemoved(dataModelId: UInt) {}
     protected open fun onAllUpdateListenersRemoved() {}
+    protected open suspend fun onBeforeFlowSnapshotBoundary() {}
     protected open fun assertModelReady(dataModelId: UInt) {}
 
     /** Allocate an update position before its backend publishes it to the listener actor. */
@@ -384,6 +386,17 @@ abstract class AbstractDataStore(
                     continue
                 }
                 try {
+                    onBeforeFlowSnapshotBoundary()
+                } catch (e: CancellationException) {
+                    readSemaphore.release()
+                    throw e
+                } catch (e: Throwable) {
+                    readSemaphore.release()
+                    e.rethrowIfFatal()
+                    action.response.completeExceptionally(e)
+                    continue
+                }
+                try {
                     action.onFlowSnapshotBoundary?.invoke(createFlowSnapshotBoundary(readContext))
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()
@@ -450,6 +463,13 @@ abstract class AbstractDataStore(
         awaitPendingResponse(listenersRemoved) {
             mutableUpdateSharedFlow.emit(RemoveAllUpdateListenersAction(listenersRemoved))
         }
+        onAllUpdateListenersRemoved()
+    }
+
+    /** Fail live listeners when a backend cannot safely continue an incremental stream. */
+    protected suspend fun failAllListeners(cause: Throwable) {
+        if (isClosed.value) return
+        mutableUpdateSharedFlow.emit(FailAllUpdateListenersAction(cause))
         onAllUpdateListenersRemoved()
     }
 

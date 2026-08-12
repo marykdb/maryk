@@ -78,16 +78,18 @@ private class BrowserIndexedDbByteStore(
     private val lockName: String,
 ) : IndexedDbByteStore {
     private var activeLeaseOwnerId: String? = null
-    private var startupWriteScopeActive = false
+    private var writeScopeActive = false
+    private var committedUpdateChannel: dynamic = null
+    private val committedUpdateSenderId = createLeaseOwnerId()
 
     suspend fun <T> withStartupWriteLock(block: suspend (IndexedDbByteStore) -> T): T =
         withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
             activeLeaseOwnerId = leaseOwnerId
-            startupWriteScopeActive = true
+            writeScopeActive = true
             try {
                 block(this)
             } finally {
-                startupWriteScopeActive = false
+                writeScopeActive = false
                 activeLeaseOwnerId = null
             }
         }
@@ -97,14 +99,16 @@ private class BrowserIndexedDbByteStore(
         mode: IndexedDbTransactionMode,
         block: suspend (IndexedDbByteStore) -> T,
     ): T =
-        if (mode == IndexedDbTransactionMode.READWRITE && startupWriteScopeActive) {
+        if (mode == IndexedDbTransactionMode.READWRITE && writeScopeActive) {
             block(this)
         } else if (mode == IndexedDbTransactionMode.READWRITE) {
             withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
                 activeLeaseOwnerId = leaseOwnerId
+                writeScopeActive = true
                 try {
                     block(this)
                 } finally {
+                    writeScopeActive = false
                     activeLeaseOwnerId = null
                 }
             }
@@ -308,8 +312,25 @@ private class BrowserIndexedDbByteStore(
     }
 
     override suspend fun close() {
+        closeCommittedUpdateChannel(committedUpdateChannel)
+        committedUpdateChannel = null
         database.close()
     }
+
+    override fun setExternalCommitListener(listener: (() -> Unit)?) {
+        closeCommittedUpdateChannel(committedUpdateChannel)
+        committedUpdateChannel = listener?.let {
+            openCommittedUpdateChannel(committedUpdateChannelName(databaseName), committedUpdateSenderId, it)
+        }
+    }
+
+    override fun signalCommittedUpdate() {
+        postCommittedUpdate(committedUpdateChannelName(databaseName), committedUpdateSenderId)
+    }
+
+    override fun contextId() = committedUpdateSenderId
+
+    override fun currentEpochMillis() = currentTimeMillis().toULong()
 }
 
 private fun createRange(
@@ -441,7 +462,7 @@ private suspend fun <T> withBrowserWriteLock(
     database: dynamic,
     databaseName: String,
     lockName: String,
-    block: suspend (leaseOwnerId: String?) -> T,
+    block: suspend (leaseOwnerId: String) -> T,
 ): T {
     if (!hasWebLocks()) {
         return withIndexedDbWriteLease(database, databaseName, lockName, block)
@@ -457,7 +478,7 @@ private suspend fun <T> withBrowserWriteLock(
                 }
                 val blockJob = CoroutineScope(continuation.context).launch {
                     try {
-                        continuation.resume(block(null))
+                        continuation.resume(withIndexedDbWriteLease(database, databaseName, lockName, block))
                     } catch (cause: Throwable) {
                         continuation.resumeWithException(cause)
                     } finally {
@@ -774,6 +795,36 @@ private fun currentTimeMillis(): Double =
 
 private fun writeLeaseChannelName(databaseName: String): String =
     "maryk-indexeddb-lease:$databaseName"
+
+private fun committedUpdateChannelName(databaseName: String): String =
+    "maryk-indexeddb-updates:$databaseName"
+
+private fun openCommittedUpdateChannel(channelName: String, senderId: String, listener: () -> Unit): dynamic = js(
+    """
+    (function() {
+        if (typeof BroadcastChannel !== "function") return null;
+        const channel = new BroadcastChannel(channelName);
+        channel.onmessage = event => { if (event.data !== senderId) listener(); };
+        return channel;
+    })()
+    """
+)
+
+private fun closeCommittedUpdateChannel(channel: dynamic) {
+    js("if (channel) channel.close()")
+}
+
+private fun postCommittedUpdate(channelName: String, senderId: String) {
+    js(
+        """
+        if (typeof BroadcastChannel === "function") {
+            const channel = new BroadcastChannel(channelName);
+            channel.postMessage(senderId);
+            channel.close();
+        }
+        """
+    )
+}
 
 private const val writeLeaseStoreName = "__maryk_write_lease"
 private const val writeLeaseDurationMillis = 30_000

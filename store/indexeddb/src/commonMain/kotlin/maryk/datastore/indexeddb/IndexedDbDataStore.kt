@@ -2,11 +2,17 @@ package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
 import maryk.core.exceptions.TypeException
+import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.models.migration.VersionUpdateHandler
@@ -84,8 +90,173 @@ class IndexedDbDataStore private constructor(
 
     override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
-    internal suspend fun emitIndexedDbUpdate(update: Update<out IsRootDataModel>) {
+    override suspend fun onBeforeFlowSnapshotBoundary() = pollExternalCommits()
+
+    private var mutationClock = HLC()
+    private var journalSequence = 0u
+    private var lastJournalKey: ByteArray? = CommitJournalStartCursor
+    private val journalCursorMutex = Mutex()
+    private var externalCommitListenerReady = false
+    private var externalCommitPending = false
+    private var journalPollingJob: Job? = null
+    private var externalCommitDrainJob: Job? = null
+    private val journalConsumerKey = byteStore.contextId().encodeToByteArray()
+
+    internal suspend fun commitIndexedDbUpdate(
+        operations: MutableList<IndexedDbWriteOperation>,
+        update: Update<out IsRootDataModel>,
+        journalPayload: ByteArray? = null,
+    ) = journalCursorMutex.withLock {
+        drainExternalCommitsLocked()
+        val persistedVersion = maxOf(mutationClock.timestamp, update.version)
+        val journalKey = createCommitJournalKey(persistedVersion, journalSequence++)
+        operations += IndexedDbWriteOperation.Put("meta", CommitClockMetadataKey, persistedVersion.toBigEndianBytes())
+        operations += IndexedDbWriteOperation.Put(
+            CommitJournalStoreName,
+            journalKey,
+            encodeCommitJournalEntry(getDataModelId(update.dataModel), update, journalPayload),
+        )
+        operations += journalConsumerOperation(journalKey)
+        byteStore.writeBatch(operations)
+        lastJournalKey = journalKey
+        observeCommittedVersion(persistedVersion)
         emitFlowUpdate(update)
+        collectCommittedJournalEntriesLocked()
+        byteStore.signalCommittedUpdate()
+    }
+
+    private suspend fun drainExternalCommits() = journalCursorMutex.withLock {
+        drainExternalCommitsLocked()
+        byteStore.writeBatch(listOf(journalConsumerOperation(lastJournalKey)))
+        collectCommittedJournalEntriesLocked()
+    }
+
+    private suspend fun pollExternalCommits() = byteStore.transaction(
+        setOf("meta", CommitJournalStoreName, CommitConsumerStoreName),
+        IndexedDbTransactionMode.READWRITE,
+    ) { drainExternalCommits() }
+
+    private suspend fun drainExternalCommitsLocked() {
+        val floor = byteStore.get("meta", CommitJournalFloorMetadataKey)
+        val cursor = lastJournalKey
+        if (floor != null && cursor != null && floor.compareTo(cursor) > 0) {
+            val latest = byteStore.scan(CommitJournalStoreName, reverse = true, limit = 1u).firstOrNull()?.first
+            lastJournalKey = latest ?: floor
+            val gap = StorageException(
+                "IndexedDB update journal retention was exceeded; resubscribe to obtain a fresh snapshot"
+            )
+            failAllListeners(gap)
+            throw gap
+        }
+        val entries = byteStore.scan(
+            storeName = CommitJournalStoreName,
+            startKey = cursor,
+            includeStart = false,
+        )
+        for ((key, value) in entries) {
+            val update = try {
+                decodeCommitJournalEntry(indexedDbModelsById, sensitiveFields, key, value)
+            } catch (exception: StorageException) {
+                lastJournalKey = key
+                failAllListeners(exception)
+                throw exception
+            }
+            lastJournalKey = key
+            observeCommittedVersion(update.version)
+            emitFlowUpdate(update)
+        }
+    }
+
+    private fun journalConsumerOperation(cursor: ByteArray?) = IndexedDbWriteOperation.Put(
+        CommitConsumerStoreName,
+        journalConsumerKey,
+        encodeJournalConsumer(byteStore.currentEpochMillis(), cursor),
+    )
+
+    private suspend fun collectCommittedJournalEntriesLocked() {
+        val now = byteStore.currentEpochMillis()
+        val consumers = byteStore.scan(CommitConsumerStoreName)
+        val operations = mutableListOf<IndexedDbWriteOperation>()
+        val activeCursors = mutableListOf<ByteArray>()
+        for ((consumerKey, encoded) in consumers) {
+            val consumer = decodeJournalConsumer(encoded)
+            if (now >= consumer.heartbeatMillis && now - consumer.heartbeatMillis > JournalConsumerTimeoutMillis) {
+                operations += IndexedDbWriteOperation.Delete(CommitConsumerStoreName, consumerKey)
+            } else {
+                consumer.cursor?.let(activeCursors::add)
+            }
+        }
+
+        val journalEntries = byteStore.scan(CommitJournalStoreName)
+        var deleteThrough: ByteArray? = activeCursors.minWithOrNull { first, second -> first.compareTo(second) }
+        if (journalEntries.size > indexedDbMaxRetainedJournalEntries) {
+            val cappedFloor = journalEntries[journalEntries.size - indexedDbMaxRetainedJournalEntries - 1].first
+            if (deleteThrough == null || cappedFloor.compareTo(deleteThrough) > 0) deleteThrough = cappedFloor
+        }
+        val floor = deleteThrough
+        if (floor != null) {
+            val deletions = journalEntries.takeWhile { (key, _) -> key.compareTo(floor) <= 0 }
+            for ((key, _) in deletions) operations += IndexedDbWriteOperation.Delete(CommitJournalStoreName, key)
+            if (deletions.isNotEmpty()) {
+                operations += IndexedDbWriteOperation.Put("meta", CommitJournalFloorMetadataKey, deletions.last().first)
+            }
+        }
+        if (operations.isNotEmpty()) byteStore.writeBatch(operations)
+    }
+
+    private suspend fun startExternalCommitListener() {
+        byteStore.transaction(
+            setOf("meta", CommitJournalStoreName, CommitConsumerStoreName),
+            IndexedDbTransactionMode.READWRITE,
+        ) {
+            journalCursorMutex.withLock {
+                byteStore.setExternalCommitListener {
+                    if (externalCommitListenerReady) {
+                        externalCommitPending = true
+                        if (externalCommitDrainJob?.isActive != true) {
+                            externalCommitDrainJob = launch {
+                                while (externalCommitPending) {
+                                    externalCommitPending = false
+                                    try {
+                                        pollExternalCommits()
+                                    } catch (_: StorageException) {
+                                        // A fresh subscription will establish a new snapshot boundary.
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        externalCommitPending = true
+                    }
+                }
+                val latest = byteStore.scan(
+                    CommitJournalStoreName,
+                    reverse = true,
+                    limit = 1u,
+                ).firstOrNull()?.first
+                lastJournalKey = latest
+                    ?: byteStore.get("meta", CommitJournalFloorMetadataKey)
+                    ?: CommitJournalStartCursor
+                byteStore.writeBatch(listOf(journalConsumerOperation(lastJournalKey)))
+                externalCommitListenerReady = true
+            }
+        }
+        if (externalCommitPending) {
+            externalCommitPending = false
+            pollExternalCommits()
+        }
+        journalPollingJob = launch {
+            while (true) {
+                delay(JournalPollIntervalMillis)
+                if (!indexedDbJournalPollingPausedForTests) {
+                    try {
+                        pollExternalCommits()
+                    } catch (_: StorageException) {
+                        // Active listeners were failed explicitly; a new subscription starts from a fresh snapshot.
+                    }
+                }
+            }
+        }
     }
 
     private suspend fun migrateHardDeleteTombstones() {
@@ -132,28 +303,44 @@ class IndexedDbDataStore private constructor(
             try {
                 processStoreActions { storeAction ->
                     try {
-                        if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
-                            clock = nextMutationClock(
-                                clock,
-                                (storeAction.request as? UpdateResponse<*>)?.update?.version,
-                            )
-                            observeCommittedVersion(clock.timestamp)
+                        suspend fun process() {
+                            @Suppress("UNCHECKED_CAST")
+                            when (storeAction.request) {
+                                is AddRequest<*> -> processAddRequest(clock, storeAction as AddStoreAction<IsRootDataModel>)
+                                is ChangeRequest<*> -> processChangeRequest(clock, storeAction as ChangeStoreAction<IsRootDataModel>)
+                                is DeleteRequest<*> -> processDeleteRequest(clock, storeAction as DeleteStoreAction<IsRootDataModel>)
+                                is GetRequest<*> -> processGetRequest(storeAction as GetStoreAction<IsRootDataModel>)
+                                is GetChangesRequest<*> -> processGetChangesRequest(storeAction as GetChangesStoreAction<IsRootDataModel>)
+                                is GetUpdatesRequest<*> -> processGetUpdatesRequest(storeAction as GetUpdatesStoreAction<IsRootDataModel>)
+                                is ScanRequest<*> -> processScanRequest(storeAction as ScanStoreAction<IsRootDataModel>)
+                                is ScanChangesRequest<*> -> processScanChangesRequest(storeAction as ScanChangesStoreAction<IsRootDataModel>)
+                                is ScanUpdateHistoryRequest<*> -> processScanUpdateHistoryRequest(storeAction as ScanUpdateHistoryStoreAction<IsRootDataModel>)
+                                is ScanUpdatesRequest<*> -> processScanUpdatesRequest(storeAction as ScanUpdatesStoreAction<IsRootDataModel>)
+                                is UpdateResponse<*> -> processUpdateResponse(storeAction as ProcessUpdateResponseStoreAction<IsRootDataModel>)
+                                else -> throw TypeException("Unknown request type ${storeAction.request}")
+                            }
                         }
 
-                        @Suppress("UNCHECKED_CAST")
-                        when (storeAction.request) {
-                            is AddRequest<*> -> processAddRequest(clock, storeAction as AddStoreAction<IsRootDataModel>)
-                            is ChangeRequest<*> -> processChangeRequest(clock, storeAction as ChangeStoreAction<IsRootDataModel>)
-                            is DeleteRequest<*> -> processDeleteRequest(clock, storeAction as DeleteStoreAction<IsRootDataModel>)
-                            is GetRequest<*> -> processGetRequest(storeAction as GetStoreAction<IsRootDataModel>)
-                            is GetChangesRequest<*> -> processGetChangesRequest(storeAction as GetChangesStoreAction<IsRootDataModel>)
-                            is GetUpdatesRequest<*> -> processGetUpdatesRequest(storeAction as GetUpdatesStoreAction<IsRootDataModel>)
-                            is ScanRequest<*> -> processScanRequest(storeAction as ScanStoreAction<IsRootDataModel>)
-                            is ScanChangesRequest<*> -> processScanChangesRequest(storeAction as ScanChangesStoreAction<IsRootDataModel>)
-                            is ScanUpdateHistoryRequest<*> -> processScanUpdateHistoryRequest(storeAction as ScanUpdateHistoryStoreAction<IsRootDataModel>)
-                            is ScanUpdatesRequest<*> -> processScanUpdatesRequest(storeAction as ScanUpdatesStoreAction<IsRootDataModel>)
-                            is UpdateResponse<*> -> processUpdateResponse(storeAction as ProcessUpdateResponseStoreAction<IsRootDataModel>)
-                            else -> throw TypeException("Unknown request type ${storeAction.request}")
+                        if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
+                            byteStore.transaction(
+                                setOf("meta", CommitJournalStoreName),
+                                IndexedDbTransactionMode.READWRITE,
+                            ) {
+                                val persistedClock = byteStore.get("meta", CommitClockMetadataKey)
+                                    ?.readBigEndianULong()
+                                clock = nextMutationClock(
+                                    clock,
+                                    maxOf(
+                                        persistedClock ?: 0uL,
+                                        (storeAction.request as? UpdateResponse<*>)?.update?.version ?: 0uL,
+                                    ),
+                                )
+                                mutationClock = clock
+                                journalSequence = 0u
+                                process()
+                            }
+                        } else {
+                            process()
                         }
                     } catch (e: CancellationException) {
                         storeAction.response.cancel(e)
@@ -302,6 +489,12 @@ class IndexedDbDataStore private constructor(
 
     override suspend fun close() {
         if (!startClosingDataStore()) return
+        journalPollingJob?.cancelAndJoin()
+        byteStore.setExternalCommitListener(null)
+        externalCommitDrainJob?.cancelAndJoin()
+        byteStore.transaction(setOf(CommitConsumerStoreName), IndexedDbTransactionMode.READWRITE) {
+            byteStore.delete(CommitConsumerStoreName, journalConsumerKey)
+        }
         byteStore.close()
         cancelAndJoinDataStoreScope()
     }
@@ -324,6 +517,8 @@ class IndexedDbDataStore private constructor(
             val sensitiveFields = IndexedDbSensitiveFieldSupport(dataModelsById, fieldEncryptionProvider)
             val objectStoreNames = buildSet {
                 add("meta")
+                add(CommitJournalStoreName)
+                add(CommitConsumerStoreName)
                 for (modelId in dataModelsById.keys) {
                     add("k:$modelId")
                     add("t:$modelId")
@@ -377,6 +572,7 @@ class IndexedDbDataStore private constructor(
                         throw error
                     }
                 }
+                dataStore.startExternalCommitListener()
                 dataStore
             } catch (error: Throwable) {
                 withContext(NonCancellable) {

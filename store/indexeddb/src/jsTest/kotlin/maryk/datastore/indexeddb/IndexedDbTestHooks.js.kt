@@ -28,6 +28,27 @@ internal actual fun webLocksAvailableForTests(): Boolean = js(
     "typeof navigator !== 'undefined' && !!navigator.locks && typeof navigator.locks.request === 'function'"
 )
 
+internal actual suspend fun <T> withFixedWallClockForTests(
+    epochMillis: Double,
+    block: suspend () -> T,
+): T {
+    val originalNow = replaceDateNow(epochMillis)
+    return try {
+        block()
+    } finally {
+        restoreDateNow(originalNow)
+    }
+}
+
+internal actual suspend fun <T> withoutBroadcastChannelForTests(block: suspend () -> T): T {
+    val snapshot = captureAndDisableBroadcastChannel()
+    return try {
+        block()
+    } finally {
+        restoreBroadcastChannel(snapshot)
+    }
+}
+
 internal actual fun setLeaseAcquisitionHandoffHookForTests(hook: (() -> Unit)?) {
     indexedDbLeaseAcquisitionHandoffHook = hook
 }
@@ -71,6 +92,22 @@ private fun captureAndDisableWebLocks(): dynamic = js(
     })()
     """
 )
+
+private fun replaceDateNow(epochMillis: Double): dynamic = js(
+    "(function() { const original = Date.now; Date.now = () => epochMillis; return original; })()"
+)
+
+private fun captureAndDisableBroadcastChannel(): dynamic = js(
+    "(function() { const value = globalThis.BroadcastChannel; globalThis.BroadcastChannel = undefined; return value; })()"
+)
+
+private fun restoreBroadcastChannel(snapshot: dynamic) {
+    js("globalThis.BroadcastChannel = snapshot")
+}
+
+private fun restoreDateNow(originalNow: dynamic) {
+    js("Date.now = originalNow")
+}
 
 private fun restoreWebLocks(snapshot: dynamic) {
     js(

@@ -29,6 +29,7 @@ import maryk.datastore.indexeddb.IndexedDbRecordMeta
 import maryk.datastore.indexeddb.IndexedDbTransactionMode
 import maryk.datastore.indexeddb.IndexedDbWriteOperation
 import maryk.datastore.indexeddb.decodeRecordMeta
+import maryk.datastore.indexeddb.encodeChangeJournalPayload
 import maryk.datastore.indexeddb.tableQualifierFromRowKey
 import maryk.datastore.shared.UniqueException
 import maryk.datastore.shared.diffIndexValues
@@ -212,19 +213,24 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     operations.put(updateHistoryStoreName, createUpdateHistoryRowKey(version.timestamp, keyBytes), changePayload)
                 }
 
-                byteStore.writeBatch(operations)
+                val update = Update.Change(
+                    request.dataModel,
+                    objectChange.key,
+                    version.timestamp,
+                    materializedChanges.appliedChanges.filterNot { it is Check } +
+                        indexChanges.takeUnless { it.isEmpty() }?.let { listOf(IndexChange(it)) }.orEmpty()
+                )
+                val journalPayload = encodeChangeJournalPayload(
+                    request.dataModel,
+                    keyBytes,
+                    version.timestamp,
+                    changePayload,
+                    update.changes,
+                )
+                commitIndexedDbUpdate(operations, update, journalPayload)
                 statuses += ChangeSuccess(
                     version = version.timestamp,
                     changes = materializedChanges.generatedChanges.ifEmpty { null }
-                )
-                emitIndexedDbUpdate(
-                    Update.Change(
-                        request.dataModel,
-                        objectChange.key,
-                        version.timestamp,
-                        materializedChanges.appliedChanges.filterNot { it is Check } +
-                            indexChanges.takeUnless { it.isEmpty() }?.let { listOf(IndexChange(it)) }.orEmpty()
-                    )
                 )
             }
         } catch (e: ValidationUmbrellaException) {

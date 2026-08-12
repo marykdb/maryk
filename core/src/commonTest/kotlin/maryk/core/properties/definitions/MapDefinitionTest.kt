@@ -177,6 +177,93 @@ internal class MapDefinitionTest {
     }
 
     @Test
+    fun skipsUnknownFieldsInProtoBufMapEntries() {
+        val bytes = byteArrayOf(
+            0x18, 0x64, // unknown tag 3, varInt 100
+            0x08, 0x18, // key tag 1 = 12
+            0x12, 0x07, '#'.code.toByte(), 't'.code.toByte(), 'w'.code.toByte(), 'e'.code.toByte(), 'l'.code.toByte(), 'v'.code.toByte(), 'e'.code.toByte()
+        )
+        var index = 0
+
+        assertEquals(
+            mapOf(12 to "#twelve"),
+            def.readTransportBytes(bytes.size, { bytes[index++] }, null, null)
+        )
+    }
+
+    @Test
+    fun rejectsMapKeyWithWrongProtoBufWireType() {
+        val bytes = byteArrayOf(
+            0x0a, 0x01, 0x18, // key tag 1 with length-delimited instead of varInt
+            0x12, 0x07, '#'.code.toByte(), 't'.code.toByte(), 'w'.code.toByte(), 'e'.code.toByte(), 'l'.code.toByte(), 'v'.code.toByte(), 'e'.code.toByte()
+        )
+        var index = 0
+
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(bytes.size, { bytes[index++] }, null, null)
+        }
+    }
+
+    @Test
+    fun rejectsMapValueWithWrongProtoBufWireType() {
+        val bytes = byteArrayOf(
+            0x08, 0x18, // key tag 1 = 12
+            0x10, 0x18 // value tag 2 with varInt instead of length-delimited
+        )
+        var index = 0
+
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(bytes.size, { bytes[index++] }, null, null)
+        }
+    }
+
+    @Test
+    fun skipsUnknownFixedAndLengthDelimitedFieldsInProtoBufMapEntries() {
+        val bytes = byteArrayOf(
+            0x25, 1, 2, 3, 4, // unknown tag 4, fixed 32-bit
+            0x2a, 2, 5, 6, // unknown tag 5, length-delimited
+            0x08, 0x18, // key tag 1 = 12
+            0x12, 0x07, '#'.code.toByte(), 't'.code.toByte(), 'w'.code.toByte(), 'e'.code.toByte(), 'l'.code.toByte(), 'v'.code.toByte(), 'e'.code.toByte()
+        )
+        var index = 0
+
+        assertEquals(
+            mapOf(12 to "#twelve"),
+            def.readTransportBytes(bytes.size, { bytes[index++] }, null, null)
+        )
+    }
+
+    @Test
+    fun rejectsUnknownProtoBufGroupWithMismatchedEndTag() {
+        val bytes = byteArrayOf(
+            0x1b, // unknown tag 3, start group
+            0x08, 0x01, // nested tag 1, varInt 1
+            0x24, // tag 4, mismatched end group
+            0x08, 0x18, // key tag 1 = 12
+            0x12, 0x07, '#'.code.toByte(), 't'.code.toByte(), 'w'.code.toByte(), 'e'.code.toByte(), 'l'.code.toByte(), 'v'.code.toByte(), 'e'.code.toByte()
+        )
+        var index = 0
+
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(bytes.size, { bytes[index++] }, null, null)
+        }
+    }
+
+    @Test
+    fun rejectsUnknownProtoBufEndGroup() {
+        val bytes = byteArrayOf(
+            0x1c, // unknown tag 3, end group
+            0x08, 0x18, // key tag 1 = 12
+            0x12, 0x07, '#'.code.toByte(), 't'.code.toByte(), 'w'.code.toByte(), 'e'.code.toByte(), 'l'.code.toByte(), 'v'.code.toByte(), 'e'.code.toByte()
+        )
+        var index = 0
+
+        assertFailsWith<ParseException> {
+            def.readTransportBytes(bytes.size, { bytes[index++] }, null, null)
+        }
+    }
+
+    @Test
     fun convertValuesToJSONStringAndBack() {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })

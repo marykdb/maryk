@@ -120,6 +120,27 @@ internal class MapDefinitionWithMapTest {
     }
 
     @Test
+    fun accumulatesRepeatedProtoBufMapValuesWithinOneEntry() {
+        val value = mapOf(
+            12 to mapOf(1 to "#one", 2 to "#two"),
+            30 to mapOf(3 to "#three", 4 to "#four")
+        )
+        val bytes = ByteCollector()
+        val cache = WriteCache()
+        bytes.reserve(def.calculateTransportByteLengthWithKey(4, value, cache))
+        def.writeTransportBytesWithKey(4, value, cache, bytes::write)
+
+        val decoded = mutableMapOf<Int, Map<Int, String>>()
+        while (bytes.readIndex < bytes.size) {
+            val key = ProtoBuf.readKey(bytes::read)
+            val length = ProtoBuf.getLength(key.wireType, bytes::read)
+            def.readTransportBytes(length, bytes::read, null, decoded)
+        }
+
+        assertEquals(value, decoded)
+    }
+
+    @Test
     fun convertValuesToJSONStringAndBack() {
         var totalString = ""
         def.writeJsonValue(value, JsonWriter { totalString += it })

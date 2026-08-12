@@ -384,7 +384,7 @@ open class DataModelSerializer<DO: Any, V: IsValues<DM>, DM: IsTypedDataModel<DO
         val valueLength = readProtoBufValueLength(key, byteReader, remainingLength)
         when {
             valueLength >= 0 -> repeat(valueLength) { byteReader() }
-            else -> ProtoBuf.skipField(key.wireType, byteReader)
+            else -> ProtoBuf.skipField(key, byteReader)
         }
     }
 

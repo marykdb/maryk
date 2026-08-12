@@ -28,8 +28,25 @@ internal object ProtoBuf {
         }
     }
 
+    /** Skips [key]'s field in [reader] */
+    internal fun skipField(key: ProtoBufKey, reader: () -> Byte) {
+        if (key.wireType == START_GROUP) {
+            while (true) {
+                val nestedKey = readKey(reader)
+                if (nestedKey.wireType == END_GROUP) {
+                    if (nestedKey.tag != key.tag) {
+                        throw ParseException("Group end tag does not match start tag")
+                    }
+                    return
+                }
+                skipField(nestedKey, reader)
+            }
+        }
+        skipField(key.wireType, reader)
+    }
+
     /** Skips a field in [reader] by [wireType] */
-    internal fun skipField(wireType: Any, reader: () -> Byte) {
+    internal fun skipField(wireType: WireType, reader: () -> Byte) {
         when (wireType) {
             VAR_INT -> {
                 repeat(10) {
@@ -48,16 +65,8 @@ internal object ProtoBuf {
                 }
                 repeat(length) { reader() }
             }
-            START_GROUP -> {
-                while (true) {
-                    val key = readKey(reader)
-                    if (key.wireType == END_GROUP) {
-                        break
-                    }
-                    skipField(key.wireType, reader)
-                }
-            }
-            END_GROUP -> return
+            START_GROUP -> throw ParseException("Cannot skip a group without its tag")
+            END_GROUP -> throw ParseException("Unexpected end group")
             BIT_32 -> repeat(4) { reader() }
         }
     }

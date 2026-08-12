@@ -197,36 +197,52 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
         }
 
         val map = earlierValue as MutableMap<K, V>? ?: mutableMapOf()
+        var key: K? = null
+        var value: V? = null
 
-        val keyOfMapKey = ProtoBuf.readKey(countingReader)
-        val keyLength = ProtoBuf.getLength(keyOfMapKey.wireType, countingReader)
-        if (keyLength > lengthToGo) {
-            throw ParseException("Map key exceeds declared length")
-        }
-        val key = keyDefinition.readTransportBytes(
-            keyLength,
-            countingReader,
-            context
-        )
-
-        // Read values until length is exhausted
-        do {
-            val keyOfMapValue = ProtoBuf.readKey(countingReader)
-            val valueLength = ProtoBuf.getLength(keyOfMapValue.wireType, countingReader)
-            if (valueLength > lengthToGo) {
-                throw ParseException("Map value exceeds declared length")
+        while (lengthToGo > 0) {
+            val entryField = ProtoBuf.readKey(countingReader)
+            when (entryField.tag) {
+                1u -> {
+                    if (entryField.wireType != keyDefinition.wireType) {
+                        throw ParseException("Map key wire type does not match definition")
+                    }
+                    val keyLength = ProtoBuf.getLength(entryField.wireType, countingReader)
+                    if (keyLength > lengthToGo) {
+                        throw ParseException("Map key exceeds declared length")
+                    }
+                    key = keyDefinition.readTransportBytes(
+                        keyLength,
+                        countingReader,
+                        context
+                    )
+                }
+                2u -> {
+                    val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType ?: LENGTH_DELIMITED
+                    if (entryField.wireType != valueWireType) {
+                        throw ParseException("Map value wire type does not match definition")
+                    }
+                    val valueLength = ProtoBuf.getLength(entryField.wireType, countingReader)
+                    if (valueLength > lengthToGo) {
+                        throw ParseException("Map value exceeds declared length")
+                    }
+                    value = valueDefinition.readTransportBytes(
+                        valueLength,
+                        countingReader,
+                        context,
+                        value ?: key?.let { map[it] }
+                    )
+                }
+                else -> ProtoBuf.skipField(entryField, countingReader)
             }
-            map[key] = valueDefinition.readTransportBytes(
-                valueLength,
-                countingReader,
-                context,
-                map[key]
-            )
-        } while (lengthToGo > 0)
+        }
 
         if (lengthToGo != 0) {
             throw ParseException("Map entry did not match declared length")
         }
+
+        map[key ?: throw ParseException("Map entry is missing a key")] =
+            value ?: throw ParseException("Map entry is missing a value")
 
         return map
     }

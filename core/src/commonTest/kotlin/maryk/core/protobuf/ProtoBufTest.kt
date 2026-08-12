@@ -93,8 +93,9 @@ class ProtoBufTest {
         333.writeBytes(bc::write)
 
         fun testSkip(bc: ByteCollector, wireType: WireType, readIndex: Int) {
-            expect(wireType) { ProtoBuf.readKey(bc::read).wireType }
-            ProtoBuf.skipField(wireType, bc::read)
+            val key = ProtoBuf.readKey(bc::read)
+            expect(wireType) { key.wireType }
+            ProtoBuf.skipField(key, bc::read)
 
             expect(readIndex) { bc.readIndex }
         }
@@ -123,6 +124,27 @@ class ProtoBufTest {
             ProtoBuf.skipField(VAR_INT) { bytes[index++] }
         }
         expect(10) { index }
+    }
+
+    @Test
+    fun skipGroupRejectsMismatchedEndTag() {
+        val bytes = byteArrayOf(
+            0x0b, // tag 1, start group
+            0x14 // tag 2, end group
+        )
+        var index = 0
+        val key = ProtoBuf.readKey { bytes[index++] }
+
+        assertFailsWith<ParseException> {
+            ProtoBuf.skipField(key) { bytes[index++] }
+        }
+    }
+
+    @Test
+    fun skipBareEndGroupShouldFail() {
+        assertFailsWith<ParseException> {
+            ProtoBuf.skipField(END_GROUP) { 0 }
+        }
     }
 
     @Test

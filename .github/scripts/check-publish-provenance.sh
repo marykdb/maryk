@@ -48,7 +48,7 @@ check_required "$release_workflow" \
   'sudo dpkg --install "$deb"' \
   'Smoke test packaged Windows app' \
   'Start-Process msiexec.exe' \
-  'actions/download-artifact@v4' \
+  'actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093' \
   "! -name 'SHA256SUMS'" \
   'Duplicate release asset basename:'
 

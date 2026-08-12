@@ -16,6 +16,7 @@ kotlin {
                 useKarma {
                     useConfigDirectory(rootProject.file("karma.config.d"))
                     useChromeHeadless()
+                    useFirefoxHeadless()
                 }
             }
         }
@@ -33,6 +34,7 @@ kotlin {
                 useKarma {
                     useConfigDirectory(rootProject.file("karma.config.d"))
                     useChromeHeadless()
+                    useFirefoxHeadless()
                 }
             }
         }

@@ -1,0 +1,11 @@
+{
+  "name": "maryk-indexeddb-browser-smoke",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node indexeddb-webkit-smoke.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

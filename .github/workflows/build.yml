@@ -97,11 +97,28 @@ jobs:
           cache-cleanup: on-success
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
+      - name: Install Firefox and WebKit
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: store/indexeddb/browser-smoke
+        shell: bash
+        run: |
+          npm ci
+          npx playwright install --with-deps firefox webkit
+          FIREFOX_BIN="$(find "$HOME/.cache/ms-playwright" -path '*/firefox/firefox' -type f -print -quit)"
+          test -n "$FIREFOX_BIN"
+          echo "FIREFOX_BIN=$FIREFOX_BIN" >> "$GITHUB_ENV"
+
       - name: Run Gradle tasks
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g
         shell: bash
         run: ./gradlew ${{ matrix.gradle_task }} --stacktrace --build-cache --no-parallel
+
+      - name: Run WebKit IndexedDB smoke
+        if: matrix.os == 'ubuntu-latest'
+        working-directory: store/indexeddb/browser-smoke
+        shell: bash
+        run: npm test
 
       - name: Upload build reports
         if: always()

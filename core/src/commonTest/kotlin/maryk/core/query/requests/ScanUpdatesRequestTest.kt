@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.RequestException
+import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext

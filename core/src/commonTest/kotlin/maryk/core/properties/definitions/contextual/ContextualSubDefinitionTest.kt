@@ -2,7 +2,7 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.StringDefinition
-import maryk.core.properties.definitions.acceptsProtoBufWireType
+import maryk.core.properties.definitions.acceptsContextualProtoBufWireType
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WireType.VAR_INT
@@ -58,7 +58,7 @@ class ContextualSubDefinitionTest {
 
     @Test
     fun resolvesWireTypeFromContext() {
-        assertTrue(def.acceptsProtoBufWireType(LENGTH_DELIMITED, context))
-        assertFalse(def.acceptsProtoBufWireType(VAR_INT, context))
+        assertTrue(def.acceptsContextualProtoBufWireType(LENGTH_DELIMITED, context))
+        assertFalse(def.acceptsContextualProtoBufWireType(VAR_INT, context))
     }
 }

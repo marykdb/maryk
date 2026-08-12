@@ -450,7 +450,7 @@ internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(
         is IsCollectionDefinition<*, *, *, *> -> when (val valueDefinition = valueDefinition) {
             is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
             is IsContextualEncodable<*, *> ->
-                (valueDefinition as IsContextualEncodable<*, *>).acceptsProtoBufWireType(wireType, context)
+                (valueDefinition as IsContextualEncodable<*, *>).acceptsContextualProtoBufWireType(wireType, context)
             else -> when (val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
                 VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == valueWireType
                 else -> wireType == LENGTH_DELIMITED
@@ -459,14 +459,14 @@ internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(
         is IsMapDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
         is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
         is IsContextualEncodable<*, *> ->
-            (this as IsContextualEncodable<*, *>).acceptsProtoBufWireType(wireType, context)
+            (this as IsContextualEncodable<*, *>).acceptsContextualProtoBufWireType(wireType, context)
         is IsValueDefinition<*, *> -> wireType == this.wireType
         else -> true
     }
 }
 
 @Suppress("UNCHECKED_CAST")
-internal fun IsContextualEncodable<*, *>.acceptsProtoBufWireType(
+internal fun IsContextualEncodable<*, *>.acceptsContextualProtoBufWireType(
     wireType: WireType,
     context: IsPropertyContext?
 ): Boolean = when (this) {
@@ -483,13 +483,15 @@ internal fun IsContextualEncodable<*, *>.acceptsProtoBufWireType(
             .contextualResolver(context)
             .acceptsProtoBufWireType(wireType, this.contextTransformer(context))
     is ContextualCollectionDefinition<*> ->
-        (this as ContextualCollectionDefinition<IsPropertyContext>)
-            .contextualResolver(context)
-            .acceptsResolvedProtoBufWireType(wireType, context)
+        wireType == LENGTH_DELIMITED ||
+            (this as ContextualCollectionDefinition<IsPropertyContext>)
+                .contextualResolver(context)
+                .acceptsResolvedProtoBufWireType(wireType, context)
     is ContextualMapDefinition<*, *, *> ->
-        (this as ContextualMapDefinition<Any, Any, IsPropertyContext>)
-            .contextualResolver(context)
-            .acceptsResolvedProtoBufWireType(wireType, context)
+        wireType == LENGTH_DELIMITED ||
+            (this as ContextualMapDefinition<Any, Any, IsPropertyContext>)
+                .contextualResolver(context)
+                .acceptsResolvedProtoBufWireType(wireType, context)
     is ContextCollectionTransformerDefinition<*, *, *, *> ->
         (this as ContextCollectionTransformerDefinition<Any, Collection<Any>, IsPropertyContext, IsPropertyContext>)
             .definition

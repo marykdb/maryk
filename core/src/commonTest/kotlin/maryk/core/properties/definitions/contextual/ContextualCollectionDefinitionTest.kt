@@ -4,7 +4,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinitionContext
-import maryk.core.properties.definitions.acceptsProtoBufWireType
+import maryk.core.properties.definitions.acceptsContextualProtoBufWireType
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WireType.VAR_INT
@@ -89,7 +89,7 @@ class ContextualCollectionDefinitionTest {
 
     @Test
     fun resolvesCollectionWireTypeFromContext() {
-        assertTrue(def.acceptsProtoBufWireType(LENGTH_DELIMITED, context))
-        assertFalse(def.acceptsProtoBufWireType(VAR_INT, context))
+        assertTrue(def.acceptsContextualProtoBufWireType(LENGTH_DELIMITED, context))
+        assertFalse(def.acceptsContextualProtoBufWireType(VAR_INT, context))
     }
 }

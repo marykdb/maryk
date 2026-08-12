@@ -28,10 +28,10 @@ internal class FoundationDBMigrationLease(
 
     override suspend fun tryAcquire(modelId: UInt, migrationId: String): Boolean {
         val key = modelPrefixesById[modelId]?.let { packKey(it, modelMigrationLeaseKey) } ?: return false
-        val nowMs = Clock.System.now().toEpochMilliseconds()
-        val expiresAtMs = nowMs.plusSaturating(leaseTimeoutMs)
 
         val acquired = tc.run { tr ->
+            val nowMs = Clock.System.now().toEpochMilliseconds()
+            val expiresAtMs = nowMs.plusSaturating(leaseTimeoutMs)
             val existing = tr.get(key).awaitResult()?.let(LeaseRecord::fromPersistedBytes)
             if (existing != null && existing.expiresAtMs > nowMs && existing.ownerToken != ownerToken) {
                 false

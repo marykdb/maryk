@@ -589,7 +589,8 @@ private class XorWithTokenFieldEncryptionProvider :
         xor(value, offset, length).also(decryptedValues::add)
 
     override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
-    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length).also(decryptedValues::add)
 
     override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray, offset: Int, length: Int): ByteArray {
         tokenInputs += value

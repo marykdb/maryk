@@ -115,7 +115,7 @@ actual object File {
                     val count = read(fd, pinned.addressOf(0), buffer.size.convert())
                     if (count < 0 && errno == EINTR) continue
                     if (count < 0) return false
-                    if (count == 0L) return true
+                    if (count.toLong() == 0L) return true
                     onChunk(buffer.copyOf(count.toInt()))
                 }
             }

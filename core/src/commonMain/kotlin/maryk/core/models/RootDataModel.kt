@@ -71,15 +71,6 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
         referenceGetter: DM.() -> (AnyOutPropertyReference?) -> R
     ) = referenceGetter(typedThis)(parent)
 
-    override fun equals(other: Any?) =
-        super.equals(other) && other is RootDataModel<*> && this.Meta == other.Meta
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + Meta.hashCode()
-        return result
-    }
-
     override fun isMigrationNeeded(
         storedDataModel: IsStorableDataModel<*>,
         checkedDataModelNames: MutableList<String>?,

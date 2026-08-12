@@ -60,15 +60,6 @@ open class DataModel<DM: IsValuesDataModel>(
         return block(typedThis)
     }
 
-    override fun equals(other: Any?) =
-        super.equals(other) && other is DataModel<*> && this.Meta == other.Meta
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + Meta.hashCode()
-        return result
-    }
-
     object Model: DefinitionModel<DataModel<*>>() {
         val properties = PropertiesCollectionDefinitionWrapper(
             1u,

@@ -16,6 +16,10 @@ import maryk.core.values.ObjectValues
 data class Multiple(
     val references: List<IsIndexable>
 ) : IsIndexable {
+    init {
+        require(references.isNotEmpty()) { "Multiple index requires at least one reference" }
+    }
+
     override val indexKeyPartType = IndexKeyPartType.Multiple
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
     override val indexPartCount by lazy { references.sumOf { it.indexPartCount } }

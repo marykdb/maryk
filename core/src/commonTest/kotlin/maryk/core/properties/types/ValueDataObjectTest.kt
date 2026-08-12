@@ -1,10 +1,14 @@
 package maryk.core.properties.types
 
+import maryk.core.base64.Base64Maryk
 import maryk.core.properties.definitions.DateTimeDefinition
+import maryk.lib.exceptions.ParseException
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
-import kotlin.test.expect
 import kotlin.test.assertContentEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.expect
 
 internal class ValueDataObjectTest {
     private val value = TestValueObject(
@@ -51,5 +55,24 @@ internal class ValueDataObjectTest {
         val new = TestValueObject.Serializer.fromBase64(string)
 
         expect(0) { new compareTo value }
+    }
+
+    @Test
+    fun fixedWidthBase64RequiresExactDecodedSize() {
+        val string = value.toBase64()
+
+        assertFailsWith<ParseException> {
+            TestValueObject.Serializer.fromBase64(
+                Base64Maryk.encode(value.toByteArray() + byteArrayOf(0))
+            )
+        }
+        assertFailsWith<ParseException> {
+            TestValueObject.Serializer.fromBase64(string.dropLast(2))
+        }
+
+        val malformed = assertFailsWith<ParseException> {
+            TestValueObject.Serializer.fromBase64("!")
+        }
+        assertIs<IllegalArgumentException>(malformed.cause)
     }
 }

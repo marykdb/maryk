@@ -148,6 +148,43 @@ class ProtoBufTest {
     }
 
     @Test
+    fun skipGroupRejectsExcessiveNesting() {
+        val bytes = ByteCollector()
+        bytes.reserve(202)
+        repeat(101) {
+            ProtoBuf.writeKey(1u, START_GROUP, bytes::write)
+        }
+        repeat(101) {
+            ProtoBuf.writeKey(1u, END_GROUP, bytes::write)
+        }
+
+        var index = 0
+        val key = ProtoBuf.readKey(bytes::read)
+
+        assertFailsWith<ParseException> {
+            ProtoBuf.skipField(key, bytes::read)
+        }
+    }
+
+    @Test
+    fun skipGroupAcceptsMaximumNesting() {
+        val bytes = ByteCollector()
+        bytes.reserve(200)
+        repeat(100) {
+            ProtoBuf.writeKey(1u, START_GROUP, bytes::write)
+        }
+        repeat(100) {
+            ProtoBuf.writeKey(1u, END_GROUP, bytes::write)
+        }
+
+        var index = 0
+        val key = ProtoBuf.readKey(bytes::read)
+        ProtoBuf.skipField(key, bytes::read)
+
+        expect(200) { bytes.readIndex }
+    }
+
+    @Test
     fun getLengthDelimitedNegativeLengthShouldFail() {
         val bytes = ("ffffffff0f").hexToByteArray()
         var index = 0

@@ -212,6 +212,13 @@ class MultipleTest {
     }
 
     @Test
+    fun emptyMultipleIsRejected() {
+        assertFailsWith<IllegalArgumentException> {
+            Multiple()
+        }
+    }
+
+    @Test
     fun checkedIndexByteLengthRejectsOverflow() {
         assertFailsWith<IllegalArgumentException> {
             Int.MAX_VALUE.checkedIndexByteLengthPlus(1)

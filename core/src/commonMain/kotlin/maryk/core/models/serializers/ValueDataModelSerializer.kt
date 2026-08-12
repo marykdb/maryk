@@ -10,6 +10,7 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.properties.types.ValueDataObjectWithValues
 import maryk.core.values.MutableValueItems
 import maryk.core.values.ObjectValues
+import maryk.lib.exceptions.ParseException
 
 /**
  * Serializer for [ValueDataObject]s
@@ -57,7 +58,14 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
     }
 
     override fun fromBase64(value: String): DO {
-        val b = Base64Maryk.decode(value)
+        val b = try {
+            Base64Maryk.decode(value)
+        } catch (e: IllegalArgumentException) {
+            throw ParseException("Invalid Base64 value", e)
+        }
+        if (b.size != byteSize) {
+            throw ParseException("Expected $byteSize bytes for ${model.Meta.name}, got ${b.size}")
+        }
         var index = 0
         return this.readFromBytes {
             b[index++]

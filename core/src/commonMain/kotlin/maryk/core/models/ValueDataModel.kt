@@ -53,15 +53,6 @@ abstract class ValueDataModel<DO: ValueDataObject, DM: IsValueDataModel<DO, *>> 
 
     abstract override fun invoke(values: ObjectValues<DO, DM>): DO
 
-    override fun equals(other: Any?) =
-        super.equals(other) && other is ValueDataModel<*, *> && this.Meta == other.Meta
-
-    override fun hashCode(): Int {
-        var result = super.hashCode()
-        result = 31 * result + Meta.hashCode()
-        return result
-    }
-
     fun toBytes(vararg inputs: Any) =
         Serializer.toBytes(*inputs)
 

@@ -16,6 +16,8 @@ import maryk.lib.exceptions.ParseException
 import kotlin.experimental.and
 
 internal object ProtoBuf {
+    private const val MAX_GROUP_NESTING = 100
+
     /** Write the key for ProtoBuf field */
     internal fun writeKey(tag: UInt, wireType: WireType, writer: (byte: Byte) -> Unit) {
         tag.writeVarIntWithExtraInfo(wireType.type, writer)
@@ -30,7 +32,14 @@ internal object ProtoBuf {
 
     /** Skips [key]'s field in [reader] */
     internal fun skipField(key: ProtoBufKey, reader: () -> Byte) {
+        skipField(key, reader, 1)
+    }
+
+    private fun skipField(key: ProtoBufKey, reader: () -> Byte, nesting: Int) {
         if (key.wireType == START_GROUP) {
+            if (nesting > MAX_GROUP_NESTING) {
+                throw ParseException("ProtoBuf group nesting exceeds $MAX_GROUP_NESTING")
+            }
             while (true) {
                 val nestedKey = readKey(reader)
                 if (nestedKey.wireType == END_GROUP) {
@@ -39,7 +48,11 @@ internal object ProtoBuf {
                     }
                     return
                 }
-                skipField(nestedKey, reader)
+                skipField(
+                    nestedKey,
+                    reader,
+                    if (nestedKey.wireType == START_GROUP) nesting + 1 else nesting
+                )
             }
         }
         skipField(key.wireType, reader)

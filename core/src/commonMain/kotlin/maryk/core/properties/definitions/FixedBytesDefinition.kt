@@ -8,6 +8,8 @@ import maryk.core.properties.definitions.PropertyDefinitionType.FixedBytes
 import maryk.core.properties.definitions.wrapper.DefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
+import maryk.core.properties.exceptions.InvalidSizeException
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -45,11 +47,31 @@ data class FixedBytesDefinition(
         return Bytes.fromByteReader(byteSize, reader)
     }
 
-    override fun calculateStorageByteLength(value: Bytes) = this.byteSize
+    override fun calculateStorageByteLength(value: Bytes): Int {
+        validateByteSize(value)
+        return this.byteSize
+    }
 
-    override fun writeStorageBytes(value: Bytes, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
+    override fun writeStorageBytes(value: Bytes, writer: (byte: Byte) -> Unit) {
+        validateByteSize(value)
+        value.writeBytes(writer)
+    }
 
-    override fun calculateTransportByteLength(value: Bytes) = this.byteSize
+    override fun calculateTransportByteLength(value: Bytes) = calculateStorageByteLength(value)
+
+    override fun validateWithRef(
+        previousValue: Bytes?,
+        newValue: Bytes?,
+        refGetter: () -> IsPropertyReference<Bytes, IsPropertyDefinition<Bytes>, *>?
+    ) {
+        if (newValue != null && newValue.size != byteSize) {
+            throw InvalidSizeException(
+                refGetter(), newValue.toHex(), byteSize.toUInt(), byteSize.toUInt()
+            )
+        }
+
+        super<IsComparableDefinition>.validateWithRef(previousValue, newValue, refGetter)
+    }
 
     override fun fromString(string: String) = Bytes(string)
 
@@ -59,6 +81,12 @@ data class FixedBytesDefinition(
         } else {
             value as? Bytes
         }
+
+    private fun validateByteSize(value: Bytes) {
+        if (value.size != byteSize) {
+            throw ParseException("Invalid storage byte length for FixedBytes: ${value.size} != $byteSize")
+        }
+    }
 
     override fun compatibleWith(
         definition: IsPropertyDefinition<*>,

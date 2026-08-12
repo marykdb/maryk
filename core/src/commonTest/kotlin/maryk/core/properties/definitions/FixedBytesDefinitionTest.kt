@@ -3,6 +3,7 @@ package maryk.core.properties.definitions
 import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
+import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.types.Bytes
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
@@ -38,6 +39,48 @@ internal class FixedBytesDefinitionTest {
         val randomizable: IsRandomizableDefinition<Bytes> = def
         randomizable.createRandom()
         assertFalse { (def as Any) is IsArithmeticDefinition<*> }
+    }
+
+    @Test
+    fun validateValuesWithDeclaredByteSize() {
+        def.validateWithRef(newValue = Bytes(ByteArray(5)))
+
+        assertFailsWith<InvalidSizeException> {
+            def.validateWithRef(newValue = Bytes(ByteArray(4)))
+        }
+        assertFailsWith<InvalidSizeException> {
+            def.validateWithRef(newValue = Bytes(ByteArray(6)))
+        }
+    }
+
+    @Test
+    fun validateDeclaredByteSizeBeforeValueRange() {
+        assertFailsWith<InvalidSizeException> {
+            defMaxDefined.validateWithRef(newValue = Bytes(ByteArray(4)))
+        }
+        assertFailsWith<InvalidSizeException> {
+            defMaxDefined.validateWithRef(newValue = Bytes(ByteArray(6)))
+        }
+    }
+
+    @Test
+    fun rejectValuesWithInvalidByteSizeBeforeStorageSerialization() {
+        assertFailsWith<ParseException> {
+            def.toStorageBytes(Bytes(ByteArray(4)))
+        }
+        assertFailsWith<ParseException> {
+            def.toStorageBytes(Bytes(ByteArray(6)))
+        }
+    }
+
+    @Test
+    fun rejectValuesWithInvalidByteSizeBeforeProtoBufSerialization() {
+        assertFailsWith<ParseException> {
+            def.toTransportByteArray(Bytes(ByteArray(4)))
+        }
+        assertFailsWith<ParseException> {
+            def.toTransportByteArray(Bytes(ByteArray(6)))
+        }
     }
 
     @Test

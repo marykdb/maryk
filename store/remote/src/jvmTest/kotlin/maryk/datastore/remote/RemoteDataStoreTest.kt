@@ -474,6 +474,42 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun executeFlowRetriesWhenAcceptedConnectionNeverSendsResponseHeaders() = runBlocking {
+        val connections = AtomicInteger()
+        val firstConnectionAccepted = CompletableDeferred<Unit>()
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            stalledHeaderThenUpdateFlowModule(connections, firstConnectionAccepted)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 1u,
+                    initialDelayMillis = 0,
+                    maxDelayMillis = 0,
+                    heartbeatTimeoutMillis = 100,
+                ),
+            )
+        )
+
+        try {
+            val update = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(
+                    SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
+                ).first()
+            }
+
+            firstConnectionAccepted.await()
+            assertEquals(1uL, update.version)
+            assertEquals(2, connections.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
     fun executeFlowFailsInsteadOfSilentlyDroppingWhenCollectorBackpressures() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -1505,6 +1541,46 @@ private fun Application.indefinitelyOpenFlowModule(
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 firstConnectionOpened.complete(Unit)
                 awaitCancellation()
+            }
+        }
+    }
+}
+
+private fun Application.stalledHeaderThenUpdateFlowModule(
+    connections: AtomicInteger,
+    firstConnectionAccepted: CompletableDeferred<Unit>,
+) {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.flowPath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            if (connections.incrementAndGet() == 1) {
+                firstConnectionAccepted.complete(Unit)
+                awaitCancellation()
+            }
+            call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                val context = RequestContext(
+                    definitionsContext = DefinitionsContext(
+                        dataModels = mutableMapOf(
+                            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                        )
+                    ),
+                    dataModel = SimpleMarykModel,
+                )
+                val payload = RemoteStoreCodec.encode(
+                    UpdatesResponse.Serializer,
+                    UpdatesResponse(
+                        SimpleMarykModel,
+                        listOf(OrderedKeysUpdate(listOf(SimpleMarykModel.key(ByteArray(16))), 1uL)),
+                    ),
+                    context,
+                )
+                writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
+                writeFully(payload)
+                flush()
             }
         }
     }

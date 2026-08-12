@@ -20,14 +20,17 @@ import io.ktor.utils.io.readFully
 import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.sync.Mutex
@@ -518,7 +521,7 @@ class RemoteDataStore private constructor(
                             }
                             setBody(payload)
                         }
-                        statement.execute { response ->
+                        suspend fun processResponse(response: HttpResponse) {
                             requireSuccess(response, "flow")
                             requireContentType(response, RemoteStoreProtocol.streamContentType, "flow")
                             val channel = response.bodyAsChannel()
@@ -583,6 +586,40 @@ class RemoteDataStore private constructor(
                             } finally {
                                 handle.close()
                                 listeners.remove(handle)
+                            }
+                        }
+                        val heartbeatTimeoutMillis = flowRetryPolicy.heartbeatTimeoutMillis
+                        if (heartbeatTimeoutMillis == null) {
+                            statement.execute(::processResponse)
+                        } else {
+                            supervisorScope {
+                                val headersReceived = CompletableDeferred<Unit>()
+                                val flowExecution = async {
+                                    statement.execute { response ->
+                                        headersReceived.complete(Unit)
+                                        processResponse(response)
+                                    }
+                                }
+                                flowExecution.invokeOnCompletion { cause ->
+                                    if (cause != null) {
+                                        headersReceived.completeExceptionally(cause)
+                                    }
+                                }
+                                try {
+                                    try {
+                                        withTimeout(heartbeatTimeoutMillis) {
+                                            headersReceived.await()
+                                        }
+                                    } catch (_: TimeoutCancellationException) {
+                                        flowExecution.cancel()
+                                        throw RemoteFlowDisconnectedException(
+                                            "Remote store flow timed out waiting for response headers"
+                                        )
+                                    }
+                                    flowExecution.await()
+                                } finally {
+                                    flowExecution.cancel()
+                                }
                             }
                         }
                         if (deliveredUpdate) {

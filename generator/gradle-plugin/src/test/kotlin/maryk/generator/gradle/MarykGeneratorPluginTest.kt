@@ -121,6 +121,50 @@ class MarykGeneratorPluginTest {
     }
 
     @Test
+    fun refusesConfiguredAndroidKotlinSourceDirectoryAsOutput() {
+        val project = fixture()
+        project.resolve("src/main/maryk").createDirectories()
+            .resolve("person.yaml").writeText(schema("Person"))
+        project.resolve("build.gradle.kts").writeText(
+            """
+            plugins {
+                id("com.android.library") version "9.2.1"
+                id("io.maryk.generator")
+            }
+
+            android {
+                namespace = "example.fixture"
+                compileSdk = 36
+            }
+
+            val androidSourceSets = extensions.getByName("android").javaClass.methods
+                .first { it.name == "getSourceSets" && it.parameterCount == 0 }
+                .invoke(extensions.getByName("android"))
+            val androidMain = androidSourceSets.javaClass.methods
+                .first { it.name == "getByName" && it.parameterCount == 1 }
+                .invoke(androidSourceSets, "main")
+            val androidKotlin = androidMain.javaClass.methods
+                .first { it.name == "getKotlin" && it.parameterCount == 0 }
+                .invoke(androidMain)
+            androidKotlin.javaClass.methods
+                .first { it.name == "srcDir" && it.parameterCount == 1 }
+                .invoke(androidKotlin, "custom/models")
+
+            marykGenerator {
+                packageName.set("example.generated")
+                outputDirectory.set(layout.projectDirectory.dir("custom/models"))
+            }
+            """.trimIndent(),
+        )
+        assertFalse(project.resolve("custom/models").exists())
+
+        val result = runner(project, "marykGenerateModels").buildAndFail()
+
+        assertTrue(result.output.contains("source directory"))
+        assertFalse(project.resolve("custom/models/Person.kt").exists())
+    }
+
+    @Test
     fun generationIsIncrementalAndRemovesStaleManagedFiles() {
         val project = fixture()
         project.resolve("src/main/maryk").createDirectories()
@@ -136,6 +180,38 @@ class MarykGeneratorPluginTest {
 
         val second = runner(project, "marykGenerateModels").build()
         assertEquals(TaskOutcome.UP_TO_DATE, second.task(":marykGenerateModels")?.outcome)
+    }
+
+    @Test
+    fun refusesConfiguredKotlinSourceDirectoryAsOutput() {
+        val project = fixture()
+        project.resolve("src/main/maryk").createDirectories()
+            .resolve("person.yaml").writeText(schema("Person"))
+        project.resolve("build.gradle.kts").writeText(
+            """
+            plugins {
+                kotlin("jvm") version "2.4.0"
+                id("io.maryk.generator")
+            }
+
+            kotlin {
+                sourceSets.named("main") {
+                    kotlin.srcDir("custom/models")
+                }
+            }
+
+            marykGenerator {
+                packageName.set("example.generated")
+                outputDirectory.set(layout.projectDirectory.dir("custom/models"))
+            }
+            """.trimIndent(),
+        )
+        assertFalse(project.resolve("custom/models").exists())
+
+        val result = runner(project, "marykGenerateModels").buildAndFail()
+
+        assertTrue(result.output.contains("source directory"))
+        assertFalse(project.resolve("custom/models/Person.kt").exists())
     }
 
     @Test

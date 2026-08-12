@@ -75,7 +75,11 @@ marykGenerator {
 
 `marykGenerateModels` recursively discovers `.yaml`, `.yml`, and `.json`
 schemas, orders them by normalized path, generates stable `<Model>.kt` files,
-and removes stale files only from its managed output directory. The output is
+and removes stale files only from its managed output directory. The first run
+creates a `.maryk-generator-output` ownership marker; later runs refuse to
+replace a non-empty directory without that marker. Use a dedicated generated
+directory (normally under `build/`), never a source or project root; an output
+directory itself cannot be a symbolic link. The output is
 wired into JVM/Android `main`, or Kotlin Multiplatform `commonMain`.
 
 Generation fails with the schema path and reason for missing input, malformed

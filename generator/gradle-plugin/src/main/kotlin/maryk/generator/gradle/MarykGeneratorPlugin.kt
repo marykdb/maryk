@@ -33,15 +33,25 @@ class MarykGeneratorPlugin : Plugin<Project> {
         }
 
         pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
-            extensions.configure(KotlinJvmProjectExtension::class.java) { kotlinExtension ->
+            afterEvaluate {
+                val kotlinExtension = extensions.getByType(KotlinJvmProjectExtension::class.java)
                 kotlinExtension.sourceSets.named("main") { sourceSet ->
+                    val configuredSourceDirectories = sourceSet.kotlin.srcDirs
+                    generate.configure { task ->
+                        task.sourceDirectories.from(configuredSourceDirectories)
+                    }
                     sourceSet.kotlin.srcDir(generate.flatMap { it.outputDirectory })
                 }
             }
         }
         pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
-            extensions.configure(KotlinMultiplatformExtension::class.java) { kotlinExtension ->
+            afterEvaluate {
+                val kotlinExtension = extensions.getByType(KotlinMultiplatformExtension::class.java)
                 kotlinExtension.sourceSets.named("commonMain") { sourceSet ->
+                    val configuredSourceDirectories = sourceSet.kotlin.srcDirs
+                    generate.configure { task ->
+                        task.sourceDirectories.from(configuredSourceDirectories)
+                    }
                     sourceSet.kotlin.srcDir(generate.flatMap { it.outputDirectory })
                 }
             }
@@ -49,8 +59,12 @@ class MarykGeneratorPlugin : Plugin<Project> {
         listOf("com.android.application", "com.android.library").forEach { pluginId ->
             pluginManager.withPlugin(pluginId) {
                 afterEvaluate {
+                    val android = extensions.getByName("android")
+                    generate.configure { task ->
+                        task.sourceDirectories.from(androidMainSourceDirectories(android))
+                    }
                     wireAndroidSourceDirectory(
-                        extensions.getByName("android"),
+                        android,
                         generate.get().outputDirectory.get().asFile,
                     )
                 }
@@ -63,6 +77,29 @@ class MarykGeneratorPlugin : Plugin<Project> {
         }
     }
 }
+
+private fun androidMainSourceDirectories(android: Any): List<Any> {
+    val sourceSets = android.javaClass.methods
+        .first { it.name == "getSourceSets" && it.parameterCount == 0 }
+        .invoke(android)
+    val main = sourceSets.javaClass.methods
+        .first { it.name == "getByName" && it.parameterTypes.contentEquals(arrayOf(String::class.java)) }
+        .invoke(sourceSets, "main")
+    return listOf("getKotlin", "getJava").flatMap { getter ->
+        main.javaClass.methods
+            .firstOrNull { it.name == getter && it.parameterCount == 0 }
+            ?.invoke(main)
+            ?.let(::sourceDirectories)
+            .orEmpty()
+    }
+}
+
+private fun sourceDirectories(sourceDirectorySet: Any): List<Any> =
+    (sourceDirectorySet.javaClass.methods
+        .firstOrNull { it.name == "getSrcDirs" && it.parameterCount == 0 }
+        ?.invoke(sourceDirectorySet) as? Iterable<*>)
+        ?.filterNotNull()
+        ?: emptyList()
 
 private fun wireAndroidSourceDirectory(android: Any, sourceDirectory: Any) {
     val sourceSets = android.javaClass.methods

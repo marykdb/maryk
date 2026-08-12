@@ -1,6 +1,7 @@
 package maryk.generator.build
 
 import java.nio.file.Files
+import kotlin.io.path.createSymbolicLinkPointingTo
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.readText
@@ -31,11 +32,20 @@ class SchemaBuildEngineTest {
     }
 
     @Test
-    fun generatesDeterministicFilesAndRemovesStaleOutput() {
+    fun generatesDeterministicFilesAndRemovesStaleManagedOutput() {
         val schemas = createTempDirectory()
         schemas.resolve("b.yaml").writeText(schema("Beta"))
         schemas.resolve("a.json").writeText(jsonSchema("Alpha"))
-        val output = createTempDirectory()
+        val output = createTempDirectory().resolve("generated")
+
+        val firstGeneration = SchemaBuildEngine.generate(
+            schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+            packageName = "example.generated",
+            outputDirectory = output,
+        )
+
+        assertEquals(listOf("Alpha.kt", "Beta.kt"), firstGeneration.files.map { it.fileName.toString() })
+        assertEquals("Managed by the Maryk generator.", output.resolve(".maryk-generator-output").readText())
         output.resolve("Stale.kt").writeText("stale")
 
         val result = SchemaBuildEngine.generate(
@@ -44,7 +54,6 @@ class SchemaBuildEngineTest {
             outputDirectory = output,
         )
 
-        assertEquals(listOf("Alpha.kt", "Beta.kt"), result.files.map { it.fileName.toString() })
         assertFalse(Files.exists(output.resolve("Stale.kt")))
         assertTrue(output.resolve("Alpha.kt").readText().startsWith("package example.generated"))
         val first = result.files.associate { it.fileName.toString() to it.readText() }
@@ -55,6 +64,74 @@ class SchemaBuildEngineTest {
             outputDirectory = output,
         )
         assertEquals(first, second.files.associate { it.fileName.toString() to it.readText() })
+    }
+
+    @Test
+    fun refusesToReplaceNonManagedOutputDirectory() {
+        val schemas = createTempDirectory()
+        schemas.resolve("alpha.yaml").writeText(schema("Alpha"))
+        val output = createTempDirectory()
+        output.resolve("Handwritten.kt").writeText("handwritten")
+
+        val exception = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "example.generated",
+                outputDirectory = output,
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("non-managed"))
+        assertEquals("handwritten", output.resolve("Handwritten.kt").readText())
+    }
+
+    @Test
+    fun refusesProjectAndSourceDirectories() {
+        val schemas = createTempDirectory()
+        schemas.resolve("alpha.yaml").writeText(schema("Alpha"))
+        val project = createTempDirectory()
+        val sourceDirectory = project.resolve("src/main/kotlin").createDirectories()
+
+        val projectException = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "example.generated",
+                outputDirectory = project,
+                projectDirectory = project,
+                sourceDirectories = listOf(sourceDirectory),
+            )
+        }
+        assertTrue(projectException.message.orEmpty().contains("project root"))
+
+        val sourceException = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "example.generated",
+                outputDirectory = sourceDirectory,
+                projectDirectory = project,
+                sourceDirectories = listOf(sourceDirectory),
+            )
+        }
+        assertTrue(sourceException.message.orEmpty().contains("source directory"))
+    }
+
+    @Test
+    fun refusesSymbolicLinkOutputDirectories() {
+        val schemas = createTempDirectory()
+        schemas.resolve("alpha.yaml").writeText(schema("Alpha"))
+        val target = createTempDirectory()
+        val output = createTempDirectory().resolve("generated")
+        output.createSymbolicLinkPointingTo(target)
+
+        val exception = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "example.generated",
+                outputDirectory = output,
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("symbolic link"))
     }
 
     @Test

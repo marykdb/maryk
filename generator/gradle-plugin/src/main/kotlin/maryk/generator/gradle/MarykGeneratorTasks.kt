@@ -38,12 +38,19 @@ abstract class MarykGenerateModelsTask : DefaultTask() {
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty
 
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val sourceDirectories: ConfigurableFileCollection
+
     @TaskAction
     fun generate() {
         SchemaBuildEngine.generate(
             schemaFiles = SchemaBuildEngine.discoverSchemas(schemas.files.map { it.toPath() }),
             packageName = packageName.get(),
             outputDirectory = outputDirectory.get().asFile.toPath(),
+            projectDirectory = project.projectDir.toPath(),
+            sourceDirectories = listOf(project.projectDir.toPath().resolve("src")) +
+                sourceDirectories.files.map { it.toPath() },
         )
     }
 }

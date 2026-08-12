@@ -37,6 +37,8 @@ data class LoadedSchema(
 )
 
 object SchemaBuildEngine {
+    private const val managedOutputMarker = ".maryk-generator-output"
+    private const val managedOutputMarkerContents = "Managed by the Maryk generator."
     private val supportedExtensions = setOf("yaml", "yml", "json")
     private val windowsReservedFileBaseNames = setOf(
         "CON", "PRN", "AUX", "NUL",
@@ -97,6 +99,8 @@ object SchemaBuildEngine {
         schemaFiles: List<Path>,
         packageName: String,
         outputDirectory: Path,
+        projectDirectory: Path? = null,
+        sourceDirectories: List<Path> = emptyList(),
     ): GenerationResult {
         require(packageName.isNotBlank()) { "Maryk generator packageName must not be blank" }
         val loaded = load(schemaFiles)
@@ -126,15 +130,18 @@ object SchemaBuildEngine {
             fileName to source
         }.toSortedMap()
 
-        val absoluteOutputDirectory = outputDirectory.toAbsolutePath().normalize()
+        val absoluteOutputDirectory = resolveOutputDirectory(outputDirectory)
+        verifyOutputDirectoryLocation(absoluteOutputDirectory, projectDirectory, sourceDirectories)
         val parentDirectory = absoluteOutputDirectory.parent
             ?: throw SchemaBuildException("Maryk generator output directory must have a parent")
         Files.createDirectories(parentDirectory)
+        verifyManagedOutputDirectory(absoluteOutputDirectory)
         val stagingDirectory = Files.createTempDirectory(parentDirectory, ".maryk-generator-")
         try {
             generated.forEach { (name, source) ->
                 stagingDirectory.resolve(name).writeText(source)
             }
+            stagingDirectory.resolve(managedOutputMarker).writeText(managedOutputMarkerContents)
             replaceManagedDirectory(stagingDirectory, absoluteOutputDirectory)
         } finally {
             clearManagedDirectory(stagingDirectory)
@@ -206,6 +213,58 @@ object SchemaBuildEngine {
                 if (path != directory) Files.deleteIfExists(path)
             }
         }
+    }
+
+    private fun verifyManagedOutputDirectory(outputDirectory: Path) {
+        if (Files.notExists(outputDirectory)) return
+        if (!Files.isDirectory(outputDirectory)) {
+            throw SchemaBuildException("Maryk generator output path must be a directory: $outputDirectory")
+        }
+        if (Files.list(outputDirectory).use { it.findAny().isEmpty }) return
+
+        val marker = outputDirectory.resolve(managedOutputMarker)
+        if (Files.notExists(marker) || marker.readText() != managedOutputMarkerContents) {
+            throw SchemaBuildException(
+                "Refusing to replace non-managed Maryk generator output directory: $outputDirectory. " +
+                    "Choose an empty directory or remove it once before generation.",
+            )
+        }
+    }
+
+    private fun verifyOutputDirectoryLocation(
+        outputDirectory: Path,
+        projectDirectory: Path?,
+        sourceDirectories: List<Path>,
+    ) {
+        if (projectDirectory?.toRealPath() == outputDirectory) {
+            throw SchemaBuildException("Maryk generator output directory must not be the project root: $outputDirectory")
+        }
+        sourceDirectories
+            .map(::resolvePathThroughExistingParent)
+            .firstOrNull { outputDirectory.startsWith(it) }
+            ?.let { sourceDirectory ->
+                throw SchemaBuildException(
+                    "Maryk generator output directory must not be inside a source directory: $sourceDirectory",
+                )
+            }
+    }
+
+    private fun resolveOutputDirectory(outputDirectory: Path): Path {
+        val absoluteOutputDirectory = outputDirectory.toAbsolutePath().normalize()
+        if (Files.isSymbolicLink(absoluteOutputDirectory)) {
+            throw SchemaBuildException("Maryk generator output directory must not be a symbolic link: $absoluteOutputDirectory")
+        }
+        return resolvePathThroughExistingParent(absoluteOutputDirectory)
+    }
+
+    private fun resolvePathThroughExistingParent(path: Path): Path {
+        val absolutePath = path.toAbsolutePath().normalize()
+        var existingParent = absolutePath
+        while (Files.notExists(existingParent)) {
+            existingParent = existingParent.parent
+                ?: throw SchemaBuildException("Maryk generator output directory must have a parent")
+        }
+        return existingParent.toRealPath().resolve(existingParent.relativize(absolutePath))
     }
 
     private fun replaceManagedDirectory(stagingDirectory: Path, outputDirectory: Path) {

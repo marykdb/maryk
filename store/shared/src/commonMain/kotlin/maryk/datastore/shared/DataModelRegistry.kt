@@ -21,6 +21,7 @@ internal fun validatedDataModelRegistry(
         if (model.Meta.name.isBlank()) {
             throw StorageException("Data model with ID $id has a blank name")
         }
+        model.checkModel()
     }
 
     val duplicateNames = dataModelsById.entries

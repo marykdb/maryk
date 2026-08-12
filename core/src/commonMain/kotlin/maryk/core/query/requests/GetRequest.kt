@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.validateKeys
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
 import maryk.core.query.filters.IsFilter
@@ -55,6 +56,7 @@ data class GetRequest<DM : IsRootDataModel> internal constructor(
         if (keys.size.toUInt() > MAX_REQUEST_BATCH_SIZE) {
             throw RequestException("Get key count ${keys.size} exceeds maximum $MAX_REQUEST_BATCH_SIZE")
         }
+        dataModel.validateKeys(keys)
     }
 
     companion object : QueryModel<GetRequest<*>, Companion>() {

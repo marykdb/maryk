@@ -65,11 +65,12 @@ class MultiTypeEnumDefinitionTest {
     fun enumDefinitionIsCompatible() {
         open class MultiTypeTestEnum<T: Any>(
             index: UInt,
-            override val definition: IsUsableInMultiType<T, *>?
+            override val definition: IsUsableInMultiType<T, *>?,
+            override val name: String,
         ) : IndexedEnumImpl<MultiTypeTestEnum<Any>>(index), MultiTypeEnum<T>
 
-        val t1 = MultiTypeTestEnum(1u, StringDefinition(regEx = "[^&]+"))
-        val t2 = MultiTypeTestEnum(1u, StringDefinition(regEx = "[^INCOMPATIBLE]+"))
+        val t1 = MultiTypeTestEnum(1u, StringDefinition(regEx = "[^&]+"), "first")
+        val t2 = MultiTypeTestEnum(1u, StringDefinition(regEx = "[^INCOMPATIBLE]+"), "first")
 
         assertTrue {
             MultiTypeEnumDefinition("Test", { listOf(t1) }).compatibleWith(
@@ -88,12 +89,13 @@ class MultiTypeEnumDefinitionTest {
     fun reorderingCasesWithChangedDefinitionIsIncompatible() {
         open class MultiTypeTestEnum<T: Any>(
             index: UInt,
-            override val definition: IsUsableInMultiType<T, *>?
+            override val definition: IsUsableInMultiType<T, *>?,
+            override val name: String,
         ) : IndexedEnumImpl<MultiTypeTestEnum<Any>>(index), MultiTypeEnum<T>
 
-        val storedFirst = MultiTypeTestEnum(1u, StringDefinition(regEx = "[a-z]+"))
-        val changedFirst = MultiTypeTestEnum(1u, StringDefinition(regEx = "[0-9]+"))
-        val second = MultiTypeTestEnum(2u, StringDefinition())
+        val storedFirst = MultiTypeTestEnum(1u, StringDefinition(regEx = "[a-z]+"), "first")
+        val changedFirst = MultiTypeTestEnum(1u, StringDefinition(regEx = "[0-9]+"), "first")
+        val second = MultiTypeTestEnum(2u, StringDefinition(), "second")
 
         assertFalse {
             MultiTypeEnumDefinition("Test", { listOf(second, changedFirst) }).compatibleWith(

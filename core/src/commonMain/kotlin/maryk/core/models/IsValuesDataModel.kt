@@ -14,20 +14,21 @@ interface IsValuesDataModel: IsTypedDataModel<Any>, IsStorableDataModel<Any> {
      * It at the moment checks the reserved indexes and names of models to see if those are not used in the model.
      */
     fun checkModel() {
-        this.Meta.reservedIndices?.let { reservedIndices ->
+        val meta = this.Meta
+        meta.reservedIndices?.let { reservedIndices ->
             this.forEach { property ->
                 require(!reservedIndices.contains(property.index)) {
-                    "Model ${Meta.name} has ${property.index} defined in option ${property.name} while it is reserved"
+                    "Model ${meta.name} has ${property.index} defined in option ${property.name} while it is reserved"
                 }
             }
         }
-        this.Meta.reservedNames?.let { reservedNames ->
+        meta.reservedNames?.let { reservedNames ->
             this.forEach { property ->
                 val names = property.alternativeNames?.let { it + property.name } ?: setOf(property.name)
                 val reservedName = names.firstOrNull { reservedNames.contains(it) }
 
                 require(reservedName == null) {
-                    "Model ${Meta.name} has a reserved name defined $reservedName"
+                    "Model ${meta.name} has a reserved name defined $reservedName"
                 }
             }
         }

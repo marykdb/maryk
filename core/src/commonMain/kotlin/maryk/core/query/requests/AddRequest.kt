@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.contextual.ContextualEmbeddedValuesDefi
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.validateKeys
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Add
 import maryk.core.query.responses.AddResponse
@@ -40,6 +41,7 @@ data class AddRequest<DM : IsRootDataModel> internal constructor(
         if (keysForObjects != null && keysForObjects.size != objects.size) {
             throw RequestException("Add key count ${keysForObjects.size} should equal object count ${objects.size}")
         }
+        keysForObjects?.let(dataModel::validateKeys)
     }
 
     companion object : QueryModel<AddRequest<*>, Companion>() {

@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.contextual.ContextualReferenceDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.validateKeys
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.RequestType.Delete
 import maryk.core.query.responses.DeleteResponse
@@ -38,6 +39,7 @@ data class DeleteRequest<DM : IsRootDataModel> internal constructor(
         if (keys.size.toUInt() > MAX_REQUEST_BATCH_SIZE) {
             throw RequestException("Delete key count ${keys.size} exceeds maximum $MAX_REQUEST_BATCH_SIZE")
         }
+        dataModel.validateKeys(keys)
     }
 
     companion object : QueryModel<DeleteRequest<*>, Companion>() {

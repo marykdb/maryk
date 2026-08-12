@@ -19,9 +19,13 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     final override val final = true
 
     // Because of compilation issue in Native this map contains IndexedEnum<E> instead of E as value
+    private val checkedCases: List<E> by lazy {
+        cases().also(::check)
+    }
+
     private val valueByString: Map<String, E> by lazy<Map<String, E>> {
         mutableMapOf<String, E>().also { output ->
-            for (type in cases()) {
+            for (type in checkedCases) {
                 output[type.name] = type
                 type.alternativeNames?.forEach { name: String ->
                     if (output.containsKey(name)) throw ParseException("Enum ${this@AbstractIndexedEnumDefinition.name} already has a case for $name")
@@ -32,7 +36,7 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     }
 
     private val valueByIndex by lazy {
-        cases().associateBy { it.index }
+        checkedCases.associateBy { it.index }
     }
 
     override val cases get() = optionalCases!!
@@ -84,6 +88,8 @@ abstract class AbstractIndexedEnumDefinition<E: IndexedEnum>(
     }
 
     override fun hashCode(): Int {
+        if (optionalCases != null) return optionalCases.invoke().hashCode()
+
         var result = optionalCases?.invoke().hashCode()
         result = 31 * result + name.hashCode()
         result = 31 * result + reservedIndices.hashCode()

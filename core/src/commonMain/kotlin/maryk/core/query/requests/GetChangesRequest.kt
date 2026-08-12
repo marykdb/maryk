@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.validateKeys
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
@@ -71,6 +72,8 @@ data class GetChangesRequest<DM : IsRootDataModel> internal constructor(
         if (keys.size.toUInt() > MAX_REQUEST_BATCH_SIZE) {
             throw RequestException("Get changes key count ${keys.size} exceeds maximum $MAX_REQUEST_BATCH_SIZE")
         }
+        dataModel.validateKeys(keys)
+        validateMaxVersions(maxVersions, "Get changes")
     }
 
     companion object : QueryModel<GetChangesRequest<*>, Companion>() {

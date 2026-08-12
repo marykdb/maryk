@@ -16,6 +16,7 @@ import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.references.TypeReference
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.invoke
+import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.END_GROUP
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -82,6 +83,23 @@ internal class MultiTypeDefinitionTest {
             EmbeddedMarykModel.Meta.name to DataModelReference(EmbeddedMarykModel),
         )
     )
+
+    @Test
+    fun rejectsTypedValuesFromForeignOrIncompatibleSameNamedEnums() {
+        val owned = MultiTypeEnum.invoke(1u, "Value", StringDefinition())
+        val definition = MultiTypeDefinition(
+            typeEnum = MultiTypeEnumDefinition("Owned", { listOf(owned) })
+        )
+        val foreign = MultiTypeEnum.invoke(1u, "Value", StringDefinition())
+        val incompatible = MultiTypeEnum.invoke(1u, "Value", NumberDefinition(type = SInt32))
+
+        assertFailsWith<DefNotFoundException> {
+            definition.validateWithRef(newValue = TypedValue(foreign, "test"))
+        }
+        assertFailsWith<DefNotFoundException> {
+            definition.validateWithRef(newValue = TypedValue(incompatible, 1))
+        }
+    }
 
     @Test
     fun getProperties() {

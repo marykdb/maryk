@@ -70,7 +70,11 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
 
     /** Get definition by [type] */
     @Suppress("UNCHECKED_CAST")
-    fun definition(type: E) = definition(type.index) as IsSubDefinition<T, CX>?
+    fun definition(type: E): IsSubDefinition<T, CX>? {
+        val registeredType = typeEnum.resolve(type.index)
+        if (registeredType !== type) return null
+        return definition(type.index) as IsSubDefinition<T, CX>?
+    }
 
     /** Override to control if embedded objects need to be returned as values to support Inject */
     fun keepAsValues(): Boolean = false
@@ -80,14 +84,26 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
      * so reference can be strongly typed
      */
     fun typedValueRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
-        TypedValueReference(type, this, parentReference)
+        TypedValueReference(
+            requireNotNull(typeEnum.resolve(type.index)?.takeIf { it === type }) {
+                "Type ${type.name} is not owned by ${typeEnum.name}"
+            },
+            this,
+            parentReference
+        )
 
     /**
      * Creates a reference referring to a value of [type] of multi type below [parentReference]
      * so reference can be strongly typed
      */
     fun simpleTypedValueRef(type: E, parentReference: CanHaveComplexChildReference<*, *, *, *>?) =
-        SimpleTypedValueReference(type, this, parentReference)
+        SimpleTypedValueReference(
+            requireNotNull(typeEnum.resolve(type.index)?.takeIf { it === type }) {
+                "Type ${type.name} is not owned by ${typeEnum.name}"
+            },
+            this,
+            parentReference
+        )
 
     /** Creates a reference referring to any type of multi type below [parentReference] */
     @Suppress("UNCHECKED_CAST")

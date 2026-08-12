@@ -9,6 +9,7 @@ import maryk.core.properties.definitions.embedObject
 import maryk.core.properties.definitions.number
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.validateKey
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.filters.IsFilter
@@ -84,6 +85,7 @@ data class ScanRequest<DM : IsRootDataModel> internal constructor(
         if (limit > MAX_SCAN_LIMIT) {
             throw RequestException("Scan limit $limit exceeds maximum $MAX_SCAN_LIMIT")
         }
+        startKey?.let(dataModel::validateKey)
         if (startKey != null && cursor != null) {
             throw RequestException("Scan startKey and cursor cannot be used together")
         }

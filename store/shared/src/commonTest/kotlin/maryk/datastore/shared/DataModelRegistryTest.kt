@@ -3,6 +3,7 @@ package maryk.datastore.shared
 import maryk.core.exceptions.StorageException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.string
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -14,8 +15,39 @@ private object DuplicateRegistryModelA : RootDataModel<DuplicateRegistryModelA>(
 private object DuplicateRegistryModelB : RootDataModel<DuplicateRegistryModelB>(name = "DuplicateRegistryModel")
 private object BlankRegistryModel : RootDataModel<BlankRegistryModel>(name = "")
 private object AddedRegistryModel : RootDataModel<AddedRegistryModel>(name = "AddedRegistryModel")
+private object ReservedIndexRegistryModel : RootDataModel<ReservedIndexRegistryModel>(
+    name = "ReservedIndexRegistryModel",
+    reservedIndices = listOf(1u),
+) {
+    val value by string(index = 1u)
+}
+private object ReservedNameRegistryModel : RootDataModel<ReservedNameRegistryModel>(
+    name = "ReservedNameRegistryModel",
+    reservedNames = listOf("value"),
+) {
+    val value by string(index = 1u)
+}
+private object ReservedAlternativeNameRegistryModel : RootDataModel<ReservedAlternativeNameRegistryModel>(
+    name = "ReservedAlternativeNameRegistryModel",
+    reservedNames = listOf("oldValue"),
+) {
+    val value by string(index = 1u, alternativeNames = setOf("oldValue"))
+}
 
 class DataModelRegistryTest {
+    @Test
+    fun rejectsReservedPropertiesWithoutManualModelCheck() {
+        assertFailsWith<IllegalArgumentException> {
+            validatedDataModelRegistry(mapOf(1u to ReservedIndexRegistryModel))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            validatedDataModelRegistry(mapOf(1u to ReservedNameRegistryModel))
+        }
+        assertFailsWith<IllegalArgumentException> {
+            validatedDataModelRegistry(mapOf(1u to ReservedAlternativeNameRegistryModel))
+        }
+    }
+
     @Test
     fun rejectsReservedModelId() {
         val exception = assertFailsWith<StorageException> {

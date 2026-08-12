@@ -12,6 +12,8 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.number
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.validateKey
+import maryk.core.properties.types.validateKeys
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.properties.types.numeric.UInt64
 import maryk.core.query.RequestContext
@@ -97,6 +99,9 @@ data class ScanUpdatesRequest<DM : IsRootDataModel> internal constructor(
         if (orderedKeys != null && orderedKeys.size.toUInt() > MAX_SCAN_LIMIT) {
             throw RequestException("Scan updates ordered key count ${orderedKeys.size} exceeds maximum $MAX_SCAN_LIMIT")
         }
+        startKey?.let(dataModel::validateKey)
+        orderedKeys?.let(dataModel::validateKeys)
+        validateMaxVersions(maxVersions, "Scan updates")
     }
 
     companion object : QueryModel<ScanUpdatesRequest<*>, Companion>() {

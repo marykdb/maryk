@@ -14,6 +14,37 @@ import kotlin.test.assertTrue
 
 class IndexedEnumDefinitionTest {
     @Test
+    fun rejectsInvalidDeclarationsBeforeCompatibilityChecks() {
+        val first = invoke(1u, "first", setOf("one"))
+
+        assertFailsWith<IllegalArgumentException> {
+            IndexedEnumDefinition("Test", { listOf(first, invoke(1u, "second")) }).resolve(1u)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            IndexedEnumDefinition("Test", { listOf(first, invoke(2u, "first")) }).resolve(1u)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            IndexedEnumDefinition("Test", { listOf(first, invoke(2u, "second", setOf("one"))) }).resolve(1u)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            IndexedEnumDefinition("Test", { listOf(first) }, reservedIndices = listOf(1u)).resolve(1u)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            IndexedEnumDefinition("Test", { listOf(first) }, reservedNames = listOf("one")).resolve(1u)
+        }
+    }
+
+    @Test
+    fun equalEnumDefinitionsHaveEqualHashes() {
+        val first = invoke(1u, "first")
+        val left = IndexedEnumDefinition("Left", { listOf(first) })
+        val right = IndexedEnumDefinition("Right", { listOf(first) }, reservedIndices = listOf(2u))
+
+        assertEquals(left, right)
+        assertEquals(left.hashCode(), right.hashCode())
+    }
+
+    @Test
     fun reorderingCasesWithStableIndicesIsCompatible() {
         val first = invoke(1u, "first")
         val second = invoke(2u, "second")

@@ -44,7 +44,10 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
     @Suppress("UNCHECKED_CAST")
     override fun definition(index: UInt) = typeEnum.resolve(index)?.definition as? IsSubDefinition<out Any, ContainsDefinitionsContext>?
     @Suppress("UNCHECKED_CAST")
-    override fun definition(type: E) = type.definition as IsSubDefinition<T, ContainsDefinitionsContext>?
+    override fun definition(type: E) =
+        typeEnum.resolve(type.index)
+            ?.takeIf { it === type }
+            ?.definition as IsSubDefinition<T, ContainsDefinitionsContext>?
 
     override fun keepAsValues() = false
 

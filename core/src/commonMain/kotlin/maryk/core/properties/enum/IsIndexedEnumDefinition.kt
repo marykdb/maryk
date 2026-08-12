@@ -36,9 +36,15 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
     /** Check [cases] from a single captured enum snapshot. */
     fun check(cases: List<IndexedEnum>) {
         val indices = mutableSetOf<UInt>()
+        val names = mutableSetOf<String>()
         cases.forEach { case ->
             require(indices.add(case.index)) {
                 "Enum $name has duplicate index ${case.index} for option ${case.name}"
+            }
+            (case.alternativeNames.orEmpty() + case.name).forEach { caseName ->
+                require(names.add(caseName)) {
+                    "Enum $name has duplicate name $caseName"
+                }
             }
         }
         this.reservedIndices?.let {
@@ -48,10 +54,11 @@ interface IsIndexedEnumDefinition<E: IndexedEnum>:
                 }
             }
         }
-        this.reservedNames?.let {
+        this.reservedNames?.let { reservedNames ->
             cases.forEach { case ->
-                require(reservedNames?.contains(case.name) != true) {
-                    "Enum $name has a reserved name defined ${case.name}"
+                val reservedName = (case.alternativeNames.orEmpty() + case.name).firstOrNull(reservedNames::contains)
+                require(reservedName == null) {
+                    "Enum $name has a reserved name defined $reservedName"
                 }
             }
         }

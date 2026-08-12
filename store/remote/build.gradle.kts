@@ -27,6 +27,7 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation(projects.testmodels)
                 implementation(projects.store.memory)
+                implementation(projects.file)
             }
         }
         getByName("jvmTest") {

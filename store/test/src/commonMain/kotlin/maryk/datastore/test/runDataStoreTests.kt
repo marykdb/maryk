@@ -1,5 +1,8 @@
 package maryk.datastore.test
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.AnyValueIncMapIndexModel
 import maryk.test.models.AnyValueMapIndexModel
@@ -13,8 +16,12 @@ import maryk.test.models.ModelV2ExtraIndex
 import maryk.test.models.Person
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
-private val allTestClasses = arrayOf(
+internal typealias DataStoreTestConstructor = (IsDataStore) -> IsDataStoreTest
+
+private val allTestClasses: Array<Pair<String, DataStoreTestConstructor>> = arrayOf(
     "DataStoreAddTest" to ::DataStoreAddTest,
     "DataStoreChangeComplexTest" to ::DataStoreChangeComplexTest,
     "DataStoreChangeTest" to ::DataStoreChangeTest,
@@ -46,6 +53,8 @@ private val allTestClasses = arrayOf(
     "UniqueTest" to ::UniqueTest,
 )
 
+private val testCaseDispatcher = Dispatchers.Default.limitedParallelism(1)
+
 val dataModelsForTests = mapOf(
     1u to TestMarykModel,
     2u to SimpleMarykModel,
@@ -63,11 +72,22 @@ val dataModelsForTests = mapOf(
     14u to GeoLocation,
 )
 
-suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = null) {
+suspend fun runDataStoreTests(
+    dataStore: IsDataStore,
+    runOnlyTest: String? = null,
+    caseTimeout: Duration = 60.seconds,
+) = runDataStoreTestClasses(dataStore, allTestClasses, runOnlyTest, caseTimeout)
+
+internal suspend fun runDataStoreTestClasses(
+    dataStore: IsDataStore,
+    testClasses: Array<Pair<String, DataStoreTestConstructor>>,
+    runOnlyTest: String? = null,
+    caseTimeout: Duration = 60.seconds,
+) {
     val exceptionList = mutableMapOf<String, Throwable>()
     var executedTests = 0
 
-    for ((testClassName, testClassConstructor) in allTestClasses) {
+    for ((testClassName, testClassConstructor) in testClasses) {
         val testClass = testClassConstructor(dataStore)
 
         var hasPrintedTestClassName = false
@@ -86,9 +106,13 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
 
             var phase = "init"
             try {
-                testClass.initData()
-                phase = "test"
-                test()
+                withContext(testCaseDispatcher) {
+                    withTimeout(caseTimeout) {
+                        testClass.initData()
+                        phase = "test"
+                        test()
+                    }
+                }
             } catch (throwable: Throwable) {
                 println("  FAILED $phase")
                 exceptionList["$testClassName.$testName.$phase"] = throwable
@@ -124,7 +148,8 @@ suspend fun runDataStoreTests(dataStore: IsDataStore, runOnlyTest: String? = nul
 
 suspend fun runDataStoreTestsIsolated(
     createDataStore: () -> IsDataStore,
-    runOnlyTests: Set<String>? = null
+    runOnlyTests: Set<String>? = null,
+    caseTimeout: Duration = 60.seconds,
 ) {
     val exceptionList = mutableMapOf<String, Throwable>()
     var executedTests = 0
@@ -155,9 +180,13 @@ suspend fun runDataStoreTestsIsolated(
 
                 var phase = "init"
                 try {
-                    testClass.initData()
-                    phase = "test"
-                    test()
+                    withContext(testCaseDispatcher) {
+                        withTimeout(caseTimeout) {
+                            testClass.initData()
+                            phase = "test"
+                            test()
+                        }
+                    }
                 } catch (throwable: Throwable) {
                     println("  FAILED $phase")
                     exceptionList["$testClassName.$testName.$phase"] = throwable

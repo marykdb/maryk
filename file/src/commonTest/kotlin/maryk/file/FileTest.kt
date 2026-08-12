@@ -66,6 +66,25 @@ class FileTest {
     }
 
     @Test
+    fun moveReplaceReplacesExistingContents() {
+        val sourcePath = "fileStoreMoveSource-${Random.nextInt()}.txt"
+        val destinationPath = "fileStoreMoveDestination-${Random.nextInt()}.txt"
+
+        try {
+            File.writeText(sourcePath, "new")
+            File.writeText(destinationPath, "old")
+
+            File.moveReplace(sourcePath, destinationPath)
+
+            assertNull(File.readText(sourcePath))
+            assertEquals("new", File.readText(destinationPath))
+        } finally {
+            File.delete(sourcePath)
+            File.delete(destinationPath)
+        }
+    }
+
+    @Test
     fun directoryIsNotReadableFile() {
         assertNull(File.size("."))
         assertNull(File.readText("."))

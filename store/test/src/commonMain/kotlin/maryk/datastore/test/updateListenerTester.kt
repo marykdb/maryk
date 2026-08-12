@@ -1,13 +1,12 @@
-@file:OptIn(DelicateCoroutinesApi::class)
-
 package maryk.datastore.test
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,65 +25,69 @@ suspend fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> updateListenerTester(
     responseCount: Int,
     changeBlock: suspend CoroutineScope.(Array<CompletableDeferred<IsUpdateResponse<DM>>>) -> Unit
 ) {
-    val responses = Array(responseCount) {
-        CompletableDeferred<IsUpdateResponse<DM>>()
-    }
-    var counter = 0
+    coroutineScope {
+        val testDispatcher = Dispatchers.Default.limitedParallelism(1)
+        val responses = Array(responseCount) {
+            CompletableDeferred<IsUpdateResponse<DM>>()
+        }
+        var counter = 0
 
-    val listenerSetupComplete = CompletableDeferred<Boolean>()
+        val listenerSetupComplete = CompletableDeferred<Boolean>()
+        val testFailure = CompletableDeferred<Throwable?>()
 
-    val listenJob = GlobalScope.launch {
-        try {
-            dataStore.executeFlow(
-                request
-            ).also {
-                listenerSetupComplete.complete(true)
-            }.collect {
-                responses[counter++].complete(it)
+        val listenJob = launch(testDispatcher) {
+            try {
+                dataStore.executeFlow(
+                    request
+                ).also {
+                    listenerSetupComplete.complete(true)
+                }.collect {
+                    val response = responses.getOrNull(counter++)
+                        ?: throw AssertionError("Received more than $responseCount updates")
+                    response.complete(it)
+                }
+            } catch (throwable: Throwable) {
+                if (!listenerSetupComplete.isCompleted) {
+                    listenerSetupComplete.completeExceptionally(throwable)
+                } else if (throwable !is CancellationException) {
+                    testFailure.complete(throwable)
+                } else {
+                    throw throwable
+                }
             }
-        } catch (throwable: Throwable) {
-            if (!listenerSetupComplete.isCompleted) {
-                listenerSetupComplete.completeExceptionally(throwable)
-            } else {
-                throw throwable
-            }
         }
-    }
 
-    withContext(Dispatchers.Default.limitedParallelism(1)) {
-        withTimeout(5.seconds) {
-            listenerSetupComplete.await()
-        }
-    }
-
-    val testFailure = CompletableDeferred<Throwable?>()
-
-    val changeJob = GlobalScope.launch {
+        var changeJob: Job? = null
+        var timeoutJob: Job? = null
         try {
-            changeBlock(responses)
-            testFailure.complete(null)
-        } catch (e: Throwable) {
-            testFailure.complete(e)
+            withContext(testDispatcher) {
+                withTimeout(5.seconds) {
+                    listenerSetupComplete.await()
+                }
+            }
+
+            changeJob = launch(testDispatcher) {
+                try {
+                    changeBlock(responses)
+                    testFailure.complete(null)
+                } catch (e: Throwable) {
+                    testFailure.complete(e)
+                }
+            }
+
+            timeoutJob = launch(testDispatcher) {
+                delay(5.seconds)
+                testFailure.complete(
+                    AssertionError("Timed out after 5s listening to updates, likely some updates were not retrieved from the store")
+                )
+            }
+
+            testFailure.await()?.let { throw it }
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
+            changeJob?.cancelAndJoin()
+            timeoutJob?.cancelAndJoin()
         }
-    }
-
-    val timeoutJob = GlobalScope.launch {
-        // Timeout
-        delay(5.seconds)
-        testFailure.complete(
-            AssertionError("Timed out after 5s listening to updates, likely some updates were not retrieved from the store")
-        )
-    }
-
-    val failure = testFailure.await()
-
-    dataStore.closeAllListeners()
-
-    listenJob.cancelAndJoin()
-    changeJob.cancelAndJoin()
-    timeoutJob.cancelAndJoin()
-
-    if (failure != null) {
-        throw failure
     }
 }

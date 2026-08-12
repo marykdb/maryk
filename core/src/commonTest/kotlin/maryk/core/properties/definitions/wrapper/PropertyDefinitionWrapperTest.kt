@@ -15,10 +15,23 @@ fun comparePropertyDefinitionWrapper(
 ) {
     assertEquals(original.index, converted.index)
     assertEquals(original.name, converted.name)
-    // Make sure JS tests correct
-    assertTrue("${converted.name} should match with original ${original.name}. $converted to $original") {
-        original.definition == converted.definition
-    }
+    // Serialized definitions rebuild their model and enum instances, so compare schema semantics.
+    val originalDefinition = original.definition
+    val convertedDefinition = converted.definition
+    val incompatibilities = mutableListOf<String>()
+    val compatibleBothWays = originalDefinition.compatibleWith(
+        convertedDefinition,
+        mutableListOf(),
+        incompatibilities::add,
+    ) && convertedDefinition.compatibleWith(
+        originalDefinition,
+        mutableListOf(),
+        incompatibilities::add,
+    )
+    assertTrue(
+        compatibleBothWays,
+        "${converted.name} should match with original ${original.name}: ${incompatibilities.joinToString()}",
+    )
 }
 
 class PropertyDefinitionWrapperTest {

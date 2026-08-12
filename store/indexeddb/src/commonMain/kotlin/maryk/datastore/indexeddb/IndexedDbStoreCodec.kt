@@ -101,26 +101,36 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readRecord(
     tableStoreName: String,
     keyBytes: ByteArray,
     select: RootPropRefGraph<DM>?,
-    decryptValue: suspend (ByteArray) -> ByteArray = { it },
+    decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): ValuesWithMetaData<DM>? {
-    val meta = get(keyStoreName, keyBytes)?.let(::decodeRecordMeta) ?: return null
-    val values = readCurrentValues(dataModel, tableStoreName, keyBytes, select, decryptValue) ?: return null
+    repeat(maxLegacyRecordReadAttempts) {
+        val metaBytes = get(keyStoreName, keyBytes) ?: return null
+        val meta = decodeRecordMeta(metaBytes)
+        val values = readCurrentValues(dataModel, tableStoreName, keyBytes, select, decryptValue)
+        if (get(keyStoreName, keyBytes)?.contentEquals(metaBytes) != true) return@repeat
 
-    return ValuesWithMetaData(
-        key = dataModel.key(keyBytes),
-        values = values,
-        firstVersion = meta.firstVersion,
-        lastVersion = meta.lastVersion,
-        isDeleted = meta.isDeleted,
-    )
+        return values?.let {
+            ValuesWithMetaData(
+                key = dataModel.key(keyBytes),
+                values = it,
+                firstVersion = meta.firstVersion,
+                lastVersion = meta.lastVersion,
+                isDeleted = meta.isDeleted,
+            )
+        }
+    }
+    throw IllegalStateException("IndexedDB record changed while it was being read")
 }
+
+/** Legacy records store metadata and table rows separately; retry if a commit crossed those reads. */
+private const val maxLegacyRecordReadAttempts = 3
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentValues(
     dataModel: DM,
     tableStoreName: String,
     keyBytes: ByteArray,
     select: RootPropRefGraph<DM>?,
-    decryptValue: suspend (ByteArray) -> ByteArray = { it },
+    decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): Values<DM>? {
     if (select != null && select.properties.isEmpty()) {
         return dataModel.emptyValues()
@@ -143,7 +153,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentValues
     return decodeStorageRowsToValues(
         dataModel = dataModel,
         rows = rows.map { (rowKey, rowValue) ->
-            tableQualifierFromRowKey(rowKey, keyBytes) to decryptValue(rowValue)
+            tableQualifierFromRowKey(rowKey, keyBytes).let { qualifier -> qualifier to decryptValue(qualifier, rowValue) }
         },
         select = select,
     )

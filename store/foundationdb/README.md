@@ -192,7 +192,7 @@ Observability:
 
 ## Operational Tips
 
-- Transactions: each request is handled within an FDB transaction; FDB retries on conflicts, while Maryk handles validation errors (uniques, parent presence, etc.).
+- Transactions: each add, change, or delete object is handled in its own FDB transaction; a multi-object request can therefore partially succeed. FDB retries conflicts, while Maryk returns validation errors (uniques, parent presence, etc.) as per-object statuses.
 - Scans: index scans are recommended for large filtered queries. Primary key scans are inexpensive for full‑range iteration.
 - Historic queries: `toVersion` is supported for data, unique, and index reads. Historic index scanning is implemented and used when `toVersion` is provided.
 

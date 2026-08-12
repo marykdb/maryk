@@ -2,6 +2,9 @@
   "name": "maryk-docs",
   "type": "module",
   "version": "0.0.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "scripts": {
     "sync": "node scripts/sync-core-docs.mjs",
     "prebuild": "yarn sync",

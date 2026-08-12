@@ -129,7 +129,7 @@ Soft delete filtering is layered in: if `filterSoftDeleted` is true, we check th
 
 ## Error Handling & Validations
 
-All writes occur in a single FDB transaction per request. We do read‑for‑write validations (uniques, parent existence for nested values) inside the same transaction to avoid races. The transaction is retried by FDB on conflicts, and we propagate Maryk validation errors (e.g. unique violation) back to clients as structured responses.
+Each add, change, or delete object is committed in its own FDB transaction. Read-for-write validation (uniques and parent existence for nested values) runs inside that object's transaction to avoid races. FDB retries conflicting transactions, and Maryk returns validation errors (for example, a unique violation) as structured per-object statuses. A multi-object request is therefore not atomic: objects committed before a later failure remain committed.
 
 ## Why use separate historic subspaces?
 

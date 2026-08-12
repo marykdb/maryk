@@ -28,7 +28,7 @@ Capabilities in the FDB engine:
   - `clusterUpdateLogConfiguration`: optional cluster-wide live update propagation for `executeFlow` (writes updates into an FDB log and tails them back into the in-memory listener flow).
     Upgrading its legacy HLC-ordered log is coordinated: quiesce all readers and writers, upgrade every binary, then restart. Consumers drain persisted legacy entries before storing a one-way commit-ordered cursor. Mixed old/new binaries and rollback after activation are unsupported because old binaries cannot enforce or understand the transition.
 - Initializes per‑model directories via DirectoryLayer.
-- Launches the store actor (coroutine) to process incoming requests one by one. Within the actor, every request is handled in an FDB transaction (or uses an iterator scoped to the transaction).
+- Launches the store actor (coroutine) to process incoming requests one by one. Add, change, and delete processors use one FDB transaction per object; multi-object requests can therefore return partial results. Reads use transactions or iterators scoped to the required operation.
 
 ### Cluster Update Log (Optional)
 

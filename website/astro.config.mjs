@@ -170,6 +170,7 @@ export default defineConfig({
                                 {label: 'Overview', slug: 'stores/remote'},
                             ],
                         },
+                        {label: 'Store Test Suite', slug: 'stores/test'},
                     ],
                 },
                 {

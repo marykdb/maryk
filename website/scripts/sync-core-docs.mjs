@@ -68,6 +68,7 @@ export const map = [
   ['src/content/docs/stores/foundationdb/storage.mdx', '../store/foundationdb/docs/storage.md'],
   ['src/content/docs/stores/foundationdb/local-testing.mdx', '../store/foundationdb/docs/local-testing.md'],
   ['src/content/docs/stores/remote.mdx', '../store/remote/README.md'],
+  ['src/content/docs/stores/test.mdx', '../store/test/README.md'],
 
   // CLI
   ['src/content/docs/cli/commands.mdx', '../cli/docs/commands.md'],

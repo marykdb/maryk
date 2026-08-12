@@ -69,10 +69,13 @@ private fun List<KotlinForProperty>.generateDefinitionsForObjectProperties(
     var properties = ""
     for (it in this) {
         addImport("maryk.core.properties.definitions."+it.wrapName)
+        val alternativeNames = it.altNames?.let { altNames ->
+            "\n            alternativeNames = setOf(${altNames.joinToString(", ") { it.kotlinStringLiteral() }}),"
+        } ?: ""
         properties += """
         val ${it.name} by ${it.wrapName}(
             index = ${it.index}u,
-            getter = $modelName::${it.name},
+            getter = $modelName::${it.name},$alternativeNames
             ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()}
         )"""
     }

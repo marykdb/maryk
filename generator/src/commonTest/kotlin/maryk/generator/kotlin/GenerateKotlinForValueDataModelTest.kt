@@ -1,8 +1,32 @@
 package maryk.generator.kotlin
 
 import maryk.test.models.ValueMarykObject
+import maryk.core.models.ValueDataModel
+import maryk.core.properties.definitions.number
+import maryk.core.properties.types.ValueDataObject
+import maryk.core.properties.types.numeric.SInt32
+import maryk.core.values.ObjectValues
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
+
+private data class ValueMarykObjectWithAlternativeName(
+    val renamedValue: Int = 5,
+) : ValueDataObject(toBytes(renamedValue)) {
+    companion object : ValueDataModel<ValueMarykObjectWithAlternativeName, Companion>(ValueMarykObjectWithAlternativeName::class) {
+        val renamedValue by number(
+            index = 1u,
+            getter = ValueMarykObjectWithAlternativeName::renamedValue,
+            type = SInt32,
+            default = 5,
+            alternativeNames = setOf("oldValue"),
+        )
+
+        override fun invoke(values: ObjectValues<ValueMarykObjectWithAlternativeName, Companion>) = ValueMarykObjectWithAlternativeName(
+            renamedValue = values(1u),
+        )
+    }
+}
 
 val generatedKotlinForValueDataModel = """
 package maryk.test.models
@@ -50,5 +74,19 @@ class GenerateKotlinForValueDataModelTest {
         }
 
         assertEquals(generatedKotlinForValueDataModel, output)
+    }
+
+    @Test
+    fun generatesAlternativeNamesForValueModelProperties() {
+        val output = buildString {
+            ValueMarykObjectWithAlternativeName.generateKotlin("maryk.test.models") {
+                append(it)
+            }
+        }
+
+        assertContains(
+            output,
+            """alternativeNames = setOf("oldValue"),""",
+        )
     }
 }

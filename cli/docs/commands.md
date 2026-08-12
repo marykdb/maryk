@@ -102,6 +102,10 @@ When the output viewer is shown, `save` supports YAML/JSON/PROTO, plus Kotlin ou
 - `save <dir> --kotlin --package <name>` (generates Kotlin files)
 - `save <dir> --no-deps` (export without dependencies)
 
+Multi-file saves (Kotlin or `--meta`) publish a complete revision under
+`<dir>/.maryk-export/` by default. Use `--legacy-direct` only for consumers
+that require files directly in `<dir>`.
+
 ## Migrations
 
 ```text
@@ -154,7 +158,7 @@ Many commands take property references (for `set`, `show`, `select`, `order`, et
 When `get` returns data, you enter a viewer with scrolling output.
 
 Commands:
-- `save <dir> [--yaml|--json|--proto] [--meta]` — export the record.
+- `save <dir> [--yaml|--json|--proto] [--meta] [--legacy-direct]` — export the record.
 - `load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]` — apply values from a file.
 - `set <ref> <value> [--if-version <n>]` — set or replace a value.
 - `unset <ref> [--if-version <n>]` — clear a value.
@@ -198,7 +202,7 @@ Commands:
 - `get` — open the selected record in the viewer.
 - `show <ref,...>` — choose fields to display (also updates the select graph).
 - `filter <expr>` — add another `where` clause (Maryk YAML format).
-- `save <dir> [--yaml|--json|--proto] [--meta]` — export the selected record.
+- `save <dir> [--yaml|--json|--proto] [--meta] [--legacy-direct]` — export the selected record.
 - `load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]` — apply values to the selected record.
 - `delete [--hard]` — soft delete (default) or hard delete.
 - `undelete [--if-version <n>]` — restore a soft-deleted record.

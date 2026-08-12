@@ -3,6 +3,7 @@ package maryk.file
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 
 class FileTest {
@@ -69,5 +70,20 @@ class FileTest {
         assertNull(File.size("."))
         assertNull(File.readText("."))
         assertNull(File.readBytes("."))
+    }
+
+    @Test
+    fun readsRegularFilesInBoundedChunks() {
+        val path = "fileStoreChunks-${Random.nextInt()}.txt"
+        try {
+            File.writeText(path, "abcdef")
+            val chunks = mutableListOf<String>()
+
+            assertEquals(true, File.readChunks(path, 2) { chunks += it.decodeToString() })
+            assertEquals(listOf("ab", "cd", "ef"), chunks)
+            assertFalse(File.readChunks("missing-$path", 2) {})
+        } finally {
+            File.delete(path)
+        }
     }
 }

@@ -169,6 +169,31 @@ actual object File {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun readChunks(path: String, chunkSize: Int, onChunk: (ByteArray) -> Unit): Boolean {
+        require(chunkSize > 0) { "Chunk size must be positive" }
+        if (!isRegularFile(path)) return false
+        val handle: HANDLE? = CreateFileW(path, GENERIC_READ, 0u, null, OPEN_EXISTING.toUInt(), FILE_ATTRIBUTE_NORMAL.toUInt(), null)
+        if (handle == null || handle == INVALID_HANDLE_VALUE) return false
+        try {
+            val buffer = ByteArray(chunkSize)
+            buffer.usePinned { pinned ->
+                while (true) {
+                    val count = memScoped {
+                        val read = alloc<DWORDVar>()
+                        if (ReadFile(handle, pinned.addressOf(0), buffer.size.toUInt(), read.ptr, null) == 0) return false
+                        read.value.toInt()
+                    }
+                    if (count == 0) return true
+                    onChunk(buffer.copyOf(count))
+                }
+            }
+        } finally {
+            CloseHandle(handle)
+        }
+        return false
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun writeText(path: String, contents: String) {
         if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
         val handle: HANDLE? = CreateFileW(

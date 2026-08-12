@@ -56,7 +56,7 @@ class ScanViewerInteraction(
     override val promptLabel: String = "scan> "
     override val introLines: List<String> = listOf(
         "Scanning ${dataModel.Meta.name}. Use Up/Down to move, PgUp/PgDn for pages, q/quit/exit to close.",
-        "Commands: get | save <dir> [--yaml|--json|--proto] [--meta] | load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta] | delete [--hard] | undelete [--if-version <n>] | filter <expr> | show <refs>",
+        "Commands: get | save <dir> [--yaml|--json|--proto] [--meta] [--legacy-direct] | load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta] | delete [--hard] | undelete [--if-version <n>] | filter <expr> | show <refs>",
     )
 
     private var currentWhere: IsFilter? = where
@@ -99,7 +99,7 @@ class ScanViewerInteraction(
                         return completeToken(currentToken, listOf("save"))
                     }
                     if (currentToken.startsWith("--")) {
-                        return completeToken(currentToken, listOf("--yaml", "--json", "--proto", "--meta"))
+                        return completeToken(currentToken, listOf("--yaml", "--json", "--proto", "--meta", "--legacy-direct"))
                     }
                     if (endsWithSpace) {
                         return "--yaml"
@@ -339,6 +339,7 @@ class ScanViewerInteraction(
                         includeMeta = saveOptions.includeMeta,
                         packageName = saveOptions.packageName,
                         noDeps = saveOptions.noDeps,
+                        legacyDirect = saveOptions.legacyDirect,
                     )
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()
@@ -743,6 +744,7 @@ class ScanViewerInteraction(
         val includeMeta: Boolean,
         val packageName: String?,
         val noDeps: Boolean,
+        val legacyDirect: Boolean,
     )
 
     private sealed class SaveOptionsResult {
@@ -777,6 +779,7 @@ class ScanViewerInteraction(
         var format: SaveFormat? = null
         var packageName: String? = null
         var noDeps = false
+        var legacyDirect = false
         var index = 0
 
         while (index < tokens.size) {
@@ -801,6 +804,7 @@ class ScanViewerInteraction(
                     index += 1
                 }
                 lowered == "--no-deps" -> noDeps = true
+                lowered == "--legacy-direct" -> legacyDirect = true
                 token.startsWith("--") -> return SaveOptionsResult.Error("Unknown option: $token")
                 directory == null -> directory = token
                 else -> return SaveOptionsResult.Error("Unexpected argument: $token")
@@ -824,6 +828,7 @@ class ScanViewerInteraction(
                 includeMeta = includeMeta,
                 packageName = packageName,
                 noDeps = noDeps,
+                legacyDirect = legacyDirect,
             )
         )
     }

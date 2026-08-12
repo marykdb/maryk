@@ -28,7 +28,7 @@ class OutputViewerInteraction(
                     "--yaml|--json|--proto"
                 }
                 val noDepsSuffix = if (introSaveContext.supportsNoDeps) " [--no-deps]" else ""
-                add("save <dir> [$formatOptions] [--package <name>] [--meta]$noDepsSuffix")
+                add("save <dir> [$formatOptions] [--package <name>] [--meta] [--legacy-direct]$noDepsSuffix")
             }
             if (loadContext != null) {
                 add("load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]")
@@ -99,6 +99,7 @@ class OutputViewerInteraction(
                         if (resolvedSaveContext.kotlinGenerator != null) add("--kotlin")
                         add("--package")
                         add("--meta")
+                        add("--legacy-direct")
                         if (resolvedSaveContext.supportsNoDeps) add("--no-deps")
                     }
                     return completeToken(currentToken, options)
@@ -260,6 +261,7 @@ class OutputViewerInteraction(
                         includeMeta = saveOptions.includeMeta,
                         packageName = saveOptions.packageName,
                         noDeps = saveOptions.noDeps,
+                        legacyDirect = saveOptions.legacyDirect,
                     )
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()

@@ -1,6 +1,8 @@
 package io.maryk.cli
 
 import maryk.file.File
+import maryk.file.ManagedExportFile
+import maryk.file.publishManagedRevision
 import maryk.file.writeBytesViaTemporaryFile
 import maryk.file.writeTextViaTemporaryFile
 
@@ -38,6 +40,27 @@ data class SaveContext(
         includeMeta: Boolean,
         packageName: String? = null,
         noDeps: Boolean = false,
+    ): String = save(
+        directory = directory,
+        format = format,
+        includeMeta = includeMeta,
+        packageName = packageName,
+        noDeps = noDeps,
+        legacyDirect = false,
+    )
+
+    /**
+     * Saves output with an explicit publication mode.
+     *
+     * Keep the five-argument overload above: CLI integrations may link to its JVM signature.
+     */
+    fun save(
+        directory: String,
+        format: SaveFormat,
+        includeMeta: Boolean,
+        packageName: String?,
+        noDeps: Boolean,
+        legacyDirect: Boolean,
     ): String {
         val basePath = directory.trimEnd('/', '\\')
         val safeKey = sanitizeSaveFileName(key)
@@ -58,11 +81,18 @@ data class SaveContext(
                 }
                 safeFiles[safeFileName] = content
             }
+            val names = safeFiles.keys.sorted()
+            val summary = names.joinToString(", ")
+            if (!legacyDirect) {
+                val revision = publishManagedRevision(
+                    outputDirectory = basePath,
+                    files = safeFiles.map { (fileName, content) -> ManagedExportFile(fileName, content.encodeToByteArray()) },
+                )
+                return "Saved managed Kotlin revision ${revision.id} via ${managedExportCurrentPath(basePath)} (${names.size}): $summary"
+            }
             safeFiles.forEach { (fileName, content) ->
                 File.writeTextViaTemporaryFile(joinSavePath(basePath, fileName), content)
             }
-            val names = safeFiles.keys.sorted()
-            val summary = names.joinToString(", ")
             return "Saved Kotlin files to $basePath (${names.size}): $summary"
         }
 
@@ -74,6 +104,29 @@ data class SaveContext(
         val metaProtoToSave = if (noDeps) noDepsProto ?: return "No-deps output not available for this data." else metaProto
 
         val dataPath = joinSavePath(basePath, "$safeKey.${format.extension}")
+        val dataContents = when (format) {
+            SaveFormat.YAML -> dataYamlToSave.encodeToByteArray()
+            SaveFormat.JSON -> dataJsonToSave.encodeToByteArray()
+            SaveFormat.PROTO -> dataProtoToSave
+            SaveFormat.KOTLIN -> ByteArray(0)
+        }
+        if (includeMeta && !legacyDirect) {
+            val metaFileName = "$safeKey.meta.${format.extension}"
+            val metaContents = when (format) {
+                SaveFormat.YAML -> metaYamlToSave.encodeToByteArray()
+                SaveFormat.JSON -> metaJsonToSave.encodeToByteArray()
+                SaveFormat.PROTO -> metaProtoToSave
+                SaveFormat.KOTLIN -> ByteArray(0)
+            }
+            val revision = publishManagedRevision(
+                outputDirectory = basePath,
+                files = listOf(
+                    ManagedExportFile("$safeKey.${format.extension}", dataContents),
+                    ManagedExportFile(metaFileName, metaContents),
+                ),
+            )
+            return "Saved managed revision ${revision.id} via ${managedExportCurrentPath(basePath)}: $safeKey.${format.extension}, $metaFileName"
+        }
         when (format) {
             SaveFormat.YAML -> File.writeTextViaTemporaryFile(dataPath, dataYamlToSave)
             SaveFormat.JSON -> File.writeTextViaTemporaryFile(dataPath, dataJsonToSave)
@@ -188,3 +241,6 @@ internal fun joinSavePath(directory: String, fileName: String): String {
     val normalized = directory.trimEnd('/', '\\')
     return if (normalized.isEmpty()) fileName else "$normalized/$fileName"
 }
+
+internal fun managedExportCurrentPath(directory: String): String =
+    joinSavePath(directory, ".maryk-export/current")

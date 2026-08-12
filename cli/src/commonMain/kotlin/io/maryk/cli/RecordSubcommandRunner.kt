@@ -37,6 +37,7 @@ internal fun runRecordSubcommand(
                             includeMeta = saveOptions.includeMeta,
                             packageName = saveOptions.packageName,
                             noDeps = saveOptions.noDeps,
+                            legacyDirect = saveOptions.legacyDirect,
                         )
                     } catch (e: Throwable) {
                         e.rethrowIfFatal()

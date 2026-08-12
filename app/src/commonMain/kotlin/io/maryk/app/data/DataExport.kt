@@ -24,6 +24,7 @@ import maryk.datastore.shared.DEFAULT_HISTORY_VERSIONS_PER_RECORD
 import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.file.File
+import maryk.file.publishManagedRevisionStreaming
 import maryk.json.JsonWriter
 import maryk.core.properties.references.SetReference
 import maryk.core.query.pairs.ReferenceValuePair
@@ -167,6 +168,29 @@ internal suspend fun exportModelDataToFolder(
     }
 }
 
+internal suspend fun exportAllDataToManagedRevision(
+    dataStore: IsDataStore,
+    models: Iterable<IsRootDataModel>,
+    format: DataExportFormat,
+    folder: String,
+    includeVersionHistory: Boolean = false,
+    snapshotVersion: ULong? = null,
+) {
+    publishManagedRevisionStreaming(folder) {
+        models.forEach { model ->
+            val fileName = dataExportFileName(model, format, includeVersionHistory)
+            exportModelDataToFolder(
+                dataStore = dataStore,
+                model = model,
+                format = format,
+                folder = path(fileName).substringBeforeLast('/'),
+                includeVersionHistory = includeVersionHistory,
+                snapshotVersion = snapshotVersion,
+            )
+        }
+    }
+}
+
 private fun serializeRecordToJson(
     record: ValuesWithMetaData<IsRootDataModel>,
     requestContext: RequestContext,
@@ -226,6 +250,12 @@ private fun buildModelFileName(
     val extra = suffix?.let { ".$it" }.orEmpty()
     return "$safeModel.data$extra.${format.extension}"
 }
+
+internal fun dataExportFileName(
+    model: IsRootDataModel,
+    format: DataExportFormat,
+    includeVersionHistory: Boolean,
+): String = buildModelFileName(model.Meta.name, format, if (includeVersionHistory) "versions" else null)
 
 private suspend fun exportModelVersionedDataToFolder(
     dataStore: IsDataStore,

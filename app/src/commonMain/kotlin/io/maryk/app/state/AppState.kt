@@ -22,11 +22,10 @@ import io.maryk.app.data.buildSummary
 import io.maryk.app.data.detectImportFormatFromPath
 import io.maryk.app.data.detectImportScopeFromPath
 import io.maryk.app.data.detectVersionedImport
+import io.maryk.app.data.exportAllDataToManagedRevision
 import io.maryk.app.data.exportModelDataToFolder
 import io.maryk.app.data.exportModelToFolder
-import io.maryk.app.data.preflightAndPublish
 import io.maryk.app.data.serializeModel
-import io.maryk.app.data.writeSerializedModelToFolder
 import io.maryk.app.data.exportRowDataToFolder
 import io.maryk.app.data.extensionsForImport
 import io.maryk.app.data.importDataFromFile
@@ -36,6 +35,7 @@ import io.maryk.app.data.parseValuesFromYaml
 import io.maryk.app.data.pickDirectory
 import io.maryk.app.data.pickFile
 import io.maryk.app.data.resolveDisplayFields
+import io.maryk.app.data.sanitizeFilePart
 import io.maryk.app.data.serializeRecordToYaml
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -80,6 +80,7 @@ import maryk.datastore.shared.migration.MigrationAdmin
 import maryk.datastore.shared.migration.MigrationAdminSnapshot
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
+import maryk.file.publishManagedRevision
 import kotlin.time.Instant
 
 @Stable
@@ -1260,16 +1261,16 @@ class BrowserState(
             val allModels = buildAllModelsByName(connection)
             val result = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
-                    preflightAndPublish(
-                        values = allModels.values,
-                        render = { model -> serializeModel(model, format, allModels) },
-                    ) { model, content ->
-                        writeSerializedModelToFolder(model, format, folder, content)
+                    publishManagedRevision(folder) {
+                        allModels.values.forEach { model ->
+                            val content = serializeModel(model, format, allModels)
+                            writeText("${sanitizeFilePart(model.Meta.name)}.${format.extension}", content)
+                        }
                     }
                 }
             }
             if (result.isSuccess) {
-                exportToastMessage = "Exported ${allModels.size} models as ${format.label}."
+                exportToastMessage = "Exported ${allModels.size} models as ${format.label}; read .maryk-export/current in $folder."
             } else {
                 lastActionMessage = "Export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
             }
@@ -1370,20 +1371,18 @@ class BrowserState(
                     } else {
                         null
                     }
-                    connection.dataStore.dataModelsById.values.forEach { model ->
-                        exportModelDataToFolder(
-                            dataStore = connection.dataStore,
-                            model = model,
-                            format = format,
-                            folder = exportFolder,
-                            includeVersionHistory = includeVersionHistory,
-                            snapshotVersion = snapshotVersion,
-                        )
-                    }
+                    exportAllDataToManagedRevision(
+                        dataStore = connection.dataStore,
+                        models = connection.dataStore.dataModelsById.values,
+                        format = format,
+                        folder = exportFolder,
+                        includeVersionHistory = includeVersionHistory,
+                        snapshotVersion = snapshotVersion,
+                    )
                 }
             }
             if (result.isSuccess) {
-                exportToastMessage = "Exported all data as ${format.label}."
+                exportToastMessage = "Exported all data as ${format.label}; read .maryk-export/current in $exportFolder."
             } else {
                 lastActionMessage = "Export failed: ${result.exceptionOrNull()?.message ?: "Unknown error"}"
             }

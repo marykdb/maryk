@@ -109,7 +109,7 @@ class HelpCommand : Command {
                 "get <model> <key> [--include-deleted] [subcommand ...]",
                 "Fetch a record by key and show it in YAML, or run a subcommand inline.",
                 "Subcommands:",
-                "  save <dir> [--yaml|--json|--proto] [--meta]",
+                "  save <dir> [--yaml|--json|--proto] [--meta] [--legacy-direct]",
                 "  load <file> [--yaml|--json|--proto] [--if-version <n>] [--meta]",
                 "  set <ref> <value> [--if-version <n>]",
                 "  unset <ref> [--if-version <n>]",

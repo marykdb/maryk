@@ -103,6 +103,9 @@ add Client ./client.yaml --key AbCdEf123
 
 Notes:
 - `--meta` expects a metadata file saved via `save --meta`.
+- Multi-file saves (Kotlin or `--meta`) publish a complete revision under
+  `<dir>/.maryk-export/`; use `--legacy-direct` only for consumers that require
+  direct files in the selected directory.
 - If `--key` is omitted, the key is derived from the values (UUIDv4/UUIDv7 keys generate a new key).
 - `add` works in both interactive and one-shot mode.
 - YAML/JSON files can contain multiple objects to add in one call.

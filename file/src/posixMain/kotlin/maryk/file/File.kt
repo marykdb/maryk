@@ -103,6 +103,29 @@ actual object File {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun readChunks(path: String, chunkSize: Int, onChunk: (ByteArray) -> Unit): Boolean {
+        require(chunkSize > 0) { "Chunk size must be positive" }
+        if (!fileExists(path) || fileSize(path) == null) return false
+        val fd = open(path, O_RDONLY, 0)
+        if (fd < 0) return false
+        try {
+            val buffer = ByteArray(chunkSize)
+            buffer.usePinned { pinned ->
+                while (true) {
+                    val count = read(fd, pinned.addressOf(0), buffer.size.convert())
+                    if (count < 0 && errno == EINTR) continue
+                    if (count < 0) return false
+                    if (count == 0L) return true
+                    onChunk(buffer.copyOf(count.toInt()))
+                }
+            }
+        } finally {
+            close(fd)
+        }
+        return false
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun writeText(path: String, contents: String) {
         if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
         val fd = open(path, O_WRONLY or O_CREAT or O_TRUNC, 0x1A4) // 0644

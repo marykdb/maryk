@@ -2,8 +2,20 @@ package io.maryk.cli
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
+import kotlin.test.assertTrue
 
 class SaveContextTest {
+    @Test
+    fun parsesLegacyDirectSaveOption() {
+        val result = assertIs<SaveOptionsResult.Success>(
+            parseSaveOptions(listOf("exports", "--meta", "--legacy-direct"), saveContext = null),
+        )
+
+        assertTrue(result.options.legacyDirect)
+        assertTrue(result.options.includeMeta)
+    }
+
     @Test
     fun sanitizesSaveFileNames() {
         assertEquals("data", sanitizeSaveFileName(""))

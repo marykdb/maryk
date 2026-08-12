@@ -33,6 +33,7 @@ internal data class SaveOptions(
     val includeMeta: Boolean,
     val packageName: String?,
     val noDeps: Boolean,
+    val legacyDirect: Boolean,
 )
 
 internal sealed class SaveOptionsResult {
@@ -87,6 +88,7 @@ internal fun parseSaveOptions(tokens: List<String>, saveContext: SaveContext?): 
     var format: SaveFormat? = null
     var packageName: String? = null
     var noDeps = false
+    var legacyDirect = false
     var index = 0
 
     while (index < tokens.size) {
@@ -127,6 +129,7 @@ internal fun parseSaveOptions(tokens: List<String>, saveContext: SaveContext?): 
                 }
                 noDeps = true
             }
+            lowered == "--legacy-direct" -> legacyDirect = true
             lowered.startsWith("--package=") -> {
                 packageName = token.substringAfter("=", missingDelimiterValue = "").ifBlank {
                     return SaveOptionsResult.Error("`--package` requires a value.")
@@ -167,6 +170,7 @@ internal fun parseSaveOptions(tokens: List<String>, saveContext: SaveContext?): 
             includeMeta = includeMeta,
             packageName = packageName,
             noDeps = noDeps,
+            legacyDirect = legacyDirect,
         )
     )
 }

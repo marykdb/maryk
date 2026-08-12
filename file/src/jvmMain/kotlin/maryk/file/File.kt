@@ -26,6 +26,21 @@ actual object File {
         return file.readBytes()
     }
 
+    actual fun readChunks(path: String, chunkSize: Int, onChunk: (ByteArray) -> Unit): Boolean {
+        require(chunkSize > 0) { "Chunk size must be positive" }
+        val file = File(path)
+        if (!file.isFile) return false
+        file.inputStream().use { input ->
+            val buffer = ByteArray(chunkSize)
+            while (true) {
+                val size = input.read(buffer)
+                if (size < 0) break
+                if (size > 0) onChunk(buffer.copyOf(size))
+            }
+        }
+        return true
+    }
+
     actual fun writeText(path: String, contents: String) {
         val file = File(path)
         file.parentFile?.mkdirs()

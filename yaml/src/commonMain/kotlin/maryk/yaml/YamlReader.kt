@@ -54,7 +54,18 @@ fun YamlReader(
     allowUnknownTags: Boolean = false,
     reader: () -> Char?
 ): IsYamlReader =
-    YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, reader)
+    YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, YamlAliasLimits(), reader)
+
+/** Reads YAML from the supplied [reader] with alias replay limits. Return null to signal end of input. */
+@Suppress("FunctionName")
+fun YamlReader(
+    defaultTag: String? = null,
+    tagMap: Map<String, Map<String, TokenType>>? = null,
+    allowUnknownTags: Boolean = false,
+    aliasLimits: YamlAliasLimits,
+    reader: () -> Char?
+): IsYamlReader =
+    YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, aliasLimits, reader)
 
 @Suppress("FunctionName")
 /** Reads YAML from the supplied [yaml]. */
@@ -64,7 +75,18 @@ fun YamlReader(
     tagMap: Map<String, Map<String, TokenType>>? = null,
     allowUnknownTags: Boolean = false
 ): IsYamlReader =
-    YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, StringYamlCharSource(yaml))
+    YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, YamlAliasLimits(), StringYamlCharSource(yaml))
+
+/** Reads YAML from the supplied [yaml] with alias replay limits. */
+@Suppress("FunctionName")
+fun YamlReader(
+    yaml: String,
+    defaultTag: String? = null,
+    tagMap: Map<String, Map<String, TokenType>>? = null,
+    allowUnknownTags: Boolean = false,
+    aliasLimits: YamlAliasLimits
+): IsYamlReader =
+    YamlReaderImpl(defaultTag, tagMap, allowUnknownTags, aliasLimits, StringYamlCharSource(yaml))
 
 /** Interface to determine object is a yaml reader */
 interface IsYamlReader : IsJsonLikeReader {
@@ -116,14 +138,16 @@ internal class YamlReaderImpl(
     private val defaultTag: String?,
     tagMap: Map<String, Map<String, TokenType>>?,
     private val allowUnknownTags: Boolean,
+    private val aliasLimits: YamlAliasLimits,
     private val reader: YamlCharSource
 ) : IsJsonLikeReader, IsInternalYamlReader, IsYamlReader {
     constructor(
         defaultTag: String?,
         tagMap: Map<String, Map<String, TokenType>>?,
         allowUnknownTags: Boolean,
+        aliasLimits: YamlAliasLimits,
         reader: () -> Char?
-    ) : this(defaultTag, tagMap, allowUnknownTags, LambdaYamlCharSource(reader))
+    ) : this(defaultTag, tagMap, allowUnknownTags, aliasLimits, LambdaYamlCharSource(reader))
 
     var version: String? = null
 
@@ -140,7 +164,9 @@ internal class YamlReaderImpl(
     private val anchorReadersToRemove = mutableListOf<AnchorRecorder>()
 
     private val tokenStack = mutableListOf<JsonToken>()
-    private val storedAnchors = mutableMapOf<String, Array<JsonToken>>()
+    private val storedAnchors = mutableMapOf<String, StoredAnchor>()
+    private var aliasCount = 0
+    private var expandedAliasTokenCount = 0L
 
     private var tokenDepth = 0
     private var merges = mutableListOf<Merge>()
@@ -193,7 +219,11 @@ internal class YamlReaderImpl(
             }
 
             when (currentToken) {
-                StartDocument -> this.storedAnchors.clear()
+                StartDocument -> {
+                    this.storedAnchors.clear()
+                    this.aliasCount = 0
+                    this.expandedAliasTokenCount = 0
+                }
                 is StartObject, is StartArray -> this.tokenDepth++
                 is EndObject, is EndArray -> this.tokenDepth--
                 is MergeFieldName -> {
@@ -235,12 +265,12 @@ internal class YamlReaderImpl(
             }
 
             for (it in this.anchorReaders) {
-                it.recordToken(currentToken, this.tokenDepth) { anchor, tokens ->
+                it.recordToken(currentToken, this.tokenDepth) { anchor, tokens, aliasDepth ->
                     val name = anchor.trim()
                     if (name in this.storedAnchors) {
                         throw InvalidYamlContent("Duplicate anchor &$name")
                     }
-                    this.storedAnchors[name] = tokens
+                    this.storedAnchors[name] = StoredAnchor(tokens, aliasDepth)
                     this.anchorReadersToRemove.add(it)
                 }
             }
@@ -367,7 +397,33 @@ internal class YamlReaderImpl(
             throw InvalidYamlContent("Alias (*) does not contain valid name")
         }
 
-        return this.storedAnchors[trimmedAlias] ?: throw InvalidYamlContent("Unknown alias *$trimmedAlias")
+        val storedAnchor = this.storedAnchors[trimmedAlias]
+            ?: throw InvalidYamlContent("Unknown alias *$trimmedAlias")
+        val aliasDepth = storedAnchor.aliasDepth + 1
+        if (aliasDepth > this.aliasLimits.maxAliasDepth) {
+            throw InvalidYamlContent(
+                "Alias expansion depth budget exceeded: $aliasDepth > ${this.aliasLimits.maxAliasDepth}"
+            )
+        }
+
+        val nextAliasCount = this.aliasCount + 1
+        if (nextAliasCount > this.aliasLimits.maxAliasCount) {
+            throw InvalidYamlContent(
+                "Alias expansion count budget exceeded: $nextAliasCount > ${this.aliasLimits.maxAliasCount}"
+            )
+        }
+
+        val nextExpandedTokenCount = this.expandedAliasTokenCount + storedAnchor.tokens.size
+        if (nextExpandedTokenCount > this.aliasLimits.maxExpandedTokens) {
+            throw InvalidYamlContent(
+                "Alias expansion token budget exceeded: $nextExpandedTokenCount > ${this.aliasLimits.maxExpandedTokens}"
+            )
+        }
+
+        this.aliasCount = nextAliasCount
+        this.expandedAliasTokenCount = nextExpandedTokenCount
+        this.anchorReaders.forEach { it.recordAliasDepth(aliasDepth) }
+        return storedAnchor.tokens
     }
 
     fun recordAnchors(anchorReader: AnchorRecorder) {
@@ -375,6 +431,11 @@ internal class YamlReaderImpl(
         this.anchorReaders.add(anchorReader)
     }
 }
+
+private class StoredAnchor(
+    val tokens: Array<JsonToken>,
+    val aliasDepth: Int
+)
 
 private class Merge(
     val tokenStartDepth: Int,

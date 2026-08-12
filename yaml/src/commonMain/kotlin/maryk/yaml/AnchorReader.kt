@@ -8,14 +8,19 @@ internal class AnchorRecorder(
 ) {
     private val storedValues = mutableListOf<JsonToken>()
     private var tokenStartDepth: Int? = null
+    private var maxAliasDepth = 0
 
     /** Records token from yamlReader and triggers [onEnd] if back at starting depth */
-    fun recordToken(token: JsonToken, tokenDepth: Int, onEnd: (String, Array<JsonToken>) -> Unit) {
+    fun recordToken(token: JsonToken, tokenDepth: Int, onEnd: (String, Array<JsonToken>, Int) -> Unit) {
         storedValues.add(token)
 
         if (tokenStartDepth == tokenDepth) {
-            onEnd(anchor, storedValues.toTypedArray())
+            onEnd(anchor, storedValues.toTypedArray(), maxAliasDepth)
         }
+    }
+
+    fun recordAliasDepth(aliasDepth: Int) {
+        maxAliasDepth = maxOf(maxAliasDepth, aliasDepth)
     }
 
     /** Set [tokenDepth] on which this token reader started */

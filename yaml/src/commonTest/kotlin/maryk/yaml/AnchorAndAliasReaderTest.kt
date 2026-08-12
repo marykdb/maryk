@@ -1,9 +1,64 @@
 package maryk.yaml
 
+import maryk.json.JsonToken.Stopped
 import maryk.json.ValueType
 import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertFailsWith
 
 class AnchorAndAliasReaderTest {
+    @Test
+    fun configuredAliasTokenBudgetRejectsLargeReplay() {
+        val reader = YamlReader(
+            yaml = "[&value [one, two], *value]",
+            aliasLimits = YamlAliasLimits(maxExpandedTokens = 3)
+        )
+
+        val exception = assertFailsWith<InvalidYamlContent> {
+            while (reader.currentToken !is Stopped) {
+                reader.nextToken()
+            }
+        }
+
+        assertContains(exception.message ?: "", "Alias expansion token budget exceeded")
+    }
+
+    @Test
+    fun configuredAliasCountBudgetRejectsRepeatedAliases() {
+        val reader = YamlReader(
+            yaml = "[&value item, *value, *value, *value]",
+            aliasLimits = YamlAliasLimits(maxAliasCount = 2)
+        )
+
+        val exception = assertFailsWith<InvalidYamlContent> {
+            while (reader.currentToken !is Stopped) {
+                reader.nextToken()
+            }
+        }
+
+        assertContains(exception.message ?: "", "Alias expansion count budget exceeded")
+    }
+
+    @Test
+    fun defaultAliasBudgetRejectsNestedAliasExpansion() {
+        val yaml = buildString {
+            appendLine("- &level0 [value, value]")
+            for (level in 1..10) {
+                appendLine("- &level$level [*level${level - 1}, *level${level - 1}]")
+            }
+            append("- *level10")
+        }
+        val reader = createYamlReader(yaml)
+
+        val exception = assertFailsWith<InvalidYamlContent> {
+            while (reader.currentToken !is Stopped) {
+                reader.nextToken()
+            }
+        }
+
+        assertContains(exception.message ?: "", "Alias expansion depth budget exceeded")
+    }
+
     @Test
     fun readsAnchorBeforeFlowSequenceEnd() {
         createYamlReader("[&anchor, *anchor]").apply {

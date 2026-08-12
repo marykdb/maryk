@@ -11,6 +11,7 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.scan
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.requests.add
 import maryk.datastore.memory.InMemoryDataStore
@@ -148,6 +149,48 @@ class DataImportProtoScopeTest {
 
             assertEquals(DataImportScope.SINGLE, scope)
             assertEquals(ImportResult(imported = 1, failed = 0), result)
+        } finally {
+            source.close()
+            destination.close()
+            folder.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun malformedTrailingFrameDoesNotImportValidPrefix() = runBlocking {
+        val source = InMemoryDataStore.open(dataModelsById = mapOf(1u to ProtoScopeModel))
+        val destination = InMemoryDataStore.open(dataModelsById = mapOf(1u to ProtoScopeModel))
+        val folder = Files.createTempDirectory("maryk-import-malformed-prefix-")
+        try {
+            source.execute(
+                ProtoScopeModel.add(*Array(101) { index ->
+                    ProtoScopeModel.create {
+                        id with index.toUInt()
+                        number with index.toUInt()
+                    }
+                })
+            )
+            exportModelDataToFolder(
+                dataStore = source,
+                model = ProtoScopeModel,
+                format = DataExportFormat.PROTO,
+                folder = folder.toString(),
+            )
+            val path = folder.resolve("${ProtoScopeModel.Meta.name}.data.proto")
+            Files.write(path, Files.readAllBytes(path) + byteArrayOf(0x80.toByte()))
+
+            assertFailsWith<IllegalArgumentException> {
+                importDataFromFile(
+                    dataStore = destination,
+                    model = ProtoScopeModel,
+                    format = DataExportFormat.PROTO,
+                    scope = DataImportScope.MULTIPLE,
+                    path = path.toString(),
+                )
+            }
+            assertTrue(
+                destination.execute(ProtoScopeModel.scan(allowTableScan = true)).values.isEmpty(),
+            )
         } finally {
             source.close()
             destination.close()

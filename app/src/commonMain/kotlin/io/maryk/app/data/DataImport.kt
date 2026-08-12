@@ -76,23 +76,18 @@ internal suspend fun importDataFromFile(
     )
     var imported = 0
     var failed = 0
-    val batch = ArrayList<Pair<Key<IsRootDataModel>, Values<IsRootDataModel>>>(100)
+    val records = mutableListOf<Pair<Key<IsRootDataModel>, Values<IsRootDataModel>>>()
 
-    suspend fun flushBatch() {
-        if (batch.isEmpty()) return
+    suspend fun importBatch(batch: List<Pair<Key<IsRootDataModel>, Values<IsRootDataModel>>>) {
         val response = dataStore.execute(model.add(*batch.toTypedArray()))
         val (ok, errors) = countStatuses(response.statuses)
         imported += ok
         failed += errors
-        batch.clear()
     }
 
     suspend fun handleRecord(values: ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) {
         val record = ValuesWithMetaData(values)
-        batch.add(record.key to record.values)
-        if (batch.size >= 100) {
-            flushBatch()
-        }
+        records.add(record.key to record.values)
     }
 
     when (format) {
@@ -101,7 +96,9 @@ internal suspend fun importDataFromFile(
         DataExportFormat.PROTO -> readProtoRecords(path, requestContext, scope, ::handleRecord)
     }
 
-    flushBatch()
+    for (batch in records.chunked(100)) {
+        importBatch(batch)
+    }
     return ImportResult(imported = imported, failed = failed)
 }
 
@@ -118,22 +115,26 @@ internal suspend fun importVersionedDataFromFile(
     )
     var imported = 0
     var failed = 0
+    val records = mutableListOf<DataObjectVersionedChange<IsRootDataModel>>()
 
     suspend fun handleRecord(values: ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) {
         val record = DataObjectVersionedChange(values)
-        val normalized = normalizeVersionedRecord(model, record, requestContext)
-        val success = applyVersionedRecord(dataStore, model, normalized)
-        if (success) {
-            imported += 1
-        } else {
-            failed += 1
-        }
+        records.add(normalizeVersionedRecord(model, record, requestContext))
     }
 
     when (format) {
         DataExportFormat.JSON -> readVersionedJsonRecords(path, requestContext, scope, ::handleRecord)
         DataExportFormat.YAML -> readVersionedYamlRecords(path, requestContext, scope, ::handleRecord)
         DataExportFormat.PROTO -> readVersionedProtoRecords(path, requestContext, scope, ::handleRecord)
+    }
+
+    records.forEach { record ->
+        val success = applyVersionedRecord(dataStore, model, record)
+        if (success) {
+            imported += 1
+        } else {
+            failed += 1
+        }
     }
 
     return ImportResult(imported = imported, failed = failed)

@@ -22,3 +22,7 @@ internal expect suspend fun <T> withThrowingWebLocksPlatform(block: suspend () -
 internal expect fun webLocksAvailableForTests(): Boolean
 
 internal expect fun setLeaseAcquisitionHandoffHookForTests(hook: (() -> Unit)?)
+
+internal expect fun setOpenResumeHookForTests(hook: (() -> Unit)?)
+
+internal expect fun installCursorContinueHookForTests(hook: () -> Unit): () -> Int

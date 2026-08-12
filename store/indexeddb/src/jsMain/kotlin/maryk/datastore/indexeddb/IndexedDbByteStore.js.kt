@@ -261,18 +261,24 @@ private class BrowserIndexedDbByteStore(
             store.openCursor(range, direction)
         }
 
-        return awaitCursorScan(request, limit)
+        return awaitCursorScan(request, transaction, limit)
     }
 
     private suspend fun awaitCursorScan(
         request: dynamic,
+        transaction: dynamic,
         limit: UInt,
     ): List<Pair<ByteArray, ByteArray>> = suspendCancellableCoroutine { continuation ->
         val values = mutableListOf<Pair<ByteArray, ByteArray>>()
         var completed = false
 
+        continuation.invokeOnCancellation {
+            completed = true
+            abortTransaction(transaction)
+        }
+
         request.onsuccess = { _: dynamic ->
-            if (!completed) {
+            if (!completed && continuation.isActive) {
                 val cursor = request.result
                 if (cursor == null) {
                     completed = true
@@ -286,6 +292,9 @@ private class BrowserIndexedDbByteStore(
                         cursor.unsafeCast<IndexedDbCursor>().continueCursor()
                     }
                 }
+            } else if (!completed) {
+                completed = true
+                abortTransaction(transaction)
             }
         }
         request.onerror = { _: dynamic ->
@@ -365,10 +374,22 @@ private suspend fun awaitResult(request: dynamic): dynamic = suspendCancellableC
 
 private suspend fun awaitOpenResult(request: dynamic): dynamic = suspendCancellableCoroutine { continuation ->
     var completed = false
+    var deliveredDatabase: dynamic = null
+    fun closeDeliveredDatabase() {
+        if (deliveredDatabase != null) {
+            deliveredDatabase.close()
+            deliveredDatabase = null
+        }
+    }
+    continuation.invokeOnCancellation { closeDeliveredDatabase() }
     request.onsuccess = { _: dynamic ->
-        if (!completed) {
+        if (!completed && continuation.isActive) {
             completed = true
-            continuation.resume(request.result)
+            deliveredDatabase = request.result
+            continuation.resume(deliveredDatabase)
+            indexedDbOpenResumeHook?.invoke()
+        } else {
+            request.result.close()
         }
     }
     request.onerror = { _: dynamic ->
@@ -760,6 +781,7 @@ private const val writeLeaseRenewIntervalMillis = 10_000L
 private const val writeLeaseRetryMillis = 100
 
 internal var indexedDbLeaseAcquisitionHandoffHook: (() -> Unit)? = null
+internal var indexedDbOpenResumeHook: (() -> Unit)? = null
 
 private fun hasWebLocks(): Boolean =
     js(

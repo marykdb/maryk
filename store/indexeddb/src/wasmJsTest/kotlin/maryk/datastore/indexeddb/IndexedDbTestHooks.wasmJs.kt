@@ -12,6 +12,9 @@ private external val fakeIndexedDb: JsAny
 @JsModule("fake-indexeddb/lib/FDBKeyRange")
 private external val fakeIdbKeyRange: JsAny
 
+@JsModule("fake-indexeddb/lib/FDBCursor")
+private external val fakeIdbCursor: JsAny
+
 private fun installFakeIndexedDb(indexedDb: JsAny, idbKeyRange: JsAny) {
     js(
         """
@@ -54,6 +57,30 @@ internal actual fun webLocksAvailableForTests(): Boolean = js(
 internal actual fun setLeaseAcquisitionHandoffHookForTests(hook: (() -> Unit)?) {
     indexedDbLeaseAcquisitionHandoffHook = hook
 }
+
+internal actual fun setOpenResumeHookForTests(hook: (() -> Unit)?) {
+    indexedDbOpenResumeHook = hook
+}
+
+internal actual fun installCursorContinueHookForTests(hook: () -> Unit): () -> Int = js(
+    """
+    (function() {
+        const prototype = fakeIdbCursor.prototype;
+        const original = prototype.continue;
+        let calls = 0;
+        prototype.continue = function(...arguments_) {
+            const result = original.apply(this, arguments_);
+            calls++;
+            hook();
+            return result;
+        };
+        return function() {
+            prototype.continue = original;
+            return calls;
+        };
+    })()
+    """
+)
 
 private fun captureAndDisableWebLocks(): JsAny = js(
     """

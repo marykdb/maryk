@@ -1,6 +1,8 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
@@ -214,6 +216,80 @@ class IndexedDbByteStoreTest {
             assertContentEquals(byteArrayOf(20), reopened.get("second", byteArrayOf(2)))
         } finally {
             reopened.close()
+        }
+    }
+
+    @Test
+    fun cancellingOpenClosesLateConnectionBeforeUpgrade() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-cancelled-open-${Random.nextInt()}"
+        val cancelledOpen = async(start = CoroutineStart.UNDISPATCHED) {
+            openIndexedDbByteStore(databaseName, setOf("initial"))
+        }
+        cancelledOpen.cancelAndJoin()
+
+        val upgraded = openIndexedDbByteStore(databaseName, setOf("initial", "added"))
+        try {
+            upgraded.put("added", byteArrayOf(1), byteArrayOf(10))
+            assertContentEquals(byteArrayOf(10), upgraded.get("added", byteArrayOf(1)))
+        } finally {
+            upgraded.close()
+        }
+    }
+
+    @Test
+    fun cancellingOpenAfterResumeClosesConnectionBeforeUpgrade() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-cancelled-open-resume-${Random.nextInt()}"
+        lateinit var cancelledOpen: Deferred<IndexedDbByteStore>
+        setOpenResumeHookForTests { cancelledOpen.cancel() }
+        try {
+            cancelledOpen = async(start = CoroutineStart.LAZY) {
+                openIndexedDbByteStore(databaseName, setOf("initial"))
+            }
+            cancelledOpen.start()
+            cancelledOpen.cancelAndJoin()
+        } finally {
+            setOpenResumeHookForTests(null)
+        }
+
+        val upgraded = openIndexedDbByteStore(databaseName, setOf("initial", "added"))
+        try {
+            upgraded.put("added", byteArrayOf(1), byteArrayOf(10))
+            assertContentEquals(byteArrayOf(10), upgraded.get("added", byteArrayOf(1)))
+        } finally {
+            upgraded.close()
+        }
+    }
+
+    @Test
+    fun cancellingScanAbortsCursorBeforeNextContinuation() = runTest {
+        installIndexedDbForTests()
+
+        val store = openIndexedDbByteStore(
+            databaseName = "maryk-indexeddb-cancelled-scan-${Random.nextInt()}",
+            objectStoreNames = setOf("rows"),
+        )
+        lateinit var scan: Deferred<List<Pair<ByteArray, ByteArray>>>
+        val cursorContinueCalls = installCursorContinueHookForTests { scan.cancel() }
+
+        try {
+            repeat(3) { index ->
+                store.put("rows", byteArrayOf(index.toByte()), byteArrayOf(index.toByte()))
+            }
+
+            scan = async(start = CoroutineStart.UNDISPATCHED) {
+                store.scan("rows", limit = 3u)
+            }
+            assertFailsWith<CancellationException> { scan.await() }
+            delay(1)
+            assertEquals(1, cursorContinueCalls())
+            assertContentEquals(byteArrayOf(2), store.get("rows", byteArrayOf(2)))
+        } finally {
+            cursorContinueCalls()
+            store.close()
         }
     }
 

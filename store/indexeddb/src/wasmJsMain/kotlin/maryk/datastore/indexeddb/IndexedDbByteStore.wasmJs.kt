@@ -36,13 +36,36 @@ internal actual suspend fun openPlatformIndexedDbByteStore(
     }
 
     val database = suspendCancellableCoroutine { continuation ->
-        openIndexedDb(
+        var deliveredDatabase: JsAny? = null
+        fun closeDeliveredDatabase() {
+            deliveredDatabase?.let {
+                closeIndexedDb(it)
+                deliveredDatabase = null
+            }
+        }
+        val cancelOpen = openIndexedDb(
             databaseName = databaseName,
             storeNames = storeNames,
             version = version,
-            onSuccess = { continuation.resume(it) },
-            onError = { continuation.resumeWithException(IllegalStateException(it)) },
+            onSuccess = {
+                if (continuation.isActive) {
+                    deliveredDatabase = it
+                    continuation.resume(it)
+                    indexedDbOpenResumeHook?.invoke()
+                } else {
+                    closeIndexedDb(it)
+                }
+            },
+            onError = {
+                if (continuation.isActive) {
+                    continuation.resumeWithException(IllegalStateException(it))
+                }
+            },
         )
+        continuation.invokeOnCancellation {
+            cancelOpen()
+            closeDeliveredDatabase()
+        }
     }
 
     return WasmIndexedDbByteStore(database, databaseName, "maryk-indexeddb:$databaseName")
@@ -192,7 +215,7 @@ private class WasmIndexedDbByteStore(
         }
 
         val rows = suspendCancellableCoroutine<JsArray<JsAny>> { continuation ->
-            scanIndexedDbValues(
+            val cancelScan = scanIndexedDbValues(
                 database = database,
                 storeName = storeName,
                 startKey = startKey?.toIndexedDbKey(),
@@ -201,9 +224,18 @@ private class WasmIndexedDbByteStore(
                 includeEnd = includeEnd,
                 reverse = reverse,
                 limit = limit.toIndexedDbLimit(),
-                onSuccess = { continuation.resume(it) },
-                onError = { continuation.resumeWithException(IllegalStateException(it)) },
+                onSuccess = {
+                    if (continuation.isActive) {
+                        continuation.resume(it)
+                    }
+                },
+                onError = {
+                    if (continuation.isActive) {
+                        continuation.resumeWithException(IllegalStateException(it))
+                    }
+                },
             )
+            continuation.invokeOnCancellation { cancelScan() }
         }
 
         return rows.toPairList()
@@ -258,7 +290,7 @@ private fun openIndexedDb(
     version: Int,
     onSuccess: (JsAny) -> Unit,
     onError: (String) -> Unit,
-) {
+): () -> Unit {
     js(
         """
         const createMissingStores = (db) => {
@@ -282,10 +314,15 @@ private fun openIndexedDb(
         };
 
         let finished = false;
+        let cancelled = false;
         const finishSuccess = (db) => {
             if (!finished) {
                 finished = true;
-                onSuccess(db);
+                if (cancelled) {
+                    db.close();
+                } else {
+                    onSuccess(db);
+                }
             }
         };
         const finishError = (message) => {
@@ -302,6 +339,10 @@ private fun openIndexedDb(
             request.onupgradeneeded = () => createMissingStores(request.result);
             request.onsuccess = () => {
                 const db = request.result;
+                if (cancelled) {
+                    db.close();
+                    return;
+                }
                 if (missingStores(db).length > 0) {
                     const nextVersion = db.version + 1;
                     db.close();
@@ -316,6 +357,7 @@ private fun openIndexedDb(
         };
 
         startOpen(version);
+        return () => { cancelled = true; };
         """
     )
 }
@@ -518,10 +560,11 @@ private fun scanIndexedDbValues(
     limit: Int,
     onSuccess: (JsArray<JsAny>) -> Unit,
     onError: (String) -> Unit,
-) {
+): () -> Unit {
     js(
         """
         let done = false;
+        let cancelled = false;
         const succeed = (rows) => {
             if (!done) {
                 done = true;
@@ -535,6 +578,17 @@ private fun scanIndexedDbValues(
             }
         };
         const transaction = database.transaction([storeName], "readonly");
+        const cancel = () => {
+            cancelled = true;
+            if (!done) {
+                done = true;
+                try {
+                    transaction.abort();
+                } catch (_) {
+                    // The transaction may already be complete or inactive.
+                }
+            }
+        };
         const store = transaction.objectStore(storeName);
         let range = null;
         if (startKey !== null && endKey !== null) {
@@ -548,6 +602,10 @@ private fun scanIndexedDbValues(
         const rows = [];
         const request = store.openCursor(range === null ? undefined : range, reverse ? "prev" : "next");
         request.onsuccess = () => {
+            if (cancelled) {
+                cancel();
+                return;
+            }
             const cursor = request.result;
             if (cursor && rows.length < limit) {
                 rows.push([cursor.key, cursor.value]);
@@ -559,6 +617,7 @@ private fun scanIndexedDbValues(
         request.onerror = () => fail(request.error?.message ?? "IndexedDB cursor failed");
         transaction.onerror = () => fail(transaction.error?.message ?? "IndexedDB transaction failed");
         transaction.onabort = () => fail(transaction.error?.message ?? "IndexedDB transaction aborted");
+        return cancel;
         """
     )
 }
@@ -920,6 +979,7 @@ private const val writeLeaseRenewIntervalMillis = 10_000L
 private const val writeLeaseRetryMillis = 100
 
 internal var indexedDbLeaseAcquisitionHandoffHook: (() -> Unit)? = null
+internal var indexedDbOpenResumeHook: (() -> Unit)? = null
 
 private fun hasWebLocks(): Boolean =
     js(

@@ -32,6 +32,30 @@ internal actual fun setLeaseAcquisitionHandoffHookForTests(hook: (() -> Unit)?) 
     indexedDbLeaseAcquisitionHandoffHook = hook
 }
 
+internal actual fun setOpenResumeHookForTests(hook: (() -> Unit)?) {
+    indexedDbOpenResumeHook = hook
+}
+
+internal actual fun installCursorContinueHookForTests(hook: () -> Unit): () -> Int = js(
+    """
+    (function() {
+        const prototype = globalThis.IDBCursor.prototype;
+        const original = prototype.continue;
+        let calls = 0;
+        prototype.continue = function(...arguments_) {
+            const result = original.apply(this, arguments_);
+            calls++;
+            hook();
+            return result;
+        };
+        return function() {
+            prototype.continue = original;
+            return calls;
+        };
+    })()
+    """
+)
+
 private fun captureAndDisableWebLocks(): dynamic = js(
     """
     (function() {

@@ -165,6 +165,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
                 key,
                 changes,
                 version,
+                latestVersionFromStore,
                 updateHandler,
             )
         } else {
@@ -187,6 +188,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
     key: Key<DM>,
     changes: List<IsChange>,
     version: HLC,
+    persistedVersion: ULong,
     updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsChangeResponseStatus<DM> {
     var savePointSet = false
@@ -893,14 +895,16 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
             }
         }
 
-        if (isChanged) {
-            val lastVersion = getLastVersion(transaction, columnFamilies, defaultReadOptions, key)
-            if (version.timestamp > lastVersion) {
-                setLatestVersion(transaction, columnFamilies, key, versionBytes)
-            }
-            columnFamilies.updateHistory?.let {
-                transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, EMPTY_ARRAY)
-            }
+        if (!isChanged) {
+            rollbackToChangeSavePoint()
+            return ChangeSuccess(persistedVersion, outChanges)
+        }
+
+        if (version.timestamp > persistedVersion) {
+            setLatestVersion(transaction, columnFamilies, key, versionBytes)
+        }
+        columnFamilies.updateHistory?.let {
+            transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, EMPTY_ARRAY)
         }
 
         var indexUpdates: MutableList<IsIndexUpdate>? = null

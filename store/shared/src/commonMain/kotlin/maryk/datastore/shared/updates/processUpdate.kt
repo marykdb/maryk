@@ -82,37 +82,85 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                     if (shouldDelete) {
                         handleDeletion(dataStore, this, SoftDelete, updateListener, sharedFlow)
                     } else {
+                        if (
+                            updateListener.filterContainsMutableValues ||
+                            updateListener is UpdateListenerForGet<DM, *> && request.where != null
+                        ) {
+                            val response = dataStore.execute(
+                                dataModel.get(
+                                    key,
+                                    select = dataModel.graph { emptyList() },
+                                    where = request.where,
+                                    filterSoftDeleted = request.filterSoftDeleted
+                                )
+                            )
+
+                            if (response.values.isEmpty()) {
+                                handleDeletion(dataStore, this, NotInRange, updateListener, sharedFlow)
+                                return
+                            }
+                        }
+
                         updateListener.changeOrder(this) { newIndex, orderChanged ->
                             if (newIndex == null) {
                                 handleDeletion(dataStore, this, NotInRange, updateListener, sharedFlow)
                             } else {
                                 createChangeUpdate(request.select, orderChanged, newIndex)?.let { changeUpdate ->
-                                    val update = if (updateListener.filterContainsMutableValues) {
-                                        // Check if the value still is valid with the current filter since it could have potentially mutated
-                                        val response = dataStore.execute(
-                                            dataModel.get(
-                                                key,
-                                                select = dataModel.graph { emptyList() },
-                                                where = request.where,
-                                                filterSoftDeleted = request.filterSoftDeleted
-                                            )
-                                        )
-
-                                        if (response.values.isNotEmpty()) {
-                                            changeUpdate
-                                        } else {
-                                            RemovalUpdate(
-                                                key = key,
-                                                version = this.version,
-                                                reason = NotInRange
-                                            )
-                                        }
-                                    } else {
-                                        changeUpdate
-                                    }
-
-                                    sharedFlow.send(update)
+                                    sharedFlow.send(changeUpdate)
                                 }
+                            }
+                        }
+                    }
+                } else if (
+                    !shouldDelete &&
+                    (
+                        updateListener.filterContainsMutableValues ||
+                            updateListener is UpdateListenerForGet<DM, *> && request.where != null
+                    ) &&
+                    (
+                        updateListener is UpdateListenerForGet<DM, *> ||
+                            updateListener is UpdateListenerForScan<DM, *> &&
+                            updateListener.usesTableScan &&
+                            updateListener.request.limit > 0u
+                    )
+                ) {
+                    // Gets and table scans have no index change to establish membership, so re-read mutable matches.
+                    yield()
+                    val response = dataStore.execute(
+                        request.dataModel.get(
+                            key,
+                            select = request.select,
+                            where = request.where,
+                            filterSoftDeleted = request.filterSoftDeleted
+                        )
+                    )
+                    val addition = response.values.firstOrNull()
+                    if (addition != null) {
+                        updateListener.addValues(addition.key, addition.values)?.let { insertionIndex ->
+                            sharedFlow.send(
+                                AdditionUpdate(
+                                    key = addition.key,
+                                    values = addition.values,
+                                    insertionIndex = insertionIndex,
+                                    version = version,
+                                    firstVersion = addition.firstVersion,
+                                    isDeleted = addition.isDeleted
+                                )
+                            )
+
+                            if (
+                                updateListener is UpdateListenerForScan<DM, *> &&
+                                updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit
+                            ) {
+                                val keyToRemove = updateListener.getLast()
+                                updateListener.removeKey(keyToRemove)
+                                sharedFlow.send(
+                                    RemovalUpdate(
+                                        key = keyToRemove,
+                                        version = version,
+                                        reason = NotInRange
+                                    )
+                                )
                             }
                         }
                     }

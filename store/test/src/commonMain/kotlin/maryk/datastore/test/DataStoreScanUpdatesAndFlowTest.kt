@@ -44,6 +44,7 @@ import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
+import maryk.lib.extensions.compare.compareTo
 import maryk.test.models.TestMarykModel
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -108,6 +109,8 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeOrderedScanUpdatesRequest" to ::executeOrderedScanUpdatesRequest,
         "executeLimitedScanValuesAsFlowRefillsAfterDeletingOnlyVisibleKey" to ::executeLimitedScanValuesAsFlowRefillsAfterDeletingOnlyVisibleKey,
         "executeLimitedScanValuesAsFlowIgnoresAddAfterWindow" to ::executeLimitedScanValuesAsFlowIgnoresAddAfterWindow,
+        "executeLimitedTableScanFlowRefillsValueThatEnteredAfterInitialScan" to ::executeLimitedTableScanFlowRefillsValueThatEnteredAfterInitialScan,
+        "executeLimitedTableScanFlowEvictsLastValueWhenEarlierValueEnters" to ::executeLimitedTableScanFlowEvictsLastValueWhenEarlierValueEnters,
         "executeScanValuesAsFlowRequest" to ::executeScanValuesAsFlowRequest,
         "uncollectedFlowDoesNotBlockWritesOrLaterListeners" to ::uncollectedFlowDoesNotBlockWritesOrLaterListeners,
         "returnedFlowGivesConcurrentCollectorsIndependentListeners" to ::returnedFlowGivesConcurrentCollectorsIndependentListeners,
@@ -441,6 +444,90 @@ class DataStoreScanUpdatesAndFlowTest(
         } finally {
             dataStore.closeAllListeners()
             listenJob.cancelAndJoin()
+        }
+    }
+
+    private suspend fun executeLimitedTableScanFlowRefillsValueThatEnteredAfterInitialScan() {
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scan(
+                where = Equals(TestMarykModel { string::ref } with "ha world 1"),
+                limit = 1u,
+                allowTableScan = true
+            ),
+            3
+        ) { responses ->
+            assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+                assertEquals(listOf(testKeys[0]), values.map { it.key })
+            }
+
+            assertStatusIs<ChangeSuccess<*>>(
+                dataStore.execute(
+                    TestMarykModel.change(
+                        testKeys[1].change(Change(TestMarykModel { string::ref } with "ha world 1"))
+                    )
+                ).statuses.single()
+            )
+            assertStatusIs<ChangeSuccess<*>>(
+                dataStore.execute(
+                    TestMarykModel.change(
+                        testKeys[0].change(Change(TestMarykModel { string::ref } with "ha outside flow"))
+                    )
+                ).statuses.single()
+            )
+
+            assertIs<RemovalUpdate<*>>(responses[1].await()).apply {
+                assertEquals(testKeys[0], key)
+                assertEquals(NotInRange, reason)
+            }
+            assertIs<AdditionUpdate<*>>(responses[2].await()).apply {
+                assertEquals(testKeys[1], key)
+                assertEquals(0, insertionIndex)
+            }
+        }
+    }
+
+    private suspend fun executeLimitedTableScanFlowEvictsLastValueWhenEarlierValueEnters() {
+        val orderedKeys = testKeys.sortedWith { left, right -> left.bytes compareTo right.bytes }
+        val earlierKey = orderedKeys.first()
+        val laterKey = orderedKeys.last()
+
+        dataStore.execute(
+            TestMarykModel.change(
+                earlierKey.change(Change(TestMarykModel { string::ref } with "ha outside limit")),
+                laterKey.change(Change(TestMarykModel { string::ref } with "ha inside limit"))
+            )
+        )
+
+        updateListenerTester(
+            dataStore,
+            TestMarykModel.scan(
+                where = Equals(TestMarykModel { string::ref } with "ha inside limit"),
+                limit = 1u,
+                allowTableScan = true
+            ),
+            3
+        ) { responses ->
+            assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+                assertEquals(listOf(laterKey), values.map { it.key })
+            }
+
+            assertStatusIs<ChangeSuccess<*>>(
+                dataStore.execute(
+                    TestMarykModel.change(
+                        earlierKey.change(Change(TestMarykModel { string::ref } with "ha inside limit"))
+                    )
+                ).statuses.single()
+            )
+
+            assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
+                assertEquals(earlierKey, key)
+                assertEquals(0, insertionIndex)
+            }
+            assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
+                assertEquals(laterKey, key)
+                assertEquals(NotInRange, reason)
+            }
         }
     }
 

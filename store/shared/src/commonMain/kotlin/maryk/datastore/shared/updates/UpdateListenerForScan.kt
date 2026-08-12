@@ -52,6 +52,8 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         else -> request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
     }
 
+    internal val usesTableScan get() = scanType is TableScan
+
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
     private val indexStartBoundary = when (response) {
         is UpdatesResponse<DM> -> (response.dataFetchType as? FetchByIndexScan)?.startKey

@@ -43,6 +43,8 @@ class DataStoreGetUpdatesAndFlowTest(
         "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest,
         "executeGetUpdatesAsFlowRequest" to ::executeGetUpdatesAsFlowRequest,
         "executeGetUpdatesAsFlowWithMutableWhereRequest" to ::executeGetUpdatesAsFlowWithMutableWhereRequest,
+        "executeGetFlowTracksInitiallyMissingAndReaddedRequestedKey" to ::executeGetFlowTracksInitiallyMissingAndReaddedRequestedKey,
+        "executeGetFlowTracksRequestedKeyEnteringMutableFilter" to ::executeGetFlowTracksRequestedKeyEnteringMutableFilter,
         "executeGetUpdatesWithInitChangesAsFlowRequest" to ::executeGetUpdatesWithInitChangesAsFlowRequest
     )
 
@@ -228,6 +230,93 @@ class DataStoreGetUpdatesAndFlowTest(
         assertIs<RemovalUpdate<*>>(changeUpdate2).apply {
             assertEquals(testKeys[1], key)
             assertEquals(NotInRange, reason)
+        }
+    }
+
+    private suspend fun executeGetFlowTracksInitiallyMissingAndReaddedRequestedKey() {
+        val key = testKeys[2]
+        assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+            dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true)).statuses.single()
+        )
+
+        updateListenerTester(
+            dataStore,
+            SimpleMarykModel.get(key),
+            4
+        ) { responses ->
+            assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+                assertEquals(emptyList(), values)
+            }
+
+            assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha first presence" })
+                ).statuses.single()
+            )
+            assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
+                assertEquals(key, this.key)
+                assertEquals(0, insertionIndex)
+            }
+
+            assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+                dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true)).statuses.single()
+            )
+            assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
+                assertEquals(key, this.key)
+            }
+
+            assertStatusIs<AddSuccess<SimpleMarykModel>>(
+                dataStore.execute(
+                    SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha second presence" })
+                ).statuses.single()
+            )
+            assertIs<AdditionUpdate<*>>(responses[3].await()).apply {
+                assertEquals(key, this.key)
+                assertEquals(0, insertionIndex)
+            }
+        }
+    }
+
+    private suspend fun executeGetFlowTracksRequestedKeyEnteringMutableFilter() = updateListenerTester(
+        dataStore,
+        SimpleMarykModel.get(
+            testKeys[0],
+            where = Equals(SimpleMarykModel { value::ref } with "ha inside")
+        ),
+        4
+    ) { responses ->
+        assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+            assertEquals(emptyList(), values)
+        }
+
+        dataStore.execute(
+            SimpleMarykModel.change(
+                testKeys[0].change(Change(SimpleMarykModel { value::ref } with "ha inside"))
+            )
+        )
+        assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(0, insertionIndex)
+        }
+
+        dataStore.execute(
+            SimpleMarykModel.change(
+                testKeys[0].change(Change(SimpleMarykModel { value::ref } with "ha outside"))
+            )
+        )
+        assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(NotInRange, reason)
+        }
+
+        dataStore.execute(
+            SimpleMarykModel.change(
+                testKeys[0].change(Change(SimpleMarykModel { value::ref } with "ha inside"))
+            )
+        )
+        assertIs<AdditionUpdate<*>>(responses[3].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(0, insertionIndex)
         }
     }
 

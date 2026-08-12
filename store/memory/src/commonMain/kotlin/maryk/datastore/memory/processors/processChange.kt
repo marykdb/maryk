@@ -692,12 +692,14 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
             }
         }
 
-        if (isChanged) {
-            if (version > objectToChange.lastVersion) {
-                objectToChange.lastVersion = version
-            }
-            dataStore.addToUpdateHistory(version, objectToChange.key.bytes)
+        if (!isChanged) {
+            return ChangeSuccess(objectToChange.lastVersion.timestamp, outChanges)
         }
+
+        if (version > objectToChange.lastVersion) {
+            objectToChange.lastVersion = version
+        }
+        dataStore.addToUpdateHistory(version, objectToChange.key.bytes)
 
         when {
             !wasSoftDeleted && isSoftDeleted -> {

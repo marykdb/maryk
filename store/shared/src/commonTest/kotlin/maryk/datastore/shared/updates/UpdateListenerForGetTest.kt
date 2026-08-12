@@ -1,9 +1,9 @@
 package maryk.datastore.shared.updates
 
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import maryk.core.models.key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.Change
@@ -20,6 +20,31 @@ import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.milliseconds
 
 class UpdateListenerForGetTest {
+    @Test
+    fun requestedKeyCanBeAddedAfterMissingInitialResponseAndReaddedAfterDeletion() = runTest {
+        val key = SimpleMarykModel.key(ByteArray(16) { 1 })
+        val values = SimpleMarykModel.create {
+            value with "present"
+        }
+        val listener = UpdateListenerForGet(
+            SimpleMarykModel.get(key),
+            ValuesResponse(dataModel = SimpleMarykModel, values = emptyList())
+        )
+
+        listener.process(Update.Addition(SimpleMarykModel, key, 1uL, values), ProcessUpdateActorTest.TestDataStore)
+
+        assertEquals(listOf(key), listener.matchingKeys.value)
+
+        listener.process(
+            Update.Deletion(SimpleMarykModel, key, 2uL, isHardDelete = true),
+            ProcessUpdateActorTest.TestDataStore
+        )
+        assertEquals(emptyList(), listener.matchingKeys.value)
+
+        listener.process(Update.Addition(SimpleMarykModel, key, 3uL, values), ProcessUpdateActorTest.TestDataStore)
+        assertEquals(listOf(key), listener.matchingKeys.value)
+    }
+
     @Test
     fun addValuesRespectsRequestKeyOrderWhenUnsorted() {
         val firstKey = SimpleMarykModel.key(ByteArray(16) { 2 })

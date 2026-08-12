@@ -1,5 +1,11 @@
 package maryk.datastore.test
 
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
@@ -20,19 +26,25 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
+import maryk.core.query.requests.scanUpdateHistory
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
+import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import kotlin.test.assertIs
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.expect
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 class DataStoreChangeTest(
     val dataStore: IsDataStore
@@ -54,6 +66,7 @@ class DataStoreChangeTest(
         "executeChangeSetRequest" to ::executeChangeSetRequest,
         "executeChangeMapRequest" to ::executeChangeMapRequest,
         "executeChangeNoOpListAndMapRequest" to ::executeChangeNoOpListAndMapRequest,
+        "executeEffectiveNoOpDoesNotAdvanceVersionOrEmitFlowUpdate" to ::executeEffectiveNoOpDoesNotAdvanceVersionOrEmitFlowUpdate,
         "executeChangeIncMapRequest" to ::executeChangeIncMapRequest
     )
 
@@ -521,6 +534,41 @@ class DataStoreChangeTest(
             TestMarykModel.get(keys[1])
         ).values.first()
         expect(initialVersion) { afterFullChange.lastVersion }
+    }
+
+    private suspend fun executeEffectiveNoOpDoesNotAdvanceVersionOrEmitFlowUpdate() = coroutineScope {
+        val updates = Channel<IsUpdateResponse<TestMarykModel>>(2)
+        val listenJob = launch {
+            dataStore.executeFlow(TestMarykModel.get(keys[0])).collect { updates.send(it) }
+        }
+
+        try {
+            val initial = assertIs<InitialValuesUpdate<*>>(withTimeout(5.seconds) { updates.receive() })
+            val initialVersion = initial.values.single().lastVersion
+            val historyBefore = if (dataStore.keepAllVersions && dataStore.keepUpdateHistoryIndex) {
+                dataStore.execute(TestMarykModel.scanUpdateHistory(limit = 100_000u)).updates
+            } else null
+            val noOp = assertStatusIs<ChangeSuccess<*>>(
+                dataStore.execute(
+                    TestMarykModel.change(
+                        keys[0].change(Change(TestMarykModel { string::ref } with "haha1"))
+                    )
+                ).statuses.single()
+            )
+
+            expect(initialVersion) { noOp.version }
+            assertNull(withTimeoutOrNull(250.milliseconds) { updates.receive() })
+            historyBefore?.also { before ->
+                assertEquals(
+                    before,
+                    dataStore.execute(TestMarykModel.scanUpdateHistory(limit = 100_000u)).updates
+                )
+            }
+            Unit
+        } finally {
+            dataStore.closeAllListeners()
+            listenJob.cancelAndJoin()
+        }
     }
 
     private suspend fun executeChangeIncMapRequest() {

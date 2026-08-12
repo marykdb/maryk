@@ -250,7 +250,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 if (exceptions.isNotEmpty()) {
                     throw EarlyStatus(ValidationFail<DM>(exceptions))
                 } else {
-                    return@runTransaction ChangeSuccess(version.timestamp, emptyList())
+                    return@runTransaction ChangeSuccess(latestVersion, emptyList())
                 }
             }
 
@@ -747,11 +747,12 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 throw EarlyStatus(status)
             }
 
-            // Update latest version if anything changed
-            if (isChanged) {
-                val last = getLastVersion(tr, tableDirs, key)
-                if (version.timestamp > last) setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+            if (!isChanged) {
+                return@runTransaction ChangeSuccess(latestVersion, outChanges)
             }
+
+            // Update latest version if anything changed
+            if (version.timestamp > latestVersion) setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
 
             // Process indexes
             var indexUpdates: MutableList<IsIndexUpdate>? = null

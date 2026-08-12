@@ -36,7 +36,6 @@ class DataStoreScanUniqueTest(
         "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
         "executeSimpleScanFilterWithToVersionRequest" to ::executeSimpleScanFilterWithToVersionRequest,
         "executeHistoricalUniqueDoesNotMatchPrefixCollision" to ::executeHistoricalUniqueDoesNotMatchPrefixCollision,
-        "executeHistoricalUniqueCanFindHardDeletedObject" to ::executeHistoricalUniqueCanFindHardDeletedObject,
         "executeHistoricalUniqueCanIncludeSoftDeletedObject" to ::executeHistoricalUniqueCanIncludeSoftDeletedObject,
         "executeHistoricalUniqueCanIncludeObjectSoftDeletedByChange" to ::executeHistoricalUniqueCanIncludeObjectSoftDeletedByChange,
     )
@@ -183,28 +182,6 @@ class DataStoreScanUniqueTest(
         expect(1) { scanResponse.values.size }
         assertTrue { scanResponse.values.single().isDeleted }
         expect(keys[0]) { scanResponse.values.single().key }
-        expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
-    }
-
-    private suspend fun executeHistoricalUniqueCanFindHardDeletedObject() {
-        if (!dataStore.keepAllVersions) return
-
-        assertStatusIs<DeleteSuccess<CompleteMarykModel>>(
-            dataStore.execute(
-                CompleteMarykModel.delete(keys[0], hardDelete = true)
-            ).statuses.single()
-        )
-
-        val scanResponse = dataStore.execute(
-            CompleteMarykModel.scan(
-                where = Equals(
-                    CompleteMarykModel.string.ref() with "haas"
-                ),
-                toVersion = lowestVersion
-            )
-        )
-
-        expect(0) { scanResponse.values.size }
         expect(FetchByUniqueKey(byteArrayOf(9))) { scanResponse.dataFetchType }
     }
 

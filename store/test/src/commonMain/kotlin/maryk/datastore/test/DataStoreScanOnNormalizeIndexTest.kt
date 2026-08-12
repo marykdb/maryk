@@ -18,13 +18,20 @@ import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.FetchByIndexScan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
+import maryk.core.query.responses.updates.AdditionUpdate
+import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.RemovalReason.NotInRange
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.CaseInsensitivePerson
+import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 class DataStoreScanOnNormalizeIndexTest(
@@ -42,6 +49,7 @@ class DataStoreScanOnNormalizeIndexTest(
         "executeHistoricIndexGreaterThanScanRequestOnNormalizeIndex" to ::executeHistoricIndexGreaterThanScanRequestOnNormalizeIndex,
         "executeIndexOnlyNormalizesConfiguredPart" to ::executeIndexOnlyNormalizesConfiguredPart,
         "executeNamedAnyOfMatchesWithoutOrder" to ::executeNamedAnyOfMatchesWithoutOrder,
+        "executeGetFlowTracksNamedMatchMembership" to ::executeGetFlowTracksNamedMatchMembership,
         "executeNamedAnyOfMultiTermMatchesWithoutOrder" to ::executeNamedAnyOfMultiTermMatchesWithoutOrder,
         "executeNamedAnyOfMatchesPrefixWithoutOrder" to ::executeNamedAnyOfMatchesPrefixWithoutOrder,
         "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrder" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrder,
@@ -330,6 +338,49 @@ class DataStoreScanOnNormalizeIndexTest(
             startKey = "garcia".encodeToByteArray(),
             stopKey = "garcib".encodeToByteArray(),
         )) { scanResponse.dataFetchType }
+    }
+
+    private suspend fun executeGetFlowTracksNamedMatchMembership() = updateListenerTester(
+        dataStore,
+        CaseInsensitivePerson.get(
+            keys[0],
+            where = Matches("name" with "smith")
+        ),
+        4
+    ) { responses ->
+        assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+            assertEquals(emptyList(), values)
+        }
+
+        dataStore.execute(
+            CaseInsensitivePerson.change(
+                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Smith"))
+            )
+        )
+        assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
+            assertEquals(keys[0], key)
+            assertEquals(0, insertionIndex)
+        }
+
+        dataStore.execute(
+            CaseInsensitivePerson.change(
+                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Jones"))
+            )
+        )
+        assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
+            assertEquals(keys[0], key)
+            assertEquals(NotInRange, reason)
+        }
+
+        dataStore.execute(
+            CaseInsensitivePerson.change(
+                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Smith"))
+            )
+        )
+        assertIs<AdditionUpdate<*>>(responses[3].await()).apply {
+            assertEquals(keys[0], key)
+            assertEquals(0, insertionIndex)
+        }
     }
 
     private suspend fun executeNamedAnyOfMultiTermMatchesWithoutOrder() {

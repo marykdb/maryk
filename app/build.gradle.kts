@@ -87,6 +87,8 @@ kotlin {
         getByName("jvmTest") {
             dependencies {
                 implementation(projects.store.memory)
+                implementation(projects.store.test)
+                implementation(projects.testmodels)
             }
         }
     }

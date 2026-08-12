@@ -1,6 +1,7 @@
 package io.maryk.app.data
 
 import maryk.core.extensions.bytes.toVarBytes
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.asValues
 import maryk.core.properties.types.Key
@@ -19,6 +20,7 @@ import maryk.core.query.requests.scan
 import maryk.core.query.requests.ScanCursor
 import maryk.core.protobuf.WriteCache
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.DEFAULT_HISTORY_VERSIONS_PER_RECORD
 import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.file.File
@@ -327,7 +329,9 @@ internal suspend fun loadCompleteChangesForKey(
     model: IsRootDataModel,
     key: Key<IsRootDataModel>,
     toVersion: ULong? = null,
+    maxHistoryVersions: UInt = DEFAULT_HISTORY_VERSIONS_PER_RECORD,
 ): DataObjectVersionedChange<IsRootDataModel>? {
+    require(maxHistoryVersions > 0u) { "Export history limit must be at least 1" }
     val changesByVersion = mutableMapOf<ULong, VersionedChanges>()
     var sortingKey: Bytes? = null
     var upperVersion = toVersion
@@ -343,13 +347,20 @@ internal suspend fun loadCompleteChangesForKey(
             )
         } catch (error: Throwable) {
             error.rethrowIfFatal()
-            return loadCompleteChangesForwardOneAtATime(dataStore, model, key, toVersion)
+            return loadCompleteChangesForwardOneAtATime(dataStore, model, key, toVersion, maxHistoryVersions)
         }
         val entry = response.changes.firstOrNull() ?: break
         if (sortingKey == null) sortingKey = entry.sortingKey
         if (entry.changes.isEmpty()) break
         val previousSize = changesByVersion.size
-        entry.changes.forEach { changesByVersion[it.version] = it }
+        entry.changes.forEach {
+            changesByVersion[it.version] = it
+            if (changesByVersion.size.toUInt() > maxHistoryVersions) {
+                throw RequestException(
+                    "Export record history exceeds the configured limit of $maxHistoryVersions versions"
+                )
+            }
+        }
         val nonCreationChanges = entry.changes.filterNot { ObjectCreate in it.changes }
         if (nonCreationChanges.size < HISTORY_PAGE_SIZE.toInt()) break
 
@@ -372,6 +383,7 @@ private suspend fun loadCompleteChangesForwardOneAtATime(
     model: IsRootDataModel,
     key: Key<IsRootDataModel>,
     toVersion: ULong?,
+    maxHistoryVersions: UInt,
 ): DataObjectVersionedChange<IsRootDataModel>? {
     val changesByVersion = mutableMapOf<ULong, VersionedChanges>()
     var sortingKey: Bytes? = null
@@ -390,7 +402,14 @@ private suspend fun loadCompleteChangesForwardOneAtATime(
         if (sortingKey == null) sortingKey = entry.sortingKey
         if (entry.changes.isEmpty()) break
         val previousSize = changesByVersion.size
-        entry.changes.forEach { changesByVersion[it.version] = it }
+        entry.changes.forEach {
+            changesByVersion[it.version] = it
+            if (changesByVersion.size.toUInt() > maxHistoryVersions) {
+                throw RequestException(
+                    "Export record history exceeds the configured limit of $maxHistoryVersions versions"
+                )
+            }
+        }
         val lastVersion = entry.changes.last().version
         if (changesByVersion.size == previousSize || lastVersion == ULong.MAX_VALUE) break
         fromVersion = lastVersion + 1uL

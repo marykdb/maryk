@@ -264,6 +264,31 @@ class DataStoreBackupTest {
             source.close()
         }
     }
+
+    @Test
+    fun backupRejectsRecordHistoryBeyondConfiguredLimit() = runTest {
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        try {
+            val add = source.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "ha initial" })
+            )
+            val key = assertStatusIs<AddSuccess<SimpleMarykModel>>(add.statuses.single()).key
+            repeat(2) { index ->
+                source.execute(
+                    SimpleMarykModel.change(
+                        key.change(Change(SimpleMarykModel { value::ref } with "ha change $index"))
+                    )
+                )
+            }
+
+            assertFailsWith<RequestException> {
+                source.backup(CollectingBackup(), null, 250u, 2u)
+            }
+        } finally {
+            source.close()
+        }
+    }
 }
 
 private object IncompatibleSimpleMarykModel : RootDataModel<IncompatibleSimpleMarykModel>(

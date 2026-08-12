@@ -17,6 +17,8 @@ import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.updates.InitialChangesUpdate
 
 const val DATA_STORE_BACKUP_FORMAT_VERSION = 2u
+/** Maximum complete version history retained for one record during backup or export. */
+const val DEFAULT_HISTORY_VERSIONS_PER_RECORD = 10_000u
 
 /** Metadata written before the chunks of a portable logical backup. */
 data class DataStoreBackupManifest(
@@ -85,8 +87,27 @@ suspend fun IsDataStore.backup(
     writer: DataStoreBackupWriter,
     snapshotVersion: ULong? = null,
     batchSize: UInt = 250u,
+): DataStoreBackupManifest = backup(
+    writer,
+    snapshotVersion,
+    batchSize,
+    DEFAULT_HISTORY_VERSIONS_PER_RECORD,
+)
+
+/**
+ * Streams a versioned, point-in-time logical backup with a bound for one record's history.
+ *
+ * A record exceeding [maxHistoryVersionsPerRecord] stops the incomplete backup before it can
+ * silently omit older versions.
+ */
+suspend fun IsDataStore.backup(
+    writer: DataStoreBackupWriter,
+    snapshotVersion: ULong?,
+    batchSize: UInt,
+    maxHistoryVersionsPerRecord: UInt,
 ): DataStoreBackupManifest {
     require(batchSize > 0u) { "Backup batch size must be at least 1" }
+    require(maxHistoryVersionsPerRecord > 0u) { "Backup history limit must be at least 1" }
     if (!keepAllVersions) {
         throw RequestException("Portable point-in-time backup requires keepAllVersions")
     }
@@ -116,7 +137,12 @@ suspend fun IsDataStore.backup(
 
             val records = mutableListOf<DataObjectVersionedChange<IsRootDataModel>>()
             for (value in page.values) {
-                readCompleteChanges(model, value.key, effectiveSnapshotVersion)?.let(records::add)
+                readCompleteChanges(
+                    model,
+                    value.key,
+                    effectiveSnapshotVersion,
+                    maxHistoryVersionsPerRecord,
+                )?.let(records::add)
             }
             if (records.isNotEmpty()) {
                 writer.write(DataStoreBackupChunk(model.Meta.name, records))
@@ -243,6 +269,7 @@ private suspend fun IsDataStore.readCompleteChanges(
     model: IsRootDataModel,
     key: Key<IsRootDataModel>,
     snapshotVersion: ULong,
+    maxHistoryVersions: UInt,
 ): DataObjectVersionedChange<IsRootDataModel>? {
     val changesByVersion = mutableMapOf<ULong, VersionedChanges>()
     var toVersion = snapshotVersion
@@ -259,7 +286,14 @@ private suspend fun IsDataStore.readCompleteChanges(
         val record = response.changes.firstOrNull() ?: break
         if (record.changes.isEmpty()) break
         val previousSize = changesByVersion.size
-        record.changes.forEach { changesByVersion[it.version] = it }
+        record.changes.forEach {
+            changesByVersion[it.version] = it
+            if (changesByVersion.size.toUInt() > maxHistoryVersions) {
+                throw RequestException(
+                    "Backup record history exceeds the configured limit of $maxHistoryVersions versions"
+                )
+            }
+        }
         val nonCreationChanges = record.changes.filterNot { ObjectCreate in it.changes }
         if (nonCreationChanges.size < BACKUP_HISTORY_PAGE_SIZE.toInt()) break
 

@@ -163,10 +163,13 @@ internal class YamlReaderImpl(
     private val anchorReaders = mutableListOf<AnchorRecorder>()
     private val anchorReadersToRemove = mutableListOf<AnchorRecorder>()
 
-    private val tokenStack = mutableListOf<JsonToken>()
+    private val tokenStack = YamlTokenQueue()
     private val storedAnchors = mutableMapOf<String, StoredAnchor>()
     private var aliasCount = 0
     private var expandedAliasTokenCount = 0L
+
+    internal val tokenQueueWorkUnits: Long
+        get() = this.tokenStack.workUnits
 
     private var tokenDepth = 0
     private var merges = mutableListOf<Merge>()
@@ -185,7 +188,7 @@ internal class YamlReaderImpl(
         try {
             this.currentToken = try {
                 if (this.tokenStack.isNotEmpty()) {
-                    this.tokenStack.removeAt(0)
+                    this.tokenStack.removeFirst()
                 } else if (this.hasException) {
                     this.currentReader.handleReaderInterrupt()
                 } else {
@@ -384,11 +387,11 @@ internal class YamlReaderImpl(
     }
 
     override fun pushToken(token: JsonToken) {
-        this.tokenStack.add(token)
+        this.tokenStack.addLast(token)
     }
 
     fun pushTokenAsFirst(token: JsonToken) {
-        this.tokenStack.add(0, token)
+        this.tokenStack.addFirst(token)
     }
 
     fun getTokensForAlias(alias: String): Array<JsonToken> {
@@ -436,6 +439,31 @@ private class StoredAnchor(
     val tokens: Array<JsonToken>,
     val aliasDepth: Int
 )
+
+/** FIFO token queue with a linear-work counter for replay regression coverage. */
+internal class YamlTokenQueue {
+    private val tokens = ArrayDeque<JsonToken>()
+
+    var workUnits: Long = 0
+        private set
+
+    fun isNotEmpty() = this.tokens.isNotEmpty()
+
+    fun addLast(token: JsonToken) {
+        this.tokens.addLast(token)
+        this.workUnits++
+    }
+
+    fun addFirst(token: JsonToken) {
+        this.tokens.addFirst(token)
+        this.workUnits++
+    }
+
+    fun removeFirst(): JsonToken {
+        this.workUnits++
+        return this.tokens.removeFirst()
+    }
+}
 
 private class Merge(
     val tokenStartDepth: Int,

@@ -6,6 +6,8 @@ import maryk.json.ValueType
 import maryk.yaml.YamlValueType.Binary
 import maryk.yaml.YamlValueType.TimeStamp
 import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertFailsWith
 
 class TypesTest {
     @Test
@@ -67,6 +69,40 @@ class TypesTest {
 
         createYamlReader("!!float wrong").apply {
             assertInvalidYaml()
+        }
+    }
+
+    @Test
+    fun preservesTimestampFractionsFromOneToNineDigits() {
+        (1..9).forEach { digits ->
+            val fraction = "123456789".take(digits)
+            createYamlReader("!!timestamp 2016-09-05T01:12:05.${fraction}Z").apply {
+                assertValue(
+                    LocalDateTime(2016, 9, 5, 1, 12, 5, fraction.padEnd(9, '0').toInt()),
+                    TimeStamp
+                )
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
+    fun rejectsTimestampFractionsLongerThanNanoseconds() {
+        val exception = assertFailsWith<InvalidYamlContent> {
+            createYamlReader("!!timestamp 2016-09-05T01:12:05.1234567890Z").nextToken()
+        }
+
+        assertContains(exception.message ?: "", "fraction")
+    }
+
+    @Test
+    fun rejectsLongTimestampFractionsWithOffsets() {
+        listOf("+01:00", "-01:00").forEach { offset ->
+            val exception = assertFailsWith<InvalidYamlContent> {
+                createYamlReader("!!timestamp 2016-09-05T01:12:05.1234567890$offset").nextToken()
+            }
+
+            assertContains(exception.message ?: "", "fraction")
         }
     }
 
@@ -148,7 +184,7 @@ class TypesTest {
         assertStartArray()
         assertValue(LocalDateTime(2018, 3, 13, 0, 0), TimeStamp)
         assertValue(LocalDateTime(2017, 12, 1, 12, 45, 13), TimeStamp)
-        assertValue(LocalDateTime(2016, 9, 5, 1, 12, 5, 123000000), TimeStamp)
+        assertValue(LocalDateTime(2016, 9, 5, 1, 12, 5, 123456789), TimeStamp)
         assertValue(LocalDateTime(2015, 5, 24, 7, 3, 55), TimeStamp)
         assertValue(LocalDateTime(2014, 2, 28, 9, 34, 43, 220000000), TimeStamp)
         assertEndArray()

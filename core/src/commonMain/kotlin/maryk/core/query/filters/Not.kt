@@ -7,6 +7,8 @@ import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.RequestContext
+import maryk.core.protobuf.WriteCacheReader
+import maryk.core.protobuf.WriteCacheWriter
 import maryk.core.values.ObjectValues
 import maryk.json.IsJsonLikeReader
 import maryk.json.IsJsonLikeWriter
@@ -45,12 +47,14 @@ data class Not(
                 context: RequestContext?,
                 skip: List<IsDefinitionWrapper<*, *, *, Not>>?
             ) {
-                filters.writeJsonValue(
-                    filters.getPropertyAndSerialize(obj, context)
-                        ?: throw ParseException("Missing filters in Not filter"),
-                    writer,
-                    context
-                )
+                withFilterNesting(context) { filterContext ->
+                    filters.writeJsonValue(
+                        filters.getPropertyAndSerialize(obj, filterContext)
+                            ?: throw ParseException("Missing filters in Not filter"),
+                        writer,
+                        filterContext
+                    )
+                }
             }
 
             override fun readJson(reader: IsJsonLikeReader, context: RequestContext?): ObjectValues<Not, Companion> {
@@ -58,10 +62,31 @@ data class Not(
                     reader.nextToken()
                 }
 
-                return create(context) {
-                    filters -= filters.readJson(reader, context)
+                return withFilterNesting(context) { filterContext ->
+                    create(filterContext) {
+                        filters -= filters.readJson(reader, filterContext)
+                    }
                 }
             }
+
+            override fun calculateObjectProtoBufLength(dataObject: Not, cacher: WriteCacheWriter, context: RequestContext?) =
+                withFilterNesting(context) { filterContext ->
+                    super.calculateObjectProtoBufLength(dataObject, cacher, filterContext)
+                }
+
+            override fun writeObjectProtoBuf(
+                dataObject: Not,
+                cacheGetter: WriteCacheReader,
+                writer: (byte: Byte) -> Unit,
+                context: RequestContext?
+            ) = withFilterNesting(context) { filterContext ->
+                super.writeObjectProtoBuf(dataObject, cacheGetter, writer, filterContext)
+            }
+
+            override fun readProtoBuf(length: Int, reader: () -> Byte, context: RequestContext?) =
+                withFilterNesting(context) { filterContext ->
+                    super.readProtoBuf(length, reader, filterContext)
+                }
         }
     }
 }

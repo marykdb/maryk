@@ -5,8 +5,44 @@ import maryk.json.ValueType
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 internal class YamlWriterTest {
+    @Test
+    fun safelyRendersRootAndNestedStringScalars() {
+        val values = listOf(
+            "null", "true", "1", "*alias", "&anchor", "!tag", "#comment", "|", ">", "%directive", "@reserved", "`reserved",
+            "---", "- value", "? value", ": value", "\r", "\u0000", "\u0001", "\u0085", "\u009F", "", " value "
+        )
+
+        values.forEach { value ->
+            val rootOutput = buildString {
+                YamlWriter(::append).writeString(value)
+            }
+            assertTrue(rootOutput.isNotEmpty())
+            createYamlReader(rootOutput).apply {
+                assertValue(value, ValueType.String)
+                assertEndDocument()
+            }
+
+            val nestedOutput = buildString {
+                YamlWriter(::append).apply {
+                    writeStartObject()
+                    writeFieldName("value")
+                    writeString(value)
+                    writeEndObject()
+                }
+            }
+            createYamlReader(nestedOutput).apply {
+                assertStartObject()
+                assertFieldName("value")
+                assertValue(value, ValueType.String)
+                assertEndObject()
+                assertEndDocument()
+            }
+        }
+    }
+
     @Test
     fun writeExpectedYAML() {
         val output = buildString {

@@ -5,8 +5,34 @@ import maryk.json.ValueType
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class AnchorAndAliasReaderTest {
+    @Test
+    fun replaysNearLimitAnchorTokensWithQueueSemantics() {
+        val itemCount = 20_000
+        val yaml = buildString {
+            append("[&items [")
+            repeat(itemCount) { index ->
+                if (index > 0) append(',')
+                append("item")
+            }
+            append("], *items]")
+        }
+        val reader = YamlReader(
+            yaml = yaml,
+            aliasLimits = YamlAliasLimits(maxExpandedTokens = itemCount + 2)
+        ) as YamlReaderImpl
+
+        var tokenCount = 0
+        while (reader.nextToken() !is Stopped) {
+            tokenCount++
+        }
+
+        assertTrue(tokenCount > itemCount)
+        assertTrue(reader.tokenQueueWorkUnits < itemCount * 6L)
+    }
+
     @Test
     fun configuredAliasTokenBudgetRejectsLargeReplay() {
         val reader = YamlReader(

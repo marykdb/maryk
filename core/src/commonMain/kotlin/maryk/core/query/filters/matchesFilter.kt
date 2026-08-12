@@ -25,18 +25,30 @@ fun matchesFilter(
         return true
     }
 
+    checkFilterNesting(filter)
+    return matchesFilterInternal(filter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)
+}
+
+private fun matchesFilterInternal(
+    filter: IsFilter,
+    valueMatcher: (AnyPropertyReference, (Any?) -> Boolean) -> Boolean,
+    normalizer: (AnyPropertyReference, Any?) -> Any?,
+    searchMatcher: (String, String) -> Boolean,
+    searchPrefixMatcher: (String, String) -> Boolean,
+    searchRegexMatcher: (String, Regex) -> Boolean
+): Boolean {
     when (filter.filterType) {
         FilterType.And -> {
             val and = filter as And
             for (aFilter in and.filters) {
-                if (!matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
+                if (!matchesFilterInternal(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
             }
             return true
         }
         FilterType.Or -> {
             val or = filter as Or
             for (aFilter in or.filters) {
-                if (matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return true
+                if (matchesFilterInternal(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return true
             }
             return false
         }
@@ -44,7 +56,7 @@ fun matchesFilter(
             val notFilter = (filter as Not)
             for (aFilter in notFilter.filters) {
                 // If internal filter succeeds, then fail
-                if (matchesFilter(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
+                if (matchesFilterInternal(aFilter, valueMatcher, normalizer, searchMatcher, searchPrefixMatcher, searchRegexMatcher)) return false
             }
             return true
         }

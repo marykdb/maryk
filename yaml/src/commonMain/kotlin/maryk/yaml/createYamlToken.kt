@@ -41,7 +41,7 @@ private val timestampRegex = Regex(
             "(([Tt]|[ \\t]+)([0-9][0-9]?)" + // hour
             ":([0-9][0-9])" + // minute
             ":([0-9][0-9])" + // second
-            "(\\.([0-9]*))?" + // fraction
+            "(\\.([0-9]+))?" + // fraction
             "(([ \\t]*)Z|([-+][0-9][0-9])?(:([0-9][0-9]))?)?)?$"  // time zone
 )
 
@@ -235,12 +235,13 @@ private fun findFloat(value: String): Value<Double>? {
 
 /** Tries to find timestamp in [value] and returns a DateTime if found */
 private fun findTimestamp(value: String): Value<LocalDateTime>? =
-    timestampRegex.find(value)?.let {
+    timestampRegex.find(value)?.let { match ->
+        val nanoseconds = parseNanoseconds(match.groups[10]?.value)
         val dateTime = when {
-            it.groups[4] == null ->
+            match.groups[4] == null ->
                 parseDate(value)
-            it.groups[11] == null || it.groups[11]!!.value == "Z" || it.groups[11]!!.value.isEmpty() ->
-                parseLocalDateTime(it)
+            match.groups[11] == null || match.groups[11]!!.value == "Z" || match.groups[11]!!.value.isEmpty() ->
+                parseLocalDateTime(match, nanoseconds)
             else -> Instant.parse(value).toLocalDateTime(TimeZone.UTC)
         }
         Value(dateTime, TimeStamp)
@@ -249,7 +250,7 @@ private fun findTimestamp(value: String): Value<LocalDateTime>? =
 private fun parseDate(value: String): LocalDateTime =
     LocalDate.parse(value).atStartOfDayIn(TimeZone.UTC).toLocalDateTime(TimeZone.UTC)
 
-private fun parseLocalDateTime(match: MatchResult): LocalDateTime =
+private fun parseLocalDateTime(match: MatchResult, nanoseconds: Int): LocalDateTime =
     LocalDateTime(
         year = match.groups[1]!!.value.toInt(),
         month = match.groups[2]!!.value.toInt(),
@@ -257,14 +258,13 @@ private fun parseLocalDateTime(match: MatchResult): LocalDateTime =
         hour = match.groups[6]!!.value.toInt(),
         minute = match.groups[7]!!.value.toInt(),
         second = match.groups[8]!!.value.toInt(),
-        nanosecond = parseNanoseconds(match.groups[10]?.value)
+        nanosecond = nanoseconds
     )
 
 private fun parseNanoseconds(value: String?): Int =
     value?.let {
-        when {
-            it.length < 3 -> it.padEnd(3, '0')
-            it.length == 3 -> it
-            else -> it.substring(0, 3)
-        }.toInt() * 1_000_000
+        if (it.length > 9) {
+            throw InvalidYamlContent("Timestamp fraction has more than 9 digits: $it")
+        }
+        it.padEnd(9, '0').toInt()
     } ?: 0

@@ -30,6 +30,8 @@ class RequestContext(
     override var dataModel: IsDataModel? = null,
     var reference: IsPropertyReference<*, IsSerializablePropertyDefinition<*, *>, *>? = null
 ) : ContainsDataModelContext<IsDataModel>, ContainsDefinitionsContext by definitionsContext {
+    internal var filterNestingDepth = 0
+
     /** For test use */
     internal constructor(
         dataModels: Map<String, IsDataModelReference<*>>,

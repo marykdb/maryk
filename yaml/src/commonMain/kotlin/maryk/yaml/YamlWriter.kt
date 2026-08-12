@@ -250,13 +250,13 @@ class YamlWriter(
 
     private fun writeValueInternal(value: String, quoteStrings: Boolean) {
         writePendingObjectStart()
+        val renderedValue = if (quoteStrings) {
+            sanitizeValue(value, quoteFlowDelimiters = this.lastIsCompact)
+        } else {
+            value
+        }
         if (typeStack.isNotEmpty()) {
             val lastTypeBeforeOperation = this.lastType
-            val renderedValue = if (quoteStrings) {
-                sanitizeValue(value, quoteFlowDelimiters = this.lastIsCompact)
-            } else {
-                value
-            }
 
             if ((lastTypeBeforeOperation == TAG && value != "") || lastTypeBeforeOperation == COMPLEX_FIELD_NAME_END) {
                 writer(" ")
@@ -272,7 +272,7 @@ class YamlWriter(
                     if (this.lastIsCompact) {
                         writer(renderedValue)
                     } else {
-                        if (value.contains('\n')) {
+                        if (value.contains('\n') && !requiresEscapedScalar(value)) {
                             writeMultilineValue(value, lastTypeBeforeOperation)
                         } else {
                             writer("$renderedValue\n")
@@ -290,7 +290,7 @@ class YamlWriter(
                         }
                         writer(renderedValue)
                     } else {
-                        if (value.contains('\n')) {
+                        if (value.contains('\n') && !requiresEscapedScalar(value)) {
                             writeMultilineValue(value, lastTypeBeforeOperation)
                         } else {
                             if (lastTypeBeforeOperation == TAG) {
@@ -311,7 +311,7 @@ class YamlWriter(
             if (this.lastType == TAG) {
                 writer(" ")
             }
-            writer(value)
+            writer(renderedValue)
         }
     }
 
@@ -432,18 +432,45 @@ class YamlWriter(
 
     /** If value contains yaml incompatible values it will be surrounded by quotes */
     private fun sanitizeValue(value: String, quoteFlowDelimiters: Boolean) =
-        if (shouldQuote(value, quoteFlowDelimiters)) {
-            "'${value.replace("'", "''")}'"
-        } else {
-            value
-        }
+        renderScalar(value, shouldQuote(value, quoteFlowDelimiters))
 
     private fun sanitizeFieldName(value: String, quoteFlowDelimiters: Boolean) =
-        if (shouldQuoteFieldName(value, quoteFlowDelimiters)) {
-            "'${value.replace("'", "''")}'"
-        } else {
-            value
+        renderScalar(value, shouldQuoteFieldName(value, quoteFlowDelimiters))
+
+    private fun renderScalar(value: String, quote: Boolean): String = when {
+        requiresEscapedScalar(value) -> buildString {
+            append('"')
+            value.forEach { character ->
+                append(
+                    when (character) {
+                        '\u0000' -> "\\0"
+                        '\u0007' -> "\\a"
+                        '\b' -> "\\b"
+                        '\t' -> "\\t"
+                        '\n' -> "\\n"
+                        '\u000B' -> "\\v"
+                        '\u000C' -> "\\f"
+                        '\r' -> "\\r"
+                        '\u001B' -> "\\e"
+                        '"' -> "\\\""
+                        '\\' -> "\\\\"
+                        else -> if (character.code in 0x7F..0x9F) {
+                            "\\x${character.code.toString(16).padStart(2, '0')}"
+                        } else {
+                            character.toString()
+                        }
+                    }
+                )
+            }
+            append('"')
         }
+        quote -> "'${value.replace("'", "''")}'"
+        else -> value
+    }
+
+    private fun requiresEscapedScalar(value: String) = value.any {
+        it.code in 0x00..0x08 || it.code in 0x0B..0x1F || it.code in 0x7F..0x9F
+    }
 
     private fun shouldQuote(value: String, quoteFlowDelimiters: Boolean): Boolean {
         if (value.isEmpty() || value != value.trim()) return true

@@ -4,7 +4,6 @@ import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.shared.TypeIndicator
-import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRange
 import maryk.lib.extensions.compare.matchesRangePart
@@ -97,34 +96,7 @@ internal class HistoricalTableReader(
     }
 
     private fun positionAtOrSeek(target: ByteArray) {
-        if (!iterator.isValid()) {
-            iterator.seek(target)
-            return
-        }
-
-        val currentKey = iterator.key()
-        when {
-            currentKey compareTo target == 0 -> return
-            currentKey compareTo target > 0 -> iterator.seek(target)
-            !advanceToAtLeast(target) -> iterator.seek(target)
-        }
-    }
-
-    private fun advanceToAtLeast(target: ByteArray): Boolean {
-        repeat(MAX_LINEAR_ADVANCE_STEPS) {
-            iterator.next()
-            if (!iterator.isValid()) {
-                return false
-            }
-            if (iterator.key() compareTo target >= 0) {
-                return true
-            }
-        }
-        return false
-    }
-
-    companion object {
-        private const val MAX_LINEAR_ADVANCE_STEPS = 8
+        iterator.seek(target)
     }
 }
 

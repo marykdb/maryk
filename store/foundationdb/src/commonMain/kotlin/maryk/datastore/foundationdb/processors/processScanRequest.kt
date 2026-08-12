@@ -54,7 +54,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
                 select = scanRequest.select,
                 toVersion = scanRequest.toVersion,
                 cachedRead = cacheReader,
-                decryptValue = this@processScanRequest::decryptValueIfNeeded
+                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
             )
             if (valuesWithMeta.size.toUInt() < scanRequest.limit && vwm != null) {
                 valuesWithMeta.add(vwm)
@@ -70,7 +70,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanRequest(
                         toVersion = scanRequest.toVersion,
                         keyBytes = keyBytes,
                         referenceBytes = it.toStorageByteArray(),
-                        decryptValue = this@processScanRequest::decryptValueIfNeeded
+                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                     ) { valueBytes, offset, length ->
                         valueBytes.convertToValue(it, offset, length)
                     }

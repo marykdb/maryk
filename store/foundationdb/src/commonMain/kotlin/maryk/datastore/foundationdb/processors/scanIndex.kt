@@ -555,7 +555,7 @@ private fun createIndexValuesGetter(
         val value = if (propertyReference is IsMapReference<*, *, *, *> && toVersion == null) {
             @Suppress("UNCHECKED_CAST")
             tr.readMapByReference(
-                tableDirs.tablePrefix,
+                tableDirs,
                 keyBytes,
                 propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
                 decryptValue,

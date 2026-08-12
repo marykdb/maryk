@@ -84,10 +84,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 val value = if (propertyReference is IsMapReference<*, *, *, *>) {
                     @Suppress("UNCHECKED_CAST")
                     tr.readMapByReference(
-                        tableDirs.tablePrefix,
+                        tableDirs,
                         keyBytes,
                         propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
-                        this@processDelete::decryptValueIfNeeded
+                        { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                     ) as T?
                 } else if (propertyReference is SetReference<*, *>) {
                     @Suppress("UNCHECKED_CAST")
@@ -103,7 +103,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                         null,
                         keyBytes,
                         propertyReference.toStorageByteArray(),
-                        decryptValue = this@processDelete::decryptValueIfNeeded
+                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                     ) { valueBytes, offset, length ->
                         valueBytes.convertToValue(propertyReference, offset, length) as T?
                     }
@@ -142,6 +142,9 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     // Stored as (version || value)
                     requireVersionedValue(value)
                     val uniqueValues = withDecryptedValueIfNeeded(
+                        dbIndex,
+                        key.bytes,
+                        reference,
                         value,
                         VERSION_BYTE_SIZE,
                         value.size - VERSION_BYTE_SIZE
@@ -335,7 +338,7 @@ private fun FoundationDBDataStore.collectHistoricUniqueReferencesForHistoricalVa
     val iterator = tr.getRange(FDBRange.startsWith(prefix)).iterator()
     while (iterator.hasNext()) {
         val historicValue = iterator.nextBlocking().value
-        val uniqueValues = withDecryptedValueIfNeeded(historicValue) { value, offset, length ->
+        val uniqueValues = withDecryptedValueIfNeeded(dbIndex, key, reference, historicValue) { value, offset, length ->
             mapUniqueValueByteCandidates(
                 dbIndex,
                 reference,

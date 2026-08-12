@@ -44,7 +44,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
     toVersion: ULong?,
     maxVersions: UInt,
     select: RootPropRefGraph<DM>?,
-    decryptValue: suspend (ByteArray) -> ByteArray = { it },
+    decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): List<VersionedChanges> {
     val creationChanges = mutableListOf<VersionedChanges>()
     val nonCreationChanges = mutableListOf<VersionedChanges>()
@@ -120,7 +120,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readHistoricRecor
     keyBytes: ByteArray,
     toVersion: ULong,
     select: RootPropRefGraph<DM>?,
-    decryptValue: suspend (ByteArray) -> ByteArray = { it },
+    decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): ValuesWithMetaData<DM>? {
     val rowKeyPrefix = createObjectRowKeyPrefix(keyBytes)
     val rows = scan(
@@ -137,7 +137,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readHistoricRecor
     val (meta, storageRows) = decodeHistoricSnapshot(value)
     val values = decodeStorageRowsToValues(
         dataModel,
-        storageRows.map { (qualifier, rowValue) -> qualifier to decryptValue(rowValue) },
+        storageRows.map { (qualifier, rowValue) -> qualifier to decryptValue(qualifier, rowValue) },
         select,
     )
         ?: dataModel.emptyValues()

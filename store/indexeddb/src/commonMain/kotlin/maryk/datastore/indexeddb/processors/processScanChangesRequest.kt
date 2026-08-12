@@ -94,7 +94,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
 
             val toVersion = request.toVersion
             val record = if (toVersion == null) {
-                decodeCurrentSnapshotRecord(request.dataModel, keyBytes, rowValue, null, sensitiveFields::decryptValueIfNeeded)
+                decodeCurrentSnapshotRecord(request.dataModel, keyBytes, rowValue, null) { qualifier, value ->
+                    sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value)
+                }
                     ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
             } else {
                 readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
@@ -112,7 +114,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
                 toVersion = request.toVersion,
                 maxVersions = request.maxVersions,
                 select = request.select,
-                decryptValue = sensitiveFields::decryptValueIfNeeded,
+                decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
             )
             if (versionedChanges.isEmpty()) return@scanInBatches true
 
@@ -276,7 +278,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
                 toVersion = request.toVersion,
                 maxVersions = request.maxVersions,
                 select = request.select,
-                decryptValue = sensitiveFields::decryptValueIfNeeded,
+                decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
             ).ifEmpty {
                 record.toCreationChanges(request.fromVersion, request.toVersion, request.select)
             }
@@ -321,4 +323,3 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
         ),
     )
 }
-

@@ -4,6 +4,7 @@ import maryk.foundationdb.directory.DirectorySubspace
 
 sealed interface IsTableDirectories {
     val dataStore: FoundationDBDataStore
+    val modelId: UInt
     val keysPrefix: ByteArray
     val modelPrefix: ByteArray
     val tablePrefix: ByteArray
@@ -14,6 +15,7 @@ sealed interface IsTableDirectories {
 
 open class TableDirectories(
     override val dataStore: FoundationDBDataStore,
+    override val modelId: UInt,
     model: DirectorySubspace,
     keys: DirectorySubspace,
     table: DirectorySubspace,
@@ -31,6 +33,7 @@ open class TableDirectories(
 
 class HistoricTableDirectories(
     override val dataStore: FoundationDBDataStore,
+    override val modelId: UInt,
     model: DirectorySubspace,
     keys: DirectorySubspace,
     table: DirectorySubspace,

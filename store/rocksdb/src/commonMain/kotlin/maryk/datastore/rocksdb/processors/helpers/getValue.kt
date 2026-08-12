@@ -22,6 +22,8 @@ internal fun <T: Any> DBAccessor.getValue(
     historicalTableReader: HistoricalTableReader? = null,
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
+    val recordKey = keyAndReference.copyOfRange(0, columnFamilies.keyByteSize)
+    val reference = keyAndReference.copyOfRange(columnFamilies.keyByteSize, keyAndReference.size)
     return if (toVersion == null) {
         val valueLength = this.get(columnFamilies.table, readOptions, keyAndReference, recyclableByteArray)
 
@@ -30,13 +32,16 @@ internal fun <T: Any> DBAccessor.getValue(
             valueLength > recyclableByteArray.size -> {
                 val valueBytes = this.get(columnFamilies.table, readOptions, keyAndReference)!!
                 requireVersionedValueSize(valueLength)
-                this.dataStore.withDecryptedValueIfNeeded(valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE) { value, offset, length ->
+                this.dataStore.withDecryptedValueIfNeeded(columnFamilies.modelId, recordKey, reference, valueBytes, VERSION_BYTE_SIZE, valueLength - VERSION_BYTE_SIZE) { value, offset, length ->
                     handleResult(value, offset, length)
                 }
             }
             else -> {
                 requireVersionedValueSize(valueLength)
                 this.dataStore.withDecryptedValueIfNeeded(
+                    columnFamilies.modelId,
+                    recordKey,
+                    reference,
                     recyclableByteArray,
                     VERSION_BYTE_SIZE,
                     valueLength - VERSION_BYTE_SIZE
@@ -50,13 +55,13 @@ internal fun <T: Any> DBAccessor.getValue(
             throw RequestException("Cannot use toVersion on a non historic table")
         }
 
-        historicalTableReader?.getValue(keyAndReference) { result, offset, length ->
-            val decrypted = this.dataStore.decryptValueIfNeeded(result)
-            handleResult(decrypted, offset, length)
+        historicalTableReader?.getValue(keyAndReference) { result, _, _ ->
+            val decrypted = this.dataStore.decryptValueIfNeeded(columnFamilies.modelId, recordKey, reference, result)
+            handleResult(decrypted, 0, decrypted.size)
         } ?: HistoricalTableReader(this, columnFamilies, readOptions, toVersion).use { reader ->
-            reader.getValue(keyAndReference) { result, offset, length ->
-                val decrypted = this.dataStore.decryptValueIfNeeded(result)
-                handleResult(decrypted, offset, length)
+            reader.getValue(keyAndReference) { result, _, _ ->
+                val decrypted = this.dataStore.decryptValueIfNeeded(columnFamilies.modelId, recordKey, reference, result)
+                handleResult(decrypted, 0, decrypted.size)
             }
         }
     }

@@ -3,6 +3,8 @@ package maryk.datastore.rocksdb
 import maryk.rocksdb.ColumnFamilyHandle
 
 internal open class TableColumnFamilies(
+    val modelId: UInt,
+    val keyByteSize: Int,
     val model: ColumnFamilyHandle,
     val keys: ColumnFamilyHandle,
     table: ColumnFamilyHandle,

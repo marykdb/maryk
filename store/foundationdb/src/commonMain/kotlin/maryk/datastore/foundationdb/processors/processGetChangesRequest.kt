@@ -48,7 +48,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
                             keyLength = key.size,
                             createdVersion = creationVersion,
                             toVersion = getRequest.toVersion,
-                            decryptValue = this@processGetChangesRequest::decryptValueIfNeeded
+                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                         )
                     ) {
                         null
@@ -69,7 +69,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
                             maxVersions = getRequest.maxVersions,
                             sortingKey = null,
                             cachedRead = cacheReader,
-                            decryptValue = this@processGetChangesRequest::decryptValueIfNeeded
+                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                         )
 
                         if (getRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {

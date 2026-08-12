@@ -113,7 +113,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                             uniqueWrites += uniqueRef
                         }
 
-                        val encryptedValue = encryptValueIfSensitive(dataModelId, reference, valueBytes)
+                        val encryptedValue = encryptValueIfSensitive(dataModelId, key.bytes, reference, valueBytes)
                         setValue(tr, tableDirs, key.bytes, reference, versionBytes, encryptedValue)
                     }
 

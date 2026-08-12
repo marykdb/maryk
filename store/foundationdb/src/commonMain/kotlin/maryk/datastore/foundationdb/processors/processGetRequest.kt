@@ -42,7 +42,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                 val creationVersion = tr.readCreationVersion(tableDirs, keyBytes, getRequest.toVersion)
                     ?: return@run null
 
-                if (getRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, key.size, creationVersion, getRequest.toVersion, this@processGetRequest::decryptValueIfNeeded)) {
+                if (getRequest.shouldBeFiltered(tr, tableDirs, keyBytes, 0, key.size, creationVersion, getRequest.toVersion, { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) })) {
                     null
                 } else {
                     val cacheReader = { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
@@ -57,7 +57,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                         select = getRequest.select,
                         toVersion = getRequest.toVersion,
                         cachedRead = cacheReader,
-                        decryptValue = this@processGetRequest::decryptValueIfNeeded
+                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                     )
                 }
             }
@@ -73,7 +73,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetRequest(
                             toVersion = getRequest.toVersion,
                             keyBytes = keyBytes,
                             referenceBytes = it.toStorageByteArray(),
-                            decryptValue = this@processGetRequest::decryptValueIfNeeded
+                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                         ) { valueBytes, offset, length ->
                             valueBytes.convertToValue(it, offset, length)
                         }

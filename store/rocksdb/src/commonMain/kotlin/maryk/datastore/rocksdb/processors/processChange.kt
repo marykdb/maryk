@@ -221,7 +221,9 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                 db,
                 columnFamilies,
                 defaultReadOptions,
-                decryptValue = this::decryptValueIfNeeded
+                decryptValue = { recordKey, reference, value, offset, length ->
+                    decryptValueIfNeeded(dbIndex, recordKey, reference, value, offset, length)
+                }
             )
             indexes.forEach { index ->
                 initialIndexValues[index] = try {
@@ -1074,7 +1076,7 @@ private fun RocksDBDataStore.createValueWriter(
                     }
                 }
 
-                val encryptedValue = encryptValueIfSensitive(dbIndex, reference, valueBytes)
+                val encryptedValue = encryptValueIfSensitive(dbIndex, key.bytes, reference, valueBytes)
                 setValue(transaction, columnFamilies, key, reference, versionBytes, encryptedValue)
             }
         }

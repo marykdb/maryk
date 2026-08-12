@@ -38,7 +38,7 @@ internal suspend fun <DM : IsRootDataModel> createStoragePlan(
 
     val encryptedTableRows = rows.map { row ->
         createTableRowKey(keyBytes, row.qualifier) to
-            sensitiveFields.encryptValueIfSensitive(modelId, row.qualifier, row.encodedValue)
+            sensitiveFields.encryptValueIfSensitive(modelId, keyBytes, row.qualifier, row.encodedValue)
     }
     for (row in rows) {
         if (row.type == Value && row.definition is IsComparableDefinition<*, *> && row.definition.unique) {

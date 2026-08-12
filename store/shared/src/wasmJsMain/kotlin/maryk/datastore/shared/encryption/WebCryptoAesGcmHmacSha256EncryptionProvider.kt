@@ -24,7 +24,7 @@ class WebCryptoAesGcmHmacSha256EncryptionProvider(
     tokenKey: ByteArray,
     associatedData: ByteArray? = null,
     private val tokenSizeBytes: Int = 16,
-) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+) : ContextualFieldEncryptionProvider, SensitiveIndexTokenProvider {
     private val encryptionKeyBytes = encryptionKey.copyOf()
     private val tokenKeyBytes = tokenKey.copyOf()
     private val associatedData = associatedData?.copyOf()
@@ -59,6 +59,39 @@ class WebCryptoAesGcmHmacSha256EncryptionProvider(
         val nonce = value.copyOfRange(nonceStart, nonceEnd)
         val cipher = value.copyOfRange(nonceEnd, offset + length)
         return subtleDecrypt(encryptionKeyBytes, nonce, cipher, associatedData)
+    }
+
+    override suspend fun encrypt(
+        context: FieldEncryptionContext,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray {
+        validateRange(value, offset, length)
+        val nonce = randomBytes(GCM_NONCE_SIZE_BYTES)
+        val plainText = value.copyOfRange(offset, offset + length)
+        val cipher = subtleEncrypt(encryptionKeyBytes, nonce, plainText, contextualAssociatedData(context, associatedData))
+        return byteArrayOf(V1_PAYLOAD_HEADER) + nonce + cipher
+    }
+
+    override suspend fun decrypt(
+        context: FieldEncryptionContext,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray {
+        validateRange(value, offset, length)
+        require(length >= 1 + GCM_NONCE_SIZE_BYTES + GCM_TAG_SIZE_BYTES) {
+            "Encrypted payload too short"
+        }
+        require(value[offset] == V1_PAYLOAD_HEADER) {
+            "Unsupported encrypted payload version: ${value[offset]}"
+        }
+        val nonceStart = offset + 1
+        val nonceEnd = nonceStart + GCM_NONCE_SIZE_BYTES
+        val nonce = value.copyOfRange(nonceStart, nonceEnd)
+        val cipher = value.copyOfRange(nonceEnd, offset + length)
+        return subtleDecrypt(encryptionKeyBytes, nonce, cipher, contextualAssociatedData(context, associatedData))
     }
 
     override suspend fun deriveDeterministicToken(
@@ -299,4 +332,19 @@ private fun Int.toByteArray(): ByteArray = ByteArray(Int.SIZE_BYTES).also { byte
     bytes[1] = (this ushr 16).toByte()
     bytes[2] = (this ushr 8).toByte()
     bytes[3] = this.toByte()
+}
+
+private val CONTEXT_AAD_DOMAIN = "maryk.field-aad.v1".encodeToByteArray()
+
+private fun contextualAssociatedData(context: FieldEncryptionContext, configuredAssociatedData: ByteArray?): ByteArray {
+    val parts = listOf(CONTEXT_AAD_DOMAIN, context.modelId.toByteArray(), context.recordKey, context.reference, configuredAssociatedData ?: ByteArray(0))
+    return ByteArray(parts.sumOf { Int.SIZE_BYTES + it.size }).also { result ->
+        var offset = 0
+        for (part in parts) {
+            part.size.toByteArray().copyInto(result, offset)
+            offset += Int.SIZE_BYTES
+            part.copyInto(result, offset)
+            offset += part.size
+        }
+    }
 }

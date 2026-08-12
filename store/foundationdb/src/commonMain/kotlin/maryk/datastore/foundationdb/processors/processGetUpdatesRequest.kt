@@ -67,7 +67,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             keyLength = key.size,
                             createdVersion = creationVersion,
                             toVersion = getRequest.toVersion,
-                            decryptValue = this@processGetUpdatesRequest::decryptValueIfNeeded
+                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                         )
                     ) {
                         Pair<ULong?, DataObjectVersionedChange<DM>?>(null, null)
@@ -93,7 +93,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                                 select = getRequest.select,
                                 toVersion = readVersion,
                                 cachedRead = cacheReader,
-                                decryptValue = this@processGetUpdatesRequest::decryptValueIfNeeded
+                                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                             )?.withSoftDeleteState(tr, tableDirs, key.bytes, readVersion)
                         }
 
@@ -108,7 +108,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                             maxVersions = getRequest.maxVersions,
                             sortingKey = null,
                             cachedRead = cacheReader,
-                            decryptValue = this@processGetUpdatesRequest::decryptValueIfNeeded
+                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                         )
 
                         val fallbackChanges = if (getRequest.needsSoftDeleteFallback() && tableDirs is HistoricTableDirectories) {

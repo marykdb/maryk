@@ -8,17 +8,18 @@ import maryk.core.properties.references.IsMapReference
 import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.foundationdb.IsTableDirectories
 
 /** Read direct map entries for [mapReference] at [keyBytes] from latest table rows. */
 internal fun ReadTransaction.readMapByReference(
-    tablePrefix: ByteArray,
+    tableDirs: IsTableDirectories,
     keyBytes: ByteArray,
     mapReference: IsMapReference<Any, Any, IsPropertyContext, *>,
     decryptValue: DecryptValue? = null
 ): Map<Any, Any>? {
     val mapDefinition = mapReference.propertyDefinition.definition
     val mapValueDefinition = mapDefinition.valueDefinition
-    val mapPrefix = packKey(tablePrefix, keyBytes, mapReference.toStorageByteArray())
+    val mapPrefix = packKey(tableDirs.tablePrefix, keyBytes, mapReference.toStorageByteArray())
     val map = linkedMapOf<Any, Any>()
 
     val iterator = this.getRange(Range.startsWith(mapPrefix)).iterator()
@@ -42,7 +43,7 @@ internal fun ReadTransaction.readMapByReference(
 
         try {
             val stored = kv.value
-            val value = stored.withCurrentPayload(decryptValue) { payload, offset, length ->
+            val value = stored.withCurrentPayload(decryptValue, tableDirs.modelId, keyBytes, qualifier.copyOfRange(mapPrefix.size, qualifier.size)) { payload, offset, length ->
                 var valueReadIndex = offset
                 readValue(mapValueDefinition, { payload[valueReadIndex++] }) { offset + length - valueReadIndex }
             } ?: continue

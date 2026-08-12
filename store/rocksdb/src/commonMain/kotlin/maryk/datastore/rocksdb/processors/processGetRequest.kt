@@ -101,6 +101,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetRequest(
 
                         val valuesWithMetaData = getRequest.dataModel.readTransactionIntoValuesWithMetaData(
                             iterator,
+                            this,
                             creationVersion,
                             columnFamilies,
                             key,

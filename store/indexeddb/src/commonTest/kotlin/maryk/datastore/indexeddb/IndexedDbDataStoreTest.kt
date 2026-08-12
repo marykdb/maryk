@@ -53,9 +53,16 @@ import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.TypeIndicator
-import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
+import maryk.datastore.shared.encryption.FieldEncryptionContext
+import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.indexeddb.processors.createUpdateHistoryRowKey
+import maryk.datastore.indexeddb.processors.decodeCurrentSnapshot
+import maryk.datastore.indexeddb.processors.decodeHistoricSnapshot
+import maryk.datastore.indexeddb.processors.encodeCurrentSnapshot
+import maryk.datastore.indexeddb.processors.encodeHistoricSnapshot
+import maryk.datastore.indexeddb.processors.createHistoricSnapshotRowKey
 import maryk.datastore.indexeddb.processors.createChangeLogRowKey
 import maryk.datastore.indexeddb.processors.createHardDeleteHistoryRowKey
 import maryk.datastore.indexeddb.processors.createHistoricVersionedRowKey
@@ -64,6 +71,7 @@ import maryk.datastore.indexeddb.processors.hardDeleteHistoryRowReadObserver
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.test.DataStoreAddTest
 import maryk.datastore.test.DataStoreBackupRoundTripTest
+import maryk.lib.bytes.combineToByteArray
 import maryk.datastore.test.DataStoreChangeComplexTest
 import maryk.datastore.test.DataStoreChangeTest
 import maryk.datastore.test.DataStoreChangeValidationTest
@@ -2022,7 +2030,8 @@ class IndexedDbDataStoreTest {
                     SensitiveRecord(Bytes(ByteArray(16) { it.toByte() }), "hello", "top-secret")
                 )
             )
-            val key = assertIs<AddSuccess<SensitiveRecord>>(addResult.statuses.single()).key
+            val addStatus = assertIs<AddSuccess<SensitiveRecord>>(addResult.statuses.single())
+            val key = addStatus.key
             val get = dataStore.execute(SensitiveRecord.get(key))
             assertEquals("top-secret", get.values.single().values[SensitiveRecord.secret.ref()])
         } finally {
@@ -2037,8 +2046,65 @@ class IndexedDbDataStoreTest {
 
             val plain = SensitiveRecord.secret.definition.toStorageBytes("top-secret", TypeIndicator.NoTypeIndicator.byte)
             assertFalse(rawStored.contentEquals(plain))
+            assertTrue(rawStored.copyOfRange(0, 4).contentEquals("MKE2".encodeToByteArray()))
         } finally {
             byteStore.close()
+        }
+    }
+
+    @Test
+    fun sensitivePropertyReadsLegacyMke1Snapshot() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-encryption-legacy-${Random.nextInt()}"
+        val provider = XorFieldEncryptionProvider()
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(901u to SensitiveRecord),
+            fieldEncryptionProvider = provider,
+            keepAllVersions = true,
+        )
+
+        try {
+            val addResult = dataStore.execute(
+                SensitiveRecord.add(SensitiveRecord(Bytes(ByteArray(16) { it.toByte() }), "hello", "top-secret"))
+            )
+            val addStatus = assertIs<AddSuccess<SensitiveRecord>>(addResult.statuses.single())
+            val key = addStatus.key
+            val qualifier = SensitiveRecord.secret.ref().toStorageByteArray()
+            val plain = SensitiveRecord.secret.definition.toStorageBytes("top-secret", TypeIndicator.NoTypeIndicator.byte)
+            val legacyValue = combineToByteArray(
+                FieldEncryptionEnvelope.Legacy.magic,
+                provider.encrypt(plain),
+            )
+            val snapshot = requireNotNull(dataStore.byteStore.get("k:901", key.bytes))
+            val (meta, rows) = decodeCurrentSnapshot(snapshot)
+            dataStore.byteStore.put(
+                "k:901",
+                key.bytes,
+                encodeCurrentSnapshot(meta, rows.map { (reference, value) ->
+                    reference to if (reference.contentEquals(qualifier)) legacyValue else value
+                }),
+            )
+            dataStore.byteStore.put("t:901", createTableRowKey(key.bytes, qualifier), legacyValue)
+
+            val historicKey = createHistoricSnapshotRowKey(key.bytes, addStatus.version)
+            val historicSnapshot = requireNotNull(dataStore.byteStore.get("ht:901", historicKey))
+            val (historicMeta, historicRows) = decodeHistoricSnapshot(historicSnapshot)
+            dataStore.byteStore.put(
+                "ht:901",
+                historicKey,
+                encodeHistoricSnapshot(historicMeta, historicRows.map { (reference, value) ->
+                    reference to if (reference.contentEquals(qualifier)) legacyValue else value
+                }),
+            )
+
+            val get = dataStore.execute(SensitiveRecord.get(key))
+            assertEquals("top-secret", get.values.single().values[SensitiveRecord.secret.ref()])
+            val historicGet = dataStore.execute(SensitiveRecord.get(key, toVersion = addStatus.version))
+            assertEquals("top-secret", historicGet.values.single().values[SensitiveRecord.secret.ref()])
+        } finally {
+            dataStore.close()
         }
     }
 
@@ -2371,9 +2437,13 @@ class IndexedDbDataStoreTest {
 
 }
 
-private class XorFieldEncryptionProvider : FieldEncryptionProvider {
+private class XorFieldEncryptionProvider : ContextualFieldEncryptionProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length)
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }
@@ -2384,7 +2454,7 @@ private class CancellationBlockingFieldEncryptionProvider(
     private val releaseEncryption: CompletableDeferred<Unit>,
     private val cancellationCleanupStarted: CompletableDeferred<Unit>,
     private val finishCancellationCleanup: CompletableDeferred<Unit>,
-) : FieldEncryptionProvider {
+) : ContextualFieldEncryptionProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray {
         encryptionStarted.complete(Unit)
         try {
@@ -2402,6 +2472,10 @@ private class CancellationBlockingFieldEncryptionProvider(
 
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
         value.copyOfRange(offset, offset + length)
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        encrypt(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        decrypt(value, offset, length)
 }
 
 private object CancellationMigrationV1 : RootDataModel<CancellationMigrationV1>(
@@ -2426,10 +2500,14 @@ private object CancellationMigrationV2 : RootDataModel<CancellationMigrationV2>(
 }
 
 private class XorWithTokenFieldEncryptionProvider :
-    FieldEncryptionProvider,
+    ContextualFieldEncryptionProvider,
     SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length)
 
     override suspend fun deriveDeterministicToken(
         modelId: UInt,
@@ -2460,9 +2538,13 @@ private class XorWithTokenFieldEncryptionProvider :
 private class RotatingTokenFieldEncryptionProvider(
     private val activeToken: Int,
     private val previousTokens: List<Int> = emptyList(),
-) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+) : ContextualFieldEncryptionProvider, SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
+        xor(value, offset, length)
 
     override suspend fun deriveDeterministicToken(
         modelId: UInt,

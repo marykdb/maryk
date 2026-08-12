@@ -78,7 +78,7 @@ internal class StoreValuesGetter(
                                 storedValue.size - VERSION_BYTE_SIZE
                             )
                         } else {
-                            val plainValue = decryptValue(storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)
+                            val plainValue = decryptValue(currentKey, propertyReference.toStorageByteArray(), storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)
                             plainValue.convertToValue(propertyReference, 0, plainValue.size)
                         }
                         version?.let { exactVersion ->
@@ -144,7 +144,8 @@ internal class StoreValuesGetter(
                         var valueReadIndex = VERSION_BYTE_SIZE
                         readValue(mapValueDefinition, { storedValue[valueReadIndex++] }) { storedValue.size - valueReadIndex }
                     } else {
-                        val valueBytes = decryptValue(storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)
+                        val recordKey = key
+                        val valueBytes = decryptValue(recordKey, qualifier.copyOfRange(recordKey.size, qualifier.size), storedValue, VERSION_BYTE_SIZE, storedValue.size - VERSION_BYTE_SIZE)
                         var valueReadIndex = 0
                         readValue(mapValueDefinition, { valueBytes[valueReadIndex++] }) { valueBytes.size - valueReadIndex }
                     }

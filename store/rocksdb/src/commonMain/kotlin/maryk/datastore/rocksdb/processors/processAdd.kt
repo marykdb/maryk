@@ -131,7 +131,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                             setUniqueIndexValue(columnFamilies, transaction, uniqueReference, versionBytes, key)
                         }
 
-                        val encryptedValue = encryptValueIfSensitive(dbIndex, reference, valueBytes)
+                        val encryptedValue = encryptValueIfSensitive(dbIndex, key.bytes, reference, valueBytes)
                         setValue(transaction, columnFamilies, key, reference, versionBytes, encryptedValue)
                     }
                     ListSize,

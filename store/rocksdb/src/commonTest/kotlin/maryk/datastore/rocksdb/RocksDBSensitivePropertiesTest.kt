@@ -11,19 +11,33 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.get
+import maryk.core.query.requests.scan
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.change
+import maryk.core.query.filters.Equals
+import maryk.core.query.pairs.with
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.createTestDBFolder
+import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.shared.encryption.FieldEncryptionContext
+import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
+import maryk.datastore.shared.encryption.AesGcmHmacSha256EncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.deleteFolder
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -94,8 +108,12 @@ class RocksDBSensitivePropertiesTest {
                 val plain = SensitiveRocksModel.secret.definition.toStorageBytes("top-secret", TypeIndicator.NoTypeIndicator.byte)
                 assertFalse(payload.contentEquals(plain))
 
-                val decrypted = store.decryptValueIfNeeded(payload)
+                val decrypted = store.decryptValueIfNeeded(1u, key.bytes, SensitiveRocksModel.secret.ref().toStorageByteArray(), payload)
                 assertContentEquals(plain, decrypted)
+                assertEquals(
+                    "top-secret",
+                    store.execute(SensitiveRocksModel.get(key)).values.single().values { secret },
+                )
             } finally {
                 store.close()
             }
@@ -114,6 +132,150 @@ class RocksDBSensitivePropertiesTest {
                     keepAllVersions = false,
                     dataModelsById = mapOf(1u to SensitiveRocksModel),
                 )
+            }
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun contextualCiphertextCannotBeTransplantedAndLegacyCiphertextStillReads() = runTest {
+        val folder = createTestDBFolder("sensitive-rocks-contextual-envelope")
+        val provider = AesGcmHmacSha256EncryptionProvider(
+            encryptionKey = ByteArray(32) { it.toByte() },
+            tokenKey = ByteArray(32) { (it + 32).toByte() },
+        )
+        try {
+            val store = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = false,
+                dataModelsById = mapOf(1u to SensitiveRocksModel),
+                fieldEncryptionProvider = provider,
+            )
+            try {
+                val firstKey = assertIs<AddSuccess<SensitiveRocksModel>>(
+                    store.execute(SensitiveRocksModel.add(SensitiveRocksModel(Bytes(ByteArray(16) { 1 }), "secret"))).statuses.single()
+                ).key
+                val secondKey = assertIs<AddSuccess<SensitiveRocksModel>>(
+                    store.execute(SensitiveRocksModel.add(SensitiveRocksModel(Bytes(ByteArray(16) { 2 }), "other"))).statuses.single()
+                ).key
+                val reference = SensitiveRocksModel.secret.ref().toStorageByteArray()
+                val storedValue = store.db.get(store.getColumnFamilies(1u).table, firstKey.bytes + reference)!!
+                val payload = storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size)
+
+                assertFailsWith<Throwable> {
+                    store.decryptValueIfNeeded(1u, secondKey.bytes, reference, payload)
+                }
+
+                Transaction(store).use { transaction ->
+                    transaction.put(store.getColumnFamilies(1u).table, secondKey.bytes + reference, storedValue)
+                    transaction.commit()
+                }
+                assertFailsWith<Throwable> {
+                    store.execute(SensitiveRocksModel.get(secondKey))
+                }
+
+                val plain = SensitiveRocksModel.secret.definition.toStorageBytes("legacy", TypeIndicator.NoTypeIndicator.byte)
+                val legacyPayload = FieldEncryptionEnvelope.Legacy.magic + provider.encrypt(plain)
+                assertContentEquals(
+                    plain,
+                    store.decryptValueIfNeeded(1u, firstKey.bytes, reference, legacyPayload),
+                )
+            } finally {
+                store.close()
+            }
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun contextualEncryptionReadsHistoricSensitiveValues() = runTest {
+        val folder = createTestDBFolder("sensitive-rocks-contextual-history")
+        val provider = contextualProvider()
+        try {
+            val store = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = true,
+                dataModelsById = mapOf(1u to SensitiveRocksModel),
+                fieldEncryptionProvider = provider,
+            )
+            try {
+                val add = assertIs<AddSuccess<SensitiveRocksModel>>(
+                    store.execute(SensitiveRocksModel.add(SensitiveRocksModel(Bytes(ByteArray(16) { 1 }), "before"))).statuses.single()
+                )
+                val beforeChange = store.captureSnapshotVersion()
+                assertIs<ChangeSuccess<SensitiveRocksModel>>(
+                    store.execute(
+                        SensitiveRocksModel.change(
+                            add.key.change(Change(SensitiveRocksModel { secret::ref } with "after"))
+                        )
+                    ).statuses.single()
+                )
+                assertEquals("after", store.execute(SensitiveRocksModel.get(add.key)).values.single().values { secret })
+                assertEquals(
+                    "before",
+                    store.execute(SensitiveRocksModel.get(add.key, toVersion = beforeChange)).values.single().values { secret },
+                )
+                val historicScan = store.execute(
+                    SensitiveRocksModel.scan(
+                        where = Equals(SensitiveRocksModel { secret::ref } with "before"),
+                        toVersion = beforeChange,
+                        allowTableScan = true,
+                    )
+                )
+                assertEquals(1, historicScan.values.size)
+                assertEquals("before", historicScan.values.single().values { secret })
+            } finally {
+                store.close()
+            }
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun legacyOnlyProviderReadsMke1AndCannotWriteNewSensitiveValues() = runTest {
+        val folder = createTestDBFolder("sensitive-rocks-legacy-provider")
+        val contextualProvider = contextualProvider()
+        var key: Key<SensitiveRocksModel>? = null
+        try {
+            val initialStore = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = false,
+                dataModelsById = mapOf(1u to SensitiveRocksModel),
+                fieldEncryptionProvider = contextualProvider,
+            )
+            try {
+                val store = initialStore
+                key = assertIs<AddSuccess<SensitiveRocksModel>>(
+                    store.execute(SensitiveRocksModel.add(SensitiveRocksModel(Bytes(ByteArray(16) { 1 }), "legacy"))).statuses.single()
+                ).key
+                val reference = SensitiveRocksModel.secret.ref().toStorageByteArray()
+                val stored = store.db.get(store.getColumnFamilies(1u).table, key.bytes + reference)!!
+                val plain = SensitiveRocksModel.secret.definition.toStorageBytes("legacy", TypeIndicator.NoTypeIndicator.byte)
+                store.db.put(
+                    store.getColumnFamilies(1u).table,
+                    key.bytes + reference,
+                    stored.copyOfRange(0, VERSION_BYTE_SIZE) + FieldEncryptionEnvelope.Legacy.magic + contextualProvider.encrypt(plain),
+                )
+            } finally {
+                initialStore.close()
+            }
+
+            val legacyStore = RocksDBDataStore.open(
+                relativePath = folder,
+                keepAllVersions = false,
+                dataModelsById = mapOf(1u to SensitiveRocksModel),
+                fieldEncryptionProvider = LegacyOnlyFieldEncryptionProvider(contextualProvider),
+            )
+            try {
+                assertEquals("legacy", legacyStore.execute(SensitiveRocksModel.get(key)).values.single().values { secret })
+                assertIs<ServerFail<SensitiveRocksModel>>(
+                    legacyStore.execute(SensitiveRocksModel.add(SensitiveRocksModel(Bytes(ByteArray(16) { 2 }), "new"))).statuses.single()
+                )
+            } finally {
+                legacyStore.close()
             }
         } finally {
             deleteFolder(folder)
@@ -282,15 +444,33 @@ private fun RocksDBDataStore.historicUniqueOwners(modelId: UInt): List<ByteArray
     }
 }
 
-private class XorFieldEncryptionProvider : FieldEncryptionProvider {
+private fun contextualProvider() = AesGcmHmacSha256EncryptionProvider(
+    encryptionKey = ByteArray(32) { it.toByte() },
+    tokenKey = ByteArray(32) { (it + 32).toByte() },
+)
+
+private class LegacyOnlyFieldEncryptionProvider(
+    private val delegate: FieldEncryptionProvider,
+) : FieldEncryptionProvider {
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
+        delegate.encrypt(value, offset, length)
+
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
+        delegate.decrypt(value, offset, length)
+}
+
+private class XorFieldEncryptionProvider : ContextualFieldEncryptionProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = encrypt(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = decrypt(value, offset, length)
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { i -> (value[offset + i].toInt() xor 0x5A).toByte() }
 }
 
-private class BlockingEncryptFieldEncryptionProvider : FieldEncryptionProvider {
+private class BlockingEncryptFieldEncryptionProvider : ContextualFieldEncryptionProvider {
     val encryptStarted = CompletableDeferred<Unit>()
     val releaseEncrypt = CompletableDeferred<Unit>()
 
@@ -303,15 +483,20 @@ private class BlockingEncryptFieldEncryptionProvider : FieldEncryptionProvider {
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
         xor(value, offset, length)
 
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = encrypt(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = decrypt(value, offset, length)
+
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { index -> (value[offset + index].toInt() xor 0x5A).toByte() }
 }
 
 private class XorWithTokenFieldEncryptionProvider :
-    FieldEncryptionProvider,
+    ContextualFieldEncryptionProvider,
     SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = encrypt(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = decrypt(value, offset, length)
 
     override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray, offset: Int, length: Int): ByteArray {
         val token = ByteArray(16)
@@ -336,9 +521,11 @@ private class XorWithTokenFieldEncryptionProvider :
 private class RotatingTokenFieldEncryptionProvider(
     private val activeToken: Int,
     private val previousTokens: List<Int> = emptyList(),
-) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+) : ContextualFieldEncryptionProvider, SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = encrypt(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = decrypt(value, offset, length)
 
     override suspend fun deriveDeterministicToken(
         modelId: UInt,

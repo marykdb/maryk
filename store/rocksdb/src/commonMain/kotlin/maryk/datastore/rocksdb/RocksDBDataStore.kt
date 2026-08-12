@@ -125,6 +125,9 @@ import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
 import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
+import maryk.datastore.shared.encryption.FieldEncryptionContext
+import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
 import maryk.datastore.shared.migration.MigrationAdmin
@@ -146,8 +149,6 @@ import maryk.rocksdb.openOptimisticTransactionDB
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.recyclableByteArray
 import kotlin.time.TimeSource
-
-private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
 
 class RocksDBDataStore private constructor(
     override val keepAllVersions: Boolean = true,
@@ -244,6 +245,8 @@ class RocksDBDataStore private constructor(
                     prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Meta.keyByteSize
                     prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.Meta.keyByteSize
                     columnFamilyHandlesByDataModelIndex[index] = HistoricTableColumnFamilies(
+                        modelId = index,
+                        keyByteSize = db.Meta.keyByteSize,
                         model = handles[handleIndex++],
                         keys = handles[handleIndex++],
                         table = handles[handleIndex++],
@@ -261,6 +264,8 @@ class RocksDBDataStore private constructor(
                 for ((index, db) in dataModelsById) {
                     prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Meta.keyByteSize
                     columnFamilyHandlesByDataModelIndex[index] = TableColumnFamilies(
+                        modelId = index,
+                        keyByteSize = db.Meta.keyByteSize,
                         model = handles[handleIndex++],
                         keys = handles[handleIndex++],
                         table = handles[handleIndex++],
@@ -466,7 +471,9 @@ class RocksDBDataStore private constructor(
                 columnFamilies,
                 defaultReadOptions,
                 captureVersion = true,
-                decryptValue = this::decryptValueIfNeeded
+                decryptValue = { key, reference, value, offset, length ->
+                    decryptValueIfNeeded(columnFamilies.modelId, key, reference, value, offset, length)
+                }
             )
 
             transaction.getIterator(defaultReadOptions, columnFamilies.keys).use { iterator ->
@@ -934,40 +941,52 @@ class RocksDBDataStore private constructor(
         updatesToEmit.forEach { emitFlowUpdate(it) }
     }
 
-    internal fun encryptValueIfSensitive(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+    internal fun encryptValueIfSensitive(modelId: UInt, key: ByteArray, reference: ByteArray, value: ByteArray): ByteArray {
         if (!isSensitiveReference(modelId, reference)) return value
-        val provider = fieldEncryptionProvider
-            ?: throw RequestException("No fieldEncryptionProvider configured for sensitive property write")
-        val encrypted = runBlocking { provider.encrypt(value) }
-        return ENCRYPTED_VALUE_MAGIC + encrypted
+        val provider = fieldEncryptionProvider as? ContextualFieldEncryptionProvider
+            ?: throw RequestException("No contextual fieldEncryptionProvider configured for sensitive property write")
+        val encrypted = runBlocking { provider.encrypt(FieldEncryptionContext(modelId, key, reference), value) }
+        return FieldEncryptionEnvelope.Contextual.magic + encrypted
     }
 
-    internal fun decryptValueIfNeeded(value: ByteArray): ByteArray {
-        if (!isEncryptedValue(value)) return value
+    internal fun decryptValueIfNeeded(modelId: UInt, key: ByteArray, reference: ByteArray, value: ByteArray): ByteArray =
+        decryptValueIfNeeded(modelId, key, reference, value, 0, value.size)
+
+    internal fun decryptValueIfNeeded(
+        modelId: UInt,
+        key: ByteArray,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray {
+        val envelope = FieldEncryptionEnvelope.from(value, offset, length)
+            ?: return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        return runBlocking { provider.decrypt(value, ENCRYPTED_VALUE_MAGIC.size, value.size - ENCRYPTED_VALUE_MAGIC.size) }
-    }
-
-    internal fun decryptValueIfNeeded(value: ByteArray, offset: Int, length: Int): ByteArray {
-        if (!isEncryptedValue(value, offset, length)) {
-            return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        val payloadOffset = offset + envelope.magic.size
+        val payloadLength = length - envelope.magic.size
+        return when (envelope) {
+            FieldEncryptionEnvelope.Legacy -> runBlocking { provider.decrypt(value, payloadOffset, payloadLength) }
+            FieldEncryptionEnvelope.Contextual -> {
+                val contextualProvider = provider as? ContextualFieldEncryptionProvider
+                    ?: throw RequestException("Contextual encrypted value encountered but no contextual fieldEncryptionProvider configured")
+                runBlocking { contextualProvider.decrypt(FieldEncryptionContext(modelId, key, reference), value, payloadOffset, payloadLength) }
+            }
         }
-        val provider = fieldEncryptionProvider
-            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        return runBlocking { provider.decrypt(value, offset + ENCRYPTED_VALUE_MAGIC.size, length - ENCRYPTED_VALUE_MAGIC.size) }
     }
 
     internal inline fun <T> withDecryptedValueIfNeeded(
+        modelId: UInt,
+        key: ByteArray,
+        reference: ByteArray,
         value: ByteArray,
         offset: Int = 0,
         length: Int = value.size - offset,
         handle: (ByteArray, Int, Int) -> T
     ): T {
-        if (!isEncryptedValue(value, offset, length)) return handle(value, offset, length)
-        val provider = fieldEncryptionProvider
-            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        val decrypted = runBlocking { provider.decrypt(value, offset + ENCRYPTED_VALUE_MAGIC.size, length - ENCRYPTED_VALUE_MAGIC.size) }
+        if (FieldEncryptionEnvelope.from(value, offset, length) == null) return handle(value, offset, length)
+        val decrypted = decryptValueIfNeeded(modelId, key, reference, value, offset, length)
         return handle(decrypted, 0, decrypted.size)
     }
 
@@ -1144,16 +1163,6 @@ class RocksDBDataStore private constructor(
         is Multiple -> references.any { it is IsIndexablePropertyReference<*> && it.isForPropertyReference(propertyReference) }
         else -> false
     }
-
-    private fun isEncryptedValue(value: ByteArray): Boolean =
-        isEncryptedValue(value, 0, value.size)
-
-    private fun isEncryptedValue(value: ByteArray, offset: Int, length: Int): Boolean =
-        length >= ENCRYPTED_VALUE_MAGIC.size &&
-            value[offset] == ENCRYPTED_VALUE_MAGIC[0] &&
-            value[offset + 1] == ENCRYPTED_VALUE_MAGIC[1] &&
-            value[offset + 2] == ENCRYPTED_VALUE_MAGIC[2] &&
-            value[offset + 3] == ENCRYPTED_VALUE_MAGIC[3]
 
     private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
         if (size < prefix.size) return false

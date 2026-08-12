@@ -23,7 +23,7 @@ class AesGcmHmacSha256EncryptionProvider(
     tokenKey: ByteArray,
     associatedData: ByteArray? = null,
     private val tokenSizeBytes: Int = 16,
-) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+) : ContextualFieldEncryptionProvider, SensitiveIndexTokenProvider {
     private val provider = CryptographyProvider.Default
     private val aesGcm = provider.get(AES.GCM)
     private val hmac = provider.get(HMAC)
@@ -65,6 +65,43 @@ class AesGcmHmacSha256EncryptionProvider(
         val aesKey = aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, encryptionKeyBytes)
         val aesCipher = aesKey.cipher()
         return aesCipher.decryptWithIv(nonce, cipherText, associatedData)
+    }
+
+    override suspend fun encrypt(
+        context: FieldEncryptionContext,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray {
+        validateRange(value, offset, length)
+        val aesKey = aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, encryptionKeyBytes)
+        val aesCipher = aesKey.cipher()
+        val nonce = generateNonce()
+        val plainText = if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        val cipherText = aesCipher.encryptWithIv(nonce, plainText, contextualAssociatedData(context, associatedData))
+        return byteArrayOf(V1_PAYLOAD_HEADER) + nonce + cipherText
+    }
+
+    override suspend fun decrypt(
+        context: FieldEncryptionContext,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray {
+        validateRange(value, offset, length)
+        require(length >= 1 + GCM_NONCE_SIZE_BYTES + GCM_TAG_SIZE_BYTES) {
+            "Encrypted payload too short"
+        }
+        require(value[offset] == V1_PAYLOAD_HEADER) {
+            "Unsupported encrypted payload version: ${value[offset]}"
+        }
+        val nonceStart = offset + 1
+        val nonceEnd = nonceStart + GCM_NONCE_SIZE_BYTES
+        val nonce = value.copyOfRange(nonceStart, nonceEnd)
+        val cipherText = value.copyOfRange(nonceEnd, offset + length)
+        val aesKey = aesGcm.keyDecoder().decodeFromByteArray(AES.Key.Format.RAW, encryptionKeyBytes)
+        val aesCipher = aesKey.cipher()
+        return aesCipher.decryptWithIv(nonce, cipherText, contextualAssociatedData(context, associatedData))
     }
 
     override suspend fun deriveDeterministicToken(
@@ -177,6 +214,26 @@ class AesGcmHmacSha256EncryptionProvider(
                 encryptionKey = encryptionKey,
                 tokenKey = sizedTokenKey,
             )
+        }
+    }
+}
+
+private val CONTEXT_AAD_DOMAIN = "maryk.field-aad.v1".encodeToByteArray()
+
+private fun contextualAssociatedData(context: FieldEncryptionContext, configuredAssociatedData: ByteArray?): ByteArray {
+    val modelId = context.modelId.toByteArray()
+    val recordKey = context.recordKey
+    val reference = context.reference
+    val globalAssociatedData = configuredAssociatedData ?: ByteArray(0)
+    val parts = listOf(CONTEXT_AAD_DOMAIN, modelId, recordKey, reference, globalAssociatedData)
+    val size = parts.sumOf { Int.SIZE_BYTES + it.size }
+    return ByteArray(size).also { result ->
+        var offset = 0
+        for (part in parts) {
+            part.size.toByteArray().copyInto(result, offset)
+            offset += Int.SIZE_BYTES
+            part.copyInto(result, offset)
+            offset += part.size
         }
     }
 }

@@ -134,6 +134,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetUpdatesRequest(
                                             }
                                         getRequest.dataModel.readTransactionIntoValuesWithMetaData(
                                             deepIterator,
+                                            this,
                                             creationVersion,
                                             columnFamilies,
                                             key,

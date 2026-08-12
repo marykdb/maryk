@@ -231,7 +231,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                             keyBytes,
                             snapshotBytes,
                             request.select,
-                            sensitiveFields::decryptValueIfNeeded,
+                            { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
                         )
                             ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
                     }
@@ -275,7 +275,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
                             keyBytes,
                             snapshotBytes,
                             request.select,
-                            sensitiveFields::decryptValueIfNeeded,
+                            { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
                         )
                             ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
                     }

@@ -118,6 +118,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
 
             return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                 deepIterator,
+                this,
                 creationVersion,
                 columnFamilies,
                 key,
@@ -414,6 +415,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
 
                     return scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                         valueIterator,
+                        this,
                         creationVersion,
                         columnFamilies,
                         key,

@@ -104,7 +104,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectCurrentUni
         )
         val definition = reference.comparablePropertyDefinition
         if (definition is IsComparableDefinition<*, *> && definition.unique) {
-            val encodedValue = sensitiveFields.decryptValueIfNeeded(rowValue)
+            val encodedValue = sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, rowValue)
             val uniqueKeys = sensitiveFields.mapUniqueValueByteCandidates(modelId, qualifier, encodedValue)
                 .map { uniqueValue -> createUniqueRowKey(qualifier, uniqueValue) }
             val existingKeys = uniqueKeys.filter { candidateKey ->
@@ -144,7 +144,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.readCurrentValues
     tableStoreName: String,
     keyBytes: ByteArray,
     select: RootPropRefGraph<DM>?,
-): Values<DM>? = byteStore.readCurrentValues(dataModel, tableStoreName, keyBytes, select, sensitiveFields::decryptValueIfNeeded)
+): Values<DM>? = byteStore.readCurrentValues(dataModel, tableStoreName, keyBytes, select) { qualifier, value ->
+    sensitiveFields.decryptValueIfNeeded(getDataModelId(dataModel), keyBytes, qualifier, value)
+}
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.readRecordDecrypted(
     byteStore: IndexedDbByteStore,
@@ -159,9 +161,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.readRecordDecrypt
     tableStoreName,
     keyBytes,
     select,
-    sensitiveFields::decryptValueIfNeeded,
-)
-
+) { qualifier, value ->
+    sensitiveFields.decryptValueIfNeeded(getDataModelId(dataModel), keyBytes, qualifier, value)
+}
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.readCurrentSnapshotDecrypted(
     byteStore: IndexedDbByteStore,
     dataModel: DM,
@@ -173,9 +175,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.readCurrentSnapsh
     keyStoreName,
     keyBytes,
     select,
-    sensitiveFields::decryptValueIfNeeded,
-)
-
+) { qualifier, value ->
+    sensitiveFields.decryptValueIfNeeded(getDataModelId(dataModel), keyBytes, qualifier, value)
+}
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.readHistoricRecordDecrypted(
     byteStore: IndexedDbByteStore,
     dataModel: DM,
@@ -189,9 +191,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.readHistoricRecor
     keyBytes,
     toVersion,
     select,
-    sensitiveFields::decryptValueIfNeeded,
-)
-
+) { qualifier, value ->
+    sensitiveFields.decryptValueIfNeeded(getDataModelId(dataModel), keyBytes, qualifier, value)
+}
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.valuesMatchFilter(
     dataModel: DM,
     values: Values<DM>,
@@ -384,7 +386,13 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.matchReferencedPr
     val referencedDataModel = reference.propertyDefinition.definition.dataModel
     val rows = readStorageRows(referencedDataModel, referencedKey.bytes, toVersion) ?: return false
 
-    return matchQualifierOnRows(rows, referencedMatcher.qualifierMatcher, valueMatcher)
+    return matchQualifierOnRows(
+        modelId = getDataModelId(referencedDataModel),
+        keyBytes = referencedKey.bytes,
+        rows = rows,
+        qualifierMatcher = referencedMatcher.qualifierMatcher,
+        valueMatcher = valueMatcher,
+    )
 }
 
 internal suspend fun IndexedDbDataStore.readStorageRows(
@@ -419,6 +427,8 @@ internal suspend fun IndexedDbDataStore.readStorageRows(
 }
 
 internal suspend fun IndexedDbDataStore.matchQualifierOnRows(
+    modelId: UInt,
+    keyBytes: ByteArray,
     rows: List<Pair<ByteArray, ByteArray>>,
     qualifierMatcher: IsQualifierMatcher,
     valueMatcher: (Any?) -> Boolean,
@@ -433,7 +443,12 @@ internal suspend fun IndexedDbDataStore.matchQualifierOnRows(
         }
         if (!matched) continue
 
-        if (valueMatcher(decodeStorageValue(referenceForCache, sensitiveFields.decryptValueIfNeeded(valueBytes)))) {
+        if (valueMatcher(decodeStorageValue(referenceForCache, sensitiveFields.decryptValueIfNeeded(
+                modelId,
+                keyBytes,
+                qualifier,
+                valueBytes,
+            )))) {
             return true
         }
     }

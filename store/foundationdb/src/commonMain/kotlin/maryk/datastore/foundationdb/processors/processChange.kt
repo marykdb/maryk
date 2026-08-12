@@ -178,10 +178,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         is IsMapReference<*, *, *, *> -> {
                             @Suppress("UNCHECKED_CAST")
                             tr.readMapByReference(
-                                tableDirs.tablePrefix,
+                                tableDirs,
                                 keyBytes,
                                 propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
-                                this@processChange::decryptValueIfNeeded
+                                { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                             ) as T?
                         }
 
@@ -201,7 +201,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 null,
                                 keyBytes,
                                 propertyReference.toStorageByteArray(),
-                                decryptValue = this@processChange::decryptValueIfNeeded
+                                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                             ) { valueBytes, offset, length ->
                                 valueBytes.convertToValue(propertyReference, offset, length) as T?
                             }
@@ -239,7 +239,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 for (change in changes) {
                     val check = change as Check
                     for ((reference, expected) in check.referenceValuePairs) {
-                        val actual = tr.getValue(tableDirs, null, keyBytes, reference.toStorageByteArray(), decryptValue = this@processChange::decryptValueIfNeeded) { bytes, offset, length ->
+                        val actual = tr.getValue(tableDirs, null, keyBytes, reference.toStorageByteArray(), decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }) { bytes, offset, length ->
                             bytes.convertToValue(reference, offset, length)
                         }
                         if (actual != expected) {
@@ -291,7 +291,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                     when (change) {
                         is ObjectSoftDeleteChange -> {
                             val softDeleteKey = key.bytes + SOFT_DELETE_INDICATOR
-                            val wasDeleted = tr.getValue(tableDirs, null, softDeleteKey, decryptValue = this@processChange::decryptValueIfNeeded) { b, o, l ->
+                            val wasDeleted = tr.getValue(tableDirs, null, softDeleteKey, decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }) { b, o, l ->
                                 if (l == 1) b[o] == TRUE else false
                             } == true
 
@@ -373,7 +373,14 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                     addValidation(InvalidValueException(reference, expected.toString()))
                                 } else {
                                     requireVersionedValue(packed)
-                                    val stored = decryptValueIfNeeded(packed, VERSION_BYTE_SIZE, packed.size - VERSION_BYTE_SIZE)
+                                    val stored = decryptValueIfNeeded(
+                                        dataModelId,
+                                        key.bytes,
+                                        refBytes,
+                                        packed,
+                                        VERSION_BYTE_SIZE,
+                                        packed.size - VERSION_BYTE_SIZE,
+                                    )
                                     try {
                                         val storable = Value.castDefinition(reference.propertyDefinition)
                                         @Suppress("UNCHECKED_CAST")
@@ -545,7 +552,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                     else -> {
                                         // Simple value (including list/map/set item refs)
                                         try {
-                                            val previousValue = tr.getValue(tableDirs, null, keyBytes, referenceBytes, decryptValue = this@processChange::decryptValueIfNeeded) { b, o, l ->
+                                            val previousValue = tr.getValue(tableDirs, null, keyBytes, referenceBytes, decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }) { b, o, l ->
                                                 b.convertToValue(reference, o, l)
                                             }
 
@@ -561,7 +568,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                                         null,
                                                         keyBytes,
                                                         reference.parentReference!!.toStorageByteArray(),
-                                                        decryptValue = this@processChange::decryptValueIfNeeded
+                                                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                                                     ) { b, o, l ->
                                                         if (l == 0 || b[o] == TypeIndicator.DeletedIndicator.byte) null else true
                                                     } != null
@@ -652,7 +659,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                                     null,
                                                     keyBytes,
                                                     setItemRef.toStorageByteArray(),
-                                                    decryptValue = this@processChange::decryptValueIfNeeded
+                                                    decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                                                 ) { b, o, l -> if (l == 0 || b[o] == TypeIndicator.DeletedIndicator.byte) null else true } != null
                                                 if (!existed) countChange++
 

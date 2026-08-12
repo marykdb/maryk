@@ -27,7 +27,9 @@ internal fun walkDataRecordsAndFillIndex(
                 columnFamilies,
                 dataStore.defaultReadOptions,
                 captureVersion = true,
-                decryptValue = dataStore::decryptValueIfNeeded
+                decryptValue = { key, reference, value, offset, length ->
+                    dataStore.decryptValueIfNeeded(columnFamilies.modelId, key, reference, value, offset, length)
+                }
             )
             val historicStoreIndexValuesWalker = if (columnFamilies is HistoricTableColumnFamilies) {
                 HistoricStoreIndexValuesWalker(

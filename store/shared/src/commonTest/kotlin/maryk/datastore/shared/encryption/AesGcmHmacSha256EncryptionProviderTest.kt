@@ -40,6 +40,52 @@ class AesGcmHmacSha256EncryptionProviderTest {
     }
 
     @Test
+    fun contextualEncryptionRejectsTransplantedCiphertext() = runTest {
+        val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
+        val provider = AesGcmHmacSha256EncryptionProvider(
+            encryptionKey = keyMaterial.encryptionKey,
+            tokenKey = keyMaterial.tokenKey,
+        )
+        val context = FieldEncryptionContext(7u, byteArrayOf(1, 2), byteArrayOf(3, 4))
+        val encrypted = provider.encrypt(context, "secret".encodeToByteArray())
+
+        assertContentEquals("secret".encodeToByteArray(), provider.decrypt(context, encrypted))
+        assertFailsWith<Throwable> {
+            provider.decrypt(FieldEncryptionContext(7u, byteArrayOf(9, 2), byteArrayOf(3, 4)), encrypted)
+        }
+        assertFailsWith<Throwable> {
+            provider.decrypt(FieldEncryptionContext(8u, byteArrayOf(1, 2), byteArrayOf(3, 4)), encrypted)
+        }
+        assertFailsWith<Throwable> {
+            provider.decrypt(FieldEncryptionContext(7u, byteArrayOf(1, 2), byteArrayOf(3, 5)), encrypted)
+        }
+    }
+
+    @Test
+    fun legacyAndContextualEncryptionAreNotInterchangeable() = runTest {
+        val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
+        val provider = AesGcmHmacSha256EncryptionProvider(
+            encryptionKey = keyMaterial.encryptionKey,
+            tokenKey = keyMaterial.tokenKey,
+        )
+        val context = FieldEncryptionContext(7u, byteArrayOf(1), byteArrayOf(2))
+        val legacy = provider.encrypt("secret".encodeToByteArray())
+        val contextual = provider.encrypt(context, "secret".encodeToByteArray())
+
+        assertFailsWith<Throwable> { provider.decrypt(context, legacy) }
+        assertFailsWith<Throwable> { provider.decrypt(contextual) }
+    }
+
+    @Test
+    fun contextualEnvelopeIsDistinctFromLegacyEnvelope() {
+        val legacy = FieldEncryptionEnvelope.Legacy.magic + byteArrayOf(1)
+        val contextual = FieldEncryptionEnvelope.Contextual.magic + byteArrayOf(1)
+
+        assertEquals(FieldEncryptionEnvelope.Legacy, FieldEncryptionEnvelope.from(legacy))
+        assertEquals(FieldEncryptionEnvelope.Contextual, FieldEncryptionEnvelope.from(contextual))
+    }
+
+    @Test
     fun deterministicTokenIsStable() = runTest {
         val keyMaterial = AesGcmHmacSha256EncryptionProvider.generateKeyMaterial()
         val provider = AesGcmHmacSha256EncryptionProvider(

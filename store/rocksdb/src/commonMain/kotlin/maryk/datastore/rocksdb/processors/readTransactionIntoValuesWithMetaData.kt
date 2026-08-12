@@ -16,11 +16,13 @@ import maryk.core.processors.datastore.readStorageToValues
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
+import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
@@ -36,6 +38,7 @@ import maryk.datastore.shared.readValue
  */
 internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
     iterator: DBIterator,
+    dataStore: RocksDBDataStore,
     creationVersion: ULong,
     columnFamilies: TableColumnFamilies,
     key: Key<DM>,
@@ -83,15 +86,23 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                         val valueBytes = iterator.value()
                         currentVersion = valueBytes.readVersionBytes()
 
-                        index = VERSION_BYTE_SIZE
-                        val reader = { valueBytes[index++] }
+                        val plainValue = dataStore.decryptValueIfNeeded(
+                            columnFamilies.modelId,
+                            key.bytes,
+                            requireNotNull(reference as? IsPropertyReference<*, *, *>).toStorageByteArray(),
+                            valueBytes,
+                            VERSION_BYTE_SIZE,
+                            valueBytes.size - VERSION_BYTE_SIZE,
+                        )
+                        index = 0
+                        val reader = { plainValue[index++] }
 
                         cachedRead(reference, currentVersion) {
                             val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                 ?: reference.propertyDefinition
 
                             readValue(definition, reader) {
-                                valueBytes.size - index
+                                plainValue.size - index
                             }
                         }
                     }
@@ -172,14 +183,20 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                                 if (valueBytes.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
+                                val plainValue = dataStore.decryptValueIfNeeded(
+                                    columnFamilies.modelId,
+                                    key.bytes,
+                                    (reference as? IsPropertyReference<*, *, *>)?.toStorageByteArray() ?: return@cachedRead null,
+                                    valueBytes,
+                                )
                                 index = 0
-                                val reader = { valueBytes[index++] }
+                                val reader = { plainValue[index++] }
 
                                 val definition =
                                     (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                         ?: reference.propertyDefinition
                                 readValue(definition, reader) {
-                                    valueBytes.size - index
+                                    plainValue.size - index
                                 }
                             }
                             ListSize -> {

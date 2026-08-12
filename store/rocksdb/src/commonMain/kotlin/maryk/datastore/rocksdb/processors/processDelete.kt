@@ -73,6 +73,9 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                         } else recyclableByteArray
 
                         val uniqueValues = withDecryptedValueIfNeeded(
+                            dbIndex,
+                            key.bytes,
+                            reference,
                             value,
                             VERSION_BYTE_SIZE,
                             valueLength - VERSION_BYTE_SIZE
@@ -248,7 +251,7 @@ private fun hardDeleteHistoricalUniqueValues(
 
             if (qualifier.matchesRangePart(0, referenceAndKey)) {
                 val valueBytes = iterator.value()
-                val plainValue = dataStore.decryptValueIfNeeded(valueBytes)
+                val plainValue = dataStore.decryptValueIfNeeded(dbIndex, key, reference, valueBytes)
                 for (uniqueValue in dataStore.mapUniqueValueByteCandidates(dbIndex, reference, plainValue)) {
                     deleteHistoricUniqueEntriesForKey(
                         transaction,

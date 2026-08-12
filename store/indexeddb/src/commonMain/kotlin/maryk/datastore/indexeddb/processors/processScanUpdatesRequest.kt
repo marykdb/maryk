@@ -131,7 +131,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
             toVersion = request.toVersion,
             maxVersions = request.maxVersions,
             select = request.select,
-            decryptValue = sensitiveFields::decryptValueIfNeeded,
+            decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, record.key.bytes, qualifier, value) },
         )
         for (versionedChange in versionedChanges) {
             if (versionedChange.changes.any { it is ObjectCreate } || request.orderedKeysSet?.contains(record.key) == false) {
@@ -233,7 +233,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectTableScanU
                     keyBytes,
                     snapshotBytes,
                     request.select,
-                    sensitiveFields::decryptValueIfNeeded,
+                    { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
                 )
                     ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
             } else {
@@ -437,7 +437,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectUpdateHist
                 keyBytes,
                 snapshotBytes,
                 request.select,
-                sensitiveFields::decryptValueIfNeeded,
+                { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
             ) ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
         } else {
             readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)

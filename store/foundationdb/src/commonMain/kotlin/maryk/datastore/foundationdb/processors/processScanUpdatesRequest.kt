@@ -106,7 +106,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
             select = scanRequest.select,
             toVersion = readVersion,
             cachedRead = cacheReader,
-            decryptValue = this@processScanUpdatesRequest::decryptValueIfNeeded
+            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
         )?.withSoftDeleteState(tr, tableDirs, key.bytes, readVersion)
     }
 
@@ -150,7 +150,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                 sortingKey?.let { indexableBytes ->
                     sortingKeys?.add(indexableBytes)
                 } ?: run {
-                    val getter = StoreValuesGetter(tr, tableDirs, this@processScanUpdatesRequest::decryptValueIfNeeded)
+                    val getter = StoreValuesGetter(tr, tableDirs) { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                     getter.moveToKey(key.bytes, scanRequest.toVersion)
                     selectSortingKey(getter, idx, key.bytes)?.let { indexableBytes ->
                         sortingKeys?.add(indexableBytes)
@@ -355,7 +355,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                 return
             }
 
-            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, this@processUpdateHistoryScanUpdates::decryptValueIfNeeded)
+            if (scanRequest.shouldBeFiltered(tr, tableDirs, key.bytes, 0, key.size, creationVersion, scanRequest.toVersion, { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) })
                 || scanRange.keyBeforeStart(key.bytes, 0)
                 || !scanRange.keyWithinRanges(key.bytes, 0)
                 || !scanRange.matchesPartials(key.bytes)
@@ -415,7 +415,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                             select = scanRequest.select,
                             toVersion = readChangeVersion,
                             cachedRead = cacheReader,
-                            decryptValue = this@processUpdateHistoryScanUpdates::decryptValueIfNeeded
+                            decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                         )?.withSoftDeleteState(
                             tr,
                             tableDirs,
@@ -448,7 +448,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                                 select = scanRequest.select,
                                 toVersion = readVersion,
                                 cachedRead = cacheReader,
-                                decryptValue = this@processUpdateHistoryScanUpdates::decryptValueIfNeeded
+                                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                             )?.withSoftDeleteState(tr, tableDirs, key.bytes, readVersion)?.let { valuesWithMeta ->
                                 AdditionUpdate(
                                     key = objectChange.key,
@@ -547,7 +547,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                         select = scanRequest.select,
                         toVersion = scanRequest.toVersion,
                         cachedRead = cacheReader,
-                        decryptValue = this@processUpdateHistoryScanUpdates::decryptValueIfNeeded
+                        decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
                     )?.withSoftDeleteState(tr, tableDirs, addedKey.bytes, scanRequest.toVersion)?.let { valuesWithMeta ->
                         updates += AdditionUpdate(
                             key = addedKey,
@@ -631,7 +631,7 @@ private class StoreValuesGetter(
         val value = if (toVersion == null && propertyReference is IsMapReference<*, *, *, *>) {
             @Suppress("UNCHECKED_CAST")
             tr.readMapByReference(
-                tableDirs.tablePrefix,
+                tableDirs,
                 keyBytes,
                 propertyReference as IsMapReference<Any, Any, IsPropertyContext, *>,
                 decryptValue

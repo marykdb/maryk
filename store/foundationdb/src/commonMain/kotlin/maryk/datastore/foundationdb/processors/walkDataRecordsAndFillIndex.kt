@@ -193,7 +193,7 @@ private fun materializeRecord(
     val latestVersion = readCurrentLatestVersion(tc, recordPrefix, onReadTransaction)
     if (latestVersion == null && tableDirectories !is HistoricTableDirectories) return false
     val currentValues = RebuildValuesGetter.current(
-        tc, recordPrefix, decryptValue, rowsPerReadTransaction, bytesPerReadTransaction, onReadTransaction,
+        tc, recordPrefix, keyBytes, tableDirectories.modelId, decryptValue, rowsPerReadTransaction, bytesPerReadTransaction, onReadTransaction,
     )
     val currentSnapshot = RebuildSnapshot(currentValues, currentValues.isDeleted())
     if (tableDirectories is HistoricTableDirectories && historicScratchPrefix != null) {
@@ -211,7 +211,7 @@ private fun materializeRecord(
         } }
         if (tableDirectories is HistoricTableDirectories) {
             replayHistoricIndexThroughScratch(
-                tc, indexable, indexReference, keyBytes,
+                tc, indexable, indexReference, keyBytes, tableDirectories.modelId,
                 rowsPerReadTransaction, bytesPerReadTransaction, decryptValue,
                 requireNotNull(historicScratchPrefix), sink, verifyRebuildOwner, onReadTransaction,
                 scratchMutationsPerTransaction, scratchBytesPerTransaction,
@@ -304,6 +304,8 @@ private fun readCurrentLatestVersion(
 private class RebuildValuesGetter private constructor(
     private val tc: TransactionContext,
     private val valuePrefix: ByteArray,
+    private val keyBytes: ByteArray,
+    private val modelId: UInt,
     private val historicState: Boolean,
     private val decryptValue: DecryptValue?,
     private val rowsPerTransaction: Int,
@@ -314,23 +316,27 @@ private class RebuildValuesGetter private constructor(
         fun current(
             tc: TransactionContext,
             recordPrefix: ByteArray,
+            keyBytes: ByteArray,
+            modelId: UInt,
             decryptValue: DecryptValue?,
             rowsPerTransaction: Int,
             bytesPerTransaction: Int,
             onReadTransaction: ((IndexRebuildReadTransaction) -> Unit)?,
         ) = RebuildValuesGetter(
-            tc, recordPrefix, false, decryptValue, rowsPerTransaction, bytesPerTransaction, onReadTransaction,
+            tc, recordPrefix, keyBytes, modelId, false, decryptValue, rowsPerTransaction, bytesPerTransaction, onReadTransaction,
         )
 
         fun historicState(
             tc: TransactionContext,
             statePrefix: ByteArray,
+            keyBytes: ByteArray,
+            modelId: UInt,
             decryptValue: DecryptValue?,
             rowsPerTransaction: Int,
             bytesPerTransaction: Int,
             onReadTransaction: ((IndexRebuildReadTransaction) -> Unit)?,
         ) = RebuildValuesGetter(
-            tc, statePrefix, true, decryptValue, rowsPerTransaction, bytesPerTransaction, onReadTransaction,
+            tc, statePrefix, keyBytes, modelId, true, decryptValue, rowsPerTransaction, bytesPerTransaction, onReadTransaction,
         )
     }
 
@@ -339,7 +345,7 @@ private class RebuildValuesGetter private constructor(
     ): T? {
         val stored = readExact(propertyReference.toStorageByteArray()) ?: return null
         return try {
-            payload(stored) { bytes, offset, length ->
+            payload(stored, propertyReference.toStorageByteArray()) { bytes, offset, length ->
                 @Suppress("UNCHECKED_CAST")
                 decodeValue(propertyReference, bytes, offset, length) as? T
             }
@@ -395,7 +401,7 @@ private class RebuildValuesGetter private constructor(
     }
 
     fun isDeleted(): Boolean = readExact(byteArrayOf(SOFT_DELETE_INDICATOR))?.let { stored ->
-        payload(stored) { bytes, offset, length -> length == 1 && bytes[offset] == TRUE }
+        payload(stored, byteArrayOf(SOFT_DELETE_INDICATOR)) { bytes, offset, length -> length == 1 && bytes[offset] == TRUE }
     } == true
 
     private fun readExact(qualifier: ByteArray): ByteArray? {
@@ -435,12 +441,12 @@ private class RebuildValuesGetter private constructor(
         }
     }
 
-    private inline fun <T> payload(stored: ByteArray, process: (ByteArray, Int, Int) -> T): T {
+    private inline fun <T> payload(stored: ByteArray, qualifier: ByteArray, process: (ByteArray, Int, Int) -> T): T {
         return if (historicState) {
-            val payload = decryptValue?.invoke(stored, 0, stored.size) ?: stored
+            val payload = decryptValue?.invoke(modelId, stored, 0, stored.size, keyBytes, qualifier) ?: stored
             process(payload, 0, payload.size)
         } else {
-            stored.withCurrentPayload(decryptValue, process)
+            stored.withCurrentPayload(decryptValue, modelId, keyBytes, qualifier, process)
         }
     }
 }
@@ -495,6 +501,7 @@ private fun replayHistoricIndexThroughScratch(
     indexable: IsIndexable,
     indexReference: ByteArray,
     keyBytes: ByteArray,
+    modelId: UInt,
     rowsPerTransaction: Int,
     bytesPerTransaction: Int,
     decryptValue: DecryptValue?,
@@ -516,7 +523,7 @@ private fun replayHistoricIndexThroughScratch(
 
     fun flushVersion(version: ByteArray) {
         val values = RebuildValuesGetter.historicState(
-            tc, statePrefix, decryptValue, rowsPerTransaction, bytesPerTransaction, onReadTransaction,
+            tc, statePrefix, keyBytes, modelId, decryptValue, rowsPerTransaction, bytesPerTransaction, onReadTransaction,
         )
         val snapshot = RebuildSnapshot(values, values.isDeleted())
         val nextOutput = 1 - previousOutput

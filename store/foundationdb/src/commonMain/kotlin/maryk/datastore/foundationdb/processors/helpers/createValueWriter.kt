@@ -93,7 +93,7 @@ internal fun FoundationDBDataStore.createValueWriter(
                     }
                 }
 
-                val encryptedValue = encryptValueIfSensitive(dataModelId, reference, valueBytes)
+                val encryptedValue = encryptValueIfSensitive(dataModelId, key.bytes, reference, valueBytes)
                 setValue(tr, tableDirs, key.bytes, reference, versionBytes, encryptedValue)
             }
         }

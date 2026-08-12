@@ -199,7 +199,7 @@ class IndexedDbDataStore private constructor(
                 keyBytes = keyBytes,
                 snapshot = snapshot,
                 select = null,
-                decryptValue = sensitiveFields::decryptValueIfNeeded,
+                decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
             ) ?: return@scanInBatches true
             if (current.isDeleted) return@scanInBatches true
 
@@ -233,7 +233,7 @@ class IndexedDbDataStore private constructor(
                         val values = decodeStorageRowsToValues(
                             dataModel = dataModel,
                             rows = storageRows.map { (qualifier, value) ->
-                                qualifier to sensitiveFields.decryptValueIfNeeded(value)
+                                qualifier to sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value)
                             },
                             select = null,
                         )

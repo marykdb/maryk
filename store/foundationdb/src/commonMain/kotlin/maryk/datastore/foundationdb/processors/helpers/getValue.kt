@@ -24,7 +24,13 @@ internal fun <T : Any> Transaction.getValue(
     return if (toVersion == null) {
         val packedKey = packKey(tableDirs.tablePrefix, keyAndReference)
         val value = this.get(packedKey).awaitResult() ?: return null
-        value.handleCurrentValue(decryptValue, handleResult)
+        value.handleCurrentValue(
+            decryptValue,
+            tableDirs.modelId,
+            keyAndReference.copyOfRange(0, keyLength ?: keyAndReference.size),
+            keyAndReference.copyOfRange(keyLength ?: keyAndReference.size, keyAndReference.size),
+            handleResult
+        )
     } else {
         val historicDirs = tableDirs as? HistoricTableDirectories
             ?: throw RequestException("Cannot use toVersion on a non historic table")
@@ -49,7 +55,12 @@ internal fun <T : Any> Transaction.getValue(
                 return if (decryptValue == null) {
                     handleResult(result, 0, result.size)
                 } else {
-                    val decrypted = decryptValue(result, 0, result.size)
+                    val decrypted = decryptValue(
+                        tableDirs.modelId,
+                        result, 0, result.size,
+                        keyAndReference.copyOfRange(0, keyLength ?: keyAndReference.size),
+                        keyAndReference.copyOfRange(keyLength ?: keyAndReference.size, keyAndReference.size)
+                    )
                     handleResult(decrypted, 0, decrypted.size)
                 }
             }
@@ -68,7 +79,7 @@ internal fun <T : Any> Transaction.getValue(
 ): T? {
     return if (toVersion == null) {
         val value = this.get(packKey(tableDirs.tablePrefix, keyBytes, referenceBytes)).awaitResult() ?: return null
-        value.handleCurrentValue(decryptValue, handleResult)
+        value.handleCurrentValue(decryptValue, tableDirs.modelId, keyBytes, referenceBytes, handleResult)
     } else {
         val historicDirs = tableDirs as? HistoricTableDirectories
             ?: throw RequestException("Cannot use toVersion on a non historic table")
@@ -91,7 +102,7 @@ internal fun <T : Any> Transaction.getValue(
                 return if (decryptValue == null) {
                     handleResult(result, 0, result.size)
                 } else {
-                    val decrypted = decryptValue(result, 0, result.size)
+                    val decrypted = decryptValue(tableDirs.modelId, result, 0, result.size, keyBytes, referenceBytes)
                     handleResult(decrypted, 0, decrypted.size)
                 }
             }
@@ -102,13 +113,16 @@ internal fun <T : Any> Transaction.getValue(
 
 private inline fun <T : Any> ByteArray.handleCurrentValue(
     noinline decryptValue: DecryptValue?,
+    modelId: UInt,
+    keyBytes: ByteArray,
+    referenceBytes: ByteArray,
     handleResult: (ByteArray, Int, Int) -> T?
 ): T? {
     requireVersionedValue(this)
     return if (decryptValue == null) {
         handleResult(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
     } else {
-        val payload = decryptValue(this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE)
+        val payload = decryptValue(modelId, this, VERSION_BYTE_SIZE, this.size - VERSION_BYTE_SIZE, keyBytes, referenceBytes)
         handleResult(payload, 0, payload.size)
     }
 }

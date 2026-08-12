@@ -28,7 +28,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentSnapsh
     keyStoreName: String,
     keyBytes: ByteArray,
     select: RootPropRefGraph<DM>?,
-    decryptValue: suspend (ByteArray) -> ByteArray = { it },
+    decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): ValuesWithMetaData<DM>? {
     val snapshot = get(keyStoreName, keyBytes) ?: return null
     if (snapshot.size == 17) return null
@@ -36,7 +36,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readCurrentSnapsh
     val (meta, rows) = decodeCurrentSnapshot(snapshot)
     val values = decodeStorageRowsToValues(
         dataModel,
-        rows.map { (qualifier, value) -> qualifier to decryptValue(value) },
+        rows.map { (qualifier, value) -> qualifier to decryptValue(qualifier, value) },
         select,
     ) ?: return null
 
@@ -54,14 +54,14 @@ internal suspend fun <DM : IsRootDataModel> decodeCurrentSnapshotRecord(
     keyBytes: ByteArray,
     snapshot: ByteArray,
     select: RootPropRefGraph<DM>?,
-    decryptValue: suspend (ByteArray) -> ByteArray = { it },
+    decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
 ): ValuesWithMetaData<DM>? {
     if (snapshot.size == 17) return null
 
     val (meta, rows) = decodeCurrentSnapshot(snapshot)
     val values = decodeStorageRowsToValues(
         dataModel,
-        rows.map { (qualifier, value) -> qualifier to decryptValue(value) },
+        rows.map { (qualifier, value) -> qualifier to decryptValue(qualifier, value) },
         select,
     ) ?: return null
 

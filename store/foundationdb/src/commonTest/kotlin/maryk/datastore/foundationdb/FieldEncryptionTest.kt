@@ -4,21 +4,27 @@ import kotlinx.coroutines.runBlocking
 import maryk.core.exceptions.RequestException
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.fixedBytes
+import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
 import maryk.core.query.changes.change
+import maryk.core.query.filters.Equals
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.get
+import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.IsAddResponseStatus
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ValidationFail
-import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.shared.encryption.AesGcmHmacSha256EncryptionProvider
+import maryk.datastore.shared.encryption.FieldEncryptionContext
+import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
@@ -68,8 +74,167 @@ class FieldEncryptionTest {
                 val plain = SensitiveRecord.secret.definition.toStorageBytes("top-secret", TypeIndicator.NoTypeIndicator.byte)
                 assertFalse(payload.contentEquals(plain))
 
-                val decrypted = store.decryptValueIfNeeded(payload)
+                val decrypted = store.decryptValueIfNeeded(901u, key.bytes, sensitiveRef, payload)
                 assertContentEquals(plain, decrypted)
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun contextualEnvelopeRejectsTransplantAndReadsLegacyEnvelope() {
+        runBlocking {
+            val provider = AesGcmHmacSha256EncryptionProvider(
+                encryptionKey = ByteArray(32) { 1 },
+                tokenKey = ByteArray(32) { 2 },
+            )
+            val store = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = listOf("maryk", "test", "field-encryption-context", Uuid.random().toString()),
+                dataModelsById = mapOf(901u to SensitiveRecord),
+                keepAllVersions = false,
+                fieldEncryptionProvider = provider,
+            )
+            try {
+                val firstKey = assertIs<AddSuccess<SensitiveRecord>>(
+                    store.execute(SensitiveRecord.add(SensitiveRecord(Bytes(ByteArray(16) { 1 }), "first", "secret"))).statuses.single()
+                ).key
+                val secondKey = assertIs<AddSuccess<SensitiveRecord>>(
+                    store.execute(SensitiveRecord.add(SensitiveRecord(Bytes(ByteArray(16) { 2 }), "second", "secret"))).statuses.single()
+                ).key
+                val tableDirs = store.getTableDirs(901u)
+                val sensitiveRef = SensitiveRecord.secret.ref().toStorageByteArray()
+                val rawStored = assertNotNull(store.runTransaction { tr ->
+                    tr.get(packKey(tableDirs.tablePrefix, firstKey.bytes, sensitiveRef)).awaitResult()
+                })
+                val payload = rawStored.copyOfRange(VERSION_BYTE_SIZE, rawStored.size)
+                assertFailsWith<Exception> {
+                    store.decryptValueIfNeeded(901u, secondKey.bytes, sensitiveRef, payload)
+                }
+                store.runTransaction { tr ->
+                    tr.set(
+                        packKey(tableDirs.tablePrefix, secondKey.bytes, sensitiveRef),
+                        rawStored,
+                    )
+                }
+                assertFailsWith<Exception> {
+                    store.execute(SensitiveRecord.get(secondKey))
+                }
+
+                val legacyPlain = SensitiveRecord.secret.definition.toStorageBytes("legacy-secret", TypeIndicator.NoTypeIndicator.byte)
+                val legacyPayload = provider.encrypt(legacyPlain)
+                val legacyEnvelope = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) + legacyPayload
+                store.runTransaction { tr ->
+                    tr.set(
+                        packKey(tableDirs.tablePrefix, firstKey.bytes, sensitiveRef),
+                        rawStored.copyOfRange(0, VERSION_BYTE_SIZE) + legacyEnvelope,
+                    )
+                }
+                assertContentEquals(
+                    legacyPlain,
+                    store.decryptValueIfNeeded(901u, firstKey.bytes, sensitiveRef, legacyEnvelope),
+                )
+                assertEquals(
+                    "legacy-secret",
+                    store.execute(SensitiveRecord.get(firstKey)).values.single().values { secret },
+                )
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun contextualEncryptionReadsHistoricSensitiveValues() {
+        runBlocking {
+            val store = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = listOf("maryk", "test", "field-encryption-history", Uuid.random().toString()),
+                dataModelsById = mapOf(901u to SensitiveRecord),
+                keepAllVersions = true,
+                fieldEncryptionProvider = AesGcmHmacSha256EncryptionProvider(
+                    encryptionKey = ByteArray(32) { 3 },
+                    tokenKey = ByteArray(32) { 4 },
+                ),
+            )
+            try {
+                val add = assertIs<AddSuccess<SensitiveRecord>>(
+                    store.execute(SensitiveRecord.add(SensitiveRecord(Bytes(ByteArray(16) { 1 }), "record", "before"))).statuses.single()
+                )
+                assertIs<ChangeSuccess<SensitiveRecord>>(
+                    store.execute(
+                        SensitiveRecord.change(
+                            add.key.change(Change(SensitiveRecord { secret::ref } with "after"))
+                        )
+                    ).statuses.single()
+                )
+                assertEquals("after", store.execute(SensitiveRecord.get(add.key)).values.single().values { secret })
+                assertEquals(
+                    "before",
+                    store.execute(SensitiveRecord.get(add.key, toVersion = add.version)).values.single().values { secret },
+                )
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun contextualEncryptionFiltersCurrentSensitiveValuesDuringTableScan() {
+        runBlocking {
+            val store = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = listOf("maryk", "test", "field-encryption-scan", Uuid.random().toString()),
+                dataModelsById = mapOf(901u to SensitiveRecord),
+                keepAllVersions = false,
+                fieldEncryptionProvider = AesGcmHmacSha256EncryptionProvider(ByteArray(32) { 5 }, ByteArray(32) { 6 }),
+            )
+            try {
+                store.execute(SensitiveRecord.add(SensitiveRecord(Bytes(ByteArray(16) { 1 }), "match", "wanted")))
+                store.execute(SensitiveRecord.add(SensitiveRecord(Bytes(ByteArray(16) { 2 }), "skip", "other")))
+
+                val response = store.execute(
+                    SensitiveRecord.scan(
+                        where = Equals(SensitiveRecord { secret::ref } with "wanted"),
+                        allowTableScan = true,
+                    )
+                )
+                assertEquals(1, response.values.size)
+                assertEquals("wanted", response.values.single().values { secret })
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun referencedFilterUsesTargetModelContextForSensitiveValue() {
+        runBlocking {
+            val store = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = listOf("maryk", "test", "field-encryption-referenced-filter", Uuid.random().toString()),
+                dataModelsById = mapOf(911u to SensitiveReferenceOwner, 912u to SensitiveReferenceTarget),
+                keepAllVersions = false,
+                fieldEncryptionProvider = AesGcmHmacSha256EncryptionProvider(ByteArray(32) { 7 }, ByteArray(32) { 8 }),
+            )
+            try {
+                val target = assertIs<AddSuccess<SensitiveReferenceTarget>>(
+                    store.execute(SensitiveReferenceTarget.add(SensitiveReferenceTarget(Bytes(ByteArray(16) { 1 }), "wanted"))).statuses.single()
+                ).key
+                val other = assertIs<AddSuccess<SensitiveReferenceTarget>>(
+                    store.execute(SensitiveReferenceTarget.add(SensitiveReferenceTarget(Bytes(ByteArray(16) { 2 }), "other"))).statuses.single()
+                ).key
+                store.execute(SensitiveReferenceOwner.add(SensitiveReferenceOwner(Bytes(ByteArray(16) { 3 }), target)))
+                store.execute(SensitiveReferenceOwner.add(SensitiveReferenceOwner(Bytes(ByteArray(16) { 4 }), other)))
+
+                val response = store.execute(
+                    SensitiveReferenceOwner.scan(
+                        where = Equals(SensitiveReferenceOwner { target { secret::ref } } with "wanted"),
+                        allowTableScan = true,
+                    )
+                )
+                assertEquals(1, response.values.size)
             } finally {
                 store.close()
             }
@@ -362,19 +527,25 @@ private suspend fun FoundationDBDataStore.historicUniqueOwners(modelId: UInt): L
     }
 }
 
-private class XorFieldEncryptionProvider : FieldEncryptionProvider {
+private class XorFieldEncryptionProvider : ContextualFieldEncryptionProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
 
     private fun xor(value: ByteArray, offset: Int, length: Int): ByteArray =
         ByteArray(length) { i -> (value[offset + i].toInt() xor 0x5A).toByte() }
 }
 
 private class XorWithTokenFieldEncryptionProvider :
-    FieldEncryptionProvider,
+    ContextualFieldEncryptionProvider,
     SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
 
     override suspend fun deriveDeterministicToken(modelId: UInt, reference: ByteArray, value: ByteArray, offset: Int, length: Int): ByteArray {
         val token = ByteArray(16)
@@ -399,9 +570,12 @@ private class XorWithTokenFieldEncryptionProvider :
 private class RotatingTokenFieldEncryptionProvider(
     private val activeToken: Int,
     private val previousTokens: List<Int> = emptyList(),
-) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+) : ContextualFieldEncryptionProvider, SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
 
     override suspend fun deriveDeterministicToken(
         modelId: UInt,
@@ -426,10 +600,13 @@ private class RotatingTokenFieldEncryptionProvider(
 }
 
 private class DuplicateRetainedTokenFieldEncryptionProvider :
-    FieldEncryptionProvider,
+    ContextualFieldEncryptionProvider,
     SensitiveIndexTokenProvider {
     override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
     override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+
+    override suspend fun encrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
+    override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray = xor(value, offset, length)
 
     override suspend fun deriveDeterministicToken(
         modelId: UInt,
@@ -490,5 +667,31 @@ object SensitiveUniqueRecord : RootDataModel<SensitiveUniqueRecord>(
     operator fun invoke(id: Bytes, secret: String) = create {
         this.id with id
         this.secret with secret
+    }
+}
+
+private object SensitiveReferenceTarget : RootDataModel<SensitiveReferenceTarget>(
+    keyDefinition = { SensitiveReferenceTarget.id.ref() },
+    minimumKeyScanByteRange = 0u,
+) {
+    val id by fixedBytes(1u, byteSize = 16, final = true)
+    val secret by string(2u, sensitive = true)
+
+    operator fun invoke(id: Bytes, secret: String) = create {
+        this.id with id
+        this.secret with secret
+    }
+}
+
+private object SensitiveReferenceOwner : RootDataModel<SensitiveReferenceOwner>(
+    keyDefinition = { SensitiveReferenceOwner.id.ref() },
+    minimumKeyScanByteRange = 0u,
+) {
+    val id by fixedBytes(1u, byteSize = 16, final = true)
+    val target by reference(index = 2u, dataModel = { SensitiveReferenceTarget })
+
+    operator fun invoke(id: Bytes, target: Key<SensitiveReferenceTarget>) = create {
+        this.id with id
+        this.target with target
     }
 }

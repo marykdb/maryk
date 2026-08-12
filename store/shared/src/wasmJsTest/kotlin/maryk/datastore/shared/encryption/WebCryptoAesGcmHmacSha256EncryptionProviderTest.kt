@@ -5,6 +5,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertFailsWith
 
 class WebCryptoAesGcmHmacSha256EncryptionProviderTest {
     private val encryptionKey = ByteArray(32) { index -> (index + 1).toByte() }
@@ -83,5 +84,17 @@ class WebCryptoAesGcmHmacSha256EncryptionProviderTest {
 
         assertContentEquals(plainText.copyOfRange(3, 44), webCryptoProvider.decrypt(commonPayload, 0, commonPayload.size))
         assertContentEquals(plainText.copyOfRange(3, 44), commonProvider.decrypt(webCryptoPayload, 0, webCryptoPayload.size))
+    }
+
+    @Test
+    fun contextualPayloadsRejectSwappedFieldContext() = runTest {
+        val provider = WebCryptoAesGcmHmacSha256EncryptionProvider(encryptionKey, tokenKey, associatedData)
+        val context = FieldEncryptionContext(9u, byteArrayOf(1, 2), byteArrayOf(3))
+        val encrypted = provider.encrypt(context, "secret".encodeToByteArray())
+
+        assertContentEquals("secret".encodeToByteArray(), provider.decrypt(context, encrypted))
+        assertFailsWith<Throwable> {
+            provider.decrypt(FieldEncryptionContext(9u, byteArrayOf(1, 2), byteArrayOf(4)), encrypted)
+        }
     }
 }

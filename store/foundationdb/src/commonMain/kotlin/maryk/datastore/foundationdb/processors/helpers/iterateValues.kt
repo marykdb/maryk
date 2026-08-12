@@ -50,7 +50,12 @@ internal fun <R : Any> Transaction.iterateValues(
                         value.size - VERSION_BYTE_SIZE
                     )
                 } else {
-                    val payload = decryptValue(value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE)
+                    val payload = decryptValue(
+                        tableDirectories.modelId,
+                        value, VERSION_BYTE_SIZE, value.size - VERSION_BYTE_SIZE,
+                        referenceBytes.copyOfRange(tablePrefix.size, tablePrefix.size + keyLength),
+                        referenceBytes.copyOfRange(refOffset, referenceBytes.size),
+                    )
                     handleValue(
                         referenceBytes,
                         refOffset,
@@ -129,7 +134,11 @@ internal fun <R : Any> Transaction.iterateValues(
                             value.size
                         )
                     } else {
-                        val decrypted = decryptValue(value, 0, value.size)
+                        val decrypted = decryptValue(
+                            tableDirectories.modelId,
+                            value, 0, value.size,
+                            reference.copyOfRange(0, keyLength), decodedQualifier
+                        )
                         handleValue(
                             decodedQualifier,
                             0,

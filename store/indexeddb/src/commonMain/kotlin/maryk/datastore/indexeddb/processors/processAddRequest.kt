@@ -88,7 +88,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
 
                 val tableRows = mutableListOf<Pair<ByteArray, ByteArray>>()
                 for (row in rows) {
-                    val encryptedValue = sensitiveFields.encryptValueIfSensitive(modelId, row.qualifier, row.encodedValue)
+                    val encryptedValue = sensitiveFields.encryptValueIfSensitive(modelId, key.bytes, row.qualifier, row.encodedValue)
                     tableRows += createTableRowKey(key.bytes, row.qualifier) to encryptedValue
 
                     if (row.type == Value && row.definition is IsComparableDefinition<*, *> && row.definition.unique) {

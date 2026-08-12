@@ -74,6 +74,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdateHistoryReq
         ): ValuesWithMetaData<DM>? =
             scanRequest.dataModel.readTransactionIntoValuesWithMetaData(
                 iterator = valuesIterator,
+                dataStore = this,
                 creationVersion = creationVersion,
                 columnFamilies = historicColumnFamilies,
                 key = key,

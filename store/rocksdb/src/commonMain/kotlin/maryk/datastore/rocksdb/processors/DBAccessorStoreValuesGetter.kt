@@ -138,6 +138,9 @@ internal class DBAccessorStoreValuesGetter(
                     val storedValue = iterator.value()
                     requireVersionedValue(storedValue)
                     val value = dbAccessor.dataStore.withDecryptedValueIfNeeded(
+                        columnFamilies.modelId,
+                        key,
+                        qualifier.copyOfRange(key.size, qualifier.size),
                         storedValue,
                         VERSION_BYTE_SIZE,
                         storedValue.size - VERSION_BYTE_SIZE

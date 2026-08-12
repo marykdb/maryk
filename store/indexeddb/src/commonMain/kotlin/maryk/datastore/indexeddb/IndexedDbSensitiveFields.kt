@@ -11,10 +11,11 @@ import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapp
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
+import maryk.datastore.shared.encryption.FieldEncryptionContext
+import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.lib.bytes.combineToByteArray
-
-private val EncryptedValueMagic = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
 
 internal data class IndexedDbSensitiveModelReferences(
     val sensitiveReferences: List<ByteArray>,
@@ -42,18 +43,49 @@ internal class IndexedDbSensitiveFieldSupport(
         }
     }
 
-    suspend fun encryptValueIfSensitive(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+    suspend fun encryptValueIfSensitive(
+        modelId: UInt,
+        recordKey: ByteArray,
+        reference: ByteArray,
+        value: ByteArray,
+    ): ByteArray {
         if (!isSensitiveReference(modelId, reference)) return value
         val provider = fieldEncryptionProvider
             ?: throw RequestException("No fieldEncryptionProvider configured for sensitive property write")
-        return combineToByteArray(EncryptedValueMagic, provider.encrypt(value))
+        val contextualProvider = provider as? ContextualFieldEncryptionProvider
+            ?: throw RequestException("Sensitive property writes require ContextualFieldEncryptionProvider")
+        return combineToByteArray(
+            FieldEncryptionEnvelope.Contextual.magic,
+            contextualProvider.encrypt(FieldEncryptionContext(modelId, recordKey, reference), value),
+        )
     }
 
-    suspend fun decryptValueIfNeeded(value: ByteArray): ByteArray {
-        if (!isEncryptedValue(value)) return value
+    suspend fun decryptValueIfNeeded(
+        modelId: UInt,
+        recordKey: ByteArray,
+        reference: ByteArray,
+        value: ByteArray,
+    ): ByteArray {
+        val envelope = FieldEncryptionEnvelope.from(value) ?: return value
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        return provider.decrypt(value, EncryptedValueMagic.size, value.size - EncryptedValueMagic.size)
+        return when (envelope) {
+            FieldEncryptionEnvelope.Legacy -> provider.decrypt(
+                value,
+                envelope.magic.size,
+                value.size - envelope.magic.size,
+            )
+            FieldEncryptionEnvelope.Contextual -> {
+                val contextualProvider = provider as? ContextualFieldEncryptionProvider
+                    ?: throw RequestException("MKE2 value encountered but provider does not support contextual field encryption")
+                contextualProvider.decrypt(
+                    FieldEncryptionContext(modelId, recordKey, reference),
+                    value,
+                    envelope.magic.size,
+                    value.size - envelope.magic.size,
+                )
+            }
+        }
     }
 
     suspend fun mapUniqueValueBytes(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
@@ -163,13 +195,6 @@ private fun IsIndexable.isForPropertyReference(propertyReference: AnyPropertyRef
     is Multiple -> references.any { it is IsIndexablePropertyReference<*> && it.isForPropertyReference(propertyReference) }
     else -> false
 }
-
-private fun isEncryptedValue(value: ByteArray): Boolean =
-    value.size >= EncryptedValueMagic.size &&
-        value[0] == EncryptedValueMagic[0] &&
-        value[1] == EncryptedValueMagic[1] &&
-        value[2] == EncryptedValueMagic[2] &&
-        value[3] == EncryptedValueMagic[3]
 
 private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
     if (size < prefix.size) return false

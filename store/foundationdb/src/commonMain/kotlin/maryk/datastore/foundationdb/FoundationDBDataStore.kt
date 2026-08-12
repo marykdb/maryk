@@ -120,6 +120,9 @@ import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.shared.encryption.FieldEncryptionContext
+import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
+import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.shared.migration.MigrationRuntimeDetails
 import maryk.datastore.shared.migration.MigrationAdmin
@@ -143,7 +146,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
 
 private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
-private val ENCRYPTED_VALUE_MAGIC = byteArrayOf(0x4D, 0x4B, 0x45, 0x31) // "MKE1"
+private val CONTEXTUAL_ENCRYPTED_VALUE_MAGIC = FieldEncryptionEnvelope.Contextual.magic
 private const val UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE = 256
 private val nextKeySuffix = byteArrayOf(0)
 
@@ -298,7 +301,7 @@ class FoundationDBDataStore private constructor(
         metadataPrefix = metadataDirectory.pack()
 
         for ((index, dataModel) in dataModelsById) {
-            directoriesByDataModelIndex[index] = openTableDirs(dataModel.Meta.name, historic = keepAllVersions)
+            directoriesByDataModelIndex[index] = openTableDirs(index, dataModel.Meta.name, historic = keepAllVersions)
         }
         expectedSchemaEpochs.value = tc.run { transaction ->
             directoriesByDataModelIndex.mapValues { (_, tableDirectories) ->
@@ -417,6 +420,11 @@ class FoundationDBDataStore private constructor(
         if (sensitiveReferencePrefixesByModelId.values.any { it.isNotEmpty() } && fieldEncryptionProvider == null) {
             throw RequestException(
                 "Sensitive properties configured but no fieldEncryptionProvider set on FoundationDBDataStore.open"
+            )
+        }
+        if (sensitiveReferencePrefixesByModelId.values.any { it.isNotEmpty() } && fieldEncryptionProvider !is ContextualFieldEncryptionProvider) {
+            throw RequestException(
+                "Sensitive properties configured but fieldEncryptionProvider does not implement ContextualFieldEncryptionProvider"
             )
         }
         if (sensitiveUniqueReferencesByModelId.values.any { it.isNotEmpty() } && fieldEncryptionProvider !is SensitiveIndexTokenProvider) {
@@ -690,6 +698,7 @@ class FoundationDBDataStore private constructor(
     }
 
     private fun openTableDirs(
+        modelId: UInt,
         modelName: String,
         historic: Boolean = false
     ): IsTableDirectories = runTransaction { tr ->
@@ -705,6 +714,7 @@ class FoundationDBDataStore private constructor(
         if (!historic) {
             TableDirectories(
                 dataStore = this,
+                modelId = modelId,
                 model  = modelDir,
                 keys   = keysDir,
                 table  = tableDir,
@@ -719,6 +729,7 @@ class FoundationDBDataStore private constructor(
 
             HistoricTableDirectories(
                 dataStore     = this,
+                modelId       = modelId,
                 model         = modelDir,
                 keys          = keysDir,
                 table         = tableDir,
@@ -843,7 +854,9 @@ class FoundationDBDataStore private constructor(
             tableDirectories = tableDirectories,
             indexesToIndex = indexesToIndex,
             dataModel = dataModel,
-            decryptValue = this::decryptValueIfNeeded,
+            decryptValue = { modelId, value, offset, length, key, reference ->
+                decryptValueIfNeeded(modelId, key, reference, value, offset, length)
+            },
             historicScratchPrefix = scratchPrefix,
             verifyRebuildOwner = { transaction ->
                 transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
@@ -1137,44 +1150,60 @@ class FoundationDBDataStore private constructor(
         return v.toULong()
     }
 
-    internal fun encryptValueIfSensitive(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
+    internal fun encryptValueIfSensitive(
+        modelId: UInt,
+        recordKey: ByteArray,
+        reference: ByteArray,
+        value: ByteArray,
+    ): ByteArray {
         if (!isSensitiveReference(modelId, reference)) return value
-        val provider = fieldEncryptionProvider
-            ?: throw RequestException("No fieldEncryptionProvider configured for sensitive property write")
-        val encrypted = runBlocking { provider.encrypt(value) }
-        return combineToByteArray(ENCRYPTED_VALUE_MAGIC, encrypted)
+        val provider = fieldEncryptionProvider as? ContextualFieldEncryptionProvider
+            ?: throw RequestException("No contextual fieldEncryptionProvider configured for sensitive property write")
+        val encrypted = runBlocking { provider.encrypt(FieldEncryptionContext(modelId, recordKey, reference), value) }
+        return combineToByteArray(CONTEXTUAL_ENCRYPTED_VALUE_MAGIC, encrypted)
     }
 
-    internal fun decryptValueIfNeeded(value: ByteArray): ByteArray {
-        if (!isEncryptedValue(value)) return value
-        val provider = fieldEncryptionProvider
-            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        return runBlocking { provider.decrypt(value, ENCRYPTED_VALUE_MAGIC.size, value.size - ENCRYPTED_VALUE_MAGIC.size) }
-    }
-
-    internal fun decryptValueIfNeeded(value: ByteArray, offset: Int, length: Int): ByteArray {
-        if (!isEncryptedValue(value, offset, length)) {
-            return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
-        }
+    internal fun decryptValueIfNeeded(
+        modelId: UInt,
+        recordKey: ByteArray,
+        reference: ByteArray,
+        value: ByteArray,
+        offset: Int = 0,
+        length: Int = value.size - offset,
+    ): ByteArray {
+        val envelope = FieldEncryptionEnvelope.from(value, offset, length)
+            ?: return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
         return runBlocking {
-            provider.decrypt(value, offset + ENCRYPTED_VALUE_MAGIC.size, length - ENCRYPTED_VALUE_MAGIC.size)
+            when (envelope) {
+                FieldEncryptionEnvelope.Legacy -> provider.decrypt(
+                    value,
+                    offset + envelope.magic.size,
+                    length - envelope.magic.size,
+                )
+                FieldEncryptionEnvelope.Contextual -> (provider as? ContextualFieldEncryptionProvider
+                    ?: throw RequestException("MKE2 encrypted value encountered but no contextual fieldEncryptionProvider configured"))
+                    .decrypt(
+                        FieldEncryptionContext(modelId, recordKey, reference),
+                        value,
+                        offset + envelope.magic.size,
+                        length - envelope.magic.size,
+                    )
+            }
         }
     }
 
     internal inline fun <T> withDecryptedValueIfNeeded(
+        modelId: UInt,
+        recordKey: ByteArray,
+        reference: ByteArray,
         value: ByteArray,
         offset: Int = 0,
         length: Int = value.size - offset,
         handle: (ByteArray, Int, Int) -> T
     ): T {
-        if (!isEncryptedValue(value, offset, length)) return handle(value, offset, length)
-        val provider = fieldEncryptionProvider
-            ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
-        val decrypted = runBlocking {
-            provider.decrypt(value, offset + ENCRYPTED_VALUE_MAGIC.size, length - ENCRYPTED_VALUE_MAGIC.size)
-        }
+        val decrypted = decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length)
         return handle(decrypted, 0, decrypted.size)
     }
 
@@ -1420,16 +1449,6 @@ class FoundationDBDataStore private constructor(
 
         return maxSeen
     }
-
-    private fun isEncryptedValue(value: ByteArray): Boolean =
-        isEncryptedValue(value, 0, value.size)
-
-    private fun isEncryptedValue(value: ByteArray, offset: Int, length: Int): Boolean =
-        length >= ENCRYPTED_VALUE_MAGIC.size &&
-            value[offset] == ENCRYPTED_VALUE_MAGIC[0] &&
-            value[offset + 1] == ENCRYPTED_VALUE_MAGIC[1] &&
-            value[offset + 2] == ENCRYPTED_VALUE_MAGIC[2] &&
-            value[offset + 3] == ENCRYPTED_VALUE_MAGIC[3]
 
     private fun ByteArray.hasPrefix(prefix: ByteArray): Boolean {
         if (size < prefix.size) return false

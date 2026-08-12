@@ -3,6 +3,8 @@ package maryk.datastore.rocksdb
 import maryk.rocksdb.ColumnFamilyHandle
 
 internal class HistoricTableColumnFamilies(
+    modelId: UInt,
+    keyByteSize: Int,
     model: ColumnFamilyHandle,
     keys: ColumnFamilyHandle,
     table: ColumnFamilyHandle,
@@ -10,7 +12,7 @@ internal class HistoricTableColumnFamilies(
     unique: ColumnFamilyHandle,
     updateHistory: ColumnFamilyHandle? = null,
     val historic: BasicTableColumnFamilies
-) : TableColumnFamilies(model, keys, table, index, unique, updateHistory) {
+) : TableColumnFamilies(modelId, keyByteSize, model, keys, table, index, unique, updateHistory) {
     override fun close() {
         super.close()
         historic.close()

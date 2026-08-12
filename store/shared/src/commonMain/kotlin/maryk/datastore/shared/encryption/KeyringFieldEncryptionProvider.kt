@@ -11,7 +11,7 @@ class KeyringFieldEncryptionProvider(
     providers: Map<String, FieldEncryptionProvider>,
     private val legacyProvider: FieldEncryptionProvider? = providers[activeKeyId],
     private val tokenReadKeyIds: List<String> = providers.keys.toList(),
-) : FieldEncryptionProvider, SensitiveIndexTokenProvider {
+) : ContextualFieldEncryptionProvider, SensitiveIndexTokenProvider {
     private val providers = providers.toMap()
 
     init {
@@ -56,6 +56,48 @@ class KeyringFieldEncryptionProvider(
         val provider = providers[keyId]
             ?: throw IllegalArgumentException("Encrypted payload uses unavailable key `$keyId`")
         return provider.decrypt(value, payloadOffset, length - KEYRING_HEADER_SIZE - keyIdSize)
+    }
+
+    override suspend fun encrypt(
+        context: FieldEncryptionContext,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray {
+        val keyId = activeKeyId.encodeToByteArray()
+        val provider = providers.getValue(activeKeyId) as? ContextualFieldEncryptionProvider
+            ?: throw IllegalStateException("Active provider does not support contextual field encryption")
+        val encrypted = provider.encrypt(context, value, offset, length)
+        return ByteArray(KEYRING_HEADER_SIZE + keyId.size + encrypted.size).also { result ->
+            KEYRING_MAGIC.copyInto(result)
+            result[KEYRING_MAGIC.size] = KEYRING_PAYLOAD_VERSION
+            result[KEYRING_MAGIC.size + 1] = keyId.size.toByte()
+            keyId.copyInto(result, KEYRING_HEADER_SIZE)
+            encrypted.copyInto(result, KEYRING_HEADER_SIZE + keyId.size)
+        }
+    }
+
+    override suspend fun decrypt(
+        context: FieldEncryptionContext,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray {
+        validateRange(value, offset, length)
+        require(hasKeyringMagic(value, offset, length)) { "Contextual encrypted payload is missing keyring envelope" }
+        require(length >= KEYRING_HEADER_SIZE + 1) { "Keyring encrypted payload too short" }
+        require(value[offset + KEYRING_MAGIC.size] == KEYRING_PAYLOAD_VERSION) {
+            "Unsupported keyring encrypted payload version ${value[offset + KEYRING_MAGIC.size].toUByte()}"
+        }
+        val keyIdSize = value[offset + KEYRING_MAGIC.size + 1].toUByte().toInt()
+        require(keyIdSize in 1..MAX_KEY_ID_BYTES && length > KEYRING_HEADER_SIZE + keyIdSize) {
+            "Invalid encrypted payload key id"
+        }
+        val payloadOffset = offset + KEYRING_HEADER_SIZE + keyIdSize
+        val keyId = value.copyOfRange(offset + KEYRING_HEADER_SIZE, payloadOffset).decodeToString()
+        val provider = providers[keyId] as? ContextualFieldEncryptionProvider
+            ?: throw IllegalArgumentException("Encrypted payload uses unavailable contextual key `$keyId`")
+        return provider.decrypt(context, value, payloadOffset, length - KEYRING_HEADER_SIZE - keyIdSize)
     }
 
     fun keyId(value: ByteArray, offset: Int = 0, length: Int = value.size - offset): String? {

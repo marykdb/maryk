@@ -23,6 +23,8 @@ import maryk.core.query.changes.VersionedChanges
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
+import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.checkExistence
@@ -75,7 +77,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
 
                 val value = when (storageType) {
                     ObjectDelete -> {
-                        val deleted = valueBytes.withCurrentPayload(decryptValue) { payload, offset, length ->
+                        val deleted = valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
                             if (length == 1) payload[offset] == TRUE else null
                         }
                         if (deleted == null) {
@@ -97,7 +99,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 val definition = (reference.propertyDefinition as? IsDefinitionWrapper<*, *, *, *>)?.definition
                                     ?: reference.propertyDefinition
 
-                                valueBytes.withCurrentPayload(decryptValue) { payload, offset, length ->
+                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, length ->
                                     index = offset
                                     val reader = { payload[index++] }
 
@@ -112,7 +114,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, _ ->
                                     index = offset
                                     initIntByVar { payload[index++] }
                                 }
@@ -123,7 +125,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, _ ->
                                     index = offset
                                     initIntByVar { payload[index++] }
                                 }
@@ -134,7 +136,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                         currentVersion = valueBytes.readVersionBytes()
                         if (currentVersion >= fromVersion) {
                             cachedRead(reference, currentVersion) {
-                                valueBytes.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                                valueBytes.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, keyBytes.copyOfRange(prefixWithKeyRange.size, keyBytes.size)) { payload, offset, _ ->
                                     index = offset
                                     initIntByVar { payload[index++] }
                                 }
@@ -177,16 +179,21 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
             creationVersion = if (creationVersion > fromVersion) creationVersion else null,
             processValue = { storageType, reference, valueWithVersionReader ->
                 if (currentVersion >= fromVersion) {
+                    val storedKey = iterator.current.key
+                    val qualifierEnd = storedKey.size - VERSION_BYTE_SIZE - 1
+                    val qualifier = decodeZeroFreeUsing01OrNull(
+                        storedKey, prefixWithKeyRange.size, qualifierEnd - prefixWithKeyRange.size
+                    ) ?: return@readStorageToChanges
                     val value = cachedRead(reference, currentVersion) {
                         when (storageType) {
                             ObjectDelete -> {
                                 if (iterator.current.key[prefixWithKeyRange.size] == 0.toByte()) {
-                                    val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                    val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
                                     if (v.isNotEmpty()) v[0] == TRUE else true
                                 } else null
                             }
                             Value -> {
-                                val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
                                 if (v.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
@@ -200,7 +207,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 }
                             }
                             ListSize -> {
-                                val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
                                 if (v.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
@@ -208,7 +215,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 initIntByVar { v[index++] }
                             }
                             SetSize -> {
-                                val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
                                 if (v.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }
@@ -216,7 +223,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoObjectChanges(
                                 initIntByVar { v[index++] }
                             }
                             MapSize -> {
-                                val v = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                                val v = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
                                 if (v.isHistoricDeleteMarker()) {
                                     return@cachedRead null
                                 }

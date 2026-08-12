@@ -1,3 +1,4 @@
 package maryk.datastore.foundationdb.processors.helpers
 
-internal typealias DecryptValue = (ByteArray, Int, Int) -> ByteArray
+/** Decrypts a stored payload with its logical record and qualifier binding. */
+internal typealias DecryptValue = (UInt, ByteArray, Int, Int, ByteArray, ByteArray) -> ByteArray

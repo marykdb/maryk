@@ -23,6 +23,8 @@ import maryk.core.values.Values
 import maryk.datastore.foundationdb.HistoricTableDirectories
 import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.DecryptValue
+import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.foundationdb.processors.helpers.decodeZeroFreeUsing01OrNull
 import maryk.datastore.foundationdb.processors.helpers.FDBIterator
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.checkExistence
@@ -81,7 +83,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
 
                 when (storageType) {
                     ObjectDelete -> {
-                        val deleted = value.withCurrentPayload(decryptValue) { payload, offset, length ->
+                        val deleted = value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
                             if (length == 1) payload[offset] == TRUE else null
                         }
                         if (deleted != null) {
@@ -96,7 +98,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     Value -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue) { payload, offset, length ->
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, length ->
                                 index = offset
                                 val reader = { payload[index++] }
 
@@ -112,7 +114,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     ListSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, _ ->
                                 index = offset
                                 initIntByVar { payload[index++] }
                             }
@@ -121,7 +123,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     SetSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, _ ->
                                 index = offset
                                 initIntByVar { payload[index++] }
                             }
@@ -130,7 +132,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     MapSize -> {
                         currentVersion = value.readVersionBytes()
                         cachedRead(reference, currentVersion) {
-                            value.withCurrentPayload(decryptValue) { payload, offset, _ ->
+                            value.withCurrentPayload(decryptValue, tableDirs.modelId, key.bytes, iterator.current.key.copyOfRange(prefixWithKeyRange.size, iterator.current.key.size)) { payload, offset, _ ->
                                 index = offset
                                 initIntByVar { payload[index++] }
                             }
@@ -170,10 +172,15 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
             getQualifier = getQualifier,
             select = select,
             processValue = { storageType, reference ->
+                val storedKey = iterator.current.key
+                val qualifierEnd = storedKey.size - VERSION_BYTE_SIZE - 1
+                val qualifier = decodeZeroFreeUsing01OrNull(
+                    storedKey, prefixWithKeyRange.size, qualifierEnd - prefixWithKeyRange.size
+                ) ?: return@readStorageToValues false
                 if (storageType == ObjectDelete) {
                     val cached = cachedRead(reference, currentVersion) {
                         val value = iterator.current.value
-                        val payload = decryptValue?.invoke(value, 0, value.size) ?: value
+                        val payload = decryptValue?.invoke(tableDirs.modelId, value, 0, value.size, key.bytes, qualifier) ?: value
                         if (payload.isNotEmpty()) payload[0] == TRUE else true
                     }
                     if (cached is Boolean) {
@@ -182,7 +189,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                     cached
                 } else {
                     cachedRead(reference, currentVersion) {
-                        val value = decryptValue?.invoke(iterator.current.value, 0, iterator.current.value.size) ?: iterator.current.value
+                        val value = decryptValue?.invoke(tableDirs.modelId, iterator.current.value, 0, iterator.current.value.size, key.bytes, qualifier) ?: iterator.current.value
                         if (value.isHistoricDeleteMarker()) {
                             return@cachedRead null
                         }

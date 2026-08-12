@@ -25,6 +25,12 @@ internal data class RemoteMigrationResponse(
     val accepted: Boolean? = null,
 )
 
+internal class RemoteMigrationResponseTooLargeException(
+    maxBytes: Int,
+) : IllegalArgumentException(
+    "Remote migration administration response exceeds max size: limit is $maxBytes bytes"
+)
+
 internal object RemoteMigrationAdminCodec {
     private const val version = "1"
 
@@ -62,42 +68,38 @@ internal object RemoteMigrationAdminCodec {
         )
     }
 
-    fun encodeResponse(response: RemoteMigrationResponse): ByteArray = buildList {
-        add("v=$version")
-        response.accepted?.let { add("accepted=$it") }
+    fun encodeResponse(
+        response: RemoteMigrationResponse,
+        maxBytes: Int = MAX_MIGRATION_ADMIN_RESPONSE_BYTES,
+    ): ByteArray {
+        val writer = BoundedResponseWriter(maxBytes)
+        writer.append("v=$version")
+        response.accepted?.let {
+            writer.append("\naccepted=$it")
+        }
         response.statuses.entries.sortedBy { it.key }.forEach { (modelId, status) ->
-            add(
-                listOf(
-                    "s",
-                    modelId.toString(),
-                    status.state.name,
-                    status.phase?.name.orEmpty(),
-                    status.attempt?.toString().orEmpty(),
-                    status.hasCursor?.toString().orEmpty(),
-                    status.etaMs?.toString().orEmpty(),
-                    status.message?.let(::encodeString).orEmpty(),
-                    status.lastError?.let(::encodeString).orEmpty(),
-                ).joinToString("|")
-            )
+            writer.append("\ns|$modelId|${status.state.name}|")
+            writer.append(status.phase?.name.orEmpty())
+            writer.append("|")
+            writer.append(status.attempt?.toString().orEmpty())
+            writer.append("|")
+            writer.append(status.hasCursor?.toString().orEmpty())
+            writer.append("|")
+            writer.append(status.etaMs?.toString().orEmpty())
+            writer.append("|")
+            status.message?.let(writer::appendEncodedString)
+            writer.append("|")
+            status.lastError?.let(writer::appendEncodedString)
         }
         response.metrics.entries.sortedBy { it.key }.forEach { (modelId, metric) ->
-            add(
-                listOf(
-                    "m",
-                    modelId.toString(),
-                    metric.started.toString(),
-                    metric.completed.toString(),
-                    metric.failed.toString(),
-                    metric.retries.toString(),
-                    metric.partials.toString(),
-                    metric.paused.toString(),
-                    metric.resumed.toString(),
-                    metric.canceled.toString(),
-                    metric.lastEventAtMs?.toString().orEmpty(),
-                ).joinToString("|")
+            writer.append(
+                "\nm|$modelId|${metric.started}|${metric.completed}|${metric.failed}|${metric.retries}" +
+                    "|${metric.partials}|${metric.paused}|${metric.resumed}|${metric.canceled}" +
+                    "|${metric.lastEventAtMs?.toString().orEmpty()}"
             )
         }
-    }.joinToString("\n").encodeToByteArray()
+        return writer.toByteArray()
+    }
 
     fun decodeResponse(bytes: ByteArray): RemoteMigrationResponse {
         val lines = bytes.decodeToString().lineSequence().toList()
@@ -196,4 +198,56 @@ internal object RemoteMigrationAdminCodec {
         } catch (_: IllegalArgumentException) {
             null
         }
+
+    private class BoundedResponseWriter(
+        private val maxBytes: Int,
+    ) {
+        private val response = StringBuilder()
+
+        init {
+            require(maxBytes > 0) { "Migration administration response max size must be positive" }
+        }
+
+        fun append(value: String) {
+            if (value.length > maxBytes - response.length) {
+                throw RemoteMigrationResponseTooLargeException(maxBytes)
+            }
+            response.append(value)
+        }
+
+        fun appendEncodedString(value: String) {
+            if (base64EncodedLength(value) > maxBytes - response.length) {
+                throw RemoteMigrationResponseTooLargeException(maxBytes)
+            }
+            response.append(encodeString(value))
+        }
+
+        fun toByteArray(): ByteArray = response.toString().encodeToByteArray()
+
+        private fun base64EncodedLength(value: String): Long {
+            var inputBytes = 0L
+            var index = 0
+            while (index < value.length) {
+                val character = value[index]
+                inputBytes += when {
+                    character.code < 0x80 -> 1
+                    character.code < 0x800 -> 2
+                    character.isHighSurrogate() && index + 1 < value.length && value[index + 1].isLowSurrogate() -> {
+                        index++
+                        4
+                    }
+                    character.isSurrogate() -> 3
+                    else -> 3
+                }
+                index++
+            }
+            return inputBytes / 3 * 4 + when ((inputBytes % 3).toInt()) {
+                0 -> 0
+                1 -> 2
+                else -> 3
+            }
+        }
+    }
 }
+
+internal const val MAX_MIGRATION_ADMIN_RESPONSE_BYTES = 16 * 1024 * 1024

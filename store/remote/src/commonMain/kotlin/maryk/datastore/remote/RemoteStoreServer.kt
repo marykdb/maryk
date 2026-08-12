@@ -429,10 +429,15 @@ internal fun Application.remoteStoreModule(
                         ),
                     )
                 }
-                call.respondBytes(
-                    RemoteMigrationAdminCodec.encodeResponse(response),
-                    ContentType.parse(RemoteStoreProtocol.contentType),
-                )
+                val responseBytes = try {
+                    RemoteMigrationAdminCodec.encodeResponse(response, MAX_MIGRATION_ADMIN_RESPONSE_BYTES)
+                } catch (error: RemoteMigrationResponseTooLargeException) {
+                    throw RequestValidationException(
+                        HttpStatusCode.PayloadTooLarge,
+                        error.message ?: "Migration administration response is too large",
+                    )
+                }
+                call.respondBytes(responseBytes, ContentType.parse(RemoteStoreProtocol.contentType))
             }
         }
     }

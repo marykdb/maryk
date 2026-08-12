@@ -7,6 +7,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.cio.CIO as ServerCIO
@@ -176,6 +177,33 @@ class RemoteStoreServerTest {
             }
             assertTrue(error.message.orEmpty().contains("HTTP 403"))
             remote.close()
+        } finally {
+            client.close()
+            server.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun migrationAdministrationRejectsOversizedResponses() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val adminStore = TestMigrationAdminStore(
+            store,
+            statusMessage = "x".repeat(12 * 1024 * 1024),
+        )
+        val (server, port) = startTestServer { remoteStoreModule(adminStore) }
+        val client = HttpClient(CIO) { expectSuccess = false }
+        try {
+            val response = client.post("http://127.0.0.1:$port${RemoteStoreProtocol.migrationsPath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(RemoteMigrationAdminCodec.encodeRequest(RemoteMigrationRequest(RemoteMigrationOperation.Status)))
+            }
+
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertEquals(
+                "Remote migration administration response exceeds max size: limit is 16777216 bytes",
+                response.bodyAsText(),
+            )
         } finally {
             client.close()
             server.stop(500, 500)
@@ -835,6 +863,7 @@ class RemoteStoreServerTest {
 
 private class TestMigrationAdminStore(
     private val delegate: IsDataStore,
+    private val statusMessage: String? = null,
 ) : IsDataStore by delegate, MigrationAdmin {
     var pausedModelId: UInt? = null
     var resumedModelId: UInt? = null
@@ -842,7 +871,7 @@ private class TestMigrationAdminStore(
     var cancelReason: String? = null
 
     override suspend fun getMigrationStatuses(): Map<UInt, MigrationRuntimeStatus> =
-        mapOf(1u to MigrationRuntimeStatus(MigrationRuntimeState.Running))
+        mapOf(1u to MigrationRuntimeStatus(MigrationRuntimeState.Running, message = statusMessage))
 
     override suspend fun getMigrationMetrics(): Map<UInt, MigrationMetrics> =
         mapOf(1u to MigrationMetrics(retries = 2u))

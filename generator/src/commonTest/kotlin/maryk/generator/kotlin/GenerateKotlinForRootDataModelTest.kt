@@ -634,6 +634,21 @@ class GenerateKotlinForRootDataModelTest {
     }
 
     @Test
+    fun escapesAllControlCharactersInGeneratedStringValues() {
+        val controls = buildString {
+            for (code in 0..0x1f) append(code.toChar())
+            for (code in 0x7f..0x9f) append(code.toChar())
+        }
+
+        val generated = generateKotlinValue(SimpleMarykModel.value.definition, controls, {})
+
+        assertTrue(generated.none { it.isISOControl() })
+        assertTrue(generated.contains("\\u0000"))
+        assertTrue(generated.contains("\\u009f"))
+        assertTrue(generated.contains("\\b"))
+    }
+
+    @Test
     fun generateDateTimeWithNanoseconds() {
         assertEquals(
             "LocalDateTime(2020, 1, 2, 3, 4, 5, 6)",

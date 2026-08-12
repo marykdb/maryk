@@ -52,13 +52,13 @@ private object SameNameBooleanValueModel :
 internal class DataModelIdentityTest {
     @Test
     fun modelsWithSameNameAndPropertyNamesKeepReferentialIdentity() {
-        assertNotEquals(SameNameStringDataModel, SameNameBooleanDataModel)
-        assertNotEquals(SameNameStringRootModel, SameNameBooleanRootModel)
-        assertNotEquals(SameNameStringValueModel, SameNameBooleanValueModel)
+        assertNotEquals(SameNameStringDataModel as Any, SameNameBooleanDataModel as Any)
+        assertNotEquals(SameNameStringRootModel as Any, SameNameBooleanRootModel as Any)
+        assertNotEquals(SameNameStringValueModel as Any, SameNameBooleanValueModel as Any)
 
         assertEquals(
             6,
-            hashSetOf(
+            hashSetOf<Any>(
                 SameNameStringDataModel,
                 SameNameBooleanDataModel,
                 SameNameStringRootModel,
@@ -74,7 +74,7 @@ internal class DataModelIdentityTest {
         val stringValues = SameNameStringDataModel.create { value with "value" }
         val booleanValues = SameNameBooleanDataModel.create { value with true }
 
-        assertNotEquals(stringValues, booleanValues)
-        assertEquals(2, hashSetOf(stringValues, booleanValues).size)
+        assertNotEquals(stringValues as Any, booleanValues as Any)
+        assertEquals(2, hashSetOf<Any>(stringValues, booleanValues).size)
     }
 }

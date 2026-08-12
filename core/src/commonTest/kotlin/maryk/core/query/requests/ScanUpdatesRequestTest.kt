@@ -5,6 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.types.Key
 import maryk.core.query.RequestContext
 import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.scanUpdatesMaxRequest
@@ -36,7 +37,7 @@ class ScanUpdatesRequestTest {
 
     @Test
     fun cacheOrderedKeyMembershipForMaximumRequestSize() {
-        val keys = List(MAX_SCAN_LIMIT.toInt()) { index ->
+        val keys: List<Key<SimpleMarykModel>> = List(MAX_SCAN_LIMIT.toInt()) { index ->
             SimpleMarykModel.key(ByteArray(SimpleMarykModel.Meta.keyByteSize) { byteIndex ->
                 (index shr (byteIndex * 8)).toByte()
             })

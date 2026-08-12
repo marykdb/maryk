@@ -449,7 +449,8 @@ internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(
     return when (this) {
         is IsCollectionDefinition<*, *, *, *> -> when (val valueDefinition = valueDefinition) {
             is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
-            is IsContextualEncodable<*, *> -> valueDefinition.acceptsContextualProtoBufWireType(wireType, context)
+            is IsContextualEncodable<*, *> ->
+                (valueDefinition as IsContextualEncodable<*, *>).acceptsProtoBufWireType(wireType, context)
             else -> when (val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType) {
                 VAR_INT, BIT_32, BIT_64 -> wireType == LENGTH_DELIMITED || wireType == valueWireType
                 else -> wireType == LENGTH_DELIMITED
@@ -457,14 +458,15 @@ internal fun IsSubDefinition<*, *>.acceptsProtoBufWireType(
         }
         is IsMapDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
         is IsMultiTypeDefinition<*, *, *> -> wireType == LENGTH_DELIMITED
-        is IsContextualEncodable<*, *> -> this.acceptsContextualProtoBufWireType(wireType, context)
+        is IsContextualEncodable<*, *> ->
+            (this as IsContextualEncodable<*, *>).acceptsProtoBufWireType(wireType, context)
         is IsValueDefinition<*, *> -> wireType == this.wireType
         else -> true
     }
 }
 
 @Suppress("UNCHECKED_CAST")
-private fun IsContextualEncodable<*, *>.acceptsContextualProtoBufWireType(
+internal fun IsContextualEncodable<*, *>.acceptsProtoBufWireType(
     wireType: WireType,
     context: IsPropertyContext?
 ): Boolean = when (this) {

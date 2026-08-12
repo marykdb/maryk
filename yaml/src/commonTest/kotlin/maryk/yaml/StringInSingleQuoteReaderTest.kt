@@ -4,6 +4,16 @@ import kotlin.test.Test
 
 class StringInSingleQuoteReaderTest {
     @Test
+    fun readLongSingleQuotedString() {
+        val value = "a".repeat(100_000)
+
+        createYamlReader("'$value'").apply {
+            assertValue(value)
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun readSingleQuote() {
         createYamlReader("'te''st\"'").apply {
             assertValue("te'st\"")

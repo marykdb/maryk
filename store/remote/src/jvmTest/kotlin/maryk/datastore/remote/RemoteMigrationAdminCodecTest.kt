@@ -42,6 +42,16 @@ class RemoteMigrationAdminCodecTest {
         assertFailsWith<IllegalArgumentException> {
             RemoteMigrationAdminCodec.decodeRequest("v=1\\nop=Status\\nmodel=3".encodeToByteArray())
         }
+        listOf(
+            "v=1\\nop=Status\\nmalformed",
+            "v=1\\nop=Status\\nunknown=value",
+            "v=1\\nop=Status\\nop=Pause",
+            "v=1\\nop=Status\\nv=1",
+        ).forEach { payload ->
+            assertFailsWith<IllegalArgumentException> {
+                RemoteMigrationAdminCodec.decodeRequest(payload.encodeToByteArray())
+            }
+        }
         assertFailsWith<IllegalArgumentException> {
             RemoteMigrationAdminCodec.decodeResponse("v=1\\naccepted=unknown".encodeToByteArray())
         }

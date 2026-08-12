@@ -26,22 +26,24 @@ internal fun IsYamlCharWithIndentsReader.plainStringReader(
     extraIndent: Int,
     jsonTokenCreator: JsonTokenCreator
 ): JsonToken {
-    var storedValue: String = startWith
+    val storedValue = StringBuilder(startWith)
 
     fun storeCharAndProceed() {
-        storedValue += lastChar
+        storedValue.append(lastChar)
         read()
     }
 
     fun createToken(): JsonToken {
-        return jsonTokenCreator(storedValue.trim(), true, tag, extraIndent)
+        return jsonTokenCreator(storedValue.toString().trim(), true, tag, extraIndent)
     }
 
     try {
         loop@ while (true) {
             when (this.lastChar) {
                 '\n', '\r' -> {
-                    storedValue = storedValue.trimEnd()
+                    while (storedValue.lastOrNull()?.isWhitespace() == true) {
+                        storedValue.deleteAt(storedValue.lastIndex)
+                    }
 
                     val currentIndentCount = this.yamlReader.skipEmptyLinesAndCommentsAndCountIndents()
                     val readerIndentCount = this.indentCount() + extraIndent + if (this is MapItemsReader<*>) 1 else 0
@@ -51,7 +53,7 @@ internal fun IsYamlCharWithIndentsReader.plainStringReader(
                             createToken()
                         }
                     } else {
-                        storedValue += ' '
+                        storedValue.append(' ')
                     }
                 }
                 ':' -> {
@@ -66,18 +68,18 @@ internal fun IsYamlCharWithIndentsReader.plainStringReader(
                             // If new map return Object Start and push new token
                             this.foundMap(tag, extraIndent)?.let {
                                 this.yamlReader.pushToken(
-                                    (this.currentReader as IsYamlCharWithIndentsReader).checkAndCreateFieldName(storedValue.trim(), true)
+                                    (this.currentReader as IsYamlCharWithIndentsReader).checkAndCreateFieldName(storedValue.toString().trim(), true)
                                 )
                                 return it
                             }
 
-                            return this.checkAndCreateFieldName(storedValue.trim(), true)
+                            return this.checkAndCreateFieldName(storedValue.toString().trim(), true)
                         }
 
                         // Else return specific token
                         return createToken()
                     }
-                    storedValue += ":$lastChar"
+                    storedValue.append(':').append(lastChar)
                     read()
                 }
                 '#' -> {

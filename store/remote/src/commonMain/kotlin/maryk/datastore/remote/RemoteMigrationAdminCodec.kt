@@ -42,7 +42,10 @@ internal object RemoteMigrationAdminCodec {
     }.joinToString("\n").encodeToByteArray()
 
     fun decodeRequest(bytes: ByteArray): RemoteMigrationRequest {
-        val fields = parseFields(bytes)
+        val fields = parseFields(
+            bytes,
+            setOf("v", "op", "model", "reason"),
+        )
         require(fields["v"] == version) { "Unsupported migration administration request format" }
         val operation = fields["op"]?.let { enumValueOrNull<RemoteMigrationOperation>(it) }
             ?: throw IllegalArgumentException("Missing migration administration operation")
@@ -182,11 +185,20 @@ internal object RemoteMigrationAdminCodec {
         )
     }
 
-    private fun parseFields(bytes: ByteArray): Map<String, String> =
-        bytes.decodeToString().lineSequence().mapNotNull { line ->
+    private fun parseFields(
+        bytes: ByteArray,
+        allowedNames: Set<String>,
+    ): Map<String, String> = buildMap {
+        bytes.decodeToString().lineSequence().forEach { line ->
             val separator = line.indexOf('=')
-            if (separator <= 0) null else line.substring(0, separator) to line.substring(separator + 1)
-        }.toMap()
+            require(separator > 0) { "Invalid migration administration request field" }
+            val name = line.substring(0, separator)
+            require(name in allowedNames) { "Unknown migration administration request field: $name" }
+            require(put(name, line.substring(separator + 1)) == null) {
+                "Duplicate migration administration request field: $name"
+            }
+        }
+    }
 
     private fun encodeString(value: String): String = Base64Maryk.encode(value.encodeToByteArray())
 

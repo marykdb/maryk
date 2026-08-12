@@ -15,7 +15,7 @@ internal fun IsYamlCharReader.singleQuoteString(
     jsonTokenCreator: JsonTokenCreator
 ): JsonToken {
     var aQuoteFound = false
-    var storedValue: String? = ""
+    val storedValue = StringBuilder()
 
     try {
         read() // skip starting quote
@@ -23,7 +23,7 @@ internal fun IsYamlCharReader.singleQuoteString(
         loop@ while (true) {
             if (lastChar == '\'') {
                 if (aQuoteFound) {
-                    storedValue += lastChar
+                    storedValue.append(lastChar)
                     aQuoteFound = false
                 } else {
                     aQuoteFound = true
@@ -32,18 +32,18 @@ internal fun IsYamlCharReader.singleQuoteString(
                 if (aQuoteFound) {
                     break@loop
                 } else {
-                    storedValue += lastChar
+                    storedValue.append(lastChar)
                 }
             }
             read()
         }
 
-        return jsonTokenCreator(storedValue, false, tag, extraIndentAtStart)
+        return jsonTokenCreator(storedValue.toString(), false, tag, extraIndentAtStart)
     } catch (e: ExceptionWhileReadingJson) {
         this.yamlReader.hasException = true
 
         if (aQuoteFound) {
-            return jsonTokenCreator(storedValue, false, tag, extraIndentAtStart)
+            return jsonTokenCreator(storedValue.toString(), false, tag, extraIndentAtStart)
         } else {
             throw InvalidYamlContent("Single quoted string was never closed")
         }

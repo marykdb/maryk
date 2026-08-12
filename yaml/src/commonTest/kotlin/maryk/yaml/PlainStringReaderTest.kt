@@ -4,6 +4,16 @@ import kotlin.test.Test
 
 class PlainStringReaderTest {
     @Test
+    fun readLongPlainString() {
+        val value = "a".repeat(100_000)
+
+        createYamlReader(value).apply {
+            assertValue(value)
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun readPlainString() {
         createYamlReader("test").apply {
             assertValue("test")

@@ -8,7 +8,7 @@ import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
-import kotlin.test.assertSame
+import kotlin.test.assertEquals
 import kotlin.test.expect
 
 class ListItemReferenceTest {
@@ -17,9 +17,9 @@ class ListItemReferenceTest {
     val cache = WriteCache()
 
     @Test
-    fun cacheReferenceTest() {
-        assertSame(reference, TestMarykModel { listOfString refAt 5u })
-        assertSame(subReference, TestMarykModel { embeddedValues { marykModel { listOfString refAt 22u } } })
+    fun sameListSelectionCreatesAnEqualReference() {
+        assertEquals(reference, TestMarykModel { listOfString refAt 5u })
+        assertEquals(subReference, TestMarykModel { embeddedValues { marykModel { listOfString refAt 22u } } })
     }
 
     @Test

@@ -30,9 +30,8 @@ interface IsListDefinitionWrapper<T : Any, TO : Any, LD : IsListDefinition<T, CX
     }
 
     /** Get a reference to a specific list item by [index] with optional [parentRef] */
-    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) = cacheRef(parentRef, index) {
+    fun getItemRef(index: UInt, parentRef: AnyPropertyReference? = null) =
         this.definition.itemRef(index, this.ref(parentRef))
-    }
 
     /** Get a reference to a specific list item at any index with optional [parentRef] */
     fun getAnyItemRef(parentRef: AnyPropertyReference? = null): ListAnyItemReference<T, CX> = cacheRef(parentRef, "*") {

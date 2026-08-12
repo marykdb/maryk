@@ -2,13 +2,16 @@
 
 package maryk.core.properties.references
 
+import kotlinx.datetime.LocalTime
 import maryk.core.models.DataModel
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.multiType
 import maryk.core.properties.definitions.string
 import maryk.test.models.MarykTypeEnum
+import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
@@ -74,5 +77,21 @@ class ReferenceCacheTest {
 
         assertSame(typedFirst, typedSecond)
         assertSame(simpleFirst, simpleSecond)
+    }
+
+    @Test
+    fun doesNotRetainDynamicallySelectedCollectionReferences() {
+        TestMarykModel { list::ref }
+        TestMarykModel { map::ref }
+        val listCacheSize = TestMarykModel.list.refCache.value?.size ?: 0
+        val mapCacheSize = TestMarykModel.map.refCache.value?.size ?: 0
+
+        repeat(60) {
+            TestMarykModel { list refAt it.toUInt() }
+            TestMarykModel { map refAt LocalTime(1, 0, it) }
+        }
+
+        assertEquals(listCacheSize, TestMarykModel.list.refCache.value?.size ?: 0)
+        assertEquals(mapCacheSize, TestMarykModel.map.refCache.value?.size ?: 0)
     }
 }

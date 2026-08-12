@@ -18,17 +18,13 @@ interface IsMapDefinitionWrapper<K : Any, V : Any, TO : Any, CX : IsPropertyCont
     /** Get a reference to a specific map [key] with optional [parentRef] */
     private fun keyRef(key: K, parentRef: AnyPropertyReference? = null) =
         this.ref(parentRef).let { ref ->
-            cacheRef(ref, key to "#") {
-                this.definition.keyRef(key, ref as CanContainMapItemReference<*, *, *>)
-            }
+            this.definition.keyRef(key, ref as CanContainMapItemReference<*, *, *>)
         }
 
     /** Get a reference to a specific map value by [key] with optional [parentRef] */
     private fun valueRef(key: K, parentRef: AnyPropertyReference? = null) =
         this.ref(parentRef).let { ref ->
-            cacheRef(ref, key to "@") {
-                this.definition.valueRef(key, ref as CanContainMapItemReference<*, *, *>)
-            }
+            this.definition.valueRef(key, ref as CanContainMapItemReference<*, *, *>)
         }
 
     /** Get a reference to any map key with optional [parentRef] */

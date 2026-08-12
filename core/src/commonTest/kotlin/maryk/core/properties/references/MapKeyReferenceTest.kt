@@ -8,7 +8,6 @@ import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertSame
 import kotlin.test.expect
 
 class MapKeyReferenceTest {
@@ -16,9 +15,9 @@ class MapKeyReferenceTest {
     private val subKeyReference = TestMarykModel { embeddedValues { marykModel { map refToKey LocalTime(15, 22, 55) } } }
 
     @Test
-    fun cacheReferenceTest() {
-        assertSame(keyReference, TestMarykModel { map refToKey LocalTime(12, 0, 1) })
-        assertSame(subKeyReference, TestMarykModel { embeddedValues { marykModel { map refToKey LocalTime(15, 22, 55) } } })
+    fun sameMapKeySelectionCreatesAnEqualReference() {
+        assertEquals(keyReference, TestMarykModel { map refToKey LocalTime(12, 0, 1) })
+        assertEquals(subKeyReference, TestMarykModel { embeddedValues { marykModel { map refToKey LocalTime(15, 22, 55) } } })
     }
 
     @Test

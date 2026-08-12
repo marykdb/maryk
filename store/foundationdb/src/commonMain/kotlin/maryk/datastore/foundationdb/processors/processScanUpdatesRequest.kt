@@ -209,7 +209,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                             )
                         }
                     } else {
-                        if (scanRequest.orderedKeys?.contains(oc.key) != false) {
+                        if (scanRequest.orderedKeysSet?.contains(oc.key) != false) {
                             ChangeUpdate(
                                 key = oc.key,
                                 version = versionedChange.version,
@@ -252,7 +252,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
         // orderedKeys reconciliation
         scanRequest.orderedKeys?.let { orderedKeys ->
             val matchingKeysSet = matchingKeys.toHashSet()
-            val orderedKeysSet = orderedKeys.toHashSet()
+            val orderedKeysSet = scanRequest.orderedKeysSet ?: return@let
+            val matchingKeyIndices = matchingKeys.withIndex().associate { it.value to it.index }
 
             // Removals for keys no longer in range
             orderedKeys.subtract(matchingKeysSet).let { removedKeys ->
@@ -285,7 +286,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                                 key = addedKey,
                                 version = lastResponseVersion,
                                 firstVersion = valuesWithMeta.firstVersion,
-                                insertionIndex = matchingKeys.indexOf(addedKey),
+                                insertionIndex = matchingKeyIndices.getValue(addedKey),
                                 isDeleted = valuesWithMeta.isDeleted,
                                 values = valuesWithMeta.values
                             )
@@ -431,7 +432,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                             )
                         }
                     } else {
-                        if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
+                        if (scanRequest.orderedKeysSet?.contains(objectChange.key) != false) {
                             ChangeUpdate(
                                 key = objectChange.key,
                                 version = versionedChange.version,
@@ -516,7 +517,8 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
     runReadTransaction(readContext, dbIndex) { tr ->
         scanRequest.orderedKeys?.let { orderedKeys ->
             val matchingKeysSet = matchingKeys.toHashSet()
-            val orderedKeysSet = orderedKeys.toHashSet()
+            val orderedKeysSet = scanRequest.orderedKeysSet ?: return@let
+            val matchingKeyIndices = matchingKeys.withIndex().associate { it.value to it.index }
 
             orderedKeys.subtract(matchingKeysSet).forEach { removedKey ->
                 val exists = tr.get(packKey(tableDirs.keysPrefix, removedKey.bytes)).awaitResult()
@@ -551,7 +553,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                             key = addedKey,
                             version = lastResponseVersion,
                             firstVersion = valuesWithMeta.firstVersion,
-                            insertionIndex = matchingKeys.indexOf(addedKey),
+                            insertionIndex = matchingKeyIndices.getValue(addedKey),
                             isDeleted = valuesWithMeta.isDeleted,
                             values = valuesWithMeta.values
                         )

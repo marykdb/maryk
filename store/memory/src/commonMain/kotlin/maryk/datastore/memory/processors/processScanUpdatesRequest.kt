@@ -104,7 +104,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                     )
                 }
             } else {
-                if (scanRequest.orderedKeys?.contains(historyRecord.key) != false) {
+                if (scanRequest.orderedKeysSet?.contains(historyRecord.key) != false) {
                     updates += ChangeUpdate(
                         key = historyRecord.key,
                         version = versionedChange.version,
@@ -148,7 +148,8 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
         // Remove values which should or should not be there from passed orderedKeys
         // This so the requester is up to date with any in between filtered values
         val matchingKeysSet = matchingKeys.toHashSet()
-        val orderedKeysSet = orderedKeys.toHashSet()
+        val orderedKeysSet = scanRequest.orderedKeysSet ?: return@let
+        val matchingKeyIndices = matchingKeys.withIndex().associate { it.value to it.index }
 
         orderedKeys.subtract(matchingKeysSet).let { removedKeys ->
             for (removedKey in removedKeys) {
@@ -181,7 +182,7 @@ internal fun <DM : IsRootDataModel> processScanUpdatesRequest(
                             record.key,
                             lastResponseVersion,
                             valuesWithMeta.firstVersion,
-                            matchingKeys.indexOf(record.key),
+                            matchingKeyIndices.getValue(record.key),
                             valuesWithMeta.isDeleted,
                             valuesWithMeta.values
                         )
@@ -290,7 +291,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                         )
                     }
                 } else {
-                    if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
+                    if (scanRequest.orderedKeysSet?.contains(objectChange.key) != false) {
                         updates += ChangeUpdate(
                             key = objectChange.key,
                             version = versionedChange.version,
@@ -334,7 +335,8 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
 
     scanRequest.orderedKeys?.let { orderedKeys ->
         val matchingKeysSet = matchingKeys.toHashSet()
-        val orderedKeysSet = orderedKeys.toHashSet()
+        val orderedKeysSet = scanRequest.orderedKeysSet ?: return@let
+        val matchingKeyIndices = matchingKeys.withIndex().associate { it.value to it.index }
 
         orderedKeys.subtract(matchingKeysSet).forEach { removedKey ->
             @Suppress("UNCHECKED_CAST")
@@ -363,7 +365,7 @@ private fun <DM : IsRootDataModel> processScanUpdatesByUpdateHistory(
                         key = record.key,
                         version = lastResponseVersion,
                         firstVersion = valuesWithMeta.firstVersion,
-                        insertionIndex = matchingKeys.indexOf(record.key),
+                        insertionIndex = matchingKeyIndices.getValue(record.key),
                         isDeleted = valuesWithMeta.isDeleted,
                         values = valuesWithMeta.values
                     )

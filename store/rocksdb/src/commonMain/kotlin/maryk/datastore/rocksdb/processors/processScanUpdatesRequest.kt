@@ -253,7 +253,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                                 )
                             }
                         } else {
-                            if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
+                            if (scanRequest.orderedKeysSet?.contains(objectChange.key) != false) {
                                 ChangeUpdate(
                                     key = objectChange.key,
                                     version = versionedChange.version,
@@ -293,7 +293,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
 
         scanRequest.orderedKeys?.let { orderedKeys ->
             val matchingKeysSet = matchingKeys.toHashSet()
-            val orderedKeysSet = orderedKeys.toHashSet()
+            val orderedKeysSet = scanRequest.orderedKeysSet ?: return@let
+            val matchingKeyIndices = matchingKeys.withIndex().associate { it.value to it.index }
 
             // Remove values which should or should not be there from passed orderedKeys
             // This so the requester is up-to-date with any in between filtered values
@@ -335,7 +336,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanUpdatesRequest(
                                 key = addedKey,
                                 version = lastResponseVersion,
                                 firstVersion = valuesWithMeta.firstVersion,
-                                insertionIndex = matchingKeys.indexOf(addedKey),
+                                insertionIndex = matchingKeyIndices.getValue(addedKey),
                                 isDeleted = valuesWithMeta.isDeleted,
                                 values = valuesWithMeta.values
                             )
@@ -584,7 +585,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                                         )
                                     }
                                 } else {
-                                    if (scanRequest.orderedKeys?.contains(objectChange.key) != false) {
+                                    if (scanRequest.orderedKeysSet?.contains(objectChange.key) != false) {
                                         ChangeUpdate(
                                             key = objectChange.key,
                                             version = versionedChange.version,
@@ -639,7 +640,8 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
 
                 scanRequest.orderedKeys?.let { orderedKeys ->
                     val matchingKeysSet = matchingKeys.toHashSet()
-                    val orderedKeysSet = orderedKeys.toHashSet()
+                    val orderedKeysSet = scanRequest.orderedKeysSet ?: return@let
+                    val matchingKeyIndices = matchingKeys.withIndex().associate { it.value to it.index }
 
                     orderedKeys.subtract(matchingKeysSet).forEach { removedKey ->
                         val createdVersionLength = dbAccessor.get(columnFamilies.keys, defaultReadOptions, removedKey.bytes, recyclableByteArray)
@@ -673,7 +675,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.processUpdateHistoryScanUpda
                                     key = addedKey,
                                     version = lastResponseVersion,
                                     firstVersion = valuesWithMeta.firstVersion,
-                                    insertionIndex = matchingKeys.indexOf(addedKey),
+                                    insertionIndex = matchingKeyIndices.getValue(addedKey),
                                     isDeleted = valuesWithMeta.isDeleted,
                                     values = valuesWithMeta.values
                                 )

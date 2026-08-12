@@ -10,7 +10,9 @@ import maryk.test.models.SimpleMarykModel
 import maryk.test.requests.scanUpdatesMaxRequest
 import maryk.test.requests.scanUpdatesRequest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class ScanUpdatesRequestTest {
@@ -30,6 +32,20 @@ class ScanUpdatesRequestTest {
         assertFailsWith<RequestException> {
             SimpleMarykModel.scanUpdates(limit = 0u)
         }
+    }
+
+    @Test
+    fun cacheOrderedKeyMembershipForMaximumRequestSize() {
+        val keys = List(MAX_SCAN_LIMIT.toInt()) { index ->
+            SimpleMarykModel.key(ByteArray(SimpleMarykModel.Meta.keyByteSize) { byteIndex ->
+                (index shr (byteIndex * 8)).toByte()
+            })
+        }
+        val request = SimpleMarykModel.scanUpdates(orderedKeys = keys)
+
+        assertEquals(keys.size, request.orderedKeysSet?.size)
+        assertTrue(keys.first() in request.orderedKeysSet.orEmpty())
+        assertTrue(keys.last() in request.orderedKeysSet.orEmpty())
     }
 
     @Test

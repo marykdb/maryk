@@ -118,6 +118,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
     )
     val updates = mutableListOf<IsUpdateResponse<DM>>()
     val matchingKeys = rows.map { it.key }
+    val matchingKeyIndices = matchingKeys.withIndex().associate { it.value to it.index }
     val orderedKeysUpdate = OrderedKeysUpdate(matchingKeys, highestVersion, selectedScanRows.sortingKeys)
     rows.forEachIndexed { index, record ->
         val versionedChanges = byteStore.readChangeLog(
@@ -133,7 +134,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
             decryptValue = sensitiveFields::decryptValueIfNeeded,
         )
         for (versionedChange in versionedChanges) {
-            if (versionedChange.changes.any { it is ObjectCreate } || request.orderedKeys?.contains(record.key) == false) {
+            if (versionedChange.changes.any { it is ObjectCreate } || request.orderedKeysSet?.contains(record.key) == false) {
                 updates += AdditionUpdate(
                     key = record.key,
                     version = versionedChange.version,
@@ -155,9 +156,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
     updates += selectedScanRows.hardDeletes
     request.orderedKeys?.let { orderedKeys ->
         val matchingSet = matchingKeys.toSet()
-        val orderedSet = orderedKeys.toSet()
+        val orderedSet = request.orderedKeysSet ?: return@let
+        val hardDeletedKeys = selectedScanRows.hardDeletes.mapTo(HashSet()) { it.key }
         for (removedKey in orderedKeys.filter { it !in matchingSet }) {
-            if (selectedScanRows.hardDeletes.any { it.key == removedKey }) continue
+            if (removedKey in hardDeletedKeys) continue
             val meta = byteStore.get(keyStoreName, removedKey.bytes)?.let(::decodeRecordMeta)
             val hardDeleteVersion = if (keepUpdateHistoryIndex) {
                 findHardDeleteVersion(modelId, removedKey.bytes, request)
@@ -180,7 +182,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
                     key = addedRecord.key,
                     version = highestVersion,
                     firstVersion = addedRecord.firstVersion,
-                    insertionIndex = matchingKeys.indexOf(addedRecord.key),
+                    insertionIndex = matchingKeyIndices.getValue(addedRecord.key),
                     isDeleted = addedRecord.isDeleted,
                     values = addedRecord.values,
                 )

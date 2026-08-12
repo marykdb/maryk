@@ -78,6 +78,12 @@ data class ScanUpdatesRequest<DM : IsRootDataModel> internal constructor(
     override val requestType = ScanUpdates
     override val responseModel = UpdatesResponse
 
+    /**
+     * Snapshot used by store implementations while reconciling many updates against [orderedKeys].
+     * `orderedKeys` remains the ordered response contract; this only provides constant-time membership checks.
+     */
+    val orderedKeysSet: Set<Key<DM>>? by lazy { orderedKeys?.toHashSet() }
+
     // Aggregations are not allowed on a scan changes request
     override val aggregations: Aggregations? = null
 

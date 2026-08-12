@@ -402,7 +402,7 @@ class RemoteDataStoreTest {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
-            lowerHlcReconnectFlowModule(connections)
+            lowerHlcReconnectFlowModule(connections, keepConnectionOpenAt = 2)
         }.start(wait = false)
         val remote = RemoteDataStore.connect(
             RemoteStoreConfig(
@@ -1552,7 +1552,10 @@ private fun Application.sameVersionReconnectFlowModule(connections: AtomicIntege
     }
 }
 
-private fun Application.lowerHlcReconnectFlowModule(connections: AtomicInteger) {
+private fun Application.lowerHlcReconnectFlowModule(
+    connections: AtomicInteger,
+    keepConnectionOpenAt: Int? = null,
+) {
     val infoBytes = defaultInfoBytes()
     routing {
         get(RemoteStoreProtocol.infoPath) {
@@ -1587,6 +1590,9 @@ private fun Application.lowerHlcReconnectFlowModule(connections: AtomicInteger) 
                     writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
                     writeFully(payload)
                     flush()
+                }
+                if (connection == keepConnectionOpenAt) {
+                    awaitCancellation()
                 }
             }
         }

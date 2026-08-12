@@ -1532,6 +1532,9 @@ class FoundationDBDataStore private constructor(
             maxConcurrentReads: Int = DEFAULT_MAX_CONCURRENT_READS,
         ): FoundationDBDataStore {
             orderMigrationModelIds(dataModelsById)
+            if (clusterUpdateLogConfiguration.enableClusterUpdateLog) {
+                clusterUpdateLogConfiguration.validateCursorCapacity(dataModelsById.size)
+            }
 
             val db = openFoundationDatabase(fdbClusterFilePath)
 

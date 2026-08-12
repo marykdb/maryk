@@ -24,6 +24,9 @@ import io.maryk.app.data.detectImportScopeFromPath
 import io.maryk.app.data.detectVersionedImport
 import io.maryk.app.data.exportModelDataToFolder
 import io.maryk.app.data.exportModelToFolder
+import io.maryk.app.data.preflightAndPublish
+import io.maryk.app.data.serializeModel
+import io.maryk.app.data.writeSerializedModelToFolder
 import io.maryk.app.data.exportRowDataToFolder
 import io.maryk.app.data.extensionsForImport
 import io.maryk.app.data.importDataFromFile
@@ -1257,8 +1260,11 @@ class BrowserState(
             val allModels = buildAllModelsByName(connection)
             val result = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
-                    allModels.values.forEach { model ->
-                        exportModelToFolder(model, format, folder, allModels)
+                    preflightAndPublish(
+                        values = allModels.values,
+                        render = { model -> serializeModel(model, format, allModels) },
+                    ) { model, content ->
+                        writeSerializedModelToFolder(model, format, folder, content)
                     }
                 }
             }

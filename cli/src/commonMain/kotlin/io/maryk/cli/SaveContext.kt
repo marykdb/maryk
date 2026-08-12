@@ -1,6 +1,8 @@
 package io.maryk.cli
 
 import maryk.file.File
+import maryk.file.writeBytesViaTemporaryFile
+import maryk.file.writeTextViaTemporaryFile
 
 enum class SaveFormat(val extension: String) {
     YAML("yaml"),
@@ -57,7 +59,7 @@ data class SaveContext(
                 safeFiles[safeFileName] = content
             }
             safeFiles.forEach { (fileName, content) ->
-                File.writeText(joinSavePath(basePath, fileName), content)
+                File.writeTextViaTemporaryFile(joinSavePath(basePath, fileName), content)
             }
             val names = safeFiles.keys.sorted()
             val summary = names.joinToString(", ")
@@ -73,18 +75,18 @@ data class SaveContext(
 
         val dataPath = joinSavePath(basePath, "$safeKey.${format.extension}")
         when (format) {
-            SaveFormat.YAML -> File.writeText(dataPath, dataYamlToSave)
-            SaveFormat.JSON -> File.writeText(dataPath, dataJsonToSave)
-            SaveFormat.PROTO -> File.writeBytes(dataPath, dataProtoToSave)
+            SaveFormat.YAML -> File.writeTextViaTemporaryFile(dataPath, dataYamlToSave)
+            SaveFormat.JSON -> File.writeTextViaTemporaryFile(dataPath, dataJsonToSave)
+            SaveFormat.PROTO -> File.writeBytesViaTemporaryFile(dataPath, dataProtoToSave)
             SaveFormat.KOTLIN -> Unit
         }
 
         if (includeMeta) {
             val metaPath = joinSavePath(basePath, "$safeKey.meta.${format.extension}")
             when (format) {
-                SaveFormat.YAML -> File.writeText(metaPath, metaYamlToSave)
-                SaveFormat.JSON -> File.writeText(metaPath, metaJsonToSave)
-                SaveFormat.PROTO -> File.writeBytes(metaPath, metaProtoToSave)
+                SaveFormat.YAML -> File.writeTextViaTemporaryFile(metaPath, metaYamlToSave)
+                SaveFormat.JSON -> File.writeTextViaTemporaryFile(metaPath, metaJsonToSave)
+                SaveFormat.PROTO -> File.writeBytesViaTemporaryFile(metaPath, metaProtoToSave)
                 SaveFormat.KOTLIN -> Unit
             }
             return "Saved to $dataPath and $metaPath"

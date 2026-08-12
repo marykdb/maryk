@@ -51,6 +51,20 @@ class FileTest {
     }
 
     @Test
+    fun temporaryFileWriteReplacesExistingContents() {
+        val path = "fileStoreAtomic-${Random.nextInt()}.txt"
+
+        try {
+            File.writeText(path, "old")
+            File.writeTextViaTemporaryFile(path, "new")
+
+            assertEquals("new", File.readText(path))
+        } finally {
+            File.delete(path)
+        }
+    }
+
+    @Test
     fun directoryIsNotReadableFile() {
         assertNull(File.size("."))
         assertNull(File.readText("."))

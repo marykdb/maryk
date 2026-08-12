@@ -11,6 +11,7 @@ import maryk.generator.kotlin.generateKotlin
 import maryk.generator.proto3.generateProto3FileHeader
 import maryk.generator.proto3.generateProto3Schema
 import maryk.file.File
+import maryk.file.writeTextViaTemporaryFile
 import maryk.json.JsonWriter
 import maryk.yaml.YamlWriter
 
@@ -26,6 +27,15 @@ enum class ModelExportFormat(
 
 private const val defaultExportPackage = "maryk.exported"
 
+internal inline fun <T> preflightAndPublish(
+    values: Iterable<T>,
+    render: (T) -> String,
+    publish: (T, String) -> Unit,
+) {
+    val rendered = values.map { value -> value to render(value) }
+    rendered.forEach { (value, content) -> publish(value, content) }
+}
+
 internal fun exportModelToFolder(
     model: IsRootDataModel,
     format: ModelExportFormat,
@@ -33,9 +43,18 @@ internal fun exportModelToFolder(
     allModels: Map<String, IsRootDataModel>,
 ) {
     val content = serializeModel(model, format, allModels)
+    writeSerializedModelToFolder(model, format, folder, content)
+}
+
+internal fun writeSerializedModelToFolder(
+    model: IsRootDataModel,
+    format: ModelExportFormat,
+    folder: String,
+    content: String,
+) {
     val fileName = "${sanitizeFilePart(model.Meta.name)}.${format.extension}"
     val path = joinExportPath(folder, fileName)
-    File.writeText(path, content)
+    File.writeTextViaTemporaryFile(path, content)
 }
 
 internal fun serializeModel(

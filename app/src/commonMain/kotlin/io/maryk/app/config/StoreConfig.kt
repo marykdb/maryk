@@ -2,6 +2,7 @@ package io.maryk.app.config
 
 import kotlin.random.Random
 import maryk.file.File
+import maryk.file.writeTextViaTemporaryFile
 
 enum class StoreKind(val label: String) {
     ROCKS_DB("RocksDB"),
@@ -82,7 +83,7 @@ class StoreRepository(
                 append('\n')
             }
         }
-        File.writeText(path, body)
+        File.writeTextViaTemporaryFile(path, body)
     }
 
     private fun parseLine(line: String): StoreDefinition? {

@@ -10,6 +10,10 @@ function Log($msg) { Write-Host "[install-foundationdb] $msg" }
 function Warn($msg) { Write-Warning $msg }
 function Die($msg) { Write-Error $msg; exit 1 }
 
+if ($Version -ne '7.3.75') {
+  Die "No pinned SHA-256 checksums for FoundationDB version $Version."
+}
+
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $Root = Resolve-Path (Join-Path $ScriptDir "..\..\..")
 $BinDir = Join-Path $Root 'store\foundationdb\bin'

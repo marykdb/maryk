@@ -3,7 +3,8 @@ set -euo pipefail
 
 # Install or link FoundationDB locally for the current platform.
 # - Installs/symlinks into: store/foundationdb/bin
-# - Configurable version via FDB_VERSION env var or --version flag (e.g. 7.3.75)
+# - Version selector via FDB_VERSION env var or --version flag. Only releases with
+#   pinned checksums are accepted (currently 7.3.75).
 # - Strategy:
 #   * If fdbserver already in bin, skip.
 #   * Else if fdbserver found on PATH, symlink into bin (and try to locate/copy libfdb_c.*).
@@ -32,7 +33,11 @@ log() { echo "[install-foundationdb] $*"; }
 warn() { echo "[install-foundationdb][WARN] $*" >&2; }
 err() { echo "[install-foundationdb][ERROR] $*" >&2; exit 1; }
 
-debug() { [[ "${VERBOSE:-0}" == "1" ]] && echo "[install-foundationdb][DEBUG] $*"; }
+debug() {
+  if [[ "${VERBOSE:-0}" == "1" ]]; then
+    echo "[install-foundationdb][DEBUG] $*"
+  fi
+}
 checksum_cmd() {
   if command -v sha256sum >/dev/null 2>&1; then
     echo "sha256sum"
@@ -49,22 +54,27 @@ compute_sha256() {
   [[ -n "$cmd" ]] || err "No sha256 checksum tool found (install sha256sum or shasum)."
   $cmd "$file" | awk '{print $1}'
 }
+pinned_sha256() {
+  case "$FDB_VERSION/$1" in
+    "7.3.75/FoundationDB-7.3.75_arm64.pkg") echo "6b162b0bebefd49873ce2e7d7db7bb001515c80ce3a90545585859c26362488f" ;;
+    "7.3.75/FoundationDB-7.3.75_x86_64.pkg") echo "62a19eddf0a46df7b835d55309c27040853530460087804b07390fefa925d0ab" ;;
+    "7.3.75/foundationdb-clients_7.3.75-1_aarch64.deb") echo "ab58b30f6bc2fa2c8ba0a30e156e292be1322b804340e089e55d21de878398c0" ;;
+    "7.3.75/foundationdb-clients_7.3.75-1_amd64.deb") echo "642841a90acd7f2cc0ae08297245f4f9df76fe250b7b1331f2f99702fec3bee8" ;;
+    "7.3.75/foundationdb-server_7.3.75-1_aarch64.deb") echo "8189d4aaf5eb29e4a79819700a08096a3853ec8806693729e3f69a91a75c6a0e" ;;
+    "7.3.75/foundationdb-server_7.3.75-1_amd64.deb") echo "2cc48b1863125dadc834f0678c3cb54191d637fdc6502d571d63a1628937721e" ;;
+    *) return 1 ;;
+  esac
+}
+validate_pinned_version() {
+  case "$FDB_VERSION" in
+    7.3.75) ;;
+    *) err "No pinned SHA-256 checksums for FoundationDB version $FDB_VERSION." ;;
+  esac
+}
 verify_checksum() {
   local file="$1"
-  local checksum_url="$2"
-  local checksum_file="$file.sha256"
-
-  if ! curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$checksum_url" -o "$checksum_file"; then
-    warn "Checksum not available for $(basename "$file") at $checksum_url; skipping verification"
-    return 0
-  fi
-
   local expected
-  expected=$(awk '{print $1}' "$checksum_file" | tr -d '\r')
-  if [[ -z "$expected" ]]; then
-    warn "Checksum file $checksum_url contained no hash; skipping verification"
-    return 0
-  fi
+  expected="$(pinned_sha256 "$(basename "$file")")" || err "No pinned SHA-256 checksum for FoundationDB $FDB_VERSION artifact $(basename "$file")."
 
   local actual
   actual=$(compute_sha256 "$file")
@@ -180,7 +190,7 @@ install_macos() {
 
   log "Downloading $pkg from FoundationDB releases"
   curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$url" -o "$tmp/$pkg"
-  verify_checksum "$tmp/$pkg" "$url.sha256"
+  verify_checksum "$tmp/$pkg"
 
   # Expand meta-pkg
   pkgutil --expand-full "$tmp/$pkg" "$tmp/expanded"
@@ -236,7 +246,7 @@ install_linux_from_deb() {
   local deb_arch
   case "$arch" in
     x86_64|amd64) deb_arch="amd64";;
-    aarch64|arm64) deb_arch="arm64";;
+    aarch64|arm64) deb_arch="aarch64";;
     *) err "Unsupported Linux arch: $arch";;
   esac
 
@@ -251,9 +261,9 @@ install_linux_from_deb() {
 
   log "Downloading $clients_pkg and $server_pkg"
   curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$base/$clients_pkg" -o "$tmp/$clients_pkg"
-  verify_checksum "$tmp/$clients_pkg" "$base/$clients_pkg.sha256"
+  verify_checksum "$tmp/$clients_pkg"
   curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors "$base/$server_pkg" -o "$tmp/$server_pkg"
-  verify_checksum "$tmp/$server_pkg" "$base/$server_pkg.sha256"
+  verify_checksum "$tmp/$server_pkg"
 
   extract_deb() {
     local deb="$1"
@@ -405,6 +415,8 @@ install_linux() {
 }
 
 main() {
+  validate_pinned_version
+
   debug "System: $(uname -a)"
   debug "Arch: $(uname -m)"
   debug "OS: $(uname -s)"
@@ -449,4 +461,6 @@ main() {
   log "FoundationDB installation complete"
 }
 
-main "$@"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

@@ -79,6 +79,7 @@ import maryk.datastore.memory.records.DataRecordValue
 import maryk.datastore.memory.records.DataStore
 import maryk.datastore.memory.records.DeletedValue
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.diffIndexValues
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.FlowUpdateEmitter
 import maryk.datastore.shared.updates.Update
@@ -746,12 +747,7 @@ private suspend fun <DM : IsRootDataModel> processChangeIntoStore(
                 it.toStorageByteArraysForIndex(objectToChange, objectToChange.key.bytes)
             }
 
-            val removed = oldValues.filter { oldValue ->
-                newValues.none { it.contentEquals(oldValue) }
-            }
-            val added = newValues.filter { newValue ->
-                oldValues.none { it.contentEquals(newValue) }
-            }
+            val (removed, added) = diffIndexValues(oldValues, newValues)
 
             if (removed.size == 1 && added.size == 1) {
                 val oldValue = removed.first()

@@ -107,6 +107,7 @@ import maryk.datastore.rocksdb.processors.helpers.unsetNonChangedValues
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
 import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.diffIndexValues
 import maryk.datastore.shared.isSkippableDataError
 import maryk.datastore.shared.readValue
 import maryk.datastore.shared.rethrowIfFatal
@@ -924,12 +925,7 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                     oldValues
                 }
 
-                val removed = oldValues.filter { oldValue ->
-                    newValues.none { it.contentEquals(oldValue) }
-                }
-                val added = newValues.filter { newValue ->
-                    oldValues.none { it.contentEquals(newValue) }
-                }
+                val (removed, added) = diffIndexValues(oldValues, newValues)
 
                 if (removed.size == 1 && added.size == 1) {
                     val oldValue = removed.first()

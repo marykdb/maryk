@@ -103,6 +103,7 @@ import maryk.datastore.foundationdb.processors.helpers.setValue
 import maryk.datastore.foundationdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.foundationdb.processors.helpers.unsetNonChangedValues
 import maryk.datastore.foundationdb.processors.helpers.unwrapFdb
+import maryk.datastore.shared.diffIndexValues
 import maryk.datastore.foundationdb.processors.helpers.withCountUpdate
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricIndex
 import maryk.datastore.foundationdb.processors.helpers.writeHistoricTable
@@ -764,12 +765,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                         oldValues
                     }
 
-                    val removed = oldValues.filter { oldValue ->
-                        newValues.none { it.contentEquals(oldValue) }
-                    }
-                    val added = newValues.filter { newValue ->
-                        oldValues.none { it.contentEquals(newValue) }
-                    }
+                    val (removed, added) = diffIndexValues(oldValues, newValues)
 
                     if (removed.size == 1 && added.size == 1) {
                         val oldValue = removed.first()

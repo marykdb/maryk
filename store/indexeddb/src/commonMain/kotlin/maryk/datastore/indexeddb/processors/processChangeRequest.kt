@@ -31,6 +31,7 @@ import maryk.datastore.indexeddb.IndexedDbWriteOperation
 import maryk.datastore.indexeddb.decodeRecordMeta
 import maryk.datastore.indexeddb.tableQualifierFromRowKey
 import maryk.datastore.shared.UniqueException
+import maryk.datastore.shared.diffIndexValues
 import maryk.datastore.shared.updates.Update
 
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequest(
@@ -140,12 +141,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                         } else {
                             index.toStorageByteArraysForIndex(changedValues, keyBytes)
                         }
-                        val removed = oldValues.filter { oldValue ->
-                            newValues.none { it.contentEquals(oldValue) }
-                        }
-                        val added = newValues.filter { newValue ->
-                            oldValues.none { it.contentEquals(newValue) }
-                        }
+                        val (removed, added) = diffIndexValues(oldValues, newValues)
                         if (removed.size == 1 && added.size == 1) {
                             add(IndexUpdate(index.referenceStorageByteArray, Bytes(added.first()), Bytes(removed.first())))
                         } else {

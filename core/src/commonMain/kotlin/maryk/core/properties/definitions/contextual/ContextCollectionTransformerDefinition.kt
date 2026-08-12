@@ -13,7 +13,7 @@ import maryk.json.IsJsonLikeWriter
  */
 internal data class ContextCollectionTransformerDefinition<T : Any, C : Collection<T>, in CX : IsPropertyContext, CXI : IsPropertyContext>(
     val definition: IsSerializablePropertyDefinition<C, CXI>,
-    private val contextTransformer: (CX?) -> CXI?
+    internal val contextTransformer: (CX?) -> CXI?
 ) : IsSerializablePropertyDefinition<C, CX>, IsContextualEncodable<C, CX> {
     override val required = definition.required
     override val final = definition.final

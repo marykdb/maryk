@@ -11,7 +11,7 @@ import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific collection definition based on context from [contextualResolver] */
 class ContextualCollectionDefinition<in CX : IsPropertyContext>(
-    private val contextualResolver: (context: CX?) -> IsSerializablePropertyDefinition<Collection<Any>, CX>,
+    internal val contextualResolver: (context: CX?) -> IsSerializablePropertyDefinition<Collection<Any>, CX>,
     override val required: Boolean = true
 ) : IsSerializablePropertyDefinition<Collection<Any>, CX>, IsContextualEncodable<Collection<Any>, CX> {
     override val final = true

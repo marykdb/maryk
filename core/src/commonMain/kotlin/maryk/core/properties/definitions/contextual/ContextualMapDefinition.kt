@@ -11,7 +11,7 @@ import maryk.json.IsJsonLikeWriter
 
 /** Definition which refers to specific map property value definition based on context from [contextualResolver] */
 class ContextualMapDefinition<K : Any, V : Any, in CX : IsPropertyContext>(
-    private val contextualResolver: (context: CX?) -> IsSerializablePropertyDefinition<Map<K, V>, CX>,
+    internal val contextualResolver: (context: CX?) -> IsSerializablePropertyDefinition<Map<K, V>, CX>,
     override val required: Boolean = true
 ) : IsSerializablePropertyDefinition<Map<K, V>, CX>, IsContextualEncodable<Map<K, V>, CX> {
     override val final = true

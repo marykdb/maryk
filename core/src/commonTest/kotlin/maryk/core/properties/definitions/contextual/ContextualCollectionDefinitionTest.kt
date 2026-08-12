@@ -4,14 +4,18 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.ListDefinitionContext
+import maryk.core.properties.definitions.acceptsProtoBufWireType
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCache
 import maryk.json.JsonReader
 import maryk.json.JsonWriter
 import maryk.test.ByteCollector
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 class ContextualCollectionDefinitionTest {
@@ -81,5 +85,11 @@ class ContextualCollectionDefinitionTest {
         val converted = def.readJson(reader, this.context)
 
         expect(listToTest) { converted }
+    }
+
+    @Test
+    fun resolvesCollectionWireTypeFromContext() {
+        assertTrue(def.acceptsProtoBufWireType(LENGTH_DELIMITED, context))
+        assertFalse(def.acceptsProtoBufWireType(VAR_INT, context))
     }
 }

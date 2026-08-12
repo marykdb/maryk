@@ -2,11 +2,16 @@ package maryk.core.properties.definitions.contextual
 
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.acceptsProtoBufWireType
 import maryk.core.protobuf.ProtoBuf
+import maryk.core.protobuf.WireType.LENGTH_DELIMITED
+import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlin.test.expect
 
 private class SubContext : IsPropertyContext {
@@ -49,5 +54,11 @@ class ContextualSubDefinitionTest {
             assertEquals(value, converted)
             bc.reset()
         }
+    }
+
+    @Test
+    fun resolvesWireTypeFromContext() {
+        assertTrue(def.acceptsProtoBufWireType(LENGTH_DELIMITED, context))
+        assertFalse(def.acceptsProtoBufWireType(VAR_INT, context))
     }
 }

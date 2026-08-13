@@ -21,7 +21,10 @@ import maryk.core.models.migration.canTransitionTo
 import maryk.core.models.migration.nextRuntimePhaseOrNull
 import maryk.core.models.migration.normalizedRuntimePhase
 import maryk.datastore.shared.migration.nextMigrationAttemptOrNull
+import maryk.datastore.foundationdb.model.FoundationDBMigrationLease
+import maryk.datastore.foundationdb.model.FoundationDBMigrationLeaseLostException
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
+import maryk.foundationdb.Transaction
 import kotlin.time.Duration.Companion.milliseconds
 
 internal suspend fun FoundationDBDataStore.handleRequiredMigration(
@@ -32,18 +35,52 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
     effectiveMigrationLease: MigrationLease,
     migrationStateStore: FoundationDBMigrationStateStore,
     recheckMigrationStatus: suspend () -> MigrationStatus,
-    finalizeInBackground: suspend (StoredRootDataModelDefinition) -> Unit,
-    finalizeInStartup: (StoredRootDataModelDefinition) -> Unit,
+    finalizeMigration: suspend (StoredRootDataModelDefinition, ((Transaction) -> Unit)?) -> Unit,
+    deferStartupFinalization: (suspend () -> Unit) -> Unit,
 ) {
     val handler = migrationConfiguration.migrationHandler
         ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
     val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
     val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
+    val finalizationPendingMessage = "Migration phases complete; finalization pending"
+    val foundationDBMigrationLease = effectiveMigrationLease as? FoundationDBMigrationLease
+
+    fun MigrationState.isFinalizationPending() =
+        phase == MigrationPhase.Contract &&
+            status == MigrationStateStatus.Running &&
+            message == finalizationPendingMessage
+
+    suspend fun bindLeaseOwner() {
+        foundationDBMigrationLease?.bindOwner(index, migrationId)
+    }
+
+    suspend fun assertLeaseOwnership() {
+        foundationDBMigrationLease?.assertOwnership(index, migrationId)
+    }
+
+    suspend fun appendOwnedAuditEvent(
+        type: MigrationAuditEventType,
+        phase: MigrationPhase? = null,
+        attempt: UInt? = null,
+        message: String? = null,
+    ) {
+        assertLeaseOwnership()
+        if (foundationDBMigrationLease == null) {
+            appendMigrationAuditEvent(index, migrationId, type, phase, attempt, message)
+        } else {
+            appendMigrationAuditEventOwned(index, migrationId, type, phase, attempt, message) { transaction ->
+                foundationDBMigrationLease.requireOwnership(transaction, index, migrationId)
+            }
+        }
+    }
 
     suspend fun failOrCompleteIfMigrationPlanChangedWhileWaiting(): Boolean {
         return when (val currentStatus = recheckMigrationStatus()) {
             MigrationStatus.UpToDate, MigrationStatus.AlreadyProcessed -> {
-                migrationStateStore.clear(index)
+                assertLeaseOwnership()
+                migrationStateStore.clear(index) { transaction ->
+                    foundationDBMigrationLease?.requireOwnership(transaction, index, migrationId)
+                }
                 pendingMigrationModelIds.update { it - index }
                 pendingMigrationReasons.update { it - index }
                 pausedMigrationModelIds.update { it - index }
@@ -87,7 +124,10 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
     }
 
     suspend fun writeMigrationState(state: MigrationState) {
-        migrationStateStore.write(index, state)
+        assertLeaseOwnership()
+        migrationStateStore.write(index, state) { transaction ->
+            foundationDBMigrationLease?.requireOwnership(transaction, index, migrationId)
+        }
         updateMigrationRuntimeDetails(index, state)
     }
 
@@ -124,7 +164,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                 cursor = previousState?.cursor,
             )
         )
-        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseStarted, phase = phase, attempt = attempt)
+        appendOwnedAuditEvent(MigrationAuditEventType.PhaseStarted, phase = phase, attempt = attempt)
         val context = MigrationContext(
             store = this,
             storedDataModel = storedModel,
@@ -133,6 +173,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
             previousState = previousState,
             attempt = attempt,
         )
+        assertLeaseOwnership()
         val outcome = when (phase) {
             MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
             MigrationPhase.Backfill -> handler(context)
@@ -149,6 +190,23 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
             return UInt.MAX_VALUE to (phase to MigrationOutcome.Fatal("Migration attempt counter overflow"))
         }
         return attempt to executeStep(previousState, attempt)
+    }
+
+    suspend fun finalizeCompletedPhases(state: MigrationState) {
+        assertLeaseOwnership()
+        finalizeMigration(storedModel, foundationDBMigrationLease?.let { lease ->
+            { transaction -> lease.requireOwnership(transaction, index, migrationId) }
+        })
+        assertLeaseOwnership()
+        migrationStateStore.clear(index) { transaction ->
+            foundationDBMigrationLease?.requireOwnership(transaction, index, migrationId)
+        }
+        migrationRuntimeDetailsByModelId.update { it - index }
+        appendOwnedAuditEvent(
+            MigrationAuditEventType.Completed,
+            phase = MigrationPhase.Contract,
+            attempt = state.attempt,
+        )
     }
 
     fun launchBackgroundMigration(leaseAlreadyAcquired: Boolean) {
@@ -168,7 +226,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                         continue
                     }
                     if (effectiveMigrationLease.tryAcquire(index, migrationId)) {
-                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseAcquired)
+                        appendOwnedAuditEvent(MigrationAuditEventType.LeaseAcquired)
                         pendingMigrationReasons.update {
                             it + (index to "Migration for ${dataModel.Meta.name} is running in background")
                         }
@@ -179,6 +237,9 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                         it + (index to "Migration lease held by another migrator for $migrationId")
                     }
                     delay(250.milliseconds)
+                }
+                if (leaseAlreadyAcquired) {
+                    bindLeaseOwner()
                 }
                 if (!leaseAlreadyAcquired && !failOrCompleteIfMigrationPlanChangedWhileWaiting()) {
                     return@launch
@@ -196,6 +257,15 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                         continue
                     }
                     val previousState = readMigrationState()
+                    if (previousState?.isFinalizationPending() == true) {
+                        finalizeCompletedPhases(previousState)
+                        pendingMigrationModelIds.update { it - index }
+                        pendingMigrationReasons.update { it - index }
+                        pausedMigrationModelIds.update { it - index }
+                        canceledMigrationReasons.update { it - index }
+                        completeAfterLeaseRelease = true
+                        break
+                    }
                     val (attempt, step) = executeNextStep(previousState)
                     val (phase, outcome) = step
 
@@ -206,7 +276,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                                 if (!phase.canTransitionTo(nextPhase)) {
                                     throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
                                 }
-                                appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
+                                appendOwnedAuditEvent(MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
                                 writeMigrationState(
                                     MigrationState(
                                         migrationId = migrationId,
@@ -220,10 +290,18 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                                 )
                                 continue
                             }
-                            migrationStateStore.clear(index)
-                            migrationRuntimeDetailsByModelId.update { it - index }
-                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Completed, phase = phase, attempt = attempt)
-                            finalizeInBackground(storedModel)
+                            appendOwnedAuditEvent(MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
+                            val finalizationState = MigrationState(
+                                migrationId = migrationId,
+                                phase = MigrationPhase.Contract,
+                                status = MigrationStateStatus.Running,
+                                attempt = attempt,
+                                fromVersion = storedModel.Meta.version.toString(),
+                                toVersion = dataModel.Meta.version.toString(),
+                                message = finalizationPendingMessage,
+                            )
+                            writeMigrationState(finalizationState)
+                            finalizeCompletedPhases(finalizationState)
                             pendingMigrationModelIds.update { it - index }
                             pendingMigrationReasons.update { it - index }
                             pausedMigrationModelIds.update { it - index }
@@ -232,7 +310,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                             break
                         }
                         is MigrationOutcome.Partial -> {
-                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Partial, phase = phase, attempt = attempt, message = outcome.message)
+                            appendOwnedAuditEvent(MigrationAuditEventType.Partial, phase = phase, attempt = attempt, message = outcome.message)
                             writeMigrationState(
                                 MigrationState(
                                     migrationId = migrationId,
@@ -247,7 +325,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                             )
                         }
                         is MigrationOutcome.Retry -> {
-                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.RetryScheduled, phase = phase, attempt = attempt, message = outcome.message)
+                            appendOwnedAuditEvent(MigrationAuditEventType.RetryScheduled, phase = phase, attempt = attempt, message = outcome.message)
                             writeMigrationState(
                                 MigrationState(
                                     migrationId = migrationId,
@@ -263,7 +341,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                             delayWithCancellationChecks(outcome.retryAfterMs)
                         }
                         is MigrationOutcome.Fatal -> {
-                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
+                            appendOwnedAuditEvent(MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
                             writeMigrationState(
                                 MigrationState(
                                     migrationId = migrationId,
@@ -286,6 +364,15 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                     }
                 }
             } catch (error: Throwable) {
+                val leaseLossReason = foundationDBMigrationLease?.leaseLossReason(index, migrationId)
+                if (error is FoundationDBMigrationLeaseLostException || leaseLossReason != null) {
+                    val reason = leaseLossReason
+                        ?: error.message
+                        ?: "FoundationDB migration lease lost for ${dataModel.Meta.name}"
+                    pendingMigrationReasons.update { it + (index to reason) }
+                    failPendingMigration(index, reason)
+                    return@launch
+                }
                 if (error is CancellationException) throw error
                 val reason = "Migration failed in background for ${dataModel.Meta.name}: ${error.message ?: "unknown error"}"
                 pendingMigrationReasons.update { it + (index to reason) }
@@ -314,9 +401,9 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         throw MigrationException("Migration lease could not be acquired for ${dataModel.Meta.name}: $migrationId")
     }
 
-    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseAcquired)
-    var completedInStartup = false
+    appendOwnedAuditEvent(MigrationAuditEventType.LeaseAcquired)
     var releaseLeaseInFinally = true
+    var deferredFinalization = false
 
     try {
         while (true) {
@@ -334,6 +421,19 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
             }
 
             val previousState = readMigrationState()
+            if (previousState?.isFinalizationPending() == true) {
+                deferStartupFinalization {
+                    try {
+                        bindLeaseOwner()
+                        finalizeCompletedPhases(previousState)
+                    } finally {
+                        effectiveMigrationLease.release(index, migrationId)
+                    }
+                }
+                releaseLeaseInFinally = false
+                deferredFinalization = true
+                break
+            }
             val (attempt, step) = executeNextStep(previousState)
             val (phase, outcome) = step
 
@@ -344,7 +444,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                         if (!phase.canTransitionTo(nextPhase)) {
                             throw MigrationException("Invalid phase transition for ${dataModel.Meta.name}: $phase -> $nextPhase")
                         }
-                        appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
+                        appendOwnedAuditEvent(MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
                         writeMigrationState(
                             MigrationState(
                                 migrationId = migrationId,
@@ -358,14 +458,31 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                         )
                         continue
                     }
-                    migrationStateStore.clear(index)
-                    migrationRuntimeDetailsByModelId.update { it - index }
-                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Completed, phase = phase, attempt = attempt)
-                    completedInStartup = true
+                    appendOwnedAuditEvent(MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
+                    val finalizationState = MigrationState(
+                        migrationId = migrationId,
+                        phase = MigrationPhase.Contract,
+                        status = MigrationStateStatus.Running,
+                        attempt = attempt,
+                        fromVersion = storedModel.Meta.version.toString(),
+                        toVersion = dataModel.Meta.version.toString(),
+                        message = finalizationPendingMessage,
+                    )
+                    writeMigrationState(finalizationState)
+                    deferStartupFinalization {
+                        try {
+                            bindLeaseOwner()
+                            finalizeCompletedPhases(finalizationState)
+                        } finally {
+                            effectiveMigrationLease.release(index, migrationId)
+                        }
+                    }
+                    releaseLeaseInFinally = false
+                    deferredFinalization = true
                     break
                 }
                 is MigrationOutcome.Partial -> {
-                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Partial, phase = phase, attempt = attempt, message = outcome.message)
+                    appendOwnedAuditEvent(MigrationAuditEventType.Partial, phase = phase, attempt = attempt, message = outcome.message)
                     writeMigrationState(
                         MigrationState(
                             migrationId = migrationId,
@@ -380,7 +497,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                     )
                 }
                 is MigrationOutcome.Retry -> {
-                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.RetryScheduled, phase = phase, attempt = attempt, message = outcome.message)
+                    appendOwnedAuditEvent(MigrationAuditEventType.RetryScheduled, phase = phase, attempt = attempt, message = outcome.message)
                     writeMigrationState(
                         MigrationState(
                             migrationId = migrationId,
@@ -396,7 +513,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                     delayWithCancellationChecks(outcome.retryAfterMs)
                 }
                 is MigrationOutcome.Fatal -> {
-                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
+                    appendOwnedAuditEvent(MigrationAuditEventType.Failed, phase = phase, attempt = attempt, message = outcome.reason)
                     writeMigrationState(
                         MigrationState(
                             migrationId = migrationId,
@@ -419,8 +536,5 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
             effectiveMigrationLease.release(index, migrationId)
         }
     }
-
-    if (completedInStartup) {
-        finalizeInStartup(storedModel)
-    }
+    if (deferredFinalization) return
 }

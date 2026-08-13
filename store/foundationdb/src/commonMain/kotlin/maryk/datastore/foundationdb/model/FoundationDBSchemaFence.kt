@@ -49,11 +49,13 @@ internal fun beginModelSchemaRebuild(
     tc: TransactionContext,
     modelPrefix: ByteArray,
     dataModel: IsRootDataModel,
+    transactionGuard: ((Transaction) -> Unit)? = null,
 ): FoundationDBSchemaFence {
     val target = modelSchemaTarget(dataModel)
     val owner = Random.nextLong().toString(16)
     val transitionId = Random.nextLong().toString(16)
     return tc.run { transaction ->
+        transactionGuard?.invoke(transaction)
         val current = readModelSchemaState(transaction, modelPrefix)
         val fence = when (current) {
             is FoundationDBSchemaState.Rebuilding -> {

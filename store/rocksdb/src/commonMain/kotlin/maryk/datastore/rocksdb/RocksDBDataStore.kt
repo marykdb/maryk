@@ -367,21 +367,16 @@ class RocksDBDataStore private constructor(
                                 },
                             )
                         },
-                        finalizeInBackground = { storedModel ->
+                        finalizeMigration = { storedModel ->
                             migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
                             versionUpdateHandler?.invoke(this, storedModel, dataModel)
-                            storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
                             ensureUpdateHistoryIndexReady(index, tableColumnFamilies)
                             writeStoreMeta()
+                            storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
                         },
-                        finalizeInStartup = {
-                            migrationStatus.indexesToIndex?.let { fillIndex(it, tableColumnFamilies) }
-                            scheduledVersionUpdateHandlers.add {
-                                versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                                storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
-                                ensureUpdateHistoryIndexReady(index, tableColumnFamilies)
-                            }
-                        }
+                        deferStartupFinalization = { finalizer ->
+                            scheduledVersionUpdateHandlers.add(finalizer)
+                        },
                     )
                 }
             }

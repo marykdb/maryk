@@ -257,6 +257,88 @@ class RocksDBDataStoreMigrationTest {
     }
 
     @Test
+    fun finalizationFailureResumesWithoutRerunningCompletedPhases() = runTest {
+        val path = createTestDBFolder("migrationFinalizationResume")
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val phaseCalls = mutableListOf<String>()
+        val migrationConfiguration = MigrationConfiguration<RocksDBDataStore>(
+            migrationExpandHandler = {
+                phaseCalls += "expand"
+                MigrationOutcome.Success
+            },
+            migrationHandler = {
+                phaseCalls += "backfill"
+                MigrationOutcome.Success
+            },
+            migrationVerifyHandler = {
+                phaseCalls += "verify"
+                MigrationOutcome.Success
+            },
+            migrationContractHandler = {
+                phaseCalls += "contract"
+                MigrationOutcome.Success
+            },
+        )
+
+        assertFailsWith<CustomException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = migrationConfiguration,
+                versionUpdateHandler = { _, oldModel, _ ->
+                    if (oldModel != null) throw CustomException()
+                },
+            )
+        }
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = migrationConfiguration,
+        ).close()
+
+        assertEquals(listOf("expand", "backfill", "verify", "contract"), phaseCalls)
+        deleteFolder(path)
+    }
+
+    @Test
+    fun startupFinalizerCanUseStartedStore() = runTest {
+        val path = createTestDBFolder("migrationFinalizerStartedStore")
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationHandler = { MigrationOutcome.Success },
+            ),
+            versionUpdateHandler = { store, oldModel, _ ->
+                if (oldModel != null) {
+                    withContext(Dispatchers.Default.limitedParallelism(1)) {
+                        withTimeout(5_000.milliseconds) {
+                            store.execute(ModelV2.scan(order = ModelV2 { value::ref }.ascending()))
+                        }
+                    }
+                }
+            },
+        ).close()
+
+        deleteFolder(path)
+    }
+
+    @Test
     fun expandAndContractHooksSupportRetryAndPartial() = runTest {
         val path = createTestDBFolder("migrationHookPhasesRetry")
 

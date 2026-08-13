@@ -3,7 +3,9 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -12,6 +14,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationConfiguration
+import maryk.core.models.migration.MigrationAuditEventType
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationLease
 import maryk.core.models.migration.MigrationOutcome
@@ -22,6 +25,9 @@ import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.NoopMigrationLease
 import maryk.datastore.foundationdb.model.modelMigrationStateKey
+import maryk.datastore.foundationdb.model.modelMigrationLeaseKey
+import maryk.datastore.foundationdb.model.FoundationDBMigrationLeaseLostException
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.number
@@ -260,6 +266,180 @@ class FoundationDBDataStoreMigrationTest {
         ).close()
 
         assertEquals(listOf("expand", "backfill", "verify", "contract"), phases)
+    }
+
+    @Test
+    fun startupFinalizationKeepsLeaseUntilVersionHandlerCompletes() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-finalization-lease", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val lease = TrackingMigrationLease()
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationLease = lease,
+                migrationHandler = { MigrationOutcome.Success },
+            ),
+            versionUpdateHandler = { store, oldModel, _ ->
+                if (oldModel != null) {
+                    assertTrue(lease.isHeld)
+                    withContext(Dispatchers.Default.limitedParallelism(1)) {
+                        withTimeout(5_000.milliseconds) {
+                            store.execute(ModelV2.scan(order = ModelV2 { value::ref }.ascending()))
+                        }
+                    }
+                }
+            },
+        ).close()
+
+        assertEquals(1, lease.releaseCalls.value)
+    }
+
+    @Test
+    fun ownershipReplacementCancelsBlockedHandlerBeforeFurtherWrites() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-ownership-loss", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        val handlerStarted = CompletableDeferred<Unit>()
+        val handlerCancelled = CompletableDeferred<Unit>()
+        val ownerStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(
+                migrationLeaseTimeoutMs = 1_000,
+                migrationLeaseHeartbeatMs = 50,
+            ),
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                persistMigrationAuditEvents = true,
+                migrationHandler = {
+                    handlerStarted.complete(Unit)
+                    try {
+                        awaitCancellation()
+                    } finally {
+                        handlerCancelled.complete(Unit)
+                    }
+                },
+            ),
+        )
+
+        try {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { handlerStarted.await() }
+            }
+            val modelPrefix = ownerStore.getTableDirs(1u).modelPrefix
+            val stateKey = packKey(modelPrefix, modelMigrationStateKey)
+            val leaseKey = packKey(modelPrefix, modelMigrationLeaseKey)
+            val stateBeforeLoss = ownerStore.tc.run { transaction ->
+                transaction.get(stateKey).awaitResult()
+            }
+            assertNotNull(stateBeforeLoss)
+
+            ownerStore.tc.run { transaction ->
+                transaction.set(
+                    leaseKey,
+                    "v=1\nowner=contender\nmigration=Model:1.1->2\nexpires=0\n".encodeToByteArray(),
+                )
+            }
+
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { handlerCancelled.await() }
+            }
+            assertTrue(ownerStore.pendingMigrations().containsKey(1u), ownerStore.pendingMigrations().toString())
+            assertFailsWith<MigrationException> {
+                withContext(Dispatchers.Default.limitedParallelism(1)) {
+                    withTimeout(5_000.milliseconds) { ownerStore.awaitMigration(1u) }
+                }
+            }
+
+            val stateAfterLoss = ownerStore.tc.run { transaction ->
+                transaction.get(stateKey).awaitResult()
+            }
+            assertContentEquals(stateBeforeLoss, stateAfterLoss)
+            assertTrue(
+                ownerStore.migrationAuditEvents(1u, limit = 20)
+                    .none { it.type == MigrationAuditEventType.Completed }
+            )
+
+            FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Success },
+                ),
+            ).close()
+        } finally {
+            ownerStore.close()
+        }
+    }
+
+    @Test
+    fun ownershipReplacementFencesRealVersionHandlerWrite() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-handler-write-fence", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        assertFailsWith<FoundationDBMigrationLeaseLostException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Success },
+                ),
+                versionUpdateHandler = { store, oldModel, _ ->
+                    if (oldModel != null) {
+                        val leaseKey = packKey(store.getTableDirs(1u).modelPrefix, modelMigrationLeaseKey)
+                        store.tc.run { transaction ->
+                            transaction.set(
+                                leaseKey,
+                                "v=1\nowner=contender\nmigration=Model:1.1->2\nexpires=0\n".encodeToByteArray(),
+                            )
+                        }
+                        store.execute(
+                            ModelV2.add(ModelV2.create {
+                                value with "handler-write"
+                                newNumber with 1
+                            })
+                        )
+                    }
+                },
+            )
+        }
+
+        val resumed = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationHandler = { MigrationOutcome.Success },
+            ),
+        )
+        assertTrue(
+            resumed.execute(ModelV2.scan(order = ModelV2 { value::ref }.ascending())).values.isEmpty()
+        )
+        resumed.close()
     }
 
     @Test
@@ -1159,6 +1339,22 @@ private class GatedMigrationLease(
     override suspend fun tryAcquire(modelId: UInt, migrationId: String): Boolean = canAcquire()
 
     override suspend fun release(modelId: UInt, migrationId: String) = Unit
+}
+
+private class TrackingMigrationLease : MigrationLease {
+    val releaseCalls = atomic(0)
+    var isHeld = false
+        private set
+
+    override suspend fun tryAcquire(modelId: UInt, migrationId: String): Boolean {
+        isHeld = true
+        return true
+    }
+
+    override suspend fun release(modelId: UInt, migrationId: String) {
+        isHeld = false
+        releaseCalls.incrementAndGet()
+    }
 }
 
 private object Phase6OrderBaseV1 : RootDataModel<Phase6OrderBaseV1>(

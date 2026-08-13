@@ -11,11 +11,13 @@ import maryk.foundationdb.TransactionContext
 import maryk.datastore.foundationdb.FoundationDBDataStore
 import maryk.datastore.foundationdb.FoundationDBMigrationLeaseConfiguration
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.assertNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
@@ -157,6 +159,40 @@ class FoundationDBMigrationLeaseTest {
             contenderLease.release(1u, "migration-v1-v2")
             ownerScope.cancel()
             contenderScope.cancel()
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun transactionalGuardRejectsSynchronousWriteAfterOwnershipReplacement() = runBlocking {
+        val dirPath = listOf("maryk", "test", "fdb-lease-fenced-write", Uuid.random().toString())
+        val dataStore = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+        val modelPrefix = dataStore.getTableDirs(1u).modelPrefix
+        val leaseKey = packKey(modelPrefix, modelMigrationLeaseKey)
+        val protectedKey = packKey(modelPrefix, byteArrayOf(99))
+        val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        val lease = FoundationDBMigrationLease(dataStore.tc, mapOf(1u to modelPrefix), scope)
+        try {
+            assertTrue(lease.tryAcquire(1u, "migration-v1-v2"))
+            dataStore.tc.run { transaction ->
+                transaction.set(
+                    leaseKey,
+                    "v=1\nowner=contender\nmigration=migration-v1-v2\nexpires=${Long.MAX_VALUE}\n".encodeToByteArray(),
+                )
+            }
+            assertFailsWith<FoundationDBMigrationLeaseLostException> {
+                dataStore.tc.run { transaction ->
+                    lease.requireOwnership(transaction, 1u, "migration-v1-v2")
+                    transaction.set(protectedKey, byteArrayOf(1))
+                }
+            }
+            assertNull(dataStore.tc.run { transaction -> transaction.get(protectedKey).awaitResult() })
+        } finally {
+            scope.cancel()
             dataStore.close()
         }
     }

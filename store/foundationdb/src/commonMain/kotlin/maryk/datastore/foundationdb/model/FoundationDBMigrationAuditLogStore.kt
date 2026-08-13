@@ -5,6 +5,7 @@ import maryk.core.models.migration.MigrationAuditLogStore
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.foundationdb.TransactionContext
+import maryk.foundationdb.Transaction
 
 internal class FoundationDBMigrationAuditLogStore(
     private val tc: TransactionContext,
@@ -16,9 +17,14 @@ internal class FoundationDBMigrationAuditLogStore(
     }
 
     override suspend fun append(modelId: UInt, event: MigrationAuditEvent) {
+        append(modelId, event, null)
+    }
+
+    suspend fun append(modelId: UInt, event: MigrationAuditEvent, guard: ((Transaction) -> Unit)?) {
         val modelPrefix = modelPrefixesById[modelId] ?: return
         val key = packKey(modelPrefix, modelMigrationAuditLogKey)
         tc.run { tr ->
+            guard?.invoke(tr)
             val current = tr.get(key).awaitResult()
                 ?.decodeToString()
                 ?.lineSequence()

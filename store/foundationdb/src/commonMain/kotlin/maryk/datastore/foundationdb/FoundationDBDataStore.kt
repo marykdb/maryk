@@ -1,6 +1,7 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -204,6 +205,7 @@ class FoundationDBDataStore private constructor(
     private lateinit var metadataPrefix: ByteArray
     internal val directoriesByDataModelIndex = mutableMapOf<UInt, IsTableDirectories>()
     private val expectedSchemaEpochs = atomic<Map<UInt, ByteArray?>>(emptyMap())
+    private val migrationTransactionGuards = atomic<Map<UInt, (Transaction) -> Unit>>(emptyMap())
     private val schemaFenceReady = atomic(false)
 
     // Cluster HLC sync: store actor uses max(observedClusterHlc, local wall clock) when generating new versions.
@@ -247,6 +249,7 @@ class FoundationDBDataStore private constructor(
     }
 
     private fun requireModelSchemaReady(transaction: Transaction, dataModelId: UInt) {
+        migrationTransactionGuards.value[dataModelId]?.invoke(transaction)
         if (!schemaFenceReady.value) return
         val tableDirectories = directoriesByDataModelIndex[dataModelId]
             ?: throw StorageException("Unknown data model id $dataModelId")
@@ -388,22 +391,42 @@ class FoundationDBDataStore private constructor(
                                 },
                             )
                         },
-                        finalizeInBackground = { storedModel ->
+                        finalizeMigration = { storedModel, transactionGuard ->
+                            ensureUpdateHistoryIndexReady(index, tableDirectories, transactionGuard)
                             migrationStatus.indexesToIndex?.let {
-                                rebuildIndexesAndPublish(index, dataModel, it, tableDirectories)
-                            } ?: publishSchemaTransition(index, dataModel, tableDirectories)
-                            ensureUpdateHistoryIndexReady(index, tableDirectories)
-                            versionUpdateHandler?.invoke(this, storedModel, dataModel)
-                        },
-                        finalizeInStartup = {
-                            migrationStatus.indexesToIndex?.let {
-                                rebuildIndexesAndPublish(index, dataModel, it, tableDirectories)
-                            } ?: publishSchemaTransition(index, dataModel, tableDirectories)
-                            ensureUpdateHistoryIndexReady(index, tableDirectories)
-                            scheduledVersionUpdateHandlers.add {
-                                versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
+                                rebuildIndexesAndPublish(
+                                    index, dataModel, it, tableDirectories, transactionGuard,
+                                    persistModelDefinition = false,
+                                )
+                            } ?: publishSchemaTransition(
+                                index, dataModel, tableDirectories,
+                                transactionGuard = transactionGuard,
+                                persistModelDefinition = false,
+                            )
+                            if (transactionGuard != null) {
+                                migrationTransactionGuards.update { it + (index to transactionGuard) }
                             }
-                        }
+                            try {
+                                versionUpdateHandler?.invoke(this, storedModel, dataModel)
+                            } finally {
+                                migrationTransactionGuards.update { it - index }
+                            }
+                            val definition = encodeModelDefinition(dataModel)
+                            tc.run { transaction ->
+                                transactionGuard?.invoke(transaction)
+                                storeModelDefinition(
+                                    transaction,
+                                    metadataPrefix,
+                                    index,
+                                    tableDirectories.modelPrefix,
+                                    dataModel.Meta.name,
+                                    definition,
+                                )
+                            }
+                        },
+                        deferStartupFinalization = { finalizer ->
+                            scheduledVersionUpdateHandlers.add(finalizer)
+                        },
                     )
                 }
             }
@@ -837,15 +860,19 @@ class FoundationDBDataStore private constructor(
         dataModel: IsRootDataModel,
         indexesToIndex: List<IsIndexable>,
         tableDirectories: IsTableDirectories,
+        transactionGuard: ((Transaction) -> Unit)? = null,
+        persistModelDefinition: Boolean = true,
     ) {
-        val fence = beginModelSchemaRebuild(tc, tableDirectories.modelPrefix, dataModel)
+        val fence = beginModelSchemaRebuild(tc, tableDirectories.modelPrefix, dataModel, transactionGuard)
         val scratchPrefix = packKey(tableDirectories.modelPrefix, modelIndexRebuildScratchKey)
         tc.run { transaction ->
+            transactionGuard?.invoke(transaction)
             transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
             transaction.clear(Range.startsWith(scratchPrefix))
         }
         indexesToIndex.forEach { indexable ->
             deleteCompleteIndexContents(tc, tableDirectories, indexable) { transaction ->
+                transactionGuard?.invoke(transaction)
                 transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
             }
         }
@@ -859,10 +886,14 @@ class FoundationDBDataStore private constructor(
             },
             historicScratchPrefix = scratchPrefix,
             verifyRebuildOwner = { transaction ->
+                transactionGuard?.invoke(transaction)
                 transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
             },
         )
-        publishSchemaTransition(dataModelId, dataModel, tableDirectories, fence, scratchPrefix)
+        publishSchemaTransition(
+            dataModelId, dataModel, tableDirectories, fence, scratchPrefix,
+            transactionGuard, persistModelDefinition,
+        )
     }
 
     private fun publishSchemaTransition(
@@ -871,19 +902,24 @@ class FoundationDBDataStore private constructor(
         tableDirectories: IsTableDirectories,
         existingFence: FoundationDBSchemaFence? = null,
         scratchPrefix: ByteArray? = null,
+        transactionGuard: ((Transaction) -> Unit)? = null,
+        persistModelDefinition: Boolean = true,
     ) {
-        val fence = existingFence ?: beginModelSchemaRebuild(tc, tableDirectories.modelPrefix, dataModel)
+        val fence = existingFence ?: beginModelSchemaRebuild(tc, tableDirectories.modelPrefix, dataModel, transactionGuard)
         val definition = encodeModelDefinition(dataModel)
         tc.run { transaction ->
+            transactionGuard?.invoke(transaction)
             transaction.requireModelSchemaRebuildOwner(tableDirectories.modelPrefix, fence)
-            storeModelDefinition(
-                transaction,
-                metadataPrefix,
-                dataModelId,
-                tableDirectories.modelPrefix,
-                dataModel.Meta.name,
-                definition,
-            )
+            if (persistModelDefinition) {
+                storeModelDefinition(
+                    transaction,
+                    metadataPrefix,
+                    dataModelId,
+                    tableDirectories.modelPrefix,
+                    dataModel.Meta.name,
+                    definition,
+                )
+            }
             transaction.publishModelSchemaReady(tableDirectories.modelPrefix, fence)
             scratchPrefix?.let { transaction.clear(Range.startsWith(it)) }
         }
@@ -896,12 +932,14 @@ class FoundationDBDataStore private constructor(
     private fun ensureUpdateHistoryIndexReady(
         dbIndex: UInt,
         tableDirectories: IsTableDirectories,
+        transactionGuard: ((Transaction) -> Unit)? = null,
     ) {
         val updateHistoryPrefix = tableDirectories.updateHistoryPrefix ?: return
         if (!keepUpdateHistoryIndex || canUseUpdateHistoryIndex(dbIndex)) return
 
         val markerKey = packKey(tableDirectories.modelPrefix, modelUpdateHistoryBackfillCompleteKey)
         val complete = runTransaction { tr ->
+            transactionGuard?.invoke(tr)
             tr.get(markerKey).awaitResult()?.firstOrNull() == 1.toByte()
         }
         if (complete) {
@@ -909,8 +947,9 @@ class FoundationDBDataStore private constructor(
             return
         }
 
-        backfillUpdateHistoryIndex(tableDirectories, updateHistoryPrefix)
+        backfillUpdateHistoryIndex(tableDirectories, updateHistoryPrefix, transactionGuard)
         runTransaction { tr ->
+            transactionGuard?.invoke(tr)
             tr.set(markerKey, byteArrayOf(1))
         }
         updateHistoryReadyModelIds.value += dbIndex
@@ -919,12 +958,14 @@ class FoundationDBDataStore private constructor(
     private fun backfillUpdateHistoryIndex(
         tableDirectories: IsTableDirectories,
         updateHistoryPrefix: ByteArray,
+        transactionGuard: ((Transaction) -> Unit)? = null,
     ) {
         var nextStart = tableDirectories.keysPrefix
         val end = tableDirectories.keysPrefix.nextByteInSameLength()
         val batchSize = 128
         while (true) {
             val batch = runTransaction { tr ->
+                transactionGuard?.invoke(tr)
                 val iterator = tr.getRange(Range(nextStart, end), batchSize, false).iterator()
                 ArrayList<Pair<ByteArray, ByteArray>>(batchSize).apply {
                     while (iterator.hasNext()) {
@@ -946,13 +987,14 @@ class FoundationDBDataStore private constructor(
                 val key = Key<IsRootDataModel>(keyBytes)
 
                 if (keepAllVersions && tableDirectories is HistoricTableDirectories) {
-                    writeSingleUpdateHistoryVersion(updateHistoryPrefix, key, HLC.fromStorageBytes(storedValue).timestamp)
+                    writeSingleUpdateHistoryVersion(updateHistoryPrefix, key, HLC.fromStorageBytes(storedValue).timestamp, transactionGuard)
 
                     val historicPrefix = packKey(tableDirectories.historicTablePrefix, key.bytes)
                     val historicEnd = historicPrefix.nextByteInSameLength()
                     var historicStart = historicPrefix
                     while (true) {
                         val (versions, nextHistoricStart) = runTransaction { tr ->
+                            transactionGuard?.invoke(tr)
                             val historicIterator = tr.getRange(
                                 Range(historicStart, historicEnd),
                                 UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE,
@@ -975,22 +1017,24 @@ class FoundationDBDataStore private constructor(
                             versions to lastKey?.let { it + nextKeySuffix }
                         }
                         if (versions.isNotEmpty()) {
-                            writeUpdateHistoryVersions(updateHistoryPrefix, key, versions)
+                            writeUpdateHistoryVersions(updateHistoryPrefix, key, versions, transactionGuard)
                         }
                         historicStart = nextHistoricStart ?: break
                     }
 
                     val softDeleteVersion = runTransaction { tr ->
+                        transactionGuard?.invoke(tr)
                         tr.get(packKey(tableDirectories.tablePrefix, key.bytes + SOFT_DELETE_INDICATOR))
                             .awaitResult()
                             ?.takeIf { it.size == ULong.SIZE_BYTES + 1 }
                             ?.readHLCTimestampIfPresent()
                     }
                     softDeleteVersion?.let {
-                        writeSingleUpdateHistoryVersion(updateHistoryPrefix, key, it)
+                        writeSingleUpdateHistoryVersion(updateHistoryPrefix, key, it, transactionGuard)
                     }
                 } else {
                     val lastVersion = runTransaction { tr ->
+                        transactionGuard?.invoke(tr)
                         tr.get(packKey(tableDirectories.tablePrefix, key.bytes)).awaitResult()
                             ?.readHLCTimestampIfExact()
                     } ?: run {
@@ -998,6 +1042,7 @@ class FoundationDBDataStore private constructor(
                         continue
                     }
                     runTransaction { tr ->
+                        transactionGuard?.invoke(tr)
                         tr.set(
                             packKey(updateHistoryPrefix, lastVersion.toReversedVersionBytes(), key.bytes),
                             EMPTY_BYTEARRAY
@@ -1014,8 +1059,10 @@ class FoundationDBDataStore private constructor(
         updateHistoryPrefix: ByteArray,
         key: Key<IsRootDataModel>,
         versions: List<ULong>,
+        transactionGuard: ((Transaction) -> Unit)? = null,
     ) {
         runTransaction { tr ->
+            transactionGuard?.invoke(tr)
             versions.forEach { version ->
                 tr.set(
                     packKey(updateHistoryPrefix, version.toReversedVersionBytes(), key.bytes),
@@ -1029,8 +1076,10 @@ class FoundationDBDataStore private constructor(
         updateHistoryPrefix: ByteArray,
         key: Key<IsRootDataModel>,
         version: ULong,
+        transactionGuard: ((Transaction) -> Unit)? = null,
     ) {
         runTransaction { tr ->
+            transactionGuard?.invoke(tr)
             tr.set(
                 packKey(updateHistoryPrefix, version.toReversedVersionBytes(), key.bytes),
                 EMPTY_BYTEARRAY
@@ -1529,6 +1578,18 @@ class FoundationDBDataStore private constructor(
         attempt: UInt? = null,
         message: String? = null,
     ) = appendMigrationAuditEventInternal(modelId, migrationId, type, phase, attempt, message)
+
+    internal suspend fun appendMigrationAuditEventOwned(
+        modelId: UInt,
+        migrationId: String,
+        type: MigrationAuditEventType,
+        phase: MigrationPhase? = null,
+        attempt: UInt? = null,
+        message: String? = null,
+        transactionGuard: (Transaction) -> Unit,
+    ) = appendMigrationAuditEventInternal(
+        modelId, migrationId, type, phase, attempt, message, transactionGuard
+    )
 
     override fun assertModelReady(dataModelId: UInt) {
         if (isClosing.value) {

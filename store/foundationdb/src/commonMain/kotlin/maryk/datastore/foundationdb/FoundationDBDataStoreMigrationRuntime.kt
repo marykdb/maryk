@@ -19,6 +19,8 @@ import maryk.datastore.shared.migration.projectMigrationRuntimeStatus
 import maryk.datastore.shared.migration.updatedMigrationMetrics
 import maryk.datastore.shared.migration.updatedMigrationRuntimeDetails
 import maryk.datastore.shared.runCatchingNonFatal
+import maryk.datastore.foundationdb.model.FoundationDBMigrationAuditLogStore
+import maryk.foundationdb.Transaction
 
 internal fun FoundationDBDataStore.pendingMigrationsInternal(): Map<UInt, String> = pendingMigrationReasons.value
 
@@ -152,8 +154,9 @@ internal fun FoundationDBDataStore.completePendingMigrationInternal(modelId: UIn
 internal fun FoundationDBDataStore.failPendingMigrationInternal(modelId: UInt, reason: String) {
     var waiter: CompletableDeferred<Unit>? = null
     pendingMigrationWaiters.update { current ->
-        waiter = current[modelId]
-        current - modelId
+        val failedWaiter = current[modelId] ?: CompletableDeferred()
+        waiter = failedWaiter
+        current + (modelId to failedWaiter)
     }
     waiter?.completeExceptionally(MigrationException(reason))
 }
@@ -183,6 +186,7 @@ internal suspend fun FoundationDBDataStore.appendMigrationAuditEventInternal(
     phase: MigrationPhase? = null,
     attempt: UInt? = null,
     message: String? = null,
+    transactionGuard: ((Transaction) -> Unit)? = null,
 ) {
     val event = createMigrationAuditEvent(
         nowMs = HLC().toPhysicalUnixTime().toLong(),
@@ -194,7 +198,12 @@ internal suspend fun FoundationDBDataStore.appendMigrationAuditEventInternal(
         message = message,
     )
     runCatchingNonFatal { migrationConfiguration.migrationAuditEventReporter(event) }
-    migrationAuditLogStore?.append(modelId, event)
+    if (transactionGuard == null) {
+        migrationAuditLogStore?.append(modelId, event)
+    } else {
+        (migrationAuditLogStore as? FoundationDBMigrationAuditLogStore)
+            ?.append(modelId, event, transactionGuard)
+    }
     incrementMigrationMetricInternal(modelId, type)
 }
 

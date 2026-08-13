@@ -32,13 +32,19 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
     effectiveMigrationLease: MigrationLease,
     migrationStateStore: RocksDBMigrationStateStore,
     recheckMigrationStatus: suspend () -> MigrationStatus,
-    finalizeInBackground: suspend (StoredRootDataModelDefinition) -> Unit,
-    finalizeInStartup: (StoredRootDataModelDefinition) -> Unit,
+    finalizeMigration: suspend (StoredRootDataModelDefinition) -> Unit,
+    deferStartupFinalization: (suspend () -> Unit) -> Unit,
 ) {
     val handler = migrationConfiguration.migrationHandler
         ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
     val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
     val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
+    val finalizationPendingMessage = "Migration phases complete; finalization pending"
+
+    fun MigrationState.isFinalizationPending() =
+        phase == MigrationPhase.Contract &&
+            status == MigrationStateStatus.Running &&
+            message == finalizationPendingMessage
 
     suspend fun failOrCompleteIfMigrationPlanChangedWhileWaiting(): Boolean {
         return when (val currentStatus = recheckMigrationStatus()) {
@@ -151,6 +157,19 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
         return attempt to executeStep(previousState, attempt)
     }
 
+    suspend fun finalizeCompletedPhases(state: MigrationState) {
+        finalizeMigration(storedModel)
+        migrationStateStore.clear(index)
+        migrationRuntimeDetailsByModelId.update { it - index }
+        appendMigrationAuditEvent(
+            index,
+            migrationId,
+            MigrationAuditEventType.Completed,
+            phase = MigrationPhase.Contract,
+            attempt = state.attempt,
+        )
+    }
+
     fun launchBackgroundMigration(leaseAlreadyAcquired: Boolean) {
         launch {
             var hasLease = leaseAlreadyAcquired
@@ -196,6 +215,15 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                         continue
                     }
                     val previousState = readMigrationState()
+                    if (previousState?.isFinalizationPending() == true) {
+                        finalizeCompletedPhases(previousState)
+                        pendingMigrationModelIds.update { it - index }
+                        pendingMigrationReasons.update { it - index }
+                        pausedMigrationModelIds.update { it - index }
+                        canceledMigrationReasons.update { it - index }
+                        completeAfterLeaseRelease = true
+                        break
+                    }
                     val (attempt, step) = executeNextStep(previousState)
                     val (phase, outcome) = step
 
@@ -220,10 +248,18 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                                 )
                                 continue
                             }
-                            migrationStateStore.clear(index)
-                            migrationRuntimeDetailsByModelId.update { it - index }
-                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Completed, phase = phase, attempt = attempt)
-                            finalizeInBackground(storedModel)
+                            appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
+                            val finalizationState = MigrationState(
+                                migrationId = migrationId,
+                                phase = MigrationPhase.Contract,
+                                status = MigrationStateStatus.Running,
+                                attempt = attempt,
+                                fromVersion = storedModel.Meta.version.toString(),
+                                toVersion = dataModel.Meta.version.toString(),
+                                message = finalizationPendingMessage,
+                            )
+                            writeMigrationState(finalizationState)
+                            finalizeCompletedPhases(finalizationState)
                             pendingMigrationModelIds.update { it - index }
                             pendingMigrationReasons.update { it - index }
                             pausedMigrationModelIds.update { it - index }
@@ -315,8 +351,8 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
     }
 
     appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.LeaseAcquired)
-    var completedInStartup = false
     var releaseLeaseInFinally = true
+    var deferredFinalization = false
 
     try {
         while (true) {
@@ -334,6 +370,18 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
             }
 
             val previousState = readMigrationState()
+            if (previousState?.isFinalizationPending() == true) {
+                deferStartupFinalization {
+                    try {
+                        finalizeCompletedPhases(previousState)
+                    } finally {
+                        effectiveMigrationLease.release(index, migrationId)
+                    }
+                }
+                releaseLeaseInFinally = false
+                deferredFinalization = true
+                break
+            }
             val (attempt, step) = executeNextStep(previousState)
             val (phase, outcome) = step
 
@@ -358,10 +406,26 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                         )
                         continue
                     }
-                    migrationStateStore.clear(index)
-                    migrationRuntimeDetailsByModelId.update { it - index }
-                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.Completed, phase = phase, attempt = attempt)
-                    completedInStartup = true
+                    appendMigrationAuditEvent(index, migrationId, MigrationAuditEventType.PhaseCompleted, phase = phase, attempt = attempt)
+                    val finalizationState = MigrationState(
+                        migrationId = migrationId,
+                        phase = MigrationPhase.Contract,
+                        status = MigrationStateStatus.Running,
+                        attempt = attempt,
+                        fromVersion = storedModel.Meta.version.toString(),
+                        toVersion = dataModel.Meta.version.toString(),
+                        message = finalizationPendingMessage,
+                    )
+                    writeMigrationState(finalizationState)
+                    deferStartupFinalization {
+                        try {
+                            finalizeCompletedPhases(finalizationState)
+                        } finally {
+                            effectiveMigrationLease.release(index, migrationId)
+                        }
+                    }
+                    releaseLeaseInFinally = false
+                    deferredFinalization = true
                     break
                 }
                 is MigrationOutcome.Partial -> {
@@ -420,7 +484,5 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
         }
     }
 
-    if (completedInStartup) {
-        finalizeInStartup(storedModel)
-    }
+    if (deferredFinalization) return
 }

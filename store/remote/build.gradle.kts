@@ -9,6 +9,13 @@ kotlin {
     macosArm64()
     macosX64()
 
+    targets.withType<org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget>().configureEach {
+        compilations.getByName("main").cinterops.create("sshspawn") {
+            defFile(project.file("src/nativeInterop/cinterop/sshspawn.def"))
+            compilerOpts("-I${project.projectDir}/src/nativeInterop/cinterop")
+        }
+    }
+
     sourceSets {
         getByName("commonMain") {
             dependencies {

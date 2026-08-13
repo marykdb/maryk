@@ -2,6 +2,7 @@
 
 package maryk.datastore.remote
 
+import maryk.datastore.remote.interop.maryk_spawnp
 import kotlinx.cinterop.ByteVar
 import kotlinx.cinterop.CPointerVar
 import kotlinx.cinterop.IntVar
@@ -23,13 +24,10 @@ import platform.posix.SOCK_STREAM
 import platform.posix.SIGKILL
 import platform.posix.SIGTERM
 import platform.posix.WNOHANG
-import platform.posix._exit
 import platform.posix.bind
 import platform.posix.close
 import platform.posix.connect
 import platform.posix.errno
-import platform.posix.execvp
-import platform.posix.fork
 import platform.posix.getsockname
 import platform.posix.kill
 import platform.posix.sockaddr_in
@@ -88,20 +86,18 @@ private object PosixSshTunnelFactory : SshTunnelFactory {
     }
 
     private fun spawnProcess(command: List<String>): Int = memScoped {
-        val pid = fork()
-        if (pid < 0) {
-            throw IllegalStateException("Failed to fork ssh tunnel: ${errnoMessage()}")
+        val pid = alloc<IntVar>()
+        val argv = allocArray<CPointerVar<ByteVar>>(command.size + 1)
+        command.forEachIndexed { index, arg ->
+            argv[index] = arg.cstr.ptr
         }
-        if (pid == 0) {
-            val argv = allocArray<CPointerVar<ByteVar>>(command.size + 1)
-            command.forEachIndexed { index, arg ->
-                argv[index] = arg.cstr.ptr
-            }
-            argv[command.size] = null
-            execvp(command.first(), argv)
-            _exit(127)
+        argv[command.size] = null
+
+        val result = maryk_spawnp(pid.ptr, argv)
+        if (result != 0) {
+            throw IllegalStateException("Failed to spawn ssh tunnel: ${strerror(result)?.toKString() ?: "errno $result"}")
         }
-        pid
+        pid.value
     }
 
     @OptIn(UnsafeNumber::class)

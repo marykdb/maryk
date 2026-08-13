@@ -17,6 +17,29 @@ import kotlin.test.assertNotNull
 
 class SshTunnelNativeTest {
     @Test
+    fun missingSshExecutableFailsDuringSpawn() {
+        val directory = "/tmp/maryk-remote-ssh-${Random.nextInt()}"
+        val originalPath = getenv("PATH")?.toKString().orEmpty()
+
+        check(mkdir(directory, 0x1C0u) == 0)
+        check(setenv("PATH", directory, 1) == 0)
+
+        try {
+            val exception = assertFailsWith<IllegalStateException> {
+                assertNotNull(defaultSshTunnelFactory()).open(
+                    RemoteSshConfig(host = "ssh.example"),
+                    SshTarget(host = "127.0.0.1", port = 1),
+                )
+            }
+
+            assertContains(exception.message.orEmpty(), "Failed to spawn ssh tunnel")
+        } finally {
+            setenv("PATH", originalPath, 1)
+            rmdir(directory)
+        }
+    }
+
+    @Test
     fun sshProcessExitFailsBeforeTunnelIsReturned() {
         val directory = "/tmp/maryk-remote-ssh-${Random.nextInt()}"
         val sshPath = "$directory/ssh"

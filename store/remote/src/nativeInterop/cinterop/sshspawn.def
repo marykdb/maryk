@@ -1,0 +1,2 @@
+headers = ssh_spawn.h
+package = maryk.datastore.remote.interop

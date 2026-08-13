@@ -349,6 +349,9 @@ private fun openIndexedDb(
         const finishError = (message) => {
             if (!finished) {
                 finished = true;
+                // An IDB open blocked by another connection may still succeed after the
+                // caller has received this error. Make that late success self-cleaning.
+                cancelled = true;
                 onError(message);
             }
         };

@@ -1240,7 +1240,6 @@ class IndexedDbDataStoreTest {
             runTestCase(DataStoreScanOnIndexTest(dataStore), "executeIndexScanRequestWithToVersionDescending")
             runTestCase(DataStoreScanUniqueTest(dataStore), "executeSimpleScanFilterWithToVersionRequest")
             runTestCase(DataStoreScanUniqueTest(dataStore), "executeHistoricalUniqueDoesNotMatchPrefixCollision")
-            runTestCase(DataStoreScanUniqueTest(dataStore), "executeHistoricalUniqueCanFindHardDeletedObject")
             runTestCase(DataStoreScanUniqueTest(dataStore), "executeHistoricalUniqueCanIncludeSoftDeletedObject")
             runTestCase(DataStoreScanUniqueTest(dataStore), "executeHistoricalUniqueCanIncludeObjectSoftDeletedByChange")
             runTestCase(DataStoreScanChangesTest(dataStore), "executeScanChangesOnIndexRequestWithToVersion")

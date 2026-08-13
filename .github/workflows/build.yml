@@ -37,7 +37,7 @@ jobs:
             gradle_task: "macosX64Test"
             job_name: macOS Apple Intel tests
           - os: ubuntu-latest
-            gradle_task: linuxX64Test compileKotlinLinuxArm64 wasmJsTest jsTest jvmTest :generator:jvmTest:test :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
+            gradle_task: linuxX64Test compileKotlinLinuxArm64 wasmJsTest jsTest :store:indexeddb:wasmJsBrowserDevelopmentLibraryDistribution jvmTest :generator:jvmTest:test :generator:gradle-plugin:validatePlugins :generator:gradle-plugin:test
             job_name: Linux JVM/JS tests
           - os: windows-latest
             gradle_task: mingwX64Test :core:jvmTest
@@ -114,7 +114,7 @@ jobs:
         shell: bash
         run: ./gradlew ${{ matrix.gradle_task }} --stacktrace --build-cache --no-parallel
 
-      - name: Run WebKit IndexedDB smoke
+      - name: Run native WebKit Maryk IndexedDB smoke
         if: matrix.os == 'ubuntu-latest'
         working-directory: store/indexeddb/browser-smoke
         shell: bash

@@ -3,17 +3,7 @@
 package maryk.datastore.indexeddb
 
 import kotlin.js.JsAny
-import kotlin.js.JsName
 import kotlin.js.js
-
-@JsModule("fake-indexeddb/lib/fakeIndexedDB")
-private external val fakeIndexedDb: JsAny
-
-@JsModule("fake-indexeddb/lib/FDBKeyRange")
-private external val fakeIdbKeyRange: JsAny
-
-@JsModule("fake-indexeddb/lib/FDBCursor")
-private external val fakeIdbCursor: JsAny
 
 private fun installFakeIndexedDb(indexedDb: JsAny, idbKeyRange: JsAny) {
     js(
@@ -29,7 +19,9 @@ private fun installFakeIndexedDb(indexedDb: JsAny, idbKeyRange: JsAny) {
 }
 
 internal actual fun installIndexedDbForTests() {
-    installFakeIndexedDb(fakeIndexedDb, fakeIdbKeyRange)
+    if (!indexedDbAvailable()) {
+        installFakeIndexedDb(nodeFakeIndexedDb(), nodeFakeIdbKeyRange())
+    }
 }
 
 internal actual suspend fun <T> withoutWebLocksPlatform(block: suspend () -> T): T {
@@ -83,10 +75,14 @@ internal actual fun setOpenResumeHookForTests(hook: (() -> Unit)?) {
     indexedDbOpenResumeHook = hook
 }
 
-internal actual fun installCursorContinueHookForTests(hook: () -> Unit): () -> Int = js(
-    """
+internal actual fun installCursorContinueHookForTests(hook: () -> Unit): () -> Int =
+    installCursorContinueHook(cursorPrototype(), hook)
+
+private fun installCursorContinueHook(cursorPrototype: JsAny, hook: () -> Unit): () -> Int =
+    js(
+        """
     (function() {
-        const prototype = fakeIdbCursor.prototype;
+        const prototype = cursorPrototype;
         const original = prototype.continue;
         let calls = 0;
         prototype.continue = function(...arguments_) {
@@ -101,6 +97,16 @@ internal actual fun installCursorContinueHookForTests(hook: () -> Unit): () -> I
         };
     })()
     """
+    )
+
+private fun indexedDbAvailable(): Boolean = js("globalThis.indexedDB !== undefined")
+
+private fun nodeFakeIndexedDb(): JsAny = js("require('fake-indexeddb/lib/fakeIndexedDB')")
+
+private fun nodeFakeIdbKeyRange(): JsAny = js("require('fake-indexeddb/lib/FDBKeyRange')")
+
+private fun cursorPrototype(): JsAny = js(
+    "globalThis.IDBCursor ? globalThis.IDBCursor.prototype : require('fake-indexeddb/lib/FDBCursor').prototype"
 )
 
 private fun captureAndDisableWebLocks(): JsAny = js(

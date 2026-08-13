@@ -2,10 +2,8 @@
 
 package maryk.datastore.indexeddb
 
-@JsModule("fake-indexeddb/auto")
-@JsNonModule
-private external val fakeIndexedDbAuto: Any
+import kotlin.js.js
 
 internal fun installFakeIndexedDb() {
-    fakeIndexedDbAuto
+    js("if (globalThis.indexedDB === undefined) eval('require')('fake-indexeddb/auto')")
 }

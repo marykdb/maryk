@@ -31,6 +31,7 @@ class MarykGeneratorPlugin : Plugin<Project> {
             task.description = "Explicitly replaces the Maryk schema baseline with current schemas."
             task.schemas.from(extension.schemas)
             task.baselineDirectory.set(extension.baselineDirectory)
+            task.projectDirectory.set(layout.projectDirectory)
         }
 
         pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {

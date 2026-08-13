@@ -1,6 +1,7 @@
 package maryk.generator.gradle
 
 import java.nio.file.Path
+import java.nio.file.Files
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
@@ -250,6 +251,8 @@ class MarykGeneratorPluginTest {
         val baseline = project.resolve("schemas/baseline").createDirectories()
             .resolve("person.yaml")
         baseline.writeText(schema("Person", required = false))
+        baseline.parent.resolve(".maryk-schema-baseline")
+            .writeText("Managed by the Maryk schema baseline task.")
         val baselineBefore = baseline.readText()
 
         val failure = runner(project, "marykCheckSchemaCompatibility").buildAndFail()
@@ -301,6 +304,8 @@ class MarykGeneratorPluginTest {
         val baseline = project.resolve("schemas/baseline/existing.yaml")
         baseline.parent.createDirectories()
         baseline.writeText(schema("Existing"))
+        baseline.parent.resolve(".maryk-schema-baseline")
+            .writeText("Managed by the Maryk schema baseline task.")
         project.configureSchemas("schemas/first", "schemas/second")
 
         val failure = runner(project, "marykUpdateSchemaBaseline").buildAndFail()
@@ -308,6 +313,97 @@ class MarykGeneratorPluginTest {
         assertTrue(failure.output.contains("conflicting relative path"))
         assertEquals(schema("Existing"), baseline.readText())
         assertFalse(project.resolve("schemas/baseline/model.yaml").exists())
+    }
+
+    @Test
+    fun baselineUpdateRefusesToReplaceAnUnmanagedDirectory() {
+        val project = fixture()
+        project.resolve("src/main/maryk/person.yaml").also {
+            it.parent.createDirectories()
+            it.writeText(schema("Person"))
+        }
+        val baseline = project.resolve("schemas/baseline/existing.yaml")
+        baseline.parent.createDirectories()
+        baseline.writeText(schema("Existing"))
+
+        val result = runner(project, "marykUpdateSchemaBaseline").buildAndFail()
+
+        assertTrue(result.output.contains("managed baseline"))
+        assertEquals(schema("Existing"), baseline.readText())
+    }
+
+    @Test
+    fun baselineUpdateRefusesDirectoriesOutsideTheProjectOrInsideSchemaSources() {
+        val outsideProject = fixture()
+        outsideProject.resolve("src/main/maryk/person.yaml").also {
+            it.parent.createDirectories()
+            it.writeText(schema("Person"))
+        }
+        outsideProject.configureBaseline("file(\"../outside-baseline\")")
+
+        val outside = runner(outsideProject, "marykUpdateSchemaBaseline").buildAndFail()
+        assertTrue(outside.output.contains("inside the project"))
+
+        val sourceProject = fixture()
+        sourceProject.resolve("src/main/maryk/person.yaml").also {
+            it.parent.createDirectories()
+            it.writeText(schema("Person"))
+        }
+        sourceProject.configureBaseline("layout.projectDirectory.dir(\"src/main/maryk\")")
+
+        val source = runner(sourceProject, "marykUpdateSchemaBaseline").buildAndFail()
+        assertTrue(source.output.contains("overlap a schema source"))
+    }
+
+    @Test
+    fun baselineUpdateRefusesSymbolicLinkDirectories() {
+        val project = fixture()
+        project.resolve("src/main/maryk/person.yaml").also {
+            it.parent.createDirectories()
+            it.writeText(schema("Person"))
+        }
+        val target = createTempDirectory().resolve("baseline").createDirectories()
+        target.resolve("existing.yaml").writeText(schema("Existing"))
+        val baseline = project.resolve("schemas/baseline")
+        baseline.parent.createDirectories()
+        Files.createSymbolicLink(baseline, target)
+
+        val result = runner(project, "marykUpdateSchemaBaseline").buildAndFail()
+
+        assertTrue(result.output.contains("symbolic links"))
+        assertEquals(schema("Existing"), target.resolve("existing.yaml").readText())
+    }
+
+    @Test
+    fun baselineUpdateRefusesSymbolicLinkSchemaRoots() {
+        val project = fixture()
+        val baseline = project.resolve("schemas/baseline").createDirectories()
+        baseline.resolve("person.yaml").writeText(schema("Person"))
+        baseline.resolve(".maryk-schema-baseline").writeText("Managed by the Maryk schema baseline task.")
+        val sourceLink = project.resolve("schemas/current")
+        Files.createSymbolicLink(sourceLink, baseline)
+        project.configureSchemas("schemas/current/person.yaml")
+
+        val result = runner(project, "marykUpdateSchemaBaseline").buildAndFail()
+
+        assertTrue(result.output.contains("schema source directories cannot use symbolic links"))
+        assertTrue(baseline.resolve("person.yaml").exists())
+    }
+
+    @Test
+    fun baselineUpdateRefusesExternalSymbolicLinkSchemaRoots() {
+        val project = fixture()
+        val baseline = project.resolve("schemas/baseline").createDirectories()
+        baseline.resolve("person.yaml").writeText(schema("Person"))
+        baseline.resolve(".maryk-schema-baseline").writeText("Managed by the Maryk schema baseline task.")
+        val external = createTempDirectory().resolve("current")
+        Files.createSymbolicLink(external, baseline)
+        project.configureSchemaExpressions("file(\"${external}\")")
+
+        val result = runner(project, "marykUpdateSchemaBaseline").buildAndFail()
+
+        assertTrue(result.output.contains("schema source directories cannot use symbolic links"))
+        assertTrue(baseline.resolve("person.yaml").exists())
     }
 
     @Test
@@ -354,6 +450,10 @@ class MarykGeneratorPluginTest {
     }
 
     private fun Path.configureSchemas(vararg roots: String) {
+        configureSchemaExpressions(*roots.map { "\"$it\"" }.toTypedArray())
+    }
+
+    private fun Path.configureSchemaExpressions(vararg roots: String) {
         resolve("build.gradle.kts").writeText(
             """
             plugins {
@@ -362,7 +462,22 @@ class MarykGeneratorPluginTest {
 
             marykGenerator {
                 packageName.set("example.generated")
-                schemas.setFrom(${roots.joinToString { "\"$it\"" }})
+                schemas.setFrom(${roots.joinToString()})
+            }
+            """.trimIndent(),
+        )
+    }
+
+    private fun Path.configureBaseline(value: String) {
+        resolve("build.gradle.kts").writeText(
+            """
+            plugins {
+                id("io.maryk.generator")
+            }
+
+            marykGenerator {
+                packageName.set("example.generated")
+                baselineDirectory.set($value)
             }
             """.trimIndent(),
         )

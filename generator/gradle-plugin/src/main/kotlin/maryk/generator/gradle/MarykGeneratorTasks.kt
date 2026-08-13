@@ -111,12 +111,17 @@ abstract class MarykUpdateSchemaBaselineTask : DefaultTask() {
     @get:OutputDirectory
     abstract val baselineDirectory: DirectoryProperty
 
+    @get:Internal
+    abstract val projectDirectory: DirectoryProperty
+
     @TaskAction
     fun update() {
         val schemaRoots = schemas.files.map { it.toPath().toAbsolutePath().normalize() }
+        val project = projectDirectory.get().asFile.toPath().toAbsolutePath().normalize()
+        val output = baselineDirectory.get().asFile.toPath().toAbsolutePath().normalize()
+        validateBaselineDirectory(output, project, schemaRoots)
         val schemaFiles = SchemaBuildEngine.discoverSchemas(schemaRoots)
         SchemaBuildEngine.load(schemaFiles)
-        val output = baselineDirectory.get().asFile.toPath()
         val outputParent = requireNotNull(output.parent) { "Maryk baseline directory must have a parent" }
         outputParent.createDirectories()
         val staged = Files.createTempDirectory(outputParent, ".${output.fileName}-")
@@ -129,10 +134,56 @@ abstract class MarykUpdateSchemaBaselineTask : DefaultTask() {
                 destination.parent.createDirectories()
                 Files.copy(source, destination)
             }
+            staged.resolve(BASELINE_MARKER).writeText(BASELINE_MARKER_CONTENT)
             replaceDirectory(output, staged)
         } finally {
             if (Files.exists(staged)) deleteDirectory(staged)
         }
+    }
+
+    private fun validateBaselineDirectory(output: Path, project: Path, schemaRoots: List<Path>) {
+        require(output.startsWith(project)) {
+            "Maryk baseline directory must be inside the project directory"
+        }
+        require(schemaRoots.none(::hasSymbolicLink)) {
+            "Maryk schema source directories cannot use symbolic links when updating a baseline"
+        }
+        require(schemaRoots.none { root -> output.startsWith(root) || root.startsWith(output) }) {
+            "Maryk baseline directory cannot overlap a schema source directory"
+        }
+        var current = project
+        project.relativize(output).forEach { segment ->
+            current = current.resolve(segment)
+            require(!Files.isSymbolicLink(current)) {
+                "Maryk baseline directory cannot use symbolic links"
+            }
+        }
+        if (Files.exists(output)) {
+            require(Files.isDirectory(output)) {
+                "Maryk baseline directory is not a managed baseline"
+            }
+            val marker = output.resolve(BASELINE_MARKER)
+            if (Files.exists(marker)) {
+                require(Files.readString(marker) == BASELINE_MARKER_CONTENT) {
+                    "Maryk baseline directory is not a managed baseline"
+                }
+            } else {
+                Files.list(output).use { entries ->
+                    require(!entries.findAny().isPresent) {
+                        "Maryk baseline directory is not a managed baseline"
+                    }
+                }
+            }
+        }
+    }
+
+    private fun hasSymbolicLink(path: Path): Boolean {
+        var current = path.root ?: return false
+        path.forEach { segment ->
+            current = current.resolve(segment)
+            if (Files.isSymbolicLink(current)) return true
+        }
+        return false
     }
 
     private fun Path.relativeToSchemaRoot(schemaRoots: List<Path>): Path {
@@ -166,5 +217,10 @@ abstract class MarykUpdateSchemaBaselineTask : DefaultTask() {
         Files.walk(directory).use { paths ->
             paths.sorted(Comparator.reverseOrder()).forEach(Files::deleteIfExists)
         }
+    }
+
+    private companion object {
+        const val BASELINE_MARKER = ".maryk-schema-baseline"
+        const val BASELINE_MARKER_CONTENT = "Managed by the Maryk schema baseline task."
     }
 }

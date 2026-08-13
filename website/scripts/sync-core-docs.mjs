@@ -224,7 +224,8 @@ export function syncDocs({
     const docsRelative = targetRel.replace(/^src\/content\/docs\//, '');
     const docsDir = dirname(docsRelative);
     const depth = docsDir === '.' ? 0 : docsDir.split('/').length;
-    const prefix = '../'.repeat(depth + 1);
+    const routeDepth = targetRel.endsWith('/index.mdx') ? depth : depth + 1;
+    const prefix = '../'.repeat(routeDepth);
     let md = rewriteLinks(srcMd, prefix);
     // Escape raw angle brackets outside code fences to keep MDX happy.
     const lines = md.split(/\r?\n/);

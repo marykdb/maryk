@@ -32,6 +32,52 @@ test('syncDocs maps the shared store test documentation', () => {
   assert.match(readFileSync(target, 'utf8'), /Shared store checks/);
 });
 
+test('syncDocs keeps links in generated section indexes below the site base', () => {
+  const root = mkdtempSync(join(tmpdir(), 'maryk-docs-sync-'));
+  const siteRoot = join(root, 'website');
+  const coreDocs = join(root, 'core', 'docs');
+  const source = join(coreDocs, 'README.md');
+  const target = join(siteRoot, 'src/content/docs/data-modeling/index.mdx');
+  mkdirSync(coreDocs, { recursive: true });
+  writeFileSync(source, '# Data modeling\n\n[Data models](datamodel.md)\n');
+
+  syncDocs({
+    siteRoot,
+    repoRoot: root,
+    coreDocs,
+    map: [['src/content/docs/data-modeling/index.mdx', 'README.md']],
+    removedTargets: [],
+  });
+
+  assert.match(
+    readFileSync(target, 'utf8'),
+    /\[Data models\]\(\.\.\/data-modeling\/datamodels\/\)/,
+  );
+});
+
+test('syncDocs keeps normal generated pages at their existing relative depth', () => {
+  const root = mkdtempSync(join(tmpdir(), 'maryk-docs-sync-'));
+  const siteRoot = join(root, 'website');
+  const coreDocs = join(root, 'core', 'docs');
+  const source = join(coreDocs, 'datamodel.md');
+  const target = join(siteRoot, 'src/content/docs/data-modeling/datamodels.mdx');
+  mkdirSync(coreDocs, { recursive: true });
+  writeFileSync(source, '# Data models\n\n[Data models](datamodel.md)\n');
+
+  syncDocs({
+    siteRoot,
+    repoRoot: root,
+    coreDocs,
+    map: [['src/content/docs/data-modeling/datamodels.mdx', 'datamodel.md']],
+    removedTargets: [],
+  });
+
+  assert.match(
+    readFileSync(target, 'utf8'),
+    /\[Data models\]\(\.\.\/\.\.\/data-modeling\/datamodels\/\)/,
+  );
+});
+
 test('syncDocs fails when a mapped source has been removed', () => {
   const root = mkdtempSync(join(tmpdir(), 'maryk-docs-sync-'));
   const siteRoot = join(root, 'website');

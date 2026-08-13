@@ -26,9 +26,11 @@ import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeout
@@ -540,7 +542,10 @@ class RemoteDataStore private constructor(
                                                 readFrameLength(channel, lengthBuffer)
                                             }
                                         }
-                                    } catch (_: TimeoutCancellationException) {
+                                    } catch (error: TimeoutCancellationException) {
+                                        if (!currentCoroutineContext().isActive) {
+                                            throw error
+                                        }
                                         throw RemoteFlowDisconnectedException(
                                             "Remote store flow heartbeat timed out"
                                         )
@@ -558,7 +563,23 @@ class RemoteDataStore private constructor(
                                         throw IllegalStateException("Streamed response frame exceeds max size: ${lengthResult.length} > $MAX_FRAME_SIZE_BYTES")
                                     }
                                     val messageBytes = ByteArray(lengthResult.length)
-                                    readFramePayload(channel, messageBytes)
+                                    try {
+                                        val heartbeatTimeoutMillis = flowRetryPolicy.heartbeatTimeoutMillis
+                                        if (heartbeatTimeoutMillis == null) {
+                                            readFramePayload(channel, messageBytes)
+                                        } else {
+                                            withTimeout(heartbeatTimeoutMillis) {
+                                                readFramePayload(channel, messageBytes)
+                                            }
+                                        }
+                                    } catch (error: TimeoutCancellationException) {
+                                        if (!currentCoroutineContext().isActive) {
+                                            throw error
+                                        }
+                                        throw RemoteFlowDisconnectedException(
+                                            "Remote store flow frame payload timed out"
+                                        )
+                                    }
                                     val responseContext = RequestContext(definitionsContext, dataModel = request.dataModel)
                                     val updatesResponse = RemoteStoreCodec.decode(UpdatesResponse.Serializer, messageBytes, responseContext)
                                     if (updatesResponse.updates.isEmpty()) {

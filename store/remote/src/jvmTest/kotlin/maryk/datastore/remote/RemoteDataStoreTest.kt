@@ -510,6 +510,38 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun executeFlowRetriesWhenFramePayloadStallsAfterItsLengthPrefix() = runBlocking {
+        val connections = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            stalledPayloadThenUpdateFlowModule(connections)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 1u,
+                    initialDelayMillis = 0,
+                    maxDelayMillis = 0,
+                    heartbeatTimeoutMillis = 100,
+                ),
+            )
+        )
+
+        try {
+            val update = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
+            }
+
+            assertEquals(1uL, update.version)
+            assertEquals(2, connections.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
     fun executeFlowFailsInsteadOfSilentlyDroppingWhenCollectorBackpressures() = runBlocking {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -1581,6 +1613,47 @@ private fun Application.stalledHeaderThenUpdateFlowModule(
                 writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
                 writeFully(payload)
                 flush()
+            }
+        }
+    }
+}
+
+private fun Application.stalledPayloadThenUpdateFlowModule(connections: AtomicInteger) {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.flowPath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            if (connections.incrementAndGet() == 1) {
+                call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                    writeFully(RemoteStoreCodec.lengthPrefix(1))
+                    flush()
+                    awaitCancellation()
+                }
+            } else {
+                call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                    val context = RequestContext(
+                        definitionsContext = DefinitionsContext(
+                            dataModels = mutableMapOf(
+                                SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                            )
+                        ),
+                        dataModel = SimpleMarykModel,
+                    )
+                    val payload = RemoteStoreCodec.encode(
+                        UpdatesResponse.Serializer,
+                        UpdatesResponse(
+                            SimpleMarykModel,
+                            listOf(OrderedKeysUpdate(listOf(SimpleMarykModel.key(ByteArray(16))), 1uL)),
+                        ),
+                        context,
+                    )
+                    writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
+                    writeFully(payload)
+                    flush()
+                }
             }
         }
     }

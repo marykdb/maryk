@@ -32,6 +32,7 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.TimePrecision
 import maryk.core.properties.types.TypedValue
 import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.NumberDescriptor
 import maryk.core.properties.types.numeric.NumberType
 import maryk.core.properties.types.numeric.SInt64
@@ -72,7 +73,8 @@ internal fun generateKotlinValue(
     is ULong -> {
         "${value}uL"
     }
-    is Float -> "${value}f"
+    is Float -> value.kotlinLiteral()
+    is Double -> value.kotlinLiteral()
     is LocalTime -> {
         when {
             value.nanosecond != 0 -> "LocalTime(${value.hour}, ${value.minute}, ${value.second}, ${value.nanosecond})"
@@ -213,13 +215,28 @@ internal fun generateKotlinValue(
 }
 
 internal fun generateKotlinNumberValue(definition: NumberDefinition<*>, value: Any): String = when (definition.type) {
-    Float32 -> "${value}f"
+    Float32 -> (value as Float).kotlinLiteral()
+    Float64 -> (value as Double).kotlinLiteral()
     SInt64 -> "${value}L"
     UInt8 -> "${value}.toUByte()"
     UInt16 -> "${value}.toUShort()"
     UInt32 -> "${value}u"
     UInt64 -> "${value}uL"
     else -> value.toString()
+}
+
+private fun Float.kotlinLiteral() = when {
+    isNaN() -> "Float.NaN"
+    this == Float.POSITIVE_INFINITY -> "Float.POSITIVE_INFINITY"
+    this == Float.NEGATIVE_INFINITY -> "Float.NEGATIVE_INFINITY"
+    else -> "${this}f"
+}
+
+private fun Double.kotlinLiteral() = when {
+    isNaN() -> "Double.NaN"
+    this == Double.POSITIVE_INFINITY -> "Double.POSITIVE_INFINITY"
+    this == Double.NEGATIVE_INFINITY -> "Double.NEGATIVE_INFINITY"
+    else -> toString()
 }
 
 private fun generateKotlinDefinitionValue(

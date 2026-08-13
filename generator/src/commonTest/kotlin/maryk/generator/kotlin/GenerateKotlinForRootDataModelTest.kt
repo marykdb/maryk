@@ -10,6 +10,7 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.incrementingMap
+import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.set
@@ -17,6 +18,7 @@ import maryk.core.properties.definitions.string
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
 import maryk.generator.DecimalGeneratorModel
@@ -102,6 +104,15 @@ private object IncMapOnly : RootDataModel<IncMapOnly>() {
         keyNumberDescriptor = UInt32,
         valueDefinition = StringDefinition()
     )
+}
+
+private object NonFiniteFloatingPointValues : RootDataModel<NonFiniteFloatingPointValues>() {
+    val floatNaN by number(index = 1u, type = Float32, default = Float.NaN)
+    val floatPositiveInfinity by number(index = 2u, type = Float32, minValue = Float.POSITIVE_INFINITY)
+    val floatNegativeInfinity by number(index = 3u, type = Float32, maxValue = Float.NEGATIVE_INFINITY)
+    val doubleNaN by number(index = 4u, type = Float64, default = Double.NaN)
+    val doublePositiveInfinity by number(index = 5u, type = Float64, minValue = Double.POSITIVE_INFINITY)
+    val doubleNegativeInfinity by number(index = 6u, type = Float64, maxValue = Double.NEGATIVE_INFINITY)
 }
 
 private object SharedInlineEnum : RootDataModel<SharedInlineEnum>() {
@@ -674,6 +685,20 @@ class GenerateKotlinForRootDataModelTest {
             "1.5f",
             generateKotlinValue(SimpleMarykModel.value.definition, 1.5f, {})
         )
+    }
+
+    @Test
+    fun generateNonFiniteFloatingPointValuesAsKotlinConstants() {
+        val output = buildString {
+            NonFiniteFloatingPointValues.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertTrue(output.contains("Float.NaN"))
+        assertTrue(output.contains("Float.POSITIVE_INFINITY"))
+        assertTrue(output.contains("Float.NEGATIVE_INFINITY"))
+        assertTrue(output.contains("Double.NaN"))
+        assertTrue(output.contains("Double.POSITIVE_INFINITY"))
+        assertTrue(output.contains("Double.NEGATIVE_INFINITY"))
     }
 
     @Test

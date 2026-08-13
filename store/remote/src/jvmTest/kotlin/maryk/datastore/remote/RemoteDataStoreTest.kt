@@ -31,6 +31,7 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collect
@@ -41,7 +42,9 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.io.readByteArray
 import maryk.core.inject.Inject
+import maryk.core.models.RootDataModel
 import maryk.core.models.key
+import maryk.core.properties.definitions.string
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.invoke
 import maryk.core.query.DefinitionsContext
@@ -53,6 +56,7 @@ import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
+import maryk.core.query.requests.scan
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.UpdatesResponse
@@ -216,6 +220,134 @@ class RemoteDataStoreTest {
             remote.close()
             engine.stop(500, 500)
             store.close()
+        }
+    }
+
+    @Test
+    fun rejectsConflictingLocalModelInstanceWithTheSameRemoteName() = runBlocking {
+        val executeCalls = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            rejectingExecuteModule(executeCalls)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            assertEquals(SimpleMarykModel.Meta.name, FirstConflictingModel.SimpleMarykModel.Meta.name)
+            assertFailsWith<IllegalStateException> {
+                remote.execute(FirstConflictingModel.SimpleMarykModel.get())
+            }
+
+            assertFailsWith<IllegalArgumentException> {
+                remote.execute(SecondConflictingModel.SimpleMarykModel.get())
+            }
+            assertEquals(1, executeCalls.get())
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun decodesRemoteResponseUsingCompatibleLocalModelInstance() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            val add = assertIs<AddSuccess<SimpleMarykModel>>(
+                remote.execute(
+                    SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-local-model" })
+                ).statuses.single()
+            )
+            val response: ValuesResponse<SimpleMarykModel> = remote.execute(
+                SimpleMarykModel.get(add.key)
+            )
+
+            assertEquals(SimpleMarykModel, response.dataModel)
+            assertEquals("ha-local-model", response.values.single().values { value })
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun remoteModelThenLocalModelDecodesWithTheLocalDefinition() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        store.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-remote-first" }))
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            val decodedRemoteModel = remote.dataModelsById.getValue(1u)
+            remote.execute(decodedRemoteModel.scan(allowTableScan = true))
+
+            val localResponse: ValuesResponse<SimpleMarykModel> = remote.execute(
+                SimpleMarykModel.scan(allowTableScan = true)
+            )
+
+            assertEquals(SimpleMarykModel, localResponse.dataModel)
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun localModelThenRemoteModelKeepsTheDecodedRemoteDefinition() = runBlocking {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        store.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-local-first" }))
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            remote.execute(SimpleMarykModel.scan(allowTableScan = true))
+            val decodedRemoteModel = remote.dataModelsById.getValue(1u)
+            val remoteResponse = remote.execute(decodedRemoteModel.scan(allowTableScan = true))
+
+            assertEquals(decodedRemoteModel, remoteResponse.dataModel)
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun concurrentSameNameRequestsAllowOnlyOneLocalModelBeforeTransport() = runBlocking {
+        val executeCalls = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            rejectingExecuteModule(executeCalls)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+        val start = CompletableDeferred<Unit>()
+
+        try {
+            val results = coroutineScope {
+                listOf(
+                    async {
+                        start.await()
+                        runCatching { remote.execute(FirstConflictingModel.SimpleMarykModel.get()) }
+                    },
+                    async {
+                        start.await()
+                        runCatching { remote.execute(SecondConflictingModel.SimpleMarykModel.get()) }
+                    },
+                ).also { start.complete(Unit) }.map { it.await() }
+            }
+
+            assertEquals(1, results.count { it.exceptionOrNull() is IllegalArgumentException })
+            assertEquals(1, executeCalls.get())
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
         }
     }
 
@@ -2344,4 +2476,34 @@ private fun defaultInfoBytes(): ByteArray {
         supportsSubReferenceFiltering = false,
     )
     return RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
+}
+
+private fun Application.rejectingExecuteModule(executeCalls: AtomicInteger) {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.executePath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            executeCalls.incrementAndGet()
+            call.respondBytes(
+                "rejected".encodeToByteArray(),
+                ContentType.Text.Plain,
+                HttpStatusCode.BadRequest,
+            )
+        }
+    }
+}
+
+private object FirstConflictingModel {
+    object SimpleMarykModel : RootDataModel<SimpleMarykModel>() {
+        val value by string(index = 1u, default = "haha", regEx = "ha.*")
+    }
+}
+
+private object SecondConflictingModel {
+    object SimpleMarykModel : RootDataModel<SimpleMarykModel>() {
+        val otherValue by string(index = 1u)
+    }
 }

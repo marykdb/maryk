@@ -48,6 +48,7 @@ import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.query.ContainsDefinitionsContext
+import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
 import maryk.core.query.requests.CollectRequest
@@ -97,6 +98,7 @@ class RemoteDataStore private constructor(
     override val supportsSubReferenceFiltering: Boolean,
 ) : IsDataStore, MigrationAdmin, SnapshotVersionProvider {
     private val definitionsMutex = Mutex()
+    private val localDataModelsByName = mutableMapOf<String, IsRootDataModel>()
 
     override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (id, model) ->
         model.Meta.name to id
@@ -331,9 +333,9 @@ class RemoteDataStore private constructor(
     suspend fun execute(requests: Requests): List<IsResponse> {
         require(requests.requests.isNotEmpty()) { "Remote execute request list cannot be empty" }
         val descriptors = requests.requests.map(::batchRequestDescriptor)
-        descriptors.forEach { ensureDataModelReference(it.dataModel) }
+        registerLocalDataModels(descriptors.map { it.dataModel })
 
-        val context = RequestContext(definitionsContext, dataModel = descriptors.first().dataModel)
+        val context = requestContext(descriptors.first().dataModel, descriptors.map { it.dataModel })
         val payload = RemoteStoreCodec.encode(Requests.Serializer, requests, context, MAX_REQUEST_BODY_BYTES)
         return executeEncodedBatch(payload, descriptors)
     }
@@ -415,7 +417,7 @@ class RemoteDataStore private constructor(
         payload: ByteArray,
         descriptor: BatchRequestDescriptor,
     ): IsResponse {
-        val responseContext = RequestContext(definitionsContext, dataModel = descriptor.dataModel)
+        val responseContext = requestContext(descriptor.dataModel)
         @Suppress("UNCHECKED_CAST")
         return RemoteStoreCodec.decode(
             descriptor.responseModel.Serializer,
@@ -434,9 +436,8 @@ class RemoteDataStore private constructor(
         val descriptors = typedRequests.map { typed ->
             batchRequestDescriptor(typed.type, typed.value)
         }
-        descriptors.forEach { ensureDataModelReference(it.dataModel) }
-        val context = requests.context
-            ?: RequestContext(definitionsContext, dataModel = descriptors.first().dataModel)
+        registerLocalDataModels(descriptors.map { it.dataModel })
+        val context = requestContext(descriptors.first().dataModel, descriptors.map { it.dataModel })
         val payload = RemoteStoreCodec.encodeValues(
             Requests.Serializer,
             requests,
@@ -493,10 +494,10 @@ class RemoteDataStore private constructor(
     override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
         request: RQ,
     ): Flow<IsUpdateResponse<DM>> {
-        ensureDataModelReference(request.dataModel)
+        registerLocalDataModels(listOf(request.dataModel))
         val transportable = request as? IsTransportableRequest<*>
             ?: throw IllegalArgumentException("Request ${request::class.simpleName} is not transportable")
-        val context = RequestContext(definitionsContext, dataModel = request.dataModel)
+        val context = requestContext(request.dataModel)
         val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(transportable), context, MAX_REQUEST_BODY_BYTES)
 
         return callbackFlow {
@@ -580,7 +581,7 @@ class RemoteDataStore private constructor(
                                             "Remote store flow frame payload timed out"
                                         )
                                     }
-                                    val responseContext = RequestContext(definitionsContext, dataModel = request.dataModel)
+                                    val responseContext = requestContext(request.dataModel)
                                     val updatesResponse = RemoteStoreCodec.decode(UpdatesResponse.Serializer, messageBytes, responseContext)
                                     if (updatesResponse.updates.isEmpty()) {
                                         throw IllegalStateException("Remote store flow returned empty update frame")
@@ -692,8 +693,8 @@ class RemoteDataStore private constructor(
     override suspend fun <DM : IsRootDataModel> processUpdate(
         updateResponse: UpdateResponse<DM>,
     ): ProcessResponse<DM> {
-        ensureDataModelReference(updateResponse.dataModel)
-        val context = RequestContext(definitionsContext, dataModel = updateResponse.dataModel)
+        registerLocalDataModels(listOf(updateResponse.dataModel))
+        val context = requestContext(updateResponse.dataModel)
         val payload = RemoteStoreCodec.encode(UpdateResponse.Serializer, updateResponse, context, MAX_REQUEST_BODY_BYTES)
         val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.processUpdatePath)) {
             headers {
@@ -710,7 +711,7 @@ class RemoteDataStore private constructor(
             throw IllegalStateException("Remote store process-update returned an empty payload")
         }
 
-        val responseContext = RequestContext(definitionsContext, dataModel = updateResponse.dataModel)
+        val responseContext = requestContext(updateResponse.dataModel)
         val remoteResponse = RemoteStoreCodec.decode(RemoteProcessResponse.Serializer, responseBytes, responseContext)
         @Suppress("UNCHECKED_CAST")
         return ProcessResponse(remoteResponse.version, remoteResponse.result as IsDataModelResponse<DM>)
@@ -781,14 +782,43 @@ class RemoteDataStore private constructor(
         listeners.closeAll()
     }
 
-    private suspend fun ensureDataModelReference(model: IsRootDataModel) {
+    private suspend fun registerLocalDataModels(models: Collection<IsRootDataModel>) {
         definitionsMutex.withLock {
-            val existing = definitionsContext.dataModels[model.Meta.name]
-            if (existing == null || existing.get() !== model) {
-                definitionsContext.dataModels[model.Meta.name] = DataModelReference(model)
+            models.forEach { model ->
+                if (isDecodedRemoteModel(model)) {
+                    return@forEach
+                }
+                val existing = localDataModelsByName[model.Meta.name]
+                if (existing != null && existing !== model) {
+                    throw IllegalArgumentException(
+                        "Remote store model `${model.Meta.name}` was already bound to a different local definition"
+                    )
+                }
+                localDataModelsByName[model.Meta.name] = model
             }
         }
     }
+
+    private fun requestContext(
+        dataModel: IsRootDataModel,
+        localModels: Collection<IsRootDataModel> = listOf(dataModel),
+    ): RequestContext {
+        val requestDefinitions = DefinitionsConversionContext(
+            DefinitionsContext(
+                dataModels = definitionsContext.dataModels.toMutableMap(),
+                enums = definitionsContext.enums.toMutableMap(),
+                currentDefinitionName = definitionsContext.currentDefinitionName,
+                typeEnums = definitionsContext.typeEnums.toMutableMap(),
+            )
+        )
+        localModels.filterNot(::isDecodedRemoteModel).forEach { model ->
+            requestDefinitions.dataModels[model.Meta.name] = DataModelReference(model)
+        }
+        return RequestContext(requestDefinitions, dataModel = dataModel)
+    }
+
+    private fun isDecodedRemoteModel(model: IsRootDataModel): Boolean =
+        dataModelsById.values.any { it === model }
 }
 
 internal fun isRetryableRemoteFlowFailure(error: Throwable): Boolean =

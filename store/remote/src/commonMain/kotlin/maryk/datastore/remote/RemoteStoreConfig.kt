@@ -21,6 +21,14 @@ data class RemoteStoreServerConfig(
     val authorizer: RemoteStoreAuthorizer? = null,
 )
 
+/** Operational limits for a remote store server. */
+data class RemoteStoreServerLimits(
+    val maxConcurrentCalls: Int = 64,
+    val maxConcurrentFlows: Int = 16,
+    val requestBodyReadTimeoutMillis: Long = 15_000,
+    val connectionIdleTimeoutSeconds: Int = 45,
+)
+
 /** Optional SSH tunnel configuration for remote store connections. */
 data class RemoteSshConfig(
     val host: String,

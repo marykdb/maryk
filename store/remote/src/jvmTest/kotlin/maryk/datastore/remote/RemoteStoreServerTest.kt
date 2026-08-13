@@ -5,6 +5,7 @@ import io.ktor.client.engine.cio.CIO
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.preparePost
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
@@ -19,8 +20,10 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import kotlinx.coroutines.runBlocking
 import kotlinx.io.readByteArray
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration.Companion.seconds
 import maryk.core.models.key
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationRuntimeState
@@ -85,6 +88,101 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun rejectsRequestsWhenCallAdmissionIsExhausted() = runBoundedIntegrationTest {
+        withServer(limits = RemoteStoreServerLimits(maxConcurrentCalls = 0)) { baseUrl, client ->
+            val response = client.get("$baseUrl${RemoteStoreProtocol.infoPath}")
+
+            assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
+            assertEquals("Remote Store is at call capacity", response.bodyAsText())
+        }
+    }
+
+    @Test
+    fun rejectsFlowsWhenFlowAdmissionIsExhausted() = runBoundedIntegrationTest {
+        withServer(limits = RemoteStoreServerLimits(maxConcurrentFlows = 0)) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(fetchRequestPayload())
+            }
+
+            assertEquals(HttpStatusCode.ServiceUnavailable, response.status)
+            assertEquals("Remote Store is at flow capacity", response.bodyAsText())
+        }
+    }
+
+    @Test
+    fun acceptsPositiveAdmissionLimits() {
+        validateRemoteStoreServerBinding(
+            "127.0.0.1",
+            RemoteStoreServerConfig(),
+            RemoteStoreServerLimits(maxConcurrentCalls = 1, maxConcurrentFlows = 1),
+        )
+    }
+
+    @Test
+    fun rejectsNonPositiveConnectionIdleTimeout() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            validateRemoteStoreServerBinding(
+                "127.0.0.1",
+                RemoteStoreServerConfig(),
+                RemoteStoreServerLimits(connectionIdleTimeoutSeconds = 0),
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("connection idle timeout"))
+    }
+
+    @Test
+    fun flowKeepsCallAndFlowPermitsUntilClientCancellation() = runBoundedIntegrationTest {
+        withServer(
+            config = RemoteStoreServerConfig(flowHeartbeatMillis = 50),
+            limits = RemoteStoreServerLimits(maxConcurrentCalls = 1, maxConcurrentFlows = 1),
+        ) { baseUrl, client ->
+            val socket = openRawFlow(baseUrl, resumable = true)
+            try {
+                withTimeout(2.seconds) {
+                    while (true) {
+                        val status = flowStatus(client, baseUrl)
+                        if (status == HttpStatusCode.ServiceUnavailable) break
+                        assertEquals(HttpStatusCode.OK, status)
+                        delay(10)
+                    }
+                }
+
+                socket.close()
+
+                withTimeout(2.seconds) {
+                    while (true) {
+                        val status = flowStatus(client, baseUrl)
+                        if (status == HttpStatusCode.OK) {
+                            break
+                        }
+                        assertEquals(HttpStatusCode.ServiceUnavailable, status)
+                        delay(10)
+                    }
+                }
+            } finally {
+                socket.close()
+            }
+        }
+    }
+
+    @Test
+    fun executeTimesOutAnIncompleteRequestBody() = runBoundedIntegrationTest {
+        withServer(limits = RemoteStoreServerLimits(requestBodyReadTimeoutMillis = 50)) { baseUrl, _ ->
+            assertRawStatus(
+                baseUrl = baseUrl,
+                path = RemoteStoreProtocol.executePath,
+                headers = mapOf(
+                    HttpHeaders.ContentType to RemoteStoreProtocol.contentType,
+                    HttpHeaders.ContentLength to "1",
+                ),
+                expectedStatusCode = HttpStatusCode.RequestTimeout.value,
+            )
+        }
+    }
+
+    @Test
     fun rejectsBlankBearerToken() {
         val exception = assertFailsWith<IllegalArgumentException> {
             validateRemoteStoreServerBinding(
@@ -97,7 +195,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun bearerAuthenticationProtectsEveryEndpointBeforeValidation() = runBlocking {
+    fun bearerAuthenticationProtectsEveryEndpointBeforeValidation() = runBoundedIntegrationTest {
         withServer(RemoteStoreServerConfig(bearerToken = "secret")) { baseUrl, client ->
             listOf(
                 RemoteStoreProtocol.infoPath to false,
@@ -130,7 +228,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun migrationAdministrationRoundTripsThroughRemoteClient() = runBlocking {
+    fun migrationAdministrationRoundTripsThroughRemoteClient() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val adminStore = TestMigrationAdminStore(store)
         val (server, port) = startTestServer { remoteStoreModule(adminStore) }
@@ -157,7 +255,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun migrationAdministrationHonorsAuthorizer() = runBlocking {
+    fun migrationAdministrationHonorsAuthorizer() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val adminStore = TestMigrationAdminStore(store)
         val (server, port) = startTestServer {
@@ -190,7 +288,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun migrationAdministrationRejectsOversizedResponses() = runBlocking {
+    fun migrationAdministrationRejectsOversizedResponses() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val adminStore = TestMigrationAdminStore(
             store,
@@ -217,7 +315,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun customAuthenticatorAndAuthorizerProtectInfo() = runBlocking {
+    fun customAuthenticatorAndAuthorizerProtectInfo() = runBoundedIntegrationTest {
         val config = RemoteStoreServerConfig(
             authenticator = RemoteStoreAuthenticator { header ->
                 if (header == "ApiKey accepted") RemoteStorePrincipal("reporter") else null
@@ -242,7 +340,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun infoAllowsArbitraryAcceptHeader() = runBlocking {
+    fun infoAllowsArbitraryAcceptHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.get("$baseUrl${RemoteStoreProtocol.infoPath}") {
                 header(HttpHeaders.Accept, "application/json")
@@ -252,7 +350,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun infoAcceptsTypeWildcard() = runBlocking {
+    fun infoAcceptsTypeWildcard() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.get("$baseUrl${RemoteStoreProtocol.infoPath}") {
                 header(HttpHeaders.Accept, "application/*")
@@ -262,7 +360,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeRejectsMissingContentType() = runBlocking {
+    fun executeRejectsMissingContentType() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
@@ -273,7 +371,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeRejectsWrongContentType() = runBlocking {
+    fun executeRejectsWrongContentType() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, "application/json")
@@ -285,7 +383,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeAllowsArbitraryAcceptHeader() = runBlocking {
+    fun executeAllowsArbitraryAcceptHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -297,7 +395,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeRejectsEmptyPayload() = runBlocking {
+    fun executeRejectsEmptyPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -309,7 +407,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeRejectsOversizedPayload() = runBlocking {
+    fun executeRejectsOversizedPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -321,7 +419,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeRejectsMalformedPayload() = runBlocking {
+    fun executeRejectsMalformedPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -333,7 +431,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeRejectsEmptyRequestList() = runBlocking {
+    fun executeRejectsEmptyRequestList() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -345,7 +443,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeAllowsMultipleRequests() = runBlocking {
+    fun executeAllowsMultipleRequests() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -357,7 +455,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeKeepsLegacySingleResponseUnframed() = runBlocking {
+    fun executeKeepsLegacySingleResponseUnframed() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -376,7 +474,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeAcceptsCollectRequest() = runBlocking {
+    fun executeAcceptsCollectRequest() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -388,7 +486,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeAcceptsTypeWildcard() = runBlocking {
+    fun executeAcceptsTypeWildcard() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -400,7 +498,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeIgnoresQZeroAccept() = runBlocking {
+    fun executeIgnoresQZeroAccept() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -412,7 +510,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeIgnoresWildcardWithZeroQ() = runBlocking {
+    fun executeIgnoresWildcardWithZeroQ() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -424,7 +522,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeAcceptsFallbackAfterZeroQWildcard() = runBlocking {
+    fun executeAcceptsFallbackAfterZeroQWildcard() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -436,7 +534,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeIgnoresInvalidQValue() = runBlocking {
+    fun executeIgnoresInvalidQValue() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -448,7 +546,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeIgnoresOutOfRangeQValue() = runBlocking {
+    fun executeIgnoresOutOfRangeQValue() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -460,7 +558,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeAcceptsUppercaseAcceptWithSpaces() = runBlocking {
+    fun executeAcceptsUppercaseAcceptWithSpaces() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -472,7 +570,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeAcceptsContentTypeWithCharset() = runBlocking {
+    fun executeAcceptsContentTypeWithCharset() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
                 header(HttpHeaders.ContentType, "${RemoteStoreProtocol.contentType}; charset=utf-8")
@@ -484,7 +582,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeRejectsInvalidContentLengthHeader() = runBlocking {
+    fun executeRejectsInvalidContentLengthHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, _ ->
             assertRawStatus(
                 baseUrl = baseUrl,
@@ -500,7 +598,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun executeRejectsNegativeContentLengthHeader() = runBlocking {
+    fun executeRejectsNegativeContentLengthHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, _ ->
             assertRawStatus(
                 baseUrl = baseUrl,
@@ -516,7 +614,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsMissingContentType() = runBlocking {
+    fun flowRejectsMissingContentType() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.Accept, RemoteStoreProtocol.streamContentType)
@@ -527,7 +625,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowIgnoresUnacceptableAcceptHeader() = runBlocking {
+    fun flowIgnoresUnacceptableAcceptHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -539,7 +637,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsEmptyPayload() = runBlocking {
+    fun flowRejectsEmptyPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -551,7 +649,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsOversizedPayload() = runBlocking {
+    fun flowRejectsOversizedPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -563,7 +661,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsMalformedPayload() = runBlocking {
+    fun flowRejectsMalformedPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -575,7 +673,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsEmptyRequestList() = runBlocking {
+    fun flowRejectsEmptyRequestList() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -587,7 +685,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsStoreRequestPayload() = runBlocking {
+    fun flowRejectsStoreRequestPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -599,7 +697,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsMultipleRequests() = runBlocking {
+    fun flowRejectsMultipleRequests() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -611,7 +709,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowTypeWildcardFallsThroughToPayloadValidation() = runBlocking {
+    fun flowTypeWildcardFallsThroughToPayloadValidation() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -623,7 +721,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowIgnoresQZeroAccept() = runBlocking {
+    fun flowIgnoresQZeroAccept() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -635,7 +733,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowIgnoresOutOfRangeQValue() = runBlocking {
+    fun flowIgnoresOutOfRangeQValue() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -647,7 +745,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowTypeWildcardWithFallbackFallsThroughToPayloadValidation() = runBlocking {
+    fun flowTypeWildcardWithFallbackFallsThroughToPayloadValidation() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -659,7 +757,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowAcceptsContentTypeWithCharset() = runBlocking {
+    fun flowAcceptsContentTypeWithCharset() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
                 header(HttpHeaders.ContentType, "${RemoteStoreProtocol.contentType}; charset=utf-8")
@@ -671,7 +769,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsInvalidContentLengthHeader() = runBlocking {
+    fun flowRejectsInvalidContentLengthHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, _ ->
             assertRawStatus(
                 baseUrl = baseUrl,
@@ -687,7 +785,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun flowRejectsNegativeContentLengthHeader() = runBlocking {
+    fun flowRejectsNegativeContentLengthHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, _ ->
             assertRawStatus(
                 baseUrl = baseUrl,
@@ -703,7 +801,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateRejectsMissingContentType() = runBlocking {
+    fun processUpdateRejectsMissingContentType() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
@@ -714,7 +812,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateIgnoresUnacceptableAcceptHeader() = runBlocking {
+    fun processUpdateIgnoresUnacceptableAcceptHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -726,7 +824,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateRejectsEmptyPayload() = runBlocking {
+    fun processUpdateRejectsEmptyPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -738,7 +836,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateRejectsOversizedPayload() = runBlocking {
+    fun processUpdateRejectsOversizedPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -750,7 +848,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateRejectsMalformedPayload() = runBlocking {
+    fun processUpdateRejectsMalformedPayload() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -762,7 +860,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateInitialChangesHonorsAddAuthorization() = runBlocking {
+    fun processUpdateInitialChangesHonorsAddAuthorization() = runBoundedIntegrationTest {
         withServer(
             RemoteStoreServerConfig(
                 authorizer = RemoteStoreAuthorizer { request -> request.requestType != RequestType.Add },
@@ -779,7 +877,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateTypeWildcardFallsThroughToPayloadValidation() = runBlocking {
+    fun processUpdateTypeWildcardFallsThroughToPayloadValidation() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -791,7 +889,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateIgnoresQZeroAccept() = runBlocking {
+    fun processUpdateIgnoresQZeroAccept() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -803,7 +901,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateIgnoresInvalidQValue() = runBlocking {
+    fun processUpdateIgnoresInvalidQValue() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -815,7 +913,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateIgnoresOutOfRangeQValue() = runBlocking {
+    fun processUpdateIgnoresOutOfRangeQValue() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -827,7 +925,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateTypeWildcardWithFallbackFallsThroughToPayloadValidation() = runBlocking {
+    fun processUpdateTypeWildcardWithFallbackFallsThroughToPayloadValidation() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -839,7 +937,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateAcceptsContentTypeWithCharset() = runBlocking {
+    fun processUpdateAcceptsContentTypeWithCharset() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
                 header(HttpHeaders.ContentType, "${RemoteStoreProtocol.contentType}; charset=utf-8")
@@ -851,7 +949,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateRejectsInvalidContentLengthHeader() = runBlocking {
+    fun processUpdateRejectsInvalidContentLengthHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, _ ->
             assertRawStatus(
                 baseUrl = baseUrl,
@@ -867,7 +965,7 @@ class RemoteStoreServerTest {
     }
 
     @Test
-    fun processUpdateRejectsNegativeContentLengthHeader() = runBlocking {
+    fun processUpdateRejectsNegativeContentLengthHeader() = runBoundedIntegrationTest {
         withServer { baseUrl, _ ->
             assertRawStatus(
                 baseUrl = baseUrl,
@@ -917,11 +1015,12 @@ private class TestMigrationAdminStore(
 
 private suspend fun withServer(
     config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
+    limits: RemoteStoreServerLimits = RemoteStoreServerLimits(),
     block: suspend (String, HttpClient) -> Unit,
 ) {
     val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
     val (server, port) = startTestServer {
-        remoteStoreModule(store, config)
+        remoteStoreModule(store, config, limits)
     }
     val client = HttpClient(CIO) { expectSuccess = false }
     try {
@@ -1084,3 +1183,29 @@ private fun assertRawStatus(
         assertEquals(expectedStatusCode, statusCode)
     }
 }
+
+private fun openRawFlow(baseUrl: String, resumable: Boolean = false): Socket {
+    val port = baseUrl.substringAfterLast(':').toInt()
+    val payload = fetchRequestPayload()
+    return Socket("127.0.0.1", port).also { socket ->
+        val request = buildString {
+            append("POST ${RemoteStoreProtocol.flowPath} HTTP/1.1\r\n")
+            append("Host: 127.0.0.1:$port\r\n")
+            append("${HttpHeaders.ContentType}: ${RemoteStoreProtocol.contentType}\r\n")
+            append("${HttpHeaders.ContentLength}: ${payload.size}\r\n")
+            if (resumable) {
+                append("${RemoteStoreProtocol.flowProtocolHeader}: ${RemoteStoreProtocol.resumableFlowProtocol}\r\n")
+            }
+            append("\r\n")
+        }.encodeToByteArray()
+        socket.getOutputStream().write(request)
+        socket.getOutputStream().write(payload)
+        socket.getOutputStream().flush()
+    }
+}
+
+private suspend fun flowStatus(client: HttpClient, baseUrl: String): HttpStatusCode =
+    client.preparePost("$baseUrl${RemoteStoreProtocol.flowPath}") {
+        header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+        setBody(fetchRequestPayload())
+    }.execute { response -> response.status }

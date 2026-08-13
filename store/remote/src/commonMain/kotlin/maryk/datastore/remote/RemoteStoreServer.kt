@@ -5,7 +5,10 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationCall
+import io.ktor.server.application.ApplicationCallPipeline
+import io.ktor.server.application.serverConfig
 import io.ktor.server.cio.CIO
+import io.ktor.server.engine.EngineConnectorBuilder
 import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.request.receiveChannel
@@ -15,10 +18,15 @@ import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.util.AttributeKey
+import kotlinx.atomicfu.atomic
 import kotlinx.io.readByteArray
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.produceIn
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
@@ -69,10 +77,27 @@ class RemoteStoreServer(
         port: Int,
         wait: Boolean = true,
         config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
+    ): RemoteStoreServerHandle = start(host, port, wait, config, RemoteStoreServerLimits())
+
+    fun start(
+        host: String,
+        port: Int,
+        wait: Boolean,
+        config: RemoteStoreServerConfig,
+        limits: RemoteStoreServerLimits,
     ): RemoteStoreServerHandle {
-        validateRemoteStoreServerBinding(host, config)
-        val engine = embeddedServer(CIO, host = host, port = port) {
-            remoteStoreModule(dataStore, config)
+        validateRemoteStoreServerBinding(host, config, limits)
+        val rootConfig = serverConfig {
+            module {
+                remoteStoreModule(dataStore, config, limits)
+            }
+        }
+        val engine = embeddedServer(CIO, rootConfig) {
+            connectors.add(EngineConnectorBuilder().apply {
+                this.host = host
+                this.port = port
+            })
+            connectionIdleTimeoutSeconds = limits.connectionIdleTimeoutSeconds
         }
         engine.start(wait = wait)
         return KtorRemoteStoreServerHandle(engine)
@@ -92,6 +117,14 @@ private class KtorRemoteStoreServerHandle(
 }
 
 fun validateRemoteStoreServerBinding(host: String, config: RemoteStoreServerConfig) {
+    validateRemoteStoreServerBinding(host, config, RemoteStoreServerLimits())
+}
+
+fun validateRemoteStoreServerBinding(
+    host: String,
+    config: RemoteStoreServerConfig,
+    limits: RemoteStoreServerLimits,
+) {
     if (host.isBlank()) {
         throw IllegalArgumentException("Remote Store host cannot be blank")
     }
@@ -100,6 +133,18 @@ fun validateRemoteStoreServerBinding(host: String, config: RemoteStoreServerConf
     }
     require(config.flowHeartbeatMillis == null || config.flowHeartbeatMillis > 0) {
         "Remote Store flow heartbeat interval must be positive"
+    }
+    require(limits.maxConcurrentCalls >= 0) {
+        "Remote Store max concurrent calls cannot be negative"
+    }
+    require(limits.maxConcurrentFlows >= 0) {
+        "Remote Store max concurrent flows cannot be negative"
+    }
+    require(limits.requestBodyReadTimeoutMillis > 0) {
+        "Remote Store request body read timeout must be positive"
+    }
+    require(limits.connectionIdleTimeoutSeconds > 0) {
+        "Remote Store connection idle timeout must be positive"
     }
     if (!host.isLoopbackRemoteHost() && !config.allowInsecureRemoteBinding) {
         throw IllegalArgumentException(
@@ -112,6 +157,7 @@ fun validateRemoteStoreServerBinding(host: String, config: RemoteStoreServerConf
 internal fun Application.remoteStoreModule(
     dataStore: IsDataStore,
     config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
+    limits: RemoteStoreServerLimits = RemoteStoreServerLimits(),
 ) {
     if (config.bearerToken != null && config.bearerToken.isBlank()) {
         throw IllegalArgumentException("Remote Store bearer token cannot be blank")
@@ -119,9 +165,38 @@ internal fun Application.remoteStoreModule(
     require(config.flowHeartbeatMillis == null || config.flowHeartbeatMillis > 0) {
         "Remote Store flow heartbeat interval must be positive"
     }
+    require(limits.maxConcurrentCalls >= 0) {
+        "Remote Store max concurrent calls cannot be negative"
+    }
+    require(limits.maxConcurrentFlows >= 0) {
+        "Remote Store max concurrent flows cannot be negative"
+    }
+    require(limits.requestBodyReadTimeoutMillis > 0) {
+        "Remote Store request body read timeout must be positive"
+    }
+    require(limits.connectionIdleTimeoutSeconds > 0) {
+        "Remote Store connection idle timeout must be positive"
+    }
+    val callAdmission = RequestAdmission(limits.maxConcurrentCalls)
+    val flowAdmission = RequestAdmission(limits.maxConcurrentFlows)
     val info = buildRemoteStoreInfo(dataStore)
 
     routing {
+        intercept(ApplicationCallPipeline.Call) {
+            val callPermit = callAdmission.tryAcquire()
+            if (callPermit == null) {
+                context.respondText("Remote Store is at call capacity", status = HttpStatusCode.ServiceUnavailable)
+                finish()
+                return@intercept
+            }
+            context.attributes.put(RemoteStoreCallAdmissionPermitKey, callPermit)
+            try {
+                proceed()
+            } finally {
+                callPermit.releaseUnlessDeferred()
+            }
+        }
+
         get(RemoteStoreProtocol.infoPath) {
             val principal = call.authenticate(config) ?: return@get
             if (!call.authorize(config, principal, RemoteStoreOperation.Info)) return@get
@@ -157,7 +232,7 @@ internal fun Application.remoteStoreModule(
             val principal = call.authenticate(config) ?: return@post
             call.respondValidationErrors {
                 requireRequestContentType(call, RemoteStoreProtocol.contentType)
-                val requestBytes = readRequestBytes(call, "execute")
+                val requestBytes = readRequestBytes(call, "execute", limits)
                 val requestContext = createRequestContext(dataStore)
                 val requests = decodeRequest(
                     operation = "execute",
@@ -261,10 +336,16 @@ internal fun Application.remoteStoreModule(
         }
 
         post(RemoteStoreProtocol.flowPath) {
-            val principal = call.authenticate(config) ?: return@post
-            call.respondValidationErrors {
+            val flowPermit = flowAdmission.tryAcquire()
+            if (flowPermit == null) {
+                call.respondText("Remote Store is at flow capacity", status = HttpStatusCode.ServiceUnavailable)
+                return@post
+            }
+            try {
+                val principal = call.authenticate(config) ?: return@post
+                call.respondValidationErrors {
                 requireRequestContentType(call, RemoteStoreProtocol.contentType)
-                val requestBytes = readRequestBytes(call, "flow")
+                val requestBytes = readRequestBytes(call, "flow", limits)
                 val requestContext = createRequestContext(dataStore)
                 val requests = decodeRequest(
                     operation = "flow",
@@ -292,36 +373,50 @@ internal fun Application.remoteStoreModule(
                         RemoteStoreProtocol.resumableFlowProtocol
                 }
 
-                call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
-                    coroutineScope {
-                        val updateChannel = updates.produceIn(this)
-                        try {
-                            while (true) {
-                                val updateResult = if (heartbeatMillis == null) {
-                                    updateChannel.receiveCatching()
-                                } else {
-                                    withTimeoutOrNull(heartbeatMillis) {
+                val callPermit = call.attributes[RemoteStoreCallAdmissionPermitKey]
+                flowPermit.deferRelease()
+                callPermit.deferRelease()
+                try {
+                    call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                        coroutineScope {
+                            val updateChannel = updates.produceIn(this)
+                            try {
+                                while (true) {
+                                    val updateResult = if (heartbeatMillis == null) {
                                         updateChannel.receiveCatching()
+                                    } else {
+                                        withTimeoutOrNull(heartbeatMillis) {
+                                            updateChannel.receiveCatching()
+                                        }
                                     }
-                                }
-                                if (updateResult == null) {
-                                    writeFully(RemoteStoreCodec.lengthPrefix(0))
+                                    if (updateResult == null) {
+                                        writeFully(RemoteStoreCodec.lengthPrefix(0))
+                                        flush()
+                                        continue
+                                    }
+                                    val update = updateResult.getOrNull() ?: break
+                                    val response = UpdatesResponse(fetchRequest.dataModel, listOf(update))
+                                    val responseContext = RequestContext(requestContext.definitionsContext, dataModel = fetchRequest.dataModel)
+                                    val responseBytes = RemoteStoreCodec.encode(UpdatesResponse.Serializer, response, responseContext, MAX_FRAME_SIZE_BYTES)
+                                    writeFully(RemoteStoreCodec.lengthPrefix(responseBytes.size))
+                                    writeFully(responseBytes)
                                     flush()
-                                    continue
                                 }
-                                val update = updateResult.getOrNull() ?: break
-                                val response = UpdatesResponse(fetchRequest.dataModel, listOf(update))
-                                val responseContext = RequestContext(requestContext.definitionsContext, dataModel = fetchRequest.dataModel)
-                                val responseBytes = RemoteStoreCodec.encode(UpdatesResponse.Serializer, response, responseContext, MAX_FRAME_SIZE_BYTES)
-                                writeFully(RemoteStoreCodec.lengthPrefix(responseBytes.size))
-                                writeFully(responseBytes)
-                                flush()
+                            } finally {
+                                updateChannel.cancel()
+                                flowPermit.release()
+                                callPermit.release()
                             }
-                        } finally {
-                            updateChannel.cancel()
                         }
                     }
+                } catch (error: Throwable) {
+                    flowPermit.release()
+                    callPermit.release()
+                    throw error
                 }
+                }
+            } finally {
+                flowPermit.releaseUnlessDeferred()
             }
         }
 
@@ -329,7 +424,7 @@ internal fun Application.remoteStoreModule(
             val principal = call.authenticate(config) ?: return@post
             call.respondValidationErrors {
                 requireRequestContentType(call, RemoteStoreProtocol.contentType)
-                val requestBytes = readRequestBytes(call, "process-update")
+                val requestBytes = readRequestBytes(call, "process-update", limits)
                 val requestContext = createRequestContext(dataStore)
                 val decodedUpdateRequest = decodeRequest(
                     operation = "process-update",
@@ -400,7 +495,7 @@ internal fun Application.remoteStoreModule(
                         "This store does not expose migration administration"
                     )
                 val request = try {
-                    RemoteMigrationAdminCodec.decodeRequest(readRequestBytes(call, "migration administration"))
+                    RemoteMigrationAdminCodec.decodeRequest(readRequestBytes(call, "migration administration", limits))
                 } catch (error: IllegalArgumentException) {
                     throw RequestValidationException(
                         HttpStatusCode.BadRequest,
@@ -608,7 +703,11 @@ private fun createRequestContext(dataStore: IsDataStore): RequestContext {
     return RequestContext(context)
 }
 
-private suspend fun readRequestBytes(call: ApplicationCall, operation: String): ByteArray {
+private suspend fun readRequestBytes(
+    call: ApplicationCall,
+    operation: String,
+    limits: RemoteStoreServerLimits,
+): ByteArray {
     val rawContentLength = call.request.headers[HttpHeaders.ContentLength]
     val contentLength = rawContentLength?.toLongOrNull()
     if (rawContentLength != null && contentLength == null) {
@@ -634,9 +733,18 @@ private suspend fun readRequestBytes(call: ApplicationCall, operation: String): 
             )
         }
     }
-    val bytes = call.receiveChannel()
-        .readRemaining(MAX_REQUEST_BODY_BYTES.toLong() + 1L)
-        .readByteArray()
+    val bytes = try {
+        withTimeout(limits.requestBodyReadTimeoutMillis) {
+            call.receiveChannel()
+                .readRemaining(MAX_REQUEST_BODY_BYTES.toLong() + 1L)
+                .readByteArray()
+        }
+    } catch (_: TimeoutCancellationException) {
+        throw RequestValidationException(
+            HttpStatusCode.RequestTimeout,
+            "Remote $operation request body read timed out",
+        )
+    }
     if (bytes.isEmpty()) {
         throw RequestValidationException(HttpStatusCode.BadRequest, "Remote $operation request payload cannot be empty")
     }
@@ -675,6 +783,36 @@ private class RequestValidationException(
     val status: HttpStatusCode,
     override val message: String,
 ) : IllegalArgumentException(message)
+
+private val RemoteStoreCallAdmissionPermitKey = AttributeKey<RequestAdmissionPermit>("RemoteStoreCallAdmissionPermit")
+
+private class RequestAdmission(maxConcurrentRequests: Int) {
+    private val permits = maxConcurrentRequests.takeIf { it > 0 }?.let(::Semaphore)
+
+    fun tryAcquire(): RequestAdmissionPermit? =
+        permits?.takeIf { it.tryAcquire() }?.let(::RequestAdmissionPermit)
+}
+
+private class RequestAdmissionPermit(
+    private val permits: Semaphore,
+) {
+    private val deferred = atomic(false)
+    private val released = atomic(false)
+
+    fun deferRelease() {
+        deferred.value = true
+    }
+
+    fun releaseUnlessDeferred() {
+        if (!deferred.value) release()
+    }
+
+    fun release() {
+        if (released.compareAndSet(expect = false, update = true)) {
+            permits.release()
+        }
+    }
+}
 
 private const val MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024
 private const val MAX_FRAME_SIZE_BYTES = 16 * 1024 * 1024

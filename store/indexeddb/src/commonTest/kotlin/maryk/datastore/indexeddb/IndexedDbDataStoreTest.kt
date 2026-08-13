@@ -114,6 +114,7 @@ import maryk.test.models.SimpleMarykTypeEnum.S1
 import maryk.test.models.TestMarykModel
 import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
@@ -2108,6 +2109,60 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
+    fun nonSensitiveMkePrefixValuesRoundTripWithAndWithoutProvider() = runTest {
+        installIndexedDbForTests()
+
+        listOf<XorFieldEncryptionProvider?>(null, XorFieldEncryptionProvider()).forEachIndexed { providerIndex, provider ->
+            val dataStore = IndexedDbDataStore.open(
+                databaseName = "maryk-indexeddb-non-sensitive-mke-prefix-$providerIndex-${Random.nextInt()}",
+                dataModelsById = mapOf(905u to MkePrefixRecord),
+                fieldEncryptionProvider = provider,
+            )
+            try {
+                FieldEncryptionEnvelope.entries.forEachIndexed { envelopeIndex, envelope ->
+                    val text = envelope.magic.decodeToString() + " public text"
+                    val bytes = Bytes(envelope.magic + byteArrayOf(1, 2, 3, 4))
+                    val key = assertIs<AddSuccess<MkePrefixRecord>>(
+                        dataStore.execute(
+                            MkePrefixRecord.add(
+                                MkePrefixRecord(
+                                    Bytes(ByteArray(16) { envelopeIndex.toByte() }),
+                                    text,
+                                    bytes,
+                                )
+                            )
+                        ).statuses.single()
+                    ).key
+
+                    val values = dataStore.execute(MkePrefixRecord.get(key)).values.single()
+                    assertEquals(text, values.values { publicText })
+                    assertContentEquals(bytes.bytes, requireNotNull(values.values { publicBytes }).bytes)
+                    assertContentEquals(
+                        text.encodeToByteArray(),
+                        IndexedDbSensitiveFieldSupport(mapOf(905u to MkePrefixRecord), provider).decryptValueIfNeeded(
+                            905u,
+                            key.bytes,
+                            MkePrefixRecord.publicText.ref().toStorageByteArray(),
+                            text.encodeToByteArray(),
+                        ),
+                    )
+                    assertContentEquals(
+                        bytes.bytes,
+                        IndexedDbSensitiveFieldSupport(mapOf(905u to MkePrefixRecord), provider).decryptValueIfNeeded(
+                            905u,
+                            key.bytes,
+                            MkePrefixRecord.publicBytes.ref().toStorageByteArray(),
+                            bytes.bytes,
+                        ),
+                    )
+                }
+            } finally {
+                dataStore.close()
+            }
+        }
+    }
+
+    @Test
     fun sensitivePropertyRequiresEncryptionProvider() = runTest {
         installIndexedDbForTests()
 
@@ -2579,6 +2634,21 @@ private object SensitiveRecord : RootDataModel<SensitiveRecord>(
         this.id with id
         this.publicText with publicText
         this.secret with secret
+    }
+}
+
+private object MkePrefixRecord : RootDataModel<MkePrefixRecord>(
+    keyDefinition = { MkePrefixRecord.id.ref() },
+    minimumKeyScanByteRange = 0u,
+) {
+    val id by fixedBytes(1u, byteSize = 16, final = true)
+    val publicText by string(2u)
+    val publicBytes by fixedBytes(3u, byteSize = 8)
+
+    operator fun invoke(id: Bytes, publicText: String, publicBytes: Bytes) = create {
+        this.id with id
+        this.publicText with publicText
+        this.publicBytes with publicBytes
     }
 }
 

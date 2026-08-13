@@ -7,6 +7,16 @@ enum class FieldEncryptionEnvelope(val magic: ByteArray) {
     ;
 
     companion object {
+        /**
+         * Detect an envelope only after the caller has established that the
+         * value belongs to a configured sensitive qualifier.
+         */
+        fun fromSensitiveValue(
+            value: ByteArray,
+            offset: Int = 0,
+            length: Int = value.size - offset,
+        ): FieldEncryptionEnvelope? = from(value, offset, length)
+
         fun from(value: ByteArray, offset: Int = 0, length: Int = value.size - offset): FieldEncryptionEnvelope? {
             require(offset >= 0 && length >= 0 && offset <= value.size - length) { "Invalid value range" }
             return entries.firstOrNull { envelope ->

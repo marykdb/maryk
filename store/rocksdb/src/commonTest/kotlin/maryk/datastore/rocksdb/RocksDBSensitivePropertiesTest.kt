@@ -123,6 +123,54 @@ class RocksDBSensitivePropertiesTest {
     }
 
     @Test
+    fun nonSensitiveMkePrefixValuesRoundTripWithAndWithoutProvider() = runTest {
+        listOf<XorFieldEncryptionProvider?>(null, XorFieldEncryptionProvider()).forEachIndexed { providerIndex, provider ->
+            val folder = createTestDBFolder("non-sensitive-mke-prefix-$providerIndex")
+            try {
+                val store = RocksDBDataStore.open(
+                    relativePath = folder,
+                    keepAllVersions = false,
+                    dataModelsById = mapOf(11u to MkePrefixRocksModel),
+                    fieldEncryptionProvider = provider,
+                )
+                try {
+                    FieldEncryptionEnvelope.entries.forEachIndexed { envelopeIndex, envelope ->
+                        val text = envelope.magic.decodeToString() + " public text"
+                        val bytes = Bytes(envelope.magic + byteArrayOf(1, 2, 3, 4))
+                        val key = assertIs<AddSuccess<MkePrefixRocksModel>>(
+                            store.execute(
+                                MkePrefixRocksModel.add(
+                                    MkePrefixRocksModel(
+                                        Bytes(ByteArray(16) { envelopeIndex.toByte() }),
+                                        text,
+                                        bytes,
+                                    )
+                                )
+                            ).statuses.single()
+                        ).key
+
+                        val values = store.execute(MkePrefixRocksModel.get(key)).values.single()
+                        assertEquals(text, values.values { publicText })
+                        assertContentEquals(bytes.bytes, requireNotNull(values.values { publicBytes }).bytes)
+                        assertContentEquals(
+                            text.encodeToByteArray(),
+                            store.decryptValueIfNeeded(11u, key.bytes, MkePrefixRocksModel.publicText.ref().toStorageByteArray(), text.encodeToByteArray()),
+                        )
+                        assertContentEquals(
+                            bytes.bytes,
+                            store.decryptValueIfNeeded(11u, key.bytes, MkePrefixRocksModel.publicBytes.ref().toStorageByteArray(), bytes.bytes),
+                        )
+                    }
+                } finally {
+                    store.close()
+                }
+            } finally {
+                deleteFolder(folder)
+            }
+        }
+    }
+
+    @Test
     fun sensitivePropertyRequiresEncryptionProvider() = runTest {
         val folder = createTestDBFolder("sensitive-rocks-missing-provider")
         try {
@@ -653,6 +701,21 @@ object SensitiveRocksModel : RootDataModel<SensitiveRocksModel>(
     operator fun invoke(id: Bytes, secret: String) = create {
         this.id with id
         this.secret with secret
+    }
+}
+
+private object MkePrefixRocksModel : RootDataModel<MkePrefixRocksModel>(
+    keyDefinition = { MkePrefixRocksModel.id.ref() },
+    minimumKeyScanByteRange = 0u,
+) {
+    val id by fixedBytes(1u, byteSize = 16, final = true)
+    val publicText by string(2u)
+    val publicBytes by fixedBytes(3u, byteSize = 8)
+
+    operator fun invoke(id: Bytes, publicText: String, publicBytes: Bytes) = create {
+        this.id with id
+        this.publicText with publicText
+        this.publicBytes with publicBytes
     }
 }
 

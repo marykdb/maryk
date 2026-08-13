@@ -960,7 +960,10 @@ class RocksDBDataStore private constructor(
         offset: Int,
         length: Int,
     ): ByteArray {
-        val envelope = FieldEncryptionEnvelope.from(value, offset, length)
+        if (!isSensitiveReference(modelId, reference)) {
+            return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        }
+        val envelope = FieldEncryptionEnvelope.fromSensitiveValue(value, offset, length)
             ?: return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
@@ -985,7 +988,9 @@ class RocksDBDataStore private constructor(
         length: Int = value.size - offset,
         handle: (ByteArray, Int, Int) -> T
     ): T {
-        if (FieldEncryptionEnvelope.from(value, offset, length) == null) return handle(value, offset, length)
+        if (!isSensitiveReference(modelId, reference) || FieldEncryptionEnvelope.fromSensitiveValue(value, offset, length) == null) {
+            return handle(value, offset, length)
+        }
         val decrypted = decryptValueIfNeeded(modelId, key, reference, value, offset, length)
         return handle(decrypted, 0, decrypted.size)
     }

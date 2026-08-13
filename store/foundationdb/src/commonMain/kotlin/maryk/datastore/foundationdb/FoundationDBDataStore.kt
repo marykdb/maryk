@@ -1171,7 +1171,10 @@ class FoundationDBDataStore private constructor(
         offset: Int = 0,
         length: Int = value.size - offset,
     ): ByteArray {
-        val envelope = FieldEncryptionEnvelope.from(value, offset, length)
+        if (!isSensitiveReference(modelId, reference)) {
+            return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
+        }
+        val envelope = FieldEncryptionEnvelope.fromSensitiveValue(value, offset, length)
             ?: return if (offset == 0 && length == value.size) value else value.copyOfRange(offset, offset + length)
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")

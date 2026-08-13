@@ -66,7 +66,8 @@ internal class IndexedDbSensitiveFieldSupport(
         reference: ByteArray,
         value: ByteArray,
     ): ByteArray {
-        val envelope = FieldEncryptionEnvelope.from(value) ?: return value
+        if (!isSensitiveReference(modelId, reference)) return value
+        val envelope = FieldEncryptionEnvelope.fromSensitiveValue(value) ?: return value
         val provider = fieldEncryptionProvider
             ?: throw RequestException("Encrypted value encountered but no fieldEncryptionProvider configured")
         return when (envelope) {

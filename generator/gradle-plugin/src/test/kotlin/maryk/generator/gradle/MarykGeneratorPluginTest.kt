@@ -183,6 +183,19 @@ class MarykGeneratorPluginTest {
     }
 
     @Test
+    fun generationSupportsConfigurationCache() {
+        val project = fixture()
+        project.resolve("src/main/maryk").createDirectories()
+            .resolve("person.yaml").writeText(schema("Person"))
+
+        val first = runner(project, "marykGenerateModels", "--configuration-cache").build()
+        assertEquals(TaskOutcome.SUCCESS, first.task(":marykGenerateModels")?.outcome)
+
+        val second = runner(project, "marykGenerateModels", "--configuration-cache").build()
+        assertTrue(second.output.contains("Reusing configuration cache."))
+    }
+
+    @Test
     fun refusesConfiguredKotlinSourceDirectoryAsOutput() {
         val project = fixture()
         project.resolve("src/main/maryk").createDirectories()

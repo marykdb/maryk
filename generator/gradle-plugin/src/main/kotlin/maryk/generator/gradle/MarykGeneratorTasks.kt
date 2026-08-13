@@ -16,6 +16,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFiles
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
@@ -38,18 +39,22 @@ abstract class MarykGenerateModelsTask : DefaultTask() {
     @get:OutputDirectory
     abstract val outputDirectory: DirectoryProperty
 
+    @get:Internal
+    abstract val projectDirectory: DirectoryProperty
+
     @get:InputFiles
     @get:PathSensitive(PathSensitivity.RELATIVE)
     abstract val sourceDirectories: ConfigurableFileCollection
 
     @TaskAction
     fun generate() {
+        val projectDirectory = projectDirectory.get().asFile.toPath()
         SchemaBuildEngine.generate(
             schemaFiles = SchemaBuildEngine.discoverSchemas(schemas.files.map { it.toPath() }),
             packageName = packageName.get(),
             outputDirectory = outputDirectory.get().asFile.toPath(),
-            projectDirectory = project.projectDir.toPath(),
-            sourceDirectories = listOf(project.projectDir.toPath().resolve("src")) +
+            projectDirectory = projectDirectory,
+            sourceDirectories = listOf(projectDirectory.resolve("src")) +
                 sourceDirectories.files.map { it.toPath() },
         )
     }

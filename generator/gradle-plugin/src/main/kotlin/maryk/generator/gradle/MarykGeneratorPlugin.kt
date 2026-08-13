@@ -15,6 +15,7 @@ class MarykGeneratorPlugin : Plugin<Project> {
             task.packageName.set(extension.packageName)
             task.generatorVersion.set(provider { project.version.toString() })
             task.outputDirectory.set(extension.outputDirectory)
+            task.projectDirectory.set(layout.projectDirectory)
         }
         tasks.register("marykCheckSchemaCompatibility", MarykCheckSchemaCompatibilityTask::class.java) { task ->
             task.group = "verification"

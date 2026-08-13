@@ -28,12 +28,17 @@ import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.query.changes.DataObjectVersionedChange
+import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.requests.CollectRequest
+import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.datastore.shared.IsDataStore
@@ -757,6 +762,23 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun processUpdateInitialChangesHonorsAddAuthorization() = runBlocking {
+        withServer(
+            RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request -> request.requestType != RequestType.Add },
+            )
+        ) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(initialChangesWithCreatePayload())
+            }
+
+            assertEquals(HttpStatusCode.Forbidden, response.status)
+        }
+    }
+
+    @Test
     fun processUpdateTypeWildcardFallsThroughToPayloadValidation() = runBlocking {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
@@ -992,6 +1014,29 @@ private fun validProcessUpdatePayload(): ByteArray =
             update = OrderedKeysUpdate(
                 keys = listOf(SimpleMarykModel.key(ByteArray(16))),
                 version = 1uL,
+            ),
+        ),
+        testRequestContext(),
+    )
+
+private fun initialChangesWithCreatePayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        UpdateResponse.Serializer,
+        UpdateResponse(
+            dataModel = SimpleMarykModel,
+            update = InitialChangesUpdate(
+                version = 1uL,
+                changes = listOf(
+                    DataObjectVersionedChange(
+                        key = SimpleMarykModel.key(ByteArray(16)),
+                        changes = listOf(
+                            VersionedChanges(
+                                version = 1uL,
+                                changes = listOf(ObjectCreate),
+                            )
+                        ),
+                    )
+                ),
             ),
         ),
         testRequestContext(),

@@ -30,6 +30,7 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
+import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -50,6 +51,7 @@ import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.statuses.AuthFail
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
+import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.properties.types.TypedValue
@@ -335,20 +337,31 @@ internal fun Application.remoteStoreModule(
                 )
                 @Suppress("UNCHECKED_CAST")
                 val updateRequest = decodedUpdateRequest as UpdateResponse<IsRootDataModel>
-                val requestType = when (updateRequest.update) {
-                    is AdditionUpdate<*> -> RequestType.Add
-                    is ChangeUpdate<*> -> RequestType.Change
-                    is RemovalUpdate<*> -> RequestType.Delete
-                    else -> null
+                val requestTypes = when (val update = updateRequest.update) {
+                    is AdditionUpdate<*> -> setOf(RequestType.Add)
+                    is ChangeUpdate<*> -> setOf(RequestType.Change)
+                    is RemovalUpdate<*> -> setOf(RequestType.Delete)
+                    is InitialChangesUpdate<*> -> update.changes
+                        .flatMap { it.changes }
+                        .mapTo(mutableSetOf()) { versionedChanges ->
+                            if (ObjectCreate in versionedChanges.changes) RequestType.Add else RequestType.Change
+                        }
+                    else -> emptySet()
                 }
-                val authorized = call.authorize(
-                    config = config,
-                    principal = principal,
-                    operation = RemoteStoreOperation.ProcessUpdate,
-                    requestType = requestType,
-                    modelName = updateRequest.dataModel.Meta.name,
-                    respondOnFailure = false,
-                )
+                val authorized = if (requestTypes.isEmpty()) {
+                    config.authorizer == null
+                } else {
+                    requestTypes.all { requestType ->
+                        call.authorize(
+                            config = config,
+                            principal = principal,
+                            operation = RemoteStoreOperation.ProcessUpdate,
+                            requestType = requestType,
+                            modelName = updateRequest.dataModel.Meta.name,
+                            respondOnFailure = false,
+                        )
+                    }
+                }
                 val response = if (authorized) {
                     dataStore.processUpdate(updateRequest)
                 } else {

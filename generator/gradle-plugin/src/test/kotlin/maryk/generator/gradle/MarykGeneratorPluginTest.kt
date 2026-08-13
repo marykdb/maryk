@@ -172,6 +172,7 @@ class MarykGeneratorPluginTest {
         val stale = project.resolve("build/generated/maryk/Stale.kt")
         stale.parent.createDirectories()
         stale.writeText("stale")
+        stale.parent.resolve(".maryk-generator-output").writeText("Managed by the Maryk generator.")
 
         val first = runner(project, "marykGenerateModels").build()
         assertEquals(TaskOutcome.SUCCESS, first.task(":marykGenerateModels")?.outcome)

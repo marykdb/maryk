@@ -76,5 +76,3 @@ private fun normalizedReplacement(character: Char): String? = when (character) {
     'þ' -> "th"
     else -> null
 }
-
-internal expect fun decomposeUnicodeForIndex(value: String): String

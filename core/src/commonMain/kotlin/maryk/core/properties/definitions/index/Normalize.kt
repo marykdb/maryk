@@ -19,7 +19,7 @@ import maryk.core.values.ObjectValues
 data class Normalize(
     val reference: IsIndexablePropertyReference<String>
 ) : IsIndexablePropertyReference<String> {
-    override val indexKeyPartType = IndexKeyPartType.Normalize
+    override val indexKeyPartType = IndexKeyPartType.NormalizeV2
     override val referenceStorageByteArray by lazy { Bytes(this.toReferenceStorageByteArray()) }
 
     override fun getValue(values: IsValuesGetter) =

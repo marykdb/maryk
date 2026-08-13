@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.models.RootDataModel
+import maryk.core.models.migration.MigrationStatus.NewIndicesOnExistingProperties
 import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.index.SplitOn.WordBoundary
 import maryk.core.properties.definitions.index.SplitOn.Whitespace
@@ -14,6 +15,7 @@ import maryk.test.ByteCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.expect
 
 internal class NormalizeTest {
@@ -44,6 +46,20 @@ internal class NormalizeTest {
             final = true,
             valueDefinition = StringDefinition()
         )
+    }
+
+    object LegacyNormalizeModel : RootDataModel<LegacyNormalizeModel>(
+        name = "NormalizeUpgradeModel",
+        indexes = { listOf(LegacyNormalize(LegacyNormalizeModel.value.ref())) },
+    ) {
+        val value by string(index = 1u, final = true)
+    }
+
+    object CurrentNormalizeModel : RootDataModel<CurrentNormalizeModel>(
+        name = "NormalizeUpgradeModel",
+        indexes = { listOf(Normalize(CurrentNormalizeModel.value.ref())) },
+    ) {
+        val value by string(index = 1u, final = true)
     }
 
     @Test
@@ -81,6 +97,18 @@ internal class NormalizeTest {
         expect("smorrebrod") { normalizeStringForIndex("Smørrebrød") }
     }
 
+    @Test
+    fun canonicallyEquivalentStringsProduceTheSameIndexBytes() {
+        with(MarykModel.Meta.indexes!![0] as Normalize) {
+            for (value in listOf("Ǻ", "A\u030A\u0301")) {
+                val bytes = ByteCollector()
+                bytes.reserve(calculateStorageByteLength(value))
+                writeStorageBytes(value, bytes::write)
+                assertEquals("61", bytes.bytes!!.toHexString())
+            }
+        }
+    }
+
     private val context = DefinitionsConversionContext(
         propertyDefinitions = MarykModel
     )
@@ -116,7 +144,19 @@ internal class NormalizeTest {
 
     @Test
     fun toReferenceStorageBytes() {
-        expect("170a09") { Normalize(MarykModel.value.ref()).toReferenceStorageByteArray().toHexString() }
+        expect("130a09") { Normalize(MarykModel.value.ref()).toReferenceStorageByteArray().toHexString() }
+    }
+
+    @Test
+    fun legacyNormalizeSignatureTriggersIndexRebuild() {
+        val migration = assertIs<NewIndicesOnExistingProperties>(
+            CurrentNormalizeModel.isMigrationNeeded(LegacyNormalizeModel)
+        )
+
+        assertEquals(
+            listOf(CurrentNormalizeModel.Meta.indexes!!.single().referenceStorageByteArray),
+            migration.indexesToIndex.map { it.referenceStorageByteArray },
+        )
     }
 
     @Test

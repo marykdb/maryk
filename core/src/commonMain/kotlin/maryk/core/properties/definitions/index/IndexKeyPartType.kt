@@ -41,10 +41,11 @@ sealed class IndexKeyPartType<out T: IsIndexable>(
     object Split : IndexKeyPartType<SplitInstance>(8u), ValueType<String>
     object AnyOf : IndexKeyPartType<AnyOfInstance>(9u), ArrayType
     object GeoHash : IndexKeyPartType<GeoHashInstance>(10u), ValueType<String>
+    object NormalizeV2 : IndexKeyPartType<NormalizeInstance>(11u), ValueType<String>
 
     companion object : IndexedEnumDefinition<IndexKeyPartType<*>>(
         IndexKeyPartType::class, {
-            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7, Normalize, Split, AnyOf, GeoHash)
+            listOf(UUIDv4, Reference, Reversed, Multiple, ReferenceToMax, UUIDv7, Normalize, Split, AnyOf, GeoHash, NormalizeV2)
         }
     )
 }
@@ -61,7 +62,8 @@ internal val mapOfSimpleIndexKeyPartDefinitions: Map<IndexKeyPartType<IsIndexabl
         IndexKeyPartType.Reversed to EmbeddedObjectDefinition(dataModel = { ReversedInstance.Model }),
         IndexKeyPartType.ReferenceToMax to EmbeddedObjectDefinition(dataModel = { ReferenceToMaxInstance.Model }),
         IndexKeyPartType.UUIDv7 to EmbeddedObjectDefinition(dataModel = { UUIDv7Key.Model }),
-        IndexKeyPartType.Normalize to EmbeddedObjectDefinition(dataModel = { NormalizeInstance.Model }),
+        IndexKeyPartType.Normalize to EmbeddedObjectDefinition(dataModel = { LegacyNormalize.Model }),
+        IndexKeyPartType.NormalizeV2 to EmbeddedObjectDefinition(dataModel = { NormalizeInstance.Model }),
         IndexKeyPartType.Split to EmbeddedObjectDefinition(dataModel = { SplitInstance.Model }),
         IndexKeyPartType.GeoHash to EmbeddedObjectDefinition(dataModel = { GeoHashInstance.Model }),
     )
@@ -77,6 +79,7 @@ internal val mapOfIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefin
 internal val mapOfStringIndexKeyPartDefinitions: Map<IndexKeyPartType<*>, IsValueDefinition<*, DefinitionsConversionContext>> =
     mapOf(
         IndexKeyPartType.Reference to mapOfSimpleIndexKeyPartDefinitions.getValue(IndexKeyPartType.Reference),
-        IndexKeyPartType.Normalize to EmbeddedObjectDefinition(dataModel = { NormalizeInstance.Model }),
+        IndexKeyPartType.Normalize to EmbeddedObjectDefinition(dataModel = { LegacyNormalize.Model }),
+        IndexKeyPartType.NormalizeV2 to EmbeddedObjectDefinition(dataModel = { NormalizeInstance.Model }),
         IndexKeyPartType.Split to EmbeddedObjectDefinition(dataModel = { SplitInstance.Model }),
     )

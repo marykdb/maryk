@@ -9,7 +9,10 @@ internal fun TypedValue<IndexKeyPartType<*>, *>.toIndexable(): IsIndexable = whe
     is IsIndexable -> typedValue
     is ObjectValues<*, *> -> when (this.type) {
         IndexKeyPartType.Multiple -> Multiple.Model.invoke(typedValue as ObjectValues<Multiple, Multiple.Model>)
-        IndexKeyPartType.Normalize -> Normalize.Model.invoke(typedValue as ObjectValues<Normalize, Normalize.Model>)
+        IndexKeyPartType.Normalize -> LegacyNormalize.Model.invoke(
+            typedValue as ObjectValues<LegacyNormalize, LegacyNormalize.Model>
+        )
+        IndexKeyPartType.NormalizeV2 -> Normalize.Model.invoke(typedValue as ObjectValues<Normalize, Normalize.Model>)
         IndexKeyPartType.Split -> Split.Model.invoke(typedValue as ObjectValues<Split, Split.Model>)
         IndexKeyPartType.AnyOf -> AnyOf.Model.invoke(typedValue as ObjectValues<AnyOf, AnyOf.Model>)
         IndexKeyPartType.ReferenceToMax -> ReferenceToMax.Model.invoke(

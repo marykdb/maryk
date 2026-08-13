@@ -1,7 +1,9 @@
 package io.maryk.app
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -21,9 +23,73 @@ import io.maryk.app.config.StoreRepository
 import io.maryk.app.state.BrowserState
 import io.maryk.app.state.StoresState
 import java.awt.Toolkit
+import kotlinx.coroutines.runBlocking
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.number
+import maryk.core.properties.definitions.string
+import maryk.core.properties.types.numeric.UInt32
+import maryk.core.query.pairs.with
+import maryk.core.query.requests.add
+import maryk.core.query.requests.get
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.datastore.rocksdb.RocksDBDataStore
 import kotlin.uuid.Uuid
 
-fun main() = application {
+const val PACKAGED_STORE_SMOKE_SUCCESS = "MARYK_PACKAGED_STORE_SMOKE_OK"
+
+fun main(args: Array<String>) {
+    val smokeDirectory = args.getOrNull(0).takeIf { it == "--smoke-store" }?.let {
+        requireNotNull(args.getOrNull(1)) { "--smoke-store requires a directory" }
+    }
+    if (smokeDirectory != null) {
+        println(runPackagedStoreSmoke(smokeDirectory))
+    } else {
+        runMarykApp()
+    }
+}
+
+fun runPackagedStoreSmoke(directory: String): String = runBlocking {
+    val values = PackagedStoreSmokeModel.create {
+        id with 1u
+        value with "packaged-store-smoke"
+    }
+    var dataStore = RocksDBDataStore.open(
+        relativePath = directory,
+        dataModelsById = mapOf(1u to PackagedStoreSmokeModel),
+    )
+    val key = try {
+        val status = dataStore.execute(PackagedStoreSmokeModel.add(values)).statuses.single()
+        @Suppress("UNCHECKED_CAST")
+        (status as? AddSuccess<PackagedStoreSmokeModel>)?.key
+            ?: error("Smoke write failed: $status")
+    } finally {
+        dataStore.close()
+    }
+
+    dataStore = RocksDBDataStore.open(
+        relativePath = directory,
+        dataModelsById = mapOf(1u to PackagedStoreSmokeModel),
+    )
+    try {
+        val storedValue = dataStore.execute(PackagedStoreSmokeModel.get(key)).values.single()
+            .values { value }
+        check(storedValue == "packaged-store-smoke") { "Smoke read returned $storedValue" }
+    } finally {
+        dataStore.close()
+    }
+    PACKAGED_STORE_SMOKE_SUCCESS
+}
+
+private object PackagedStoreSmokeModel : RootDataModel<PackagedStoreSmokeModel>(
+    keyDefinition = {
+        PackagedStoreSmokeModel.run { id.ref() }
+    },
+) {
+    val id by number(index = 1u, type = UInt32, final = true)
+    val value by string(index = 2u)
+}
+
+private fun runMarykApp() = application {
     val repository = remember { StoreRepository() }
     val storesState = remember { StoresState(repository) }
     val storesWindowState = rememberWindowState(
@@ -98,53 +164,55 @@ fun main() = application {
         }
 
         sessions.forEach { session ->
-            val sessionWindowState = rememberWindowState(
-                width = defaultWidth.dp,
-                height = defaultHeight.dp,
-                position = WindowPosition(Alignment.Center),
-            )
-            Window(
-                onCloseRequest = { closeBrowserWindow(session) },
-                title = "Maryk - ${session.store.name}",
-                state = sessionWindowState,
-            ) {
-                val scope = rememberCoroutineScope()
-                val connector = remember { StoreConnector() }
-                val browserState = remember(session.id) { BrowserState(connector, scope) }
+            BrowserSessionScope(session.id) {
+                val sessionWindowState = rememberWindowState(
+                    width = defaultWidth.dp,
+                    height = defaultHeight.dp,
+                    position = WindowPosition(Alignment.Center),
+                )
+                Window(
+                    onCloseRequest = { closeBrowserWindow(session) },
+                    title = "Maryk - ${session.store.name}",
+                    state = sessionWindowState,
+                ) {
+                    val scope = rememberCoroutineScope()
+                    val connector = remember { StoreConnector() }
+                    val browserState = remember(session.id) { BrowserState(connector, scope) }
 
-                LaunchedEffect(session.id) {
-                    browserState.connect(session.store)
-                }
+                    LaunchedEffect(session.id) {
+                        browserState.connect(session.store)
+                    }
 
-                DisposableEffect(Unit) {
-                    onDispose { browserState.disconnect() }
-                }
+                    DisposableEffect(Unit) {
+                        onDispose { browserState.disconnect() }
+                    }
 
-                MenuBar {
-                    Menu("File") {
-                        Item("Close Window", onClick = { closeBrowserWindow(session) }, shortcut = shortcutClose)
-                    }
-                    Menu("Data") {
-                        Item("Reload Results", onClick = { browserState.scanFromStart() }, shortcut = shortcutReload)
-                        Item("Import data…", onClick = { browserState.requestImportDataDialog() })
-                        Item("Export all models…", onClick = { browserState.requestExportAllDialog() })
-                        Item("Export data…", onClick = { browserState.requestExportDataDialog() })
-                    }
-                    Menu("Operations") {
-                        Item("Migrations…", onClick = { browserState.requestMigrationDialog() })
-                    }
-                    Menu("Stores") {
-                        Item("New Store", onClick = { openStoreEditor() }, shortcut = shortcutNew)
-                        if (!storesWindowOpen.value) {
-                            Item("Show Stores", onClick = { storesWindowOpen.value = true })
+                    MenuBar {
+                        Menu("File") {
+                            Item("Close Window", onClick = { closeBrowserWindow(session) }, shortcut = shortcutClose)
+                        }
+                        Menu("Data") {
+                            Item("Reload Results", onClick = { browserState.scanFromStart() }, shortcut = shortcutReload)
+                            Item("Import data…", onClick = { browserState.requestImportDataDialog() })
+                            Item("Export all models…", onClick = { browserState.requestExportAllDialog() })
+                            Item("Export data…", onClick = { browserState.requestExportDataDialog() })
+                        }
+                        Menu("Operations") {
+                            Item("Migrations…", onClick = { browserState.requestMigrationDialog() })
+                        }
+                        Menu("Stores") {
+                            Item("New Store", onClick = { openStoreEditor() }, shortcut = shortcutNew)
+                            if (!storesWindowOpen.value) {
+                                Item("Show Stores", onClick = { storesWindowOpen.value = true })
+                            }
                         }
                     }
-                }
 
-                BrowserWindowContent(
-                    state = browserState,
-                    onClose = { closeBrowserWindow(session) },
-                )
+                    BrowserWindowContent(
+                        state = browserState,
+                        onClose = { closeBrowserWindow(session) },
+                    )
+                }
             }
         }
     }
@@ -154,6 +222,13 @@ private data class BrowserSession(
     val id: String,
     val store: StoreDefinition,
 )
+
+@Composable
+internal fun BrowserSessionScope(sessionId: String, content: @Composable () -> Unit) {
+    key(sessionId) {
+        content()
+    }
+}
 
 private fun generateSessionId(): String {
     return Uuid.random().toString()

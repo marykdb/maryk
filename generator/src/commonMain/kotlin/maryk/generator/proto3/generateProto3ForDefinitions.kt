@@ -14,12 +14,12 @@ fun Definitions.generateProto3(
     for (obj in this.definitions) {
         when (obj) {
             is IsIndexedEnumDefinition<*> -> {
-                val writer = writerConstructor(obj.name)
+                val writer = writerConstructor(obj.name.requireProto3Identifier())
                 obj.generateProto3Schema(writer)
                 kotlinGenerationContext.enums.add(obj)
             }
             is IsStorableDataModel<*> -> {
-                val writer = writerConstructor(obj.Meta.name)
+                val writer = writerConstructor(obj.Meta.name.requireProto3Identifier())
                 obj.generateProto3Schema(kotlinGenerationContext, writer)
             }
             else -> throw TypeException("Unknown Maryk Primitive $obj")

@@ -44,6 +44,7 @@ fun <DM : IsStorableDataModel<*>> DM.generateProto3Schema(
     generationContext: GenerationContext,
     writer: (String) -> Unit
 ) {
+    val modelName = Meta.name.requireProto3Identifier()
     val subMessages = mutableListOf<String>()
 
     val messageAdder: (String) -> Unit = {
@@ -60,7 +61,7 @@ fun <DM : IsStorableDataModel<*>> DM.generateProto3Schema(
             reservations += "reserved ${indexes.joinToString(", ")};\n      "
         }
         meta.reservedNames?.let { names ->
-            reservations += "reserved ${names.joinToString{ "\"$it\"" }};\n      "
+            reservations += "reserved ${names.joinToString { "\"${it.proto3StringLiteral()}\"" }};\n      "
         }
         if (reservations.isNotBlank()) reservations.prependIndent().prependIndent("  ")
     }
@@ -73,7 +74,7 @@ fun <DM : IsStorableDataModel<*>> DM.generateProto3Schema(
     } else ""
 
     val schema = """
-    message ${Meta.name} {
+    message $modelName {
       $reservations$precedingMessages${properties.prependIndent().prependIndent("  ").trimStart()}
     }
     """.trimIndent()
@@ -88,8 +89,10 @@ private fun IsStorableDataModel<*>.generateSchemaForProperties(
     var properties = ""
 
     for (it in this) {
-        val type = it.definition.toProtoBufType(it.name, generationContext, messageAdder)
-        properties += "$type ${it.name} = ${it.index};\n"
+        val name = it.name.requireProto3Identifier()
+        val index = it.index.requireProto3FieldNumber()
+        val type = it.definition.toProtoBufType(name, generationContext, messageAdder)
+        properties += "$type $name = $index;\n"
     }
     return properties.trimEnd()
 }
@@ -124,6 +127,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             Float64Type -> "double"
         }
         is EnumDefinition<*> -> {
+            val enumName = this.enum.name.requireProto3Identifier()
             if (!generationContext.enums.contains(this.enum)) {
                 var enumSchema = ""
                 this.enum.generateProto3Schema {
@@ -132,7 +136,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
 
                 messageAdder(enumSchema)
             }
-            this.enum.name
+            enumName
         }
         is SetDefinition<*, *> -> "repeated ${this.valueDefinition.toProtoBufType(
             name,
@@ -190,8 +194,8 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             // Separate object
             "map<${this.keyDefinition.toProtoBufType(name, generationContext, messageAdder)}, ${this.valueDefinition.toProtoBufType(name, generationContext, messageAdder)}>"
         }
-        is EmbeddedValuesDefinition<*> -> this.dataModel.Meta.name
-        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableDataModel<*>).Meta.name
+        is EmbeddedValuesDefinition<*> -> this.dataModel.Meta.name.requireProto3Identifier()
+        is EmbeddedObjectDefinition<*, *, *, *> -> (this.dataModel as IsStorableDataModel<*>).Meta.name.requireProto3Identifier()
         is MultiTypeDefinition<*, *> -> {
             val multiTypeName = "${name.replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }}Type"
 
@@ -201,8 +205,10 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
             } == null
 
             for (typeCase in this.typeEnum.cases()) {
-                val type = typeCase.definition!!.toProtoBufType(typeCase.name, generationContext, messageAdder)
-                multiTypes += "$type ${typeCase.name.replaceFirstChar { it.lowercase() }} = ${typeCase.index};"
+                val typeCaseName = typeCase.name.requireProto3Identifier()
+                val typeCaseIndex = typeCase.index.requireProto3FieldNumber()
+                val type = typeCase.definition!!.toProtoBufType(typeCaseName, generationContext, messageAdder)
+                multiTypes += "$type ${typeCaseName.replaceFirstChar { it.lowercase() }} = $typeCaseIndex;"
             }
 
             val properties = multiTypes.joinToString(separator = "\n    ").prependIndent().prependIndent().prependIndent()
@@ -211,7 +217,7 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
                 messageAdder(
                 """
                 message $multiTypeName {
-                  oneof $name {
+                  oneof ${name.requireProto3Identifier()} {
                     ${properties.prependIndent().trimStart()}
                   }
                 }

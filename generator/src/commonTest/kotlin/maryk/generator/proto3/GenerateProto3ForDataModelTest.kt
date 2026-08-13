@@ -2,6 +2,16 @@ package maryk.generator.proto3
 
 import maryk.generator.kotlin.GenerationContext
 import maryk.generator.DecimalGeneratorModel
+import maryk.core.models.RootDataModel
+import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.IsUsableInMultiType
+import maryk.core.properties.definitions.multiType
+import maryk.core.properties.definitions.string
+import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
+import maryk.core.properties.enum.MultiTypeEnum
+import maryk.core.properties.enum.MultiTypeEnumDefinition
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum
@@ -10,6 +20,7 @@ import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 val generatedProto3ForSimpleMarykModel = """
 message SimpleMarykModel {
@@ -167,6 +178,65 @@ message CompleteMarykModel {
 
 class GenerateProto3ForDataModelTest {
     @Test
+    fun rejectsModelNamesThatAreInvalidProtoIdentifiers() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            buildString {
+                `invalid-model`.generateProto3Schema(GenerationContext(), ::append)
+            }
+        }
+
+        assertEquals("Proto3 identifier is invalid: invalid-model", exception.message)
+    }
+
+    @Test
+    fun rejectsInvalidEmbeddedModelTypeNames() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            buildString {
+                ModelWithInvalidEmbeddedType.generateProto3Schema(GenerationContext(), ::append)
+            }
+        }
+
+        assertEquals("Proto3 identifier is invalid: invalid-embedded", exception.message)
+    }
+
+    @Test
+    fun rejectsMultiTypeCaseIndexesOutsideTheProtoFieldNumberRange() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            buildString {
+                ModelWithOutOfRangeMultiType.generateProto3Schema(GenerationContext(), ::append)
+            }
+        }
+
+        assertEquals("Proto3 field number is invalid: 536870912", exception.message)
+    }
+
+    @Test
+    fun escapesReservedNamesAsProtoStringLiterals() {
+        val output = buildString {
+            ReservedNamesEscapingModel.generateProto3Schema(GenerationContext(), ::append)
+        }
+
+        assertEquals(
+            """
+            message ReservedNamesEscapingModel {
+              reserved "quote\" and newline\n";
+              string value = 1;
+            }
+            """.trimIndent(),
+            output,
+        )
+    }
+
+    @Test
+    fun rejectsInvalidOrdinaryPropertyFieldNumbers() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            536_870_912u.requireProto3FieldNumber()
+        }
+
+        assertEquals("Proto3 field number is invalid: 536870912", exception.message)
+    }
+
+    @Test
     fun decimalUsesExactStringType() {
         val output = buildString {
             DecimalGeneratorModel.generateProto3Schema(GenerationContext()) {
@@ -256,4 +326,38 @@ class GenerateProto3ForDataModelTest {
 
         assertEquals(generatedProto3ForTestMarykModel, output)
     }
+}
+
+private object `invalid-model` : RootDataModel<`invalid-model`>() {
+    val value by string(index = 1u)
+}
+
+private object `invalid-embedded` : RootDataModel<`invalid-embedded`>() {
+    val value by string(index = 1u)
+}
+
+private object ModelWithInvalidEmbeddedType : RootDataModel<ModelWithInvalidEmbeddedType>() {
+    val embedded by embed(index = 1u, dataModel = { `invalid-embedded` })
+}
+
+private sealed class OutOfRangeMultiType<T : Any>(
+    index: UInt,
+    override val definition: IsUsableInMultiType<T, IsPropertyContext>?
+) : IndexedEnumImpl<OutOfRangeMultiType<Any>>(index), MultiTypeEnum<T> {
+    object Value : OutOfRangeMultiType<String>(536_870_912u, StringDefinition())
+
+    companion object : MultiTypeEnumDefinition<OutOfRangeMultiType<out Any>>(
+        OutOfRangeMultiType::class,
+        values = { listOf(Value) },
+    )
+}
+
+private object ModelWithOutOfRangeMultiType : RootDataModel<ModelWithOutOfRangeMultiType>() {
+    val value by multiType(index = 1u, typeEnum = OutOfRangeMultiType)
+}
+
+private object ReservedNamesEscapingModel : RootDataModel<ReservedNamesEscapingModel>(
+    reservedNames = listOf("quote\" and newline\n"),
+) {
+    val value by string(index = 1u)
 }

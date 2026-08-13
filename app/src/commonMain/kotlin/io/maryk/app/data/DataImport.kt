@@ -88,17 +88,27 @@ internal suspend fun importDataFromFile(
     suspend fun handleRecord(values: ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) {
         val record = ValuesWithMetaData(values)
         records.add(record.key to record.values)
+        if (records.size == IMPORT_BATCH_SIZE) {
+            importBatch(records)
+            records.clear()
+        }
     }
 
-    when (format) {
-        DataExportFormat.JSON -> readJsonRecords(path, requestContext, scope, ::handleRecord)
-        DataExportFormat.YAML -> readYamlRecords(path, requestContext, scope, ::handleRecord)
-        DataExportFormat.PROTO -> readProtoRecords(path, requestContext, scope, ::handleRecord)
+    suspend fun readRecords(
+        onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
+    ) {
+        when (format) {
+            DataExportFormat.JSON -> readJsonRecords(path, requestContext, scope, onRecord)
+            DataExportFormat.YAML -> readYamlRecords(path, requestContext, scope, onRecord)
+            DataExportFormat.PROTO -> readProtoRecords(path, requestContext, scope, onRecord)
+        }
     }
 
-    for (batch in records.chunked(100)) {
-        importBatch(batch)
+    readRecords { values ->
+        ValuesWithMetaData(values)
     }
+    readRecords(::handleRecord)
+    if (records.isNotEmpty()) importBatch(records)
     return ImportResult(imported = imported, failed = failed)
 }
 
@@ -115,21 +125,10 @@ internal suspend fun importVersionedDataFromFile(
     )
     var imported = 0
     var failed = 0
-    val records = mutableListOf<DataObjectVersionedChange<IsRootDataModel>>()
 
     suspend fun handleRecord(values: ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) {
         val record = DataObjectVersionedChange(values)
-        records.add(normalizeVersionedRecord(model, record, requestContext))
-    }
-
-    when (format) {
-        DataExportFormat.JSON -> readVersionedJsonRecords(path, requestContext, scope, ::handleRecord)
-        DataExportFormat.YAML -> readVersionedYamlRecords(path, requestContext, scope, ::handleRecord)
-        DataExportFormat.PROTO -> readVersionedProtoRecords(path, requestContext, scope, ::handleRecord)
-    }
-
-    records.forEach { record ->
-        val success = applyVersionedRecord(dataStore, model, record)
+        val success = applyVersionedRecord(dataStore, model, normalizeVersionedRecord(model, record, requestContext))
         if (success) {
             imported += 1
         } else {
@@ -137,8 +136,24 @@ internal suspend fun importVersionedDataFromFile(
         }
     }
 
+    suspend fun readRecords(
+        onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
+    ) {
+        when (format) {
+            DataExportFormat.JSON -> readVersionedJsonRecords(path, requestContext, scope, onRecord)
+            DataExportFormat.YAML -> readVersionedYamlRecords(path, requestContext, scope, onRecord)
+            DataExportFormat.PROTO -> readVersionedProtoRecords(path, requestContext, scope, onRecord)
+        }
+    }
+
+    readRecords { values ->
+        normalizeVersionedRecord(model, DataObjectVersionedChange(values), requestContext)
+    }
+    readRecords(::handleRecord)
     return ImportResult(imported = imported, failed = failed)
 }
+
+private const val IMPORT_BATCH_SIZE = 100
 
 internal fun detectVersionedImport(
     path: String,
@@ -240,17 +255,19 @@ private suspend fun readYamlRecords(
     onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
 ) {
     val content = readImportText(path)
-    val documents = splitYamlDocuments(content)
     when (scope) {
         DataImportScope.SINGLE -> {
-            val doc = documents.firstOrNull() ?: return
-            val values = ValuesWithMetaData.Serializer.readJson(MarykYamlReader(doc), requestContext)
-            onRecord(values)
+            var read = false
+            forEachYamlDocument(content) { document ->
+                if (!read) {
+                    onRecord(ValuesWithMetaData.Serializer.readJson(MarykYamlReader(document), requestContext))
+                    read = true
+                }
+            }
         }
         DataImportScope.MULTIPLE -> {
-            documents.forEach { doc ->
-                val values = ValuesWithMetaData.Serializer.readJson(MarykYamlReader(doc), requestContext)
-                onRecord(values)
+            forEachYamlDocument(content) { document ->
+                onRecord(ValuesWithMetaData.Serializer.readJson(MarykYamlReader(document), requestContext))
             }
         }
     }
@@ -261,6 +278,19 @@ internal fun splitYamlDocuments(content: String): List<String> {
     if (trimmed.isEmpty() || trimmed == "[]") return emptyList()
     val raw = trimmed.split(Regex("(?m)^---\\s*$"))
     return raw.map { it.trim() }.filter { it.isNotEmpty() }
+}
+
+private suspend fun forEachYamlDocument(content: String, onDocument: suspend (String) -> Unit) {
+    val trimmed = content.trim()
+    if (trimmed.isEmpty() || trimmed == "[]") return
+    var start = 0
+    for (separator in Regex("(?m)^---\\s*$").findAll(trimmed)) {
+        val document = trimmed.substring(start, separator.range.first).trim()
+        if (document.isNotEmpty()) onDocument(document)
+        start = separator.range.last + 1
+    }
+    val document = trimmed.substring(start).trim()
+    if (document.isNotEmpty()) onDocument(document)
 }
 
 private const val MAX_IMPORT_FILE_BYTES = 64L * 1024L * 1024L
@@ -373,17 +403,19 @@ private suspend fun readVersionedYamlRecords(
     onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
 ) {
     val content = readImportText(path)
-    val documents = splitYamlDocuments(content)
     when (scope) {
         DataImportScope.SINGLE -> {
-            val doc = documents.firstOrNull() ?: return
-            val values = DataObjectVersionedChange.Serializer.readJson(MarykYamlReader(doc), requestContext)
-            onRecord(values)
+            var read = false
+            forEachYamlDocument(content) { document ->
+                if (!read) {
+                    onRecord(DataObjectVersionedChange.Serializer.readJson(MarykYamlReader(document), requestContext))
+                    read = true
+                }
+            }
         }
         DataImportScope.MULTIPLE -> {
-            documents.forEach { doc ->
-                val values = DataObjectVersionedChange.Serializer.readJson(MarykYamlReader(doc), requestContext)
-                onRecord(values)
+            forEachYamlDocument(content) { document ->
+                onRecord(DataObjectVersionedChange.Serializer.readJson(MarykYamlReader(document), requestContext))
             }
         }
     }

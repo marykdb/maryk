@@ -22,6 +22,10 @@ For broad review-to-fix work:
 - Run generated-document synchronization before the related implementation commit. Update review reports once at the end, not after every finding.
 - Prefer bounded waits over repeated status polling or large agent-tree dumps. Report only changed status or blockers.
 
+For commits:
+- Use a concise subject followed by a multiline body for every substantive commit. The body must separately state what changed, why it was needed, and relevant compatibility, safety, or verification considerations. Do not use one-line commit messages for review fixes, behavior changes, CI changes, or documentation that records their disposition.
+- Before committing, inspect staged and unstaged changes separately. Keep each commit concern-based and path-limited; preserve unrelated work in a dirty tree.
+
 Style: telegraph. Drop filler/grammar. Min tokens (global AGENTS + replies).
 
 When writing code:

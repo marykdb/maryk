@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
+import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -8,9 +9,12 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
 import maryk.core.exceptions.TypeException
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.decodeVarUInt
@@ -21,6 +25,7 @@ import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.models.migration.MigrationAuditEventType
 import maryk.core.models.migration.MigrationAuditLogStore
 import maryk.core.models.migration.MigrationConfiguration
+import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationRuntimeStatus
@@ -188,6 +193,22 @@ class RocksDBDataStore private constructor(
 
     override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
+    private val storePath: String = relativePath
+    private var storeMeta: StoreMeta = readStoreMetaFile(storePath).also { meta ->
+        if (meta.indexKeyFormatVersion > CURRENT_INDEX_KEY_FORMAT_VERSION) {
+            throw StorageException(
+                "Unsupported RocksDB index key format version ${meta.indexKeyFormatVersion}; " +
+                    "this Maryk version supports up to $CURRENT_INDEX_KEY_FORMAT_VERSION"
+            )
+        }
+    }
+    private val modelMetas: MutableMap<UInt, ModelMeta> = storeMeta.models.toMutableMap()
+    private val storeInitializationComplete = atomic(false)
+    private val indexKeyFormatReady = atomic(
+        storeMeta.indexKeyFormatVersion == CURRENT_INDEX_KEY_FORMAT_VERSION
+    )
+    private val indexKeyFormatMigrationMutex = Mutex()
+
     private val blockCache = RocksDBBlockCache()
 
     // Only create Options if no Options were passed. Will take ownership and close it if this object is closed
@@ -197,10 +218,6 @@ class RocksDBDataStore private constructor(
         } else null
 
     internal val db: OptimisticTransactionDB
-
-    private val storePath: String = relativePath
-    private var storeMeta: StoreMeta = readStoreMetaFile(storePath)
-    private val modelMetas: MutableMap<UInt, ModelMeta> = storeMeta.models.toMutableMap()
 
     internal val defaultWriteOptions = WriteOptions()
     internal val defaultReadOptions = ReadOptions().apply {
@@ -277,7 +294,7 @@ class RocksDBDataStore private constructor(
             }
             retainedColumnFamilyHandles = handles.drop(handleIndex)
 
-            validateStoredIndexKeyFormat()
+            validateStoredModelsBeforeIndexFormatMigration()
         } catch (e: Throwable) {
             closeResources()
             throw e
@@ -396,9 +413,12 @@ class RocksDBDataStore private constructor(
             it()
             writeStoreMeta()
         }
+
+        storeInitializationComplete.value = true
+        migrateStoredIndexKeyFormatIfReady()
     }
 
-    private fun writeStoreMeta() {
+    private fun writeStoreMeta(indexKeyFormatVersion: Int = storeMeta.indexKeyFormatVersion) {
         dataModelsById.forEach { (modelId, dataModel) ->
             if (modelId !in modelMetas) {
                 modelMetas[modelId] = ModelMeta(dataModel.Meta.name, dataModel.Meta.keyByteSize)
@@ -406,7 +426,7 @@ class RocksDBDataStore private constructor(
         }
         storeMeta = StoreMeta(
             models = modelMetas.toMap(),
-            indexKeyFormatVersion = CURRENT_INDEX_KEY_FORMAT_VERSION
+            indexKeyFormatVersion = indexKeyFormatVersion,
         )
         writeStoreMetaFile(storePath, storeMeta)
     }
@@ -419,11 +439,65 @@ class RocksDBDataStore private constructor(
         }
 
         if (!hasIndexOrUniqueData) {
-            writeStoreMeta()
+            writeStoreMeta(CURRENT_INDEX_KEY_FORMAT_VERSION)
             return
         }
 
         migrateStoredIndexKeyFormat()
+    }
+
+    internal suspend fun migrateStoredIndexKeyFormatIfReady(completingModelId: UInt? = null) {
+        indexKeyFormatMigrationMutex.withLock {
+            if (completingModelId != null && !storeInitializationComplete.value) {
+                pendingMigrationModelIds.update { it - completingModelId }
+                return@withLock
+            }
+            if (indexKeyFormatReady.value) {
+                if (completingModelId != null) {
+                    pendingMigrationModelIds.update { it - completingModelId }
+                }
+                return@withLock
+            }
+            if (!storeInitializationComplete.value) return@withLock
+
+            val migrationsStillPending = pendingMigrationModelIds.value.let { pending ->
+                if (completingModelId == null) pending else pending - completingModelId
+            }
+            if (migrationsStillPending.isNotEmpty()) {
+                if (completingModelId != null) {
+                    pendingMigrationModelIds.update { it - completingModelId }
+                }
+                return@withLock
+            }
+
+            validateStoredIndexKeyFormat()
+            indexKeyFormatReady.value = true
+            if (completingModelId != null) {
+                pendingMigrationModelIds.update { it - completingModelId }
+            }
+        }
+    }
+
+    private fun validateStoredModelsBeforeIndexFormatMigration() {
+        val conversionContext = DefinitionsConversionContext().apply {
+            addDataModelReferences(dataModelsById.values)
+        }
+        for (index in orderMigrationModelIds(dataModelsById)) {
+            val dataModel = dataModelsById.getValue(index)
+            val columnFamilies = columnFamilyHandlesByDataModelIndex[index] ?: continue
+            val migrationStatus = checkModelIfMigrationIsNeeded(
+                rocksDB = db,
+                modelMeta = modelMetas[index],
+                modelId = index,
+                modelColumnFamily = columnFamilies.model,
+                dataModel = dataModel,
+                onlyCheckVersion = onlyCheckModelVersion,
+                conversionContext = conversionContext,
+            )
+            if (migrationStatus is NeedsMigration && migrationConfiguration.migrationHandler == null) {
+                throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
+            }
+        }
     }
 
     private fun migrateStoredIndexKeyFormat() {
@@ -448,7 +522,7 @@ class RocksDBDataStore private constructor(
         }
 
         uniqueIndicesByDataModelIndex.value = emptyMap()
-        writeStoreMeta()
+        writeStoreMeta(CURRENT_INDEX_KEY_FORMAT_VERSION)
     }
 
     private fun rebuildCurrentUniqueIndex(
@@ -1241,7 +1315,12 @@ class RocksDBDataStore private constructor(
         message: String? = null,
     ) = appendMigrationAuditEventInternal(modelId, migrationId, type, phase, attempt, message)
 
-    override fun assertModelReady(dataModelId: UInt) = assertModelReadyForMigrations(dataModelId)
+    override fun assertModelReady(dataModelId: UInt) {
+        if (!indexKeyFormatReady.value) {
+            throw MigrationException("RocksDB index key format migration is pending")
+        }
+        assertModelReadyForMigrations(dataModelId)
+    }
 
     companion object {
         suspend fun open(

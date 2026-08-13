@@ -50,7 +50,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
         return when (val currentStatus = recheckMigrationStatus()) {
             MigrationStatus.UpToDate, MigrationStatus.AlreadyProcessed -> {
                 migrationStateStore.clear(index)
-                pendingMigrationModelIds.update { it - index }
+                migrateStoredIndexKeyFormatIfReady(index)
                 pendingMigrationReasons.update { it - index }
                 pausedMigrationModelIds.update { it - index }
                 canceledMigrationReasons.update { it - index }
@@ -217,7 +217,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                     val previousState = readMigrationState()
                     if (previousState?.isFinalizationPending() == true) {
                         finalizeCompletedPhases(previousState)
-                        pendingMigrationModelIds.update { it - index }
+                        migrateStoredIndexKeyFormatIfReady(index)
                         pendingMigrationReasons.update { it - index }
                         pausedMigrationModelIds.update { it - index }
                         canceledMigrationReasons.update { it - index }
@@ -260,7 +260,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                             )
                             writeMigrationState(finalizationState)
                             finalizeCompletedPhases(finalizationState)
-                            pendingMigrationModelIds.update { it - index }
+                            migrateStoredIndexKeyFormatIfReady(index)
                             pendingMigrationReasons.update { it - index }
                             pausedMigrationModelIds.update { it - index }
                             canceledMigrationReasons.update { it - index }

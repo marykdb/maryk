@@ -17,6 +17,17 @@ import kotlin.test.assertTrue
 
 class AppStateScanConfigTest {
     @Test
+    fun invalidatingAnActiveScanClearsBusyStateAndRejectsItsCompletion() {
+        val scanBusyState = ScanBusyState()
+
+        val scan = scanBusyState.start()
+
+        assertTrue(scanBusyState.cancel())
+        assertFalse(scanBusyState.isScanning)
+        assertFalse(scanBusyState.complete(scan))
+    }
+
+    @Test
     fun delayedScanAPaginationCompletionDoesNotClearScanBBusyState() = runBlocking {
         val scanBusyState = ScanBusyState()
         val allowScanACompletion = CompletableDeferred<Unit>()

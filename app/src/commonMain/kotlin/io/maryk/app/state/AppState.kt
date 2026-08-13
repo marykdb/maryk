@@ -270,6 +270,7 @@ class BrowserState(
     fun disconnect() {
         activeConnection?.close()
         activeConnection = null
+        invalidateScanRequests()
         models = emptyList()
         selectedModelId = null
         scanResults = emptyList()
@@ -539,7 +540,7 @@ class BrowserState(
         if (timeTravelInputError != null) {
             scanResults = emptyList()
             scanCursor = ScanPageCursor()
-            scanGeneration += 1
+            invalidateScanRequests()
             scanStatus = timeTravelInputError
             invalidateAggregations(timeTravelInputError)
             modelCountGeneration += 1
@@ -618,7 +619,7 @@ class BrowserState(
         if (hasInvalidTimeTravelInput()) return
         scanResults = emptyList()
         scanCursor = ScanPageCursor()
-        scanGeneration += 1
+        invalidateScanRequests()
         loadNextPage(reset = true)
     }
 
@@ -971,13 +972,15 @@ class BrowserState(
             val result = withContext(Dispatchers.IO) {
                 buildScanPage(connection.dataStore, dataModel, reset)
             }
+            val completedRequest = scanBusyState.complete(scanRequest)
             if (requestGeneration != scanGeneration) {
+                if (completedRequest) isWorking = false
                 return@launch
             }
             when (result) {
                 is ScanPageResult.Error -> {
                     scanStatus = result.message
-                    if (scanBusyState.complete(scanRequest)) {
+                    if (completedRequest) {
                         isWorking = false
                     }
                 }
@@ -985,7 +988,7 @@ class BrowserState(
                     scanStatus = result.message
                     scanCursor = result.cursor
                     scanResults = if (reset) result.rows else scanResults + result.rows
-                    if (scanBusyState.complete(scanRequest)) {
+                    if (completedRequest) {
                         isWorking = false
                     }
                 }
@@ -1567,7 +1570,7 @@ class BrowserState(
         scanResults = emptyList()
         scanCursor = ScanPageCursor()
         scanStatus = null
-        scanGeneration += 1
+        invalidateScanRequests()
     }
 
     private fun hasInvalidTimeTravelInput(): Boolean {
@@ -1588,6 +1591,11 @@ class BrowserState(
 
     private fun invalidateRecordLoadRequests() {
         recordLoadGeneration += 1
+    }
+
+    private fun invalidateScanRequests() {
+        scanGeneration += 1
+        if (scanBusyState.cancel()) isWorking = false
     }
 }
 
@@ -1787,6 +1795,13 @@ internal class ScanBusyState {
 
     fun complete(request: Int): Boolean {
         if (request != activeRequest) return false
+        isScanning = false
+        return true
+    }
+
+    fun cancel(): Boolean {
+        if (!isScanning) return false
+        activeRequest = ++nextRequest
         isScanning = false
         return true
     }

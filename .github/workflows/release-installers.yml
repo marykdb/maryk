@@ -199,6 +199,7 @@ jobs:
           package_name=$(dpkg-deb --field "$deb" Package)
           [[ "$package_name" =~ ^[a-z0-9][a-z0-9+.-]*$ ]]
           smoke_home=$(mktemp -d)
+          smoke_store=$(mktemp -d)
           smoke_log="$RUNNER_TEMP/maryk-linux-smoke.log"
           install_attempted=false
           cleanup() {
@@ -206,6 +207,7 @@ jobs:
               sudo dpkg --purge "$package_name" >/dev/null || true
             fi
             rm -rf -- "$smoke_home"
+            rm -rf -- "$smoke_store"
           }
           trap cleanup EXIT
 
@@ -214,14 +216,11 @@ jobs:
           launcher=$(dpkg-query --listfiles "$package_name" | awk '/\/bin\/[^/]+$/ { print; exit }')
           test -x "$launcher"
 
-          status=0
-          HOME="$smoke_home" timeout --signal=TERM --kill-after=5s 10s xvfb-run -a "$launcher" >"$smoke_log" 2>&1 || status=$?
-          if [[ "$status" -ne 124 ]]; then
+          if ! HOME="$smoke_home" timeout --signal=TERM --kill-after=5s 60s "$launcher" --smoke-store "$smoke_store" >"$smoke_log" 2>&1; then
             cat "$smoke_log" >&2
-            echo "Packaged Linux app exited during startup with status $status" >&2
             exit 1
           fi
-          echo "Packaged Linux app remained alive for 10 seconds"
+          grep -Fx 'MARYK_PACKAGED_STORE_SMOKE_OK' "$smoke_log"
 
       - name: Smoke test packaged Windows app
         if: runner.os == 'Windows'
@@ -238,6 +237,7 @@ jobs:
           $stdoutLog = Join-Path $env:RUNNER_TEMP 'maryk-windows-smoke.stdout.log'
           $stderrLog = Join-Path $env:RUNNER_TEMP 'maryk-windows-smoke.stderr.log'
           $smokeProfile = Join-Path $env:RUNNER_TEMP 'maryk-windows-smoke-profile'
+          $smokeStore = Join-Path $env:RUNNER_TEMP 'maryk-windows-smoke-store'
           $appProcess = $null
           $installAttempted = $false
           try {
@@ -261,14 +261,20 @@ jobs:
             $env:APPDATA = Join-Path $smokeProfile 'AppData/Roaming'
             $env:LOCALAPPDATA = Join-Path $smokeProfile 'AppData/Local'
             New-Item $env:APPDATA, $env:LOCALAPPDATA -ItemType Directory -Force | Out-Null
-            $appProcess = Start-Process $executable.FullName -WorkingDirectory $executable.DirectoryName -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog -PassThru
-            Start-Sleep -Seconds 10
-            if ($appProcess.HasExited) {
+            $appProcess = Start-Process $executable.FullName -ArgumentList @('--smoke-store', $smokeStore) -WorkingDirectory $executable.DirectoryName -RedirectStandardOutput $stdoutLog -RedirectStandardError $stderrLog -PassThru
+            if (-not $appProcess.WaitForExit(60000)) {
+              taskkill.exe /PID $($appProcess.Id) /T /F | Out-Null
+              throw 'Packaged Windows app store smoke timed out'
+            }
+            if ($appProcess.ExitCode -ne 0) {
               Get-Content $stdoutLog -ErrorAction SilentlyContinue
               Get-Content $stderrLog -ErrorAction SilentlyContinue
-              throw "Packaged Windows app exited during startup with status $($appProcess.ExitCode)"
+              throw "Packaged Windows app store smoke failed with status $($appProcess.ExitCode)"
             }
-            Write-Output 'Packaged Windows app remained alive for 10 seconds'
+            if (-not (Select-String -Path $stdoutLog -Pattern '^MARYK_PACKAGED_STORE_SMOKE_OK$' -Quiet)) {
+              Get-Content $stdoutLog -ErrorAction SilentlyContinue
+              throw 'Packaged Windows app store smoke did not report success'
+            }
           }
           finally {
             if ($appProcess -and -not $appProcess.HasExited) {
@@ -283,6 +289,7 @@ jobs:
             }
             Remove-Item $installRoot -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item $smokeProfile -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item $smokeStore -Recurse -Force -ErrorAction SilentlyContinue
           }
 
       - name: Upload distribution

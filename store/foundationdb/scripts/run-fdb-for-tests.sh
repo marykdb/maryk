@@ -20,8 +20,29 @@ FDB_LISTEN="${FDB_LISTEN:-127.0.0.1:4500}"
 
 mkdir -p "$DATA_DIR" "$LOG_DIR"
 
-if [[ ! -x "$BIN_DIR/fdbserver" ]] && ! command -v fdbserver >/dev/null 2>&1; then
+if { [[ ! -x "$BIN_DIR/fdbserver" ]] && ! command -v fdbserver >/dev/null 2>&1; } ||
+   { [[ ! -x "$BIN_DIR/fdbcli" ]] && ! command -v fdbcli >/dev/null 2>&1; }; then
   bash "$SCRIPT_DIR/install-foundationdb.sh"
+fi
+
+resolve_tool() {
+  local name="$1"
+  if [[ -x "$BIN_DIR/$name" ]]; then
+    printf '%s\n' "$BIN_DIR/$name"
+  else
+    command -v "$name" 2>/dev/null || true
+  fi
+}
+
+FDBSERVER_BIN="$(resolve_tool fdbserver)"
+FDBCLI_BIN="$(resolve_tool fdbcli)"
+if [[ -z "$FDBSERVER_BIN" ]]; then
+  echo "fdbserver is unavailable both in $BIN_DIR and on PATH" >&2
+  exit 1
+fi
+if [[ -z "$FDBCLI_BIN" ]]; then
+  echo "fdbcli is required for authoritative FoundationDB readiness checks" >&2
+  exit 1
 fi
 
 export PATH="$BIN_DIR:$PATH"
@@ -51,7 +72,7 @@ start_server() {
   fi
 
   set -x
-  "$BIN_DIR/fdbserver" \
+  "$FDBSERVER_BIN" \
     --cluster-file "$CLUSTER_FILE" \
     --listen-address "$FDB_LISTEN" \
     --public-address "$FDB_LISTEN" \
@@ -76,17 +97,15 @@ start_server() {
 
 wait_ready() {
   export FDB_CLUSTER_FILE="$CLUSTER_FILE"
-  # If we don't have fdbcli available, do a best-effort short wait and return success.
-  if [[ ! -x "$BIN_DIR/fdbcli" ]]; then
-    sleep 2
-    return 0
-  fi
   # Wait until the cluster reports as available.
-  for i in {1..180}; do
-    if "$BIN_DIR/fdbcli" --exec "status minimal" 2>/dev/null | grep -qi "The database is available"; then
+  local attempts="${FDB_READY_ATTEMPTS:-180}"
+  local delay_seconds="${FDB_READY_DELAY_SECONDS:-1}"
+  local attempt
+  for ((attempt = 1; attempt <= attempts; attempt++)); do
+    if "$FDBCLI_BIN" --exec "status minimal" 2>/dev/null | grep -qi "The database is available"; then
       return 0
     fi
-    sleep 1
+    sleep "$delay_seconds"
   done
   return 1
 }
@@ -94,16 +113,14 @@ wait_ready() {
 configure_if_needed() {
   export FDB_CLUSTER_FILE="$CLUSTER_FILE"
   # Configure a single-memory test database; ignore errors if it already exists.
-  if [[ -x "$BIN_DIR/fdbcli" ]]; then
-    local configure_output
-    configure_output="$("$BIN_DIR/fdbcli" --timeout 15 --exec "configure new single memory logs=1 commit_proxies=1 grv_proxies=1" 2>&1 || true)"
-    if grep -qi "Database created" <<<"$configure_output"; then
-      echo "$configure_output"
-    elif grep -qi "Database already exists" <<<"$configure_output"; then
-      echo "Reusing existing FoundationDB configuration"
-    elif [[ -n "$configure_output" ]]; then
-      echo "$configure_output" >&2
-    fi
+  local configure_output
+  configure_output="$("$FDBCLI_BIN" --timeout 15 --exec "configure new single memory logs=1 commit_proxies=1 grv_proxies=1" 2>&1 || true)"
+  if grep -qi "Database created" <<<"$configure_output"; then
+    echo "$configure_output"
+  elif grep -qi "Database already exists" <<<"$configure_output"; then
+    echo "Reusing existing FoundationDB configuration"
+  elif [[ -n "$configure_output" ]]; then
+    echo "$configure_output" >&2
   fi
 }
 
@@ -117,7 +134,7 @@ else
 fi
 
 # Fail fast if server exited immediately
-sleep 0.5
+sleep "${FDB_STARTUP_PROBE_DELAY_SECONDS:-0.5}"
 if ! kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
   echo "fdbserver exited immediately; see $LOG_DIR/fdbserver.out" >&2
   exit 1

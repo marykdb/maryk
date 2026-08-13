@@ -24,6 +24,12 @@ data class FoundationDBClusterUpdateLogConfiguration(
         require(clusterUpdateLogBatchSize in 1..MAX_CLUSTER_UPDATE_LOG_BATCH_SIZE) {
             "clusterUpdateLogBatchSize should be between 1 and $MAX_CLUSTER_UPDATE_LOG_BATCH_SIZE but was $clusterUpdateLogBatchSize"
         }
+        require(clusterUpdateLogRetention.isPositive() && clusterUpdateLogRetention.isFinite()) {
+            "clusterUpdateLogRetention should be positive and finite but was $clusterUpdateLogRetention"
+        }
+        require(clusterUpdateLogPollInterval.isPositive() && clusterUpdateLogPollInterval.isFinite()) {
+            "clusterUpdateLogPollInterval should be positive and finite but was $clusterUpdateLogPollInterval"
+        }
     }
 
     /** Validates the cursor array capacity before the cluster log tailer allocates it. */

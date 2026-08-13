@@ -25,9 +25,14 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 private const val maxUShortLength = 0xFFFF
+private const val maxChunkValueSize = 90_000
+// Leaves transaction budget for the primary value writes and optional history/index mutations.
+private const val maxChunkedValueSize = 3_000_000
 private val nextKeySuffix = byteArrayOf(0)
 private const val retentionIndexMarker = "retention-v2"
 private const val cursorMarker = "cluster-log-cursor-v2"
+private const val chunkKeyMarker = "cluster-log-chunk-v1"
+private val chunkManifestMagic = byteArrayOf(0x43, 0x4c, 0x43, 0x01)
 
 internal class ClusterUpdateLog(
     private val logPrefix: ByteArray,
@@ -63,7 +68,24 @@ internal class ClusterUpdateLog(
         val key = buildLogKey(modelId, update, versionstamp)
         val retentionKey = buildRetentionKey(shard, modelId, hlcBytes, update.keyBytes.bytes, originBytes, versionstamp)
         val value = encodeValue(modelId, update, dataModelsById.getValue(modelId))
-        tr.mutate(MutationType.SET_VERSIONSTAMPED_KEY, key, value)
+        if (value.size <= maxChunkValueSize) {
+            tr.mutate(MutationType.SET_VERSIONSTAMPED_KEY, key, value)
+        } else {
+            require(value.size <= maxChunkedValueSize) {
+                "Cluster-log update exceeds the bounded chunk format: ${value.size} bytes"
+            }
+            val chunkCount = (value.size + maxChunkValueSize - 1) / maxChunkValueSize
+            tr.mutate(MutationType.SET_VERSIONSTAMPED_KEY, key, encodeChunkManifest(value.size, chunkCount))
+            for (index in 0 until chunkCount) {
+                val start = index * maxChunkValueSize
+                val end = minOf(start + maxChunkValueSize, value.size)
+                tr.mutate(
+                    MutationType.SET_VERSIONSTAMPED_KEY,
+                    buildChunkKey(shard, modelId, hlcBytes, update.keyBytes.bytes, originBytes, versionstamp, index),
+                    value.copyOfRange(start, end),
+                )
+            }
+        }
         tr.mutate(MutationType.SET_VERSIONSTAMPED_KEY, retentionKey, byteArrayOf())
 
         hlcPrefix?.also {
@@ -106,7 +128,7 @@ internal class ClusterUpdateLog(
             val kv = entries.nextBlocking()
             cursor = if (cursor.v2Active) cursor.copy(v2Key = kv.key) else cursor.copy(legacyKey = kv.key)
             processed++
-            decodeEntry(kv.key, kv.value)?.also { decoded ->
+            decodeStoredEntry(tr, kv.key, kv.value)?.also { decoded ->
                 if (decoded.header.origin != originId && cursor.includes(decoded)) {
                     updates += decoded
                 }
@@ -156,13 +178,20 @@ internal class ClusterUpdateLog(
                 stoppedForBytes = true
                 break
             }
-            mainKey?.also(tr::clear)
+            mainKey?.also { key ->
+                tr.clear(key)
+                chunkRangeForMainKey(key)?.also(tr::clear)
+            }
             tr.clear(retentionKey)
             cleared++
             affectedKeyBytes += entryBytes
         }
         return stoppedForBytes || cleared == limit
     }
+
+    internal fun chunkRange(shard: Int, modelId: UInt): Range = Range.startsWith(
+        combineToByteArray(logPrefix, Tuple.from(chunkKeyMarker, shard, modelId.toLong()).pack())
+    )
 
     fun cursorIsBeforeCutoff(shard: Int, modelId: UInt, cursorKey: ByteArray, cutoff: ULong): Boolean {
         val cursor = decodeCursor(cursorKey, shard, modelId)
@@ -400,6 +429,27 @@ internal class ClusterUpdateLog(
     internal fun decodeEntry(key: ByteArray, value: ByteArray): DecodedUpdate? =
         decodeValue(value)?.copy(commitVersion = commitVersionFromLogKey(key))
 
+    private fun decodeStoredEntry(tr: Transaction, key: ByteArray, value: ByteArray): DecodedUpdate? {
+        if (!value.isChunkManifest()) return decodeEntry(key, value)
+        val manifest = requireNotNull(decodeChunkManifest(value)) { "Invalid cluster-log chunk manifest" }
+        val chunkPrefix = requireNotNull(chunkPrefixForMainKey(key)) { "Invalid chunked cluster-log key" }
+        val reconstructed = ByteArray(manifest.totalSize)
+        var offset = 0
+        for (index in 0 until manifest.chunkCount) {
+            val chunk = requireNotNull(tr.get(chunkKey(chunkPrefix, index)).awaitResult()) {
+                "Missing cluster-log chunk $index of ${manifest.chunkCount}"
+            }
+            val expectedSize = minOf(maxChunkValueSize, manifest.totalSize - offset)
+            require(chunk.size == expectedSize) {
+                "Invalid cluster-log chunk $index size: ${chunk.size}, expected $expectedSize"
+            }
+            chunk.copyInto(reconstructed, offset)
+            offset += chunk.size
+        }
+        require(offset == manifest.totalSize) { "Incomplete cluster-log chunk reconstruction" }
+        return decodeEntry(key, reconstructed)
+    }
+
     internal fun buildLogKey(
         modelId: UInt,
         update: ClusterLogUpdate,
@@ -446,6 +496,40 @@ internal class ClusterUpdateLog(
     ): ByteArray = packVersionstampedTuple(
         Tuple.from(retentionIndexMarker, shard, modelId.toLong(), hlcBytes, keyBytes, origin, versionstamp),
     )
+
+    private fun buildChunkKey(
+        shard: Int,
+        modelId: UInt,
+        hlcBytes: ByteArray,
+        keyBytes: ByteArray,
+        origin: ByteArray,
+        versionstamp: Versionstamp,
+        index: Int,
+    ): ByteArray = packVersionstampedTuple(
+        Tuple.from(chunkKeyMarker, shard, modelId.toLong(), versionstamp, hlcBytes, keyBytes, origin, index),
+    )
+
+    private fun chunkPrefixForMainKey(key: ByteArray): ByteArray? {
+        val tuple = unpackLogTuple(key) ?: return null
+        if (tuple.size < 6) return null
+        val shard = tuple[0] as? Long ?: return null
+        val modelId = tuple[1] as? Long ?: return null
+        val versionstamp = tuple[2] as? Versionstamp ?: return null
+        val hlcBytes = tuple[3] as? ByteArray ?: return null
+        val keyBytes = tuple[4] as? ByteArray ?: return null
+        val origin = tuple[5] as? ByteArray ?: return null
+        if (!versionstamp.isComplete) return null
+        return combineToByteArray(
+            logPrefix,
+            Tuple.from(chunkKeyMarker, shard, modelId, versionstamp, hlcBytes, keyBytes, origin).pack(),
+        )
+    }
+
+    private fun chunkKey(prefix: ByteArray, index: Int): ByteArray =
+        combineToByteArray(prefix, Tuple.from(index).pack())
+
+    private fun chunkRangeForMainKey(key: ByteArray): Range? =
+        chunkPrefixForMainKey(key)?.let(Range::startsWith)
 
     private fun packVersionstampedTuple(tuple: Tuple): ByteArray =
         if (tuple.items.any { it is Versionstamp && !it.isComplete }) {
@@ -686,6 +770,34 @@ private fun versionstampedValuePlaceholder(): ByteArray {
     return out
 }
 
+private data class ClusterLogChunkManifest(
+    val totalSize: Int,
+    val chunkCount: Int,
+)
+
+private fun encodeChunkManifest(totalSize: Int, chunkCount: Int): ByteArray {
+    require(totalSize > maxChunkValueSize) { "Chunked cluster-log value should exceed the inline limit" }
+    require(chunkCount > 1) { "Chunked cluster-log value should use multiple chunks" }
+    return ByteArray(chunkManifestMagic.size + Int.SIZE_BYTES * 2).also { bytes ->
+        chunkManifestMagic.copyInto(bytes)
+        bytes.writeIntBigEndian(chunkManifestMagic.size, totalSize)
+        bytes.writeIntBigEndian(chunkManifestMagic.size + Int.SIZE_BYTES, chunkCount)
+    }
+}
+
+private fun decodeChunkManifest(value: ByteArray): ClusterLogChunkManifest? {
+    if (!value.isChunkManifest()) return null
+    val totalSize = value.readIntBigEndian(chunkManifestMagic.size)
+    val chunkCount = value.readIntBigEndian(chunkManifestMagic.size + Int.SIZE_BYTES)
+    if (totalSize !in (maxChunkValueSize + 1)..maxChunkedValueSize || chunkCount <= 1) return null
+    if (((totalSize - 1) / maxChunkValueSize) + 1 != chunkCount) return null
+    return ClusterLogChunkManifest(totalSize, chunkCount)
+}
+
+private fun ByteArray.isChunkManifest(): Boolean =
+    size == chunkManifestMagic.size + Int.SIZE_BYTES * 2 &&
+        copyOfRange(0, chunkManifestMagic.size).contentEquals(chunkManifestMagic)
+
 internal fun packWithAdjustedVersionstampOffset(prefix: ByteArray, packedWithVersionstamp: ByteArray): ByteArray {
     require(packedWithVersionstamp.size >= 4) { "Versionstamped tuple must include 4-byte offset trailer" }
     val payloadLen = packedWithVersionstamp.size - 4
@@ -735,6 +847,19 @@ private fun ByteArray.writeIntLittleEndian(offset: Int, value: Int) {
     this[offset + 1] = ((value ushr 8) and 0xFF).toByte()
     this[offset + 2] = ((value ushr 16) and 0xFF).toByte()
     this[offset + 3] = ((value ushr 24) and 0xFF).toByte()
+}
+
+private fun ByteArray.readIntBigEndian(offset: Int): Int =
+    ((this[offset].toInt() and 0xFF) shl 24) or
+        ((this[offset + 1].toInt() and 0xFF) shl 16) or
+        ((this[offset + 2].toInt() and 0xFF) shl 8) or
+        (this[offset + 3].toInt() and 0xFF)
+
+private fun ByteArray.writeIntBigEndian(offset: Int, value: Int) {
+    this[offset] = ((value ushr 24) and 0xFF).toByte()
+    this[offset + 1] = ((value ushr 16) and 0xFF).toByte()
+    this[offset + 2] = ((value ushr 8) and 0xFF).toByte()
+    this[offset + 3] = (value and 0xFF).toByte()
 }
 
 private fun ByteArray.readLongBigEndian(): Long {

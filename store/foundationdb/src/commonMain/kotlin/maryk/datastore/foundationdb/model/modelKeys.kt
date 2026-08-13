@@ -16,3 +16,5 @@ internal val modelUpdateHistoryBackfillCompleteKey = byteArrayOf(7)
 internal val modelSchemaStateKey = byteArrayOf(8)
 /** Transition-owned scratch space for bounded index-rebuild replay. */
 internal val modelIndexRebuildScratchKey = byteArrayOf(9)
+/** Versioned chunks for migration audit logs which exceed FoundationDB's value limit. */
+internal val modelMigrationAuditLogChunksKey = byteArrayOf(10)

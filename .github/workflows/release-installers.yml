@@ -124,23 +124,31 @@ jobs:
 
           mount_point=$(mktemp -d)
           smoke_home=$(mktemp -d)
+          smoke_store=$(mktemp -d)
           smoke_log="$RUNNER_TEMP/maryk-macos-smoke.log"
           app_pid=''
           mounted=false
-          cleanup() {
+          stop_app() {
             if [[ -n "$app_pid" ]] && kill -0 "$app_pid" 2>/dev/null; then
-              kill "$app_pid" 2>/dev/null || true
+              pkill -TERM -P "$app_pid" 2>/dev/null || true
+              kill -TERM "$app_pid" 2>/dev/null || true
               for _ in {1..5}; do
                 kill -0 "$app_pid" 2>/dev/null || break
                 sleep 1
               done
-              kill -9 "$app_pid" 2>/dev/null || true
+              pkill -KILL -P "$app_pid" 2>/dev/null || true
+              kill -KILL "$app_pid" 2>/dev/null || true
               wait "$app_pid" 2>/dev/null || true
             fi
+            app_pid=''
+          }
+          cleanup() {
+            stop_app
             if [[ "$mounted" == true ]]; then
               hdiutil detach "$mount_point" -force >/dev/null || true
             fi
             rm -rf -- "$smoke_home"
+            rm -rf -- "$smoke_store"
             rmdir "$mount_point" 2>/dev/null || true
           }
           trap cleanup EXIT
@@ -153,19 +161,30 @@ jobs:
           executable="$app/Contents/MacOS/$executable_name"
           test -x "$executable"
 
-          HOME="$smoke_home" "$executable" >"$smoke_log" 2>&1 &
+          HOME="$smoke_home" "$executable" --smoke-store "$smoke_store" >"$smoke_log" 2>&1 &
           app_pid=$!
-          for _ in {1..10}; do
-            sleep 1
+          for _ in {1..60}; do
             if ! kill -0 "$app_pid" 2>/dev/null; then
-              status=0
-              wait "$app_pid" || status=$?
-              cat "$smoke_log" >&2
-              echo "Packaged macOS app exited during startup with status $status" >&2
-              exit 1
+              break
             fi
+            sleep 1
           done
-          echo "Packaged macOS app remained alive for 10 seconds"
+
+          if kill -0 "$app_pid" 2>/dev/null; then
+            stop_app
+            cat "$smoke_log" >&2
+            echo "Packaged macOS app store smoke timed out after 60 seconds" >&2
+            exit 1
+          fi
+          status=0
+          wait "$app_pid" || status=$?
+          app_pid=''
+          if [[ "$status" -ne 0 ]]; then
+            cat "$smoke_log" >&2
+            echo "Packaged macOS app store smoke failed with status $status" >&2
+            exit 1
+          fi
+          grep -Fx 'MARYK_PACKAGED_STORE_SMOKE_OK' "$smoke_log"
 
       - name: Smoke test packaged Linux app
         if: runner.os == 'Linux'

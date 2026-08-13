@@ -3,7 +3,9 @@ package maryk.file
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 
 class FileTest {
@@ -62,6 +64,30 @@ class FileTest {
             assertEquals("new", File.readText(path))
         } finally {
             File.delete(path)
+        }
+    }
+
+    @Test
+    fun temporaryFileSyncFailurePreservesExistingContentsAndCleansTemporaryFile() {
+        val path = "fileStoreAtomicFailure-${Random.nextInt()}.txt"
+        var temporaryPath: String? = null
+
+        try {
+            File.writeText(path, "old")
+
+            assertFailsWith<IllegalStateException> {
+                File.writeTextViaTemporaryFile(path, "new") { temporary ->
+                    temporaryPath = temporary
+                    false
+                }
+            }
+
+            assertEquals("old", File.readText(path))
+            assertNotNull(temporaryPath)
+            assertNull(File.readText(temporaryPath))
+        } finally {
+            File.delete(path)
+            temporaryPath?.let(File::delete)
         }
     }
 

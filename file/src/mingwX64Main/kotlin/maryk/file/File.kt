@@ -17,6 +17,7 @@ import platform.windows.DeleteFileW
 import platform.windows.FILE_ATTRIBUTE_DIRECTORY
 import platform.windows.FILE_ATTRIBUTE_NORMAL
 import platform.windows.FILE_END
+import platform.windows.FlushFileBuffers
 import platform.windows.GENERIC_READ
 import platform.windows.GENERIC_WRITE
 import platform.windows.GetFileAttributesW
@@ -269,6 +270,20 @@ actual object File {
             "Could not replace $destinationPath with $sourcePath (${GetLastError()})"
         }
     }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun syncFile(path: String): Boolean {
+        val handle = CreateFileW(path, GENERIC_WRITE.toUInt(), 0u, null, OPEN_EXISTING.toUInt(), FILE_ATTRIBUTE_NORMAL.toUInt(), null)
+        if (handle == null || handle == INVALID_HANDLE_VALUE) return false
+        try {
+            return FlushFileBuffers(handle) != 0
+        } finally {
+            CloseHandle(handle)
+        }
+    }
+
+    /** Windows does not expose a reliable directory-handle flush through this API. */
+    actual fun syncParentDirectory(path: String): Boolean = false
 
     actual fun delete(path: String): Boolean {
         return DeleteFileW(path) != 0

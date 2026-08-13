@@ -55,6 +55,15 @@ class MetaFileTest {
     }
 
     @Test
+    fun replacesExistingCompleteMetaFile() {
+        writeMetaFile(path, mapOf(1u to ModelMeta("Old", 8)))
+
+        writeMetaFile(path, mapOf(2u to ModelMeta("New", 16)))
+
+        assertEquals(mapOf(2u to ModelMeta("New", 16)), readMetaFile(path))
+    }
+
+    @Test
     fun readsModelNamesAndKeySizes() {
         val metas = mapOf<UInt, ModelMeta>(
             5u to ModelMeta("Fancy", 12),

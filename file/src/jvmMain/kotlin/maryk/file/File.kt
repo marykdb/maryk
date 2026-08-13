@@ -2,8 +2,10 @@ package maryk.file
 
 import java.io.File
 import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.StandardOpenOption.READ
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
@@ -66,6 +68,17 @@ actual object File {
             Files.move(Path.of(sourcePath), Path.of(destinationPath), REPLACE_EXISTING)
         }
     }
+
+    actual fun syncFile(path: String): Boolean =
+        runCatching {
+            FileChannel.open(Path.of(path), READ).use { it.force(true) }
+        }.isSuccess
+
+    actual fun syncParentDirectory(path: String): Boolean =
+        runCatching {
+            val parent = Path.of(path).parent ?: Path.of(".")
+            FileChannel.open(parent, READ).use { it.force(true) }
+        }.isSuccess
 
     actual fun delete(path: String): Boolean = File(path).delete()
 }

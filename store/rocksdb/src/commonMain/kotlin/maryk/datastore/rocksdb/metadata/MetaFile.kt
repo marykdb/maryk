@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb.metadata
 
 import maryk.file.File
+import maryk.file.writeTextViaTemporaryFile
 import maryk.json.JsonToken
 import maryk.yaml.YamlReader
 import maryk.yaml.YamlWriter
@@ -78,7 +79,7 @@ fun writeStoreMetaFile(storePath: String, storeMeta: StoreMeta) {
     writer.writeEndObject() // models
     writer.writeEndObject() // root
 
-    File.writeText("$storePath/$META_FILE_NAME", builder.toString())
+    File.writeTextViaTemporaryFile("$storePath/$META_FILE_NAME", builder.toString())
 }
 
 fun readModelNames(storePath: String): Map<UInt, String> =

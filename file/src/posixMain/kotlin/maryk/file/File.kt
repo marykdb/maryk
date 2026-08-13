@@ -24,6 +24,7 @@ import platform.posix.mkdir
 import platform.posix.open
 import platform.posix.read
 import platform.posix.rename
+import platform.posix.fsync
 import platform.posix.stat
 import platform.posix.write
 
@@ -171,7 +172,34 @@ actual object File {
     }
 
     @OptIn(ExperimentalForeignApi::class)
+    actual fun syncFile(path: String): Boolean = sync(path)
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun syncParentDirectory(path: String): Boolean =
+        sync(parentDirectory(path))
+
+    @OptIn(ExperimentalForeignApi::class)
     actual fun delete(path: String): Boolean = platform.posix.remove(path) == 0
+}
+
+@OptIn(ExperimentalForeignApi::class)
+private fun sync(path: String): Boolean {
+    val fd = open(path, O_RDONLY, 0)
+    if (fd < 0) return false
+    try {
+        return fsync(fd) == 0
+    } finally {
+        close(fd)
+    }
+}
+
+private fun parentDirectory(path: String): String {
+    val separatorIndex = path.lastIndexOf('/')
+    return when {
+        separatorIndex < 0 -> "."
+        separatorIndex == 0 -> "/"
+        else -> path.substring(0, separatorIndex)
+    }
 }
 
 @OptIn(ExperimentalForeignApi::class)

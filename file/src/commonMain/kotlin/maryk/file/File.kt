@@ -15,5 +15,9 @@ expect object File {
     fun writeBytes(path: String, contents: ByteArray)
     fun appendText(path: String, contents: String)
     fun moveReplace(sourcePath: String, destinationPath: String)
+    /** Flushes a regular file's contents and metadata. Returns false when the platform cannot do so. */
+    fun syncFile(path: String): Boolean
+    /** Flushes the directory entry for [path]. Returns false when the platform cannot do so. */
+    fun syncParentDirectory(path: String): Boolean
     fun delete(path: String): Boolean
 }

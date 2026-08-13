@@ -5,7 +5,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDateTime
 import maryk.core.query.requests.add
@@ -27,7 +26,7 @@ import kotlin.uuid.Uuid
 
 class ClusterUpdateLogObservabilityTest {
     @Test
-    fun clusterUpdateLogCloseCompletesAfterListenerStartup() = runBlocking {
+    fun clusterUpdateLogCloseCompletesAfterListenerStartup() = runBoundedIntegrationTest {
         val store = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = listOf("maryk", "test", "observability", "close", Uuid.random().toString()),
@@ -65,7 +64,7 @@ class ClusterUpdateLogObservabilityTest {
     }
 
     @Test
-    fun clusterUpdateLogStatsAreNullWhenDisabled() = runBlocking {
+    fun clusterUpdateLogStatsAreNullWhenDisabled() = runBoundedIntegrationTest {
         val store = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = listOf("maryk", "test", "observability", "disabled", Uuid.random().toString()),
@@ -83,7 +82,7 @@ class ClusterUpdateLogObservabilityTest {
     }
 
     @Test
-    fun clusterUpdateLogStatsTrackTailingAndListeners() = runBlocking {
+    fun clusterUpdateLogStatsTrackTailingAndListeners() = runBoundedIntegrationTest {
         val store = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = listOf("maryk", "test", "observability", Uuid.random().toString()),
@@ -161,7 +160,7 @@ class ClusterUpdateLogObservabilityTest {
     }
 
     @Test
-    fun clusterUpdateLogStatsTrackMultipleListenersPerModel() = runBlocking {
+    fun clusterUpdateLogStatsTrackMultipleListenersPerModel() = runBoundedIntegrationTest {
         val store = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
             directoryPath = listOf("maryk", "test", "observability", "multi-listener", Uuid.random().toString()),
@@ -215,7 +214,7 @@ class ClusterUpdateLogObservabilityTest {
     }
 
     @Test
-    fun clusterHlcSyncAdvancesWithoutActiveListeners() = runBlocking {
+    fun clusterHlcSyncAdvancesWithoutActiveListeners() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "hlc-sync", Uuid.random().toString())
         val writer = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",

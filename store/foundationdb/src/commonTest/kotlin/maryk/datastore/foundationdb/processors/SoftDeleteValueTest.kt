@@ -1,10 +1,10 @@
 package maryk.datastore.foundationdb.processors
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.clock.HLC
 import maryk.core.models.key
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.runBoundedIntegrationTest
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.test.dataModelsForTests
 import maryk.test.models.SimpleMarykModel
@@ -16,7 +16,7 @@ import kotlin.uuid.Uuid
 class SoftDeleteValueTest {
     @Test
     fun currentIsSoftDeletedIgnoresOverlongValue() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 directoryPath = listOf("maryk", "test", "soft-delete-current-overlong", Uuid.random().toString()),
                 dataModelsById = dataModelsForTests,
@@ -48,7 +48,7 @@ class SoftDeleteValueTest {
 
     @Test
     fun softDeleteFallbackIgnoresValueWithoutDeleteFlag() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 directoryPath = listOf("maryk", "test", "soft-delete-fallback-missing-flag", Uuid.random().toString()),
                 dataModelsById = dataModelsForTests,

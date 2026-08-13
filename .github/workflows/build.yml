@@ -45,6 +45,7 @@ jobs:
       fail-fast: false
     name: ${{ matrix.job_name }}
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
     env:
       FDB_VERSION: '7.3.75'
 

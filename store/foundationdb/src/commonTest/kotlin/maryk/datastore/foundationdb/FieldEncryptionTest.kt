@@ -1,6 +1,5 @@
 package maryk.datastore.foundationdb
 
-import kotlinx.coroutines.runBlocking
 import maryk.core.exceptions.RequestException
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.fixedBytes
@@ -47,7 +46,7 @@ import kotlin.uuid.Uuid
 class FieldEncryptionTest {
     @Test
     fun sensitivePropertyStoredEncrypted() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
                 directoryPath = listOf("maryk", "test", "field-encryption", Uuid.random().toString()),
@@ -85,7 +84,7 @@ class FieldEncryptionTest {
 
     @Test
     fun nonSensitiveMkePrefixValuesRoundTripWithAndWithoutProvider() {
-        runBlocking {
+        runBoundedIntegrationTest {
             listOf<XorFieldEncryptionProvider?>(null, XorFieldEncryptionProvider()).forEachIndexed { providerIndex, provider ->
                 val store = FoundationDBDataStore.open(
                     fdbClusterFilePath = "./fdb.cluster",
@@ -131,7 +130,7 @@ class FieldEncryptionTest {
 
     @Test
     fun contextualEnvelopeRejectsTransplantAndReadsLegacyEnvelope() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val provider = AesGcmHmacSha256EncryptionProvider(
                 encryptionKey = ByteArray(32) { 1 },
                 tokenKey = ByteArray(32) { 2 },
@@ -194,7 +193,7 @@ class FieldEncryptionTest {
 
     @Test
     fun contextualEncryptionReadsHistoricSensitiveValues() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
                 directoryPath = listOf("maryk", "test", "field-encryption-history", Uuid.random().toString()),
@@ -229,7 +228,7 @@ class FieldEncryptionTest {
 
     @Test
     fun contextualEncryptionFiltersCurrentSensitiveValuesDuringTableScan() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
                 directoryPath = listOf("maryk", "test", "field-encryption-scan", Uuid.random().toString()),
@@ -257,7 +256,7 @@ class FieldEncryptionTest {
 
     @Test
     fun referencedFilterUsesTargetModelContextForSensitiveValue() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
                 directoryPath = listOf("maryk", "test", "field-encryption-referenced-filter", Uuid.random().toString()),
@@ -290,7 +289,7 @@ class FieldEncryptionTest {
 
     @Test
     fun sensitivePropertyRequiresEncryptionProvider() {
-        runBlocking {
+        runBoundedIntegrationTest {
             assertFailsWith<RequestException> {
                 FoundationDBDataStore.open(
                     fdbClusterFilePath = "./fdb.cluster",
@@ -304,7 +303,7 @@ class FieldEncryptionTest {
 
     @Test
     fun sensitivePropertyCannotBeIndexed() {
-        runBlocking {
+        runBoundedIntegrationTest {
             assertFailsWith<RequestException> {
                 FoundationDBDataStore.open(
                     fdbClusterFilePath = "./fdb.cluster",
@@ -319,7 +318,7 @@ class FieldEncryptionTest {
 
     @Test
     fun sensitiveUniqueRequiresTokenProvider() {
-        runBlocking {
+        runBoundedIntegrationTest {
             assertFailsWith<RequestException> {
                 FoundationDBDataStore.open(
                     fdbClusterFilePath = "./fdb.cluster",
@@ -334,7 +333,7 @@ class FieldEncryptionTest {
 
     @Test
     fun sensitiveUniqueUsesDeterministicToken() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
                 directoryPath = listOf("maryk", "test", "field-encryption-unique", Uuid.random().toString()),
@@ -365,7 +364,7 @@ class FieldEncryptionTest {
 
     @Test
     fun deletingSensitiveUniqueValuePassesDecryptedRangeToTokenProvider() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val encryptionProvider = XorWithTokenFieldEncryptionProvider()
             val store = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
@@ -403,7 +402,7 @@ class FieldEncryptionTest {
 
     @Test
     fun softDeleteRemovesRetainedSensitiveUniqueRotationToken() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val directoryPath = listOf("maryk", "test", "field-encryption-unique-rotation", Uuid.random().toString())
             val oldStore = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
@@ -446,7 +445,7 @@ class FieldEncryptionTest {
 
     @Test
     fun hardDeleteRemovesRetainedTokenHistoryAfterSoftDeleteWithoutErasingReusedTokenHistory() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val directoryPath = listOf("maryk", "test", "field-encryption-unique-hard-delete-rotation", Uuid.random().toString())
             val oldStore = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
@@ -500,7 +499,7 @@ class FieldEncryptionTest {
 
     @Test
     fun hardDeleteRemovesHistoricTokensForChangedSensitiveUniqueValueWithoutErasingOtherOwnerHistory() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
                 directoryPath = listOf("maryk", "test", "field-encryption-unique-hard-delete-changed", Uuid.random().toString()),
@@ -544,7 +543,7 @@ class FieldEncryptionTest {
 
     @Test
     fun hardDeleteDeduplicatesRepeatedHistoricValuesAndDuplicateRetainedTokens() {
-        runBlocking {
+        runBoundedIntegrationTest {
             val store = FoundationDBDataStore.open(
                 fdbClusterFilePath = "./fdb.cluster",
                 directoryPath = listOf("maryk", "test", "field-encryption-unique-hard-delete-deduplicate", Uuid.random().toString()),

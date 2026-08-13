@@ -7,7 +7,6 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
@@ -31,7 +30,7 @@ import kotlin.uuid.Uuid
 
 class ClusterUpdateLogReliabilityTest {
     @Test
-    fun clusterLogCursorUsesCommitOrderWhenHlcDecreases() = runBlocking {
+    fun clusterLogCursorUsesCommitOrderWhenHlcDecreases() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "cluster-log", "commit-order", Uuid.random().toString())
         val writer = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
@@ -212,7 +211,7 @@ class ClusterUpdateLogReliabilityTest {
     }
 
     @Test
-    fun clusterHlcSyncMaintainsCrossNodeMonotonicWrites() = runBlocking {
+    fun clusterHlcSyncMaintainsCrossNodeMonotonicWrites() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "hlc-reliability", "monotonic", Uuid.random().toString())
         val nodeA = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
@@ -273,7 +272,7 @@ class ClusterUpdateLogReliabilityTest {
     }
 
     @Test
-    fun clusterHlcSyncSurvivesRestartWithStableConsumerId() = runBlocking {
+    fun clusterHlcSyncSurvivesRestartWithStableConsumerId() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "hlc-reliability", "restart", Uuid.random().toString())
         val stableConsumerId = "restarted-${Uuid.random()}"
 
@@ -340,7 +339,7 @@ class ClusterUpdateLogReliabilityTest {
     }
 
     @Test
-    fun retentionBoundaryCursorResetStillKeepsHlcSafe() = runBlocking {
+    fun retentionBoundaryCursorResetStillKeepsHlcSafe() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "hlc-reliability", "retention-reset", Uuid.random().toString())
         val writer = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
@@ -402,7 +401,7 @@ class ClusterUpdateLogReliabilityTest {
     }
 
     @Test
-    fun malformedLogEntryDoesNotStallTailer() = runBlocking {
+    fun malformedLogEntryDoesNotStallTailer() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "hlc-reliability", "malformed", Uuid.random().toString())
         val writer = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",
@@ -460,7 +459,7 @@ class ClusterUpdateLogReliabilityTest {
     }
 
     @Test
-    fun highContentionParallelWritersStayMonotonicPerNode() = runBlocking {
+    fun highContentionParallelWritersStayMonotonicPerNode() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "hlc-reliability", "contention", Uuid.random().toString())
         val nodes = List(4) { idx ->
             FoundationDBDataStore.open(
@@ -498,7 +497,7 @@ class ClusterUpdateLogReliabilityTest {
     }
 
     @Test
-    fun cursorRewindCanCauseDuplicateDeliveryAtLeastOnce() = runBlocking {
+    fun cursorRewindCanCauseDuplicateDeliveryAtLeastOnce() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "hlc-reliability", "duplicates", Uuid.random().toString())
         val readerConsumerId = "reader-${Uuid.random()}"
         val writer = FoundationDBDataStore.open(

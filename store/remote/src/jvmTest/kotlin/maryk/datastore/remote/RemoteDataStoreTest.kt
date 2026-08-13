@@ -38,7 +38,6 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.io.readByteArray
 import maryk.core.inject.Inject
@@ -101,7 +100,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBearerTokenOverPublicHttpBeforeNetworkIo() = runBlocking {
+    fun connectRejectsBearerTokenOverPublicHttpBeforeNetworkIo() = runBoundedIntegrationTest {
         val client = HttpClient(MockEngine) {
             engine {
                 addHandler {
@@ -128,7 +127,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectAllowsPublicHttpBearerWithExplicitInsecureOptIn() = runBlocking {
+    fun connectAllowsPublicHttpBearerWithExplicitInsecureOptIn() = runBoundedIntegrationTest {
         val client = HttpClient(MockEngine) {
             engine {
                 addHandler {
@@ -156,7 +155,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectAllowsBearerTransportForHttpsAndLoopbackHttpUrls() = runBlocking {
+    fun connectAllowsBearerTransportForHttpsAndLoopbackHttpUrls() = runBoundedIntegrationTest {
         val client = HttpClient(MockEngine) {
             engine {
                 addHandler {
@@ -198,7 +197,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun capturesAuthoritativeRemoteSnapshotVersion() = runBlocking {
+    fun capturesAuthoritativeRemoteSnapshotVersion() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(
             keepAllVersions = true,
             dataModelsById = mapOf(1u to SimpleMarykModel),
@@ -224,7 +223,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun rejectsConflictingLocalModelInstanceWithTheSameRemoteName() = runBlocking {
+    fun rejectsConflictingLocalModelInstanceWithTheSameRemoteName() = runBoundedIntegrationTest {
         val executeCalls = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -249,7 +248,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun decodesRemoteResponseUsingCompatibleLocalModelInstance() = runBlocking {
+    fun decodesRemoteResponseUsingCompatibleLocalModelInstance() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val port = ServerSocket(0).use { it.localPort }
         val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
@@ -275,7 +274,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun remoteModelThenLocalModelDecodesWithTheLocalDefinition() = runBlocking {
+    fun remoteModelThenLocalModelDecodesWithTheLocalDefinition() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         store.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-remote-first" }))
         val port = ServerSocket(0).use { it.localPort }
@@ -299,7 +298,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun localModelThenRemoteModelKeepsTheDecodedRemoteDefinition() = runBlocking {
+    fun localModelThenRemoteModelKeepsTheDecodedRemoteDefinition() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         store.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-local-first" }))
         val port = ServerSocket(0).use { it.localPort }
@@ -320,7 +319,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun concurrentSameNameRequestsAllowOnlyOneLocalModelBeforeTransport() = runBlocking {
+    fun concurrentSameNameRequestsAllowOnlyOneLocalModelBeforeTransport() = runBoundedIntegrationTest {
         val executeCalls = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -352,7 +351,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun serverAuthorizerScopesByPrincipalModelAndAction() = runBlocking {
+    fun serverAuthorizerScopesByPrincipalModelAndAction() = runBoundedIntegrationTest {
         val decisions = mutableListOf<RemoteStoreAuthorizationRequest>()
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val port = ServerSocket(0).use { it.localPort }
@@ -392,7 +391,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowReconnectsWithAtLeastOnceInitialState() = runBlocking {
+    fun executeFlowReconnectsWithAtLeastOnceInitialState() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -425,7 +424,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowResetsRetryBudgetAfterDeliveringNewUpdates() = runBlocking {
+    fun executeFlowResetsRetryBudgetAfterDeliveringNewUpdates() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -458,7 +457,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun closeAllListenersStopsAReconnectableRemoteFlow() = runBlocking {
+    fun closeAllListenersStopsAReconnectableRemoteFlow() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val firstConnectionOpened = CompletableDeferred<Unit>()
         val port = ServerSocket(0).use { it.localPort }
@@ -496,7 +495,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowDeliversAtLeastOnceUpdatesAtReconnectBoundary() = runBlocking {
+    fun executeFlowDeliversAtLeastOnceUpdatesAtReconnectBoundary() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -530,7 +529,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowDeliversLowerHlcUpdateAfterReconnect() = runBlocking {
+    fun executeFlowDeliversLowerHlcUpdateAfterReconnect() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -580,7 +579,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowProtocolV2AcceptsHeartbeatFrames() = runBlocking {
+    fun executeFlowProtocolV2AcceptsHeartbeatFrames() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             heartbeatThenUpdateFlowModule()
@@ -606,7 +605,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowRetriesWhenAcceptedConnectionNeverSendsResponseHeaders() = runBlocking {
+    fun executeFlowRetriesWhenAcceptedConnectionNeverSendsResponseHeaders() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val firstConnectionAccepted = CompletableDeferred<Unit>()
         val port = ServerSocket(0).use { it.localPort }
@@ -642,7 +641,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowRetriesWhenFramePayloadStallsAfterItsLengthPrefix() = runBlocking {
+    fun executeFlowRetriesWhenFramePayloadStallsAfterItsLengthPrefix() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -674,7 +673,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsInsteadOfSilentlyDroppingWhenCollectorBackpressures() = runBlocking {
+    fun executeFlowFailsInsteadOfSilentlyDroppingWhenCollectorBackpressures() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             backpressuredFlowModule()
@@ -699,7 +698,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun remoteExecuteAndFlow() = runBlocking {
+    fun remoteExecuteAndFlow() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val info = RemoteStoreInfo(
             definitions = RemoteDataStore.collectDefinitions(store.dataModelsById.values),
@@ -773,7 +772,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun remoteExecuteBatchReturnsEveryResponseInOrder() = runBlocking {
+    fun remoteExecuteBatchReturnsEveryResponseInOrder() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val port = ServerSocket(0).use { it.localPort }
         val engine = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
@@ -798,7 +797,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun remoteExecuteBatchCollectsAndInjectsResponseValues() = runBlocking {
+    fun remoteExecuteBatchCollectsAndInjectsResponseValues() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(
             dataModelsById = mapOf(
                 1u to SimpleMarykModel,
@@ -871,7 +870,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBlankBearerToken() = runBlocking {
+    fun connectRejectsBlankBearerToken() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -885,7 +884,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFailsOnTrailingBytes() = runBlocking {
+    fun executeFailsOnTrailingBytes() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             malformedExecuteModule()
@@ -910,7 +909,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsUnsupportedUrlScheme() = runBlocking {
+    fun connectRejectsUnsupportedUrlScheme() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "ftp://127.0.0.1:8210"))
         }
@@ -918,7 +917,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBaseUrlWithQuery() = runBlocking {
+    fun connectRejectsBaseUrlWithQuery() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:8210?x=1"))
         }
@@ -926,7 +925,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBaseUrlWithFragment() = runBlocking {
+    fun connectRejectsBaseUrlWithFragment() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:8210#anchor"))
         }
@@ -934,7 +933,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBaseUrlWithUserInfo() = runBlocking {
+    fun connectRejectsBaseUrlWithUserInfo() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://user:pass@127.0.0.1:8210"))
         }
@@ -942,7 +941,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBaseUrlWithInvalidPort() = runBlocking {
+    fun connectRejectsBaseUrlWithInvalidPort() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:70000"))
         }
@@ -950,7 +949,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsMalformedBaseUrl() = runBlocking {
+    fun connectRejectsMalformedBaseUrl() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:abc"))
         }
@@ -958,7 +957,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBlankBaseUrl() = runBlocking {
+    fun connectRejectsBlankBaseUrl() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "   "))
         }
@@ -967,7 +966,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBaseUrlWithLeadingWhitespace() = runBlocking {
+    fun connectRejectsBaseUrlWithLeadingWhitespace() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(RemoteStoreConfig(baseUrl = " http://127.0.0.1:8210"))
         }
@@ -975,7 +974,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBlankSshHost() = runBlocking {
+    fun connectRejectsBlankSshHost() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -988,7 +987,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsOutOfRangeSshPort() = runBlocking {
+    fun connectRejectsOutOfRangeSshPort() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -1001,7 +1000,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsOutOfRangeSshLocalPort() = runBlocking {
+    fun connectRejectsOutOfRangeSshLocalPort() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -1030,7 +1029,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsOutOfRangeSshRemotePort() = runBlocking {
+    fun connectRejectsOutOfRangeSshRemotePort() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -1043,7 +1042,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBlankSshUser() = runBlocking {
+    fun connectRejectsBlankSshUser() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -1056,7 +1055,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBlankSshRemoteHost() = runBlocking {
+    fun connectRejectsBlankSshRemoteHost() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -1069,7 +1068,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBlankSshIdentityFile() = runBlocking {
+    fun connectRejectsBlankSshIdentityFile() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -1082,7 +1081,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsBlankSshExtraArgs() = runBlocking {
+    fun connectRejectsBlankSshExtraArgs() = runBoundedIntegrationTest {
         val exception = assertFailsWith<IllegalArgumentException> {
             RemoteDataStore.connect(
                 RemoteStoreConfig(
@@ -1095,7 +1094,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsDuplicateModelIds() = runBlocking {
+    fun connectRejectsDuplicateModelIds() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             duplicateInfoModule(
@@ -1117,7 +1116,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectClosesSshTunnelWhenInfoValidationFails() = runBlocking {
+    fun connectClosesSshTunnelWhenInfoValidationFails() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             duplicateInfoModule(
@@ -1157,7 +1156,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectKeepsOriginalFailureWhenSshTunnelCloseFails() = runBlocking {
+    fun connectKeepsOriginalFailureWhenSshTunnelCloseFails() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             duplicateInfoModule(
@@ -1197,7 +1196,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsDuplicateModelNames() = runBlocking {
+    fun connectRejectsDuplicateModelNames() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             duplicateInfoModule(
@@ -1219,7 +1218,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsUnexpectedInfoContentType() = runBlocking {
+    fun connectRejectsUnexpectedInfoContentType() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             wrongInfoContentTypeModule()
@@ -1236,7 +1235,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectRejectsEmptyInfoPayload() = runBlocking {
+    fun connectRejectsEmptyInfoPayload() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             emptyInfoPayloadModule()
@@ -1253,7 +1252,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectIncludesErrorBodyPreview() = runBlocking {
+    fun connectIncludesErrorBodyPreview() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             infoServerErrorModule()
@@ -1270,7 +1269,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFailsOnNegativeLengthPrefix() = runBlocking {
+    fun executeFailsOnNegativeLengthPrefix() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             negativeLengthExecuteModule()
@@ -1295,7 +1294,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeAcceptsLegacyUnframedSingleResponse() = runBlocking {
+    fun executeAcceptsLegacyUnframedSingleResponse() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             legacyExecuteModule()
@@ -1314,7 +1313,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFailsOnZeroLengthPrefix() = runBlocking {
+    fun executeFailsOnZeroLengthPrefix() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             zeroLengthExecuteModule()
@@ -1336,7 +1335,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFailsOnUnexpectedContentType() = runBlocking {
+    fun executeFailsOnUnexpectedContentType() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             wrongExecuteContentTypeModule()
@@ -1358,7 +1357,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFailsOnEmptyPayload() = runBlocking {
+    fun executeFailsOnEmptyPayload() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             emptyExecutePayloadModule()
@@ -1380,7 +1379,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeRejectsInvalidResponseContentLength() = runBlocking {
+    fun executeRejectsInvalidResponseContentLength() = runBoundedIntegrationTest {
         val server = RawRemoteServer(
             infoBody = defaultInfoBytes(),
             secondResponseHeaders = listOf(
@@ -1407,7 +1406,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFailsOnOversizedLengthPrefix() = runBlocking {
+    fun executeFailsOnOversizedLengthPrefix() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             oversizedLengthExecuteModule()
@@ -1429,7 +1428,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsOnNegativeLengthPrefix() = runBlocking {
+    fun executeFlowFailsOnNegativeLengthPrefix() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             negativeLengthFlowModule()
@@ -1451,7 +1450,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsOnUnexpectedContentType() = runBlocking {
+    fun executeFlowFailsOnUnexpectedContentType() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             wrongFlowContentTypeModule()
@@ -1470,7 +1469,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsOnZeroLengthPrefix() = runBlocking {
+    fun executeFlowFailsOnZeroLengthPrefix() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             zeroLengthFlowModule()
@@ -1489,7 +1488,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsOnOversizedLengthPrefix() = runBlocking {
+    fun executeFlowFailsOnOversizedLengthPrefix() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             oversizedLengthFlowModule()
@@ -1508,7 +1507,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowEndsWithoutUpdates(): Unit = runBlocking {
+    fun executeFlowEndsWithoutUpdates(): Unit = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             emptyFlowStreamModule()
@@ -1528,7 +1527,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsOnEmptyUpdateFrame() = runBlocking {
+    fun executeFlowFailsOnEmptyUpdateFrame() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             emptyFlowUpdatesModule()
@@ -1547,7 +1546,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsOnTruncatedLengthPrefix() = runBlocking {
+    fun executeFlowFailsOnTruncatedLengthPrefix() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             truncatedLengthFlowModule()
@@ -1566,7 +1565,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsOnTruncatedPayload() = runBlocking {
+    fun executeFlowFailsOnTruncatedPayload() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             truncatedPayloadFlowModule()
@@ -1585,7 +1584,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun executeFlowFailsOnDataModelMismatch() = runBlocking {
+    fun executeFlowFailsOnDataModelMismatch() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
             mismatchedFlowDataModelModule()

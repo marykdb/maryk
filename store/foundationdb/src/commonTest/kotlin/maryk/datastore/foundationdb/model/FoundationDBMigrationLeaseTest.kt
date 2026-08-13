@@ -5,10 +5,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.runBoundedIntegrationTest
 import maryk.datastore.foundationdb.FoundationDBMigrationLeaseConfiguration
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
@@ -39,7 +39,7 @@ class FoundationDBMigrationLeaseTest {
     }
 
     @Test
-    fun heartbeatRenewsLeaseAndPreventsTakeover() = runBlocking {
+    fun heartbeatRenewsLeaseAndPreventsTakeover() = runBoundedIntegrationTest {
         val dirPath = listOf("maryk", "test", "fdb-lease-heartbeat", Uuid.random().toString())
         val dataStore = FoundationDBDataStore.open(
             keepAllVersions = true,
@@ -82,7 +82,7 @@ class FoundationDBMigrationLeaseTest {
     }
 
     @Test
-    fun expiredLeaseCanBeTakenOverWithoutHeartbeatRenewal() = runBlocking {
+    fun expiredLeaseCanBeTakenOverWithoutHeartbeatRenewal() = runBoundedIntegrationTest {
         val dirPath = listOf("maryk", "test", "fdb-lease-timeout", Uuid.random().toString())
         val dataStore = FoundationDBDataStore.open(
             keepAllVersions = true,
@@ -123,7 +123,7 @@ class FoundationDBMigrationLeaseTest {
     }
 
     @Test
-    fun retriedAcquireUsesTheRetryAttemptTime() = runBlocking {
+    fun retriedAcquireUsesTheRetryAttemptTime() = runBoundedIntegrationTest {
         val dirPath = listOf("maryk", "test", "fdb-lease-retry", Uuid.random().toString())
         val dataStore = FoundationDBDataStore.open(
             keepAllVersions = true,
@@ -164,7 +164,7 @@ class FoundationDBMigrationLeaseTest {
     }
 
     @Test
-    fun transactionalGuardRejectsSynchronousWriteAfterOwnershipReplacement() = runBlocking {
+    fun transactionalGuardRejectsSynchronousWriteAfterOwnershipReplacement() = runBoundedIntegrationTest {
         val dirPath = listOf("maryk", "test", "fdb-lease-fenced-write", Uuid.random().toString())
         val dataStore = FoundationDBDataStore.open(
             fdbClusterFilePath = "fdb.cluster",

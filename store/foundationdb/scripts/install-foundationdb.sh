@@ -6,12 +6,12 @@ set -euo pipefail
 # - Version selector via FDB_VERSION env var or --version flag. Only releases with
 #   pinned checksums are accepted (currently 7.3.75).
 # - Strategy:
-#   * If fdbserver already in bin, skip.
-#   * Else if fdbserver found on PATH, symlink into bin (and try to locate/copy libfdb_c.*).
-#   * Else attempt platform-native install:
+#   * Always rebuild the CLI bundle from pinned release artifacts and verify
+#     their checksums before extraction. Cached, PATH, and package-manager
+#     binaries have no trusted artifact provenance and are never bundled.
 #       - macOS: download .pkg from GitHub Releases and extract.
 #       - Linux: download .deb packages from GitHub Releases and extract.
-#       - Windows: print hint to use the PowerShell script in this repo.
+#       - Windows: reject bundling until release artifacts and checksums are pinned.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -100,73 +100,11 @@ safe_copy() {
   cp -f "$src" "$dst_dir/" 2>/dev/null || true
 }
 
-have() { command -v "$1" >/dev/null 2>&1; }
-
-copy_libs_from_dir() {
-  local dir="$1"
-  [[ -d "$dir" ]] || return 1
+discard_existing_bundle() {
+  rm -f "$BIN_DIR/fdbserver" "$BIN_DIR/fdbcli"
   shopt -s nullglob
-  local found_any=0
-  for lib in "$dir"/libfdb_c.*; do
-    safe_copy "$lib" "$LIB_DIR"
-    found_any=1
-  done
+  rm -f "$LIB_DIR"/libfdb_c.*
   shopt -u nullglob
-  if [[ "$found_any" -eq 1 ]]; then
-    return 0
-  fi
-  return 1
-}
-
-link_existing_install() {
-  local server
-  if ! server="$(command -v fdbserver 2>/dev/null)"; then
-    return 1
-  fi
-
-  safe_copy "$server" "$BIN_DIR"
-  chmod +x "$BIN_DIR/fdbserver" 2>/dev/null || true
-
-  if command -v fdbcli >/dev/null 2>&1; then
-    safe_copy "$(command -v fdbcli)" "$BIN_DIR"
-    chmod +x "$BIN_DIR/fdbcli" 2>/dev/null || true
-  fi
-
-  local copied_lib=0
-
-  if command -v ldconfig >/dev/null 2>&1; then
-    while IFS= read -r libpath; do
-      [[ -n "$libpath" ]] || continue
-      safe_copy "$libpath" "$LIB_DIR"
-      copied_lib=1
-    done < <((ldconfig -p 2>/dev/null | awk '/libfdb_c\./ {print $4}' | sort -u) || true)
-  fi
-
-  local server_dir
-  server_dir="$(dirname "$server")"
-  for candidate in \
-    "$server_dir" \
-    "$server_dir/.." \
-    "$server_dir/../lib" \
-    "$server_dir/../lib64" \
-    "/usr/lib" "/usr/lib64" "/usr/local/lib" "/usr/local/lib64" \
-    "/usr/lib/x86_64-linux-gnu" "/usr/lib/aarch64-linux-gnu" \
-    "/opt/foundationdb/lib" "/opt/foundationdb/lib64"; do
-    if copy_libs_from_dir "$candidate"; then
-      copied_lib=1
-    fi
-  done
-
-  if [[ ! -x "$BIN_DIR/fdbserver" ]]; then
-    return 1
-  fi
-
-  if [[ "$copied_lib" -eq 0 ]]; then
-    warn "libfdb_c not found next to system installation; continuing"
-  fi
-
-  log "Linked existing FoundationDB installation from PATH ($server)"
-  return 0
 }
 
 macos_pkg_arch() {
@@ -338,80 +276,8 @@ install_linux_from_deb() {
   log "Installed FoundationDB binaries into $BIN_DIR"
 }
 
-install_linux_with_apt() {
-  local sudo_prefix=()
-  if (( EUID != 0 )); then
-    if have sudo; then
-      sudo_prefix=(sudo -n)
-    else
-      warn "apt-get found but no sudo/root privileges; skipping"
-      return 1
-    fi
-  fi
-
-  "${sudo_prefix[@]}" apt-get update || return 1
-  if ! "${sudo_prefix[@]}" apt-get install -y foundationdb-clients foundationdb-server; then
-    return 1
-  fi
-
-  if ! link_existing_install; then
-    warn "apt install succeeded but linking binaries failed"
-    return 1
-  fi
-
-  return 0
-}
-
-install_linux_with_dnf() {
-  local sudo_prefix=()
-  if (( EUID != 0 )); then
-    if have sudo; then
-      sudo_prefix=(sudo -n)
-    else
-      warn "dnf found but no sudo/root privileges; skipping"
-      return 1
-    fi
-  fi
-
-  if ! "${sudo_prefix[@]}" dnf install -y foundationdb; then
-    return 1
-  fi
-
-  if ! link_existing_install; then
-    warn "dnf install succeeded but linking binaries failed"
-    return 1
-  fi
-
-  return 0
-}
-
 install_linux() {
-  if link_existing_install; then
-    return 0
-  fi
-
-  local installed=1
-
-  if have apt-get; then
-    warn "Attempting apt-based installation of FoundationDB"
-    if install_linux_with_apt; then
-      installed=0
-    fi
-  elif have dnf; then
-    warn "Attempting dnf-based installation of FoundationDB"
-    if install_linux_with_dnf; then
-      installed=0
-    fi
-  fi
-
-  if [[ "$installed" -ne 0 ]]; then
-    log "Falling back to downloading .deb packages from GitHub releases"
-    if ! install_linux_from_deb; then
-      warn "Deb extraction method failed"
-    fi
-  fi
-
-  link_existing_install || true
+  install_linux_from_deb
 }
 
 main() {
@@ -424,16 +290,13 @@ main() {
   debug "BIN_DIR: $BIN_DIR"
   debug "LIB_DIR: $LIB_DIR"
 
-  if [[ -x "$BIN_DIR/fdbserver" ]]; then
-    log "fdbserver already present in $BIN_DIR"
-    exit 0
-  fi
+  discard_existing_bundle
 
   case "$(uname -s)" in
     Darwin) install_macos ;;
     Linux) install_linux ;;
     MINGW*|MSYS*|CYGWIN*)
-      warn "Windows detected. Use PowerShell script: store/foundationdb/scripts/install-foundationdb.ps1"
+      err "Windows CLI bundling is unavailable until FoundationDB release artifacts and SHA-256 checksums are pinned."
       ;;
     *) err "Unsupported OS: $(uname -s)" ;;
   esac

@@ -85,6 +85,22 @@ grep -Fq 'No pinned SHA-256 checksums for FoundationDB version 7.3.76' <<< "$out
   exit 1
 }
 
+# A system binary on PATH has no release-artifact checksum provenance, so it
+# must not be copied into the CLI bundle.
+PATH_ROOT="$TEST_ROOT/path-repo"
+PATH_SCRIPTS="$PATH_ROOT/store/foundationdb/scripts"
+mkdir -p "$PATH_SCRIPTS"
+cp "$INSTALLER" "$PATH_SCRIPTS/install-foundationdb.sh"
+if output="$(FAKE_UNAME_OS=Linux FAKE_UNAME_ARCH=x86_64 PATH="$FAKE_BIN:/usr/bin:/bin" bash "$PATH_SCRIPTS/install-foundationdb.sh" 2>&1)"; then
+  echo "Expected an unverified PATH FoundationDB binary to be rejected, but it succeeded." >&2
+  exit 1
+fi
+grep -Fq 'Checksum mismatch' <<< "$output" || {
+  echo "Expected trusted-download checksum failure instead of PATH reuse, got:" >&2
+  echo "$output" >&2
+  exit 1
+}
+
 while read -r artifact expected; do
   actual="$(bash -c 'source "$1"; pinned_sha256 "$2"' _ "$INSTALLER" "$artifact")"
   [[ "$actual" == "$expected" ]] || {
@@ -118,6 +134,40 @@ if output="$(FDB_VERSION=7.3.76 bash -c 'source "$1"; verify_checksum "$2"' _ "$
 fi
 grep -Fq 'No pinned SHA-256 checksum' <<< "$output" || {
   echo "Expected an unpinned checksum failure, got:" >&2
+  echo "$output" >&2
+  exit 1
+}
+
+# Cached CLI binaries have no release-artifact checksum provenance. They must
+# be discarded instead of silently reused.
+CACHED_ROOT="$TEST_ROOT/cached-repo"
+CACHED_SCRIPTS="$CACHED_ROOT/store/foundationdb/scripts"
+CACHED_BIN="$CACHED_ROOT/store/foundationdb/bin"
+mkdir -p "$CACHED_SCRIPTS" "$CACHED_BIN"
+cp "$INSTALLER" "$CACHED_SCRIPTS/install-foundationdb.sh"
+printf '#!/usr/bin/env bash\nexit 0\n' > "$CACHED_BIN/fdbserver"
+chmod +x "$CACHED_BIN/fdbserver"
+
+if output="$(PATH="$FAKE_BIN:/usr/bin:/bin" bash "$CACHED_SCRIPTS/install-foundationdb.sh" 2>&1)"; then
+  echo "Expected an unverified cached FoundationDB bundle to be rejected, but it succeeded." >&2
+  exit 1
+fi
+grep -Fq 'Checksum mismatch' <<< "$output" || {
+  echo "Expected trusted-download checksum failure instead of cached bundle reuse, got:" >&2
+  echo "$output" >&2
+  exit 1
+}
+
+# Even a forged manifest cannot make arbitrary cached binaries reusable.
+printf '#!/usr/bin/env bash\nexit 0\n' > "$CACHED_BIN/fdbserver"
+chmod +x "$CACHED_BIN/fdbserver"
+printf 'version 7.3.75\n%s fdbserver\n' "$(shasum -a 256 "$CACHED_BIN/fdbserver" | awk '{print $1}')" > "$CACHED_BIN/.maryk-foundationdb-integrity"
+if output="$(PATH="$FAKE_BIN:/usr/bin:/bin" bash "$CACHED_SCRIPTS/install-foundationdb.sh" 2>&1)"; then
+  echo "Expected a forged cached FoundationDB bundle to be rejected, but it succeeded." >&2
+  exit 1
+fi
+grep -Fq 'Checksum mismatch' <<< "$output" || {
+  echo "Expected forged cached bundle to fall through to trusted download, got:" >&2
   echo "$output" >&2
   exit 1
 }

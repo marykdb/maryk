@@ -7,6 +7,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -23,6 +24,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
@@ -388,6 +390,15 @@ abstract class AbstractDataStore(
                 try {
                     onBeforeFlowSnapshotBoundary()
                 } catch (e: CancellationException) {
+                    if (readContext != null) {
+                        try {
+                            withContext(NonCancellable) {
+                                closeReadContext(readContext)
+                            }
+                        } catch (closeError: Throwable) {
+                            closeError.rethrowIfFatal()
+                        }
+                    }
                     readSemaphore.release()
                     throw e
                 } catch (e: Throwable) {
@@ -413,8 +424,9 @@ abstract class AbstractDataStore(
                     readSemaphore.release()
                     continue
                 }
-                readJobs += launch(readCoroutineContext) {
+                readJobs += launch(readCoroutineContext, start = CoroutineStart.UNDISPATCHED) {
                     try {
+                        yield()
                         processAction(action, readContext)
                     } finally {
                         if (readContext != null) {

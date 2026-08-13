@@ -1,6 +1,8 @@
 package maryk.datastore.shared
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
@@ -136,6 +138,25 @@ class RequestExecutionTest {
                 store.executeWithFailingBoundaryCallback()
             }
             store.readContextClosed.await()
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
+    fun cancellationAfterReadWorkerHandoffClosesPreparedReadContext() = runTest {
+        val dispatcher = QueuedReadWorkerDispatcher()
+        val store = CancellationBeforeReadWorkerTestStore(dispatcher)
+        try {
+            store.queueRead()
+            dispatcher.dispatched.await()
+
+            val close = async(start = CoroutineStart.UNDISPATCHED) { store.close() }
+            dispatcher.runNext()
+
+            close.await()
+            store.readContextClosed.await()
+            assertFalse(store.readWorkerStarted)
         } finally {
             store.close()
         }
@@ -712,6 +733,62 @@ private class BoundaryFailureReadTestStore : AbstractDataStore(
                 error("Read worker must not start after a boundary callback failure")
             }
         }
+    }
+}
+
+private class CancellationBeforeReadWorkerTestStore(
+    dispatcher: CoroutineDispatcher,
+) : AbstractDataStore(
+    dataModelsById = mapOf(1u to SimpleMarykModel),
+    coroutineContext = Dispatchers.Default,
+    readWorkerCoroutineContext = dispatcher,
+) {
+    override val keepAllVersions = false
+    override val keepUpdateHistoryIndex = false
+    override val supportsFuzzyQualifierFiltering = true
+    override val supportsSubReferenceFiltering = true
+
+    val readContextClosed = CompletableDeferred<Unit>()
+    var readWorkerStarted = false
+
+    init {
+        startFlows()
+    }
+
+    fun queueRead() {
+        check(storeChannel.trySend(StoreAction(SimpleMarykModel.scan(), CompletableDeferred())).isSuccess)
+    }
+
+    override fun startFlows() {
+        super.startFlows()
+        launch {
+            storeActorHasStarted.complete(Unit)
+            processStoreActions(
+                createReadContext = { Unit },
+                closeReadContext = { readContextClosed.complete(Unit) },
+            ) { _, _ ->
+                readWorkerStarted = true
+            }
+        }
+    }
+}
+
+private class QueuedReadWorkerDispatcher : CoroutineDispatcher() {
+    private val blocks = ArrayDeque<Runnable>()
+    val dispatched = CompletableDeferred<Unit>()
+
+    override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) {
+        synchronized(blocks) {
+            blocks.addLast(block)
+        }
+        dispatched.complete(Unit)
+    }
+
+    fun runNext() {
+        val block = synchronized(blocks) {
+            blocks.removeFirst()
+        }
+        block.run()
     }
 }
 

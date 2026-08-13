@@ -9,8 +9,37 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.async
+import kotlinx.coroutines.runBlocking
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class AppStateScanConfigTest {
+    @Test
+    fun delayedScanAPaginationCompletionDoesNotClearScanBBusyState() = runBlocking {
+        val scanBusyState = ScanBusyState()
+        val allowScanACompletion = CompletableDeferred<Unit>()
+
+        val scanA = scanBusyState.start()
+        val scanB = scanBusyState.start()
+
+        val completedScanA = async {
+            allowScanACompletion.await()
+            scanBusyState.complete(scanA)
+        }
+
+        allowScanACompletion.complete(Unit)
+
+        assertFalse(completedScanA.await())
+
+        assertTrue(scanBusyState.isScanning)
+
+        assertTrue(scanBusyState.complete(scanB))
+
+        assertFalse(scanBusyState.isScanning)
+    }
+
     @Test
     fun parseScanToVersionTrimsBlankAndValidValues() {
         assertNull(parseScanToVersion(""))

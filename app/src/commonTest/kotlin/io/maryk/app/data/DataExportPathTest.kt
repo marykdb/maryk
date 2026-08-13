@@ -45,4 +45,18 @@ class DataExportPathTest {
         assertNotEquals(sanitizeFilePart("records/2026"), sanitizeFilePart("records:2026"))
         assertNotEquals(sanitizeFilePart("a".repeat(200) + "/one"), sanitizeFilePart("a".repeat(200) + "/two"))
     }
+
+    @Test
+    fun givesCaseDistinctModelsPortableExportNames() {
+        val names = modelExportFileNames(listOf("Person", "person"), ModelExportFormat.JSON)
+
+        assertEquals(2, names.values.map { it.lowercase() }.toSet().size)
+    }
+
+    @Test
+    fun givesCaseDistinctModelsPortableDataExportNames() {
+        val names = dataExportFileNames(listOf("Person", "person"), DataExportFormat.JSON)
+
+        assertEquals(2, names.values.map { it.lowercase() }.toSet().size)
+    }
 }

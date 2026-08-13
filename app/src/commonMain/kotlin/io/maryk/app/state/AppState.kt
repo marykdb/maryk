@@ -25,6 +25,8 @@ import io.maryk.app.data.detectVersionedImport
 import io.maryk.app.data.exportAllDataToManagedRevision
 import io.maryk.app.data.exportModelDataToFolder
 import io.maryk.app.data.exportModelToFolder
+import io.maryk.app.data.fileNameHash
+import io.maryk.app.data.modelExportFileNames
 import io.maryk.app.data.serializeModel
 import io.maryk.app.data.exportRowDataToFolder
 import io.maryk.app.data.extensionsForImport
@@ -35,7 +37,6 @@ import io.maryk.app.data.parseValuesFromYaml
 import io.maryk.app.data.pickDirectory
 import io.maryk.app.data.pickFile
 import io.maryk.app.data.resolveDisplayFields
-import io.maryk.app.data.sanitizeFilePart
 import io.maryk.app.data.serializeRecordToYaml
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -112,8 +113,10 @@ class BrowserState(
     var isWorking by mutableStateOf(false)
         private set
 
-    var isScanning by mutableStateOf(false)
-        private set
+    private val scanBusyState = ScanBusyState()
+
+    val isScanning: Boolean
+        get() = scanBusyState.isScanning
 
     var aggregationConfig by mutableStateOf(AggregationConfig())
         private set
@@ -962,29 +965,29 @@ class BrowserState(
         val dataModel = resolveSelectedModel(connection.dataStore) ?: return
         if (scanCursor.endReached && !reset) return
         val requestGeneration = scanGeneration
+        val scanRequest = scanBusyState.start()
         isWorking = true
-        isScanning = true
         scope.launch {
             val result = withContext(Dispatchers.IO) {
                 buildScanPage(connection.dataStore, dataModel, reset)
             }
             if (requestGeneration != scanGeneration) {
-                isWorking = false
-                isScanning = false
                 return@launch
             }
             when (result) {
                 is ScanPageResult.Error -> {
                     scanStatus = result.message
-                    isWorking = false
-                    isScanning = false
+                    if (scanBusyState.complete(scanRequest)) {
+                        isWorking = false
+                    }
                 }
                 is ScanPageResult.Success -> {
                     scanStatus = result.message
                     scanCursor = result.cursor
                     scanResults = if (reset) result.rows else scanResults + result.rows
-                    isWorking = false
-                    isScanning = false
+                    if (scanBusyState.complete(scanRequest)) {
+                        isWorking = false
+                    }
                 }
             }
         }
@@ -1262,9 +1265,10 @@ class BrowserState(
             val result = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
                     publishManagedRevision(folder) {
+                        val fileNames = modelExportFileNames(allModels.keys, format)
                         allModels.values.forEach { model ->
                             val content = serializeModel(model, format, allModels)
-                            writeText("${sanitizeFilePart(model.Meta.name)}.${format.extension}", content)
+                            writeText(fileNames.getValue(model.Meta.name), content)
                         }
                     }
                 }
@@ -1501,25 +1505,7 @@ class BrowserState(
     }
 
     private fun detectModelIdFromPath(path: String): UInt? {
-        val fileName = path.substringAfterLast('/').substringAfterLast('\\')
-        val baseName = fileName.substringBeforeLast('.')
-        if (baseName.isBlank()) return null
-        val candidates = buildList {
-            add(baseName)
-            var current = baseName
-            listOf("versions", "data").forEach { suffix ->
-                if (current.endsWith(".$suffix", ignoreCase = true)) {
-                    current = current.removeSuffix(".$suffix")
-                    if (current.isNotBlank()) add(current)
-                }
-            }
-            val trimmed = baseName.substringBefore('.')
-            if (trimmed.isNotBlank()) add(trimmed)
-        }.distinct().sortedByDescending { it.length }
-        val modelByName = models.associateBy { it.name.lowercase() }
-        return candidates.firstNotNullOfOrNull { candidate ->
-            modelByName[candidate.lowercase()]?.id
-        }
+        return resolveModelIdFromImportPath(path, models)
     }
 
     private fun buildAllModelsByName(connection: StoreConnection): Map<String, IsRootDataModel> {
@@ -1654,6 +1640,28 @@ internal fun formatDeleteStatus(
     }
 }
 
+internal fun resolveModelIdFromImportPath(path: String, models: List<ModelEntry>): UInt? {
+    val fileName = path.substringAfterLast('/').substringAfterLast('\\')
+    val baseName = fileName.substringBeforeLast('.')
+    if (baseName.isBlank()) return null
+    val candidates = buildList {
+        add(baseName)
+        var current = baseName
+        listOf("versions", "data").forEach { suffix ->
+            if (current.endsWith(".$suffix", ignoreCase = true)) {
+                current = current.removeSuffix(".$suffix")
+                if (current.isNotBlank()) add(current)
+            }
+        }
+        val trimmed = baseName.substringBefore('.')
+        if (trimmed.isNotBlank()) add(trimmed)
+    }.distinct().sortedByDescending { it.length }
+    return candidates.firstNotNullOfOrNull { candidate ->
+        models.firstOrNull { candidate == it.name || candidate == "${it.name}-${it.name.fileNameHash()}" }?.id
+            ?: models.singleOrNull { it.name.equals(candidate, ignoreCase = true) }?.id
+    }
+}
+
 data class ModelEntry(
     val name: String,
     val id: UInt,
@@ -1762,6 +1770,27 @@ private data class ScanPageCursor(
     val includeStart: Boolean = true,
     val endReached: Boolean = false,
 )
+
+internal class ScanBusyState {
+    var isScanning by mutableStateOf(false)
+        private set
+
+    private var nextRequest = 0
+    private var activeRequest = 0
+
+    fun start(): Int {
+        val request = ++nextRequest
+        activeRequest = request
+        isScanning = true
+        return request
+    }
+
+    fun complete(request: Int): Boolean {
+        if (request != activeRequest) return false
+        isScanning = false
+        return true
+    }
+}
 
 private sealed class ScanPageResult {
     data class Success(

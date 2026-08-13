@@ -57,6 +57,13 @@ internal fun writeSerializedModelToFolder(
     File.writeTextViaTemporaryFile(path, content)
 }
 
+internal fun modelExportFileNames(
+    modelNames: Iterable<String>,
+    format: ModelExportFormat,
+): Map<String, String> = portableFileNames(modelNames) { modelName ->
+    "${sanitizeFilePart(modelName)}.${format.extension}"
+}
+
 internal fun serializeModel(
     model: IsRootDataModel,
     format: ModelExportFormat,

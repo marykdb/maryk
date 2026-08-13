@@ -2,6 +2,8 @@ package io.maryk.app.state
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.runBlocking
+import io.maryk.app.data.DataExportFormat
+import io.maryk.app.data.dataExportFileNames
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
@@ -30,8 +32,21 @@ import maryk.core.query.responses.statuses.AddSuccess
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
+import kotlin.test.assertNull
 
 class BrowserStateHistoryTest {
+    @Test
+    fun importPathResolvesCaseDistinctModelNamesExactly() {
+        val models = listOf(ModelEntry("Person", 1u), ModelEntry("person", 2u))
+
+        assertEquals(1u, resolveModelIdFromImportPath("Person.data.json", models))
+        assertEquals(2u, resolveModelIdFromImportPath("person.data.json", models))
+        val exportedNames = dataExportFileNames(models.map { it.name }, DataExportFormat.JSON)
+        assertEquals(1u, resolveModelIdFromImportPath(exportedNames.getValue("Person"), models))
+        assertEquals(2u, resolveModelIdFromImportPath(exportedNames.getValue("person"), models))
+        assertNull(resolveModelIdFromImportPath("PERSON.data.json", models))
+    }
+
     @Test
     fun loadAllChangesIncludesHistoryOlderThanMaxVersionsWindow() = runBlocking {
         val store = InMemoryDataStore.open(

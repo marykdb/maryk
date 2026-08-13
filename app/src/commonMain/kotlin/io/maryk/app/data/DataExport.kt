@@ -94,6 +94,7 @@ internal suspend fun exportModelDataToFolder(
     folder: String,
     includeVersionHistory: Boolean = false,
     snapshotVersion: ULong? = null,
+    fileNameOverride: String? = null,
 ) {
     val effectiveSnapshotVersion = snapshotVersion ?: if (dataStore.keepAllVersions) {
         dataStore.captureSnapshotVersion()
@@ -101,10 +102,10 @@ internal suspend fun exportModelDataToFolder(
         null
     }
     if (includeVersionHistory) {
-        exportModelVersionedDataToFolder(dataStore, model, format, folder, effectiveSnapshotVersion)
+        exportModelVersionedDataToFolder(dataStore, model, format, folder, effectiveSnapshotVersion, fileNameOverride)
     } else {
         val requestContext = buildRequestContext(model)
-        val fileName = buildModelFileName(model.Meta.name, format)
+        val fileName = fileNameOverride ?: buildModelFileName(model.Meta.name, format)
         val path = joinExportPath(folder, fileName)
         exportToTemporaryPath(path) { temporaryPath ->
             val batchSize = 250u
@@ -176,9 +177,11 @@ internal suspend fun exportAllDataToManagedRevision(
     includeVersionHistory: Boolean = false,
     snapshotVersion: ULong? = null,
 ) {
+    val exportModels = models.toList()
+    val fileNames = dataExportFileNames(exportModels.map { it.Meta.name }, format, includeVersionHistory)
     publishManagedRevisionStreaming(folder) {
-        models.forEach { model ->
-            val fileName = dataExportFileName(model, format, includeVersionHistory)
+        exportModels.forEach { model ->
+            val fileName = fileNames.getValue(model.Meta.name)
             exportModelDataToFolder(
                 dataStore = dataStore,
                 model = model,
@@ -186,6 +189,7 @@ internal suspend fun exportAllDataToManagedRevision(
                 folder = path(fileName).substringBeforeLast('/'),
                 includeVersionHistory = includeVersionHistory,
                 snapshotVersion = snapshotVersion,
+                fileNameOverride = fileName,
             )
         }
     }
@@ -257,15 +261,24 @@ internal fun dataExportFileName(
     includeVersionHistory: Boolean,
 ): String = buildModelFileName(model.Meta.name, format, if (includeVersionHistory) "versions" else null)
 
+internal fun dataExportFileNames(
+    modelNames: Iterable<String>,
+    format: DataExportFormat,
+    includeVersionHistory: Boolean = false,
+): Map<String, String> = portableFileNames(modelNames) { modelName ->
+    buildModelFileName(modelName, format, if (includeVersionHistory) "versions" else null)
+}
+
 private suspend fun exportModelVersionedDataToFolder(
     dataStore: IsDataStore,
     model: IsRootDataModel,
     format: DataExportFormat,
     folder: String,
     snapshotVersion: ULong?,
+    fileNameOverride: String?,
 ) {
     val requestContext = buildRequestContext(model)
-    val fileName = buildModelFileName(model.Meta.name, format, "versions")
+    val fileName = fileNameOverride ?: buildModelFileName(model.Meta.name, format, "versions")
     val path = joinExportPath(folder, fileName)
     exportToTemporaryPath(path) { temporaryPath ->
         val batchSize = 250u
@@ -601,12 +614,29 @@ internal fun sanitizeFilePart(value: String): String {
 private fun Char.isAsciiFileNameCharacter(): Boolean =
     this in 'A'..'Z' || this in 'a'..'z' || this in '0'..'9' || this == '.' || this == '_' || this == '-'
 
-private fun String.fileNameHash(): String {
+internal fun String.fileNameHash(): String {
     var hash = 0xcbf29ce484222325uL
     forEach { char ->
         hash = (hash xor char.code.toULong()) * 0x100000001b3uL
     }
     return hash.toString(16)
+}
+
+internal fun portableFileNames(
+    names: Iterable<String>,
+    fileNameFor: (String) -> String,
+): Map<String, String> {
+    val namesList = names.toList()
+    val baseNames = namesList.associateWith(fileNameFor)
+    val collisions = baseNames.values.groupingBy { it.lowercase() }.eachCount()
+    return baseNames.mapValues { (name, fileName) ->
+        if (collisions.getValue(fileName.lowercase()) == 1) {
+            fileName
+        } else {
+            val extensionIndex = fileName.lastIndexOf('.')
+            "${fileName.substring(0, extensionIndex)}-${name.fileNameHash()}${fileName.substring(extensionIndex)}"
+        }
+    }
 }
 
 internal fun joinExportPath(folder: String, name: String): String {

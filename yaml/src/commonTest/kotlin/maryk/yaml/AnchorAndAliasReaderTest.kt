@@ -34,6 +34,50 @@ class AnchorAndAliasReaderTest {
     }
 
     @Test
+    fun configuredAliasNameBudgetAcceptsNameAtLimit() {
+        YamlReader(
+            yaml = "&abc value\n*abc",
+            aliasLimits = YamlAliasLimits(maxAliasNameLength = 3)
+        ).apply {
+            assertValue("value")
+            assertValue("value")
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun configuredAliasNameBudgetRejectsOversizedAnchor() {
+        val reader = YamlReader(
+            yaml = "&oversized value",
+            aliasLimits = YamlAliasLimits(maxAliasNameLength = 3)
+        )
+
+        val exception = assertFailsWith<InvalidYamlContent> {
+            while (reader.currentToken !is Stopped) {
+                reader.nextToken()
+            }
+        }
+
+        assertContains(exception.message ?: "", "Anchor name length budget exceeded")
+    }
+
+    @Test
+    fun configuredAliasNameBudgetRejectsOversizedAlias() {
+        val reader = YamlReader(
+            yaml = "&ok value\n*oversized",
+            aliasLimits = YamlAliasLimits(maxAliasNameLength = 3)
+        )
+
+        val exception = assertFailsWith<InvalidYamlContent> {
+            while (reader.currentToken !is Stopped) {
+                reader.nextToken()
+            }
+        }
+
+        assertContains(exception.message ?: "", "Alias name length budget exceeded")
+    }
+
+    @Test
     fun configuredAliasTokenBudgetRejectsLargeReplay() {
         val reader = YamlReader(
             yaml = "[&value [one, two], *value]",

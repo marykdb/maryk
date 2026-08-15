@@ -429,6 +429,14 @@ internal class YamlReaderImpl(
         return storedAnchor.tokens
     }
 
+    fun checkAliasNameLength(nameLength: Int, type: String) {
+        if (nameLength > this.aliasLimits.maxAliasNameLength) {
+            throw InvalidYamlContent(
+                "$type name length budget exceeded: $nameLength > ${this.aliasLimits.maxAliasNameLength}"
+            )
+        }
+    }
+
     fun recordAnchors(anchorReader: AnchorRecorder) {
         anchorReader.setTokenStartDepth(this.tokenDepth)
         this.anchorReaders.add(anchorReader)

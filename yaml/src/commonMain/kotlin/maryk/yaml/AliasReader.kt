@@ -7,10 +7,10 @@ import maryk.yaml.PlainStyleMode.FLOW_SEQUENCE
 
 /** Reads an alias with [mode] and returns first found token */
 internal fun IsYamlCharReader.aliasReader(mode: PlainStyleMode): JsonToken {
-    var alias = ""
+    val alias = StringBuilder()
 
     fun pushStoredTokens(): JsonToken =
-        yamlReader.getTokensForAlias(alias).also { tokens ->
+        yamlReader.getTokensForAlias(alias.toString()).also { tokens ->
             for (index in 1 until tokens.size) {
                 yamlReader.pushToken(tokens[index])
             }
@@ -26,7 +26,8 @@ internal fun IsYamlCharReader.aliasReader(mode: PlainStyleMode): JsonToken {
         }
 
         while (lastChar !in forbiddenChars) {
-            alias += lastChar
+            alias.append(lastChar)
+            yamlReader.checkAliasNameLength(alias.length, "Alias")
             read()
         }
 

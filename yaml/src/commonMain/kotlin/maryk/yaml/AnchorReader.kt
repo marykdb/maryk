@@ -35,6 +35,7 @@ internal fun IsYamlCharReader.anchorReader(onDone: () -> JsonToken): JsonToken {
         read() // Skip the '&' character
         while (!lastChar.isWhitespace() && lastChar !in charArrayOf(',', '[', ']', '{', '}')) {
             append(lastChar)
+            yamlReader.checkAliasNameLength(length, "Anchor")
             read()
         }
     }

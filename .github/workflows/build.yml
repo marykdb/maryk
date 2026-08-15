@@ -113,7 +113,7 @@ jobs:
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g
         shell: bash
-        run: ./gradlew ${{ matrix.gradle_task }} --stacktrace --build-cache --no-parallel
+        run: ./gradlew ${{ matrix.gradle_task }} --dependency-verification=strict --stacktrace --build-cache --no-parallel
 
       - name: Run native WebKit Maryk IndexedDB smoke
         if: matrix.os == 'ubuntu-latest'
@@ -170,7 +170,7 @@ jobs:
           emulator-boot-timeout: 900
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew testAndroidHostTest connectedAndroidDeviceTest compileKotlinAndroidNativeArm32 compileKotlinAndroidNativeArm64 compileKotlinAndroidNativeX86 compileKotlinAndroidNativeX64 --stacktrace --build-cache --no-parallel
+          script: ./gradlew testAndroidHostTest connectedAndroidDeviceTest compileKotlinAndroidNativeArm32 compileKotlinAndroidNativeArm64 compileKotlinAndroidNativeX86 compileKotlinAndroidNativeX64 --dependency-verification=strict --stacktrace --build-cache --no-parallel
 
       - name: Upload Android test reports
         if: always()

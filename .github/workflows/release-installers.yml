@@ -51,7 +51,7 @@ jobs:
             exit 1
           fi
           EXPECTED_SHA="$ACTUAL_SHA" bash .github/scripts/verify-build-provenance.sh
-          ./gradlew :app:verifyDistributionVersion -PreleaseTag="$TAG" --no-daemon
+          ./gradlew :app:verifyDistributionVersion -PreleaseTag="$TAG" --dependency-verification=strict --no-daemon
           echo "source_sha=$ACTUAL_SHA" >> "$GITHUB_OUTPUT"
 
   distributions:
@@ -104,7 +104,7 @@ jobs:
 
       - name: Build distribution
         shell: bash
-        run: ./gradlew :app:verifyDistributionVersion ${{ matrix.gradle_task }} -PreleaseTag="$RELEASE_TAG" --stacktrace --build-cache --no-parallel
+        run: ./gradlew :app:verifyDistributionVersion ${{ matrix.gradle_task }} -PreleaseTag="$RELEASE_TAG" --dependency-verification=strict --stacktrace --build-cache --no-parallel
 
       - name: Smoke test native CLI bundle
         if: matrix.cli_platform != ''

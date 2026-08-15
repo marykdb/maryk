@@ -1,8 +1,10 @@
 package maryk.datastore.test
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import maryk.datastore.shared.IsDataStore
 import maryk.test.models.AnyValueIncMapIndexModel
 import maryk.test.models.AnyValueMapIndexModel
@@ -106,26 +108,16 @@ internal suspend fun runDataStoreTestClasses(
 
             var phase = "init"
             try {
-                withContext(testCaseDispatcher) {
-                    withTimeout(caseTimeout) {
-                        testClass.initData()
-                        phase = "test"
-                        test()
-                    }
+                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }) {
+                    testClass.initData()
+                    phase = "test"
+                    test()
                 }
-            } catch (throwable: Throwable) {
-                println("  FAILED $phase")
-                exceptionList["$testClassName.$testName.$phase"] = throwable
-                throwable.printStackTrace()
-            }
-
-            phase = "reset"
-            try {
-                testClass.resetData()
-            } catch (throwable: Throwable) {
-                println("  FAILED $phase")
-                exceptionList["$testClassName.$testName.$phase"] = throwable
-                throwable.printStackTrace()
+            } finally {
+                phase = "reset"
+                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, cleanup = true) {
+                    testClass.resetData()
+                }
             }
         }
     }
@@ -151,65 +143,75 @@ suspend fun runDataStoreTestsIsolated(
     runOnlyTests: Set<String>? = null,
     caseTimeout: Duration = 60.seconds,
 ) {
+    runDataStoreTestClassesIsolated(createDataStore, allTestClasses, runOnlyTests, caseTimeout)
+}
+
+internal suspend fun runDataStoreTestClassesIsolated(
+    createDataStore: () -> IsDataStore,
+    testClasses: Array<Pair<String, DataStoreTestConstructor>>,
+    runOnlyTests: Set<String>? = null,
+    caseTimeout: Duration = 60.seconds,
+) {
     val exceptionList = mutableMapOf<String, Throwable>()
-    var executedTests = 0
-
-    for ((testClassName, testClassConstructor) in allTestClasses) {
-        val testNames = createDataStore().let { dataStore ->
-            try {
-                testClassConstructor(dataStore).allTests.keys.toList()
-            } finally {
+    val testCases = testClasses.flatMap { (testClassName, testClassConstructor) ->
+        val dataStore = createDataStore()
+        try {
+            testClassConstructor(dataStore).allTests.keys.map { testName ->
+                Triple(testClassName, testClassConstructor, testName)
+            }
+        } finally {
+            runBoundedCasePhase(caseTimeout, exceptionList, testClassName, "discovery", { "close" }, cleanup = true) {
                 dataStore.close()
             }
         }
+    }
 
-        for (testName in testNames) {
-            if (runOnlyTests != null && testName !in runOnlyTests) {
-                continue
-            }
+    val selectedTestCases = if (runOnlyTests == null) {
+        testCases
+    } else {
+        val unresolvedTestNames = runOnlyTests.filter { requestedTestName ->
+            testCases.count { (testClassName, _, testName) ->
+                "$testClassName.$testName" == requestedTestName
+            } != 1
+        }
+        require(unresolvedTestNames.isEmpty()) {
+            "No datastore test found exactly once with qualified names `${unresolvedTestNames.joinToString()}`."
+        }
+        testCases.filter { (testClassName, _, testName) ->
+            "$testClassName.$testName" in runOnlyTests
+        }
+    }
 
-            println(testClassName)
-            println("- $testName")
-            executedTests += 1
+    for ((testClassName, testClassConstructor, testName) in selectedTestCases) {
+        println(testClassName)
+        println("- $testName")
 
-            val dataStore = createDataStore()
+        val dataStore = createDataStore()
+        try {
+            val testClass = testClassConstructor(dataStore)
+            val test = testClass.allTests[testName]
+                ?: error("Missing test `$testName` in `$testClassName`.")
+
+            var phase = "init"
             try {
-                val testClass = testClassConstructor(dataStore)
-                val test = testClass.allTests[testName]
-                    ?: error("Missing test `$testName` in `$testClassName`.")
-
-                var phase = "init"
-                try {
-                    withContext(testCaseDispatcher) {
-                        withTimeout(caseTimeout) {
-                            testClass.initData()
-                            phase = "test"
-                            test()
-                        }
-                    }
-                } catch (throwable: Throwable) {
-                    println("  FAILED $phase")
-                    exceptionList["$testClassName.$testName.$phase"] = throwable
-                    throwable.printStackTrace()
+                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }) {
+                    testClass.initData()
+                    phase = "test"
+                    test()
                 }
-
+            } finally {
                 phase = "reset"
-                try {
+                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, cleanup = true) {
                     testClass.resetData()
-                } catch (throwable: Throwable) {
-                    println("  FAILED $phase")
-                    exceptionList["$testClassName.$testName.$phase"] = throwable
-                    throwable.printStackTrace()
                 }
-            } finally {
+            }
+        } finally {
+            runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { "close" }, cleanup = true) {
                 dataStore.close()
             }
         }
     }
 
-    if (runOnlyTests != null && executedTests == 0) {
-        throw IllegalArgumentException("No datastore test found with names `${runOnlyTests.joinToString()}`.")
-    }
     if (exceptionList.isNotEmpty()) {
         val messages = StringBuilder("DataStore Tests failed: (${exceptionList.size})[\n")
         var firstThrowable: Throwable? = null
@@ -223,3 +225,47 @@ suspend fun runDataStoreTestsIsolated(
         throw RuntimeException(messages.toString(), firstThrowable)
     }
 }
+
+private suspend fun runBoundedCasePhase(
+    caseTimeout: Duration,
+    exceptionList: MutableMap<String, Throwable>,
+    testClassName: String,
+    testName: String,
+    phase: () -> String,
+    cleanup: Boolean = false,
+    action: suspend () -> Unit,
+) {
+    try {
+        if (cleanup) {
+            withContext(NonCancellable) {
+                runWithCaseTimeout(caseTimeout, action)
+            }
+        } else {
+            runWithCaseTimeout(caseTimeout, action)
+        }
+    } catch (throwable: Throwable) {
+        if (throwable is CancellationException) {
+            throw throwable
+        }
+        val failedPhase = phase()
+        println("  FAILED $failedPhase")
+        exceptionList["$testClassName.$testName.$failedPhase"] = throwable
+        throwable.printStackTrace()
+    }
+}
+
+private suspend fun runWithCaseTimeout(
+    caseTimeout: Duration,
+    action: suspend () -> Unit,
+) = withContext(testCaseDispatcher) {
+    if (withTimeoutOrNull(caseTimeout) {
+            action()
+            true
+        } != true
+    ) {
+        throw DataStoreTestTimeoutException(caseTimeout)
+    }
+}
+
+private class DataStoreTestTimeoutException(caseTimeout: Duration) :
+    RuntimeException("Datastore test phase timed out after $caseTimeout.")

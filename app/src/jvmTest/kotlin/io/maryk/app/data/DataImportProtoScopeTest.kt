@@ -15,6 +15,7 @@ import maryk.core.query.requests.scan
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.requests.add
 import maryk.datastore.memory.InMemoryDataStore
+import maryk.yaml.YamlWriter
 import java.nio.file.Files
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.test.Test
@@ -23,6 +24,49 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DataImportProtoScopeTest {
+    @Test
+    fun trailingYamlRecordDoesNotMutateTheDestination() = runBlocking {
+        val destination = InMemoryDataStore.open(dataModelsById = mapOf(1u to ProtoScopeModel))
+        val values = ProtoScopeModel.create {
+            id with 7u
+            number with 42u
+        }
+        val requestContext = buildRequestContext(ProtoScopeModel)
+        val record = ValuesWithMetaData(
+            key = ProtoScopeModel.key(values),
+            values = values,
+            firstVersion = 1uL,
+            lastVersion = 1uL,
+            isDeleted = false,
+        )
+        val yaml = buildString {
+            val writer = YamlWriter { append(it) }
+            ValuesWithMetaData.Serializer.writeJson(
+                ValuesWithMetaData.asValues(record, requestContext),
+                writer,
+                requestContext,
+            )
+        } + "\n...\ntrailing"
+        val path = Files.createTempFile("maryk-import-trailing-", ".yaml")
+        try {
+            Files.writeString(path, yaml)
+
+            assertFailsWith<IllegalArgumentException> {
+                importDataFromFile(
+                    dataStore = destination,
+                    model = ProtoScopeModel,
+                    format = DataExportFormat.YAML,
+                    scope = DataImportScope.SINGLE,
+                    path = path.toString(),
+                )
+            }
+            assertTrue(destination.execute(ProtoScopeModel.scan(allowTableScan = true)).values.isEmpty())
+        } finally {
+            destination.close()
+            Files.deleteIfExists(path)
+        }
+    }
+
     @Test
     fun detectsAndImportsUnframedVersionedProtoExport() = runBlocking {
         val source = InMemoryDataStore.open(

@@ -3,6 +3,8 @@ package io.maryk.cli.commands
 import io.maryk.cli.CliEnvironment
 import io.maryk.cli.DirectoryResolution
 import io.maryk.cli.StoreType
+import io.maryk.cli.readEnvironmentVariable
+import io.maryk.cli.readStdinText
 import maryk.datastore.remote.RemoteStoreServer
 import maryk.datastore.remote.RemoteStoreServerConfig
 import maryk.datastore.remote.validateRemoteStoreServerBinding
@@ -33,8 +35,8 @@ class ServeCommand(
             is ServeParseResult.Error -> return CommandResult(
                 lines = listOf(
                     "Serve configuration error: ${parseResult.reason}",
-                    "Usage: serve rocksdb --dir <path> [--host <host>] [--port <port>] [--bearer-token <token>]",
-                    "       serve foundationdb --dir <dir> [--cluster <file>] [--host <host>] [--port <port>] [--bearer-token <token>]",
+                    "Usage: serve rocksdb --dir <path> [--host <host>] [--port <port>] [--bearer-token-env <name>|--bearer-token-file <path>|--bearer-token-stdin]",
+                    "       serve foundationdb --dir <dir> [--cluster <file>] [--host <host>] [--port <port>] [--bearer-token-env <name>|--bearer-token-file <path>|--bearer-token-stdin]",
                     "       serve --config <file>",
                 ),
                 isError = true,
@@ -63,6 +65,9 @@ class ServeCommand(
         val server = RemoteStoreServer(dataStore)
 
         println("Serving ${options.store.displayName()} at http://${options.host}:${options.port}")
+        if (options.warnBearerTokenInArguments) {
+            println("Warning: --bearer-token exposes its secret in command input and, in one-shot use, process arguments; use --bearer-token-env, --bearer-token-file, or --bearer-token-stdin.")
+        }
         when {
             options.bearerToken != null -> println("Bearer authentication enabled; use TLS or SSH to protect traffic in transit.")
             options.allowInsecureRemoteBinding -> println("Warning: explicitly allowing an unauthenticated remote bind without TLS.")
@@ -97,8 +102,16 @@ internal data class ServeOptions(
     val host: String,
     val port: Int,
     val bearerToken: String?,
+    val warnBearerTokenInArguments: Boolean,
     val allowInsecureRemoteBinding: Boolean,
 )
+
+internal sealed class BearerTokenSource {
+    data class Literal(val token: String) : BearerTokenSource()
+    data class Environment(val variable: String) : BearerTokenSource()
+    data class File(val path: String) : BearerTokenSource()
+    data object Stdin : BearerTokenSource()
+}
 
 internal sealed class ServeStore {
     data class RocksDb(val directory: String) : ServeStore()
@@ -116,7 +129,7 @@ internal data class ServeConfigInput(
     val clusterFile: String? = null,
     val host: String? = null,
     val port: Int? = null,
-    val bearerToken: String? = null,
+    val bearerTokenSource: BearerTokenSource? = null,
     val allowInsecureRemoteBinding: Boolean? = null,
 ) {
     fun merge(override: ServeConfigInput): ServeConfigInput = ServeConfigInput(
@@ -125,7 +138,7 @@ internal data class ServeConfigInput(
         clusterFile = override.clusterFile ?: clusterFile,
         host = override.host ?: host,
         port = override.port ?: port,
-        bearerToken = override.bearerToken ?: bearerToken,
+        bearerTokenSource = override.bearerTokenSource ?: bearerTokenSource,
         allowInsecureRemoteBinding = override.allowInsecureRemoteBinding ?: allowInsecureRemoteBinding,
     )
 }
@@ -156,7 +169,16 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
     val host = merged.host?.ifBlank { defaultHost } ?: defaultHost
     val port = merged.port ?: defaultPort
     if (port !in 1..65535) return ServeParseResult.Error("Port must be between 1 and 65535.")
-    if (merged.bearerToken != null && merged.bearerToken.isBlank()) {
+    val bearerToken = when (val source = merged.bearerTokenSource) {
+        null -> null
+        is BearerTokenSource.Literal -> source.token
+        is BearerTokenSource.Environment -> readEnvironmentVariable(source.variable)
+            ?: return ServeParseResult.Error("Bearer token environment variable `${source.variable}` is not set.")
+        is BearerTokenSource.File -> File.readText(source.path)
+            ?: return ServeParseResult.Error("Bearer token file not found at ${source.path}")
+        BearerTokenSource.Stdin -> readStdinText()
+    }?.trimEnd('\r', '\n')
+    if (bearerToken != null && bearerToken.isBlank()) {
         return ServeParseResult.Error("Bearer token cannot be blank.")
     }
     try {
@@ -164,7 +186,7 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
             host,
             RemoteStoreServerConfig(
                 allowInsecureRemoteBinding = merged.allowInsecureRemoteBinding ?: false,
-                bearerToken = merged.bearerToken,
+                bearerToken = bearerToken,
             ),
         )
     } catch (error: IllegalArgumentException) {
@@ -179,7 +201,8 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
                     store = ServeStore.RocksDb(resolution.normalizedPath),
                     host = host,
                     port = port,
-                    bearerToken = merged.bearerToken,
+                    bearerToken = bearerToken,
+                    warnBearerTokenInArguments = cliInput.usesLiteralBearerToken,
                     allowInsecureRemoteBinding = merged.allowInsecureRemoteBinding ?: false,
                 ),
             )
@@ -197,7 +220,8 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
                     store = ServeStore.FoundationDb(options),
                     host = host,
                     port = port,
-                    bearerToken = merged.bearerToken,
+                    bearerToken = bearerToken,
+                    warnBearerTokenInArguments = cliInput.usesLiteralBearerToken,
                     allowInsecureRemoteBinding = merged.allowInsecureRemoteBinding ?: false,
                 ),
             )
@@ -208,6 +232,7 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
 private data class ServeCliInput(
     val input: ServeConfigInput,
     val configPath: String?,
+    val usesLiteralBearerToken: Boolean,
 )
 
 private sealed class CliParseResult {
@@ -224,7 +249,7 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
     var clusterFile: String? = null
     var host: String? = null
     var port: Int? = null
-    var bearerToken: String? = null
+    var bearerTokenSource: BearerTokenSource? = null
     var allowInsecureRemoteBinding: Boolean? = null
 
     var index = 0
@@ -287,13 +312,35 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
                     ?: return CliParseResult.Error("Invalid port value.")
             }
             token.startsWith("--bearer-token=") -> {
-                if (bearerToken != null) return CliParseResult.Error("Bearer token provided multiple times.")
-                bearerToken = token.substringAfter("=")
+                if (bearerTokenSource != null) return CliParseResult.Error("Provide only one bearer token source.")
+                bearerTokenSource = BearerTokenSource.Literal(token.substringAfter("="))
             }
             token == "--bearer-token" -> {
-                if (bearerToken != null) return CliParseResult.Error("Bearer token provided multiple times.")
+                if (bearerTokenSource != null) return CliParseResult.Error("Provide only one bearer token source.")
                 if (index + 1 >= arguments.size) return CliParseResult.Error("`--bearer-token` requires a value.")
-                bearerToken = arguments[++index]
+                bearerTokenSource = BearerTokenSource.Literal(arguments[++index])
+            }
+            token.startsWith("--bearer-token-env=") -> {
+                if (bearerTokenSource != null) return CliParseResult.Error("Provide only one bearer token source.")
+                bearerTokenSource = BearerTokenSource.Environment(token.substringAfter("="))
+            }
+            token == "--bearer-token-env" -> {
+                if (bearerTokenSource != null) return CliParseResult.Error("Provide only one bearer token source.")
+                if (index + 1 >= arguments.size) return CliParseResult.Error("`--bearer-token-env` requires a variable name.")
+                bearerTokenSource = BearerTokenSource.Environment(arguments[++index])
+            }
+            token.startsWith("--bearer-token-file=") -> {
+                if (bearerTokenSource != null) return CliParseResult.Error("Provide only one bearer token source.")
+                bearerTokenSource = BearerTokenSource.File(token.substringAfter("="))
+            }
+            token == "--bearer-token-file" -> {
+                if (bearerTokenSource != null) return CliParseResult.Error("Provide only one bearer token source.")
+                if (index + 1 >= arguments.size) return CliParseResult.Error("`--bearer-token-file` requires a path.")
+                bearerTokenSource = BearerTokenSource.File(arguments[++index])
+            }
+            token == "--bearer-token-stdin" -> {
+                if (bearerTokenSource != null) return CliParseResult.Error("Provide only one bearer token source.")
+                bearerTokenSource = BearerTokenSource.Stdin
             }
             token == "--allow-insecure-remote-binding" -> {
                 if (allowInsecureRemoteBinding != null) {
@@ -318,10 +365,11 @@ private fun parseServeArguments(arguments: List<String>): CliParseResult {
                 clusterFile = clusterFile,
                 host = host,
                 port = port,
-                bearerToken = bearerToken,
+                bearerTokenSource = bearerTokenSource,
                 allowInsecureRemoteBinding = allowInsecureRemoteBinding,
             ),
             configPath = configPath,
+            usesLiteralBearerToken = bearerTokenSource is BearerTokenSource.Literal,
         ),
     )
 }
@@ -337,7 +385,7 @@ internal fun parseServeConfig(contents: String): ConfigParseResult {
     var clusterFile: String? = null
     var host: String? = null
     var port: Int? = null
-    var bearerToken: String? = null
+    var bearerTokenSource: BearerTokenSource? = null
     var allowInsecureRemoteBinding: Boolean? = null
     val seenKeys = mutableSetOf<String>()
 
@@ -357,7 +405,7 @@ internal fun parseServeConfig(contents: String): ConfigParseResult {
             "store", "type" -> "store"
             "dir", "directory", "path" -> "directory"
             "cluster", "clusterfile" -> "cluster"
-            "bearertoken", "bearer-token" -> "bearer-token"
+            "bearertoken", "bearer-token", "bearertokenenv", "bearer-token-env", "bearertokenfile", "bearer-token-file", "bearertokenstdin", "bearer-token-stdin" -> "bearer-token-source"
             "allowinsecureremotebinding", "allow-insecure-remote-binding" -> "allow-insecure-remote-binding"
             else -> key
         }
@@ -372,7 +420,13 @@ internal fun parseServeConfig(contents: String): ConfigParseResult {
             "cluster", "clusterfile" -> clusterFile = value
             "host" -> host = value
             "port" -> port = value.toIntOrNull() ?: return ConfigParseResult.Error("Invalid port on line ${index + 1}")
-            "bearertoken", "bearer-token" -> bearerToken = value
+            "bearertoken", "bearer-token" -> bearerTokenSource = BearerTokenSource.Literal(value)
+            "bearertokenenv", "bearer-token-env" -> bearerTokenSource = BearerTokenSource.Environment(value)
+            "bearertokenfile", "bearer-token-file" -> bearerTokenSource = BearerTokenSource.File(value)
+            "bearertokenstdin", "bearer-token-stdin" -> {
+                if (value.isNotEmpty()) return ConfigParseResult.Error("Bearer token stdin source must be blank on line ${index + 1}")
+                bearerTokenSource = BearerTokenSource.Stdin
+            }
             "allowinsecureremotebinding", "allow-insecure-remote-binding" -> {
                 allowInsecureRemoteBinding = value.toBooleanStrictOrNull()
                     ?: return ConfigParseResult.Error("Invalid boolean on line ${index + 1}")
@@ -388,7 +442,7 @@ internal fun parseServeConfig(contents: String): ConfigParseResult {
             clusterFile = clusterFile,
             host = host,
             port = port,
-            bearerToken = bearerToken,
+            bearerTokenSource = bearerTokenSource,
             allowInsecureRemoteBinding = allowInsecureRemoteBinding,
         )
     )

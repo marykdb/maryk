@@ -4,6 +4,7 @@ import io.maryk.cli.CliEnvironment
 import io.maryk.cli.CliState
 import io.maryk.cli.DirectoryResolution
 import io.maryk.cli.RocksDbStoreConnection
+import maryk.file.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -105,7 +106,7 @@ class ServeCommandTest {
                 listOf("rocksdb", "--dir", "/data", "--bearer-token=a", "--bearer-token=b"),
             )
         )
-        assertTrue(duplicate.reason.contains("multiple times"))
+        assertTrue(duplicate.reason.contains("only one bearer token source"))
 
         val blank = assertIs<ServeParseResult.Error>(
             parseServeOptions(
@@ -114,6 +115,46 @@ class ServeCommandTest {
             )
         )
         assertTrue(blank.reason.contains("cannot be blank"))
+    }
+
+    @Test
+    fun loadsBearerTokenFromFileWithoutPuttingTheSecretInArguments() {
+        val path = "build/tmp/serve-command-token.txt"
+        File.writeText(path, "secret-from-file\n")
+
+        val result = assertIs<ServeParseResult.Success>(
+            parseServeOptions(
+                TestServeEnvironment,
+                listOf("rocksdb", "--dir", "/data", "--bearer-token-file", path),
+            )
+        )
+
+        assertEquals("secret-from-file", result.options.bearerToken)
+    }
+
+    @Test
+    fun rejectsMoreThanOneBearerTokenSource() {
+        val result = assertIs<ServeParseResult.Error>(
+            parseServeOptions(
+                TestServeEnvironment,
+                listOf("rocksdb", "--dir", "/data", "--bearer-token", "literal", "--bearer-token-env", "MARYK_TOKEN"),
+            )
+        )
+
+        assertTrue(result.reason.contains("only one bearer token source"))
+    }
+
+    @Test
+    fun reportsMissingBearerTokenEnvironmentVariable() {
+        val result = assertIs<ServeParseResult.Error>(
+            parseServeOptions(
+                TestServeEnvironment,
+                listOf("rocksdb", "--dir", "/data", "--bearer-token-env", "MARYK_TEST_MISSING_TOKEN"),
+            )
+        )
+
+        assertTrue(result.reason.contains("MARYK_TEST_MISSING_TOKEN"))
+        assertTrue(result.reason.contains("not set"))
     }
 
     @Test
@@ -129,7 +170,7 @@ class ServeCommandTest {
             )
         )
 
-        assertEquals("secret", result.input.bearerToken)
+        assertEquals(BearerTokenSource.Literal("secret"), result.input.bearerTokenSource)
         assertEquals(true, result.input.allowInsecureRemoteBinding)
     }
 

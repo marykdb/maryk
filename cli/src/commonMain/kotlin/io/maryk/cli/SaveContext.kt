@@ -62,7 +62,7 @@ data class SaveContext(
         noDeps: Boolean,
         legacyDirect: Boolean,
     ): String {
-        val basePath = directory.trimEnd('/', '\\')
+        val basePath = normalizeSaveDirectory(directory)
         val safeKey = sanitizeSaveFileName(key)
         if (format == SaveFormat.KOTLIN) {
             val generator = if (noDeps) kotlinNoDepsGenerator else kotlinGenerator
@@ -238,8 +238,17 @@ internal fun sanitizeSaveFileName(value: String): String {
 }
 
 internal fun joinSavePath(directory: String, fileName: String): String {
+    val normalized = normalizeSaveDirectory(directory)
+    return when {
+        normalized.isEmpty() -> fileName
+        normalized == "/" || normalized == "\\" -> "$normalized$fileName"
+        else -> "$normalized/$fileName"
+    }
+}
+
+private fun normalizeSaveDirectory(directory: String): String {
     val normalized = directory.trimEnd('/', '\\')
-    return if (normalized.isEmpty()) fileName else "$normalized/$fileName"
+    return if (normalized.isEmpty() && directory.isNotEmpty()) directory.first().toString() else normalized
 }
 
 internal fun managedExportCurrentPath(directory: String): String =

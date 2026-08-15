@@ -53,7 +53,7 @@ internal fun readRecordValuesInput(
     return when (format) {
         SaveFormat.YAML -> {
             val content = readTextInput(path)
-            val reader = MarykYamlReader(content)
+            val reader = singleYamlDocumentReader(content, "record")
             val token = if (reader.currentToken == JsonToken.StartDocument) reader.nextToken() else reader.currentToken
             when (token) {
                 is JsonToken.StartArray -> ParsedRecordValues.Multi(readValuesList(reader, serializer))
@@ -96,7 +96,8 @@ private fun readRecordDataValues(
     return when (format) {
         SaveFormat.YAML -> {
             val content = readTextInput(path)
-            serializer.readJson(MarykYamlReader(content), null)
+            val reader = singleYamlDocumentReader(content, "record")
+            serializer.readJson(reader, null).also { ensureJsonInputEnded(reader) }
         }
         SaveFormat.JSON -> {
             val content = readTextInput(path)
@@ -166,6 +167,33 @@ internal fun ensureJsonInputEnded(reader: IsJsonLikeReader) {
     }
 }
 
+private fun singleYamlDocumentReader(content: String, label: String): IsJsonLikeReader {
+    val documents = content.trim()
+        .split(Regex("(?m)^---\\s*$"))
+        .map { document ->
+            ensureYamlDocumentTerminatedAtEnd(document)
+            document.trim()
+        }
+        .filter(String::isNotEmpty)
+    if (documents.size != 1) {
+        throw IllegalArgumentException("Expected one YAML $label document, found ${documents.size}.")
+    }
+    return MarykYamlReader(documents.single())
+}
+
+private fun ensureYamlDocumentTerminatedAtEnd(document: String) {
+    val endMarker = yamlDocumentEndMarker.find(document) ?: return
+    val trailingContent = document.substring(endMarker.range.last + 1)
+        .lineSequence()
+        .map(String::trim)
+        .firstOrNull { it.isNotEmpty() && !it.startsWith("#") }
+    if (trailingContent != null) {
+        throw IllegalArgumentException("Unexpected YAML content after document end marker.")
+    }
+}
+
+private val yamlDocumentEndMarker = Regex("(?m)^\\.\\.\\.[ \\t]*(?:#.*)?$")
+
 private fun readRecordMetaValues(
     dataModel: IsRootDataModel,
     path: String,
@@ -179,7 +207,8 @@ private fun readRecordMetaValues(
     val metaValues = when (format) {
         SaveFormat.YAML -> {
             val content = readTextInput(path)
-            ValuesWithMetaData.Serializer.readJson(MarykYamlReader(content), requestContext)
+            val reader = singleYamlDocumentReader(content, "record metadata")
+            ValuesWithMetaData.Serializer.readJson(reader, requestContext).also { ensureJsonInputEnded(reader) }
         }
         SaveFormat.JSON -> {
             val content = readTextInput(path)

@@ -51,6 +51,7 @@ import maryk.datastore.shared.rethrowIfFatal
 import maryk.file.File
 import maryk.json.JsonReader
 import maryk.json.JsonToken
+import maryk.json.IsJsonLikeReader
 import maryk.core.yaml.MarykYamlReader
 
 enum class DataImportScope {
@@ -260,14 +261,18 @@ private suspend fun readYamlRecords(
             var read = false
             forEachYamlDocument(content) { document ->
                 if (!read) {
-                    onRecord(ValuesWithMetaData.Serializer.readJson(MarykYamlReader(document), requestContext))
+                    val reader = MarykYamlReader(document)
+                    onRecord(ValuesWithMetaData.Serializer.readJson(reader, requestContext))
+                    ensureYamlDocumentEnded(reader)
                     read = true
                 }
             }
         }
         DataImportScope.MULTIPLE -> {
             forEachYamlDocument(content) { document ->
-                onRecord(ValuesWithMetaData.Serializer.readJson(MarykYamlReader(document), requestContext))
+                val reader = MarykYamlReader(document)
+                onRecord(ValuesWithMetaData.Serializer.readJson(reader, requestContext))
+                ensureYamlDocumentEnded(reader)
             }
         }
     }
@@ -286,11 +291,30 @@ private suspend fun forEachYamlDocument(content: String, onDocument: suspend (St
     var start = 0
     for (separator in Regex("(?m)^---\\s*$").findAll(trimmed)) {
         val document = trimmed.substring(start, separator.range.first).trim()
-        if (document.isNotEmpty()) onDocument(document)
+        if (document.isNotEmpty()) {
+            ensureYamlDocumentTerminatedAtEnd(document)
+            onDocument(document)
+        }
         start = separator.range.last + 1
     }
     val document = trimmed.substring(start).trim()
-    if (document.isNotEmpty()) onDocument(document)
+    if (document.isNotEmpty()) {
+        ensureYamlDocumentTerminatedAtEnd(document)
+        onDocument(document)
+    }
+}
+
+private val yamlDocumentEndMarker = Regex("(?m)^\\.\\.\\.[ \\t]*(?:#.*)?$")
+
+private fun ensureYamlDocumentTerminatedAtEnd(document: String) {
+    val endMarker = yamlDocumentEndMarker.find(document) ?: return
+    val trailingContent = document.substring(endMarker.range.last + 1)
+        .lineSequence()
+        .map(String::trim)
+        .firstOrNull { it.isNotEmpty() && !it.startsWith("#") }
+    if (trailingContent != null) {
+        throw IllegalArgumentException("Unexpected YAML content after document end marker.")
+    }
 }
 
 private const val MAX_IMPORT_FILE_BYTES = 64L * 1024L * 1024L
@@ -408,14 +432,18 @@ private suspend fun readVersionedYamlRecords(
             var read = false
             forEachYamlDocument(content) { document ->
                 if (!read) {
-                    onRecord(DataObjectVersionedChange.Serializer.readJson(MarykYamlReader(document), requestContext))
+                    val reader = MarykYamlReader(document)
+                    onRecord(DataObjectVersionedChange.Serializer.readJson(reader, requestContext))
+                    ensureYamlDocumentEnded(reader)
                     read = true
                 }
             }
         }
         DataImportScope.MULTIPLE -> {
             forEachYamlDocument(content) { document ->
-                onRecord(DataObjectVersionedChange.Serializer.readJson(MarykYamlReader(document), requestContext))
+                val reader = MarykYamlReader(document)
+                onRecord(DataObjectVersionedChange.Serializer.readJson(reader, requestContext))
+                ensureYamlDocumentEnded(reader)
             }
         }
     }
@@ -470,6 +498,13 @@ internal fun ensureJsonDocumentEnded(reader: JsonReader) {
     when (val token = reader.nextToken()) {
         is JsonToken.EndDocument -> Unit
         else -> throw IllegalArgumentException("Unexpected JSON token after records: $token")
+    }
+}
+
+private fun ensureYamlDocumentEnded(reader: IsJsonLikeReader) {
+    when (val token = reader.nextToken()) {
+        is JsonToken.EndDocument -> Unit
+        else -> throw IllegalArgumentException("Unexpected YAML token after records: $token")
     }
 }
 

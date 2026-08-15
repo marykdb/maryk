@@ -37,6 +37,17 @@ class SaveContextTest {
     }
 
     @Test
+    fun preservesPosixRootWhenJoiningSavePath() {
+        assertEquals("/record.yaml", joinSavePath("/", "record.yaml"))
+    }
+
+    @Test
+    fun preservesWindowsRootsWhenJoiningSavePath() {
+        assertEquals("C:/record.yaml", joinSavePath("C:\\", "record.yaml"))
+        assertEquals("\\record.yaml", joinSavePath("\\", "record.yaml"))
+    }
+
+    @Test
     fun joinsSaveDirectoryWithoutDuplicatingSeparator() {
         assertEquals("exports/record.yaml", joinSavePath("exports/", "record.yaml"))
         assertEquals("exports/record.yaml", joinSavePath("exports", "record.yaml"))

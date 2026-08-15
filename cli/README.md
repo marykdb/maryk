@@ -40,7 +40,9 @@ Expose a local store via a lightweight Ktor server:
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
 serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
-serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token replace-with-a-secret
+MARYK_BEARER_TOKEN=replace-with-a-secret maryk serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-env MARYK_BEARER_TOKEN
+serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-file ./maryk-token
+printf '%s' 'replace-with-a-secret' | maryk serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-stdin
 serve --config ./serve.conf
 ```
 
@@ -51,13 +53,15 @@ store: rocksdb
 dir: ./data
 host: 127.0.0.1
 port: 8210
-bearer-token: replace-with-a-secret
+bearer-token-env: MARYK_BEARER_TOKEN
 ```
 
-Note: `serve` works in JVM and native desktop binaries.
-The interactive CLI treats the token argument literally; it does not expand shell
-syntax such as `$MARYK_BEARER_TOKEN`. Replace the placeholder or use a protected
-config/launcher when supplying a real secret.
+Note: `serve` works in JVM and native desktop binaries. Use exactly one of
+`--bearer-token-env <name>`, `--bearer-token-file <path>`, or
+`--bearer-token-stdin` (the same `bearer-token-env`, `bearer-token-file`, and
+blank `bearer-token-stdin:` config keys are supported). `--bearer-token <token>`
+remains available for compatibility but warns because command-line arguments can
+be visible to other local users and process monitors.
 Non-loopback plaintext binds require the explicit unsafe `--allow-insecure-remote-binding` opt-in, even with bearer authentication.
 Keep the Maryk server loopback-bound behind TLS termination or use SSH tunneling; bearer authentication does not encrypt traffic.
 

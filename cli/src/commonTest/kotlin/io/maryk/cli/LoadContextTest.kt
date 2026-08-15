@@ -89,6 +89,82 @@ class LoadContextTest {
     }
 
     @Test
+    fun rejectsTrailingYamlBeforeApplyingChange() {
+        val values = SimpleMarykModel.create {
+            value with "updated"
+        }
+        val path = "build/tmp/load-context-trailing.yaml"
+        val yaml = buildString {
+            val writer = YamlWriter { append(it) }
+            SimpleMarykModel.Serializer.writeJson(values, writer)
+        } + "\n...\ntrailing"
+        File.writeText(path, yaml)
+
+        var executeCalled = false
+        val context = LoadContext(
+            label = "SimpleMarykModel ${SimpleMarykModel.key(values)}",
+            dataModel = SimpleMarykModel,
+            key = SimpleMarykModel.key(values),
+            dataStore = object : FakeDataStore(dataModelsById = mapOf(1u to SimpleMarykModel)) {
+                override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(request: RQ): RP {
+                    executeCalled = true
+                    error("Trailing input must not reach the store")
+                }
+            },
+        )
+
+        val result = context.loadResult(path, SaveFormat.YAML)
+
+        assertTrue(!result.success)
+        assertTrue(result.message.startsWith("Load failed:"))
+        assertTrue(!executeCalled)
+    }
+
+    @Test
+    fun rejectsTrailingMetadataYamlBeforeApplyingChange() {
+        val values = SimpleMarykModel.create {
+            value with "updated"
+        }
+        val key = SimpleMarykModel.key(values)
+        val requestContext = RequestContext(
+            DefinitionsContext(mutableMapOf(SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel))),
+            dataModel = SimpleMarykModel,
+        )
+        val yaml = buildString {
+            val writer = YamlWriter { append(it) }
+            ValuesWithMetaData.Serializer.writeJson(
+                ValuesWithMetaData.asValues(
+                    ValuesWithMetaData(key, values, firstVersion = 1uL, lastVersion = 1uL, isDeleted = false),
+                    requestContext,
+                ),
+                writer,
+                requestContext,
+            )
+        } + "\n...\ntrailing"
+        val path = "build/tmp/load-context-meta-trailing.yaml"
+        File.writeText(path, yaml)
+
+        var executeCalled = false
+        val context = LoadContext(
+            label = "SimpleMarykModel $key",
+            dataModel = SimpleMarykModel,
+            key = key,
+            dataStore = object : FakeDataStore(dataModelsById = mapOf(1u to SimpleMarykModel)) {
+                override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(request: RQ): RP {
+                    executeCalled = true
+                    error("Trailing metadata must not reach the store")
+                }
+            },
+        )
+
+        val result = context.loadResult(path, SaveFormat.YAML, useMeta = true)
+
+        assertTrue(!result.success)
+        assertTrue(result.message.startsWith("Load failed:"))
+        assertTrue(!executeCalled)
+    }
+
+    @Test
     fun usesMetaVersionGuardWhenPresent() {
         val values = SimpleMarykModel.create {
             value with "meta"

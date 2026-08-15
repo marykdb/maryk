@@ -4,7 +4,6 @@
 A property which contains another DataModel as embedded object. See 
 [DataModels](../../datamodel.md) for more details on how to define DataModels.
 
-- Maryk Yaml Definition: `EmbedObject`
 - Kotlin Definition: `EmbeddedObjectDefinition`
 - Kotlin Value: `T` T stands for the DataModel data class 
 

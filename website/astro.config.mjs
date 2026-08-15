@@ -192,6 +192,13 @@ export default defineConfig({
                                 {label: 'Commands', slug: 'cli/commands'},
                             ],
                         },
+                        {
+                            label: 'Generator',
+                            collapsed: true,
+                            items: [
+                                {label: 'Overview', slug: 'generator'},
+                            ],
+                        },
                     ],
                 },
             ],

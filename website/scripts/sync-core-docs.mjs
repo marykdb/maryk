@@ -72,6 +72,8 @@ export const map = [
 
   // CLI
   ['src/content/docs/cli/commands.mdx', '../cli/docs/commands.md'],
+  // Generator
+  ['src/content/docs/generator.mdx', '../generator/README.md'],
   // App
   ['src/content/docs/app.mdx', '../app/docs/README.md'],
 ];

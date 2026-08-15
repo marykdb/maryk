@@ -19,7 +19,7 @@ Maryk is useful when the same model needs to move through code, storage, tools, 
 maryk --connect rocksdb --dir ./data --exec "list"
 maryk --connect rocksdb --dir ./data --exec "model Client"
 maryk --connect rocksdb --dir ./data --exec "scan Client --show info.name.firstNames,info.name.familyName"
-maryk --connect rocksdb --dir ./data --exec "get Client AbCdEf123 save ./client.yaml"
+maryk --connect rocksdb --dir ./data --exec "get Client AbCdEf123 save ./exports"
 ```
 
 Typical output is intentionally plain: model names, schema fields, keys, selected values, and command status. That makes it useful in terminals, scripts, and CI diagnostics.
@@ -37,8 +37,8 @@ KEY        info.name.firstNames  info.name.familyName
 AbCdEf123  Jane                  Doe
 BcDeFg234  Sam                   Taylor
 
-$ maryk --connect rocksdb --dir ./data --exec "get Client AbCdEf123 save ./client.yaml"
-Saved Client AbCdEf123 to ./client.yaml
+$ maryk --connect rocksdb --dir ./data --exec "get Client AbCdEf123 save ./exports"
+Saved to ./exports/AbCdEf123.yaml
 ```
 
 ## App workflow

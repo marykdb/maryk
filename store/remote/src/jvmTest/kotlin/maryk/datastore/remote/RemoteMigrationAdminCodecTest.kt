@@ -71,4 +71,17 @@ class RemoteMigrationAdminCodecTest {
             )
         }
     }
+
+    @Test
+    fun rejectsDuplicateMigrationResponseFields() {
+        listOf(
+            "v=1\naccepted=true\naccepted=false",
+            "v=1\ns|3|Running||||||\ns|3|Paused||||||",
+            "v=1\nm|3|0|0|0|0|0|0|0|0|\nm|3|1|0|0|0|0|0|0|0|",
+        ).forEach { payload ->
+            assertFailsWith<IllegalArgumentException> {
+                RemoteMigrationAdminCodec.decodeResponse(payload.encodeToByteArray())
+            }
+        }
+    }
 }

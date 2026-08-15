@@ -114,10 +114,21 @@ internal object RemoteMigrationAdminCodec {
         var accepted: Boolean? = null
         lines.drop(1).forEach { line ->
             when {
-                line.startsWith("accepted=") -> accepted = line.substringAfter('=').toBooleanStrictOrNull()
-                    ?: throw IllegalArgumentException("Invalid migration administration acceptance value")
-                line.startsWith("s|") -> decodeStatus(line).let { (id, status) -> statuses[id] = status }
-                line.startsWith("m|") -> decodeMetrics(line).let { (id, metric) -> metrics[id] = metric }
+                line.startsWith("accepted=") -> {
+                    require(accepted == null) { "Duplicate migration administration acceptance value" }
+                    accepted = line.substringAfter('=').toBooleanStrictOrNull()
+                        ?: throw IllegalArgumentException("Invalid migration administration acceptance value")
+                }
+                line.startsWith("s|") -> decodeStatus(line).let { (id, status) ->
+                    require(statuses.put(id, status) == null) {
+                        "Duplicate migration administration status for model id: $id"
+                    }
+                }
+                line.startsWith("m|") -> decodeMetrics(line).let { (id, metric) ->
+                    require(metrics.put(id, metric) == null) {
+                        "Duplicate migration administration metrics for model id: $id"
+                    }
+                }
                 line.isNotEmpty() -> throw IllegalArgumentException("Invalid migration administration response line")
             }
         }

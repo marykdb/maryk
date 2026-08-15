@@ -571,7 +571,7 @@ private suspend fun ApplicationCall.authenticate(
     val principal = when {
         config.authenticator != null -> config.authenticator.authenticate(supplied)
         config.bearerToken != null && supplied != null &&
-            constantTimeEquals(supplied, "Bearer ${config.bearerToken}") ->
+            bearerTokenMatches(supplied, config.bearerToken) ->
             RemoteStorePrincipal("bearer")
         config.bearerToken == null -> RemoteStorePrincipal("anonymous")
         else -> null
@@ -580,6 +580,13 @@ private suspend fun ApplicationCall.authenticate(
         respondText("Unauthorized", status = HttpStatusCode.Unauthorized)
     }
     return principal
+}
+
+private fun bearerTokenMatches(authorization: String, bearerToken: String): Boolean {
+    val separator = authorization.indexOf(' ')
+    return separator > 0 &&
+        authorization.substring(0, separator).equals("Bearer", ignoreCase = true) &&
+        constantTimeEquals(authorization.substring(separator + 1), bearerToken)
 }
 
 private suspend fun ApplicationCall.authorize(

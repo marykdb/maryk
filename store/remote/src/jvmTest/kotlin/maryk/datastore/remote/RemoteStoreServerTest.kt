@@ -224,6 +224,16 @@ class RemoteStoreServerTest {
                 header(HttpHeaders.Authorization, "Bearer secret")
             }
             assertEquals(HttpStatusCode.OK, response.status)
+
+            val caseInsensitiveSchemeResponse = client.get("$baseUrl${RemoteStoreProtocol.infoPath}") {
+                header(HttpHeaders.Authorization, "bEaReR secret")
+            }
+            assertEquals(HttpStatusCode.OK, caseInsensitiveSchemeResponse.status)
+
+            val caseSensitiveTokenResponse = client.get("$baseUrl${RemoteStoreProtocol.infoPath}") {
+                header(HttpHeaders.Authorization, "bearer SECRET")
+            }
+            assertEquals(HttpStatusCode.Unauthorized, caseSensitiveTokenResponse.status)
         }
     }
 

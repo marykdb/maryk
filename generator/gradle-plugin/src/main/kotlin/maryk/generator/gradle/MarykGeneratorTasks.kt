@@ -12,6 +12,7 @@ import org.gradle.api.DefaultTask
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.ListProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
@@ -42,9 +43,8 @@ abstract class MarykGenerateModelsTask : DefaultTask() {
     @get:Internal
     abstract val projectDirectory: DirectoryProperty
 
-    @get:InputFiles
-    @get:PathSensitive(PathSensitivity.RELATIVE)
-    abstract val sourceDirectories: ConfigurableFileCollection
+    @get:Input
+    abstract val sourceDirectoryPaths: ListProperty<String>
 
     @TaskAction
     fun generate() {
@@ -54,8 +54,11 @@ abstract class MarykGenerateModelsTask : DefaultTask() {
             packageName = packageName.get(),
             outputDirectory = outputDirectory.get().asFile.toPath(),
             projectDirectory = projectDirectory,
-            sourceDirectories = listOf(projectDirectory.resolve("src")) +
-                sourceDirectories.files.map { it.toPath() },
+            sourceDirectories = sourceDirectoryPaths.get().map { sourceDirectory ->
+                Path.of(sourceDirectory).let { path ->
+                    if (path.isAbsolute) path else projectDirectory.resolve(path)
+                }
+            },
         )
     }
 }

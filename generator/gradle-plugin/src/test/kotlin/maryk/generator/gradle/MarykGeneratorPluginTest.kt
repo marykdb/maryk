@@ -198,6 +198,24 @@ class MarykGeneratorPluginTest {
     }
 
     @Test
+    fun generationStaysUpToDateWhenHandwrittenSourceContentChanges() {
+        val project = fixture()
+        project.resolve("src/main/maryk").createDirectories()
+            .resolve("person.yaml").writeText(schema("Person"))
+        val handwrittenSource = project.resolve("src/main/kotlin/Handwritten.kt")
+        handwrittenSource.parent.createDirectories()
+        handwrittenSource.writeText("package example\n\nclass Handwritten")
+
+        val first = runner(project, "marykGenerateModels", "--configuration-cache").build()
+        assertEquals(TaskOutcome.SUCCESS, first.task(":marykGenerateModels")?.outcome)
+
+        handwrittenSource.writeText("package example\n\nclass Handwritten(val version: Int)")
+        val second = runner(project, "marykGenerateModels", "--configuration-cache").build()
+
+        assertEquals(TaskOutcome.UP_TO_DATE, second.task(":marykGenerateModels")?.outcome)
+    }
+
+    @Test
     fun refusesConfiguredKotlinSourceDirectoryAsOutput() {
         val project = fixture()
         project.resolve("src/main/maryk").createDirectories()

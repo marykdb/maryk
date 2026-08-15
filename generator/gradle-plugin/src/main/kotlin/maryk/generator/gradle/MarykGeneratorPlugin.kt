@@ -1,5 +1,6 @@
 package maryk.generator.gradle
 
+import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
@@ -8,6 +9,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 class MarykGeneratorPlugin : Plugin<Project> {
     override fun apply(project: Project) = with(project) {
         val extension = extensions.create("marykGenerator", MarykGeneratorExtension::class.java)
+        val projectSourceDirectory = "src"
         val generate = tasks.register("marykGenerateModels", MarykGenerateModelsTask::class.java) { task ->
             task.group = "maryk"
             task.description = "Generates Kotlin models from Maryk schemas."
@@ -16,6 +18,7 @@ class MarykGeneratorPlugin : Plugin<Project> {
             task.generatorVersion.set(provider { project.version.toString() })
             task.outputDirectory.set(extension.outputDirectory)
             task.projectDirectory.set(layout.projectDirectory)
+            task.sourceDirectoryPaths.convention(listOf(projectSourceDirectory))
         }
         tasks.register("marykCheckSchemaCompatibility", MarykCheckSchemaCompatibilityTask::class.java) { task ->
             task.group = "verification"
@@ -40,7 +43,9 @@ class MarykGeneratorPlugin : Plugin<Project> {
                 kotlinExtension.sourceSets.named("main") { sourceSet ->
                     val configuredSourceDirectories = sourceSet.kotlin.srcDirs
                     generate.configure { task ->
-                        task.sourceDirectories.from(configuredSourceDirectories)
+                        task.sourceDirectoryPaths.set(
+                            listOf(projectSourceDirectory) + sourceDirectoryPaths(configuredSourceDirectories),
+                        )
                     }
                     sourceSet.kotlin.srcDir(generate.flatMap { it.outputDirectory })
                 }
@@ -52,7 +57,9 @@ class MarykGeneratorPlugin : Plugin<Project> {
                 kotlinExtension.sourceSets.named("commonMain") { sourceSet ->
                     val configuredSourceDirectories = sourceSet.kotlin.srcDirs
                     generate.configure { task ->
-                        task.sourceDirectories.from(configuredSourceDirectories)
+                        task.sourceDirectoryPaths.set(
+                            listOf(projectSourceDirectory) + sourceDirectoryPaths(configuredSourceDirectories),
+                        )
                     }
                     sourceSet.kotlin.srcDir(generate.flatMap { it.outputDirectory })
                 }
@@ -63,7 +70,10 @@ class MarykGeneratorPlugin : Plugin<Project> {
                 afterEvaluate {
                     val android = extensions.getByName("android")
                     generate.configure { task ->
-                        task.sourceDirectories.from(androidMainSourceDirectories(android))
+                        task.sourceDirectoryPaths.set(
+                            listOf(projectSourceDirectory) +
+                                sourceDirectoryPaths(files(androidMainSourceDirectories(android)).files),
+                        )
                     }
                     wireAndroidSourceDirectory(
                         android,
@@ -77,6 +87,14 @@ class MarykGeneratorPlugin : Plugin<Project> {
                 }
             }
         }
+    }
+}
+
+private fun Project.sourceDirectoryPaths(directories: Iterable<File>): List<String> {
+    val projectDirectory = layout.projectDirectory.asFile.toPath().toAbsolutePath().normalize()
+    return directories.map { directory ->
+        val path = directory.toPath().toAbsolutePath().normalize()
+        if (path.startsWith(projectDirectory)) projectDirectory.relativize(path).toString() else path.toString()
     }
 }
 

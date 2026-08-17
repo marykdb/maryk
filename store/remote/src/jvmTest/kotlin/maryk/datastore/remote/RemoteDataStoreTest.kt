@@ -29,6 +29,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
@@ -1403,6 +1404,24 @@ class RemoteDataStoreTest {
             remote.close()
             server.close()
         }
+    }
+
+    @Test
+    fun nonFlowRequestTimesOutResponseConsumptionAfterHeaders(): Unit = runBoundedIntegrationTest {
+        val headersReceived = CompletableDeferred<Unit>()
+
+        assertFailsWith<TimeoutCancellationException> {
+            executeNonFlowRequest(
+                timeoutMillis = 25,
+                request = {
+                    headersReceived.complete(Unit)
+                },
+                consumeResponse = {
+                    delay(250)
+                },
+            )
+        }
+        assertTrue(headersReceived.isCompleted)
     }
 
     @Test

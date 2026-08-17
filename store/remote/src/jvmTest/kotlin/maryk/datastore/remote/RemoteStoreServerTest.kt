@@ -31,9 +31,12 @@ import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
+import maryk.core.query.changes.Change
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.pairs.with
 import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
@@ -41,6 +44,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.get
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.memory.InMemoryDataStore
@@ -887,6 +891,72 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun processUpdateMixedChangeRequiresChangeAndDeleteAuthorization() = runBoundedIntegrationTest {
+        val authorizedRequestTypes = mutableListOf<RequestType?>()
+        withServer(
+            RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    authorizedRequestTypes += request.requestType
+                    request.requestType != RequestType.Delete
+                },
+            )
+        ) { baseUrl, client ->
+            client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(changeWithSoftDeletePayload())
+            }
+        }
+
+        assertEquals(listOf<RequestType?>(RequestType.Change, RequestType.Delete), authorizedRequestTypes)
+    }
+
+    @Test
+    fun processUpdateSoftDeleteChangeRequiresDeleteAuthorization() = runBoundedIntegrationTest {
+        val authorizedRequestTypes = mutableListOf<RequestType?>()
+        withServer(
+            RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    authorizedRequestTypes += request.requestType
+                    request.requestType != RequestType.Delete
+                },
+            )
+        ) { baseUrl, client ->
+            client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(softDeleteChangePayload())
+            }
+        }
+
+        assertEquals(listOf<RequestType?>(RequestType.Delete), authorizedRequestTypes)
+    }
+
+    @Test
+    fun processUpdateMixedInitialChangesRequiresAddChangeAndDeleteAuthorization() = runBoundedIntegrationTest {
+        val authorizedRequestTypes = mutableListOf<RequestType?>()
+        withServer(
+            RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    authorizedRequestTypes += request.requestType
+                    request.requestType != RequestType.Delete
+                },
+            )
+        ) { baseUrl, client ->
+            client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(initialChangesWithMixedOperationsPayload())
+            }
+        }
+
+        assertEquals(
+            listOf<RequestType?>(RequestType.Add, RequestType.Change, RequestType.Delete),
+            authorizedRequestTypes,
+        )
+    }
+
+    @Test
     fun processUpdateTypeWildcardFallsThroughToPayloadValidation() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
@@ -1143,6 +1213,64 @@ private fun initialChangesWithCreatePayload(): ByteArray =
                                 version = 1uL,
                                 changes = listOf(ObjectCreate),
                             )
+                        ),
+                    )
+                ),
+            ),
+        ),
+        testRequestContext(),
+    )
+
+private fun changeWithSoftDeletePayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        UpdateResponse.Serializer,
+        UpdateResponse(
+            dataModel = SimpleMarykModel,
+            update = ChangeUpdate(
+                key = SimpleMarykModel.key(ByteArray(16)),
+                version = 1uL,
+                index = 0,
+                changes = listOf(
+                    Change(SimpleMarykModel { value::ref } with "changed"),
+                    ObjectSoftDeleteChange(true),
+                ),
+            ),
+        ),
+        testRequestContext(),
+    )
+
+private fun softDeleteChangePayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        UpdateResponse.Serializer,
+        UpdateResponse(
+            dataModel = SimpleMarykModel,
+            update = ChangeUpdate(
+                key = SimpleMarykModel.key(ByteArray(16)),
+                version = 1uL,
+                index = 0,
+                changes = listOf(ObjectSoftDeleteChange(true)),
+            ),
+        ),
+        testRequestContext(),
+    )
+
+private fun initialChangesWithMixedOperationsPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        UpdateResponse.Serializer,
+        UpdateResponse(
+            dataModel = SimpleMarykModel,
+            update = InitialChangesUpdate(
+                version = 3uL,
+                changes = listOf(
+                    DataObjectVersionedChange(
+                        key = SimpleMarykModel.key(ByteArray(16)),
+                        changes = listOf(
+                            VersionedChanges(1uL, listOf(ObjectCreate)),
+                            VersionedChanges(
+                                2uL,
+                                listOf(Change(SimpleMarykModel { value::ref } with "changed")),
+                            ),
+                            VersionedChanges(3uL, listOf(ObjectSoftDeleteChange(true))),
                         ),
                     )
                 ),

@@ -38,7 +38,9 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
+import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectCreate
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
@@ -434,12 +436,12 @@ internal fun Application.remoteStoreModule(
                 val updateRequest = decodedUpdateRequest as UpdateResponse<IsRootDataModel>
                 val requestTypes = when (val update = updateRequest.update) {
                     is AdditionUpdate<*> -> setOf(RequestType.Add)
-                    is ChangeUpdate<*> -> setOf(RequestType.Change)
+                    is ChangeUpdate<*> -> authorizationRequestTypes(update.changes)
                     is RemovalUpdate<*> -> setOf(RequestType.Delete)
                     is InitialChangesUpdate<*> -> update.changes
                         .flatMap { it.changes }
-                        .mapTo(mutableSetOf()) { versionedChanges ->
-                            if (ObjectCreate in versionedChanges.changes) RequestType.Add else RequestType.Change
+                        .flatMapTo(mutableSetOf()) { versionedChanges ->
+                            authorizationRequestTypes(versionedChanges.changes)
                         }
                     else -> emptySet()
                 }
@@ -671,6 +673,15 @@ private fun authorizationFailureForUpdate(
     )
     else -> null
 }
+
+private fun authorizationRequestTypes(changes: List<IsChange>): Set<RequestType> =
+    changes.mapTo(mutableSetOf()) { change ->
+        when {
+            change === ObjectCreate -> RequestType.Add
+            change is ObjectSoftDeleteChange -> RequestType.Delete
+            else -> RequestType.Change
+        }
+    }.ifEmpty { setOf(RequestType.Change) }
 
 private fun resolveRequest(rawRequest: Any, operation: String): IsTransportableRequest<*> = when (rawRequest) {
     is IsTransportableRequest<*> -> rawRequest

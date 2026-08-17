@@ -242,15 +242,14 @@ class RemoteDataStore private constructor(
         }
 
         private suspend fun fetchInfo(client: HttpClient, baseUrl: Url, bearerToken: String?): InfoResult {
-            val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { client.get(buildUrl(baseUrl, RemoteStoreProtocol.infoPath)) {
-                headers {
-                    append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                    appendBearerToken(bearerToken)
+            val bytes = readNonFlowResponseBytes("info") {
+                client.get(buildUrl(baseUrl, RemoteStoreProtocol.infoPath)) {
+                    headers {
+                        append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                        appendBearerToken(bearerToken)
+                    }
                 }
-            } }
-            requireSuccess(response, "info")
-            requireContentType(response, RemoteStoreProtocol.contentType, "info")
-            val bytes = readResponseBytes(response, "info")
+            }
             if (bytes.isEmpty()) {
                 throw IllegalStateException("Remote store info returned an empty payload")
             }
@@ -344,21 +343,20 @@ class RemoteDataStore private constructor(
         payload: ByteArray,
         descriptors: List<BatchRequestDescriptor>,
     ): List<IsResponse> {
-        val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
-            headers {
-                append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
-                append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                append(
-                    RemoteStoreProtocol.executeProtocolHeader,
-                    RemoteStoreProtocol.batchExecuteProtocol,
-                )
-                appendBearerToken(bearerToken)
+        val responseBytes = readNonFlowResponseBytes("execute", MAX_BATCH_RESPONSE_BODY_BYTES) {
+            httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.executePath)) {
+                headers {
+                    append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                    append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                    append(
+                        RemoteStoreProtocol.executeProtocolHeader,
+                        RemoteStoreProtocol.batchExecuteProtocol,
+                    )
+                    appendBearerToken(bearerToken)
+                }
+                setBody(payload)
             }
-            setBody(payload)
-        } }
-        requireSuccess(response, "execute")
-        requireContentType(response, RemoteStoreProtocol.contentType, "execute")
-        val responseBytes = readResponseBytes(response, "execute", MAX_BATCH_RESPONSE_BODY_BYTES)
+        }
         if (responseBytes.isEmpty()) {
             throw IllegalStateException("Remote store execute returned an empty payload")
         }
@@ -696,17 +694,16 @@ class RemoteDataStore private constructor(
         registerLocalDataModels(listOf(updateResponse.dataModel))
         val context = requestContext(updateResponse.dataModel)
         val payload = RemoteStoreCodec.encode(UpdateResponse.Serializer, updateResponse, context, MAX_REQUEST_BODY_BYTES)
-        val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.processUpdatePath)) {
-            headers {
-                append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
-                append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                appendBearerToken(bearerToken)
+        val responseBytes = readNonFlowResponseBytes("process-update") {
+            httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.processUpdatePath)) {
+                headers {
+                    append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                    append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                    appendBearerToken(bearerToken)
+                }
+                setBody(payload)
             }
-            setBody(payload)
-        } }
-        requireSuccess(response, "process-update")
-        requireContentType(response, RemoteStoreProtocol.contentType, "process-update")
-        val responseBytes = readResponseBytes(response, "process-update")
+        }
         if (responseBytes.isEmpty()) {
             throw IllegalStateException("Remote store process-update returned an empty payload")
         }
@@ -718,16 +715,16 @@ class RemoteDataStore private constructor(
     }
 
     override suspend fun captureSnapshotVersion(): ULong {
-        val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.get(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
-            headers {
-                append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                appendBearerToken(bearerToken)
+        val responseBytes = readNonFlowResponseBytes("snapshot version") {
+            httpClient.get(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
+                headers {
+                    append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                    appendBearerToken(bearerToken)
+                }
             }
-        } }
-        requireSuccess(response, "snapshot version")
-        requireContentType(response, RemoteStoreProtocol.contentType, "snapshot version")
+        }
         return try {
-            RemoteStoreCodec.decodeVersion(readResponseBytes(response, "snapshot version"))
+            RemoteStoreCodec.decodeVersion(responseBytes)
         } catch (error: IllegalArgumentException) {
             throw IllegalStateException("Remote store returned an invalid snapshot version", error)
         }
@@ -754,18 +751,18 @@ class RemoteDataStore private constructor(
         executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Cancel, modelId, reason)).accepted == true
 
     private suspend fun executeMigrationAdmin(request: RemoteMigrationRequest): RemoteMigrationResponse {
-        val response = withTimeout(NON_FLOW_REQUEST_TIMEOUT_MILLIS) { httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.migrationsPath)) {
-            headers {
-                append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
-                append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
-                appendBearerToken(bearerToken)
+        val responseBytes = readNonFlowResponseBytes("migration administration") {
+            httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.migrationsPath)) {
+                headers {
+                    append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                    append(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                    appendBearerToken(bearerToken)
+                }
+                setBody(RemoteMigrationAdminCodec.encodeRequest(request))
             }
-            setBody(RemoteMigrationAdminCodec.encodeRequest(request))
-        } }
-        requireSuccess(response, "migration administration")
-        requireContentType(response, RemoteStoreProtocol.contentType, "migration administration")
+        }
         return RemoteMigrationAdminCodec.decodeResponse(
-            readResponseBytes(response, "migration administration"),
+            responseBytes,
             request.operation,
         )
     }
@@ -945,6 +942,24 @@ private suspend fun readResponseBytes(
         throw IllegalStateException("Remote store $operation response exceeds max size: ${bytes.size} > $maxBytes")
     }
     return bytes
+}
+
+private suspend fun readNonFlowResponseBytes(
+    operation: String,
+    maxBytes: Int = MAX_FRAME_SIZE_BYTES,
+    request: suspend () -> HttpResponse,
+): ByteArray = executeNonFlowRequest(request = request) { response ->
+    requireSuccess(response, operation)
+    requireContentType(response, RemoteStoreProtocol.contentType, operation)
+    readResponseBytes(response, operation, maxBytes)
+}
+
+internal suspend fun <Response, Result> executeNonFlowRequest(
+    timeoutMillis: Long = NON_FLOW_REQUEST_TIMEOUT_MILLIS,
+    request: suspend () -> Response,
+    consumeResponse: suspend (Response) -> Result,
+): Result = withTimeout(timeoutMillis) {
+    consumeResponse(request())
 }
 
 private const val MAX_FRAME_SIZE_BYTES = 16 * 1024 * 1024

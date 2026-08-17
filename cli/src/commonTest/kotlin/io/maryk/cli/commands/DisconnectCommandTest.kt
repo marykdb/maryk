@@ -40,6 +40,28 @@ class DisconnectCommandTest {
         assertTrue(result.isError)
         assertTrue(result.lines.first().contains("No active"))
     }
+
+    @Test
+    fun reportsListenerCloseFailureAndStillClosesStore() {
+        val dataStore = object : FakeDataStore() {
+            override suspend fun closeAllListeners() {
+                throw IllegalStateException("listener close boom")
+            }
+        }
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", dataStore))
+        }
+
+        val result = DisconnectCommand().execute(
+            CommandContext(CommandRegistry(state, TestEnvironment), state, TestEnvironment),
+            emptyList(),
+        )
+
+        assertTrue(result.isError)
+        assertTrue(result.lines.single().contains("listener close boom"))
+        assertTrue(dataStore.closed)
+        assertEquals(null, state.currentConnection)
+    }
 }
 
 private object TestEnvironment : CliEnvironment {

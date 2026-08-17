@@ -54,6 +54,37 @@ class DataImportDetectionTest {
     }
 
     @Test
+    fun importSnapshotRemainsStableWhenSourcePathChanges() {
+        val values = VersionedImportModel.create {
+            id with 7u
+            number with 42u
+        }
+        val record = DataObjectVersionedChange(
+            key = VersionedImportModel.key(values),
+            changes = listOf(VersionedChanges(version = 1uL, changes = listOf(ObjectCreate))),
+        )
+        val requestContext = buildRequestContext(VersionedImportModel)
+        val versionedJson = buildString {
+            val writer = JsonWriter(pretty = true) { append(it) }
+            DataObjectVersionedChange.Serializer.writeObjectAsJson(record, writer, requestContext)
+        }
+        val path = Files.createTempFile("maryk-import-snapshot-", ".json")
+        try {
+            Files.writeString(path, "[$versionedJson]")
+            val snapshot = ImportSnapshot.read(path.toString())
+            Files.writeString(
+                path,
+                """[{"key":"AAACKwEAAw","values":{"number":1},"firstVersion":1,"lastVersion":1,"isDeleted":false}]""",
+            )
+
+            assertTrue(detectVersionedImport(snapshot, DataExportFormat.JSON, requestContext))
+            assertFalse(detectVersionedImport(path.toString(), DataExportFormat.JSON, requestContext))
+        } finally {
+            Files.deleteIfExists(path)
+        }
+    }
+
+    @Test
     fun detectVersionedImportReturnsTrueForVersionedYamlDocument() {
         val values = VersionedImportModel.create {
             id with 7u

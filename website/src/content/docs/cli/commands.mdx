@@ -58,7 +58,9 @@ Serve a local store over HTTP (Ktor):
 ```text
 serve rocksdb --dir ./data --host 127.0.0.1 --port 8210
 serve foundationdb --dir maryk/app/store --cluster /path/to/fdb.cluster --port 8210
-serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token replace-with-a-secret
+MARYK_BEARER_TOKEN=replace-with-a-secret maryk serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-env MARYK_BEARER_TOKEN
+serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-file ./maryk-token
+printf '%s' 'replace-with-a-secret' | maryk serve rocksdb --dir ./data --host 127.0.0.1 --bearer-token-stdin
 ```
 
 Config file:
@@ -68,16 +70,18 @@ store: rocksdb
 dir: ./data
 host: 127.0.0.1
 port: 8210
-bearer-token: replace-with-a-secret
+bearer-token-env: MARYK_BEARER_TOKEN
 ```
 
 ```text
 serve --config ./serve.conf
 ```
 
-The interactive CLI treats the token argument literally; it does not expand shell
-syntax such as `$MARYK_BEARER_TOKEN`. Replace the placeholder or use a protected
-config/launcher when supplying a real secret.
+Use exactly one of `--bearer-token-env &lt;name&gt;`, `--bearer-token-file &lt;path&gt;`, or
+`--bearer-token-stdin` (the same `bearer-token-env`, `bearer-token-file`, and
+blank `bearer-token-stdin:` config keys are supported). `--bearer-token &lt;token&gt;`
+remains available for compatibility but warns because command-line arguments can
+be visible to other local users and process monitors.
 
 Notes:
 - Uses ProtoBuf `Requests`/responses over HTTP.

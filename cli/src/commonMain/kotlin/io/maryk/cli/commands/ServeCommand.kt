@@ -9,6 +9,7 @@ import maryk.datastore.remote.RemoteStoreServer
 import maryk.datastore.remote.RemoteStoreServerConfig
 import maryk.datastore.remote.validateRemoteStoreServerBinding
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 import maryk.file.File
 
 class ServeCommand(
@@ -75,7 +76,8 @@ class ServeCommand(
         }
         println("Press Ctrl+C to stop.")
 
-        return try {
+        var closeFailure: Throwable? = null
+        val serverResult = try {
             try {
                 serverStarter(server, options.host, options.port, options.allowInsecureRemoteBinding, options.bearerToken)
                 CommandResult(lines = listOf("Server stopped."))
@@ -87,7 +89,16 @@ class ServeCommand(
                 )
             }
         } finally {
-            connection.close()
+            closeFailure = runCatchingNonFatal { connection.close() }.exceptionOrNull()
+        }
+        val cleanupFailure = closeFailure
+        return if (cleanupFailure == null) {
+            serverResult
+        } else {
+            CommandResult(
+                lines = serverResult.lines + "Store cleanup failed: ${cleanupFailure.message ?: cleanupFailure::class.simpleName ?: "Unknown error"}",
+                isError = true,
+            )
         }
     }
 }
@@ -145,6 +156,8 @@ internal data class ServeConfigInput(
 
 private const val defaultHost = "127.0.0.1"
 private const val defaultPort = 8210
+private const val MAX_SERVE_CONFIG_BYTES = 1024 * 1024
+private const val MAX_BEARER_TOKEN_FILE_BYTES = 16 * 1024
 
 internal fun parseServeOptions(environment: CliEnvironment, arguments: List<String>): ServeParseResult {
     val cliInput = when (val parsed = parseServeArguments(arguments)) {
@@ -153,8 +166,11 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
     }
 
     val fileInput = if (cliInput.configPath != null) {
-        val contents = File.readText(cliInput.configPath)
-            ?: return ServeParseResult.Error("Config file not found at ${cliInput.configPath}")
+        val contents = File.readText(cliInput.configPath, MAX_SERVE_CONFIG_BYTES) ?: return if (File.size(cliInput.configPath) != null) {
+            ServeParseResult.Error("Config file exceeds max size: $MAX_SERVE_CONFIG_BYTES bytes")
+        } else {
+            ServeParseResult.Error("Config file not found at ${cliInput.configPath}")
+        }
         when (val parsed = parseServeConfig(contents)) {
             is ConfigParseResult.Error -> return ServeParseResult.Error(parsed.reason)
             is ConfigParseResult.Success -> parsed.input
@@ -174,8 +190,11 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
         is BearerTokenSource.Literal -> source.token
         is BearerTokenSource.Environment -> readEnvironmentVariable(source.variable)
             ?: return ServeParseResult.Error("Bearer token environment variable `${source.variable}` is not set.")
-        is BearerTokenSource.File -> File.readText(source.path)
-            ?: return ServeParseResult.Error("Bearer token file not found at ${source.path}")
+        is BearerTokenSource.File -> File.readText(source.path, MAX_BEARER_TOKEN_FILE_BYTES) ?: return if (File.size(source.path) != null) {
+            ServeParseResult.Error("Bearer token file exceeds max size: $MAX_BEARER_TOKEN_FILE_BYTES bytes")
+        } else {
+            ServeParseResult.Error("Bearer token file not found at ${source.path}")
+        }
         BearerTokenSource.Stdin -> readStdinText()
     }?.trimEnd('\r', '\n')
     if (bearerToken != null && bearerToken.isBlank()) {

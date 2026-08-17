@@ -100,8 +100,7 @@ data class RocksDbStoreConnection(
 
     override fun close() {
         runBlocking {
-            runCatchingNonFatal { dataStore.closeAllListeners() }
-            runCatchingNonFatal { dataStore.close() }
+            dataStore.closeConnectionResources()
         }
     }
 }
@@ -115,8 +114,19 @@ data class FoundationDbStoreConnection(
 
     override fun close() {
         runBlocking {
-            runCatchingNonFatal { dataStore.closeAllListeners() }
-            runCatchingNonFatal { dataStore.close() }
+            dataStore.closeConnectionResources()
         }
+    }
+}
+
+private suspend fun IsDataStore.closeConnectionResources() {
+    val listenerFailure = runCatchingNonFatal { closeAllListeners() }.exceptionOrNull()
+    val storeFailure = runCatchingNonFatal { close() }.exceptionOrNull()
+    when {
+        listenerFailure != null -> {
+            storeFailure?.let(listenerFailure::addSuppressed)
+            throw listenerFailure
+        }
+        storeFailure != null -> throw storeFailure
     }
 }

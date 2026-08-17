@@ -25,6 +25,7 @@ import io.maryk.cli.commands.UndeleteCommand
 import io.maryk.cli.commands.registerAll
 import io.maryk.cli.commands.platformCommands
 import maryk.datastore.shared.rethrowIfFatal
+import maryk.datastore.shared.runCatchingNonFatal
 
 fun main(args: Array<String>) {
     try {
@@ -46,7 +47,11 @@ fun main(args: Array<String>) {
                     printNonInteractiveHelp(registry)
                     return
                 }
-                MarykCli(registry).run()
+                try {
+                    MarykCli(registry).run()
+                } finally {
+                    state.clearConnection()?.close()
+                }
             }
         }
     } catch (t: Throwable) {
@@ -543,19 +548,41 @@ internal fun runOneShot(
     val state = registry.state
     val previousOneShot = state.isOneShotMode
     state.isOneShotMode = true
-    return try {
+    val execution = try {
+        runCatchingNonFatal { executeOneShot(registry, options) }
+    } finally {
+        state.isOneShotMode = previousOneShot
+    }
+    val closeFailure = runCatchingNonFatal { state.clearConnection()?.close() }.exceptionOrNull()
+    execution.exceptionOrNull()?.let { failure ->
+        closeFailure?.let(failure::addSuppressed)
+        throw failure
+    }
+    if (closeFailure != null) {
+        println("Store cleanup failed: ${closeFailure.message ?: closeFailure::class.simpleName ?: "Unknown error"}")
+        return 1
+    }
+    return execution.getOrThrow()
+}
+
+private fun executeOneShot(
+    registry: CommandRegistry,
+    options: OneShotOptions,
+): Int {
+    val state = registry.state
+    return run {
         val parsed = CommandLineParser.parse(options.commandLine)
         val tokens = when (parsed) {
             is CommandLineParser.ParseResult.Error -> {
                 println("Command parse error: ${parsed.message}")
-                return 1
+                return@run 1
             }
             is CommandLineParser.ParseResult.Success -> parsed.tokens
         }
 
         if (tokens.isEmpty()) {
             println("No command provided for --exec.")
-            return 1
+            return@run 1
         }
 
         if (options.store != null) {
@@ -565,12 +592,12 @@ internal fun runOneShot(
             )
             if (connectionResult.isError) {
                 connectionResult.lines.forEach(::println)
-                return 1
+                return@run 1
             }
             if (state.hasActiveInteraction()) {
                 state.clearInteraction()
                 println("Connect requires interactive mode. Run without --exec to use it.")
-                return 1
+                return@run 1
             }
         }
 
@@ -581,13 +608,10 @@ internal fun runOneShot(
         if (state.hasActiveInteraction()) {
             state.clearInteraction()
             println("Command `$commandName` requires interactive mode. Run without --exec to use it.")
-            return 1
+            return@run 1
         }
 
         if (result.isError) 1 else 0
-    } finally {
-        state.isOneShotMode = previousOneShot
-        state.clearConnection()?.close()
     }
 }
 

@@ -10,7 +10,8 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.AddRequest
-import maryk.core.query.responses.AddOrChangeResponse
+import maryk.core.query.requests.add
+import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
@@ -40,7 +41,7 @@ class DataImportHeapTest {
 
 object DataImportHeapProbe {
     @JvmStatic
-    fun main(args: Array<String>) = runBlocking {
+    fun main(args: Array<String>): Unit = runBlocking {
         val source = InMemoryDataStore.open(dataModelsById = mapOf(1u to HeapImportModel))
         val folder = Files.createTempDirectory("maryk-import-heap-")
         try {
@@ -106,7 +107,7 @@ private object CountingDataStore : IsDataStore {
         request: RQ,
     ): RP {
         check((request as AddRequest<*>).objects.size <= 100)
-        return AddOrChangeResponse(request.dataModel, emptyList()) as RP
+        return AddResponse(request.dataModel, emptyList()) as RP
     }
 
     override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(

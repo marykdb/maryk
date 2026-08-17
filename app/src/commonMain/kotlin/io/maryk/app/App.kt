@@ -245,6 +245,7 @@ private fun StoreEditorDialog(storesState: StoresState) {
     var sshPort by remember(editing) { mutableStateOf(editing?.sshPort?.toString().orEmpty()) }
     var sshLocalPort by remember(editing) { mutableStateOf(editing?.sshLocalPort?.toString().orEmpty()) }
     var sshIdentityFile by remember(editing) { mutableStateOf(editing?.sshIdentityFile.orEmpty()) }
+    var bearerTokenFile by remember(editing) { mutableStateOf(editing?.bearerTokenFile.orEmpty()) }
     val initialUseSsh = editing?.let {
         it.sshHost?.isNotBlank() == true ||
             it.sshUser?.isNotBlank() == true ||
@@ -315,6 +316,12 @@ private fun StoreEditorDialog(storesState: StoresState) {
                     )
                 }
                 if (type == StoreKind.REMOTE) {
+                    SmallOutlinedTextField(
+                        value = bearerTokenFile,
+                        onValueChange = { bearerTokenFile = it },
+                        label = "Bearer token file (optional)",
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -399,6 +406,7 @@ private fun StoreEditorDialog(storesState: StoresState) {
                         val trimmedSshPort = sshPort.trim()
                         val trimmedSshLocalPort = sshLocalPort.trim()
                         val trimmedSshIdentityFile = sshIdentityFile.trim()
+                        val trimmedBearerTokenFile = bearerTokenFile.trim()
                         if (trimmedName.isBlank()) {
                             error = "Name is required."
                             return@ModalPrimaryButton
@@ -445,6 +453,7 @@ private fun StoreEditorDialog(storesState: StoresState) {
                             sshPort = if (sshEnabled) resolvedSshPort else null,
                             sshLocalPort = if (sshEnabled) resolvedSshLocalPort else null,
                             sshIdentityFile = sshIdentityValue,
+                            bearerTokenFile = if (type == StoreKind.REMOTE) trimmedBearerTokenFile.ifBlank { null } else null,
                         )
                         storesState.upsertStore(newStore)
                         storesState.closeStoreEditor()

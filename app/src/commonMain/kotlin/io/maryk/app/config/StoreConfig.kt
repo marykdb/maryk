@@ -21,6 +21,7 @@ data class StoreDefinition(
     val sshPort: Int? = null,
     val sshLocalPort: Int? = null,
     val sshIdentityFile: String? = null,
+    val bearerTokenFile: String? = null,
 ) {
     fun displayLocation(): String = when (type) {
         StoreKind.ROCKS_DB -> directory
@@ -45,7 +46,12 @@ class StoreRepository(
     private val path: String = storesFilePath(),
 ) {
     fun load(): List<StoreDefinition> {
-        val content = File.readText(path) ?: return emptyList()
+        val content = File.readText(path, MAX_STORE_CONFIG_BYTES) ?: run {
+            if (File.size(path) != null) {
+                throw IllegalArgumentException("Store configuration exceeds max size: $MAX_STORE_CONFIG_BYTES bytes")
+            }
+            return emptyList()
+        }
         return content.lineSequence()
             .mapNotNull { line ->
                 val trimmed = line.trim()
@@ -59,7 +65,7 @@ class StoreRepository(
         ensureParentDirectory(path)
         val body = buildString {
             append("# Maryk app store connections\n")
-            append("# id\tname\ttype\tpath_or_url\tcluster\tssh_host\tssh_user\tssh_port\tssh_local_port\tssh_identity_file\n")
+            append("# id\tname\ttype\tpath_or_url\tcluster\tssh_host\tssh_user\tssh_port\tssh_local_port\tssh_identity_file\tbearer_token_file\n")
             stores.forEach { store ->
                 append(encode(store.id))
                 append('\t')
@@ -80,6 +86,8 @@ class StoreRepository(
                 append(encode(store.sshLocalPort?.toString().orEmpty()))
                 append('\t')
                 append(encode(store.sshIdentityFile.orEmpty()))
+                append('\t')
+                append(encode(store.bearerTokenFile.orEmpty()))
                 append('\n')
             }
         }
@@ -102,6 +110,7 @@ class StoreRepository(
         val sshPort = (parsePort(parts.getOrNull(7)) ?: return null).value
         val sshLocalPort = (parsePort(parts.getOrNull(8)) ?: return null).value
         val sshIdentityFile = parts.getOrNull(9)?.let { decode(it) }?.ifBlank { null }
+        val bearerTokenFile = parts.getOrNull(10)?.let { decode(it) }?.ifBlank { null }
         return StoreDefinition(
             id = id,
             name = name,
@@ -113,6 +122,7 @@ class StoreRepository(
             sshPort = sshPort,
             sshLocalPort = sshLocalPort,
             sshIdentityFile = sshIdentityFile,
+            bearerTokenFile = bearerTokenFile,
         )
     }
 
@@ -189,3 +199,5 @@ class StoreRepository(
 }
 
 private data class ParsedPort(val value: Int?)
+
+private const val MAX_STORE_CONFIG_BYTES = 1024 * 1024

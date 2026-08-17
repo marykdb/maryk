@@ -64,12 +64,39 @@ internal data class ImportResult(
     val failed: Int,
 )
 
+internal class ImportSnapshot private constructor(
+    private val bytes: ByteArray,
+) {
+    internal fun bytes(): ByteArray = bytes
+    internal fun text(): String = bytes.decodeToString()
+
+    companion object {
+        fun read(path: String): ImportSnapshot {
+            val bytes = File.readBytes(path, MAX_IMPORT_FILE_BYTES.toInt()) ?: run {
+                if (File.size(path) != null) {
+                    throw IllegalArgumentException("Import file exceeds max size: $MAX_IMPORT_FILE_BYTES bytes")
+                }
+                throw IllegalArgumentException("File not found: $path")
+            }
+            return ImportSnapshot(bytes)
+        }
+    }
+}
+
 internal suspend fun importDataFromFile(
     dataStore: IsDataStore,
     model: IsRootDataModel,
     format: DataExportFormat,
     scope: DataImportScope,
     path: String,
+): ImportResult = importDataFromSnapshot(dataStore, model, format, scope, ImportSnapshot.read(path))
+
+internal suspend fun importDataFromSnapshot(
+    dataStore: IsDataStore,
+    model: IsRootDataModel,
+    format: DataExportFormat,
+    scope: DataImportScope,
+    snapshot: ImportSnapshot,
 ): ImportResult {
     val requestContext = RequestContext(
         DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
@@ -99,9 +126,9 @@ internal suspend fun importDataFromFile(
         onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
     ) {
         when (format) {
-            DataExportFormat.JSON -> readJsonRecords(path, requestContext, scope, onRecord)
-            DataExportFormat.YAML -> readYamlRecords(path, requestContext, scope, onRecord)
-            DataExportFormat.PROTO -> readProtoRecords(path, requestContext, scope, onRecord)
+            DataExportFormat.JSON -> readJsonRecords(snapshot, requestContext, scope, onRecord)
+            DataExportFormat.YAML -> readYamlRecords(snapshot, requestContext, scope, onRecord)
+            DataExportFormat.PROTO -> readProtoRecords(snapshot, requestContext, scope, onRecord)
         }
     }
 
@@ -119,6 +146,14 @@ internal suspend fun importVersionedDataFromFile(
     format: DataExportFormat,
     scope: DataImportScope,
     path: String,
+): ImportResult = importVersionedDataFromSnapshot(dataStore, model, format, scope, ImportSnapshot.read(path))
+
+internal suspend fun importVersionedDataFromSnapshot(
+    dataStore: IsDataStore,
+    model: IsRootDataModel,
+    format: DataExportFormat,
+    scope: DataImportScope,
+    snapshot: ImportSnapshot,
 ): ImportResult {
     val requestContext = RequestContext(
         DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
@@ -141,9 +176,9 @@ internal suspend fun importVersionedDataFromFile(
         onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
     ) {
         when (format) {
-            DataExportFormat.JSON -> readVersionedJsonRecords(path, requestContext, scope, onRecord)
-            DataExportFormat.YAML -> readVersionedYamlRecords(path, requestContext, scope, onRecord)
-            DataExportFormat.PROTO -> readVersionedProtoRecords(path, requestContext, scope, onRecord)
+            DataExportFormat.JSON -> readVersionedJsonRecords(snapshot, requestContext, scope, onRecord)
+            DataExportFormat.YAML -> readVersionedYamlRecords(snapshot, requestContext, scope, onRecord)
+            DataExportFormat.PROTO -> readVersionedProtoRecords(snapshot, requestContext, scope, onRecord)
         }
     }
 
@@ -160,12 +195,18 @@ internal fun detectVersionedImport(
     path: String,
     format: DataExportFormat,
     requestContext: RequestContext,
+): Boolean = detectVersionedImport(ImportSnapshot.read(path), format, requestContext)
+
+internal fun detectVersionedImport(
+    snapshot: ImportSnapshot,
+    format: DataExportFormat,
+    requestContext: RequestContext,
 ): Boolean {
     return runCatching {
         when (format) {
-            DataExportFormat.JSON -> detectVersionedJson(path, requestContext)
-            DataExportFormat.YAML -> detectVersionedYaml(path, requestContext)
-            DataExportFormat.PROTO -> detectVersionedProto(path, requestContext)
+            DataExportFormat.JSON -> detectVersionedJson(snapshot, requestContext)
+            DataExportFormat.YAML -> detectVersionedYaml(snapshot, requestContext)
+            DataExportFormat.PROTO -> detectVersionedProto(snapshot, requestContext)
         }
     }.onFailure {
         it.rethrowIfFatal()
@@ -173,6 +214,14 @@ internal fun detectVersionedImport(
 }
 
 internal fun detectImportFormatFromPath(path: String): DataExportFormat? {
+    val size = File.size(path) ?: return null
+    if (size > MAX_IMPORT_FILE_BYTES) {
+        throw IllegalArgumentException("Import file exceeds max size: $size > $MAX_IMPORT_FILE_BYTES bytes")
+    }
+    return detectImportFormat(path, ImportSnapshot.read(path))
+}
+
+internal fun detectImportFormat(path: String, snapshot: ImportSnapshot): DataExportFormat? {
     val extension = path.substringAfterLast('.', "").lowercase()
     if (extension.isNotEmpty()) {
         return when (extension) {
@@ -182,7 +231,7 @@ internal fun detectImportFormatFromPath(path: String): DataExportFormat? {
             else -> null
         }
     }
-    val bytes = readImportBytesOrNull(path) ?: return null
+    val bytes = snapshot.bytes()
     if (bytes.any { it == 0.toByte() }) return DataExportFormat.PROTO
     val text = bytes.decodeToString()
     val first = text.firstNonWhitespaceChar() ?: return null
@@ -193,32 +242,38 @@ internal fun detectImportScopeFromPath(
     path: String,
     format: DataExportFormat,
     requestContext: RequestContext? = null,
+): DataImportScope = detectImportScope(ImportSnapshot.read(path), format, requestContext)
+
+internal fun detectImportScope(
+    snapshot: ImportSnapshot,
+    format: DataExportFormat,
+    requestContext: RequestContext? = null,
 ): DataImportScope {
     return when (format) {
         DataExportFormat.JSON -> {
-            val content = readImportTextOrNull(path) ?: return DataImportScope.SINGLE
+            val content = snapshot.text()
             val first = content.firstNonWhitespaceChar()
             if (first == '[') DataImportScope.MULTIPLE else DataImportScope.SINGLE
         }
         DataExportFormat.YAML -> {
-            val content = readImportTextOrNull(path) ?: return DataImportScope.SINGLE
+            val content = snapshot.text()
             val docs = splitYamlDocuments(content)
             if (docs.size > 1) DataImportScope.MULTIPLE else DataImportScope.SINGLE
         }
         DataExportFormat.PROTO -> {
-            val bytes = readImportBytesOrNull(path) ?: return DataImportScope.SINGLE
+            val bytes = snapshot.bytes()
             detectProtoScope(bytes, requestContext)
         }
     }
 }
 
 private suspend fun readJsonRecords(
-    path: String,
+    snapshot: ImportSnapshot,
     requestContext: RequestContext,
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
 ) {
-    val content = readImportText(path)
+    val content = snapshot.text()
     val reader = jsonReader(content)
     when (scope) {
         DataImportScope.SINGLE -> {
@@ -250,12 +305,12 @@ private suspend fun readJsonRecords(
 }
 
 private suspend fun readYamlRecords(
-    path: String,
+    snapshot: ImportSnapshot,
     requestContext: RequestContext,
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
 ) {
-    val content = readImportText(path)
+    val content = snapshot.text()
     when (scope) {
         DataImportScope.SINGLE -> {
             var read = false
@@ -319,40 +374,13 @@ private fun ensureYamlDocumentTerminatedAtEnd(document: String) {
 
 private const val MAX_IMPORT_FILE_BYTES = 64L * 1024L * 1024L
 
-private fun readImportText(path: String): String =
-    readImportTextOrNull(path) ?: throw IllegalArgumentException("File not found: $path")
-
-private fun readImportTextOrNull(path: String): String? {
-    return readImportBytesOrNull(path)?.decodeToString()
-}
-
-private fun readImportBytes(path: String): ByteArray =
-    readImportBytesOrNull(path) ?: throw IllegalArgumentException("File not found: $path")
-
-private fun readImportBytesOrNull(path: String): ByteArray? {
-    ensureImportFileSize(path) ?: return null
-    val bytes = File.readBytes(path) ?: return null
-    if (bytes.size.toLong() > MAX_IMPORT_FILE_BYTES) {
-        throw IllegalArgumentException("Import file exceeds max size: ${bytes.size} > $MAX_IMPORT_FILE_BYTES bytes")
-    }
-    return bytes
-}
-
-private fun ensureImportFileSize(path: String): Long? {
-    val size = File.size(path) ?: return null
-    if (size > MAX_IMPORT_FILE_BYTES) {
-        throw IllegalArgumentException("Import file exceeds max size: $size > $MAX_IMPORT_FILE_BYTES bytes")
-    }
-    return size
-}
-
 private suspend fun readProtoRecords(
-    path: String,
+    snapshot: ImportSnapshot,
     requestContext: RequestContext,
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<ValuesWithMetaData<*>, ValuesWithMetaData.Companion>) -> Unit,
 ) {
-    val bytes = readImportBytes(path)
+    val bytes = snapshot.bytes()
     when (scope) {
         DataImportScope.SINGLE -> {
             val values = readSingleProtoPayloadOrFrame(
@@ -384,12 +412,12 @@ private suspend fun readProtoRecords(
 }
 
 private suspend fun readVersionedJsonRecords(
-    path: String,
+    snapshot: ImportSnapshot,
     requestContext: RequestContext,
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
 ) {
-    val content = readImportText(path)
+    val content = snapshot.text()
     val reader = jsonReader(content)
     when (scope) {
         DataImportScope.SINGLE -> {
@@ -421,12 +449,12 @@ private suspend fun readVersionedJsonRecords(
 }
 
 private suspend fun readVersionedYamlRecords(
-    path: String,
+    snapshot: ImportSnapshot,
     requestContext: RequestContext,
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
 ) {
-    val content = readImportText(path)
+    val content = snapshot.text()
     when (scope) {
         DataImportScope.SINGLE -> {
             var read = false
@@ -450,12 +478,12 @@ private suspend fun readVersionedYamlRecords(
 }
 
 private suspend fun readVersionedProtoRecords(
-    path: String,
+    snapshot: ImportSnapshot,
     requestContext: RequestContext,
     scope: DataImportScope,
     onRecord: suspend (ObjectValues<DataObjectVersionedChange<*>, DataObjectVersionedChange.Companion>) -> Unit,
 ) {
-    val bytes = readImportBytes(path)
+    val bytes = snapshot.bytes()
     when (scope) {
         DataImportScope.SINGLE -> {
             val values = readSingleProtoPayloadOrFrame(
@@ -513,8 +541,8 @@ private fun jsonReader(content: String): JsonReader {
     return JsonReader { if (iterator.hasNext()) iterator.nextChar() else null }
 }
 
-private fun detectVersionedJson(path: String, requestContext: RequestContext): Boolean {
-    val content = readImportTextOrNull(path) ?: return false
+private fun detectVersionedJson(snapshot: ImportSnapshot, requestContext: RequestContext): Boolean {
+    val content = snapshot.text()
     return runCatching {
         val reader = jsonReader(content)
         when (reader.nextToken()) {
@@ -537,8 +565,8 @@ private fun detectVersionedJson(path: String, requestContext: RequestContext): B
     }.getOrDefault(false)
 }
 
-private fun detectVersionedYaml(path: String, requestContext: RequestContext): Boolean {
-    val content = readImportTextOrNull(path) ?: return false
+private fun detectVersionedYaml(snapshot: ImportSnapshot, requestContext: RequestContext): Boolean {
+    val content = snapshot.text()
     val doc = splitYamlDocuments(content).firstOrNull() ?: return false
     return runCatching {
         DataObjectVersionedChange.Serializer.readJson(MarykYamlReader(doc), requestContext)
@@ -548,8 +576,8 @@ private fun detectVersionedYaml(path: String, requestContext: RequestContext): B
     }.getOrDefault(false)
 }
 
-private fun detectVersionedProto(path: String, requestContext: RequestContext): Boolean {
-    val bytes = readImportBytesOrNull(path) ?: return false
+private fun detectVersionedProto(snapshot: ImportSnapshot, requestContext: RequestContext): Boolean {
+    val bytes = snapshot.bytes()
     if (isValidVersionedProtoPayload(bytes, 0, bytes.size, requestContext)) {
         return true
     }

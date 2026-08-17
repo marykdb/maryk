@@ -10,6 +10,21 @@ already writes contextual MKE2 fields without keyring envelopes, configure that
 existing `ContextualFieldEncryptionProvider` as `legacyProvider` so those values
 remain readable while rotation upgrades them.
 
+## Key material is application-owned
+
+The provider and keyring objects do not persist encryption keys. Load encryption
+and deterministic-token keys from durable secret storage before opening a store,
+and reconstruct the same key IDs and providers after every restart. Losing an
+encryption key makes the fields written with it unreadable; losing a retained
+token key can make existing sensitive unique-index entries unreachable and can
+weaken duplicate detection during rotation.
+
+Do not generate replacement keys at process startup or store raw key bytes beside
+the database. Back up the secret-store entries independently, restrict access to
+the Maryk process, and restore/test old keys before removing them from the active
+deployment. Key IDs in envelopes are selectors, not secret material and not a
+substitute for key backup.
+
 ## Rotation sequence
 
 1. Add the new provider to the keyring. Keep the old provider and make the new

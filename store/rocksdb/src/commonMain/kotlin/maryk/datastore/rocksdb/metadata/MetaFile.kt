@@ -28,6 +28,7 @@ data class StoreMeta(
 
 private const val META_FILE_NAME = "MARYK_META.yml"
 private const val CURRENT_VERSION = 1
+private const val MAX_META_FILE_BYTES = 4 * 1024 * 1024
 internal const val LEGACY_INDEX_KEY_FORMAT_VERSION = 1
 internal const val CURRENT_INDEX_KEY_FORMAT_VERSION = 2
 
@@ -36,11 +37,13 @@ fun readMetaFile(storePath: String): Map<UInt, ModelMeta> {
 }
 
 fun hasStoreMetaFile(storePath: String): Boolean =
-    File.readText("$storePath/$META_FILE_NAME") != null
+    File.size("$storePath/$META_FILE_NAME") != null
 
 fun readStoreMetaFile(storePath: String): StoreMeta {
     val path = "$storePath/$META_FILE_NAME"
-    val text = File.readText(path) ?: return StoreMeta(emptyMap(), LEGACY_INDEX_KEY_FORMAT_VERSION)
+    if (File.size(path) == null) return StoreMeta(emptyMap(), LEGACY_INDEX_KEY_FORMAT_VERSION)
+    val text = File.readText(path, MAX_META_FILE_BYTES)
+        ?: throw IllegalStateException("Store metadata exceeds $MAX_META_FILE_BYTES bytes or changed while reading: $path")
     return parseMeta(text)
 }
 

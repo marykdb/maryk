@@ -1,7 +1,7 @@
 # Remote Store (HTTP/SSH)
 
 Maryk Remote Store exposes a local Maryk store over HTTP and provides a `RemoteDataStore` client that implements `IsDataStore`.
-It lets the CLI/app connect to a store running elsewhere and still use the same request API.
+It lets the desktop App and programmatic clients connect to a store running elsewhere and still use the same request API.
 
 ## What it provides
 
@@ -38,6 +38,16 @@ server.start(
     config = RemoteStoreServerConfig(bearerToken = System.getenv("MARYK_BEARER_TOKEN")),
 )
 ```
+
+If a deliberately plaintext LAN deployment must listen on every interface, the
+CLI opt-in belongs inside the `--exec` command:
+
+```text
+MARYK_BEARER_TOKEN=replace-with-a-secret maryk --exec "serve rocksdb --dir ./data --host 0.0.0.0 --port 8210 --bearer-token-env MARYK_BEARER_TOKEN --allow-insecure-remote-binding"
+```
+
+This authenticates requests but does not encrypt them. Prefer a loopback bind
+behind TLS or SSH whenever traffic crosses a machine boundary.
 
 Programmatic deployments can replace the shared token with an identity provider
 and authorize each decoded operation by principal, request type, and model:
@@ -125,10 +135,13 @@ val get = remote.execute(SimpleMarykModel.get(add.statuses.first().key))
 ```
 
 Stores with managed migrations also expose the shared `MigrationAdmin` API through
-the remote client. The CLI command `migrations status|pause|resume|cancel` and the
-desktop Operations → Migrations dialog use the same authenticated endpoint.
-Authorization callbacks receive `RemoteStoreOperation.MigrationAdmin` and the
-target model name for control operations.
+the remote client. The desktop Operations → Migrations dialog uses the same
+endpoint; when the App connection has a bearer-token file configured, that token
+is sent with the administration request. Authorization callbacks receive one of
+`MigrationStatus`, `MigrationPause`, `MigrationResume`, or `MigrationCancel`, plus
+the target model name for control operations. The CLI currently manages migrations
+only on its directly connected local RocksDB or FoundationDB store; it does not
+connect to Remote Store endpoints.
 
 Execute several ordered requests in one round trip:
 
@@ -212,5 +225,5 @@ Streaming format:
 ## When to use
 
 - Serve a local RocksDB/FoundationDB store for remote tooling.
-- Connect the app/CLI to a server-side store over HTTP or SSH.
+- Connect the App or a programmatic client to a server-side store over HTTP or SSH.
 - Build future thin gateways without rewriting store logic.

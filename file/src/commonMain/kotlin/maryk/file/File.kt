@@ -8,7 +8,9 @@ package maryk.file
 expect object File {
     fun size(path: String): Long?
     fun readText(path: String): String?
+    fun readText(path: String, maxBytes: Int): String?
     fun readBytes(path: String): ByteArray?
+    fun readBytes(path: String, maxBytes: Int): ByteArray?
     /** Calls [onChunk] with bounded chunks from a regular file. Returns false when unavailable. */
     fun readChunks(path: String, chunkSize: Int = 64 * 1024, onChunk: (ByteArray) -> Unit): Boolean
     fun writeText(path: String, contents: String)

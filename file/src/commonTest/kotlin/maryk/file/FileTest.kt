@@ -131,4 +131,30 @@ class FileTest {
             File.delete(path)
         }
     }
+
+    @Test
+    fun boundedReadRejectsContentOverLimit() {
+        val path = "fileStoreBounded-${Random.nextInt()}.txt"
+        try {
+            File.writeText(path, "abcdef")
+
+            assertEquals("abcdef", File.readText(path, 6))
+            assertNull(File.readText(path, 5))
+            assertNull(File.readBytes(path, 5))
+        } finally {
+            File.delete(path)
+        }
+    }
+
+    @Test
+    fun windowsParentDirectoriesTreatUncShareAsRoot() {
+        assertEquals(
+            listOf("\\\\server\\share\\folder", "\\\\server\\share\\folder\\nested"),
+            windowsParentDirectories("\\\\server\\share\\folder\\nested\\value.txt"),
+        )
+        assertEquals(
+            listOf("C:\\folder", "C:\\folder\\nested"),
+            windowsParentDirectories("C:\\folder\\nested\\value.txt"),
+        )
+    }
 }

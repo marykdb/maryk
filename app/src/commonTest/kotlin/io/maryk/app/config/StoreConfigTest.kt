@@ -2,6 +2,7 @@ package io.maryk.app.config
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import maryk.file.File
 
@@ -80,6 +81,80 @@ class StoreConfigTest {
             File.writeText(path, line)
 
             assertTrue(repository.load().isEmpty())
+        } finally {
+            File.delete(path)
+        }
+    }
+
+    @Test
+    fun storeRepositoryPreservesBearerTokenFileReference() {
+        val path = "build/test-store-config-token-file.txt"
+        val tokenPath = "/run/secrets/maryk-token"
+        val line = listOf(
+            "remote-token",
+            "Remote",
+            "REMOTE",
+            "https://store.example.test",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            tokenPath,
+        ).joinToString("\t")
+
+        try {
+            File.writeText(path, line)
+            val repository = StoreRepository(path)
+
+            repository.save(repository.load())
+
+            assertTrue(File.readText(path).orEmpty().contains(tokenPath))
+        } finally {
+            File.delete(path)
+        }
+    }
+
+    @Test
+    fun storeRepositoryRejectsOversizedConfiguration() {
+        val path = "build/test-store-config-oversized.txt"
+        try {
+            File.writeText(path, "#".repeat(1024 * 1024 + 1))
+
+            val error = assertFailsWith<IllegalArgumentException> {
+                StoreRepository(path).load()
+            }
+
+            assertTrue(error.message.orEmpty().contains("max size"))
+        } finally {
+            File.delete(path)
+        }
+    }
+
+    @Test
+    fun bearerTokenFileReadTrimsLineEnding() {
+        val path = "build/test-store-bearer-token.txt"
+        try {
+            File.writeText(path, "secret-token\n")
+
+            assertEquals("secret-token", readBearerToken(path))
+        } finally {
+            File.delete(path)
+        }
+    }
+
+    @Test
+    fun oversizedBearerTokenFileIsRejected() {
+        val path = "build/test-store-bearer-token-oversized.txt"
+        try {
+            File.writeText(path, "s".repeat(16 * 1024 + 1))
+
+            val error = assertFailsWith<IllegalArgumentException> {
+                readBearerToken(path)
+            }
+
+            assertTrue(error.message.orEmpty().contains("max size"))
         } finally {
             File.delete(path)
         }

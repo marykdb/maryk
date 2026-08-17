@@ -67,6 +67,28 @@ class SchemaBuildEngineTest {
     }
 
     @Test
+    fun rejectsInvalidPackageBeforeReplacingManagedOutput() {
+        val schemas = createTempDirectory()
+        schemas.resolve("alpha.yaml").writeText(schema("Alpha"))
+        val output = createTempDirectory()
+        output.resolve(".maryk-generator-output").writeText("Managed by the Maryk generator.")
+        output.resolve("Existing.kt").writeText("existing")
+
+        for (packageName in listOf("example..generated", "example.generated-name", "example.when", ".example")) {
+            val exception = assertFailsWith<SchemaBuildException> {
+                SchemaBuildEngine.generate(
+                    schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                    packageName = packageName,
+                    outputDirectory = output,
+                )
+            }
+
+            assertTrue(exception.message.orEmpty().contains("packageName"))
+            assertEquals("existing", output.resolve("Existing.kt").readText())
+        }
+    }
+
+    @Test
     fun refusesToReplaceNonManagedOutputDirectory() {
         val schemas = createTempDirectory()
         schemas.resolve("alpha.yaml").writeText(schema("Alpha"))

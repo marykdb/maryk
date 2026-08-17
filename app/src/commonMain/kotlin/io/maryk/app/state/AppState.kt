@@ -14,13 +14,14 @@ import io.maryk.app.data.AggregationDefinition
 import io.maryk.app.data.ApplyResult
 import io.maryk.app.data.DataExportFormat
 import io.maryk.app.data.DataImportScope
+import io.maryk.app.data.ImportSnapshot
 import io.maryk.app.data.ModelExportFormat
 import io.maryk.app.data.ScanQueryParser
 import io.maryk.app.data.applyChanges
 import io.maryk.app.data.buildAggregations
 import io.maryk.app.data.buildSummary
-import io.maryk.app.data.detectImportFormatFromPath
-import io.maryk.app.data.detectImportScopeFromPath
+import io.maryk.app.data.detectImportFormat
+import io.maryk.app.data.detectImportScope
 import io.maryk.app.data.detectVersionedImport
 import io.maryk.app.data.exportAllDataToManagedRevision
 import io.maryk.app.data.exportModelDataToFolder
@@ -30,8 +31,8 @@ import io.maryk.app.data.modelExportFileNames
 import io.maryk.app.data.serializeModel
 import io.maryk.app.data.exportRowDataToFolder
 import io.maryk.app.data.extensionsForImport
-import io.maryk.app.data.importDataFromFile
-import io.maryk.app.data.importVersionedDataFromFile
+import io.maryk.app.data.importDataFromSnapshot
+import io.maryk.app.data.importVersionedDataFromSnapshot
 import io.maryk.app.data.loadCompleteChangesForKey
 import io.maryk.app.data.parseValuesFromYaml
 import io.maryk.app.data.pickDirectory
@@ -239,7 +240,7 @@ class BrowserState(
                     isWorking = false
                 }
                 is ConnectResult.Success -> {
-                    activeConnection?.close()
+                    val closeFailure = runCatchingNonFatal { activeConnection?.close() }.exceptionOrNull()
                     activeConnection = result.connection
                     models = collectModels(result.connection.dataStore)
                     refreshModelCounts(result.connection.dataStore)
@@ -257,7 +258,9 @@ class BrowserState(
                     selectedModelField = null
                     referenceBackTarget = null
                     invalidateRecordLoadRequests()
-                    lastActionMessage = null
+                    lastActionMessage = closeFailure?.let {
+                        "Previous store cleanup failed: ${it.message ?: it::class.simpleName ?: "Unknown error"}"
+                    }
                     isWorking = false
                     if (selectedModelId != null) {
                         scanFromStart()
@@ -268,7 +271,7 @@ class BrowserState(
     }
 
     fun disconnect() {
-        activeConnection?.close()
+        val closeFailure = runCatchingNonFatal { activeConnection?.close() }.exceptionOrNull()
         activeConnection = null
         invalidateScanRequests()
         models = emptyList()
@@ -288,7 +291,12 @@ class BrowserState(
         invalidateAggregations()
         modelCountGeneration += 1
         historyChanges = emptyList()
-        lastActionMessage = "Disconnected."
+        lastActionMessage = closeFailure?.let {
+            "Disconnected with cleanup errors: ${it.message ?: it::class.simpleName ?: "Unknown error"}"
+        } ?: "Disconnected."
+        if (closeFailure != null) {
+            System.err.println(lastActionMessage)
+        }
     }
 
     fun clearLastActionMessage() {
@@ -1418,23 +1426,24 @@ class BrowserState(
                         DefinitionsContext(mutableMapOf(model.Meta.name to DataModelReference(model))),
                         dataModel = model,
                     )
-                    val detectedScope = detectImportScopeFromPath(filePath, format, context)
-                    val versioned = detectVersionedImport(filePath, format, context)
+                    val snapshot = ImportSnapshot.read(filePath)
+                    val detectedScope = detectImportScope(snapshot, format, context)
+                    val versioned = detectVersionedImport(snapshot, format, context)
                     if (versioned) {
-                        importVersionedDataFromFile(
+                        importVersionedDataFromSnapshot(
                             dataStore = connection.dataStore,
                             model = model,
                             format = format,
                             scope = detectedScope,
-                            path = filePath,
+                            snapshot = snapshot,
                         )
                     } else {
-                        importDataFromFile(
+                        importDataFromSnapshot(
                             dataStore = connection.dataStore,
                             model = model,
                             format = format,
                             scope = detectedScope,
-                            path = filePath,
+                            snapshot = snapshot,
                         )
                     }
                 }
@@ -1472,8 +1481,9 @@ class BrowserState(
         scope.launch {
             val detection = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
-                    val format = detectImportFormatFromPath(cleanPath)
-                    val scopeDetected = format?.let { detectImportScopeFromPath(cleanPath, it) }
+                    val snapshot = ImportSnapshot.read(cleanPath)
+                    val format = detectImportFormat(cleanPath, snapshot)
+                    val scopeDetected = format?.let { detectImportScope(snapshot, it) }
                     format to scopeDetected
                 }
             }.getOrElse { error ->

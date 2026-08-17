@@ -51,7 +51,7 @@ fun publishManagedRevision(
     val root = outputDirectory.trimEnd('/', '\\') + "/.maryk-export"
     val revisionDirectory = "$root/revisions/$revisionId"
     val manifestPath = "$revisionDirectory/manifest.sha256"
-    require(File.readBytes(manifestPath) == null) { "Managed export revision already exists: $revisionId" }
+    require(File.size(manifestPath) == null) { "Managed export revision already exists: $revisionId" }
     val stagingDirectory = "$root/revisions/.staging-$revisionId-${Random.nextLong().toString(16)}"
     val staging = ManagedExportStaging(stagingDirectory)
     try {
@@ -72,7 +72,7 @@ suspend fun publishManagedRevisionStreaming(
     require(revisionId.isSafeRevisionId()) { "Invalid export revision id: $revisionId" }
     val root = outputDirectory.trimEnd('/', '\\') + "/.maryk-export"
     val revisionDirectory = "$root/revisions/$revisionId"
-    require(File.readBytes("$revisionDirectory/manifest.sha256") == null) { "Managed export revision already exists: $revisionId" }
+    require(File.size("$revisionDirectory/manifest.sha256") == null) { "Managed export revision already exists: $revisionId" }
     val staging = ManagedExportStaging("$root/revisions/.staging-$revisionId-${Random.nextLong().toString(16)}")
     try {
         staging.write()

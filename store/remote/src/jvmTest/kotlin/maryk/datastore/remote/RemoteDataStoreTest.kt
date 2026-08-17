@@ -195,7 +195,7 @@ class RemoteDataStoreTest {
     }
 
     @Test
-    fun connectAllowsBearerTransportForHttpsAndLoopbackHttpUrls() = runBoundedIntegrationTest {
+    fun connectAllowsBearerTransportForHttpsAndLoopbackIpHttpUrls() = runBoundedIntegrationTest {
         val client = HttpClient(MockEngine) {
             engine {
                 addHandler {
@@ -207,8 +207,8 @@ class RemoteDataStoreTest {
         try {
             listOf(
                 "https://store.example.test:8210",
-                "http://localhost:8210",
                 "http://127.0.0.1:8210",
+                "http://127.0.0.2:8210",
                 "http://[::1]:8210",
                 "http://[0:0:0:0:0:0:0:1]:8210",
             ).forEach { baseUrl ->
@@ -224,6 +224,32 @@ class RemoteDataStoreTest {
 
                 assertEquals("Allowed bearer transport reached the HTTP client", exception.message, baseUrl)
             }
+        } finally {
+            client.close()
+        }
+    }
+
+    @Test
+    fun connectRejectsPlaintextBearerForUnresolvedLocalhostHostname() = runBoundedIntegrationTest {
+        val client = HttpClient(MockEngine) {
+            engine {
+                addHandler {
+                    error("Unresolved localhost bearer transport reached the HTTP client")
+                }
+            }
+        }
+        try {
+            val exception = assertFailsWith<IllegalArgumentException> {
+                RemoteDataStore.connect(
+                    RemoteStoreConfig(
+                        baseUrl = "http://localhost:8210",
+                        bearerToken = "secret",
+                        httpClient = client,
+                    )
+                )
+            }
+
+            assertTrue(exception.message.orEmpty().contains("plaintext"))
         } finally {
             client.close()
         }

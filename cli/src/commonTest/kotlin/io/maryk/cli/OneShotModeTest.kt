@@ -125,6 +125,30 @@ class OneShotModeTest {
     }
 
     @Test
+    fun runOneShotReportsCloseFailureAsNonZeroExit() {
+        val state = CliState()
+        val registry = CommandRegistry(state, FakeEnvironment())
+        registry.register(CapturingConnectCommand(object : FakeConnection() {
+            override fun close() {
+                throw IllegalStateException("close boom")
+            }
+        }))
+        registry.register(CapturingCommand("list"))
+
+        val exitCode = runOneShot(
+            registry,
+            OneShotOptions(
+                store = "rocksdb",
+                connectArgs = listOf("--dir", "/data"),
+                commandLine = "list",
+            ),
+        )
+
+        assertEquals(1, exitCode)
+        assertNull(state.currentConnection)
+    }
+
+    @Test
     fun runOneShotMatchesCommandsIgnoringCase() {
         val state = CliState()
         val registry = CommandRegistry(state, FakeEnvironment())
@@ -159,7 +183,7 @@ class OneShotModeTest {
             DirectoryResolution.Success(path)
     }
 
-    private class FakeConnection : StoreConnection {
+    private open class FakeConnection : StoreConnection {
         var closed = false
         override val type: StoreType = StoreType.ROCKS_DB
         override val dataStore = FakeDataStore()

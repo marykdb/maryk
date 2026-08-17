@@ -43,38 +43,9 @@ private fun isDirectory(path: String): Boolean {
 }
 
 private fun createParentDirectories(path: String): Boolean {
-    val separatorIndex = path.lastIndexOfAny(charArrayOf('\\', '/'))
-    if (separatorIndex <= 0) return true
-
-    val parent = path.substring(0, separatorIndex).replace('/', '\\')
-    if (parent.isEmpty()) return true
-
-    val rootPrefix = when {
-        parent.startsWith("\\\\") -> "\\\\"
-        parent.length >= 2 && parent[1] == ':' -> parent.substring(0, 2)
-        parent.startsWith("\\") -> "\\"
-        else -> ""
-    }
-
-    val remainder = when {
-        rootPrefix == "\\\\" -> parent.removePrefix("\\\\")
-        rootPrefix.length == 2 && rootPrefix[1] == ':' -> parent.removePrefix(rootPrefix).removePrefix("\\")
-        rootPrefix == "\\" -> parent.removePrefix("\\")
-        else -> parent
-    }
-
-    var current = rootPrefix
-    for (segment in remainder.split('\\').filter { it.isNotEmpty() }) {
-        current = when {
-            current.isEmpty() -> segment
-            current == "\\\\" -> "\\\\$segment"
-            current.endsWith("\\") -> "$current$segment"
-            current.length == 2 && current[1] == ':' -> "$current\\$segment"
-            else -> "$current\\$segment"
-        }
-
-        val created = CreateDirectoryW(current, null)
-        if (created == 0 && !isDirectory(current)) {
+    for (directory in windowsParentDirectories(path)) {
+        val created = CreateDirectoryW(directory, null)
+        if (created == 0 && !isDirectory(directory)) {
             return false
         }
     }
@@ -128,8 +99,17 @@ actual object File {
         return readBytes(path)?.decodeToString()
     }
 
+    actual fun readText(path: String, maxBytes: Int): String? =
+        readBytes(path, maxBytes)?.decodeToString()
+
     @OptIn(ExperimentalForeignApi::class)
     actual fun readBytes(path: String): ByteArray? {
+        return readBytes(path, Int.MAX_VALUE)
+    }
+
+    @OptIn(ExperimentalForeignApi::class)
+    actual fun readBytes(path: String, maxBytes: Int): ByteArray? {
+        require(maxBytes >= 0) { "Maximum byte count cannot be negative" }
         if (!isRegularFile(path)) return null
         val handle: HANDLE? = CreateFileW(
             path,
@@ -144,7 +124,7 @@ actual object File {
         try {
             val size = fileSize(handle) ?: return null
             if (size <= 0) return ByteArray(0)
-            if (size > maxFileSize) return null
+            if (size > minOf(maxFileSize, maxBytes.toLong())) return null
             val buffer = ByteArray(size.toInt())
             buffer.usePinned { pinned ->
                 var offset = 0

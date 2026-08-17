@@ -1,5 +1,6 @@
 package maryk.file
 
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.channels.FileChannel
@@ -21,11 +22,33 @@ actual object File {
         return readBytes(path)?.decodeToString()
     }
 
+    actual fun readText(path: String, maxBytes: Int): String? =
+        readBytes(path, maxBytes)?.decodeToString()
+
     actual fun readBytes(path: String): ByteArray? {
+        return readBytes(path, Int.MAX_VALUE)
+    }
+
+    actual fun readBytes(path: String, maxBytes: Int): ByteArray? {
+        require(maxBytes >= 0) { "Maximum byte count cannot be negative" }
         val file = File(path)
         if (!file.isFile) return null
-        if ((size(path) ?: return null) > maxFileSize) return null
-        return file.readBytes()
+        if ((size(path) ?: return null) > minOf(maxFileSize, maxBytes.toLong())) return null
+        file.inputStream().use { input ->
+            val initialCapacity = minOf(file.length(), maxBytes.toLong(), 8192L).toInt()
+            val output = ByteArrayOutputStream(initialCapacity)
+            val buffer = ByteArray(64 * 1024)
+            var total = 0
+            while (total < maxBytes) {
+                val count = input.read(buffer, 0, minOf(buffer.size, maxBytes - total))
+                if (count < 0) return output.toByteArray()
+                if (count > 0) {
+                    output.write(buffer, 0, count)
+                    total += count
+                }
+            }
+            return if (input.read() < 0) output.toByteArray() else null
+        }
     }
 
     actual fun readChunks(path: String, chunkSize: Int, onChunk: (ByteArray) -> Unit): Boolean {

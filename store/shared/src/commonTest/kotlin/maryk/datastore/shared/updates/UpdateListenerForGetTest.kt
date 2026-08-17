@@ -107,6 +107,22 @@ class UpdateListenerForGetTest {
     }
 
     @Test
+    fun requestedKeyIndexCachesMembershipAndInsertionOrder() {
+        val first = SimpleMarykModel.key(ByteArray(16) { 1 })
+        val second = SimpleMarykModel.key(ByteArray(16) { 2 })
+        val third = SimpleMarykModel.key(ByteArray(16) { 3 })
+        val index = OrderedKeyIndex(listOf(first, second, third), listOf(first, third))
+
+        assertEquals(true, index.contains(second))
+        assertEquals(false, index.contains(SimpleMarykModel.key(ByteArray(16) { 4 })))
+        assertEquals(1, index.insertionIndex(listOf(first, third), second))
+        index.add(second)
+        assertEquals(true, index.isPresent(second))
+        index.remove(second)
+        assertEquals(false, index.isPresent(second))
+    }
+
+    @Test
     fun updateProcessedBeforeCollectionIsBuffered() = runTest {
         val key = SimpleMarykModel.key(ByteArray(16))
         val initialValues = SimpleMarykModel.create {

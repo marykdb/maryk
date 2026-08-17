@@ -77,12 +77,20 @@ actual object File {
         return readBytes(path)?.decodeToString()
     }
 
+    actual fun readText(path: String, maxBytes: Int): String? =
+        readBytes(path, maxBytes)?.decodeToString()
+
     @OptIn(ExperimentalForeignApi::class)
     actual fun readBytes(path: String): ByteArray? {
+        return readBytes(path, Int.MAX_VALUE)
+    }
+
+    actual fun readBytes(path: String, maxBytes: Int): ByteArray? {
+        require(maxBytes >= 0) { "Maximum byte count cannot be negative" }
         if (!fileExists(path)) return null
         val size = fileSize(path) ?: return null
         if (size <= 0) return ByteArray(0)
-        if (size > maxFileSize) return null
+        if (size > minOf(maxFileSize, maxBytes.toLong())) return null
         val fd = open(path, O_RDONLY, 0)
         if (fd < 0) return null
         try {

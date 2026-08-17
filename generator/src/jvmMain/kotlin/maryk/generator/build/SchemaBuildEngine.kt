@@ -16,6 +16,7 @@ import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlModelReader
 import maryk.generator.kotlin.generateKotlin
+import maryk.generator.kotlin.kotlinIdentifier
 import maryk.json.JsonReader
 
 class SchemaBuildException(message: String, cause: Throwable? = null) : IllegalArgumentException(message, cause)
@@ -102,7 +103,7 @@ object SchemaBuildEngine {
         projectDirectory: Path? = null,
         sourceDirectories: List<Path> = emptyList(),
     ): GenerationResult {
-        require(packageName.isNotBlank()) { "Maryk generator packageName must not be blank" }
+        validatePackageName(packageName)
         val loaded = load(schemaFiles)
         val generatedFileNames = loaded.map { schema ->
             schema to generatedFileName(schema.model.Meta.name)
@@ -183,6 +184,18 @@ object SchemaBuildEngine {
 
     private fun isSchema(path: Path): Boolean =
         path.extension.lowercase() in supportedExtensions
+
+    private fun validatePackageName(packageName: String) {
+        val segments = packageName.split('.')
+        val valid = packageName.isNotBlank() && segments.all { segment ->
+            segment.isNotEmpty() && runCatching { segment.kotlinIdentifier() == segment }.getOrDefault(false)
+        }
+        if (!valid) {
+            throw SchemaBuildException(
+                "Maryk generator packageName must contain only unescaped Kotlin identifier segments: $packageName",
+            )
+        }
+    }
 
     private fun generatedFileName(modelName: String): String {
         val fileName = "$modelName.kt"

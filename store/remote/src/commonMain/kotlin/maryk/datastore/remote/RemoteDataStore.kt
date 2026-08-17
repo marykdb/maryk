@@ -160,7 +160,7 @@ class RemoteDataStore private constructor(
                 if (
                     config.bearerToken != null &&
                     effectiveUrl.protocol == URLProtocol.HTTP &&
-                    !effectiveUrl.host.isLoopbackRemoteHost() &&
+                    !effectiveUrl.host.isLoopbackIpLiteral() &&
                     !allowInsecureBearerTransport
                 ) {
                     throw IllegalArgumentException(

@@ -34,6 +34,31 @@ class ServeCommandTest {
     }
 
     @Test
+    fun reportsStoreCloseFailureAfterServerStops() {
+        val store = object : FakeDataStore() {
+            override suspend fun close() {
+                throw IllegalStateException("close boom")
+            }
+        }
+        val command = ServeCommand(
+            rocksDbConnector = RocksDbConnector {
+                ConnectCommand.RocksDbConnectionOutcome.Success(RocksDbStoreConnection("/data", store))
+            },
+            serverStarter = { _, _, _, _, _ -> },
+        )
+        val state = CliState()
+
+        val result = command.execute(
+            CommandContext(CommandRegistry(state, TestServeEnvironment), state, TestServeEnvironment),
+            listOf("rocksdb", "--dir", "/data"),
+        )
+
+        assertTrue(result.isError)
+        assertTrue(result.lines.any { it.contains("close boom") })
+        assertTrue(store.listenersClosed)
+    }
+
+    @Test
     fun rejectsUnauthenticatedPublicBindBeforeOpeningStore() {
         var connectorCalled = false
         val command = ServeCommand(
@@ -130,6 +155,33 @@ class ServeCommandTest {
         )
 
         assertEquals("secret-from-file", result.options.bearerToken)
+    }
+
+    @Test
+    fun rejectsOversizedBearerTokenFile() {
+        val path = "build/tmp/serve-command-token-oversized.txt"
+        File.writeText(path, "s".repeat(16 * 1024 + 1))
+
+        val result = assertIs<ServeParseResult.Error>(
+            parseServeOptions(
+                TestServeEnvironment,
+                listOf("rocksdb", "--dir", "/data", "--bearer-token-file", path),
+            )
+        )
+
+        assertTrue(result.reason.contains("max size"))
+    }
+
+    @Test
+    fun rejectsOversizedServeConfiguration() {
+        val path = "build/tmp/serve-command-config-oversized.txt"
+        File.writeText(path, "#".repeat(1024 * 1024 + 1))
+
+        val result = assertIs<ServeParseResult.Error>(
+            parseServeOptions(TestServeEnvironment, listOf("--config", path))
+        )
+
+        assertTrue(result.reason.contains("max size"))
     }
 
     @Test

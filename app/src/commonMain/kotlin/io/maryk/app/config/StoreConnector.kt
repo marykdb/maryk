@@ -21,6 +21,7 @@ import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.recoverNonFatal
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.runCatchingNonFatal
+import maryk.file.File
 import kotlin.time.Duration.Companion.milliseconds
 
 sealed class ConnectResult {
@@ -34,9 +35,20 @@ data class StoreConnection(
 ) {
     fun close() {
         runBlocking {
-            runCatchingNonFatal { dataStore.closeAllListeners() }
-            runCatchingNonFatal { dataStore.close() }
+            dataStore.closeConnectionResources()
         }
+    }
+}
+
+private suspend fun IsDataStore.closeConnectionResources() {
+    val listenerFailure = runCatchingNonFatal { closeAllListeners() }.exceptionOrNull()
+    val storeFailure = runCatchingNonFatal { close() }.exceptionOrNull()
+    when {
+        listenerFailure != null -> {
+            storeFailure?.let(listenerFailure::addSuppressed)
+            throw listenerFailure
+        }
+        storeFailure != null -> throw storeFailure
     }
 }
 
@@ -160,8 +172,15 @@ class StoreConnector {
 
         return recoverNonFatal(
             block = {
+                val bearerToken = definition.bearerTokenFile?.let(::readBearerToken)
                 val dataStore = runBlocking {
-                    RemoteDataStore.connect(RemoteStoreConfig(baseUrl = url, ssh = sshConfig))
+                    RemoteDataStore.connect(
+                        RemoteStoreConfig(
+                            baseUrl = url,
+                            ssh = sshConfig,
+                            bearerToken = bearerToken,
+                        )
+                    )
                 }
                 ConnectResult.Success(
                     StoreConnection(
@@ -176,6 +195,20 @@ class StoreConnector {
         )
     }
 }
+
+internal fun readBearerToken(path: String): String {
+    val token = File.readText(path, MAX_BEARER_TOKEN_BYTES) ?: run {
+        if (File.size(path) != null) {
+            throw IllegalArgumentException("Bearer token file exceeds max size: $MAX_BEARER_TOKEN_BYTES bytes")
+        }
+        throw IllegalArgumentException("Bearer token file not found: $path")
+    }
+    return token.trimEnd('\r', '\n').also {
+        require(it.isNotBlank()) { "Bearer token file cannot be blank." }
+    }
+}
+
+private const val MAX_BEARER_TOKEN_BYTES = 16 * 1024
 
 private fun Throwable.isRocksDbLockError(): Boolean {
     var current: Throwable? = this

@@ -43,7 +43,7 @@ internal class FlowSequenceReader<out P: IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     private val indentToAdd: Int
-) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader) {
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader, 1) {
     private var state = START
     private var cachedCall: (() -> JsonToken)? = null
 

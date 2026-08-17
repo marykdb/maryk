@@ -6,8 +6,9 @@ import maryk.json.TokenType
 /** Yaml reader with basic implementations for parents and indents */
 internal abstract class YamlCharWithParentAndIndentReader<out P: IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
-    parentReader: P
-) : YamlCharWithParentReader<P>(yamlReader, parentReader),
+    parentReader: P,
+    structuralDepthIncrement: Int = 0
+) : YamlCharWithParentReader<P>(yamlReader, parentReader, structuralDepthIncrement),
     IsYamlCharWithIndentsReader {
     override fun continueIndentLevel(extraIndent: Int, tag: TokenType?): JsonToken {
         this.currentReader = this

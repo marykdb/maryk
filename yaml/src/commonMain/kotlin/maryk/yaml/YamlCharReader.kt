@@ -8,6 +8,9 @@ import maryk.json.TokenType
 internal interface IsYamlCharReader: IsInternalYamlReader {
     val yamlReader: YamlReaderImpl
 
+    /** Number of open structural map and sequence readers. */
+    val structuralDepth: Int
+
     /** Reads Yaml until next found Token */
     fun readUntilToken(extraIndent: Int, tag: TokenType? = null): JsonToken
 
@@ -18,13 +21,18 @@ internal interface IsYamlCharReader: IsInternalYamlReader {
 /** Yaml Character reader which uses the state in YamlReader to read until next token */
 internal abstract class YamlCharReader(
     override val yamlReader: YamlReaderImpl
-) : IsInternalYamlReader by yamlReader, IsYamlCharReader
+) : IsInternalYamlReader by yamlReader, IsYamlCharReader {
+    override val structuralDepth = 0
+}
 
 /** Yaml Character reader which is a child to a parent reader */
 internal abstract class YamlCharWithParentReader<out P : IsYamlCharReader>(
     yamlReader: YamlReaderImpl,
-    val parentReader: P
-) : YamlCharReader(yamlReader)
+    val parentReader: P,
+    structuralDepthIncrement: Int = 0
+) : YamlCharReader(yamlReader) {
+    override val structuralDepth = parentReader.structuralDepth + structuralDepthIncrement
+}
 
 /** Yaml char reader which is aware of indentation */
 internal interface IsYamlCharWithIndentsReader: IsInternalYamlReader, IsYamlCharReader {

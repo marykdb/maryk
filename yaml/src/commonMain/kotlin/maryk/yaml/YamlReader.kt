@@ -133,6 +133,9 @@ private val yamlTagMap = mapOf(
     )
 )
 
+/** Maximum number of open YAML maps and sequences on one path. */
+private const val MAX_YAML_STRUCTURE_DEPTH = 128
+
 /** Reads YAML from the supplied [reader] */
 internal class YamlReaderImpl(
     private val defaultTag: String?,
@@ -155,6 +158,14 @@ internal class YamlReaderImpl(
 
     override var lastChar: Char = '\u0000'
     override var currentReader: IsYamlCharReader = DocumentReader(this)
+        set(value) {
+            if (value.structuralDepth > MAX_YAML_STRUCTURE_DEPTH) {
+                throw InvalidYamlContent(
+                    "YAML structure nesting exceeds $MAX_YAML_STRUCTURE_DEPTH"
+                )
+            }
+            field = value
+        }
 
     private var unclaimedIndenting: Int? = null
     internal var hasException: Boolean = false

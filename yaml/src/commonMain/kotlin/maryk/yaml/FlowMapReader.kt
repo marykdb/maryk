@@ -27,7 +27,7 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     private val indentToAdd: Int
-) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader) {
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader, 1) {
     private var state = START
     private val fieldNames = mutableListOf<String?>()
 

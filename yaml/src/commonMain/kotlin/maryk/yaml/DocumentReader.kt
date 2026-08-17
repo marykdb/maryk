@@ -8,6 +8,7 @@ import maryk.json.JsonToken.Value
 import maryk.json.TokenType
 import maryk.json.ValueType
 import maryk.lib.exceptions.ParseException
+import maryk.lib.extensions.isLineBreak
 import maryk.yaml.PlainStyleMode.NORMAL
 
 /** Read single or multiple yaml documents until end of stream or "..." */
@@ -23,6 +24,16 @@ internal class DocumentReader(
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         if (this.lastChar == '\u0000') {
             this.read()
+        }
+
+        while (this.lastChar == '#' || this.lastChar.isLineBreak()) {
+            if (this.lastChar == '#') {
+                while (!this.lastChar.isLineBreak()) {
+                    read()
+                }
+            } else {
+                read()
+            }
         }
 
         return when (this.lastChar) {
@@ -108,15 +119,6 @@ internal class DocumentReader(
                     }
                     else -> plainStringReader(".")
                 }
-            }
-            '#' -> {
-                this.commentReader {
-                    this.readUntilToken(0, tag)
-                }
-            }
-            '\n' -> {
-                read()
-                this.readUntilToken(0)
             }
             '\t' -> throw InvalidYamlContent("Tabs cannot be used for indentation")
             ' ' -> {

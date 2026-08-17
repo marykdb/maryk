@@ -14,7 +14,7 @@ internal class SequenceItemsReader<out P : IsYamlCharWithIndentsReader>(
     yamlReader: YamlReaderImpl,
     parentReader: P,
     val indentToAdd: Int = 0
-) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader),
+) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader, 1),
     IsYamlCharWithIndentsReader {
     private var isStarted: Boolean? = null
     private var expectValueAfter: JsonToken? = null

@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
 import maryk.datastore.foundationdb.FoundationDBDataStore

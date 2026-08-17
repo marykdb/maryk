@@ -780,7 +780,7 @@ class InMemoryDataStoreTest {
     }
 
     @Test
-    fun indexedScanAtOldVersionSkipsHardDeletedRecord() = runTest(timeout = 1.minutes) {
+    fun indexedScanAtOldVersionFindsHardDeletedRecord() = runTest(timeout = 1.minutes) {
         val log = Log(
             message = "historic indexed scan",
             severity = INFO,
@@ -807,14 +807,15 @@ class InMemoryDataStoreTest {
                 )
             )
 
-            assertEquals(0, scanResponse.values.size)
+            assertEquals(1, scanResponse.values.size)
+            assertEquals(addStatus.key, scanResponse.values.single().key)
         } finally {
             dataStore.close()
         }
     }
 
     @Test
-    fun uniqueScanAtOldVersionSkipsHardDeletedRecord() = runTest(timeout = 1.minutes) {
+    fun uniqueScanAtOldVersionFindsHardDeletedRecord() = runTest(timeout = 1.minutes) {
         val dataStore = InMemoryDataStore.open(
             keepAllVersions = true,
             dataModelsById = mapOf(1u to UniqueModel)
@@ -839,7 +840,8 @@ class InMemoryDataStoreTest {
                 )
             )
 
-            assertEquals(0, scanResponse.values.size)
+            assertEquals(1, scanResponse.values.size)
+            assertEquals(addStatus.key, scanResponse.values.single().key)
         } finally {
             dataStore.close()
         }

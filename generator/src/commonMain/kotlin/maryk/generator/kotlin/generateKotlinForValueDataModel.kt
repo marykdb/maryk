@@ -7,6 +7,10 @@ fun IsValueDataModel<*, *>.generateKotlin(
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
 ) {
+    validateKotlinGeneratedModelNames(
+        Meta.name,
+        setOf("ObjectValues", "ValueDataModel", "ValueDataObject"),
+    )
     val importsToAdd = mutableSetOf(
         "maryk.core.values.ObjectValues",
         "maryk.core.properties.ValueModel",

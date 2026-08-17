@@ -21,6 +21,8 @@ import maryk.core.properties.types.numeric.Float32
 import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.properties.types.numeric.UInt32
+import maryk.core.query.DefinitionsConversionContext
+import maryk.core.yaml.MarykYamlModelReader
 import maryk.generator.DecimalGeneratorModel
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
@@ -540,6 +542,65 @@ class GenerateKotlinForRootDataModelTest {
     }
 
     @Test
+    fun rendersEveryReservedIndexAsUInt() {
+        val model = parsedRootModel(
+            """
+            name: MultipleReservations
+            reservedIndices: [2, 3]
+            ? 1: value
+            : !String
+            """.trimIndent(),
+        )
+
+        val output = buildString { model.generateKotlin("maryk.test.models", writer = ::append) }
+
+        assertTrue(output.contains("reservedIndices = listOf(2u, 3u)"))
+    }
+
+    @Test
+    fun rejectsPropertiesCollidingWithKotlinFrameworkMembers() {
+        for ((property, member) in listOf("meta" to "Meta", "serializer" to "Serializer")) {
+            val model = parsedRootModel(
+                """
+                name: FrameworkCollision
+                ? 1: $property
+                : !String
+                """.trimIndent(),
+            )
+
+            val exception = assertFailsWith<IllegalArgumentException> {
+                model.generateKotlin("maryk.test.models") {}
+            }
+
+            assertEquals(
+                "Kotlin property $property in model FrameworkCollision generates JVM getter get$member " +
+                    "which collides with framework member $member",
+                exception.message,
+            )
+        }
+    }
+
+    @Test
+    fun rejectsModelNamesShadowingTheGeneratedFrameworkBase() {
+        val model = parsedRootModel(
+            """
+            name: RootDataModel
+            ? 1: value
+            : !String
+            """.trimIndent(),
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            model.generateKotlin("maryk.test.models") {}
+        }
+
+        assertEquals(
+            "Kotlin model name RootDataModel shadows generated framework type RootDataModel",
+            exception.message,
+        )
+    }
+
+    @Test
     fun rendersContextualKeywordsAndHyphenatedNamesInDeclarationsAndReferences() {
         val output = buildString {
             `catch`.generateKotlin("maryk.test.models") { append(it) }
@@ -768,3 +829,9 @@ class GenerateKotlinForRootDataModelTest {
         assertTrue(!output.contains(",,"))
     }
 }
+
+private fun parsedRootModel(yaml: String): RootDataModel<*> =
+    RootDataModel.Model.Serializer.readJson(
+        MarykYamlModelReader(yaml),
+        DefinitionsConversionContext(),
+    ).toDataObject()

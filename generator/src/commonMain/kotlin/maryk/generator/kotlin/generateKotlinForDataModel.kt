@@ -7,6 +7,7 @@ fun DataModel<*>.generateKotlin(
     generationContext: GenerationContext? = null,
     writer: (String) -> Unit
 ) {
+    validateKotlinGeneratedModelNames(Meta.name, setOf("DataModel"))
     val importsToAdd = mutableSetOf(
         "maryk.core.models.DataModel",
     )
@@ -20,7 +21,7 @@ fun DataModel<*>.generateKotlin(
     val reservedIndices = Meta.reservedIndices.let { indexes ->
         when {
             indexes.isNullOrEmpty() -> null
-            else -> "reservedIndices = listOf(${indexes.joinToString(", ", postfix = "u")}),"
+            else -> "reservedIndices = listOf(${indexes.toKotlinUIntList()}),"
         }
     }
     val reservedNames = Meta.reservedNames.let { names ->

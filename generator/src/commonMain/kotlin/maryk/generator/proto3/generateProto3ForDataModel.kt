@@ -45,6 +45,7 @@ fun <DM : IsStorableDataModel<*>> DM.generateProto3Schema(
     writer: (String) -> Unit
 ) {
     val modelName = Meta.name.requireProto3Identifier()
+    validateProto3GeneratedNames(modelName, generationContext)
     val subMessages = mutableListOf<String>()
 
     val messageAdder: (String) -> Unit = {

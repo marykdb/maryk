@@ -17,13 +17,14 @@ fun IndexedEnumDefinition<*>.generateKotlin(packageName: String, writer: (String
 
 /** Generates kotlin class string for IndexedEnumDefinition and adds imports to [addImport] */
 fun IndexedEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): String {
+    validateKotlinGeneratedEnumNames(setOf("IndexedEnumDefinition", "IndexedEnumImpl"))
     addImport("maryk.core.properties.enum.IndexedEnumImpl")
     addImport("maryk.core.properties.enum.IndexedEnumDefinition")
 
     val reservedIndices = this.reservedIndices.let { indexes ->
         when {
             indexes.isNullOrEmpty() -> ""
-            else -> "\n"+ "reservedIndices = listOf(${indexes.joinToString(", ", postfix = "u")}),".prependIndent().prependIndent().prependIndent()
+            else -> "\n"+ "reservedIndices = listOf(${indexes.toKotlinUIntList()}),".prependIndent().prependIndent().prependIndent()
         }
     }
     val reservedNames = this.reservedNames.let { names ->

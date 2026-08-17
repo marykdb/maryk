@@ -12,6 +12,8 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.properties.enum.MultiTypeEnum
 import maryk.core.properties.enum.MultiTypeEnumDefinition
+import maryk.core.query.DefinitionsConversionContext
+import maryk.core.yaml.MarykYamlModelReader
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykTypeEnum
@@ -21,6 +23,7 @@ import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 val generatedProto3ForSimpleMarykModel = """
 message SimpleMarykModel {
@@ -237,6 +240,167 @@ class GenerateProto3ForDataModelTest {
     }
 
     @Test
+    fun rejectsReservedFieldNumbersOutsideTheProtoRange() {
+        for ((indices, expected) in listOf(
+            "[0]" to "Proto3 field number is invalid: 0",
+            "[19000]" to "Proto3 field number is invalid: 19000",
+            "[2, 2]" to "Proto3 model InvalidReservation contains duplicate reserved field number 2",
+        )) {
+            val model = rootModel(
+                """
+                name: InvalidReservation
+                reservedIndices: $indices
+                ? 1: value
+                : !String
+                """.trimIndent(),
+            )
+
+            val exception = assertFailsWith<IllegalArgumentException> {
+                model.generateProto3Schema(GenerationContext()) {}
+            }
+
+            assertEquals(expected, exception.message)
+        }
+    }
+
+    @Test
+    fun rejectsDuplicateReservedFieldNames() {
+        val model = rootModel(
+            """
+            name: DuplicateReservedName
+            reservedNames: [removed, removed]
+            ? 1: value
+            : !String
+            """.trimIndent(),
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            model.generateProto3Schema(GenerationContext()) {}
+        }
+
+        assertEquals(
+            "Proto3 model DuplicateReservedName contains duplicate reserved field name removed",
+            exception.message,
+        )
+    }
+
+    @Test
+    fun escapesNulInReservedProtoNames() {
+        val output = buildString {
+            NulReservation.generateProto3Schema(GenerationContext(), ::append)
+        }
+
+        assertTrue(output.contains("reserved \"nul\\x00name\";"))
+    }
+
+    @Test
+    fun rejectsPropertiesUsingReservedProtoNamesOrNumbers() {
+        for ((reservation, expected) in listOf(
+            "reservedIndices: [1]" to "Proto3 field value uses reserved number 1 in model ReservedField",
+            "reservedNames: [value]" to "Proto3 field value uses reserved name value in model ReservedField",
+        )) {
+            val model = rootModel(
+                """
+                name: ReservedField
+                $reservation
+                ? 1: value
+                : !String
+                """.trimIndent(),
+            )
+
+            val exception = assertFailsWith<IllegalArgumentException> {
+                model.generateProto3Schema(GenerationContext()) {}
+            }
+
+            assertEquals(expected, exception.message)
+        }
+    }
+
+    @Test
+    fun rejectsMultiTypeCasesCollidingAfterProtoFieldTransformation() {
+        val model = rootModel(
+            """
+            name: TransformedFields
+            ? 1: choice
+            : !MultiType
+              typeEnum:
+                name: Choice
+                cases:
+                  ? 1: URL
+                  : !String
+                  ? 2: uRL
+                  : !String
+            """.trimIndent(),
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            model.generateProto3Schema(GenerationContext()) {}
+        }
+
+        assertEquals(
+            "Proto3 multi type Choice cases URL and uRL both generate field uRL",
+            exception.message,
+        )
+    }
+
+    @Test
+    fun rejectsNestedHelpersCollidingAfterProtoNameTransformation() {
+        val model = rootModel(
+            """
+            name: HelperCollision
+            ? 1: status
+            : !Enum
+              enum:
+                name: ChoiceType
+                cases:
+                  1: Active
+            ? 2: choice
+            : !MultiType
+              typeEnum:
+                name: Choice
+                cases:
+                  ? 1: text
+                  : !String
+            """.trimIndent(),
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            model.generateProto3Schema(GenerationContext()) {}
+        }
+
+        assertEquals(
+            "Proto3 properties status and choice both generate nested symbol ChoiceType in model HelperCollision",
+            exception.message,
+        )
+    }
+
+    @Test
+    fun rejectsFieldsCollidingWithNestedEnumValues() {
+        val model = rootModel(
+            """
+            name: EnumValueCollision
+            ? 1: kind
+            : !Enum
+              enum:
+                name: Kind
+                cases:
+                  1: status
+            ? 2: status
+            : !String
+            """.trimIndent(),
+        )
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            model.generateProto3Schema(GenerationContext()) {}
+        }
+
+        assertEquals(
+            "Proto3 field status collides with nested symbol status generated for property kind in model EnumValueCollision",
+            exception.message,
+        )
+    }
+
+    @Test
     fun decimalUsesExactStringType() {
         val output = buildString {
             DecimalGeneratorModel.generateProto3Schema(GenerationContext()) {
@@ -328,7 +492,19 @@ class GenerateProto3ForDataModelTest {
     }
 }
 
+private fun rootModel(yaml: String): RootDataModel<*> =
+    RootDataModel.Model.Serializer.readJson(
+        MarykYamlModelReader(yaml),
+        DefinitionsConversionContext(),
+    ).toDataObject()
+
 private object `invalid-model` : RootDataModel<`invalid-model`>() {
+    val value by string(index = 1u)
+}
+
+private object NulReservation : RootDataModel<NulReservation>(
+    reservedNames = listOf("nul\u0000name"),
+) {
     val value by string(index = 1u)
 }
 

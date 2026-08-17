@@ -1,8 +1,11 @@
 package maryk.generator.kotlin
 
 import maryk.test.models.Option
+import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IndexedEnumImpl
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 val generatedKotlinForIndexedEnum = """
 package maryk.test.models
@@ -41,4 +44,41 @@ class GenerateKotlinForIndexedEnumTest {
 
         assertEquals(generatedKotlinForIndexedEnum, output)
     }
+
+    @Test
+    fun rejectsCasesCollidingWithGeneratedEnumHelpers() {
+        for ((definition, caseName, expectedHelper) in listOf(
+            Triple(CompanionCollision, "Companion", "Companion"),
+            Triple(UnknownHelperCollision, "UnknownUnknownHelperCollision", "UnknownUnknownHelperCollision"),
+        )) {
+            val exception = assertFailsWith<IllegalArgumentException> {
+                definition.generateKotlin("maryk.test.models") {}
+            }
+
+            assertEquals(
+                "Kotlin enum ${definition.name} case $caseName collides with generated helper $expectedHelper",
+                exception.message,
+            )
+        }
+    }
+}
+
+private sealed class CompanionCollision(index: UInt, override val name: String) :
+    IndexedEnumImpl<CompanionCollision>(index) {
+    object Value : CompanionCollision(1u, "Companion")
+
+    companion object : IndexedEnumDefinition<CompanionCollision>(
+        CompanionCollision::class,
+        values = { listOf(Value) },
+    )
+}
+
+private sealed class UnknownHelperCollision(index: UInt, override val name: String) :
+    IndexedEnumImpl<UnknownHelperCollision>(index) {
+    object Value : UnknownHelperCollision(1u, "UnknownUnknownHelperCollision")
+
+    companion object : IndexedEnumDefinition<UnknownHelperCollision>(
+        UnknownHelperCollision::class,
+        values = { listOf(Value) },
+    )
 }

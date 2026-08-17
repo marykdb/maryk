@@ -24,6 +24,14 @@ internal fun String.proto3StringLiteral(): String = buildString {
             '\t' -> append("\\t")
             '\u0008' -> append("\\b")
             '\u000c' -> append("\\f")
+            in '\u0000'..'\u001f' -> {
+                append("\\x")
+                append(character.code.toString(16).padStart(2, '0'))
+            }
+            in '\u007f'..'\u009f' -> {
+                append("\\u")
+                append(character.code.toString(16).padStart(4, '0'))
+            }
             else -> append(character)
         }
     }

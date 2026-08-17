@@ -64,6 +64,28 @@ class GenerateProto3ForEnumTest {
 
         assertEquals("Proto3 enum index must be greater than zero: 0", exception.message)
     }
+
+    @Test
+    fun rejectsCaseNameCollidingWithGeneratedUnknownValue() {
+        val exception = assertFailsWith<IllegalArgumentException> {
+            SyntheticCollision.generateProto3Schema {}
+        }
+
+        assertEquals(
+            "Proto3 enum SyntheticCollision case UNKNOWN_SYNTHETICCOLLISION collides with generated zero value UNKNOWN_SYNTHETICCOLLISION",
+            exception.message,
+        )
+    }
+}
+
+private sealed class SyntheticCollision(index: UInt, override val name: String) :
+    IndexedEnumImpl<SyntheticCollision>(index) {
+    object Value : SyntheticCollision(1u, "UNKNOWN_SYNTHETICCOLLISION")
+
+    companion object : IndexedEnumDefinition<SyntheticCollision>(
+        SyntheticCollision::class,
+        values = { listOf(Value) },
+    )
 }
 
 private sealed class `invalid-enum`(index: UInt) : IndexedEnumImpl<`invalid-enum`>(index) {

@@ -12,6 +12,8 @@ import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.enum
 import maryk.core.properties.definitions.reference
 import maryk.core.properties.definitions.string
+import maryk.core.query.DefinitionsConversionContext
+import maryk.core.yaml.MarykYamlModelReader
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 
@@ -36,6 +38,17 @@ class GeneratedKotlinCompilationTest {
     @Test
     fun compilesGeneratedKeywordModelsWithNestedDefaultAndIndexReferences() {
         val packageName = "example.generated"
+        val multipleReservations = RootDataModel.Model.Serializer.readJson(
+            MarykYamlModelReader(
+                """
+                name: MultipleReservations
+                reservedIndices: [2, 3]
+                ? 1: value
+                : !String
+                """.trimIndent(),
+            ),
+            DefinitionsConversionContext(),
+        ).toDataObject()
         val sources = listOf(
             buildString { `catch`.generateKotlin(packageName) { append(it) } },
             buildString { `when`.generateKotlin(packageName) { append(it) } },
@@ -46,6 +59,7 @@ class GeneratedKotlinCompilationTest {
                     GenerationContext(enums = mutableListOf(`when`)),
                 ) { append(it) }
             },
+            buildString { multipleReservations.generateKotlin(packageName) { append(it) } },
         )
         val sourceDirectory = createTempDirectory()
         val outputDirectory = createTempDirectory()

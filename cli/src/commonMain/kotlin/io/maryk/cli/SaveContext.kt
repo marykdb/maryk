@@ -74,10 +74,15 @@ data class SaveContext(
             val packageValue = packageName ?: return "Kotlin save requires --package <name>."
             val outputs = generator(packageValue)
             val safeFiles = linkedMapOf<String, String>()
+            val originalFileByNormalizedName = mutableMapOf<String, String>()
             outputs.files.forEach { (fileName, content) ->
                 val safeFileName = sanitizeSaveFileName(fileName)
                 if (safeFileName in safeFiles) {
                     return "Kotlin save failed: duplicate output file name `$safeFileName` after sanitizing."
+                }
+                originalFileByNormalizedName.put(safeFileName.lowercase(), safeFileName)?.let { first ->
+                    return "Kotlin save failed: output file names `$first` and `$safeFileName` " +
+                        "collide after case normalization."
                 }
                 safeFiles[safeFileName] = content
             }

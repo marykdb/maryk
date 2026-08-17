@@ -12,6 +12,22 @@ fun Definitions.generateKotlin(
     packageName: String,
     writerConstructor: (String) -> ((String) -> Unit)
 ) {
+    val outputNames = definitions.map { it.Meta.name }
+    outputNames.groupBy { it }
+        .entries
+        .firstOrNull { it.value.size > 1 }
+        ?.let { (name) ->
+            throw IllegalArgumentException("Kotlin definitions generate duplicate output name $name")
+        }
+    outputNames.groupBy { it.lowercase() }
+        .values
+        .firstOrNull { it.distinct().size > 1 }
+        ?.let { names ->
+            throw IllegalArgumentException(
+                "Kotlin definitions output names ${names.distinct().joinToString()} collide after case normalization",
+            )
+        }
+
     val kotlinGenerationContext = GenerationContext()
 
     for (obj in this.definitions) {

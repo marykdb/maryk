@@ -79,4 +79,30 @@ class SaveContextTest {
             context.save("", SaveFormat.KOTLIN, includeMeta = false, packageName = "test"),
         )
     }
+
+    @Test
+    fun rejectsKotlinOutputNameCollisionAfterCaseNormalization() {
+        val context = SaveContext(
+            key = "record",
+            dataYaml = "",
+            dataJson = "",
+            dataProto = ByteArray(0),
+            metaYaml = "",
+            metaJson = "",
+            metaProto = ByteArray(0),
+            kotlinGenerator = {
+                KotlinSaveResult(
+                    mapOf(
+                        "Client.kt" to "one",
+                        "client.kt" to "two",
+                    ),
+                )
+            },
+        )
+
+        assertEquals(
+            "Kotlin save failed: output file names `Client.kt` and `client.kt` collide after case normalization.",
+            context.save("", SaveFormat.KOTLIN, includeMeta = false, packageName = "test"),
+        )
+    }
 }

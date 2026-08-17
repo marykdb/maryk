@@ -19,6 +19,9 @@ fun MultiTypeEnumDefinition<*>.generateKotlin(packageName: String, writer: (Stri
 
 /** Generates kotlin class string for IndexedEnumDefinition and adds imports to [addImport] */
 fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit): String {
+    validateKotlinGeneratedEnumNames(
+        setOf("IndexedEnumImpl", "IsUsableInMultiType", "MultiTypeEnum", "MultiTypeEnumDefinition"),
+    )
     addImport("maryk.core.properties.enum.IndexedEnumImpl")
     addImport("maryk.core.properties.enum.MultiTypeEnum")
     addImport("maryk.core.properties.enum.MultiTypeEnumDefinition")
@@ -27,7 +30,7 @@ fun MultiTypeEnumDefinition<*>.generateKotlinClass(addImport: (String) -> Unit):
     val reservedIndices = this.reservedIndices.let { indexes ->
         when {
             indexes.isNullOrEmpty() -> ""
-            else -> "\n"+ "reservedIndices = listOf(${indexes.joinToString(", ", postfix = "u")}),".prependIndent().prependIndent().prependIndent()
+            else -> "\n"+ "reservedIndices = listOf(${indexes.toKotlinUIntList()}),".prependIndent().prependIndent().prependIndent()
         }
     }
     val reservedNames = this.reservedNames.let { names ->

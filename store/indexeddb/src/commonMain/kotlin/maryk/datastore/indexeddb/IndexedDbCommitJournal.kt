@@ -43,8 +43,10 @@ internal fun decodeJournalConsumer(bytes: ByteArray): JournalConsumer {
     )
 }
 
-internal fun encodeChangeJournalPayload(
+internal suspend fun encodeChangeJournalPayload(
     dataModel: IsRootDataModel,
+    modelId: UInt,
+    sensitiveFields: IndexedDbSensitiveFieldSupport,
     key: ByteArray,
     version: ULong,
     changePayload: ByteArray?,
@@ -53,11 +55,16 @@ internal fun encodeChangeJournalPayload(
     val indexChanges = changes.filterIsInstance<IndexChange>().flatMap(IndexChange::changes)
     val parts = mutableListOf<ByteArray>()
     val ordinaryPayload = when {
-        changePayload == null -> encodeVersionedChange(
-            dataModel,
-            DataObjectVersionedChange(
-                key = dataModel.key(key),
-                changes = listOf(VersionedChanges(version, emptyList())),
+        changePayload == null -> sensitiveFields.encryptChangeLogPayload(
+            modelId,
+            key,
+            version,
+            encodeVersionedChange(
+                dataModel,
+                DataObjectVersionedChange(
+                    key = dataModel.key(key),
+                    changes = listOf(VersionedChanges(version, emptyList())),
+                ),
             ),
         )
         changePayload.isUnserializableChangeLogMarker() -> null
@@ -83,7 +90,14 @@ internal fun encodeChangeJournalPayload(
     return parts.fold(byteArrayOf()) { result, part -> result + part }
 }
 
-private fun decodeChangeJournalPayload(dataModel: IsRootDataModel, payload: ByteArray): List<IsChange> {
+private suspend fun decodeChangeJournalPayload(
+    dataModel: IsRootDataModel,
+    modelId: UInt,
+    sensitiveFields: IndexedDbSensitiveFieldSupport,
+    key: ByteArray,
+    version: ULong,
+    payload: ByteArray,
+): List<IsChange> {
     var offset = 0
     fun readSize(): UInt = payload.readBigEndianUInt(offset).also { offset += UInt.SIZE_BYTES }
     fun readBytes(): ByteArray {
@@ -97,7 +111,10 @@ private fun decodeChangeJournalPayload(dataModel: IsRootDataModel, payload: Byte
         )
     }
     val ordinary = readBytes()
-    val changes = decodeVersionedChange(dataModel, ordinary).changes.single().changes.toMutableList()
+    val changes = decodeVersionedChange(
+        dataModel,
+        sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, key, version, ordinary),
+    ).changes.single().changes.toMutableList()
     val indexUpdates = buildList {
         repeat(readSize().toInt()) {
             val type = payload[offset++]
@@ -153,6 +170,44 @@ internal fun encodeCommitJournalEntry(
         update.key.bytes + (payload ?: byteArrayOf())
 }
 
+internal suspend fun migrateLegacyCommitJournalEntry(
+    dataModelsById: Map<UInt, IsRootDataModel>,
+    sensitiveFields: IndexedDbSensitiveFieldSupport,
+    targetModelId: UInt,
+    value: ByteArray,
+): ByteArray? {
+    require(value.size >= JournalHeaderSize) { "Invalid IndexedDB commit journal entry" }
+    if (value[0] != ChangeJournalEntry) return null
+
+    val modelId = value.readBigEndianUInt(1)
+    if (modelId != targetModelId) return null
+    val version = value.readBigEndianULong(1 + UInt.SIZE_BYTES)
+    val dataModel = dataModelsById.getValue(modelId)
+    val keyStart = JournalHeaderSize
+    val keyEnd = keyStart + dataModel.Meta.keyByteSize
+    require(value.size > keyEnd) { "Invalid IndexedDB change journal entry" }
+    val key = value.copyOfRange(keyStart, keyEnd)
+    val payloadOffset = keyEnd
+    if (value[payloadOffset] == UnavailableChangePayload) return null
+    require(value[payloadOffset] == ReplayableChangePayload && value.size >= payloadOffset + 1 + UInt.SIZE_BYTES) {
+        "Invalid IndexedDB change journal payload"
+    }
+
+    val ordinarySizeOffset = payloadOffset + 1
+    val ordinarySize = value.readBigEndianUInt(ordinarySizeOffset).toInt()
+    val ordinaryOffset = ordinarySizeOffset + UInt.SIZE_BYTES
+    val ordinaryEnd = ordinaryOffset + ordinarySize
+    require(ordinaryEnd <= value.size) { "Invalid IndexedDB change journal payload size" }
+    val ordinary = value.copyOfRange(ordinaryOffset, ordinaryEnd)
+    if (sensitiveFields.isEncryptedChangeLogPayload(ordinary)) return null
+
+    val encrypted = sensitiveFields.encryptChangeLogPayload(modelId, key, version, ordinary)
+    return value.copyOfRange(0, ordinarySizeOffset) +
+        encrypted.size.toUInt().toBigEndianBytes() +
+        encrypted +
+        value.copyOfRange(ordinaryEnd, value.size)
+}
+
 internal suspend fun decodeCommitJournalEntry(
     dataModelsById: Map<UInt, IsRootDataModel>,
     sensitiveFields: IndexedDbSensitiveFieldSupport,
@@ -190,7 +245,7 @@ internal suspend fun decodeCommitJournalEntry(
             dataModel,
             objectKey,
             version,
-            decodeChangeJournalPayload(dataModel, payload),
+            decodeChangeJournalPayload(dataModel, modelId, sensitiveFields, objectKey.bytes, version, payload),
         )
         SoftDeleteJournalEntry, HardDeleteJournalEntry -> Update.Deletion(
             dataModel,

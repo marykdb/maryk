@@ -132,6 +132,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
             maxVersions = request.maxVersions,
             select = request.select,
             decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, record.key.bytes, qualifier, value) },
+            decryptChangePayload = { version, value ->
+                sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, record.key.bytes, version, value)
+            },
         )
         for (versionedChange in versionedChanges) {
             if (versionedChange.changes.any { it is ObjectCreate } || request.orderedKeysSet?.contains(record.key) == false) {

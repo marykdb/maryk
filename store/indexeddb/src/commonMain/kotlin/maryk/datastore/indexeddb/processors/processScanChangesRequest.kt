@@ -114,7 +114,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
                 toVersion = request.toVersion,
                 maxVersions = request.maxVersions,
                 select = request.select,
-                decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
+                decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
+                decryptChangePayload = { version, value ->
+                    sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, keyBytes, version, value)
+                },
             )
             if (versionedChanges.isEmpty()) return@scanInBatches true
 
@@ -279,6 +282,14 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
                 maxVersions = request.maxVersions,
                 select = request.select,
                 decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(getDataModelId(request.dataModel), keyBytes, qualifier, value) },
+                decryptChangePayload = { version, value ->
+                    sensitiveFields.decryptChangeLogPayloadIfNeeded(
+                        getDataModelId(request.dataModel),
+                        keyBytes,
+                        version,
+                        value,
+                    )
+                },
             ).ifEmpty {
                 record.toCreationChanges(request.fromVersion, request.toVersion, request.select)
             }

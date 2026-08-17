@@ -10,10 +10,11 @@ import maryk.core.properties.definitions.index.Multiple
 import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 import maryk.core.properties.references.AnyPropertyReference
 import maryk.core.properties.references.IsIndexablePropertyReference
-import maryk.datastore.shared.encryption.FieldEncryptionProvider
+import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
+import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.lib.bytes.combineToByteArray
 
@@ -89,6 +90,58 @@ internal class IndexedDbSensitiveFieldSupport(
         }
     }
 
+    suspend fun encryptChangeLogPayload(
+        modelId: UInt,
+        recordKey: ByteArray,
+        version: ULong,
+        value: ByteArray,
+    ): ByteArray {
+        if (sensitiveReferencePrefixesByModelId[modelId].isNullOrEmpty()) return value
+        val provider = fieldEncryptionProvider as? ContextualFieldEncryptionProvider
+            ?: throw RequestException("Sensitive change-log writes require ContextualFieldEncryptionProvider")
+        return combineToByteArray(
+            FieldEncryptionEnvelope.Contextual.magic,
+            provider.encrypt(changeLogContext(modelId, recordKey, version), value),
+        )
+    }
+
+    fun hasSensitiveFields(modelId: UInt): Boolean =
+        !sensitiveReferencePrefixesByModelId[modelId].isNullOrEmpty()
+
+    fun isEncryptedChangeLogPayload(value: ByteArray): Boolean =
+        FieldEncryptionEnvelope.fromSensitiveValue(value) != null
+
+    suspend fun decryptChangeLogPayloadIfNeeded(
+        modelId: UInt,
+        recordKey: ByteArray,
+        version: ULong,
+        value: ByteArray,
+    ): ByteArray {
+        if (sensitiveReferencePrefixesByModelId[modelId].isNullOrEmpty()) return value
+        val envelope = FieldEncryptionEnvelope.fromSensitiveValue(value) ?: return value
+        val provider = fieldEncryptionProvider
+            ?: throw RequestException("Encrypted change log encountered but no fieldEncryptionProvider configured")
+        return when (envelope) {
+            FieldEncryptionEnvelope.Legacy -> provider.decrypt(
+                value,
+                envelope.magic.size,
+                value.size - envelope.magic.size,
+            )
+            FieldEncryptionEnvelope.Contextual -> {
+                val contextualProvider = provider as? ContextualFieldEncryptionProvider
+                    ?: throw RequestException(
+                        "MKE2 change log encountered but provider does not support contextual field encryption"
+                    )
+                contextualProvider.decrypt(
+                    changeLogContext(modelId, recordKey, version),
+                    value,
+                    envelope.magic.size,
+                    value.size - envelope.magic.size,
+                )
+            }
+        }
+    }
+
     suspend fun mapUniqueValueBytes(modelId: UInt, reference: ByteArray, value: ByteArray): ByteArray {
         if (!isSensitiveUniqueReference(modelId, reference)) return value
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
@@ -112,6 +165,12 @@ internal class IndexedDbSensitiveFieldSupport(
 
     private fun isSensitiveUniqueReference(modelId: UInt, reference: ByteArray): Boolean =
         sensitiveUniqueReferencesByModelId[modelId]?.any { it.contentEquals(reference) } == true
+
+    private fun changeLogContext(modelId: UInt, recordKey: ByteArray, version: ULong) = FieldEncryptionContext(
+        modelId,
+        recordKey,
+        combineToByteArray(ChangeLogContextReference, version.toBigEndianBytes()),
+    )
 
     private fun collectSensitiveReferences(modelId: UInt, dataModel: IsRootDataModel): IndexedDbSensitiveModelReferences {
         val sensitiveReferences = mutableListOf<ByteArray>()
@@ -190,6 +249,8 @@ internal class IndexedDbSensitiveFieldSupport(
         return isUnique
     }
 }
+
+private val ChangeLogContextReference = byteArrayOf(0) + "maryk-change-log-v1:".encodeToByteArray()
 
 private fun IsIndexable.isForPropertyReference(propertyReference: AnyPropertyReference): Boolean = when (this) {
     is IsIndexablePropertyReference<*> -> isForPropertyReference(propertyReference)

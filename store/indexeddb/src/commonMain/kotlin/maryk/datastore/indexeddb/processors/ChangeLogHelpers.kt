@@ -14,6 +14,7 @@ import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
 import maryk.datastore.indexeddb.IndexedDbRecordMeta
+import maryk.datastore.indexeddb.IndexedDbSensitiveFieldSupport
 import maryk.datastore.indexeddb.IndexedDbWriteOperation
 import maryk.datastore.shared.rethrowIfFatal
 
@@ -66,8 +67,10 @@ internal fun MutableList<IndexedDbWriteOperation>.delete(
     add(IndexedDbWriteOperation.Delete(storeName, key))
 }
 
-internal fun <DM : IsRootDataModel> MutableList<IndexedDbWriteOperation>.addChangeLog(
+internal suspend fun <DM : IsRootDataModel> MutableList<IndexedDbWriteOperation>.addChangeLog(
     dataModel: DM,
+    modelId: UInt,
+    sensitiveFields: IndexedDbSensitiveFieldSupport,
     changeStoreName: String,
     keyBytes: ByteArray,
     version: ULong,
@@ -85,11 +88,16 @@ internal fun <DM : IsRootDataModel> MutableList<IndexedDbWriteOperation>.addChan
         )
     )
 
-    val encoded = try {
+    val plainEncoded = try {
         encodeVersionedChange(dataModel, versionedChange)
     } catch (e: Throwable) {
         e.rethrowIfFatal()
         unserializableChangeLogMarker
+    }
+    val encoded = if (plainEncoded.isUnserializableChangeLogMarker()) {
+        plainEncoded
+    } else {
+        sensitiveFields.encryptChangeLogPayload(modelId, keyBytes, version, plainEncoded)
     }
 
     put(

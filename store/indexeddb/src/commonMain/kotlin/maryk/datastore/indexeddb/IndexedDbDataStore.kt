@@ -60,6 +60,7 @@ import maryk.datastore.indexeddb.processors.processScanUpdatesRequest
 import maryk.datastore.indexeddb.processors.processUpdateResponse
 import maryk.datastore.indexeddb.processors.put
 import maryk.datastore.indexeddb.processors.isHardDeleteTombstone
+import maryk.datastore.indexeddb.processors.isUnserializableChangeLogMarker
 import maryk.datastore.indexeddb.processors.readInvertedVersion
 import maryk.datastore.indexeddb.processors.readTrailingVersion
 import maryk.datastore.indexeddb.processors.readTrailingInvertedVersion
@@ -287,6 +288,79 @@ class IndexedDbDataStore private constructor(
                 true
             }
             byteStore.put("meta", markerKey, byteArrayOf(1))
+        }
+    }
+
+    private suspend fun migrateSensitiveChangeLogs() {
+        for ((modelId, dataModel) in indexedDbModelsById) {
+            if (!sensitiveFields.hasSensitiveFields(modelId)) continue
+
+            suspend fun migrateRows(
+                storeName: String,
+                identity: (ByteArray) -> Pair<ByteArray, ULong>,
+                isMarker: (ByteArray) -> Boolean,
+            ) {
+                val operations = mutableListOf<IndexedDbWriteOperation>()
+                byteStore.scanInBatches(storeName, targetLimit = UInt.MAX_VALUE) { rowKey, rowValue ->
+                    if (!isMarker(rowValue) && !sensitiveFields.isEncryptedChangeLogPayload(rowValue)) {
+                        val (recordKey, version) = identity(rowKey)
+                        operations += IndexedDbWriteOperation.Put(
+                            storeName,
+                            rowKey,
+                            sensitiveFields.encryptChangeLogPayload(modelId, recordKey, version, rowValue),
+                        )
+                    }
+                    if (operations.size >= SensitiveChangeLogMigrationBatchSize) {
+                        byteStore.writeBatch(operations.toList())
+                        operations.clear()
+                    }
+                    true
+                }
+                if (operations.isNotEmpty()) byteStore.writeBatch(operations)
+            }
+
+            val baseMarkerKey = sensitiveChangeLogMigrationMarker(modelId, "base")
+            if (byteStore.get("meta", baseMarkerKey) == null) {
+                migrateRows(
+                    storeName = "c:$modelId",
+                    identity = { rowKey -> objectKeyBytesFromScopedRowKey(rowKey) to rowKey.readTrailingVersion() },
+                    isMarker = { it.isUnserializableChangeLogMarker() },
+                )
+
+                val journalOperations = mutableListOf<IndexedDbWriteOperation>()
+                byteStore.scanInBatches(CommitJournalStoreName, targetLimit = UInt.MAX_VALUE) { rowKey, rowValue ->
+                    migrateLegacyCommitJournalEntry(
+                        indexedDbModelsById,
+                        sensitiveFields,
+                        modelId,
+                        rowValue,
+                    )?.let { migrated ->
+                        journalOperations += IndexedDbWriteOperation.Put(CommitJournalStoreName, rowKey, migrated)
+                    }
+                    if (journalOperations.size >= SensitiveChangeLogMigrationBatchSize) {
+                        byteStore.writeBatch(journalOperations.toList())
+                        journalOperations.clear()
+                    }
+                    true
+                }
+                if (journalOperations.isNotEmpty()) byteStore.writeBatch(journalOperations)
+                byteStore.put("meta", baseMarkerKey, byteArrayOf(1))
+            }
+
+            if (keepUpdateHistoryIndex) {
+                val historyMarkerKey = sensitiveChangeLogMigrationMarker(modelId, "history")
+                if (byteStore.get("meta", historyMarkerKey) == null) {
+                    migrateRows(
+                        storeName = "uh:$modelId",
+                        identity = { rowKey ->
+                            rowKey.copyOfRange(rowKey.size - dataModel.Meta.keyByteSize, rowKey.size) to
+                                rowKey.readInvertedVersion()
+                        },
+                        isMarker = { it.isUnserializableChangeLogMarker() || it.isHardDeleteTombstone() },
+                    )
+                    byteStore.put("meta", historyMarkerKey, byteArrayOf(1))
+                }
+            }
         }
     }
 
@@ -595,6 +669,7 @@ class IndexedDbDataStore private constructor(
                             versionUpdateHandler = versionUpdateHandler,
                         )
                         dataStore.migrateHardDeleteTombstones()
+                        dataStore.migrateSensitiveChangeLogs()
                     } catch (error: Throwable) {
                         withContext(NonCancellable) {
                             dataStore.stopFailedStartupWork()
@@ -614,3 +689,9 @@ class IndexedDbDataStore private constructor(
         }
     }
 }
+
+private const val SensitiveChangeLogMigrationBatchSize = 256
+private val SensitiveChangeLogMigrationMetadataPrefix = "sensitive-change-log-v1:".encodeToByteArray()
+
+private fun sensitiveChangeLogMigrationMarker(modelId: UInt, storeGroup: String): ByteArray =
+    SensitiveChangeLogMigrationMetadataPrefix + "$modelId:$storeGroup".encodeToByteArray()

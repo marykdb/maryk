@@ -220,6 +220,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 }
                 val changePayload = operations.addChangeLog(
                     dataModel = request.dataModel,
+                    modelId = modelId,
+                    sensitiveFields = sensitiveFields,
                     changeStoreName = changeStoreName,
                     keyBytes = keyBytes,
                     version = version.timestamp,
@@ -238,6 +240,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 )
                 val journalPayload = encodeChangeJournalPayload(
                     request.dataModel,
+                    modelId,
+                    sensitiveFields,
                     keyBytes,
                     version.timestamp,
                     changePayload,

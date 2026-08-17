@@ -4,16 +4,22 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.models.RootDataModel
+import maryk.core.models.key
 import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.models.migration.MigrationOutcome
 import maryk.core.models.migration.MigrationRetryPolicy
@@ -25,7 +31,9 @@ import maryk.core.properties.types.Key
 import maryk.core.properties.types.Version
 import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.orders.Orders
@@ -58,6 +66,7 @@ import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
 import maryk.datastore.indexeddb.processors.createUpdateHistoryRowKey
+import maryk.datastore.indexeddb.processors.decodeVersionedChange
 import maryk.datastore.indexeddb.processors.decodeCurrentSnapshot
 import maryk.datastore.indexeddb.processors.decodeHistoricSnapshot
 import maryk.datastore.indexeddb.processors.encodeCurrentSnapshot
@@ -67,6 +76,7 @@ import maryk.datastore.indexeddb.processors.createChangeLogRowKey
 import maryk.datastore.indexeddb.processors.createHardDeleteHistoryRowKey
 import maryk.datastore.indexeddb.processors.createHistoricVersionedRowKey
 import maryk.datastore.indexeddb.processors.createUniqueRowKey
+import maryk.datastore.indexeddb.processors.encodeVersionedChange
 import maryk.datastore.indexeddb.processors.hardDeleteHistoryRowReadObserver
 import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.test.DataStoreAddTest
@@ -102,6 +112,7 @@ import maryk.datastore.test.UniqueModel
 import maryk.datastore.test.UniqueOwnershipTest
 import maryk.datastore.test.assertStatusIs
 import maryk.datastore.test.dataModelsForTests
+import maryk.datastore.shared.updates.Update
 import maryk.lib.extensions.compare.compareTo
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.AnyValueSetIndexModel
@@ -125,6 +136,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 class IndexedDbDataStoreTest {
     @Test
@@ -2132,6 +2144,181 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
+    fun sensitiveAddAndChangeLogsStayEncryptedAndReplayAcrossContexts() = runTest {
+        installIndexedDbForTests()
+
+        withoutBroadcastChannelForTests {
+            indexedDbJournalPollingPausedForTests = true
+            val databaseName = "maryk-indexeddb-encryption-journal-${Random.nextInt()}"
+            val reader = IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(901u to SensitiveRecord),
+                keepAllVersions = true,
+                keepUpdateHistoryIndex = true,
+                fieldEncryptionProvider = XorFieldEncryptionProvider(),
+            )
+            val writer = IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(901u to SensitiveRecord),
+                keepAllVersions = true,
+                keepUpdateHistoryIndex = true,
+                fieldEncryptionProvider = XorFieldEncryptionProvider(),
+            )
+            val updates = Channel<Any>(capacity = 3)
+            val keyBytes = ByteArray(16) { it.toByte() }
+            val addSecret = "durable-add-secret"
+            val changedSecret = "durable-change-secret"
+            val listener = launch {
+                reader.executeFlow(SensitiveRecord.getUpdates(SensitiveRecord.key(keyBytes))).collect(updates::send)
+            }
+            suspend fun receiveUpdate(): Any = withContext(indexedDbDataStoreTestListenerDispatcher) {
+                withTimeout(5.seconds) { updates.receive() }
+            }
+
+            try {
+                assertIs<OrderedKeysUpdate<*>>(receiveUpdate())
+
+                val addStatus = assertIs<AddSuccess<SensitiveRecord>>(
+                    writer.execute(
+                        SensitiveRecord.add(SensitiveRecord(Bytes(keyBytes), "public", addSecret))
+                    ).statuses.single()
+                )
+                val change = Change(SensitiveRecord { secret::ref } with changedSecret)
+                val changeStatus = assertIs<ChangeSuccess<SensitiveRecord>>(
+                    writer.execute(SensitiveRecord.change(addStatus.key.change(change))).statuses.single()
+                )
+
+                val changeLogValues = writer.byteStore.scan("c:901").map { it.second }
+                val updateHistoryValues = writer.byteStore.scan("uh:901").map { it.second }
+                val journalValues = writer.byteStore.scan(CommitJournalStoreName).map { it.second }
+                val durableValues = changeLogValues + updateHistoryValues + journalValues
+                for (secret in listOf(addSecret, changedSecret)) {
+                    assertTrue(
+                        durableValues.none { it.containsBytes(secret.encodeToByteArray()) },
+                        "Durable IndexedDB logs must not contain `$secret` in plaintext",
+                    )
+                }
+                assertTrue(
+                    (changeLogValues + updateHistoryValues).all {
+                        FieldEncryptionEnvelope.fromSensitiveValue(it) == FieldEncryptionEnvelope.Contextual
+                    },
+                    "Sensitive change and update-history rows must use contextual encryption envelopes",
+                )
+
+                indexedDbJournalPollingPausedForTests = false
+                assertIs<AdditionUpdate<SensitiveRecord>>(receiveUpdate()).also { update ->
+                    assertEquals(addStatus.key, update.key)
+                    assertEquals(addStatus.version, update.version)
+                    assertEquals(addSecret, update.values[SensitiveRecord.secret.ref()])
+                }
+                assertIs<ChangeUpdate<SensitiveRecord>>(receiveUpdate()).also { update ->
+                    assertEquals(addStatus.key, update.key)
+                    assertEquals(changeStatus.version, update.version)
+                    assertEquals(listOf(change), update.changes)
+                }
+            } finally {
+                indexedDbJournalPollingPausedForTests = false
+                reader.closeAllListeners()
+                listener.cancelAndJoin()
+                reader.close()
+                writer.close()
+            }
+        }
+    }
+
+    @Test
+    fun openMigratesLegacySensitiveChangeAndJournalPayloads() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-encryption-log-migration-${Random.nextInt()}"
+        val keyBytes = ByteArray(16) { (it + 1).toByte() }
+        val key = SensitiveRecord.key(keyBytes)
+        val version = 123uL
+        val secretValue = "legacy-durable-secret"
+        val change = Change(SensitiveRecord { secret::ref } with secretValue)
+        val plainChangePayload = encodeVersionedChange(
+            SensitiveRecord,
+            DataObjectVersionedChange(
+                key = key,
+                changes = listOf(VersionedChanges(version, listOf(change))),
+            ),
+        )
+        val sensitiveFields = IndexedDbSensitiveFieldSupport(
+            mapOf(901u to SensitiveRecord),
+            XorFieldEncryptionProvider(),
+        )
+        val journalPayload = encodeChangeJournalPayload(
+            SensitiveRecord,
+            901u,
+            sensitiveFields,
+            keyBytes,
+            version,
+            plainChangePayload,
+            listOf(change),
+        )
+        val legacyJournal = encodeCommitJournalEntry(
+            901u,
+            Update.Change(SensitiveRecord, key, version, listOf(change)),
+            journalPayload,
+        )
+        assertTrue(legacyJournal.containsBytes(secretValue.encodeToByteArray()))
+
+        openIndexedDbByteStore(
+            databaseName,
+            setOf("c:901", "uh:901", CommitJournalStoreName),
+        ).also { legacyStore ->
+            try {
+                legacyStore.put("c:901", createChangeLogRowKey(keyBytes, version), plainChangePayload)
+                legacyStore.put("uh:901", createUpdateHistoryRowKey(version, keyBytes), plainChangePayload)
+                legacyStore.put(CommitJournalStoreName, createCommitJournalKey(version, 0u), legacyJournal)
+            } finally {
+                legacyStore.close()
+            }
+        }
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(901u to SensitiveRecord),
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+            fieldEncryptionProvider = XorFieldEncryptionProvider(),
+        )
+        try {
+            val migratedChange = dataStore.byteStore.scan("c:901").single().second
+            val migratedHistory = dataStore.byteStore.scan("uh:901").single().second
+            val migratedJournalEntry = dataStore.byteStore.scan(CommitJournalStoreName).single()
+            for (payload in listOf(migratedChange, migratedHistory)) {
+                assertEquals(
+                    FieldEncryptionEnvelope.Contextual,
+                    FieldEncryptionEnvelope.fromSensitiveValue(payload),
+                )
+                assertFalse(payload.containsBytes(secretValue.encodeToByteArray()))
+                assertEquals(
+                    listOf(change),
+                    decodeVersionedChange(
+                        SensitiveRecord,
+                        sensitiveFields.decryptChangeLogPayloadIfNeeded(901u, keyBytes, version, payload),
+                    ).changes.single().changes,
+                )
+            }
+            assertFalse(migratedJournalEntry.second.containsBytes(secretValue.encodeToByteArray()))
+            assertEquals(
+                listOf(change),
+                assertIs<Update.Change<SensitiveRecord>>(
+                    decodeCommitJournalEntry(
+                        mapOf(901u to SensitiveRecord),
+                        sensitiveFields,
+                        migratedJournalEntry.first,
+                        migratedJournalEntry.second,
+                    )
+                ).changes,
+            )
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun sensitivePropertyReadsLegacyMke1Snapshot() = runTest {
         installIndexedDbForTests()
 
@@ -2754,6 +2941,7 @@ private object SensitiveUniqueRecord : RootDataModel<SensitiveUniqueRecord>(
 }
 
 private val indexedDbLongTestTimeout = 3.minutes
+private val indexedDbDataStoreTestListenerDispatcher = Dispatchers.Default.limitedParallelism(1)
 
 private infix fun ByteArray.compareToBytes(other: ByteArray): Int {
     val size = minOf(size, other.size)
@@ -2762,6 +2950,14 @@ private infix fun ByteArray.compareToBytes(other: ByteArray): Int {
         if (comparison != 0) return comparison
     }
     return this.size - other.size
+}
+
+private fun ByteArray.containsBytes(expected: ByteArray): Boolean {
+    if (expected.isEmpty()) return true
+    if (expected.size > size) return false
+    return (0..size - expected.size).any { offset ->
+        expected.indices.all { index -> this[offset + index] == expected[index] }
+    }
 }
 
 private suspend fun runTestCase(

@@ -89,7 +89,10 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanUpdate
             return@scanInBatches updates.size.toUInt() < request.limit
         }
 
-        val decoded = decodeVersionedChange(request.dataModel, rowValue)
+        val decoded = decodeVersionedChange(
+            request.dataModel,
+            sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, keyBytes, version, rowValue),
+        )
         val historicRecord = readHistoricRecordDecrypted(byteStore, 
             dataModel = request.dataModel,
             storeName = historicTableStoreName,

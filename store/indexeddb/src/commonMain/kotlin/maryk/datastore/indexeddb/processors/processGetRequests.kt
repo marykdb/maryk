@@ -95,6 +95,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetChanges
             maxVersions = request.maxVersions,
             select = request.select,
             decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, key.bytes, qualifier, value) },
+            decryptChangePayload = { version, value ->
+                sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, key.bytes, version, value)
+            },
         )
 
         if (versionedChanges.isEmpty()) continue
@@ -167,6 +170,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetUpdates
             maxVersions = request.maxVersions,
             select = request.select,
             decryptValue = { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, key.bytes, qualifier, value) },
+            decryptChangePayload = { version, value ->
+                sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, key.bytes, version, value)
+            },
         )
 
         for (versionedChange in versionedChanges) {

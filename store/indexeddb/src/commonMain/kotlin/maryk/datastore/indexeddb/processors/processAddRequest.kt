@@ -160,6 +160,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                 }
                 val changePayload = operations.addChangeLog(
                     dataModel = request.dataModel,
+                    modelId = modelId,
+                    sensitiveFields = sensitiveFields,
                     changeStoreName = changeStoreName,
                     keyBytes = key.bytes,
                     version = version.timestamp,

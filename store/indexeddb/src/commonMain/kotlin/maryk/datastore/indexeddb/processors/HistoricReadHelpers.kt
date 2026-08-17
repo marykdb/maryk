@@ -45,6 +45,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
     maxVersions: UInt,
     select: RootPropRefGraph<DM>?,
     decryptValue: suspend (ByteArray, ByteArray) -> ByteArray = { _, value -> value },
+    decryptChangePayload: suspend (ULong, ByteArray) -> ByteArray,
 ): List<VersionedChanges> {
     val creationChanges = mutableListOf<VersionedChanges>()
     val nonCreationChanges = mutableListOf<VersionedChanges>()
@@ -52,8 +53,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
     val rows = scanObjectScopedRows(changeStoreName, keyBytes)
 
     for ((rowKey, rowValue) in rows) {
+        val version = rowKey.readTrailingVersion()
         if (rowValue.isUnserializableChangeLogMarker()) {
-            val version = rowKey.readTrailingVersion()
             if (version < fromVersion || (toVersion != null && version > toVersion)) continue
             val historicRecord = historicTableStoreName?.let {
                 readHistoricRecord(dataModel, it, keyBytes, version, select, decryptValue)
@@ -70,7 +71,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
             continue
         }
 
-        val decoded = decodeVersionedChange(dataModel, rowValue)
+        val decoded = decodeVersionedChange(dataModel, decryptChangePayload(version, rowValue))
         for (versionedChanges in decoded.changes) {
             if (versionedChanges.version < fromVersion) continue
             if (toVersion != null && versionedChanges.version > toVersion) continue

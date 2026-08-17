@@ -25,7 +25,7 @@ class RequestBoundaryValidationTest {
 
     @Test
     fun rejectsHistoryBoundsAtRequestConstruction() {
-        listOf(1001u, UInt.MAX_VALUE).forEach { maxVersions ->
+        listOf(0u, 1001u, UInt.MAX_VALUE).forEach { maxVersions ->
             assertFailsWith<RequestException> { SimpleMarykModel.getChanges(maxVersions = maxVersions) }
             assertFailsWith<RequestException> { SimpleMarykModel.getUpdates(maxVersions = maxVersions) }
             assertFailsWith<RequestException> { SimpleMarykModel.scanChanges(maxVersions = maxVersions) }

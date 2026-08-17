@@ -7,6 +7,9 @@ import maryk.core.query.responses.IsResponse
 internal const val MAX_HISTORY_VERSIONS = 1000u
 
 internal fun validateMaxVersions(maxVersions: UInt, requestName: String) {
+    if (maxVersions == 0u) {
+        throw RequestException("$requestName maxVersions should be at least 1")
+    }
     if (maxVersions > MAX_HISTORY_VERSIONS) {
         throw RequestException("$requestName maxVersions $maxVersions exceeds maximum $MAX_HISTORY_VERSIONS")
     }

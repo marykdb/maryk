@@ -14,6 +14,7 @@ import maryk.core.query.requests.getChanges
 import maryk.core.query.requests.getUpdates
 import maryk.core.query.responses.FetchByKey
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -39,6 +40,7 @@ class DataStoreGetUpdatesAndFlowTest(
 
     override val allTests = mapOf(
         "executeSimpleGetUpdatesRequest" to ::executeSimpleGetUpdatesRequest,
+        "executeGetUpdatesToVersionIncludesChangeAtBound" to ::executeGetUpdatesToVersionIncludesChangeAtBound,
         "executeGetValuesAsFlowRequest" to ::executeGetValuesAsFlowRequest,
         "executeGetChangesAsFlowRequest" to ::executeGetChangesAsFlowRequest,
         "executeGetUpdatesAsFlowRequest" to ::executeGetUpdatesAsFlowRequest,
@@ -102,6 +104,28 @@ class DataStoreGetUpdatesAndFlowTest(
         assertIs<AdditionUpdate<SimpleMarykModel>>(getResponse.updates[2]).apply {
             assertEquals(testKeys[1], key)
             assertEquals(SimpleMarykModel.create { value with "haha2" }, values)
+        }
+    }
+
+    private suspend fun executeGetUpdatesToVersionIncludesChangeAtBound() {
+        if (!dataStore.keepAllVersions) return
+
+        val change = Change(SimpleMarykModel { value::ref } with "habound")
+        val changeVersion = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(
+            dataStore.execute(SimpleMarykModel.change(testKeys[0].change(change))).statuses.single()
+        ).version
+
+        val response = dataStore.execute(
+            SimpleMarykModel.getUpdates(
+                testKeys[0],
+                fromVersion = changeVersion,
+                toVersion = changeVersion,
+            )
+        )
+
+        assertIs<ChangeUpdate<SimpleMarykModel>>(response.updates.last()).apply {
+            assertEquals(changeVersion, version)
+            assertEquals(listOf(change), changes)
         }
     }
 

@@ -30,6 +30,7 @@ class DataStoreGetChangesTest(
     override val allTests = mapOf(
         "executeSimpleGetChangesRequest" to ::executeSimpleGetChangesRequest,
         "executeToVersionGetChangesRequest" to ::executeToVersionGetChangesRequest,
+        "executeToVersionIncludesChangeAtBound" to ::executeToVersionIncludesChangeAtBound,
         "executeFromVersionGetChangesRequest" to ::executeFromVersionGetChangesRequest,
         "executeGetChangesRequestWithSelect" to ::executeGetChangesRequestWithSelect,
         "executeGetChangesRequestWithMaxVersions" to ::executeGetChangesRequestWithMaxVersions
@@ -117,6 +118,23 @@ class DataStoreGetChangesTest(
                     SimpleMarykModel.getChanges(*keys.toTypedArray(), toVersion = lowestVersion - 1uL)
                 )
             }
+        }
+    }
+
+    private suspend fun executeToVersionIncludesChangeAtBound() {
+        if (!dataStore.keepAllVersions) return
+
+        val change = Change(SimpleMarykModel { value::ref } with "habound")
+        val changeVersion = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(
+            dataStore.execute(SimpleMarykModel.change(keys[0].change(change))).statuses.single()
+        ).version
+
+        val response = dataStore.execute(
+            SimpleMarykModel.getChanges(keys[0], fromVersion = changeVersion, toVersion = changeVersion)
+        )
+
+        expect(listOf(VersionedChanges(changeVersion, listOf(change)))) {
+            response.changes.single().changes
         }
     }
 

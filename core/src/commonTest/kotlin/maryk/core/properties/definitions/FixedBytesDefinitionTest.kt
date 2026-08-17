@@ -64,6 +64,23 @@ internal class FixedBytesDefinitionTest {
     }
 
     @Test
+    fun rejectNonPositiveDeclaredByteSize() {
+        assertFailsWith<IllegalArgumentException> {
+            FixedBytesDefinition(byteSize = 0)
+        }
+        assertFailsWith<IllegalArgumentException> {
+            FixedBytesDefinition(byteSize = -1)
+        }
+    }
+
+    @Test
+    fun rejectUInt32ByteSizeWhichCannotBeRepresentedByInt() {
+        assertFailsWith<IllegalArgumentException> {
+            FixedBytesDefinition.Model.Serializer.readJson("""{"byteSize":4294967295}""").toDataObject()
+        }
+    }
+
+    @Test
     fun rejectValuesWithInvalidByteSizeBeforeStorageSerialization() {
         assertFailsWith<ParseException> {
             def.toStorageBytes(Bytes(ByteArray(4)))

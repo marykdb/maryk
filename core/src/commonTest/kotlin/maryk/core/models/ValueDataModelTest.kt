@@ -10,13 +10,26 @@ import maryk.core.properties.types.ValueDataObject
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
+import maryk.core.values.ObjectValues
 import maryk.test.ByteCollector
 import maryk.test.models.TestValueObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.expect
 
+private class EmptyValueObject : ValueDataObject(byteArrayOf())
+
+private object EmptyValueDataModel : ValueDataModel<EmptyValueObject, EmptyValueDataModel>("EmptyValue") {
+    override fun invoke(values: ObjectValues<EmptyValueObject, EmptyValueDataModel>) = EmptyValueObject()
+}
+
 internal class ValueDataModelTest {
+    @Test
+    fun emptyValueDataModelSerializesToEmptyBytes() {
+        assertEquals(0, EmptyValueDataModel.Serializer.byteSize)
+        assertEquals(0, EmptyValueDataModel.Serializer.toBytes().size)
+    }
+
     @Test
     fun convertDefinitionToProtoBufAndBack() {
         checkProtoBufConversion(

@@ -18,6 +18,13 @@ import maryk.lib.exceptions.ParseException
 
 private val versionRegEx = Regex("^([0-9]+)([.]([0-9]+))?([.]([0-9]+))?$")
 
+private fun versionComponent(name: String, value: Int): UShort {
+    require(value in 0..UShort.MAX_VALUE.toInt()) {
+        "Version $name must be between 0 and ${UShort.MAX_VALUE}"
+    }
+    return value.toUShort()
+}
+
 /**
  * A Version according to semantic versioning.
  * The internal values are UShort so it means that each part has a max 65535
@@ -27,7 +34,11 @@ data class Version(
     val minor: UShort,
     val patch: UShort
 ): ValueDataObject(toBytes(major, minor, patch)) {
-    constructor(major: Int = 1, minor: Int = 0, patch: Int = 0) : this(major.toUShort(), minor.toUShort(), patch.toUShort())
+    constructor(major: Int = 1, minor: Int = 0, patch: Int = 0) : this(
+        versionComponent("major", major),
+        versionComponent("minor", minor),
+        versionComponent("patch", patch),
+    )
 
     override fun toString(): String {
         val patch = if(patch != UShort.MIN_VALUE) {".${patch}" } else ""

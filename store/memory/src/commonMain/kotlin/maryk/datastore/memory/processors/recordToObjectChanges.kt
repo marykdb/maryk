@@ -37,8 +37,8 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
         processValue = { _, _, valueWithVersionReader ->
             when (val node = record.values[valueIndex]) {
                 is DataRecordValue<*> -> {
-                    // Only add if below expected version
-                    if (node.version >= fromVersion && (toVersion == null || node.version < toVersion)) {
+                    // Only add if within the requested version bound
+                    if (node.version >= fromVersion && (toVersion == null || node.version <= toVersion)) {
                         valueWithVersionReader(node.version.timestamp, node.value)
                     }
                 }
@@ -49,7 +49,7 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
                         val lastIndex = if (toVersion == null) {
                             node.history.lastIndex
                         } else {
-                            node.history.indexOfLast { it.version < toVersion }
+                            node.history.indexOfLast { it.version <= toVersion }
                         }
 
                         if(lastIndex != -1) {
@@ -74,7 +74,7 @@ internal fun <DM : IsRootDataModel> DM.recordToObjectChanges(
                     }
                 }
                 is DeletedValue<*> -> {
-                    if (node.version >= fromVersion && (toVersion == null || node.version < toVersion)) {
+                    if (node.version >= fromVersion && (toVersion == null || node.version <= toVersion)) {
                         valueWithVersionReader(node.version.timestamp, null)
                     }
                 }

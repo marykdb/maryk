@@ -69,4 +69,16 @@ internal class VersionTest {
             Version.Serializer.readJson("1.2.3.4")
         }
     }
+
+    @Test
+    fun rejectIntComponentsOutsideUInt16Range() {
+        listOf(
+            { value: Int -> Version(value, 0, 0) },
+            { value: Int -> Version(0, value, 0) },
+            { value: Int -> Version(0, 0, value) },
+        ).forEach { createVersion ->
+            assertFailsWith<IllegalArgumentException> { createVersion(-1) }
+            assertFailsWith<IllegalArgumentException> { createVersion(65536) }
+        }
+    }
 }

@@ -37,6 +37,10 @@ data class FixedBytesDefinition(
     override val propertyDefinitionType = FixedBytes
     override val wireType = LENGTH_DELIMITED
 
+    init {
+        require(byteSize > 0) { "Fixed bytes byte size must be positive" }
+    }
+
     override fun createRandom() = Bytes(Random.nextBytes(this.byteSize))
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): Bytes {
@@ -119,7 +123,14 @@ data class FixedBytesDefinition(
             toSerializable = { value, _: IsPropertyContext? ->
                 value?.toUInt()
             },
-            fromSerializable = { it?.toInt() }
+            fromSerializable = { value ->
+                value?.let {
+                    require(it <= Int.MAX_VALUE.toUInt()) {
+                        "Fixed bytes byte size cannot exceed ${Int.MAX_VALUE}"
+                    }
+                    it.toInt()
+                }
+            }
         )
 
         override fun invoke(values: SimpleObjectValues<FixedBytesDefinition>) = FixedBytesDefinition(

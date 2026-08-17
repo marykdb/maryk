@@ -19,10 +19,11 @@ open class ValueDataModelSerializer<DO: ValueDataObject, DM: IsValueDataModel<DO
     model: DM,
 ): ObjectDataModelSerializer<DO, DM, IsPropertyContext, IsPropertyContext>(model), IsValueDataModelSerializer<DO, DM> {
     override val byteSize by lazy {
-        var size = -1
-        for (it in model) {
+        var size = 0
+        model.forEachIndexed { index, it ->
             val def = it.definition as IsFixedStorageBytesEncodable<*>
-            size += def.byteSize + 1
+            size += def.byteSize
+            if (index > 0) size++
         }
         size
     }

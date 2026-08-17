@@ -1,6 +1,7 @@
 package maryk.yaml
 
 import maryk.json.IllegalJsonOperation
+import maryk.json.JsonWriteException
 import maryk.json.ValueType
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -8,6 +9,29 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 internal class YamlWriterTest {
+    @Test
+    fun rejectsUnpairedSurrogatesInWrittenText() {
+        val invalidValues = listOf("\uD800", "\uDC00", "before\uD800after")
+
+        invalidValues.forEach { value ->
+            assertFailsWith<JsonWriteException> {
+                YamlWriter {}.writeString(value)
+            }
+            assertFailsWith<JsonWriteException> {
+                YamlWriter {}.writeValue(value)
+            }
+            assertFailsWith<JsonWriteException> {
+                YamlWriter {}.apply {
+                    writeStartObject()
+                    writeFieldName(value)
+                }
+            }
+            assertFailsWith<JsonWriteException> {
+                YamlWriter {}.writeTag(value)
+            }
+        }
+    }
+
     @Test
     fun safelyRendersRootAndNestedStringScalars() {
         val values = listOf(

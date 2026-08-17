@@ -135,6 +135,8 @@ private val yamlTagMap = mapOf(
 
 /** Maximum number of open YAML maps and sequences on one path. */
 private const val MAX_YAML_STRUCTURE_DEPTH = 128
+/** Maximum number of token copies retained by anchors in one document. */
+private const val MAX_YAML_ANCHOR_CAPTURE_TOKENS = 100_000
 
 /** Reads YAML from the supplied [reader] */
 internal class YamlReaderImpl(
@@ -172,12 +174,12 @@ internal class YamlReaderImpl(
     internal val tags: MutableMap<String, String> = mutableMapOf()
 
     private val anchorReaders = mutableListOf<AnchorRecorder>()
-    private val anchorReadersToRemove = mutableListOf<AnchorRecorder>()
 
     private val tokenStack = YamlTokenQueue()
     private val storedAnchors = mutableMapOf<String, StoredAnchor>()
     private var aliasCount = 0
     private var expandedAliasTokenCount = 0L
+    private var capturedAnchorTokenCount = 0L
 
     internal val tokenQueueWorkUnits: Long
         get() = this.tokenStack.workUnits
@@ -235,8 +237,10 @@ internal class YamlReaderImpl(
             when (currentToken) {
                 StartDocument -> {
                     this.storedAnchors.clear()
+                    this.anchorReaders.clear()
                     this.aliasCount = 0
                     this.expandedAliasTokenCount = 0
+                    this.capturedAnchorTokenCount = 0
                 }
                 is StartObject, is StartArray -> this.tokenDepth++
                 is EndObject, is EndArray -> this.tokenDepth--
@@ -278,21 +282,23 @@ internal class YamlReaderImpl(
                 }
             }
 
-            for (it in this.anchorReaders) {
-                it.recordToken(currentToken, this.tokenDepth) { anchor, tokens, aliasDepth ->
+            val anchorIterator = this.anchorReaders.listIterator()
+            while (anchorIterator.hasNext()) {
+                val recorder = anchorIterator.next()
+                recordAnchorToken()
+                var completed = false
+                recorder.recordToken(currentToken, this.tokenDepth) { anchor, tokens, aliasDepth ->
                     val name = anchor.trim()
                     if (name in this.storedAnchors) {
                         throw InvalidYamlContent("Duplicate anchor &$name")
                     }
                     this.storedAnchors[name] = StoredAnchor(tokens, aliasDepth)
-                    this.anchorReadersToRemove.add(it)
+                    completed = true
+                }
+                if (completed) {
+                    anchorIterator.remove()
                 }
             }
-
-            for (it in this.anchorReadersToRemove) {
-                this.anchorReaders.remove(it)
-            }
-            this.anchorReadersToRemove.clear()
 
             return currentToken
         } catch (e: InvalidYamlContent) {
@@ -451,6 +457,16 @@ internal class YamlReaderImpl(
     fun recordAnchors(anchorReader: AnchorRecorder) {
         anchorReader.setTokenStartDepth(this.tokenDepth)
         this.anchorReaders.add(anchorReader)
+    }
+
+    private fun recordAnchorToken() {
+        val nextTokenCount = this.capturedAnchorTokenCount + 1
+        if (nextTokenCount > MAX_YAML_ANCHOR_CAPTURE_TOKENS) {
+            throw InvalidYamlContent(
+                "Anchor capture token budget exceeded: $nextTokenCount > $MAX_YAML_ANCHOR_CAPTURE_TOKENS"
+            )
+        }
+        this.capturedAnchorTokenCount = nextTokenCount
     }
 }
 

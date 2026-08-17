@@ -79,6 +79,16 @@ internal enum class JsonComplexType {
     OBJECT, ARRAY
 }
 
+/** Maximum number of open JSON objects and arrays on one path. */
+private const val MAX_JSON_STRUCTURE_DEPTH = 128
+
+/** Persistent stack node so a resumable reader state can capture nesting in constant time. */
+private class JsonTypeStack(
+    val type: JsonComplexType,
+    val previous: JsonTypeStack?,
+    val depth: Int
+)
+
 /** Reads JSON from the supplied [reader]. Return null to signal end of input. */
 class JsonReader private constructor(
     private val reader: JsonCharReader
@@ -93,7 +103,7 @@ class JsonReader private constructor(
     override var lineNumber = 1
 
     private var storedValue: String? = ""
-    private val typeStack: MutableList<JsonComplexType> = mutableListOf()
+    private var typeStack: JsonTypeStack? = null
     private var lastChar: Char = ' '
     private var resumedFromSuspension = false
     private var readReplay: String? = null
@@ -112,7 +122,7 @@ class JsonReader private constructor(
     private data class ReaderState(
         val currentToken: JsonToken,
         val storedValue: String?,
-        val typeStack: List<JsonComplexType>,
+        val typeStack: JsonTypeStack?,
         val lastChar: Char,
         val columnNumber: Int,
         val lineNumber: Int,
@@ -161,7 +171,7 @@ class JsonReader private constructor(
                     readDocumentValue()
                 }
                 is StartObject -> {
-                    typeStack.add(OBJECT)
+                    pushType(OBJECT)
                     when (lastChar) {
                         '}' -> endObject()
                         '"' -> readFieldName()
@@ -172,7 +182,7 @@ class JsonReader private constructor(
                     continueComplexRead()
                 }
                 is StartArray -> {
-                    typeStack.add(ARRAY)
+                    pushType(ARRAY)
                     if (lastChar == ']') {
                         endArray()
                     } else {
@@ -187,8 +197,8 @@ class JsonReader private constructor(
                 }
                 is Value<*> -> {
                     when {
-                        typeStack.isEmpty() -> finishDocumentRead()
-                        typeStack.last() == OBJECT -> readObject()
+                        typeStack == null -> finishDocumentRead()
+                        typeStack?.type == OBJECT -> readObject()
                         else -> readArray()
                     }
                 }
@@ -319,8 +329,7 @@ class JsonReader private constructor(
     private fun restore(state: ReaderState) {
         currentToken = state.currentToken
         storedValue = state.storedValue
-        typeStack.clear()
-        typeStack.addAll(state.typeStack)
+        typeStack = state.typeStack
         lastChar = state.lastChar
         columnNumber = state.columnNumber
         lineNumber = state.lineNumber
@@ -335,7 +344,7 @@ class JsonReader private constructor(
     private fun captureState() = ReaderState(
         currentToken = currentToken,
         storedValue = storedValue,
-        typeStack = typeStack.toList(),
+        typeStack = typeStack,
         lastChar = lastChar,
         columnNumber = columnNumber,
         lineNumber = lineNumber,
@@ -362,11 +371,11 @@ class JsonReader private constructor(
     }
 
     override fun skipUntilNextField(handleSkipToken: ((JsonToken) -> Unit)?) {
-        val startDepth = typeStack.count()
+        val startDepth = typeStack?.depth ?: 0
         nextToken()
         while (
             // Continue while there is not a field name on current stack depth or object has ended at below stack depth
-            !((currentToken is FieldName && this.typeStack.count() <= startDepth) || (currentToken is EndObject && this.typeStack.count() < startDepth))
+            !((currentToken is FieldName && (this.typeStack?.depth ?: 0) <= startDepth) || (currentToken is EndObject && (this.typeStack?.depth ?: 0) < startDepth))
             && currentToken !is Stopped
         ) {
             handleSkipToken?.invoke(this.currentToken)
@@ -439,15 +448,15 @@ class JsonReader private constructor(
         }
         WhitespaceReadResume.FINISH_DOCUMENT -> throwJsonException()
         WhitespaceReadResume.ROOT_SCALAR -> {
-            if (typeStack.isEmpty()) throwJsonException()
+            if (typeStack == null) throwJsonException()
             nextToken()
         }
     }
 
     private fun continueComplexRead() {
         when {
-            typeStack.isEmpty() -> finishDocumentRead()
-            else -> when (typeStack.last()) {
+            typeStack == null -> finishDocumentRead()
+            else -> when (typeStack!!.type) {
                 OBJECT -> readObject()
                 ARRAY -> readArray()
             }
@@ -528,11 +537,11 @@ class JsonReader private constructor(
             try {
                 read()
             } catch (error: ExceptionWhileReadingJson) {
-                if (typeStack.isEmpty() && numberRead.canFinish()) {
+                if (typeStack == null && numberRead.canFinish()) {
                     finishNumber(reachedDefinitiveRootEnd = true)
                     return
                 }
-                if (typeStack.isEmpty()) {
+                if (typeStack == null) {
                     throwJsonException()
                 }
                 throw error
@@ -626,7 +635,7 @@ class JsonReader private constructor(
             try {
                 skipWhiteSpace(WhitespaceReadResume.NUMBER_TRAILING)
             } catch (error: ExceptionWhileReadingJson) {
-                if (typeStack.isNotEmpty()) {
+                if (typeStack != null) {
                     throw error
                 }
                 suspendedWhitespaceRead = null
@@ -636,7 +645,7 @@ class JsonReader private constructor(
     }
 
     private fun validateNumberTrailingCharacter() {
-        if (typeStack.isEmpty() && !lastChar.isJsonWhitespace()) {
+        if (typeStack == null && !lastChar.isJsonWhitespace()) {
             throwJsonException()
         }
     }
@@ -683,13 +692,13 @@ class JsonReader private constructor(
         try {
             readSkipWhitespace(WhitespaceReadResume.ROOT_SCALAR)
         } catch (error: ExceptionWhileReadingJson) {
-            if (typeStack.isEmpty()) {
+            if (typeStack == null) {
                 suspendedWhitespaceRead = null
                 return
             }
             throw error
         }
-        if (typeStack.isEmpty()) {
+        if (typeStack == null) {
             throwJsonException()
         }
     }
@@ -698,7 +707,7 @@ class JsonReader private constructor(
         try {
             read()
         } catch (error: ExceptionWhileReadingJson) {
-            if (typeStack.isEmpty()) {
+            if (typeStack == null) {
                 throwJsonException()
             }
             throw error
@@ -810,7 +819,7 @@ class JsonReader private constructor(
         }
         storedValue = ""
         suspendedStringRead = null
-        if (typeStack.isNotEmpty()) {
+        if (typeStack != null) {
             readSkipWhitespace(
                 if (stringRead.mode == StringReadMode.FIELD_NAME) {
                     WhitespaceReadResume.FINISH_FIELD_NAME
@@ -830,9 +839,9 @@ class JsonReader private constructor(
     }
 
     private fun endObject() {
-        typeStack.removeAt(typeStack.lastIndex)
+        popType()
         currentToken = EndObject
-        if (typeStack.isNotEmpty()) {
+        if (typeStack != null) {
             readSkipWhitespace(WhitespaceReadResume.RETURN_CURRENT)
         }
     }
@@ -843,15 +852,28 @@ class JsonReader private constructor(
     }
 
     private fun endArray() {
-        typeStack.removeAt(typeStack.lastIndex)
+        popType()
         currentToken = EndArray
-        if (typeStack.isNotEmpty()) {
+        if (typeStack != null) {
             readSkipWhitespace(WhitespaceReadResume.RETURN_CURRENT)
         }
     }
 
     private fun throwJsonException(): Nothing {
         throw InvalidJsonContent("Invalid character '$lastChar' after $currentToken")
+    }
+
+    private fun pushType(type: JsonComplexType) {
+        val depth = (typeStack?.depth ?: 0) + 1
+        if (depth > MAX_JSON_STRUCTURE_DEPTH) {
+            throw InvalidJsonContent("JSON structure nesting exceeds $MAX_JSON_STRUCTURE_DEPTH")
+        }
+        typeStack = JsonTypeStack(type, typeStack, depth)
+    }
+
+    private fun popType() {
+        val currentType = typeStack ?: throwJsonException()
+        typeStack = currentType.previous
     }
 }
 

@@ -1,11 +1,32 @@
 package maryk.yaml
 
 import maryk.json.ArrayType
+import maryk.json.JsonToken.Stopped
 import maryk.json.MapType
 import maryk.json.ValueType
 import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertFailsWith
 
 class TagReaderTest {
+    @Test
+    fun rejectsOversizedTag() {
+        val reader = YamlReader(
+            yaml = "!${"x".repeat(1025)} value",
+            defaultTag = defaultTag,
+            tagMap = mapOf(defaultTag to emptyMap()),
+            allowUnknownTags = true
+        )
+
+        val exception = assertFailsWith<InvalidYamlContent> {
+            while (reader.currentToken !is Stopped) {
+                reader.nextToken()
+            }
+        }
+
+        assertContains(exception.message.orEmpty(), "Tag length budget exceeded")
+    }
+
     @Test
     fun readTagsInMap() {
         createYamlReader("""

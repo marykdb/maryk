@@ -17,6 +17,20 @@ import kotlin.test.expect
 
 internal class JsonReaderTest {
     @Test
+    fun rejectsExcessiveStructureNesting() {
+        val input = "[".repeat(129) + "0" + "]".repeat(129)
+        val reader = createJsonReader(input)
+
+        val exception = assertFailsWith<InvalidJsonContent> {
+            while (reader.currentToken !is Stopped) {
+                reader.nextToken()
+            }
+        }
+
+        assertTrue(exception.message.orEmpty().contains("nesting"))
+    }
+
+    @Test
     fun testJsonParserStructure() {
         val input = """{
             "string": "hey",

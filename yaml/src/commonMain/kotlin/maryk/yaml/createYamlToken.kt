@@ -53,12 +53,11 @@ internal typealias JsonTokenCreator = (value: String?, isPlainStringReader: Bool
  * Can create a MergeFieldName if token was << and was read by a PlainStringReader signalled by [isPlainStringReader] = true
  */
 internal fun checkAndCreateFieldName(
-    foundFieldNames: MutableList<String?>,
+    foundFieldNames: MutableSet<String?>,
     fieldName: String?,
     isPlainStringReader: Boolean
 ) =
-    if (!foundFieldNames.contains(fieldName)) {
-        foundFieldNames += fieldName
+    if (foundFieldNames.add(fieldName)) {
         if (isPlainStringReader && fieldName == "<<") {
             MergeFieldName
         } else {

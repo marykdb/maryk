@@ -1,9 +1,22 @@
 package maryk.yaml
 
 import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
 class DirectiveReaderTest {
+    @Test
+    fun rejectsOversizedDirective() {
+        val reader = createSimpleYamlReader("%${"X".repeat(4097)}\n---\nvalue")
+
+        val exception = assertFailsWith<InvalidYamlContent> {
+            reader.nextToken()
+        }
+
+        assertContains(exception.message.orEmpty(), "Directive length budget exceeded")
+    }
+
     @Test
     fun readYamlDirective() {
         createYamlReader("""

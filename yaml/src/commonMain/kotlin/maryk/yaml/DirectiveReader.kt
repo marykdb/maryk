@@ -5,17 +5,23 @@ import maryk.lib.extensions.isLineBreak
 
 private val yamlRegEx = Regex("^YAML ([0-9]).([0-9]+)$")
 private val tagRegEx = Regex("^TAG (!|!!|![a-zAZ]+!) ([^ ]+)$")
+private const val MAX_YAML_DIRECTIVE_LENGTH = 4096
 
 /**
  * Reads YAML directives and fires [onDone] when done
  */
 internal fun IsYamlCharReader.directiveReader(onDone: () -> JsonToken): JsonToken {
-    var foundDirective = ""
+    val directive = StringBuilder()
     while (!this.lastChar.isLineBreak()) {
-        foundDirective += lastChar
+        directive.append(lastChar)
+        if (directive.length > MAX_YAML_DIRECTIVE_LENGTH) {
+            throw InvalidYamlContent(
+                "Directive length budget exceeded: ${directive.length} > $MAX_YAML_DIRECTIVE_LENGTH"
+            )
+        }
         read()
     }
-    foundDirective = foundDirective.trimEnd()
+    val foundDirective = directive.toString().trimEnd()
 
     yamlRegEx.matchEntire(foundDirective)?.let {
         it.groups.let { match ->

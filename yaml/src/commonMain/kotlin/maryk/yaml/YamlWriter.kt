@@ -5,6 +5,7 @@ import maryk.json.IllegalJsonOperation
 import maryk.json.JsonEmbedType
 import maryk.json.JsonEmbedType.ComplexField
 import maryk.json.JsonEmbedType.Object
+import maryk.json.JsonWriteException
 import maryk.json.JsonType
 import maryk.json.JsonType.ARRAY_VALUE
 import maryk.json.JsonType.COMPLEX_FIELD_NAME_END
@@ -226,6 +227,7 @@ class YamlWriter(
 
     /** Writes the field [name] for an object */
     override fun writeFieldName(name: String) {
+        name.requirePairedSurrogates()
         writePendingObjectStart()
         val isCompact = this.lastIsCompact
         val renderedName = sanitizeFieldName(name, quoteFlowDelimiters = isCompact)
@@ -249,6 +251,7 @@ class YamlWriter(
     override fun writeValue(value: String) = writeValueInternal(value, quoteStrings = false)
 
     private fun writeValueInternal(value: String, quoteStrings: Boolean) {
+        value.requirePairedSurrogates()
         writePendingObjectStart()
         val renderedValue = if (quoteStrings) {
             sanitizeValue(value, quoteFlowDelimiters = this.lastIsCompact)
@@ -352,6 +355,7 @@ class YamlWriter(
 
     /** Writes a [tag] to YAML output */
     fun writeTag(tag: String) {
+        tag.requirePairedSurrogates()
         writePendingObjectStart()
         if (this.lastType == FIELD_NAME || this.lastType == COMPLEX_FIELD_NAME_END) {
             writer(" ")
@@ -470,6 +474,25 @@ class YamlWriter(
 
     private fun requiresEscapedScalar(value: String) = value.any {
         it.code in 0x00..0x08 || it.code in 0x0B..0x1F || it.code in 0x7F..0x9F
+    }
+
+    private fun String.requirePairedSurrogates() {
+        var index = 0
+        while (index < length) {
+            val character = this[index]
+            when {
+                character.isHighSurrogate() -> {
+                    if (index + 1 >= length || !this[index + 1].isLowSurrogate()) {
+                        throw JsonWriteException("YAML text contains an unpaired UTF-16 surrogate")
+                    }
+                    index++
+                }
+                character.isLowSurrogate() -> {
+                    throw JsonWriteException("YAML text contains an unpaired UTF-16 surrogate")
+                }
+            }
+            index++
+        }
     }
 
     private fun shouldQuote(value: String, quoteFlowDelimiters: Boolean): Boolean {

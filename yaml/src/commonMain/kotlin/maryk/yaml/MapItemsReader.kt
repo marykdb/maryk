@@ -32,7 +32,7 @@ internal class MapItemsReader<out P : IsYamlCharWithIndentsReader>(
     private var state: MapState = KEY_FOUND // Because is always created after finding key
     private var isStarted = false
 
-    private val fieldNames = mutableListOf<String?>()
+    private val fieldNames = mutableSetOf<String?>()
 
     private var stateWasSetOnRead: Boolean = false
 

@@ -94,6 +94,27 @@ class AnchorAndAliasReaderTest {
     }
 
     @Test
+    fun rejectsAnchorCaptureBeyondDocumentBudgetWithoutReplay() {
+        val yaml = buildString {
+            append("[&value [")
+            repeat(100_001) { index ->
+                if (index > 0) append(',')
+                append('x')
+            }
+            append("]]")
+        }
+        val reader = YamlReader(yaml)
+
+        val exception = assertFailsWith<InvalidYamlContent> {
+            while (reader.currentToken !is Stopped) {
+                reader.nextToken()
+            }
+        }
+
+        assertContains(exception.message ?: "", "Anchor capture token budget exceeded")
+    }
+
+    @Test
     fun configuredAliasCountBudgetRejectsRepeatedAliases() {
         val reader = YamlReader(
             yaml = "[&value item, *value, *value, *value]",

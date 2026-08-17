@@ -29,7 +29,7 @@ internal class FlowMapReader<out P: IsYamlCharWithIndentsReader>(
     private val indentToAdd: Int
 ) : YamlCharWithParentAndIndentReader<P>(yamlReader, parentReader, 1) {
     private var state = START
-    private val fieldNames = mutableListOf<String?>()
+    private val fieldNames = mutableSetOf<String?>()
 
     override fun readUntilToken(extraIndent: Int, tag: TokenType?): JsonToken {
         val stateAtStart = this.state

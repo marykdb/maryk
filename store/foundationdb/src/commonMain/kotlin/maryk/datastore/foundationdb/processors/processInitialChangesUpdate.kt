@@ -34,6 +34,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processInitial
                     key = change.key,
                     version = HLC(versionedChange.version),
                     objectToAdd = addedValues,
+                    ignoreIfVersionNotNewer = true,
                 )
                 changeStatuses += addStatus
             } else {
@@ -44,6 +45,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processInitial
                     changes = versionedChange.changes,
                     version = HLC(versionedChange.version),
                     tableDirs = tableDirs,
+                    ignoreIfVersionNotNewer = true,
                 )
                 changeStatuses += changeStatus
             }

@@ -15,10 +15,16 @@ import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.processors.deleteCompleteIndexContents
 import maryk.datastore.rocksdb.processors.helpers.createIndexKey
 import maryk.datastore.rocksdb.processors.processChange
+import maryk.datastore.rocksdb.metadata.LEGACY_INDEX_KEY_FORMAT_VERSION
+import maryk.datastore.rocksdb.metadata.ModelMeta
+import maryk.datastore.rocksdb.metadata.StoreMeta
+import maryk.datastore.rocksdb.metadata.writeStoreMetaFile
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.test.UniqueModel
 import maryk.datastore.test.UniqueModel.email
+import maryk.datastore.test.UniqueOwnershipTest
 import maryk.datastore.test.DataStoreBackupRoundTripTest
+import maryk.datastore.test.DurableReplicationTombstoneTest
 import maryk.datastore.test.assertStatusIs
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
@@ -44,6 +50,103 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RocksDBDataStoreTest {
+    @Test
+    fun replicationTombstoneSurvivesReopen() = runTest {
+        val folder = createTestDBFolder("durable-replication-tombstones")
+        var dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+        )
+        try {
+            val test = DurableReplicationTombstoneTest()
+            test.writeHardDelete(dataStore)
+            dataStore.close()
+            dataStore = RocksDBDataStore.open(
+                relativePath = folder,
+                dataModelsById = dataModelsForTests,
+                keepAllVersions = false,
+            )
+            test.replayStaleAdd(dataStore)
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun replicatedUpdatesRespectHardDeleteTombstonesWithoutUpdateHistory() = runTest {
+        val folder = createTestDBFolder("replication-tombstones")
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+            keepUpdateHistoryIndex = false,
+        )
+        try {
+            runDataStoreTests(dataStore, "executeProcessUpdatesRespectHardDeleteTombstone")
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun legacyUniqueRebuildSkipsSoftDeletedRecords() = runTest {
+        val folder = createTestDBFolder("legacy-unique-soft-delete-rebuild")
+        val models = mapOf(6u to UniqueModel)
+        val initial = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = models,
+        )
+
+        try {
+            val deleted = assertStatusIs<AddSuccess<UniqueModel>>(
+                initial.execute(UniqueModel.add(UniqueModel.create { email with "legacy-deleted@test.com" })).statuses.single()
+            )
+            initial.execute(UniqueModel.delete(deleted.key))
+            initial.execute(UniqueModel.add(UniqueModel.create { email with "live@test.com" }))
+        } finally {
+            initial.close()
+        }
+
+        writeStoreMetaFile(
+            folder,
+            StoreMeta(
+                models = mapOf(6u to ModelMeta(UniqueModel.Meta.name, UniqueModel.Meta.keyByteSize)),
+                indexKeyFormatVersion = LEGACY_INDEX_KEY_FORMAT_VERSION,
+            )
+        )
+        val rebuilt = RocksDBDataStore.open(relativePath = folder, dataModelsById = models)
+        try {
+            assertStatusIs<AddSuccess<UniqueModel>>(
+                rebuilt.execute(UniqueModel.add(UniqueModel.create { email with "legacy-deleted@test.com" })).statuses.single()
+            )
+        } finally {
+            rebuilt.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun uniqueOwnershipHonorsSoftDeletesAndRestoreCollisions() = runTest {
+        val folder = createTestDBFolder("unique-soft-delete-ownership")
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = mapOf(6u to UniqueModel),
+            keepAllVersions = true,
+        )
+
+        try {
+            UniqueOwnershipTest(dataStore).finalSoftDeleteWithCollidingUniqueReleasesOwnership()
+            UniqueOwnershipTest(dataStore).deletedUniqueMutationDoesNotClaimOwnership()
+            UniqueOwnershipTest(dataStore).restoreCollisionKeepsDeletedRecordOwnerless()
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
     @Test
     fun reopenKeepsColumnFamiliesForRemovedModels() = runTest {
         val folder = createTestDBFolder("removed-model-column-families")

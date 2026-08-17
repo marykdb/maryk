@@ -83,6 +83,7 @@ import maryk.datastore.test.DataStoreGetTest
 import maryk.datastore.test.DataStoreGetUpdatesAndFlowTest
 import maryk.datastore.test.DataStoreGeoTest
 import maryk.datastore.test.DataStoreProcessUpdateTest
+import maryk.datastore.test.DurableReplicationTombstoneTest
 import maryk.datastore.test.DataStoreScanChangesTest
 import maryk.datastore.test.DataStoreScanMultiTypeTest
 import maryk.datastore.test.DataStoreScanOnAnyValueIndexTest
@@ -97,6 +98,8 @@ import maryk.datastore.test.DataStoreScanWithFilterTest
 import maryk.datastore.test.DataStoreScanWithMutableValueIndexTest
 import maryk.datastore.test.IsDataStoreTest
 import maryk.datastore.test.UniqueTest
+import maryk.datastore.test.UniqueModel
+import maryk.datastore.test.UniqueOwnershipTest
 import maryk.datastore.test.assertStatusIs
 import maryk.datastore.test.dataModelsForTests
 import maryk.lib.extensions.compare.compareTo
@@ -124,6 +127,55 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
 
 class IndexedDbDataStoreTest {
+    @Test
+    fun replicationTombstoneSurvivesReopen() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+        val databaseName = "maryk-indexeddb-durable-replication-tombstones-${Random.nextInt()}"
+        var dataStore = IndexedDbDataStore.open(databaseName, dataModelsForTests)
+        try {
+            val test = DurableReplicationTombstoneTest()
+            test.writeHardDelete(dataStore)
+            dataStore.close()
+            dataStore = IndexedDbDataStore.open(databaseName, dataModelsForTests)
+            test.replayStaleAdd(dataStore)
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun replicatedUpdatesRespectHardDeleteTombstonesWithoutUpdateHistory() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-replication-tombstones-${Random.nextInt()}",
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+            keepUpdateHistoryIndex = false,
+        )
+        try {
+            runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessUpdatesRespectHardDeleteTombstone")
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun uniqueOwnershipHonorsFinalSoftDeletes() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-unique-soft-delete-${Random.nextInt()}",
+            dataModelsById = mapOf(6u to UniqueModel),
+            keepAllVersions = true,
+        )
+
+        try {
+            UniqueOwnershipTest(dataStore).finalSoftDeleteWithCollidingUniqueReleasesOwnership()
+            UniqueOwnershipTest(dataStore).deletedUniqueMutationDoesNotClaimOwnership()
+        } finally {
+            dataStore.close()
+        }
+    }
+
     @Test
     fun scanUpdatesReplaysHardDeleteFromUpdateHistory() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()
@@ -882,6 +934,31 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
+    fun replicationTombstoneCompactionDoesNotDeleteNewerConcurrentVersion() = runTest(timeout = indexedDbLongTestTimeout) {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-tombstone-compaction-race-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+        val key = Key<SimpleMarykModel>(ByteArray(SimpleMarykModel.Meta.keyByteSize) { 5 })
+        try {
+            dataStore.byteStore.put("hd:1", key.bytes, 10uL.toBigEndianBytes())
+            replicationTombstoneCompactionAfterScan = { modelId ->
+                dataStore.byteStore.put("hd:$modelId", key.bytes, 20uL.toBigEndianBytes())
+                replicationTombstoneCompactionAfterScan = null
+            }
+
+            dataStore.compactReplicationTombstones(10uL)
+
+            assertTrue(dataStore.byteStore.get("hd:1", key.bytes)?.contentEquals(20uL.toBigEndianBytes()) == true)
+        } finally {
+            replicationTombstoneCompactionAfterScan = null
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun getUpdatesReplaysHistoricChangesInsteadOfCurrentState() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()
 
@@ -1177,6 +1254,8 @@ class IndexedDbDataStoreTest {
             runTestCase(DataStoreScanChangesTest(dataStore), "executeScanChangesRequestWithSelect")
             runTestCase(DataStoreScanChangesTest(dataStore), "executeScanChangesRequestWithMaxVersions")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessAddRequest")
+            runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessDeletedAddRequest")
+            runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessUpdatesRespectHardDeleteTombstone")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessChangeRequest")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessAddInChangeRequest")
             runTestCase(DataStoreProcessUpdateTest(dataStore), "executeProcessRemovalRequest")

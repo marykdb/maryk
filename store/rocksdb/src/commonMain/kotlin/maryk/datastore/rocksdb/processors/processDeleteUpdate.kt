@@ -44,6 +44,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDeleteUpdate
                 hardDelete,
                 historicStoreIndexValuesWalker,
                 cache,
+                ignoreIfVersionNotNewer = true,
             )
         } finally {
             historicStoreIndexValuesWalker?.close()

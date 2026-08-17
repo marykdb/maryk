@@ -7,6 +7,8 @@ import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddOrChangeResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.statuses.IsAddOrChangeResponseStatus
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.memory.IsStoreFetcher
@@ -29,6 +31,16 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
     val changeStatuses = mutableListOf<IsAddOrChangeResponseStatus<DM>>()
     for (change in update.changes) {
         for (versionedChange in change.changes) {
+            val version = HLC(versionedChange.version)
+            val lastAppliedVersion = dataStore.lastAppliedVersion(change.key.bytes)
+            if (lastAppliedVersion != null && version <= lastAppliedVersion) {
+                changeStatuses += if (versionedChange.changes.contains(ObjectCreate)) {
+                    AddSuccess(change.key, lastAppliedVersion.timestamp, emptyList())
+                } else {
+                    ChangeSuccess(lastAppliedVersion.timestamp, emptyList())
+                }
+                continue
+            }
             if (versionedChange.changes.contains(ObjectCreate)) {
                 val addedValues = dataModel.fromChanges(null, versionedChange.changes)
 
@@ -36,7 +48,7 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
                     dataStore,
                     dataModel = dataModel,
                     key = change.key,
-                    version = HLC(versionedChange.version),
+                    version = version,
                     objectToAdd = addedValues,
                     updateSharedFlow = updateSharedFlow
                 )
@@ -47,7 +59,7 @@ internal suspend fun <DM : IsRootDataModel> processInitialChangesUpdate(
                     change.key,
                     null,
                     versionedChange.changes,
-                    HLC(versionedChange.version),
+                    version,
                     updateSharedFlow
                 )
             }

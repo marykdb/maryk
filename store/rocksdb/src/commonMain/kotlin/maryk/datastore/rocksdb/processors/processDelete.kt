@@ -40,6 +40,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
     hardDelete: Boolean,
     historicStoreIndexValuesWalker: HistoricStoreIndexValuesWalker?,
     cache: Cache,
+    ignoreIfVersionNotNewer: Boolean = false,
 ): IsDeleteResponseStatus<DM> = try {
     val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
 
@@ -47,6 +48,33 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
         val valueLength = db.get(columnFamilies.keys, key.bytes, recyclableByteArray)
         recyclableByteArray.readVersionBytesIfExact(valueLength) != null
     } else false
+
+    if (ignoreIfVersionNotNewer) {
+        val currentVersion = if (exists) {
+            db.get(columnFamilies.table, defaultReadOptions, key.bytes)?.readVersionBytesIfExact()
+        } else null
+        val tombstoneVersion = db.get(
+            columnFamilies.replicationTombstones,
+            defaultReadOptions,
+            key.bytes,
+        )?.readVersionBytesIfExact()
+        val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
+        if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
+            return DeleteSuccess(lastAppliedVersion)
+        }
+        if (!exists && hardDelete) {
+            withTransaction { transaction ->
+                val versionBytes = HLC.toStorageBytes(version)
+                transaction.put(columnFamilies.replicationTombstones, key.bytes, versionBytes)
+                columnFamilies.updateHistory?.let {
+                    transaction.put(it, version.timestamp.toReversedVersionBytes() + key.bytes, byteArrayOf(1))
+                }
+                transaction.commit()
+            }
+            emitUpdate(Deletion(dataModel, key, version.timestamp, true))
+            return DeleteSuccess(version.timestamp)
+        }
+    }
 
     when {
         exists -> {
@@ -176,6 +204,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                 }
 
                 if (hardDelete) {
+                    transaction.put(columnFamilies.replicationTombstones, key.bytes, versionBytes)
                     transaction.delete(columnFamilies.keys, key.bytes)
                     transaction.deleteRange(
                         columnFamilies.table,

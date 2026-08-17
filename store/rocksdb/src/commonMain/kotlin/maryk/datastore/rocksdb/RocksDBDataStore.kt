@@ -76,6 +76,7 @@ import maryk.datastore.rocksdb.TableType.HistoricUnique
 import maryk.datastore.rocksdb.TableType.Index
 import maryk.datastore.rocksdb.TableType.Keys
 import maryk.datastore.rocksdb.TableType.Model
+import maryk.datastore.rocksdb.TableType.ReplicationTombstone
 import maryk.datastore.rocksdb.TableType.Table
 import maryk.datastore.rocksdb.TableType.UpdateHistory
 import maryk.datastore.rocksdb.TableType.Unique
@@ -90,6 +91,7 @@ import maryk.datastore.rocksdb.model.RocksDBMigrationAuditLogStore
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
 import maryk.datastore.rocksdb.model.modelUpdateHistoryBackfillCompleteKey
+import maryk.datastore.rocksdb.model.modelReplicationTombstoneBackfillCompleteKey
 import maryk.datastore.rocksdb.model.storeModelDefinition
 import maryk.datastore.rocksdb.processors.AnyAddStoreAction
 import maryk.datastore.rocksdb.processors.AnyChangeStoreAction
@@ -116,6 +118,7 @@ import maryk.datastore.rocksdb.processors.processGetUpdatesRequest
 import maryk.datastore.rocksdb.processors.processInitialChangesUpdate
 import maryk.datastore.rocksdb.processors.SOFT_DELETE_INDICATOR
 import maryk.datastore.rocksdb.processors.StoreValuesGetter
+import maryk.datastore.rocksdb.processors.isSoftDeleted
 import maryk.datastore.rocksdb.processors.processScanChangesRequest
 import maryk.datastore.rocksdb.processors.processScanRequest
 import maryk.datastore.rocksdb.processors.processScanUpdateHistoryRequest
@@ -128,6 +131,7 @@ import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.ReplicationTombstoneCompactor
 import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
@@ -171,7 +175,7 @@ class RocksDBDataStore private constructor(
     coroutineContext = Dispatchers.IO,
     maxConcurrentReads = maxConcurrentReads,
     readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
-), MigrationAdmin, SnapshotVersionProvider {
+), MigrationAdmin, SnapshotVersionProvider, ReplicationTombstoneCompactor {
     private val columnFamilyHandlesByDataModelIndex = mutableMapOf<UInt, TableColumnFamilies>()
     private var retainedColumnFamilyHandles: List<ColumnFamilyHandle> = emptyList()
     private val prefixSizesByColumnFamilyHandlesIndex = mutableMapOf<Int, Int>()
@@ -260,7 +264,8 @@ class RocksDBDataStore private constructor(
             if (keepAllVersions) {
                 for ((index, db) in dataModelsById) {
                     prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+2].getID()] = db.Meta.keyByteSize
-                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex+5].getID()] = db.Meta.keyByteSize
+                    val historicTableOffset = 6 + if (keepUpdateHistoryIndex) 1 else 0
+                    prefixSizesByColumnFamilyHandlesIndex[handles[handleIndex + historicTableOffset].getID()] = db.Meta.keyByteSize
                     columnFamilyHandlesByDataModelIndex[index] = HistoricTableColumnFamilies(
                         modelId = index,
                         keyByteSize = db.Meta.keyByteSize,
@@ -269,6 +274,7 @@ class RocksDBDataStore private constructor(
                         table = handles[handleIndex++],
                         index = handles[handleIndex++],
                         unique = handles[handleIndex++],
+                        replicationTombstones = handles[handleIndex++],
                         updateHistory = if (keepUpdateHistoryIndex) handles[handleIndex++] else null,
                         historic = BasicTableColumnFamilies(
                             table = handles[handleIndex++],
@@ -288,6 +294,7 @@ class RocksDBDataStore private constructor(
                         table = handles[handleIndex++],
                         index = handles[handleIndex++],
                         unique = handles[handleIndex++],
+                        replicationTombstones = handles[handleIndex++],
                         updateHistory = if (keepUpdateHistoryIndex) handles[handleIndex++] else null
                     )
                 }
@@ -403,6 +410,7 @@ class RocksDBDataStore private constructor(
             for ((index, _) in dataModelsById) {
                 if (index !in pendingMigrationModelIds.value) {
                     ensureUpdateHistoryIndexReady(index, getColumnFamilies(index))
+                    backfillReplicationTombstones(getColumnFamilies(index))
                 }
             }
         }
@@ -550,6 +558,10 @@ class RocksDBDataStore private constructor(
                 while (iterator.isValid()) {
                     val keyBytes = iterator.key()
                     if (iterator.value().readVersionBytesIfExact() == null) {
+                        iterator.next()
+                        continue
+                    }
+                    if (isSoftDeleted(transaction, columnFamilies, defaultReadOptions, null, keyBytes)) {
                         iterator.next()
                         continue
                     }
@@ -840,6 +852,32 @@ class RocksDBDataStore private constructor(
         )
     }
 
+    private fun backfillReplicationTombstones(tableColumnFamilies: TableColumnFamilies) {
+        val updateHistory = tableColumnFamilies.updateHistory ?: return
+        if (db.get(tableColumnFamilies.model, defaultReadOptions, modelReplicationTombstoneBackfillCompleteKey) != null) return
+
+        db.newIterator(updateHistory, sequentialReadOptions).use { iterator ->
+            iterator.seekToFirst()
+            while (iterator.isValid()) {
+                val historyKey = iterator.key()
+                val historyValue = iterator.value()
+                if (historyKey.size >= ULong.SIZE_BYTES + tableColumnFamilies.keyByteSize &&
+                    historyValue.size == 1 && historyValue[0] == 1.toByte()
+                ) {
+                    val version = historyKey.readReversedVersionBytes()
+                    val key = historyKey.copyOfRange(ULong.SIZE_BYTES, historyKey.size)
+                    val current = db.get(tableColumnFamilies.replicationTombstones, defaultReadOptions, key)
+                        ?.readVersionBytesIfExact()
+                    if (current == null || version > current) {
+                        db.put(tableColumnFamilies.replicationTombstones, key, HLC.toStorageBytes(HLC(version)))
+                    }
+                }
+                iterator.next()
+            }
+        }
+        db.put(tableColumnFamilies.model, modelReplicationTombstoneBackfillCompleteKey, byteArrayOf(1))
+    }
+
     private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: IsRootDataModel) {
         val nameSize = tableIndex.calculateVarByteLength() + 1
 
@@ -853,6 +891,7 @@ class RocksDBDataStore private constructor(
         descriptors += Table.getDescriptor(tableIndex, nameSize, tableOptions)
         descriptors += Index.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
         descriptors += Unique.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
+        descriptors += ReplicationTombstone.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
         if (keepUpdateHistoryIndex) {
             descriptors += UpdateHistory.getDescriptor(tableIndex, nameSize, blockCache.createColumnFamilyOptions())
         }
@@ -918,6 +957,35 @@ class RocksDBDataStore private constructor(
                 }
                 descriptors += ColumnFamilyDescriptor(name, columnFamilyOptions)
             }
+    }
+
+    override suspend fun compactReplicationTombstones(upToVersionInclusive: ULong) {
+        for (columnFamilies in columnFamilyHandlesByDataModelIndex.values) {
+            var nextStart: ByteArray? = null
+            while (true) {
+                val next = withTransaction { transaction ->
+                    val keysToDelete = mutableListOf<ByteArray>()
+                    var lastKey: ByteArray? = null
+                    var scanned = 0
+                    transaction.getIterator(sequentialReadOptions, columnFamilies.replicationTombstones).use { iterator ->
+                        nextStart?.let(iterator::seek) ?: iterator.seekToFirst()
+                        while (iterator.isValid() && scanned < 256) {
+                            lastKey = iterator.key()
+                            scanned++
+                            val version = iterator.value().readVersionBytesIfExact()
+                            if (version != null && version <= upToVersionInclusive) {
+                                keysToDelete += lastKey
+                            }
+                            iterator.next()
+                        }
+                    }
+                    keysToDelete.forEach { transaction.delete(columnFamilies.replicationTombstones, it) }
+                    transaction.commit()
+                    if (scanned == 256) lastKey?.let { it + byteArrayOf(0) } else null
+                }
+                nextStart = next ?: break
+            }
+        }
     }
 
     override suspend fun close() {

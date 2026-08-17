@@ -9,6 +9,8 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.rocksdb.metadata.ModelMeta
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.RocksDB
+import maryk.rocksdb.WriteBatch
+import maryk.rocksdb.WriteOptions
 
 fun storeModelDefinition(
     rocksDB: RocksDB,
@@ -17,9 +19,6 @@ fun storeModelDefinition(
     modelColumnFamily: ColumnFamilyHandle,
     dataModel: IsRootDataModel,
 ) {
-    rocksDB.put(modelColumnFamily, modelNameKey, dataModel.Meta.name.encodeToByteArray())
-    rocksDB.put(modelColumnFamily, modelVersionKey, dataModel.Meta.version.toByteArray())
-
     val context = DefinitionsConversionContext()
 
     val modelCache = WriteCache()
@@ -27,12 +26,10 @@ fun storeModelDefinition(
     val modelBytes = ByteArray(modelByteSize)
     var writeIndex = 0
     RootDataModel.Model.Serializer.writeObjectProtoBuf(dataModel, modelCache, { modelBytes[writeIndex++] = it }, context)
-    rocksDB.put(modelColumnFamily, modelDefinitionKey, modelBytes)
-
     val dependencies = mutableListOf<MarykPrimitive>()
     dataModel.getAllDependencies(dependencies)
 
-    if (dependencies.isNotEmpty()) {
+    val dependentBytes = if (dependencies.isNotEmpty()) {
         val dependentCache = WriteCache()
 
         val dependents = Definitions(dependencies)
@@ -41,7 +38,19 @@ fun storeModelDefinition(
         var depWriteIndex = 0
         Definitions.Serializer.writeObjectProtoBuf(dependents, dependentCache, { dependentBytes[depWriteIndex++] = it }, context)
 
-        rocksDB.put(modelColumnFamily, modelDependentsDefinitionKey, dependentBytes)
+        dependentBytes
+    } else null
+
+    WriteBatch().use { batch ->
+        batch.put(modelColumnFamily, modelNameKey, dataModel.Meta.name.encodeToByteArray())
+        batch.put(modelColumnFamily, modelVersionKey, dataModel.Meta.version.toByteArray())
+        batch.put(modelColumnFamily, modelDefinitionKey, modelBytes)
+        if (dependentBytes != null) {
+            batch.put(modelColumnFamily, modelDependentsDefinitionKey, dependentBytes)
+        }
+        WriteOptions().use { writeOptions ->
+            rocksDB.write(writeOptions, batch)
+        }
     }
 
     modelMetas[modelId] = ModelMeta(

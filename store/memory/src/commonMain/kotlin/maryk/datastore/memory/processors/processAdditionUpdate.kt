@@ -4,6 +4,7 @@ import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.query.responses.AddResponse
+import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.core.query.responses.UpdateResponse
@@ -32,14 +33,20 @@ internal suspend fun <DM : IsRootDataModel> processAdditionUpdate(
         throw RequestException("Cannot process an AdditionUpdate with a version different than the first version. Use a query for changes to properly process changes into a data store")
     }
 
-    val result = processAdd(
-        dataStore = dataStore,
-        dataModel = dataModel,
-        key = update.key,
-        version = HLC(update.version),
-        objectToAdd = update.values,
-        updateSharedFlow = updateSharedFlow
-    )
+    val version = HLC(update.version)
+    val result = if (dataStore.lastAppliedVersion(update.key.bytes)?.let { version <= it } == true) {
+        AddSuccess(update.key, update.version, emptyList())
+    } else {
+        processAdd(
+            dataStore = dataStore,
+            dataModel = dataModel,
+            key = update.key,
+            version = version,
+            objectToAdd = update.values,
+            isDeleted = update.isDeleted,
+            updateSharedFlow = updateSharedFlow
+        )
+    }
 
     storeAction.response.complete(
         ProcessResponse(

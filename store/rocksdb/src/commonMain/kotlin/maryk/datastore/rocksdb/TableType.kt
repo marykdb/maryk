@@ -15,7 +15,8 @@ internal enum class TableType(
     HistoricTable(6),
     HistoricIndex(7),
     HistoricUnique(8),
-    UpdateHistory(9);
+    UpdateHistory(9),
+    ReplicationTombstone(10);
 
     fun getName(tableIndex: UInt): ByteArray {
         val name = ByteArray(6)

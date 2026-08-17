@@ -12,14 +12,22 @@ import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.invoke
+import maryk.core.query.changes.Change
+import maryk.core.query.changes.Check
+import maryk.core.query.changes.change
+import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
+import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
+import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.DataStoreBackupChunk
 import maryk.datastore.shared.DataStoreBackupManifest
 import maryk.datastore.shared.DataStoreBackupWriter
@@ -27,10 +35,14 @@ import maryk.datastore.shared.backup
 import maryk.datastore.test.dataModelsForTests
 import maryk.datastore.test.runDataStoreTests
 import maryk.datastore.test.DataStoreBackupRoundTripTest
+import maryk.datastore.test.DurableReplicationTombstoneTest
+import maryk.datastore.test.UniqueModel
+import maryk.datastore.test.UniqueOwnershipTest
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.test.models.Log
 import maryk.test.models.SimpleMarykModel
+import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -43,6 +55,97 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
+    @Test
+    fun replicationTombstoneSurvivesReopen() = runTest(timeout = 3.minutes) {
+        val directoryPath = listOf("maryk", "test", "durable-replication-tombstones", Uuid.random().toString())
+        var dataStore = FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+        )
+        try {
+            val test = DurableReplicationTombstoneTest()
+            test.writeHardDelete(dataStore)
+            dataStore.close()
+            dataStore = FoundationDBDataStore.open(
+                directoryPath = directoryPath,
+                dataModelsById = dataModelsForTests,
+                keepAllVersions = false,
+            )
+            test.replayStaleAdd(dataStore)
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun replicatedUpdatesRespectHardDeleteTombstonesWithoutUpdateHistory() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "replication-tombstones", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = false,
+            keepUpdateHistoryIndex = false,
+        )
+        try {
+            runDataStoreTests(dataStore, "executeProcessUpdatesRespectHardDeleteTombstone")
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun failedCompoundCheckDoesNotCommitLaterChange() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "compound-check-atomicity", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+        )
+
+        try {
+            val key = assertIs<AddSuccess<TestMarykModel>>(
+                dataStore.execute(
+                    TestMarykModel.add(TestMarykModel.create {
+                        string with "before check"
+                        list with listOf(1, 2)
+                    })
+                ).statuses.single()
+            ).key
+
+            assertIs<ValidationFail<*>>(
+                dataStore.execute(
+                    TestMarykModel.change(
+                        key.change(
+                            Check(TestMarykModel { list::ref } with listOf(3)),
+                            Change(TestMarykModel { string::ref } with "must not commit"),
+                        )
+                    )
+                ).statuses.single()
+            )
+            assertEquals(
+                "before check",
+                dataStore.execute(TestMarykModel.get(key)).values.single().values { string }
+            )
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun uniqueOwnershipHonorsSoftDeletesAndRestoreCollisions() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "unique-soft-delete-ownership", Uuid.random().toString()),
+            dataModelsById = mapOf(6u to UniqueModel),
+            keepAllVersions = true,
+        )
+
+        try {
+            UniqueOwnershipTest(dataStore).finalSoftDeleteWithCollidingUniqueReleasesOwnership()
+            UniqueOwnershipTest(dataStore).deletedUniqueMutationDoesNotClaimOwnership()
+            UniqueOwnershipTest(dataStore).restoreCollisionKeepsDeletedRecordOwnerless()
+        } finally {
+            dataStore.close()
+        }
+    }
+
     @Test
     fun abortedDeleteAttemptDoesNotEmitDeletion() = runTest(timeout = 3.minutes) {
         withContext(Dispatchers.Default) {

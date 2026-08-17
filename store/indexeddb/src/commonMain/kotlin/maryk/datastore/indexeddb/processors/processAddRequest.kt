@@ -20,6 +20,7 @@ import maryk.datastore.indexeddb.IndexedDbRecordMeta
 import maryk.datastore.indexeddb.IndexedDbTransactionMode
 import maryk.datastore.indexeddb.IndexedDbWriteOperation
 import maryk.datastore.indexeddb.createTableRowKey
+import maryk.datastore.indexeddb.decodeRecordMeta
 import maryk.datastore.indexeddb.encodeStorageValue
 import maryk.datastore.indexeddb.tableQualifierFromRowKey
 import maryk.datastore.shared.UniqueException
@@ -28,6 +29,8 @@ import maryk.datastore.shared.updates.Update
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest(
     version: HLC,
     storeAction: AddStoreAction<DM>,
+    isDeleted: Boolean = false,
+    ignoreIfVersionNotNewer: Boolean = false,
 ) {
     val request = storeAction.request
     val modelId = getDataModelId(request.dataModel)
@@ -61,7 +64,16 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
         try {
             byteStore.transaction(writeStoreNames, IndexedDbTransactionMode.READWRITE) { byteStore ->
                 val key = request.keysForObjects?.getOrNull(index) ?: request.dataModel.key(values)
-                if (byteStore.get(keyStoreName, key.bytes) != null) {
+                val currentMeta = byteStore.get(keyStoreName, key.bytes)?.let(::decodeRecordMeta)
+                val tombstoneVersion = byteStore.get("hd:$modelId", key.bytes)?.readTrailingVersion()
+                if (ignoreIfVersionNotNewer) {
+                    val lastAppliedVersion = listOfNotNull(currentMeta?.lastVersion, tombstoneVersion).maxOrNull()
+                    if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
+                        statuses += AddSuccess(key, version.timestamp, emptyList())
+                        return@transaction
+                    }
+                }
+                if (currentMeta != null) {
                     statuses += AlreadyExists(key)
                     return@transaction
                 }
@@ -69,13 +81,18 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                 values.validate()
 
                 val operations = mutableListOf<IndexedDbWriteOperation>()
+                if (tombstoneVersion != null) {
+                    operations.delete("hd:$modelId", key.bytes)
+                }
                 val rows = mutableListOf<StorageRowToWrite>()
                 val indexRows = mutableListOf<ByteArray>()
                 val uniqueRows = mutableListOf<IndexedDbUniqueRow>()
 
-                request.dataModel.Meta.indexes?.forEach { index ->
-                    index.toStorageByteArraysForIndex(values, key.bytes).forEach { valueAndKey ->
-                        indexRows += createIndexRowKey(index.referenceStorageByteArray.bytes, valueAndKey)
+                if (!isDeleted) {
+                    request.dataModel.Meta.indexes?.forEach { index ->
+                        index.toStorageByteArraysForIndex(values, key.bytes).forEach { valueAndKey ->
+                            indexRows += createIndexRowKey(index.referenceStorageByteArray.bytes, valueAndKey)
+                        }
                     }
                 }
 
@@ -91,7 +108,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                     val encryptedValue = sensitiveFields.encryptValueIfSensitive(modelId, key.bytes, row.qualifier, row.encodedValue)
                     tableRows += createTableRowKey(key.bytes, row.qualifier) to encryptedValue
 
-                    if (row.type == Value && row.definition is IsComparableDefinition<*, *> && row.definition.unique) {
+                    if (!isDeleted && row.type == Value && row.definition is IsComparableDefinition<*, *> && row.definition.unique) {
                         val uniqueKeys = sensitiveFields.mapUniqueValueByteCandidates(modelId, row.qualifier, row.encodedValue)
                             .map { uniqueValue -> createUniqueRowKey(row.qualifier, uniqueValue) }
                         uniqueRows += IndexedDbUniqueRow(
@@ -116,7 +133,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                     operations.put(tableStoreName, rowKey, encodedValue)
                 }
                 val currentSnapshot = encodeCurrentSnapshot(
-                    IndexedDbRecordMeta(version.timestamp, version.timestamp, false),
+                    IndexedDbRecordMeta(version.timestamp, version.timestamp, isDeleted),
                     tableRows.map { (rowKey, rowValue) -> tableQualifierFromRowKey(rowKey, key.bytes) to rowValue },
                 )
                 operations.put(
@@ -135,11 +152,11 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processAddRequest
                         historicTableStoreName,
                         key.bytes,
                         version.timestamp,
-                        IndexedDbRecordMeta(version.timestamp, version.timestamp, false),
+                        IndexedDbRecordMeta(version.timestamp, version.timestamp, isDeleted),
                         tableRows.map { (rowKey, rowValue) -> tableQualifierFromRowKey(rowKey, key.bytes) to rowValue },
                     )
-                    operations.addHistoricIndexRows(historicIndexStoreName, historicIndexCleanupStoreName, key.bytes, indexRows, version.timestamp, active = true)
-                    operations.addHistoricUniqueRows(historicUniqueStoreName, historicUniqueCleanupStoreName, uniqueRows, version.timestamp, active = true)
+                    operations.addHistoricIndexRows(historicIndexStoreName, historicIndexCleanupStoreName, key.bytes, indexRows, version.timestamp, active = !isDeleted)
+                    operations.addHistoricUniqueRows(historicUniqueStoreName, historicUniqueCleanupStoreName, uniqueRows, version.timestamp, active = !isDeleted)
                 }
                 val changePayload = operations.addChangeLog(
                     dataModel = request.dataModel,

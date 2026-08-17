@@ -1,6 +1,7 @@
 package maryk.datastore.memory
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import maryk.core.clock.HLC
@@ -18,6 +19,8 @@ import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.requests.ScanUpdateHistoryRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.requests.IsStoreRequest
+import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -54,7 +57,9 @@ import maryk.datastore.memory.records.DataStore
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
 import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.ReplicationTombstoneCompactor
 import maryk.datastore.shared.SnapshotVersionProvider
+import maryk.datastore.shared.StoreAction
 import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.requestExecutionKind
 
@@ -62,11 +67,24 @@ import maryk.datastore.shared.requestExecutionKind
  * DataProcessor that stores all data changes in local memory.
  * Very useful for tests.
  */
+private data class CompactReplicationTombstonesRequest(
+    override val dataModel: IsRootDataModel,
+    val upToVersionInclusive: ULong,
+) : IsStoreRequest<IsRootDataModel, CompactReplicationTombstonesResponse>
+
+private object CompactReplicationTombstonesResponse : IsResponse
+
+private typealias CompactReplicationTombstonesStoreAction = StoreAction<
+    IsRootDataModel,
+    CompactReplicationTombstonesRequest,
+    CompactReplicationTombstonesResponse,
+>
+
 class InMemoryDataStore private constructor(
     override val keepAllVersions: Boolean = false,
     override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
-) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider {
+) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
@@ -128,6 +146,15 @@ class InMemoryDataStore private constructor(
                                 processScanUpdateHistoryRequest(storeAction as AnyScanUpdateHistoryStoreAction, dataStoreFetcher)
                             is ScanUpdatesRequest<*> ->
                                 processScanUpdatesRequest(storeAction as AnyScanUpdatesStoreAction, dataStoreFetcher)
+                            is CompactReplicationTombstonesRequest -> {
+                                val compactionAction = storeAction as CompactReplicationTombstonesStoreAction
+                                dataStores.values.forEach {
+                                    it.compactHardDeleteTombstones(compactionAction.request.upToVersionInclusive)
+                                }
+                                compactionAction.response.complete(
+                                    CompactReplicationTombstonesResponse
+                                )
+                            }
                             is UpdateResponse<*> -> when(val update = (storeAction.request as UpdateResponse<*>).update) {
                                 is AdditionUpdate<*> -> processAdditionUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
                                 is ChangeUpdate<*> -> processChangeUpdate(storeAction as AnyProcessUpdateResponseStoreAction, dataStoreFetcher) { update -> emitFlowUpdate(update) }
@@ -154,6 +181,11 @@ class InMemoryDataStore private constructor(
                 }
             }
         }
+    }
+
+    override suspend fun compactReplicationTombstones(upToVersionInclusive: ULong) {
+        val dataModel = dataModelsById.values.firstOrNull() ?: return
+        execute(CompactReplicationTombstonesRequest(dataModel, upToVersionInclusive))
     }
 
     companion object {

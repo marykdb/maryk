@@ -41,6 +41,8 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processAdditionUpda
             update.key,
             HLC(update.version),
             update.values,
+            isDeleted = update.isDeleted,
+            ignoreIfVersionNotNewer = true,
         ) {
             updateToEmit = it
         }.also {

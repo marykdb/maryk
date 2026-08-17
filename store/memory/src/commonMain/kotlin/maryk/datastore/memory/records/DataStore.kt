@@ -29,6 +29,7 @@ internal class DataStore<DM : IsRootDataModel>(
 
     val records: MutableList<DataRecord<DM>> = mutableListOf()
     val hardDeletedRecords: MutableList<HardDeletedRecord<DM>> = mutableListOf()
+    private val hardDeleteTombstones = mutableMapOf<Bytes, HLC>()
     val updateHistory = mutableListOf<UpdateHistoryRecord>()
     private val indexes: MutableList<IndexValues<DM>> = mutableListOf()
     private val uniqueIndices: MutableList<UniqueIndexValues<DM, Comparable<Any>>> = mutableListOf()
@@ -192,6 +193,33 @@ internal class DataStore<DM : IsRootDataModel>(
         val index = this.records.binarySearch { it.key.bytes compareTo key }
 
         return if (index >= 0) this.records[index] else null
+    }
+
+    internal fun lastAppliedVersion(key: ByteArray): HLC? {
+        val recordVersion = getByKey(key)?.lastVersion
+        val tombstoneVersion = hardDeleteTombstones[Bytes(key)]
+        return when {
+            recordVersion == null -> tombstoneVersion
+            tombstoneVersion == null || recordVersion >= tombstoneVersion -> recordVersion
+            else -> tombstoneVersion
+        }
+    }
+
+    internal fun recordHardDelete(key: ByteArray, version: HLC) {
+        val keyBytes = Bytes(key)
+        if (version > (hardDeleteTombstones[keyBytes] ?: HLC(0uL))) {
+            hardDeleteTombstones[keyBytes] = version
+        }
+    }
+
+    internal fun clearHardDeleteTombstone(key: ByteArray) {
+        hardDeleteTombstones.remove(Bytes(key))
+    }
+
+    internal fun compactHardDeleteTombstones(upToVersionInclusive: ULong) {
+        hardDeleteTombstones.entries.removeAll { (_, version) ->
+            version.timestamp <= upToVersionInclusive
+        }
     }
 
     /** Get DataRecord by [key] visible at [toVersion] */

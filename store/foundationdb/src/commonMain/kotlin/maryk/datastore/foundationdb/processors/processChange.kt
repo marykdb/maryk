@@ -132,23 +132,36 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
     changes: List<IsChange>,
     version: HLC,
     tableDirs: IsTableDirectories,
+    ignoreIfVersionNotNewer: Boolean = false,
 ): IsChangeResponseStatus<DM> {
     val dataModelId = getDataModelId(dataModel)
-    var checkFailed = false
     val result: IsChangeResponseStatus<DM> = try {
         var updateToEmit: Update<DM>? = null
 
         runTransaction(dataModelId) { tr ->
             val keyBytes = key.bytes
+            val tombstoneVersion = if (ignoreIfVersionNotNewer) {
+                tr.get(packKey(tableDirs.replicationTombstonePrefix, keyBytes))
+                    .awaitResult()
+                    ?.readHLCTimestampIfExact()
+            } else null
             val createdBytes = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
             if (createdBytes?.readHLCTimestampIfExact() == null) {
-                return@runTransaction DoesNotExist(key)
+                return@runTransaction if (tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
+                    ChangeSuccess(tombstoneVersion, emptyList())
+                } else {
+                    DoesNotExist(key)
+                }
             }
 
             // Validate expected last version if provided
             val latest = tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()
                 ?: return@runTransaction DoesNotExist(key)
             val latestVersion = latest.readHLCTimestampIfExact() ?: return@runTransaction DoesNotExist(key)
+            val lastAppliedVersion = maxOf(latestVersion, tombstoneVersion ?: 0uL)
+            if (ignoreIfVersionNotNewer && version.timestamp <= lastAppliedVersion) {
+                return@runTransaction ChangeSuccess(lastAppliedVersion, emptyList())
+            }
             if (lastVersion != null && latestVersion != lastVersion) {
                 return@runTransaction ValidationFail(
                     listOf(InvalidValueException(null, "Version of object was different than given: $lastVersion < $latestVersion"))
@@ -157,6 +170,13 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
             val versionBytes = HLC.toStorageBytes(version)
             val requestedChangedReferences = collectRequestedChangedReferences(changes)
+            val currentIsDeleted = tr.getValue(
+                tableDirs,
+                null,
+                keyBytes + SOFT_DELETE_INDICATOR,
+                decryptValue = { modelId, value, offset, length, recordKey, reference -> decryptValueIfNeeded(modelId, recordKey, reference, value, offset, length) }
+            ) { bytes, offset, length -> length == 1 && bytes[offset] == TRUE } == true
+            val targetIsDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: currentIsDeleted
 
             // Capture initial index values BEFORE any writes
             val storeGetter = object : IsValuesGetter {
@@ -348,6 +368,16 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                             return@forEach
                                         }
 
+                                    tr.get(packKey(tableDirs.uniquePrefix, uniqueReferenceWithValue))
+                                        .awaitResult()
+                                        ?.takeIf { it.size == VERSION_BYTE_SIZE + key.bytes.size }
+                                        ?.let { stored ->
+                                            val owner = Key<IsValuesDataModel>(
+                                                stored.copyOfRange(VERSION_BYTE_SIZE, stored.size)
+                                            )
+                                            if (owner != key) throw UniqueException(reference, owner)
+                                        }
+
                                     setUniqueIndexValue(tr, tableDirs, uniqueReferenceWithValue, versionBytes, key.bytes)
                                 }
                             }
@@ -394,7 +424,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         var readIndex = 0
                                         val actual = readValue(reference.comparablePropertyDefinition, { stored[readIndex++] }) { stored.size - readIndex }
                                         if (actual != expected) {
-                                            checkFailed = true
+                                            addValidation(InvalidValueException(reference, expected.toString()))
                                         }
                                     }
                                 }
@@ -586,7 +616,14 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
                                             reference.propertyDefinition.validateWithRef(previousValue = previousValue, newValue = value) { reference }
 
-                                            val writer = createValueWriter(dataModelId, tr, tableDirs, key, versionBytes)
+                                            val writer = createValueWriter(
+                                                dataModelId,
+                                                tr,
+                                                tableDirs,
+                                                key,
+                                                versionBytes,
+                                                skipCurrentUniqueOwnership = targetIsDeleted,
+                                            )
 
                                             // Unique handling if applicable is covered by writer for TypeValue; handle comparable uniques here
                                             val storableDef = try {
@@ -760,17 +797,21 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 indexUpdates = mutableListOf()
                 for (index in indexes) {
                     val oldValues = initialIndexValues[index].orEmpty()
-                    val newValues = try {
-                        index.toStorageByteArraysForIndex(overlayGetter, key.bytes)
-                    } catch (error: Throwable) {
-                        error.rethrowIfFatal()
-                        if (
-                            !error.isSkippableDataError() ||
-                            index.isAffectedByAnyReference(requestedChangedReferences)
-                        ) {
-                            throw error
+                    val newValues = if (targetIsDeleted) {
+                        emptyList()
+                    } else {
+                        try {
+                            index.toStorageByteArraysForIndex(overlayGetter, key.bytes)
+                        } catch (error: Throwable) {
+                            error.rethrowIfFatal()
+                            if (
+                                !error.isSkippableDataError() ||
+                                index.isAffectedByAnyReference(requestedChangedReferences)
+                            ) {
+                                throw error
+                            }
+                            oldValues
                         }
-                        oldValues
                     }
 
                     val (removed, added) = diffIndexValues(oldValues, newValues)
@@ -839,9 +880,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             ServerFail(cause.toString(), cause)
         }
     }
-    return if (checkFailed) {
-        ValidationFail(listOf(InvalidValueException(null, "Check failed")))
-    } else result
+    return result
 }
 
 private fun deleteCurrentUniqueIndexEntryForKey(

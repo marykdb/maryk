@@ -27,6 +27,8 @@ import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
+import maryk.datastore.rocksdb.processors.helpers.getLastVersion
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
 import maryk.datastore.rocksdb.processors.helpers.setCreatedVersion
 import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
@@ -40,7 +42,6 @@ import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.lib.recyclableByteArray
-import maryk.rocksdb.rocksDBNotFound
 
 internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     dataModel: DM,
@@ -50,6 +51,8 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     key: Key<DM>,
     version: HLC,
     objectToAdd: Values<DM>,
+    isDeleted: Boolean = false,
+    ignoreIfVersionNotNewer: Boolean = false,
     updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsAddResponseStatus<DM> {
     var savePointSet = false
@@ -63,12 +66,21 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
     return try {
         objectToAdd.validate()
 
-        val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
-
-        val exists = if (mayExist) {
-            // Really check if item exists
-            db.get(columnFamilies.table, key.bytes, recyclableByteArray) != rocksDBNotFound
-        } else false
+        val exists = transaction.get(columnFamilies.keys, defaultReadOptions, key.bytes) != null
+        val tombstoneVersion = transaction.getForUpdate(
+            defaultReadOptions,
+            columnFamilies.replicationTombstones,
+            key.bytes,
+        )?.readVersionBytesIfExact()
+        if (ignoreIfVersionNotNewer) {
+            val currentVersion = if (exists) {
+                getLastVersion(transaction, columnFamilies, defaultReadOptions, key)
+            } else null
+            val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
+            if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
+                return AddSuccess(key, version.timestamp, emptyList())
+            }
+        }
 
         if (!exists) {
             val checksBeforeWrite = mutableListOf<() -> Unit>()
@@ -79,6 +91,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
             transaction.setSavePoint()
             savePointSet = true
 
+            if (tombstoneVersion != null) {
+                transaction.delete(columnFamilies.replicationTombstones, key.bytes)
+            }
+
             // Store first and last version
             setCreatedVersion(transaction, columnFamilies, key, versionBytes)
             setLatestVersion(transaction, columnFamilies, key, versionBytes)
@@ -87,10 +103,12 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
             }
 
             // Find new index values to write
-            dataModel.Meta.indexes?.forEach { indexDefinition ->
-                val indexReference = indexDefinition.referenceStorageByteArray.bytes
-                indexDefinition.toStorageByteArraysForIndex(objectToAdd, key.bytes).forEach { valueAndKeyBytes ->
-                    setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
+            if (!isDeleted) {
+                dataModel.Meta.indexes?.forEach { indexDefinition ->
+                    val indexReference = indexDefinition.referenceStorageByteArray.bytes
+                    indexDefinition.toStorageByteArraysForIndex(objectToAdd, key.bytes).forEach { valueAndKeyBytes ->
+                        setIndexValue(transaction, columnFamilies, indexReference, valueAndKeyBytes, versionBytes)
+                    }
                 }
             }
 
@@ -102,7 +120,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                         val valueBytes = storableDefinition.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
                         // If a unique index, check if exists, and then write
-                        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                        if (!isDeleted && (definition is IsComparableDefinition<*, *>) && definition.unique) {
                             val uniqueReferences = mapUniqueValueByteCandidates(dbIndex, reference, valueBytes)
                                 .map { uniqueValue -> reference + uniqueValue }
                             val uniqueReference = uniqueReferences.first()
@@ -160,6 +178,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
                         setValue(transaction, columnFamilies, key, reference, versionBytes, valueBytes)
                     }
                 }
+            }
+
+            if (isDeleted) {
+                transaction.put(columnFamilies.table, key.bytes + SOFT_DELETE_INDICATOR, versionBytes + TRUE)
             }
 
             for (check in checksBeforeWrite) {

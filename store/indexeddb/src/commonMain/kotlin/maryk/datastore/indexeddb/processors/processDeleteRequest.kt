@@ -20,6 +20,7 @@ import maryk.datastore.shared.updates.Update
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequest(
     version: HLC,
     storeAction: DeleteStoreAction<DM>,
+    ignoreIfVersionNotNewer: Boolean = false,
 ) {
     val request = storeAction.request
     val modelId = getDataModelId(request.dataModel)
@@ -53,7 +54,29 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
 
     for (key in request.keys) {
         byteStore.transaction(writeStoreNames, IndexedDbTransactionMode.READWRITE) { byteStore ->
+            val tombstoneVersion = byteStore.get(hardDeleteStoreName, key.bytes)?.readTrailingVersion()
             val currentMeta = byteStore.get(keyStoreName, key.bytes)?.let(::decodeRecordMeta)
+            if (ignoreIfVersionNotNewer) {
+                val lastAppliedVersion = listOfNotNull(currentMeta?.lastVersion, tombstoneVersion).maxOrNull()
+                if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
+                    statuses += DeleteSuccess(lastAppliedVersion)
+                    return@transaction
+                }
+                if (currentMeta == null && request.hardDelete) {
+                    val operations = mutableListOf<IndexedDbWriteOperation>()
+                    operations.put(hardDeleteStoreName, key.bytes, version.timestamp.toBigEndianBytes())
+                    if (keepUpdateHistoryIndex) {
+                        operations.put(updateHistoryStoreName, createUpdateHistoryRowKey(version.timestamp, key.bytes), byteArrayOf(1))
+                        operations.put(hardDeleteHistoryStoreName, createHardDeleteHistoryRowKey(key.bytes, version.timestamp), byteArrayOf(1))
+                    }
+                    commitIndexedDbUpdate(
+                        operations,
+                        Update.Deletion(request.dataModel, key, version.timestamp, true),
+                    )
+                    statuses += DeleteSuccess(version.timestamp)
+                    return@transaction
+                }
+            }
             if (currentMeta == null) {
                 statuses += DoesNotExist(key)
                 return@transaction
@@ -86,6 +109,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
             }
 
             if (request.hardDelete) {
+                operations.put(hardDeleteStoreName, key.bytes, version.timestamp.toBigEndianBytes())
                 operations.delete(keyStoreName, key.bytes)
                 for ((rowKey, _) in scanTableRows(tableStoreName, key.bytes)) {
                     operations.delete(tableStoreName, rowKey)
@@ -108,7 +132,6 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processDeleteRequ
                 }
                 if (keepUpdateHistoryIndex) {
                     operations.put(updateHistoryStoreName, createUpdateHistoryRowKey(version.timestamp, key.bytes), byteArrayOf(1))
-                    operations.put(hardDeleteStoreName, key.bytes, version.timestamp.toBigEndianBytes())
                     operations.put(hardDeleteHistoryStoreName, createHardDeleteHistoryRowKey(key.bytes, version.timestamp), byteArrayOf(1))
                 }
             } else {

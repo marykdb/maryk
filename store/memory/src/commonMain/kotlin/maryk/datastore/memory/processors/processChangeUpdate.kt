@@ -6,6 +6,7 @@ import maryk.core.models.fromChanges
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.ChangeResponse
+import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.ProcessResponse
@@ -42,15 +43,20 @@ internal suspend fun <DM : IsRootDataModel> processChangeUpdate(
             ProcessResponse(update.version, AddResponse(dataModel, listOf(response)))
         )
     } else {
-        val response = processChange(
-            dataStore,
-            dataModel,
-            update.key,
-            null,
-            update.changes,
-            HLC(update.version),
-            updateSharedFlow
-        )
+        val version = HLC(update.version)
+        val response = if (dataStore.lastAppliedVersion(update.key.bytes)?.let { version <= it } == true) {
+            ChangeSuccess(update.version, emptyList())
+        } else {
+            processChange(
+                dataStore,
+                dataModel,
+                update.key,
+                null,
+                update.changes,
+                version,
+                updateSharedFlow
+            )
+        }
 
         storeAction.response.complete(
             ProcessResponse(update.version, ChangeResponse(dataModel, listOf(response)))

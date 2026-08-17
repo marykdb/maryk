@@ -56,12 +56,40 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
     dbIndex: UInt,
     hardDelete: Boolean,
     cache: Cache,
+    ignoreIfVersionNotNewer: Boolean = false,
 ): IsDeleteResponseStatus<DM> = try {
     var updateToEmit: Update<DM>? = null
     runTransaction(dbIndex) { tr ->
         val keyBytes = key.bytes
+        val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, keyBytes)
+        val tombstoneVersion = tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
         val exists = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
             ?.readHLCTimestampIfExact() != null
+
+        if (ignoreIfVersionNotNewer) {
+            val currentVersion = if (exists) {
+                tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()?.readHLCTimestampIfExact()
+            } else null
+            val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
+            if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
+                return@runTransaction DeleteSuccess(lastAppliedVersion)
+            }
+
+            if (!exists && hardDelete) {
+                tr.set(tombstoneKey, HLC.toStorageBytes(version))
+                tableDirs.updateHistoryPrefix?.let { prefix ->
+                    tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), byteArrayOf(1))
+                }
+                updateToEmit = Update.Deletion(dataModel, key, version.timestamp, true)
+                afterDeleteUpdatePrepared.value?.invoke(tr)
+                clusterUpdateLog?.append(
+                    tr = tr,
+                    modelId = dbIndex,
+                    update = ClusterLogDeletion(Bytes(key.bytes), version.timestamp, true),
+                )
+                return@runTransaction DeleteSuccess(version.timestamp)
+            }
+        }
 
         if (!exists) {
             return@runTransaction DoesNotExist(key)
@@ -242,6 +270,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         }
 
         if (hardDelete) {
+            tr.set(tombstoneKey, versionBytes)
             cache.delete(dbIndex, key)
 
             // Delete key and all values under it (including historic if present)

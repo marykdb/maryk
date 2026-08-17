@@ -30,6 +30,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeU
             key = update.key,
             version = HLC(update.version),
             objectToAdd = addedValues,
+            ignoreIfVersionNotNewer = true,
         )
 
         storeAction.response.complete(
@@ -43,6 +44,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChangeU
             changes = update.changes,
             version = HLC(update.version),
             tableDirs = tableDirs,
+            ignoreIfVersionNotNewer = true,
         )
 
         storeAction.response.complete(

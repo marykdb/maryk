@@ -35,6 +35,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDeleteU
         dbIndex = dbIndex,
         hardDelete = update.reason == RemovalReason.HardDelete,
         cache = cache,
+        ignoreIfVersionNotNewer = true,
     )
 
     storeAction.response.complete(
@@ -47,4 +48,3 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDeleteU
         )
     )
 }
-

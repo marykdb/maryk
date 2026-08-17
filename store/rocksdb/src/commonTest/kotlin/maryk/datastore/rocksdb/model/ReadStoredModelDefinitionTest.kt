@@ -115,4 +115,25 @@ class ReadStoredModelDefinitionTest {
             )
         }
     }
+
+    @Test
+    fun rejectsPartialStoredModelMetadata() = runTest {
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = dbPath,
+            dataModelsById = mapOf(1u to ModelWithDependents)
+        )
+
+        val columnFamilies = dataStore.getColumnFamilies(1u)
+        dataStore.db.delete(columnFamilies.model, modelDefinitionKey)
+        dataStore.close()
+
+        assertFailsWith<StorageException> {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = dbPath,
+                dataModelsById = mapOf(1u to ModelWithDependents)
+            )
+        }
+    }
 }

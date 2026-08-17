@@ -10,6 +10,7 @@ sealed interface IsTableDirectories {
     val tablePrefix: ByteArray
     val uniquePrefix: ByteArray
     val indexPrefix: ByteArray
+    val replicationTombstonePrefix: ByteArray
     val updateHistoryPrefix: ByteArray?
 }
 
@@ -21,6 +22,7 @@ open class TableDirectories(
     table: DirectorySubspace,
     unique: DirectorySubspace,
     index: DirectorySubspace,
+    replicationTombstones: DirectorySubspace,
     updateHistory: DirectorySubspace? = null,
 ): IsTableDirectories {
     override val keysPrefix = keys.pack()
@@ -28,6 +30,7 @@ open class TableDirectories(
     override val tablePrefix = table.pack()
     override val uniquePrefix = unique.pack()
     override val indexPrefix = index.pack()
+    override val replicationTombstonePrefix = replicationTombstones.pack()
     override val updateHistoryPrefix = updateHistory?.pack()
 }
 
@@ -39,6 +42,7 @@ class HistoricTableDirectories(
     table: DirectorySubspace,
     unique: DirectorySubspace,
     index: DirectorySubspace,
+    replicationTombstones: DirectorySubspace,
     updateHistory: DirectorySubspace? = null,
     historicTable: DirectorySubspace,
     historicUnique: DirectorySubspace,
@@ -49,6 +53,7 @@ class HistoricTableDirectories(
     override val tablePrefix = table.pack()
     override val uniquePrefix = unique.pack()
     override val indexPrefix = index.pack()
+    override val replicationTombstonePrefix = replicationTombstones.pack()
     override val updateHistoryPrefix = updateHistory?.pack()
     val historicTablePrefix = historicTable.pack()
     val historicUniquePrefix = historicUnique.pack()

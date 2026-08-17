@@ -10,9 +10,10 @@ internal class HistoricTableColumnFamilies(
     table: ColumnFamilyHandle,
     index: ColumnFamilyHandle,
     unique: ColumnFamilyHandle,
+    replicationTombstones: ColumnFamilyHandle,
     updateHistory: ColumnFamilyHandle? = null,
     val historic: BasicTableColumnFamilies
-) : TableColumnFamilies(modelId, keyByteSize, model, keys, table, index, unique, updateHistory) {
+) : TableColumnFamilies(modelId, keyByteSize, model, keys, table, index, unique, replicationTombstones, updateHistory) {
     override fun close() {
         super.close()
         historic.close()

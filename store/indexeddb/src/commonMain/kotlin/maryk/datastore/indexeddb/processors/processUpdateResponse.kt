@@ -47,7 +47,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                 storeAction = StoreAction(
                     request = dataModel.add(update.key to update.values),
                     response = response,
-                )
+                ),
+                isDeleted = update.isDeleted,
+                ignoreIfVersionNotNewer = true,
             )
             storeAction.response.complete(ProcessResponse(update.version, response.await()))
         }
@@ -59,7 +61,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                     storeAction = StoreAction(
                         request = dataModel.add(update.key to dataModel.fromChanges(null, update.changes)),
                         response = response,
-                    )
+                    ),
+                    ignoreIfVersionNotNewer = true,
                 )
                 storeAction.response.complete(ProcessResponse(update.version, response.await()))
             } else {
@@ -69,7 +72,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                     storeAction = StoreAction(
                         request = dataModel.change(update.key.change(*update.changes.toTypedArray())),
                         response = response,
-                    )
+                    ),
+                    ignoreIfVersionNotNewer = true,
                 )
                 storeAction.response.complete(ProcessResponse(update.version, response.await()))
             }
@@ -85,7 +89,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                 storeAction = StoreAction(
                     request = dataModel.delete(update.key, hardDelete = update.reason == HardDelete),
                     response = response,
-                )
+                ),
+                ignoreIfVersionNotNewer = true,
             )
             storeAction.response.complete(ProcessResponse(update.version, response.await()))
         }
@@ -100,7 +105,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                             storeAction = StoreAction(
                                 request = dataModel.add(change.key to dataModel.fromChanges(null, versionedChange.changes)),
                                 response = response,
-                            )
+                            ),
+                            ignoreIfVersionNotNewer = true,
                         )
                         statuses += response.await().statuses
                     } else {
@@ -110,7 +116,8 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
                             storeAction = StoreAction(
                                 request = dataModel.change(change.key.change(*versionedChange.changes.toTypedArray())),
                                 response = response,
-                            )
+                            ),
+                            ignoreIfVersionNotNewer = true,
                         )
                         statuses += response.await().statuses
                     }
@@ -129,4 +136,3 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processUpdateResp
         else -> throw TypeException("Unknown update type $update for datastore processing")
     }
 }
-

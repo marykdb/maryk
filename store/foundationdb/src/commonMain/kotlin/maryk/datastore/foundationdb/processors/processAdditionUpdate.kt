@@ -32,6 +32,8 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdditio
         key = update.key,
         version = HLC(update.version),
         objectToAdd = update.values,
+        isDeleted = update.isDeleted,
+        ignoreIfVersionNotNewer = true,
     )
 
     storeAction.response.complete(

@@ -31,7 +31,8 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
     key: Key<DM>,
     version: HLC,
     objectToAdd: Values<DM>,
-    updateSharedFlow: FlowUpdateEmitter
+    updateSharedFlow: FlowUpdateEmitter,
+    isDeleted: Boolean = false,
 ): IsAddResponseStatus<DM> = try {
     objectToAdd.validate()
 
@@ -49,19 +50,21 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         )
 
         // Find new index values to write
-        dataModel.Meta.indexes?.forEach { indexDefinition ->
-            val valueBytesList = indexDefinition.toStorageByteArraysForIndex(objectToAdd, key.bytes)
-            if (valueBytesList.isEmpty()) return@forEach
+        if (!isDeleted) {
+            dataModel.Meta.indexes?.forEach { indexDefinition ->
+                val valueBytesList = indexDefinition.toStorageByteArraysForIndex(objectToAdd, key.bytes)
+                if (valueBytesList.isEmpty()) return@forEach
 
-            val indexEntries = toIndex ?: mutableListOf<Pair<ByteArray, ByteArray>>().also { toIndex = it }
-            valueBytesList.forEach { valueBytes ->
-                indexEntries.add(indexDefinition.referenceStorageByteArray.bytes to valueBytes)
+                val indexEntries = toIndex ?: mutableListOf<Pair<ByteArray, ByteArray>>().also { toIndex = it }
+                valueBytesList.forEach { valueBytes ->
+                    indexEntries.add(indexDefinition.referenceStorageByteArray.bytes to valueBytes)
+                }
             }
         }
 
         objectToAdd.writeToStorage { _, reference, definition, value ->
             val dataRecordValue = DataRecordValue(reference, value, version)
-            if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+            if (!isDeleted && (definition is IsComparableDefinition<*, *>) && definition.unique) {
                 @Suppress("UNCHECKED_CAST")
                 val comparableValue = dataRecordValue as DataRecordValue<Comparable<Any>>
                 dataStore.validateUniqueNotExists(comparableValue, dataRecord)
@@ -71,6 +74,10 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
                 }
             }
             recordValues += dataRecordValue
+        }
+
+        if (isDeleted) {
+            recordValues += DataRecordValue(objectSoftDeleteQualifier, true, version)
         }
 
         // Sort all nodes since some operations like map key values can be unsorted
@@ -87,6 +94,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         }
 
         dataStore.records.add((index * -1) - 1, dataRecord)
+        dataStore.clearHardDeleteTombstone(key.bytes)
         dataStore.addToUpdateHistory(version, key.bytes)
 
         val changes = listOf<IsChange>()

@@ -38,6 +38,7 @@ import maryk.datastore.shared.updates.Update
 internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequest(
     version: HLC,
     storeAction: ChangeStoreAction<DM>,
+    ignoreIfVersionNotNewer: Boolean = false,
 ) {
     val request = storeAction.request
     val modelId = getDataModelId(request.dataModel)
@@ -71,9 +72,22 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
         try {
             byteStore.transaction(writeStoreNames, IndexedDbTransactionMode.READWRITE) { byteStore ->
                 val keyBytes = objectChange.key.bytes
+                val tombstoneVersion = if (ignoreIfVersionNotNewer) {
+                    byteStore.get("hd:$modelId", keyBytes)?.readTrailingVersion()
+                } else null
                 val currentMeta = byteStore.get(keyStoreName, keyBytes)?.let(::decodeRecordMeta)
                 if (currentMeta == null) {
-                    statuses += DoesNotExist(objectChange.key)
+                    statuses += if (tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
+                        ChangeSuccess(tombstoneVersion, emptyList())
+                    } else {
+                        DoesNotExist(objectChange.key)
+                    }
+                    return@transaction
+                }
+
+                val lastAppliedVersion = maxOf(currentMeta.lastVersion, tombstoneVersion ?: 0uL)
+                if (ignoreIfVersionNotNewer && version.timestamp <= lastAppliedVersion) {
+                    statuses += ChangeSuccess(lastAppliedVersion, emptyList())
                     return@transaction
                 }
 
@@ -122,7 +136,9 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 }
 
                 val storagePlan = createStoragePlan(request.dataModel, modelId, keyBytes, changedValues, sensitiveFields)
-                validateUniqueRows(request.dataModel, keyBytes, uniqueStoreName, storagePlan.uniqueRows)
+                if (!targetIsDeleted) {
+                    validateUniqueRows(request.dataModel, keyBytes, uniqueStoreName, storagePlan.uniqueRows)
+                }
 
                 val oldIndexRows = collectCurrentIndexRows(request.dataModel, keyBytes)
                 val oldUniqueRows = collectCurrentUniqueRows(
@@ -200,7 +216,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     operations.addHistoricIndexRows(historicIndexStoreName, historicIndexCleanupStoreName, keyBytes, oldIndexRows, version.timestamp, active = false)
                     operations.addHistoricIndexRows(historicIndexStoreName, historicIndexCleanupStoreName, keyBytes, storagePlan.indexRows, version.timestamp, active = true)
                     operations.addHistoricUniqueRows(historicUniqueStoreName, historicUniqueCleanupStoreName, oldUniqueRows, version.timestamp, active = false)
-                    operations.addHistoricUniqueRows(historicUniqueStoreName, historicUniqueCleanupStoreName, storagePlan.uniqueRows, version.timestamp, active = true)
+                    operations.addHistoricUniqueRows(historicUniqueStoreName, historicUniqueCleanupStoreName, storagePlan.uniqueRows, version.timestamp, active = !targetIsDeleted)
                 }
                 val changePayload = operations.addChangeLog(
                     dataModel = request.dataModel,

@@ -53,6 +53,7 @@ internal suspend fun <DM : IsRootDataModel> processDelete(
             }
 
             if (hardDelete) {
+                dataStore.recordHardDelete(key.bytes, version)
                 if (dataStore.keepAllVersions) {
                     dataStore.hardDeletedRecords.add(
                         DataStore.HardDeletedRecord(

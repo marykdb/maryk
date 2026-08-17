@@ -77,6 +77,7 @@ import maryk.datastore.foundationdb.model.readModelSchemaState
 import maryk.datastore.foundationdb.model.requireModelSchemaReady
 import maryk.datastore.foundationdb.model.requireModelSchemaRebuildOwner
 import maryk.datastore.foundationdb.model.modelUpdateHistoryBackfillCompleteKey
+import maryk.datastore.foundationdb.model.modelReplicationTombstoneBackfillCompleteKey
 import maryk.datastore.foundationdb.model.modelIndexRebuildScratchKey
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
@@ -120,6 +121,7 @@ import maryk.datastore.foundationdb.processors.walkDataRecordsAndFillIndex
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.Cache
 import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.ReplicationTombstoneCompactor
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
@@ -174,7 +176,7 @@ class FoundationDBDataStore private constructor(
     coroutineContext = Dispatchers.IO,
     maxConcurrentReads = maxConcurrentReads,
     readWorkerCoroutineContext = Dispatchers.IO.limitedParallelism(maxConcurrentReads),
-), MigrationAdmin {
+), MigrationAdmin, ReplicationTombstoneCompactor {
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
 
@@ -436,6 +438,7 @@ class FoundationDBDataStore private constructor(
             for ((index, _) in dataModelsById) {
                 if (index !in pendingMigrationModelIds.value) {
                     ensureUpdateHistoryIndexReady(index, getTableDirs(index))
+                    backfillReplicationTombstones(index, getTableDirs(index))
                 }
             }
         }
@@ -730,6 +733,10 @@ class FoundationDBDataStore private constructor(
         val tableDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "table")).awaitResult()
         val uniqueDir       = rootDirectory.createOrOpen(tr, listOf(modelName, "unique")).awaitResult()
         val indexDir        = rootDirectory.createOrOpen(tr, listOf(modelName, "index")).awaitResult()
+        val replicationTombstoneDir = rootDirectory.createOrOpen(
+            tr,
+            listOf(modelName, "replication_tombstones")
+        ).awaitResult()
         val updateHistoryDir = if (keepUpdateHistoryIndex) {
             rootDirectory.createOrOpen(tr, listOf(modelName, "update_history")).awaitResult()
         } else null
@@ -743,6 +750,7 @@ class FoundationDBDataStore private constructor(
                 table  = tableDir,
                 unique = uniqueDir,
                 index  = indexDir,
+                replicationTombstones = replicationTombstoneDir,
                 updateHistory = updateHistoryDir
             )
         } else {
@@ -758,6 +766,7 @@ class FoundationDBDataStore private constructor(
                 table         = tableDir,
                 unique        = uniqueDir,
                 index         = indexDir,
+                replicationTombstones = replicationTombstoneDir,
                 updateHistory = updateHistoryDir,
                 historicTable = histTableDir,
                 historicIndex = histIndexDir,
@@ -1087,6 +1096,43 @@ class FoundationDBDataStore private constructor(
         }
     }
 
+    private fun backfillReplicationTombstones(
+        modelId: UInt,
+        tableDirectories: IsTableDirectories,
+    ) {
+        val updateHistoryPrefix = tableDirectories.updateHistoryPrefix ?: return
+        val markerKey = packKey(tableDirectories.modelPrefix, modelReplicationTombstoneBackfillCompleteKey)
+        if (runTransaction(modelId) { tr -> tr.get(markerKey).awaitResult() != null }) return
+
+        var nextStart = updateHistoryPrefix
+        val end = updateHistoryPrefix.nextByteInSameLength()
+        while (true) {
+            val next = runTransaction(modelId) { tr ->
+                val iterator = tr.getRange(
+                    Range(nextStart, end),
+                    UPDATE_HISTORY_BACKFILL_WRITE_BATCH_SIZE,
+                    false,
+                ).iterator()
+                var lastKey: ByteArray? = null
+                while (iterator.hasNext()) {
+                    val entry = iterator.nextBlocking()
+                    lastKey = entry.key
+                    if (entry.value.size != 1 || entry.value[0] != 1.toByte()) continue
+                    val version = entry.key.readReversedVersionBytes(updateHistoryPrefix.size)
+                    val key = entry.key.copyOfRange(updateHistoryPrefix.size + ULong.SIZE_BYTES, entry.key.size)
+                    val tombstoneKey = packKey(tableDirectories.replicationTombstonePrefix, key)
+                    val current = tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
+                    if (current == null || version > current) {
+                        tr.set(tombstoneKey, HLC.toStorageBytes(HLC(version)))
+                    }
+                }
+                lastKey?.let { it + nextKeySuffix }
+            } ?: break
+            nextStart = next
+        }
+        runTransaction(modelId) { tr -> tr.set(markerKey, byteArrayOf(1)) }
+    }
+
     internal fun getTableDirs(dataModel: IsRootDataModel) =
         getTableDirs(dataModelIdsByString.getValue(dataModel.Meta.name))
 
@@ -1106,6 +1152,29 @@ class FoundationDBDataStore private constructor(
         val flowUpdate = prepareFlowUpdate(update)
         beforeUpdateEmission.value?.invoke()
         emitFlowUpdate(flowUpdate)
+    }
+
+    override suspend fun compactReplicationTombstones(upToVersionInclusive: ULong) {
+        for ((modelId, tableDirectories) in directoriesByDataModelIndex) {
+            var nextStart = tableDirectories.replicationTombstonePrefix
+            val end = tableDirectories.replicationTombstonePrefix.nextByteInSameLength()
+            while (true) {
+                val next = runTransaction(modelId) { tr ->
+                    val iterator = tr.getRange(Range(nextStart, end), 256, false).iterator()
+                    var lastKey: ByteArray? = null
+                    while (iterator.hasNext()) {
+                        val entry = iterator.nextBlocking()
+                        lastKey = entry.key
+                        val version = entry.value.readHLCTimestampIfExact()
+                        if (version != null && version <= upToVersionInclusive) {
+                            tr.clear(entry.key)
+                        }
+                    }
+                    lastKey?.let { it + nextKeySuffix }
+                } ?: break
+                nextStart = next
+            }
+        }
     }
 
     override suspend fun close() {

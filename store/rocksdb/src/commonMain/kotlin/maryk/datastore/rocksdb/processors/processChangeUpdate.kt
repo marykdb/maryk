@@ -42,6 +42,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeUpdate
                 key = update.key,
                 version = HLC(update.version),
                 objectToAdd = addedValues,
+                ignoreIfVersionNotNewer = true,
             ) {
                 updateToEmit = it
             }.also {
@@ -67,6 +68,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processChangeUpdate
                     transaction,
                     dbIndex,
                     HLC(update.version),
+                    ignoreIfVersionNotNewer = true,
                 ) {
                     updateToEmit = it
                 }

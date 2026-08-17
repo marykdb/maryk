@@ -54,6 +54,7 @@ import maryk.datastore.test.runDataStoreTests
 import maryk.datastore.test.runDataStoreTestsIsolated
 import maryk.datastore.test.NullableUniqueModel
 import maryk.datastore.test.UniqueModel
+import maryk.datastore.shared.ReplicationTombstoneCompactor
 import maryk.test.models.AnyValueIncMapIndexModel
 import maryk.test.models.AnyValueSetIndexModel
 import maryk.test.models.Log
@@ -195,6 +196,17 @@ class InMemoryDataStoreTest {
                 )
             }
         )
+    }
+
+    @Test
+    fun replicatedUpdatesRespectHardDeleteTombstones() = runTest(timeout = 1.minutes) {
+        val dataStore = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
+        try {
+            assertIs<ReplicationTombstoneCompactor>(dataStore)
+            runDataStoreTests(dataStore, "executeProcessUpdatesRespectHardDeleteTombstone")
+        } finally {
+            dataStore.close()
+        }
     }
 
     @Test

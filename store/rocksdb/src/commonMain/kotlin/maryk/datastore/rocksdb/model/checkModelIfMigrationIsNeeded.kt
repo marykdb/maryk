@@ -49,9 +49,12 @@ fun checkModelIfMigrationIsNeeded(
         else -> storedNameFromModel
     }
 
-    // If nothing stored yet, treat as new model
-    if (storedDefinition == null || effectiveName == null || storedVersion == null) {
+    val storedMetadataCount = listOf(storedDefinition, storedNameFromModel, storedVersion).count { it != null }
+    if (storedMetadataCount == 0) {
         return NewModel
+    }
+    if (storedMetadataCount != 3) {
+        throw StorageException("Model id $modelId has partial RocksDB metadata")
     }
 
     // Validate against configured model

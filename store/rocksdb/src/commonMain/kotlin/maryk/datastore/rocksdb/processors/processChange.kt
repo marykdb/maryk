@@ -128,8 +128,16 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
     transaction: Transaction,
     dbIndex: UInt,
     version: HLC,
+    ignoreIfVersionNotNewer: Boolean = false,
     updateHandler: ((Update<DM>) -> Unit)? = null,
 ): IsChangeResponseStatus<DM> {
+    val tombstoneVersion = if (ignoreIfVersionNotNewer) {
+        transaction.getForUpdate(
+            defaultReadOptions,
+            columnFamilies.replicationTombstones,
+            key.bytes,
+        )?.readVersionBytesIfExact()
+    } else null
     val mayExist = db.keyMayExist(columnFamilies.keys, key.bytes, null)
     return if (mayExist) {
         val valueLength =
@@ -145,6 +153,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
                 getLastVersion(transaction, columnFamilies, defaultReadOptions, key)
             } catch (_: StorageException) {
                 return DoesNotExist(key)
+            }
+
+            val lastAppliedVersion = maxOf(latestVersionFromStore, tombstoneVersion ?: 0uL)
+            if (ignoreIfVersionNotNewer && version.timestamp <= lastAppliedVersion) {
+                return ChangeSuccess(lastAppliedVersion, emptyList())
             }
 
             // Check if version is within range
@@ -169,10 +182,18 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processChange(
                 updateHandler,
             )
         } else {
-            DoesNotExist(key)
+            if (tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
+                ChangeSuccess(tombstoneVersion, emptyList())
+            } else {
+                DoesNotExist(key)
+            }
         }
     } else {
-        DoesNotExist(key)
+        if (tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
+            ChangeSuccess(tombstoneVersion, emptyList())
+        } else {
+            DoesNotExist(key)
+        }
     }
 }
 
@@ -248,6 +269,14 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
         transaction.setSavePoint()
         savePointSet = true
+
+        val currentIsDeleted = transaction.getValue(
+            columnFamilies,
+            defaultReadOptions,
+            null,
+            key.bytes + SOFT_DELETE_INDICATOR
+        ) { bytes, offset, length -> length == 1 && bytes[offset] == TRUE } == true
+        val targetIsDeleted = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()?.isDeleted ?: currentIsDeleted
 
         for (change in changes) {
             try {
@@ -336,6 +365,17 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                             }
                                             continue@uniqueLoop
                                         }
+
+                                    transaction.getForUpdate(
+                                        defaultReadOptions,
+                                        columnFamilies.unique,
+                                        uniqueReferenceWithValue
+                                    )?.takeIf { it.size == VERSION_BYTE_SIZE + key.size }?.let { stored ->
+                                        val owner = Key<IsValuesDataModel>(
+                                            stored.copyOfRange(stored.size - key.size, stored.size)
+                                        )
+                                        if (owner != key) throw UniqueException(reference, owner)
+                                    }
 
                                     setUniqueIndexValue(
                                         columnFamilies,
@@ -692,7 +732,14 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                             refGetter = { reference }
                                         )
 
-                                        val valueWriter = createValueWriter(dbIndex, transaction, columnFamilies, key, versionBytes)
+                                        val valueWriter = createValueWriter(
+                                            dbIndex,
+                                            transaction,
+                                            columnFamilies,
+                                            key,
+                                            versionBytes,
+                                            skipCurrentUniqueOwnership = targetIsDeleted,
+                                        )
 
                                         valueWriter(Value, referenceAsBytes, reference.comparablePropertyDefinition, value)
                                         setChanged(true)
@@ -918,17 +965,21 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
             for (index in indexes) {
                 val oldValues = initialIndexValues[index].orEmpty()
-                val newValues = try {
-                    index.toStorageByteArraysForIndex(transactionGetter, key.bytes)
-                } catch (error: Throwable) {
-                    error.rethrowIfFatal()
-                    if (
-                        !error.isSkippableDataError() ||
-                        index.isAffectedByAnyReference(requestedChangedReferences)
-                    ) {
-                        throw error
+                val newValues = if (targetIsDeleted) {
+                    emptyList()
+                } else {
+                    try {
+                        index.toStorageByteArraysForIndex(transactionGetter, key.bytes)
+                    } catch (error: Throwable) {
+                        error.rethrowIfFatal()
+                        if (
+                            !error.isSkippableDataError() ||
+                            index.isAffectedByAnyReference(requestedChangedReferences)
+                        ) {
+                            throw error
+                        }
+                        oldValues
                     }
-                    oldValues
                 }
 
                 val (removed, added) = diffIndexValues(oldValues, newValues)
@@ -1027,6 +1078,7 @@ private fun RocksDBDataStore.createValueWriter(
     qualifiersToKeep: MutableList<ByteArray>? = null,
     shouldWrite: ((ByteArray, ByteArray) -> Boolean)? = null,
     onWrite: (() -> Unit)? = null,
+    skipCurrentUniqueOwnership: Boolean = false,
 ): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
     when (type) {
         ObjectDelete -> {} // Cannot happen on new add
@@ -1038,7 +1090,7 @@ private fun RocksDBDataStore.createValueWriter(
             if (shouldWrite?.invoke(reference, valueBytes) != false) {
                 onWrite?.invoke()
                 // If a unique index, check if exists, and then write
-                if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                if (!skipCurrentUniqueOwnership && (definition is IsComparableDefinition<*, *>) && definition.unique) {
                     val uniqueReferences = mapUniqueValueByteCandidates(dbIndex, reference, valueBytes)
                         .map { uniqueValue -> reference + uniqueValue }
                     val uniqueReference = uniqueReferences.first()

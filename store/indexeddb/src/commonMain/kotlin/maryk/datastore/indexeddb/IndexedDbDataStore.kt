@@ -67,6 +67,7 @@ import maryk.datastore.indexeddb.processors.toBigEndianBytes
 import maryk.datastore.shared.AbstractDataStore
 import maryk.datastore.shared.DISPATCHER
 import maryk.datastore.shared.RequestExecutionKind
+import maryk.datastore.shared.ReplicationTombstoneCompactor
 import maryk.datastore.shared.SnapshotVersionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionProvider
 import maryk.datastore.shared.rethrowIfFatal
@@ -76,6 +77,7 @@ import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.matchesRangePart
 
 internal var hardDeleteTombstoneMigrationBeforeWrite: (suspend (UInt, ByteArray, ULong) -> Unit)? = null
+internal var replicationTombstoneCompactionAfterScan: (suspend (UInt) -> Unit)? = null
 
 class IndexedDbDataStore private constructor(
     internal val byteStore: IndexedDbByteStore,
@@ -83,7 +85,7 @@ class IndexedDbDataStore private constructor(
     override val keepUpdateHistoryIndex: Boolean = false,
     dataModelsById: Map<UInt, IsRootDataModel>,
     internal val sensitiveFields: IndexedDbSensitiveFieldSupport,
-) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider {
+) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
     private val indexedDbModelsById = dataModelsById
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
@@ -487,6 +489,34 @@ class IndexedDbDataStore private constructor(
         }
     }
 
+    override suspend fun compactReplicationTombstones(upToVersionInclusive: ULong) {
+        for (modelId in dataModelsById.keys) {
+            val storeName = "hd:$modelId"
+            var nextStart: ByteArray? = null
+            while (true) {
+                val rows = byteStore.scan(
+                    storeName = storeName,
+                    startKey = nextStart,
+                    includeStart = false,
+                    limit = 256u,
+                )
+                if (rows.isEmpty()) break
+                replicationTombstoneCompactionAfterScan?.invoke(modelId)
+                byteStore.transaction(setOf(storeName), IndexedDbTransactionMode.READWRITE) { store ->
+                    val operations = mutableListOf<IndexedDbWriteOperation>()
+                    for ((key, _) in rows) {
+                        val currentValue = store.get(storeName, key) ?: continue
+                        if (currentValue.readTrailingVersion() <= upToVersionInclusive) {
+                            operations += IndexedDbWriteOperation.Delete(storeName, key)
+                        }
+                    }
+                    if (operations.isNotEmpty()) store.writeBatch(operations)
+                }
+                nextStart = rows.last().first
+            }
+        }
+    }
+
     override suspend fun close() {
         if (!startClosingDataStore()) return
         journalPollingJob?.cancelAndJoin()
@@ -525,6 +555,7 @@ class IndexedDbDataStore private constructor(
                     add("i:$modelId")
                     add("u:$modelId")
                     add("c:$modelId")
+                    add("hd:$modelId")
                     if (keepAllVersions) {
                         add("ht:$modelId")
                         add("hi:$modelId")
@@ -534,7 +565,6 @@ class IndexedDbDataStore private constructor(
                     }
                     if (keepUpdateHistoryIndex) {
                         add("uh:$modelId")
-                        add("hd:$modelId")
                         add("hdk:$modelId")
                     }
                 }

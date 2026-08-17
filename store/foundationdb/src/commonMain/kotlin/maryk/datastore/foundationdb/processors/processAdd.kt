@@ -27,6 +27,7 @@ import maryk.datastore.foundationdb.IsTableDirectories
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
 import maryk.datastore.foundationdb.processors.helpers.setCreatedVersion
 import maryk.datastore.foundationdb.processors.helpers.setIndexValue
 import maryk.datastore.foundationdb.processors.helpers.setLatestVersion
@@ -48,6 +49,8 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     key: Key<DM>,
     version: HLC,
     objectToAdd: Values<DM>,
+    isDeleted: Boolean = false,
+    ignoreIfVersionNotNewer: Boolean = false,
 ): IsAddResponseStatus<DM> = try {
     val dataModelId = getDataModelId(dataModel)
     objectToAdd.validate()
@@ -56,12 +59,24 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 
     runTransaction(dataModelId) { tr ->
         val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
+        val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, key.bytes)
 
         val existing = tr.get(packedKey).awaitResult()
+        val tombstoneVersion = tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
+        if (ignoreIfVersionNotNewer) {
+            val currentVersion = if (existing != null) {
+                tr.get(packKey(tableDirs.tablePrefix, key.bytes)).awaitResult()?.readHLCTimestampIfExact()
+            } else null
+            val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
+            if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
+                return@runTransaction AddSuccess(key, version.timestamp, emptyList())
+            }
+        }
         if (existing != null) {
             AlreadyExists(key)
         } else {
             val versionBytes = HLC.toStorageBytes(version)
+            tr.clear(tombstoneKey)
 
             // Store first and last version markers
             setCreatedVersion(tr, tableDirs, key.bytes, versionBytes)
@@ -74,10 +89,12 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             val uniqueWrites: MutableList<ByteArray> = mutableListOf()
 
             // Indexes
-            dataModel.Meta.indexes?.forEach { indexDef ->
-                val indexRef = indexDef.referenceStorageByteArray.bytes
-                indexDef.toStorageByteArraysForIndex(objectToAdd, key.bytes).forEach { valueAndKeyBytes ->
-                    setIndexValue(tr, tableDirs, indexRef, valueAndKeyBytes, versionBytes)
+            if (!isDeleted) {
+                dataModel.Meta.indexes?.forEach { indexDef ->
+                    val indexRef = indexDef.referenceStorageByteArray.bytes
+                    indexDef.toStorageByteArraysForIndex(objectToAdd, key.bytes).forEach { valueAndKeyBytes ->
+                        setIndexValue(tr, tableDirs, indexRef, valueAndKeyBytes, versionBytes)
+                    }
                 }
             }
 
@@ -91,7 +108,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                             storableDef.toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
 
                         // Unique handling
-                        if ((definition is IsComparableDefinition<*, *>) && definition.unique) {
+                        if (!isDeleted && (definition is IsComparableDefinition<*, *>) && definition.unique) {
                             val uniqueRefs = mapUniqueValueByteCandidates(dataModelId, reference, valueBytes)
                                 .map { uniqueValue -> reference + uniqueValue }
                             val uniqueRef = uniqueRefs.first()
@@ -142,6 +159,17 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                         setValue(tr, tableDirs, key.bytes, reference, versionBytes, valueBytes)
                     }
                 }
+            }
+
+            if (isDeleted) {
+                setValue(
+                    tr,
+                    tableDirs,
+                    key.bytes,
+                    byteArrayOf(SOFT_DELETE_INDICATOR),
+                    versionBytes,
+                    byteArrayOf(TRUE)
+                )
             }
 
             // Run uniqueness checks right before commit to keep all reads in txn

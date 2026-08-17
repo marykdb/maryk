@@ -10,11 +10,13 @@ internal open class TableColumnFamilies(
     table: ColumnFamilyHandle,
     index: ColumnFamilyHandle,
     unique: ColumnFamilyHandle,
+    val replicationTombstones: ColumnFamilyHandle,
     val updateHistory: ColumnFamilyHandle? = null
 ) : BasicTableColumnFamilies(table, index, unique) {
     override fun close() {
         super.close()
         updateHistory?.close()
+        replicationTombstones.close()
         model.close()
         keys.close()
     }

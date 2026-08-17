@@ -30,6 +30,7 @@ internal fun FoundationDBDataStore.createValueWriter(
     versionBytes: ByteArray,
     qualifiersToKeep: MutableList<ByteArray>? = null,
     currentValues: List<Pair<ByteArray, ByteArray>>? = null,
+    skipCurrentUniqueOwnership: Boolean = false,
     onWrite: (() -> Unit)? = null,
 ): ValueWriter<IsPropertyDefinition<*>> = { type, reference, definition, value ->
     fun shouldSkip(referenceBytes: ByteArray, valueBytes: ByteArray): Boolean =
@@ -57,7 +58,7 @@ internal fun FoundationDBDataStore.createValueWriter(
                 // Handle unique indexes for comparable unique values on change/writes
                 val isComparableUnique = (definition as? IsComparableDefinition<*, *>)?.unique == true
 
-                if (isComparableUnique) {
+                if (isComparableUnique && !skipCurrentUniqueOwnership) {
                     val uniqueRefs = mapUniqueValueByteCandidates(dataModelId, reference, valueBytes)
                         .map { uniqueValue -> reference + uniqueValue }
                     val uniqueRef = uniqueRefs.first()

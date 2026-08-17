@@ -96,10 +96,10 @@ internal fun IndexedDbDataStore.modelWriteStoreNames(
     add(indexStoreName)
     add(uniqueStoreName)
     add(changeStoreName)
+    val modelId = updateHistoryStoreName.substringAfter(':')
+    add("hd:$modelId")
     if (keepUpdateHistoryIndex) {
         add(updateHistoryStoreName)
-        val modelId = updateHistoryStoreName.substringAfter(':')
-        add("hd:$modelId")
         add("hdk:$modelId")
     }
     if (keepAllVersions) {

@@ -28,6 +28,7 @@ import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.datastore.shared.IsDataStore
+import maryk.datastore.shared.ReplicationTombstoneCompactor
 import maryk.test.models.Log
 import maryk.test.models.Severity.ERROR
 import maryk.test.models.Severity.INFO
@@ -42,6 +43,9 @@ class DataStoreProcessUpdateTest(
 ) : IsDataStoreTest {
     override val allTests = mapOf(
         "executeProcessAddRequest" to ::executeProcessAddRequest,
+        "executeProcessDeletedAddRequest" to ::executeProcessDeletedAddRequest,
+        "executeProcessStaleChangeRequest" to ::executeProcessStaleChangeRequest,
+        "executeProcessUpdatesRespectHardDeleteTombstone" to ::executeProcessUpdatesRespectHardDeleteTombstone,
         "executeProcessChangeRequest" to ::executeProcessChangeRequest,
         "executeProcessAddInChangeRequest" to ::executeProcessAddInChangeRequest,
         "executeProcessRemovalRequest" to ::executeProcessRemovalRequest,
@@ -80,6 +84,8 @@ class DataStoreProcessUpdateTest(
         ).statuses.forEach {
             assertStatusIs<DeleteSuccess<*>>(it)
         }
+        (dataStore as? ReplicationTombstoneCompactor)
+            ?.compactReplicationTombstones(ULong.MAX_VALUE)
     }
 
     private suspend fun executeProcessAddRequest() {
@@ -110,6 +116,224 @@ class DataStoreProcessUpdateTest(
 
         expect(1) { getResponse.values.size }
         expect(logs[0]) { getResponse.values.first().values }
+    }
+
+    private suspend fun executeProcessDeletedAddRequest() {
+        val key = keys[6]
+        val response = dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = AdditionUpdate(
+                    key = key,
+                    version = 1234uL,
+                    firstVersion = 1234uL,
+                    insertionIndex = 1,
+                    isDeleted = true,
+                    values = logs[6]
+                )
+            )
+        )
+
+        keysToDelete.add(key)
+        assertIs<AddResponse<*>>(response.result).statuses.single().also {
+            assertStatusIs<AddSuccess<*>>(it)
+        }
+
+        expect(0) { dataStore.execute(Log.get(key)).values.size }
+        dataStore.execute(Log.get(key, filterSoftDeleted = false)).values.single().also {
+            assertTrue(it.isDeleted)
+            assertEquals(1234uL, it.lastVersion)
+        }
+    }
+
+    private suspend fun executeProcessStaleChangeRequest() {
+        val values = Log("stale replication", timestamp = LocalDateTime(2022, 1, 1, 0, 0))
+        val key = Log.key(values)
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = AdditionUpdate(
+                    key = key,
+                    version = 1234uL,
+                    firstVersion = 1234uL,
+                    insertionIndex = 1,
+                    isDeleted = false,
+                    values = values
+                )
+            )
+        )
+        keysToDelete.add(key)
+
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = ChangeUpdate(
+                    key = key,
+                    version = 1236uL,
+                    index = 1,
+                    changes = listOf(Change(Log { message::ref } with "newer value"))
+                )
+            )
+        )
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = ChangeUpdate(
+                    key = key,
+                    version = 1235uL,
+                    index = 1,
+                    changes = listOf(Change(Log { message::ref } with "stale value"))
+                )
+            )
+        )
+
+        dataStore.execute(Log.get(key)).values.single().also {
+            assertEquals("newer value", it.values { message })
+            assertEquals(1236uL, it.lastVersion)
+        }
+    }
+
+    private suspend fun executeProcessUpdatesRespectHardDeleteTombstone() {
+        val timestamp = LocalDateTime(2022, 2, 2, 0, 0)
+        val oldValues = Log("replication tombstone", timestamp = timestamp)
+        val key = Log.key(oldValues)
+
+        suspend fun add(version: ULong, message: String) = dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = AdditionUpdate(
+                    key = key,
+                    version = version,
+                    firstVersion = version,
+                    insertionIndex = 1,
+                    isDeleted = false,
+                    values = Log(message, timestamp = timestamp)
+                )
+            )
+        )
+
+        add(10uL, "version 10")
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = RemovalUpdate(key = key, version = 20uL, reason = HardDelete)
+            )
+        )
+
+        add(10uL, "stale replay")
+        assertTrue(dataStore.execute(Log.get(key)).values.isEmpty())
+
+        add(21uL, "version 21")
+        keysToDelete.add(key)
+
+        add(10uL, "stale add over current")
+
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = RemovalUpdate(key = key, version = 20uL, reason = HardDelete)
+            )
+        )
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = ChangeUpdate(
+                    key = key,
+                    version = 19uL,
+                    index = 1,
+                    changes = listOf(Change(Log { message::ref } with "stale change"))
+                )
+            )
+        )
+
+        dataStore.execute(Log.get(key)).values.single().also {
+            assertEquals("version 21", it.values { message })
+            assertEquals(21uL, it.lastVersion)
+        }
+
+        val absentTimestamp = LocalDateTime(2022, 2, 2, 1, 0)
+        val absentValues = Log("absent removal tombstone", timestamp = absentTimestamp)
+        val absentKey = Log.key(absentValues)
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = RemovalUpdate(absentKey, 20uL, HardDelete)
+            )
+        )
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = AdditionUpdate(absentKey, 10uL, 10uL, 1, false, absentValues)
+            )
+        )
+        assertTrue(dataStore.execute(Log.get(absentKey)).values.isEmpty())
+
+        val initialLogTimestamp = LocalDateTime(2022, 2, 2, 2, 0)
+        val initialValues = Log("initial changes tombstone", timestamp = initialLogTimestamp)
+        val initialKey = Log.key(initialValues)
+        dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = RemovalUpdate(initialKey, 20uL, HardDelete)
+            )
+        )
+        val staleInitialResponse = dataStore.processUpdate(
+            UpdateResponse(
+                dataModel = Log,
+                update = InitialChangesUpdate(
+                    version = 10uL,
+                    changes = listOf(
+                        DataObjectVersionedChange(
+                            key = initialKey,
+                            changes = listOf(
+                                VersionedChanges(
+                                    version = 10uL,
+                                    changes = listOf(
+                                        ObjectCreate,
+                                        Change(Log { message::ref } with "stale initial replay"),
+                                        Change(Log { severity::ref } with INFO),
+                                        Change(Log { this.timestamp::ref } with initialLogTimestamp),
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+        assertIs<AddOrChangeResponse<*>>(staleInitialResponse.result).also {
+            assertStatusIs<AddSuccess<*>>(it.statuses.single())
+        }
+        assertTrue(dataStore.execute(Log.get(initialKey)).values.isEmpty())
+
+        if (dataStore is ReplicationTombstoneCompactor) {
+            val compactedTimestamp = LocalDateTime(2022, 2, 3, 0, 0)
+            val compactedValues = Log("compacted tombstone", timestamp = compactedTimestamp)
+            val compactedKey = Log.key(compactedValues)
+            dataStore.processUpdate(
+                UpdateResponse(
+                    dataModel = Log,
+                    update = AdditionUpdate(compactedKey, 10uL, 10uL, 1, false, compactedValues)
+                )
+            )
+            dataStore.processUpdate(
+                UpdateResponse(
+                    dataModel = Log,
+                    update = RemovalUpdate(compactedKey, 20uL, HardDelete)
+                )
+            )
+
+            dataStore.compactReplicationTombstones(20uL)
+            dataStore.processUpdate(
+                UpdateResponse(
+                    dataModel = Log,
+                    update = AdditionUpdate(compactedKey, 10uL, 10uL, 1, false, compactedValues)
+                )
+            )
+
+            assertEquals(10uL, dataStore.execute(Log.get(compactedKey)).values.single().lastVersion)
+            keysToDelete.add(compactedKey)
+        }
     }
 
     private suspend fun executeProcessChangeRequest() {
@@ -291,12 +515,12 @@ class DataStoreProcessUpdateTest(
             UpdateResponse(
                 dataModel = Log,
                 update = InitialChangesUpdate(
-                    version = 1234uL,
+                    version = 1235uL,
                     changes = listOf(
                         DataObjectVersionedChange(
                             key = keys[5],
                             changes = listOf(VersionedChanges(
-                                version = 1234uL,
+                                version = 1235uL,
                                 changes = listOf(
                                     Change(Log { message::ref } with editedMessage)
                                 )

@@ -18,3 +18,4 @@ internal val modelSchemaStateKey = byteArrayOf(8)
 internal val modelIndexRebuildScratchKey = byteArrayOf(9)
 /** Versioned chunks for migration audit logs which exceed FoundationDB's value limit. */
 internal val modelMigrationAuditLogChunksKey = byteArrayOf(10)
+internal val modelReplicationTombstoneBackfillCompleteKey = byteArrayOf(11)

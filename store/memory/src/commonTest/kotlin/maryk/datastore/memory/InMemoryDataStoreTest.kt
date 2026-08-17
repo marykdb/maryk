@@ -193,18 +193,7 @@ class InMemoryDataStoreTest {
                     keepUpdateHistoryIndex = true,
                     dataModelsById = dataModelsForTests
                 )
-            },
-            runOnlyTests = setOf(
-                "executeSimpleScanUpdatesRequestWithUpdateHistoryIndex",
-                "executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex",
-                "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill",
-                "executeScanUpdateHistoryReturnsVersionOrderedEntries",
-                "executeScanUpdateHistoryCanIncludeSoftDeleteAtHistoricVersion",
-                "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex",
-                "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey",
-                "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexStartKey",
-                "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexRefillsAfterDeletion"
-            )
+            }
         )
     }
 

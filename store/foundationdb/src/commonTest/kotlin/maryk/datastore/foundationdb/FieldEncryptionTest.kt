@@ -22,10 +22,15 @@ import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.encryption.AesGcmHmacSha256EncryptionProvider
+import maryk.datastore.shared.encryption.EncryptedFieldRecord
 import maryk.datastore.shared.encryption.FieldEncryptionContext
 import maryk.datastore.shared.encryption.ContextualFieldEncryptionProvider
 import maryk.datastore.shared.encryption.FieldEncryptionEnvelope
+import maryk.datastore.shared.encryption.KeyringFieldEncryptionProvider
+import maryk.datastore.shared.encryption.ReEncryptionBatch
+import maryk.datastore.shared.encryption.ReEncryptionState
 import maryk.datastore.shared.encryption.SensitiveIndexTokenProvider
+import maryk.datastore.shared.encryption.runReEncryptionBatch
 import maryk.datastore.foundationdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.distinctHistoricUniqueReferences
@@ -44,6 +49,116 @@ import kotlin.test.assertTrue
 import kotlin.uuid.Uuid
 
 class FieldEncryptionTest {
+    @Test
+    fun clusterUpdateLogRejectsModelsWithSensitiveProperties() {
+        runBoundedIntegrationTest {
+            var openedStore: FoundationDBDataStore? = null
+            try {
+                assertFailsWith<RequestException> {
+                    openedStore = FoundationDBDataStore.open(
+                        fdbClusterFilePath = "./fdb.cluster",
+                        directoryPath = listOf("maryk", "test", "sensitive-cluster-log", Uuid.random().toString()),
+                        dataModelsById = mapOf(901u to SensitiveRecord),
+                        keepAllVersions = false,
+                        clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                            enableClusterUpdateLog = true,
+                            clusterUpdateLogConsumerId = "sensitive-cluster-log-test",
+                        ),
+                        fieldEncryptionProvider = XorFieldEncryptionProvider(),
+                    )
+                }
+            } finally {
+                openedStore?.close()
+            }
+        }
+    }
+
+    @Test
+    fun reEncryptionBatchRotatesPersistedContextualField() {
+        runBoundedIntegrationTest {
+            val directoryPath = listOf("maryk", "test", "persisted-field-rotation", Uuid.random().toString())
+            val oldProvider = AesGcmHmacSha256EncryptionProvider(
+                encryptionKey = ByteArray(32) { 1 },
+                tokenKey = ByteArray(32) { 2 },
+            )
+            val currentProvider = AesGcmHmacSha256EncryptionProvider(
+                encryptionKey = ByteArray(32) { 3 },
+                tokenKey = ByteArray(32) { 4 },
+            )
+            val newKeyring = KeyringFieldEncryptionProvider(
+                activeKeyId = "current",
+                providers = mapOf("old" to oldProvider, "current" to currentProvider),
+                legacyProvider = oldProvider,
+            )
+            var store = FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = directoryPath,
+                dataModelsById = mapOf(901u to SensitiveRecord),
+                keepAllVersions = false,
+                fieldEncryptionProvider = oldProvider,
+            )
+            try {
+                val key = assertIs<AddSuccess<SensitiveRecord>>(
+                    store.execute(
+                        SensitiveRecord.add(
+                            SensitiveRecord(Bytes(ByteArray(16) { it.toByte() }), "hello", "rotate-me")
+                        )
+                    ).statuses.single()
+                ).key
+                store.close()
+                store = FoundationDBDataStore.open(
+                    fdbClusterFilePath = "./fdb.cluster",
+                    directoryPath = directoryPath,
+                    dataModelsById = mapOf(901u to SensitiveRecord),
+                    keepAllVersions = false,
+                    fieldEncryptionProvider = newKeyring,
+                )
+
+                val sensitiveReference = SensitiveRecord.secret.ref().toStorageByteArray()
+                val storedKey = packKey(store.getTableDirs(901u).tablePrefix, key.bytes, sensitiveReference)
+                val storedValue = assertNotNull(store.runTransaction { tr ->
+                    tr.get(storedKey).awaitResult()
+                })
+                val persistedPayload = storedValue.copyOfRange(VERSION_BYTE_SIZE, storedValue.size)
+
+                runReEncryptionBatch(
+                    provider = newKeyring,
+                    state = ReEncryptionState(targetKeyId = "current"),
+                    read = {
+                        ReEncryptionBatch(
+                            records = listOf(
+                                EncryptedFieldRecord(
+                                    id = storedKey,
+                                    modelId = 901u,
+                                    recordKey = key.bytes,
+                                    reference = sensitiveReference,
+                                    payload = persistedPayload,
+                                )
+                            ),
+                            nextCursor = null,
+                        )
+                    },
+                    write = { id, payload ->
+                        store.runTransaction { tr ->
+                            tr.set(id, storedValue.copyOfRange(0, VERSION_BYTE_SIZE) + payload)
+                        }
+                    },
+                    persistState = {},
+                )
+
+                assertEquals("rotate-me", store.execute(SensitiveRecord.get(key)).values.single().values { secret })
+                val rotatedValue = assertNotNull(store.runTransaction { tr -> tr.get(storedKey).awaitResult() })
+                val keyringOffset = VERSION_BYTE_SIZE + FieldEncryptionEnvelope.Contextual.magic.size
+                assertEquals(
+                    "current",
+                    newKeyring.keyId(rotatedValue, keyringOffset, rotatedValue.size - keyringOffset),
+                )
+            } finally {
+                store.close()
+            }
+        }
+    }
+
     @Test
     fun sensitivePropertyStoredEncrypted() {
         runBoundedIntegrationTest {

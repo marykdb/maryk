@@ -100,7 +100,7 @@ You can inject a custom `migrationLease` if needed.
 - `fdbClusterFilePath`: Optional path to an FDB cluster file; uses default environment if null.
 - `directoryPath`: Subspace root path under which model directories are created.
 - `databaseOptionsSetter`: Lambda executed once during startup on the underlying `DatabaseOptions`. Use this to enable tracing, tweak locality, or set transaction logging limits without forking Maryk.
-- `clusterUpdateLogConfiguration.enableClusterUpdateLog`: Persist each local write (add/change/delete) into an FDB-backed update log and tail that log back into this process to drive `executeFlow` listeners across a whole cluster (multi-writer, multi-reader).
+- `clusterUpdateLogConfiguration.enableClusterUpdateLog`: Persist each local write (add/change/delete) into an FDB-backed update log and tail that log back into this process to drive `executeFlow` listeners across a whole cluster (multi-writer, multi-reader). It cannot be enabled when a registered model contains sensitive properties because cluster-log payload encryption is not yet supported.
 - `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId`: Required when cluster update logging is enabled. Must be unique per node/process (cursor stored under `__updates__/v1/consumers/<id>`).
 - `clusterUpdateLogConfiguration.clusterUpdateLogOriginId`: Optional. Defaults to the consumer id. Used to skip “echo” of updates written by this same node when tailing.
 - `clusterUpdateLogConfiguration.clusterUpdateLogShardCount`: Number of log shards (per store root). Higher spreads write hot-spotting; tailers read per-shard cursors.
@@ -176,6 +176,7 @@ Typical use cases:
 - Short catch-up after restart/outage: consumer cursor resumes inside retention window.
 
 Notes:
+- Models containing sensitive properties cannot use the cluster update log. Startup rejects this combination rather than persisting logical update payloads in plaintext.
 - Uses FDB itself (append-only, sharded) and writes the log entry in the same transaction as the data mutation.
 - Retention is time-based. If a node is offline longer than the retention window, it will resume at the retention cutoff (no replay beyond retention).
 - Cluster HLC sync:

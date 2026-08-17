@@ -165,6 +165,10 @@ class IndexedDbDataStore private constructor(
                 throw exception
             }
             lastJournalKey = key
+            if (update == null) {
+                observeCommittedVersion(value.readBigEndianULong(1 + UInt.SIZE_BYTES))
+                continue
+            }
             observeCommittedVersion(update.version)
             emitFlowUpdate(update)
         }
@@ -592,15 +596,26 @@ class IndexedDbDataStore private constructor(
     }
 
     override suspend fun close() {
-        if (!startClosingDataStore()) return
-        journalPollingJob?.cancelAndJoin()
-        byteStore.setExternalCommitListener(null)
-        externalCommitDrainJob?.cancelAndJoin()
-        byteStore.transaction(setOf(CommitConsumerStoreName), IndexedDbTransactionMode.READWRITE) {
-            byteStore.delete(CommitConsumerStoreName, journalConsumerKey)
+        withContext(NonCancellable) {
+            if (!startClosingDataStore()) return@withContext
+            try {
+                byteStore.setExternalCommitListener(null)
+                journalPollingJob?.cancelAndJoin()
+                externalCommitDrainJob?.cancelAndJoin()
+            } finally {
+                try {
+                    cancelAndJoinDataStoreScope()
+                } finally {
+                    try {
+                        byteStore.transaction(setOf(CommitConsumerStoreName), IndexedDbTransactionMode.READWRITE) {
+                            byteStore.delete(CommitConsumerStoreName, journalConsumerKey)
+                        }
+                    } finally {
+                        byteStore.close()
+                    }
+                }
+            }
         }
-        byteStore.close()
-        cancelAndJoinDataStoreScope()
     }
 
     private suspend fun stopFailedStartupWork() {

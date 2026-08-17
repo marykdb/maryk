@@ -388,8 +388,7 @@ private fun migrationStateMetadataKey(modelId: UInt): ByteArray =
 
 private suspend fun IndexedDbByteStore.readMigrationState(modelId: UInt): MigrationState? {
     val bytes = get("meta", migrationStateMetadataKey(modelId)) ?: return null
-    return MigrationState.fromPersistedBytes(bytes)
-        ?: throw RequestException("IndexedDB migration state for model $modelId is corrupt")
+    return MigrationState.requireFromPersistedBytes(bytes)
 }
 
 private suspend fun IndexedDbByteStore.writeMigrationState(modelId: UInt, state: MigrationState) {

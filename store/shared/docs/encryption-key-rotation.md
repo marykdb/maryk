@@ -5,7 +5,10 @@
 the active provider and stored in a versioned envelope containing its key ID.
 The configured providers decrypt envelopes for both active and retained keys.
 Unwrapped ciphertext is sent to `legacyProvider`; retain that provider until
-the oldest stored data is known to have been migrated.
+the oldest stored data is known to have been migrated. If the existing store
+already writes contextual MKE2 fields without keyring envelopes, configure that
+existing `ContextualFieldEncryptionProvider` as `legacyProvider` so those values
+remain readable while rotation upgrades them.
 
 ## Rotation sequence
 
@@ -17,16 +20,23 @@ the oldest stored data is known to have been migrated.
    allowing old rows to remain addressable.
 3. Run `runReEncryptionBatch` repeatedly, persisting the returned
    `ReEncryptionState` after each call. Its `read`, `write`, and state storage
-   callbacks are supplied by the application/backend integration. `write` must
-   be idempotent because a failure before state persistence can replay a batch.
+   callbacks are supplied by the application/backend integration. Each
+   `EncryptedFieldRecord` must contain the model ID, record key, property
+   reference, and complete persisted field payload beginning with MKE1 or MKE2;
+   exclude backend version bytes. The write callback receives a complete MKE2
+   replacement payload. It must be idempotent because a failure before state
+   persistence can replay a batch.
 4. Rebuild or otherwise migrate remaining deterministic unique-index rows to
    the active token. Do not remove previous token keys before this has finished.
 5. After all encrypted payloads and index rows have migrated, remove the old
    provider and, last, the legacy fallback.
 
-The generic re-encryption loop deliberately does not provide transaction or
-cursor persistence itself: the datastore integration owns atomicity, ordering,
-and durable job state. It is not a turnkey atomic re-encryption operation: run
-one backend at a time, persist state after every batch, and make writes idempotent
-so a crash can safely replay the current batch. Keep the retained providers and
-token keys configured while historic rows and unique indexes are being rebuilt.
+The generic re-encryption loop deliberately does not provide record discovery,
+transaction, or cursor persistence itself: the datastore integration owns
+atomicity, ordering, and durable job state. Its record identity fields are
+required because MKE2 authenticates the model, key, and property reference; do
+not reconstruct or substitute them during rotation. It is not a turnkey atomic
+re-encryption operation: run one backend at a time, persist state after every
+batch, and make writes idempotent so a crash can safely replay the current batch.
+Keep the retained providers and token keys configured while historic rows and
+unique indexes are being rebuilt.

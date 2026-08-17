@@ -16,6 +16,9 @@ class IndexedDbCrossContextTest {
     fun pollingWorksWithoutBroadcastChannel() = pollingDeliversWithoutBroadcastChannel()
 
     @Test
+    fun unknownModelJournalEntryDoesNotStopPolling() = unknownModelJournalEntriesDoNotStopPolling()
+
+    @Test
     fun localCommitDrainsPendingExternalCommit() = localCommitCannotSkipPendingExternalCommit()
 
     @Test

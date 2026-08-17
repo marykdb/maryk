@@ -402,6 +402,15 @@ abstract class AbstractDataStore(
                     readSemaphore.release()
                     throw e
                 } catch (e: Throwable) {
+                    if (readContext != null) {
+                        try {
+                            withContext(NonCancellable) {
+                                closeReadContext(readContext)
+                            }
+                        } catch (closeError: Throwable) {
+                            closeError.rethrowIfFatal()
+                        }
+                    }
                     readSemaphore.release()
                     e.rethrowIfFatal()
                     action.response.completeExceptionally(e)

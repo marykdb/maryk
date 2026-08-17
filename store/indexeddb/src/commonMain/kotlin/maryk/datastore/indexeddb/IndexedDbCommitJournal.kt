@@ -213,14 +213,14 @@ internal suspend fun decodeCommitJournalEntry(
     sensitiveFields: IndexedDbSensitiveFieldSupport,
     key: ByteArray,
     value: ByteArray,
-): Update<out IsRootDataModel> {
+): Update<out IsRootDataModel>? {
     require(key.size >= ULong.SIZE_BYTES && value.size >= JournalHeaderSize) {
         "Invalid IndexedDB commit journal entry"
     }
     val version = value.readBigEndianULong(1 + UInt.SIZE_BYTES)
     val type = value[0]
     val modelId = value.readBigEndianUInt(1)
-    val dataModel = dataModelsById.getValue(modelId)
+    val dataModel = dataModelsById[modelId] ?: return null
     val keyEnd = JournalHeaderSize + dataModel.Meta.keyByteSize
     val objectKey = dataModel.key(value.copyOfRange(JournalHeaderSize, keyEnd))
     val payload = value.copyOfRange(keyEnd, value.size)

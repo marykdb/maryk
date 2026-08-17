@@ -29,16 +29,19 @@ import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.io.readByteArray
 import maryk.core.inject.Inject
@@ -75,6 +78,42 @@ import maryk.test.models.TestMarykModel
 import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
+    @Test
+    fun canceledCloseStillClosesSshTunnel() = runBoundedIntegrationTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val port = ServerSocket(0).use { it.localPort }
+        val server = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val tunnelClosed = AtomicBoolean(false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://remote.example:8210",
+                ssh = RemoteSshConfig(host = "ssh.example"),
+                sshTunnelFactory = { _, _ ->
+                    object : SshTunnel {
+                        override val localPort = port
+
+                        override fun close() {
+                            tunnelClosed.set(true)
+                        }
+                    }
+                },
+            )
+        )
+
+        try {
+            launch {
+                currentCoroutineContext()[Job]?.cancel()
+                remote.close()
+            }.join()
+
+            assertTrue(tunnelClosed.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+            store.close()
+        }
+    }
+
     @Test
     fun preservesLegacyRemoteStoreConfigConstructorAndConnectEntryPoint() {
         val legacyConstructor = RemoteStoreConfig::class.java.constructors.singleOrNull { constructor ->

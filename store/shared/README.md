@@ -17,12 +17,15 @@ Not intended as a standalone store.
   - Deterministic sensitive lookup tokens: HMAC-SHA256
 - Additive key rotation:
   - `KeyringFieldEncryptionProvider` writes versioned key-id envelopes and reads
-    active, previous, and legacy ciphertext.
+    active, previous, and legacy ciphertext. Existing unwrapped MKE2 ciphertext
+    requires a contextual `legacyProvider` during adoption.
   - Deterministic-token candidate derivation and candidate-aware unique reads support
     staged index-key rotation. Keep previous token keys configured until stored
     unique indexes have been rebuilt with the active token key.
   - `runReEncryptionBatch` provides a bounded, resumable adapter contract with a
-    versioned cursor/state record.
+    versioned cursor/state record. Adapters supply the persisted MKE1/MKE2 field
+    envelope plus its model, record-key, and property-reference identity so MKE2
+    authentication is preserved during rotation.
 - Portable point-in-time operations:
   - `captureSnapshotVersion`, `backup`, and `restore`
   - Versioned manifests, opaque cursor paging, bounded streaming chunks, and
@@ -39,7 +42,9 @@ Key rotation is an additive, per-store operation. The shared
 supplied write/state callbacks. The backend must provide idempotent writes and
 durable state; the helper does not make payloads, historic rows, or deterministic
 unique-index rows atomic across a store or across engines. Persist state after each
-batch and design retries to replay a batch safely.
+batch and design retries to replay a batch safely. Read callbacks exclude backend
+version bytes but retain the complete MKE1/MKE2 field envelope; write callbacks
+receive the complete replacement MKE2 payload.
 
 Keep the previous token keys and the legacy payload provider configured until all
 encrypted payloads, historic rows, and deterministic unique-index rows have been

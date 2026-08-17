@@ -34,6 +34,7 @@ import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.exceptions.StorageException
 import maryk.datastore.test.assertStatusIs
+import maryk.datastore.shared.updates.Update
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.Person
 import kotlin.random.Random
@@ -200,6 +201,47 @@ internal fun pollingDeliversWithoutBroadcastChannel() = runTest {
             )
             assertIs<AdditionUpdate<*>>(responses.receiveResponse())
             assertEquals(null, responses.receiveQuietly(500))
+        } finally {
+            reader.closeAllListeners()
+            listener.cancelAndJoin()
+            reader.close()
+            writer.close()
+        }
+    }
+}
+
+internal fun unknownModelJournalEntriesDoNotStopPolling() = runTest {
+    withoutBroadcastChannelForTests {
+        installIndexedDbForTests()
+        val databaseName = "maryk-indexeddb-unknown-model-journal-${Random.nextInt()}"
+        val reader = IndexedDbDataStore.open(databaseName, mapOf(1u to SimpleMarykModel))
+        val writer = IndexedDbDataStore.open(databaseName, mapOf(1u to SimpleMarykModel))
+        val observedKey = SimpleMarykModel.key(ByteArray(SimpleMarykModel.Meta.keyByteSize) { 61 })
+        val ignoredKey = SimpleMarykModel.key(ByteArray(SimpleMarykModel.Meta.keyByteSize) { 62 })
+        val responses = Channel<Any>(capacity = 2)
+        val listener = launch {
+            reader.executeFlow(SimpleMarykModel.getUpdates(observedKey)).collect(responses::send)
+        }
+
+        try {
+            assertIs<OrderedKeysUpdate<*>>(responses.receiveResponse())
+            writer.byteStore.put(
+                CommitJournalStoreName,
+                createCommitJournalKey(1uL, 0u),
+                encodeCommitJournalEntry(
+                    999u,
+                    Update.Deletion(SimpleMarykModel, ignoredKey, 1uL, isHardDelete = true),
+                    null,
+                ),
+            )
+
+            val add = writer.execute(
+                SimpleMarykModel.add(
+                    observedKey to SimpleMarykModel.create { value with "ha after unknown model" }
+                )
+            )
+            val addVersion = assertStatusIs<AddSuccess<SimpleMarykModel>>(add.statuses.single()).version
+            assertEquals(addVersion, assertIs<AdditionUpdate<SimpleMarykModel>>(responses.receiveResponse()).version)
         } finally {
             reader.closeAllListeners()
             listener.cancelAndJoin()

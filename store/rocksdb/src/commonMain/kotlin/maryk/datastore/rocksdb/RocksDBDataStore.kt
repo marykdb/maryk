@@ -7,10 +7,12 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
@@ -212,6 +214,7 @@ class RocksDBDataStore private constructor(
         storeMeta.indexKeyFormatVersion == CURRENT_INDEX_KEY_FORMAT_VERSION
     )
     private val indexKeyFormatMigrationMutex = Mutex()
+    private val storeMetaMutex = Mutex()
 
     private val blockCache = RocksDBBlockCache()
 
@@ -299,7 +302,7 @@ class RocksDBDataStore private constructor(
                     )
                 }
             }
-            retainedColumnFamilyHandles = handles.drop(handleIndex)
+            retainedColumnFamilyHandles = listOf(handles.first()) + handles.drop(handleIndex)
 
             validateStoredModelsBeforeIndexFormatMigration()
         } catch (e: Throwable) {
@@ -355,13 +358,13 @@ class RocksDBDataStore private constructor(
                     NewModel -> {
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, null, dataModel)
-                            storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
+                            storeDataModelDefinition(index, tableColumnFamilies.model, dataModel)
                         }
                     }
                     is OnlySafeAdds -> {
                         scheduledVersionUpdateHandlers.add {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
-                            storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
+                            storeDataModelDefinition(index, tableColumnFamilies.model, dataModel)
                         }
                     }
                     is NewIndicesOnExistingProperties -> {
@@ -396,7 +399,7 @@ class RocksDBDataStore private constructor(
                             versionUpdateHandler?.invoke(this, storedModel, dataModel)
                             ensureUpdateHistoryIndexReady(index, tableColumnFamilies)
                             writeStoreMeta()
-                            storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
+                            storeDataModelDefinition(index, tableColumnFamilies.model, dataModel)
                         },
                         deferStartupFinalization = { finalizer ->
                             scheduledVersionUpdateHandlers.add(finalizer)
@@ -426,22 +429,34 @@ class RocksDBDataStore private constructor(
         migrateStoredIndexKeyFormatIfReady()
     }
 
-    private fun writeStoreMeta(indexKeyFormatVersion: Int = storeMeta.indexKeyFormatVersion) {
-        dataModelsById.forEach { (modelId, dataModel) ->
-            if (modelId !in modelMetas) {
-                modelMetas[modelId] = ModelMeta(dataModel.Meta.name, dataModel.Meta.keyByteSize)
+    private suspend fun writeStoreMeta(indexKeyFormatVersion: Int? = null) {
+        storeMetaMutex.withLock {
+            dataModelsById.forEach { (modelId, dataModel) ->
+                if (modelId !in modelMetas) {
+                    modelMetas[modelId] = ModelMeta(dataModel.Meta.name, dataModel.Meta.keyByteSize)
+                }
             }
+            storeMeta = StoreMeta(
+                models = modelMetas.toMap(),
+                indexKeyFormatVersion = indexKeyFormatVersion ?: storeMeta.indexKeyFormatVersion,
+            )
+            writeStoreMetaFile(storePath, storeMeta)
         }
-        storeMeta = StoreMeta(
-            models = modelMetas.toMap(),
-            indexKeyFormatVersion = indexKeyFormatVersion,
-        )
-        writeStoreMetaFile(storePath, storeMeta)
     }
 
-    private fun validateStoredIndexKeyFormat() {
+    private suspend fun storeDataModelDefinition(
+        modelId: UInt,
+        modelColumnFamily: ColumnFamilyHandle,
+        dataModel: IsRootDataModel,
+    ) {
+        storeMetaMutex.withLock {
+            storeModelDefinition(db, modelMetas, modelId, modelColumnFamily, dataModel)
+        }
+    }
+
+    private suspend fun validateStoredIndexKeyFormat() {
         val hasIndexOrUniqueData = !isIndexAndUniqueStorageEmpty()
-        val storedFormat = storeMeta.indexKeyFormatVersion
+        val storedFormat = storeMetaMutex.withLock { storeMeta.indexKeyFormatVersion }
         if (storedFormat == CURRENT_INDEX_KEY_FORMAT_VERSION) {
             return
         }
@@ -502,13 +517,19 @@ class RocksDBDataStore private constructor(
                 onlyCheckVersion = onlyCheckModelVersion,
                 conversionContext = conversionContext,
             )
-            if (migrationStatus is NeedsMigration && migrationConfiguration.migrationHandler == null) {
+            if (
+                migrationStatus is NeedsMigration &&
+                migrationConfiguration.migrationExpandHandler == null &&
+                migrationConfiguration.migrationHandler == null &&
+                migrationConfiguration.migrationVerifyHandler == null &&
+                migrationConfiguration.migrationContractHandler == null
+            ) {
                 throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
             }
         }
     }
 
-    private fun migrateStoredIndexKeyFormat() {
+    private suspend fun migrateStoredIndexKeyFormat() {
         Transaction(this).use { transaction ->
             for ((_, columnFamilies) in columnFamilyHandlesByDataModelIndex) {
                 clearColumnFamily(transaction, columnFamilies.index)
@@ -989,11 +1010,14 @@ class RocksDBDataStore private constructor(
     }
 
     override suspend fun close() {
-        cancelPendingMigrations("Datastore closing")
-
-        super.close()
-
-        closeResources()
+        withContext(NonCancellable) {
+            cancelPendingMigrations("Datastore closing")
+            try {
+                super.close()
+            } finally {
+                closeResources()
+            }
+        }
     }
 
     fun closeResources() {

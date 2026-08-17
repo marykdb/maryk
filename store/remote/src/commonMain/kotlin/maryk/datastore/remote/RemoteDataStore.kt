@@ -22,6 +22,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
@@ -34,6 +35,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -768,10 +770,18 @@ class RemoteDataStore private constructor(
     }
 
     override suspend fun close() {
-        listeners.close()
-        sshTunnel?.close()
-        if (ownsClient) {
-            httpClient.close()
+        withContext(NonCancellable) {
+            try {
+                listeners.close()
+            } finally {
+                try {
+                    sshTunnel?.close()
+                } finally {
+                    if (ownsClient) {
+                        httpClient.close()
+                    }
+                }
+            }
         }
     }
 

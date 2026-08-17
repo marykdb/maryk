@@ -4,7 +4,10 @@ package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -61,6 +64,30 @@ import kotlin.time.Duration.Companion.milliseconds
 class RocksDBDataStoreMigrationTest {
 
     class CustomException : Error()
+
+    @Test
+    fun canceledCloseReleasesNativeResources() = runTest {
+        val path = createTestDBFolder("canceledClose")
+        val store = RocksDBDataStore.open(
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        )
+
+        try {
+            launch {
+                currentCoroutineContext()[Job]?.cancel()
+                store.close()
+            }.join()
+
+            RocksDBDataStore.open(
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV1_1),
+            ).close()
+        } finally {
+            store.closeResources()
+            deleteFolder(path)
+        }
+    }
 
     @Test
     fun backgroundMigrationFailsPromptlyForInvalidPersistedState() = runTest {
@@ -254,6 +281,36 @@ class RocksDBDataStoreMigrationTest {
         assertEquals(listOf("expand", "backfill", "verify", "contract"), phases)
 
         deleteFolder(path)
+    }
+
+    @Test
+    fun migrationCanRunWithExpandHandlerOnly() = runTest {
+        val path = createTestDBFolder("migrationExpandOnly")
+
+        try {
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV1_1),
+            ).close()
+
+            var expandCalls = 0
+            RocksDBDataStore.open(
+                keepAllVersions = true,
+                relativePath = path,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationExpandHandler = {
+                        expandCalls++
+                        MigrationOutcome.Success
+                    },
+                ),
+            ).close()
+
+            assertEquals(1, expandCalls)
+        } finally {
+            deleteFolder(path)
+        }
     }
 
     @Test

@@ -137,7 +137,20 @@ class RequestExecutionTest {
             assertFailsWith<IllegalStateException> {
                 store.executeWithFailingBoundaryCallback()
             }
-            store.readContextClosed.await()
+            withTimeout(2.seconds) { store.readContextClosed.await() }
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
+    fun snapshotBoundaryPreparationFailureClosesPreparedReadContext() = runTest {
+        val store = SnapshotBoundaryPreparationFailureReadTestStore()
+        try {
+            assertFailsWith<IllegalStateException> {
+                store.execute(SimpleMarykModel.scan())
+            }
+            withTimeout(2.seconds) { store.readContextClosed.await() }
         } finally {
             store.close()
         }
@@ -731,6 +744,39 @@ private class BoundaryFailureReadTestStore : AbstractDataStore(
                 closeReadContext = { readContextClosed.complete(Unit) },
             ) { _, _ ->
                 error("Read worker must not start after a boundary callback failure")
+            }
+        }
+    }
+}
+
+private class SnapshotBoundaryPreparationFailureReadTestStore : AbstractDataStore(
+    dataModelsById = mapOf(1u to SimpleMarykModel),
+    coroutineContext = Dispatchers.Default,
+) {
+    override val keepAllVersions = false
+    override val keepUpdateHistoryIndex = false
+    override val supportsFuzzyQualifierFiltering = true
+    override val supportsSubReferenceFiltering = true
+
+    val readContextClosed = CompletableDeferred<Unit>()
+
+    init {
+        startFlows()
+    }
+
+    override suspend fun onBeforeFlowSnapshotBoundary() {
+        throw IllegalStateException("snapshot boundary preparation failed")
+    }
+
+    override fun startFlows() {
+        super.startFlows()
+        launch {
+            storeActorHasStarted.complete(Unit)
+            processStoreActions(
+                createReadContext = { Unit },
+                closeReadContext = { readContextClosed.complete(Unit) },
+            ) { _, _ ->
+                error("Read worker must not start after snapshot boundary preparation failure")
             }
         }
     }

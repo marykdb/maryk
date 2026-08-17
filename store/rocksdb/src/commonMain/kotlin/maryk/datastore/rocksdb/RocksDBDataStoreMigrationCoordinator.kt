@@ -35,8 +35,14 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
     finalizeMigration: suspend (StoredRootDataModelDefinition) -> Unit,
     deferStartupFinalization: (suspend () -> Unit) -> Unit,
 ) {
-    val handler = migrationConfiguration.migrationHandler
-        ?: throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
+    if (
+        migrationConfiguration.migrationExpandHandler == null &&
+        migrationConfiguration.migrationHandler == null &&
+        migrationConfiguration.migrationVerifyHandler == null &&
+        migrationConfiguration.migrationContractHandler == null
+    ) {
+        throw MigrationException("Migration needed: No migration handler present. \n$migrationStatus")
+    }
     val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
     val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
     val finalizationPendingMessage = "Migration phases complete; finalization pending"
@@ -141,7 +147,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
         )
         val outcome = when (phase) {
             MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
-            MigrationPhase.Backfill -> handler(context)
+            MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
             MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
             MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
         }

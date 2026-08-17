@@ -458,6 +458,14 @@ class FoundationDBDataStore private constructor(
                 "Sensitive unique properties configured but fieldEncryptionProvider does not implement SensitiveIndexTokenProvider"
             )
         }
+        if (
+            clusterUpdateLogConfiguration.enableClusterUpdateLog &&
+            sensitiveReferencePrefixesByModelId.values.any { it.isNotEmpty() }
+        ) {
+            throw RequestException(
+                "Cluster update log cannot be enabled for models with sensitive properties because update payloads are persisted unencrypted"
+            )
+        }
 
         if (clusterUpdateLogConfiguration.enableClusterUpdateLog) {
             val consumerId = clusterUpdateLogConfiguration.clusterUpdateLogConsumerId

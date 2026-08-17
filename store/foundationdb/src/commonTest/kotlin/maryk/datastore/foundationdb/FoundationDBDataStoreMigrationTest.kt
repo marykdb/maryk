@@ -269,6 +269,34 @@ class FoundationDBDataStoreMigrationTest {
     }
 
     @Test
+    fun migrationCanRunWithExpandHandlerOnly() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-expand-only", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        var expandCalls = 0
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationExpandHandler = {
+                    expandCalls++
+                    MigrationOutcome.Success
+                },
+            ),
+        ).close()
+
+        assertEquals(1, expandCalls)
+    }
+
+    @Test
     fun startupFinalizationKeepsLeaseUntilVersionHandlerCompletes() = runTest(timeout = 3.minutes) {
         val dirPath = listOf("maryk", "test", "fdb-migration-finalization-lease", Uuid.random().toString())
         FoundationDBDataStore.open(

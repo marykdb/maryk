@@ -4,7 +4,9 @@ package maryk.datastore.shared.encryption
  * Versioned keyring envelope.
  *
  * New ciphertexts contain the active key id. Legacy provider payloads remain
- * readable through [legacyProvider], allowing an additive rollout.
+ * readable through [legacyProvider], allowing an additive rollout. When legacy
+ * values use contextual MKE2 encryption, [legacyProvider] must also implement
+ * [ContextualFieldEncryptionProvider].
  */
 class KeyringFieldEncryptionProvider(
     val activeKeyId: String,
@@ -84,7 +86,13 @@ class KeyringFieldEncryptionProvider(
         length: Int,
     ): ByteArray {
         validateRange(value, offset, length)
-        require(hasKeyringMagic(value, offset, length)) { "Contextual encrypted payload is missing keyring envelope" }
+        if (!hasKeyringMagic(value, offset, length)) {
+            val contextualLegacyProvider = legacyProvider as? ContextualFieldEncryptionProvider
+                ?: throw IllegalArgumentException(
+                    "Legacy contextual encrypted payload encountered without a contextual legacy provider"
+                )
+            return contextualLegacyProvider.decrypt(context, value, offset, length)
+        }
         require(length >= KEYRING_HEADER_SIZE + 1) { "Keyring encrypted payload too short" }
         require(value[offset + KEYRING_MAGIC.size] == KEYRING_PAYLOAD_VERSION) {
             "Unsupported keyring encrypted payload version ${value[offset + KEYRING_MAGIC.size].toUByte()}"

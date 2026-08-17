@@ -5,6 +5,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
@@ -20,9 +21,12 @@ import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
+import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.models.migration.MigrationOutcome
+import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationRetryPolicy
+import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.definitions.string
@@ -139,6 +143,33 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class IndexedDbDataStoreTest {
+
+    @Test
+    fun canceledCloseRemovesJournalConsumer() = runTest {
+        installIndexedDbForTests()
+        val databaseName = "maryk-indexeddb-canceled-close-${Random.nextInt()}"
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+
+        try {
+            assertEquals(1, dataStore.byteStore.scan(CommitConsumerStoreName).size)
+            launch {
+                currentCoroutineContext()[Job]?.cancel()
+                dataStore.close()
+            }.join()
+
+            val inspector = openIndexedDbByteStore(databaseName, setOf(CommitConsumerStoreName))
+            try {
+                assertTrue(inspector.scan(CommitConsumerStoreName).isEmpty())
+            } finally {
+                inspector.close()
+            }
+        } finally {
+            dataStore.byteStore.close()
+        }
+    }
     @Test
     fun replicationTombstoneSurvivesReopen() = runTest(timeout = indexedDbLongTestTimeout) {
         installIndexedDbForTests()
@@ -1707,6 +1738,45 @@ class IndexedDbDataStoreTest {
             databaseName = databaseName,
             dataModelsById = mapOf(1u to ModelV2),
         ).close()
+    }
+
+    @Test
+    fun openRejectsMalformedPersistedMigrationState() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-malformed-migration-state-${Random.nextInt()}"
+        IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to ModelV1),
+        ).close()
+        val byteStore = openIndexedDbByteStore(databaseName, setOf("meta"))
+        try {
+            val validState = MigrationState(
+                migrationId = "Model:1.0->2.0",
+                phase = MigrationPhase.Backfill,
+                status = MigrationStateStatus.Running,
+                attempt = 1u,
+                fromVersion = "1.0",
+                toVersion = "2.0",
+            ).toPersistedBytes()
+            byteStore.put(
+                "meta",
+                byteArrayOf(5, 0, 0, 0, 1),
+                validState + "\nignored-without-separator".encodeToByteArray(),
+            )
+        } finally {
+            byteStore.close()
+        }
+
+        assertFailsWith<MigrationException> {
+            IndexedDbDataStore.open(
+                databaseName = databaseName,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Success },
+                ),
+            )
+        }
     }
 
     @Test

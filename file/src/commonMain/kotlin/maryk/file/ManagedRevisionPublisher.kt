@@ -83,20 +83,38 @@ suspend fun publishManagedRevisionStreaming(
     }
 }
 
-private fun publishStagedRevision(
+internal fun publishStagedRevision(
     root: String,
     revisionDirectory: String,
     revisionId: String,
     staging: ManagedExportStaging,
+    publishCurrent: (String, String) -> Unit = { pointerRoot, id ->
+        File.writeTextViaTemporaryFile("$pointerRoot/current", "$id\n")
+    },
 ): ManagedExportRevision {
     require(staging.paths.isNotEmpty()) { "Managed export revision cannot be empty" }
     val manifest = staging.paths.sorted().joinToString(separator = "") { relativePath ->
         "${sha256Hex(staging.pathOf(relativePath))}  $relativePath\n"
     }
     File.writeText("${staging.directory}/manifest.sha256", manifest)
-    File.moveReplace(staging.directory, revisionDirectory)
-    File.writeTextViaTemporaryFile("$root/current", "$revisionId\n")
-    return ManagedExportRevision(revisionId, revisionDirectory, "$revisionDirectory/manifest.sha256")
+    staging.paths.forEach { relativePath ->
+        check(File.syncFile(staging.pathOf(relativePath))) { "Could not sync staged export: $relativePath" }
+    }
+    check(File.syncFile("${staging.directory}/manifest.sha256")) { "Could not sync staged manifest" }
+    File.syncParentDirectory("${staging.directory}/manifest.sha256")
+
+    var moved = false
+    try {
+        File.moveReplace(staging.directory, revisionDirectory)
+        moved = true
+        File.syncParentDirectory("$revisionDirectory/manifest.sha256")
+        File.syncParentDirectory(revisionDirectory)
+        publishCurrent(root, revisionId)
+        return ManagedExportRevision(revisionId, revisionDirectory, "$revisionDirectory/manifest.sha256")
+    } catch (exception: Throwable) {
+        if (moved) staging.cleanup(revisionDirectory)
+        throw exception
+    }
 }
 
 /** Safe output writer for one unpublished managed revision. */
@@ -141,7 +159,7 @@ class ManagedExportStaging internal constructor(
         return path
     }
 
-    internal fun cleanup() {
+    internal fun cleanup(directory: String = this.directory) {
         paths.forEach { relativePath -> File.delete("$directory/$relativePath") }
         File.delete("$directory/manifest.sha256")
         paths.flatMap { relativePath ->

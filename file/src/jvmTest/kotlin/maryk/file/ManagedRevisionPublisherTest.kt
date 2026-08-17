@@ -134,6 +134,23 @@ class ManagedRevisionPublisherTest {
         assertEquals("[]", Files.readString(output.resolve(".maryk-export/revisions/streaming/data.json")))
     }
 
+    @Test
+    fun removesMovedRevisionWhenPublishingCurrentPointerFails() {
+        val output = Files.createTempDirectory("managed-export-")
+        val root = output.resolve(".maryk-export").toString()
+        val staging = ManagedExportStaging("$root/revisions/.staging-failed")
+        staging.writeText("data.json", "[]")
+
+        assertFailsWith<IllegalStateException> {
+            publishStagedRevision(root, "$root/revisions/failed", "failed", staging) { _, _ ->
+                throw IllegalStateException("pointer failed")
+            }
+        }
+
+        assertNull(File.readText("$root/revisions/failed/data.json"))
+        assertNull(File.readText("$root/revisions/failed/manifest.sha256"))
+    }
+
     private fun <T> runSuspend(block: suspend () -> T): T {
         var outcome: Result<T>? = null
         block.startCoroutine(object : Continuation<T> {

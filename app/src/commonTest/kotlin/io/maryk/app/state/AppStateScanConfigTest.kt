@@ -17,6 +17,20 @@ import kotlin.test.assertTrue
 
 class AppStateScanConfigTest {
     @Test
+    fun deleteSubmissionGuardRejectsDuplicateUntilCompletion() {
+        val guard = DeleteSubmissionGuard()
+
+        assertTrue(guard.tryStart())
+        assertFalse(guard.tryStart())
+        assertTrue(guard.isDeleting)
+
+        guard.complete()
+
+        assertFalse(guard.isDeleting)
+        assertTrue(guard.tryStart())
+    }
+
+    @Test
     fun invalidatingAnActiveScanClearsBusyStateAndRejectsItsCompletion() {
         val scanBusyState = ScanBusyState()
 

@@ -205,11 +205,9 @@ interface IsMultiTypeDefinition<E : TypeEnum<T>, T: Any, in CX : IsPropertyConte
     }
 
     override fun asString(value: TypedValue<E, T>, context: CX?): String {
-        var string = ""
-        this.writeJsonValue(value, JsonWriter {
-            string += it
-        }, context)
-        return string
+        return buildJsonString { writer ->
+            this.writeJsonValue(value, JsonWriter(writer = writer), context)
+        }
     }
 
     override fun fromString(string: String, context: CX?): TypedValue<E, T> {

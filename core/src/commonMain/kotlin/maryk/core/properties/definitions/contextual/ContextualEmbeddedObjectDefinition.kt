@@ -4,6 +4,7 @@ import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsContextualEncodable
 import maryk.core.properties.definitions.IsValueDefinition
+import maryk.core.properties.definitions.buildJsonString
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
@@ -24,11 +25,9 @@ data class ContextualEmbeddedObjectDefinition<CX : IsPropertyContext>(
     }
 
     override fun asString(value: Any, context: CX?): String {
-        var string = ""
-        this.writeJsonValue(value, JsonWriter {
-            string += it
-        }, context)
-        return string
+        return buildJsonString { writer ->
+            this.writeJsonValue(value, JsonWriter(writer = writer), context)
+        }
     }
 
     override fun writeJsonValue(value: Any, writer: IsJsonLikeWriter, context: CX?) =

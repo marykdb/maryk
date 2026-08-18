@@ -711,6 +711,7 @@ fun ResultsDataGrid(
                     )
                     ModalPrimaryButton(
                         label = "Delete",
+                        enabled = !state.isDeleting,
                         onClick = {
                             state.deleteRow(deleteRow!!, hardDelete)
                             deleteRow = null

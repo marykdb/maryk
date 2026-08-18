@@ -43,6 +43,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import kotlinx.io.readByteArray
 import maryk.core.inject.Inject
 import maryk.core.models.RootDataModel
@@ -78,6 +79,27 @@ import maryk.test.models.TestMarykModel
 import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
+    @Test
+    fun completedFlowJobIsRemovedWithoutCollectorScope() = runBoundedIntegrationTest {
+        val registry = RemoteListenerRegistry()
+        val job = Job()
+
+        try {
+            registry.track(job) {}
+            assertEquals(1, registry.trackedJobCount())
+
+            job.complete()
+
+            withTimeout(2_000.milliseconds) {
+                while (registry.trackedJobCount() != 0) {
+                    yield()
+                }
+            }
+        } finally {
+            registry.close()
+        }
+    }
+
     @Test
     fun canceledCloseStillClosesSshTunnel() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))

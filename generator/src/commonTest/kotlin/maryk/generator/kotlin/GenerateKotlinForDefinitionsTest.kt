@@ -19,6 +19,17 @@ import kotlin.test.fail
 
 class GenerateKotlinForDefinitionsTest {
     @Test
+    fun generateImportsHandlesManyCallerOwnedImports() {
+        val imports = (1..10_000).mapTo(mutableSetOf()) { "example.package.Type$it" }
+
+        val generated = generateImports(imports)
+
+        assertEquals(10_000, generated.lineSequence().count { it.startsWith("import ") })
+        assertEquals("import example.package.Type1", generated.lineSequence().first())
+        assertEquals("import example.package.Type9999", generated.lineSequence().last { it.isNotEmpty() })
+    }
+
+    @Test
     fun rejectsDuplicateOutputNamesBeforeCreatingWriters() {
         val duplicate = RootDataModel.Model.Serializer.readJson(
             MarykYamlModelReader(

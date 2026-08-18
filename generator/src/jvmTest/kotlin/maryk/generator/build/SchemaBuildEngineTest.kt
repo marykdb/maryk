@@ -67,6 +67,77 @@ class SchemaBuildEngineTest {
     }
 
     @Test
+    fun recoversManagedOutputBeforeAReplacementRetryFails() {
+        val schemas = createTempDirectory()
+        schemas.resolve("alpha.yaml").writeText(schema("Alpha"))
+        val parent = createTempDirectory()
+        val output = parent.resolve("generated")
+        output.createDirectories()
+        output.resolve(".maryk-generator-output").writeText("Managed by the Maryk generator.")
+        output.resolve("Existing.kt").writeText("existing")
+        val backup = parent.resolve(".generated-maryk-generator-backup")
+        Files.move(output, backup)
+
+        assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "invalid-package",
+                outputDirectory = output,
+            )
+        }
+
+        assertEquals("existing", output.resolve("Existing.kt").readText())
+        assertFalse(Files.exists(backup))
+    }
+
+    @Test
+    fun completesBackupCleanupWhenReplacementWasAlreadyPublished() {
+        val schemas = createTempDirectory()
+        schemas.resolve("alpha.yaml").writeText(schema("Alpha"))
+        val parent = createTempDirectory()
+        val output = parent.resolve("generated").createDirectories()
+        output.resolve(".maryk-generator-output").writeText("Managed by the Maryk generator.")
+        output.resolve("Current.kt").writeText("current")
+        val backup = parent.resolve(".generated-maryk-generator-backup").createDirectories()
+        backup.resolve(".maryk-generator-output").writeText("Managed by the Maryk generator.")
+        backup.resolve("Previous.kt").writeText("previous")
+
+        val exception = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "invalid-package",
+                outputDirectory = output,
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("packageName"))
+        assertEquals("current", output.resolve("Current.kt").readText())
+        assertFalse(Files.exists(backup))
+    }
+
+    @Test
+    fun refusesToRecoverAnUnmanagedBackupDirectory() {
+        val schemas = createTempDirectory()
+        schemas.resolve("alpha.yaml").writeText(schema("Alpha"))
+        val parent = createTempDirectory()
+        val output = parent.resolve("generated")
+        val backup = parent.resolve(".generated-maryk-generator-backup").createDirectories()
+        backup.resolve("Handwritten.kt").writeText("handwritten")
+
+        val exception = assertFailsWith<SchemaBuildException> {
+            SchemaBuildEngine.generate(
+                schemaFiles = SchemaBuildEngine.discoverSchemas(listOf(schemas)),
+                packageName = "example.generated",
+                outputDirectory = output,
+            )
+        }
+
+        assertTrue(exception.message.orEmpty().contains("non-managed"))
+        assertEquals("handwritten", backup.resolve("Handwritten.kt").readText())
+        assertFalse(Files.exists(output))
+    }
+
+    @Test
     fun rejectsInvalidPackageBeforeReplacingManagedOutput() {
         val schemas = createTempDirectory()
         schemas.resolve("alpha.yaml").writeText(schema("Alpha"))

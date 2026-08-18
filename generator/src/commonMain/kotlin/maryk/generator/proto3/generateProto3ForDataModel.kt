@@ -46,25 +46,19 @@ fun <DM : IsStorableDataModel<*>> DM.generateProto3Schema(
 ) {
     val modelName = Meta.name.requireProto3Identifier()
     validateProto3GeneratedNames(modelName, generationContext)
-    val subMessages = mutableListOf<String>()
-
-    val messageAdder: (String) -> Unit = {
-        if (!subMessages.contains(it)) {
-            subMessages.add(it)
-        }
-    }
-
-    var reservations = ""
+    val subMessages = linkedSetOf<String>()
+    val messageAdder: (String) -> Unit = { subMessages.add(it) }
 
     val meta = Meta
-    if (meta is IsValuesDataModelDefinition) {
-        meta.reservedIndices?.let { indexes ->
-            reservations += "reserved ${indexes.joinToString(", ")};\n      "
+    val reservations = buildString {
+        if (meta is IsValuesDataModelDefinition) {
+            meta.reservedIndices?.let { indexes ->
+                append("reserved ${indexes.joinToString(", ")};\n      ")
+            }
+            meta.reservedNames?.let { names ->
+                append("reserved ${names.joinToString { "\"${it.proto3StringLiteral()}\"" }};\n      ")
+            }
         }
-        meta.reservedNames?.let { names ->
-            reservations += "reserved ${names.joinToString { "\"${it.proto3StringLiteral()}\"" }};\n      "
-        }
-        if (reservations.isNotBlank()) reservations.prependIndent().prependIndent("  ")
     }
 
     val properties = this.generateSchemaForProperties(generationContext, messageAdder)
@@ -87,15 +81,14 @@ private fun IsStorableDataModel<*>.generateSchemaForProperties(
     generationContext: GenerationContext,
     messageAdder: (String) -> Unit
 ): String {
-    var properties = ""
-
-    for (it in this) {
-        val name = it.name.requireProto3Identifier()
-        val index = it.index.requireProto3FieldNumber()
-        val type = it.definition.toProtoBufType(name, generationContext, messageAdder)
-        properties += "$type $name = $index;\n"
-    }
-    return properties.trimEnd()
+    return buildString {
+        for (property in this@generateSchemaForProperties) {
+            val name = property.name.requireProto3Identifier()
+            val index = property.index.requireProto3FieldNumber()
+            val type = property.definition.toProtoBufType(name, generationContext, messageAdder)
+            append(type).append(' ').append(name).append(" = ").append(index).append(";\n")
+        }
+    }.trimEnd()
 }
 
 private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
@@ -130,9 +123,8 @@ private fun IsSerializablePropertyDefinition<*, *>.toProtoBufType(
         is EnumDefinition<*> -> {
             val enumName = this.enum.name.requireProto3Identifier()
             if (!generationContext.enums.contains(this.enum)) {
-                var enumSchema = ""
-                this.enum.generateProto3Schema {
-                    enumSchema += it
+                val enumSchema = buildString {
+                    this@toProtoBufType.enum.generateProto3Schema(::append)
                 }
 
                 messageAdder(enumSchema)

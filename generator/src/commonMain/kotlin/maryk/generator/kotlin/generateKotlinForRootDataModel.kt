@@ -171,9 +171,19 @@ private fun SimpleTypedValueReference<*, *, *>.generateKotlin(
     val typeName = this.type.name.kotlinIdentifier()
     val segments = parentRef.completeName.split(".")
 
-    var expression = "${segments.last().kotlinIdentifier()} simpleRefAtType $typeEnumName.$typeName"
-    for (segment in segments.dropLast(1).asReversed()) {
-        expression = "${segment.kotlinIdentifier()} { $expression }"
+    val parentSegments = segments.dropLast(1)
+    val expression = buildString {
+        parentSegments.forEach { segment ->
+            append(segment.kotlinIdentifier()).append(" { ")
+        }
+        append(segments.last().kotlinIdentifier())
+            .append(" simpleRefAtType ")
+            .append(typeEnumName)
+            .append('.')
+            .append(typeName)
+        repeat(parentSegments.size) {
+            append(" }")
+        }
     }
 
     return "${modelName.kotlinIdentifier()} { $expression }"

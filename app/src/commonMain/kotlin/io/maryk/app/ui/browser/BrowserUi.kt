@@ -739,6 +739,7 @@ private fun DeleteDialog(state: BrowserState) {
             ModalPrimaryButton(
                 label = "Delete",
                 onClick = { state.deleteRecord(state.pendingHardDelete) },
+                enabled = !state.isDeleting,
                 colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.error,
                     contentColor = MaterialTheme.colorScheme.onError,

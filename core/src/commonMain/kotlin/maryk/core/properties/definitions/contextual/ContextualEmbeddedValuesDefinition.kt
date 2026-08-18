@@ -6,6 +6,7 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.models.IsValuesDataModel
 import maryk.core.models.TypedValuesDataModel
 import maryk.core.properties.definitions.IsEmbeddedValuesDefinition
+import maryk.core.properties.definitions.buildJsonString
 import maryk.core.properties.definitions.wrapper.EmbeddedValuesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -33,11 +34,9 @@ internal data class ContextualEmbeddedValuesDefinition<CX : IsPropertyContext>(
     }
 
     override fun asString(value: ValuesImpl, context: CX?): String {
-        var string = ""
-        this.writeJsonValue(value, JsonWriter {
-            string += it
-        }, context)
-        return string
+        return buildJsonString { writer ->
+            this.writeJsonValue(value, JsonWriter(writer = writer), context)
+        }
     }
 
     override fun writeJsonValue(value: ValuesImpl, writer: IsJsonLikeWriter, context: CX?) =

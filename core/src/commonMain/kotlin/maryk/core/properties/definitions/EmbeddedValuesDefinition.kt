@@ -50,11 +50,9 @@ class EmbeddedValuesDefinition<DM : IsValuesDataModel>(
     private val typedDataModel get() = dataModel as TypedValuesDataModel<DM>
 
     override fun asString(value: Values<DM>, context: IsPropertyContext?): String {
-        var string = ""
-        this.writeJsonValue(value, JsonWriter {
-            string += it
-        }, context)
-        return string
+        return buildJsonString { writer ->
+            this.writeJsonValue(value, JsonWriter(writer = writer), context)
+        }
     }
 
     override fun fromString(string: String, context: IsPropertyContext?): Values<DM> {

@@ -46,20 +46,19 @@ fun DataModel<*>.generateKotlin(
 }
 
 internal fun List<KotlinForProperty>.generateDefinitionsForProperties(addImport: (String) -> Unit): String {
-    var properties = ""
-    for (it in this) {
-        addImport("maryk.core.properties.definitions."+it.wrapName)
+    return buildString {
+        for (property in this@generateDefinitionsForProperties) {
+            addImport("maryk.core.properties.definitions." + property.wrapName)
 
-        val altNames = it.altNames?.let { altName ->
-            "\n            alternativeNames = setOf(${altName.joinToString(", ") { it.kotlinStringLiteral() }}),"
-        } ?: ""
-        val definitionProperties = "\n            " +it.definition.prependIndent().prependIndent().prependIndent().trimStart()
-        val propertiesToBeAdded = if (definitionProperties.isBlank() && altNames.isEmpty()) "" else ",$altNames$definitionProperties"
+            val altNames = property.altNames?.let { altName ->
+                "\n            alternativeNames = setOf(${altName.joinToString(", ") { it.kotlinStringLiteral() }}),"
+            } ?: ""
+            val definitionProperties = "\n            " + property.definition.prependIndent().prependIndent().prependIndent().trimStart()
+            val propertiesToBeAdded = if (definitionProperties.isBlank() && altNames.isEmpty()) "" else ",$altNames$definitionProperties"
 
-        properties += """
-        val ${it.name} by ${it.wrapName}(
-            index = ${it.index}u$propertiesToBeAdded
-        )"""
+            append("\n        val ").append(property.name).append(" by ").append(property.wrapName).append("(\n")
+            append("            index = ").append(property.index).append('u').append(propertiesToBeAdded).append('\n')
+            append("        )")
+        }
     }
-    return properties
 }

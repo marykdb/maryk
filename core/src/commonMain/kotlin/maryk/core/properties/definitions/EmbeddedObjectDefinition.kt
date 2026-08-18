@@ -43,11 +43,9 @@ class EmbeddedObjectDefinition<DO : Any, DM : IsTypedObjectDataModel<DO, *, CXI,
     override val dataModel: DM by lazy(dataModel)
 
     override fun asString(value: DO, context: CXI?): String {
-        var string = ""
-        this.writeJsonValue(value, JsonWriter {
-            string += it
-        }, context)
-        return string
+        return buildJsonString { writer ->
+            this.writeJsonValue(value, JsonWriter(writer = writer), context)
+        }
     }
 
     override fun fromString(string: String, context: CXI?): DO {

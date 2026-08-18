@@ -115,9 +115,13 @@ class BrowserState(
         private set
 
     private val scanBusyState = ScanBusyState()
+    private val deleteSubmissionGuard = DeleteSubmissionGuard()
 
     val isScanning: Boolean
         get() = scanBusyState.isScanning
+
+    val isDeleting: Boolean
+        get() = deleteSubmissionGuard.isDeleting
 
     var aggregationConfig by mutableStateOf(AggregationConfig())
         private set
@@ -833,32 +837,37 @@ class BrowserState(
         }
         val connection = activeConnection ?: return
         val details = recordDetails ?: return
+        if (!deleteSubmissionGuard.tryStart()) return
         isWorking = true
         closeDeleteDialog()
         scope.launch {
-            val result = withContext(Dispatchers.IO) {
-                try {
-                    val request = details.model.delete(details.key, hardDelete = hardDelete)
-                    val response = connection.dataStore.execute(request)
-                    formatDeleteStatus(
-                        label = "${details.model.Meta.name} ${details.keyText}",
-                        hardDelete = hardDelete,
-                        status = response.statuses.firstOrNull(),
-                    )
-                } catch (e: Throwable) {
-                    e.rethrowIfFatal()
-                    ApplyResult("Delete failed: ${e.message ?: e::class.simpleName}", success = false)
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    try {
+                        val request = details.model.delete(details.key, hardDelete = hardDelete)
+                        val response = connection.dataStore.execute(request)
+                        formatDeleteStatus(
+                            label = "${details.model.Meta.name} ${details.keyText}",
+                            hardDelete = hardDelete,
+                            status = response.statuses.firstOrNull(),
+                        )
+                    } catch (e: Throwable) {
+                        e.rethrowIfFatal()
+                        ApplyResult("Delete failed: ${e.message ?: e::class.simpleName}", success = false)
+                    }
                 }
-            }
-            lastActionMessage = result.message
-            isWorking = false
-            if (result.success) {
-                if (hardDelete) {
-                    recordDetails = null
-                } else {
-                    refreshRecord()
+                lastActionMessage = result.message
+                isWorking = false
+                if (result.success) {
+                    if (hardDelete) {
+                        recordDetails = null
+                    } else {
+                        refreshRecord()
+                    }
+                    scanFromStart()
                 }
-                scanFromStart()
+            } finally {
+                deleteSubmissionGuard.complete()
             }
         }
     }
@@ -870,28 +879,33 @@ class BrowserState(
         }
         val connection = activeConnection ?: return
         val dataModel = currentDataModel() ?: return
+        if (!deleteSubmissionGuard.tryStart()) return
         isWorking = true
         scope.launch {
-            val result = withContext(Dispatchers.IO) {
-                try {
-                    val response = connection.dataStore.execute(dataModel.delete(row.key, hardDelete = hardDelete))
-                    formatDeleteStatus(
-                        label = "${dataModel.Meta.name} ${row.keyText}",
-                        hardDelete = hardDelete,
-                        status = response.statuses.firstOrNull(),
-                    )
-                } catch (e: Throwable) {
-                    e.rethrowIfFatal()
-                    ApplyResult("Delete failed: ${e.message ?: e::class.simpleName}", success = false)
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    try {
+                        val response = connection.dataStore.execute(dataModel.delete(row.key, hardDelete = hardDelete))
+                        formatDeleteStatus(
+                            label = "${dataModel.Meta.name} ${row.keyText}",
+                            hardDelete = hardDelete,
+                            status = response.statuses.firstOrNull(),
+                        )
+                    } catch (e: Throwable) {
+                        e.rethrowIfFatal()
+                        ApplyResult("Delete failed: ${e.message ?: e::class.simpleName}", success = false)
+                    }
                 }
-            }
-            lastActionMessage = result.message
-            isWorking = false
-            if (result.success) {
-                if (recordDetails?.keyText == row.keyText) {
-                    refreshRecord()
+                lastActionMessage = result.message
+                isWorking = false
+                if (result.success) {
+                    if (recordDetails?.keyText == row.keyText) {
+                        refreshRecord()
+                    }
+                    scanFromStart()
                 }
-                scanFromStart()
+            } finally {
+                deleteSubmissionGuard.complete()
             }
         }
     }
@@ -1814,6 +1828,21 @@ internal class ScanBusyState {
         activeRequest = ++nextRequest
         isScanning = false
         return true
+    }
+}
+
+internal class DeleteSubmissionGuard {
+    var isDeleting by mutableStateOf(false)
+        private set
+
+    fun tryStart(): Boolean {
+        if (isDeleting) return false
+        isDeleting = true
+        return true
+    }
+
+    fun complete() {
+        isDeleting = false
     }
 }
 

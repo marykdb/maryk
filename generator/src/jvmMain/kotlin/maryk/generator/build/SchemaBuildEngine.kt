@@ -103,6 +103,13 @@ object SchemaBuildEngine {
         projectDirectory: Path? = null,
         sourceDirectories: List<Path> = emptyList(),
     ): GenerationResult {
+        val absoluteOutputDirectory = resolveOutputDirectory(outputDirectory)
+        verifyOutputDirectoryLocation(absoluteOutputDirectory, projectDirectory, sourceDirectories)
+        val parentDirectory = absoluteOutputDirectory.parent
+            ?: throw SchemaBuildException("Maryk generator output directory must have a parent")
+        Files.createDirectories(parentDirectory)
+        recoverManagedOutputDirectory(absoluteOutputDirectory)
+
         validatePackageName(packageName)
         val loaded = load(schemaFiles)
         val generatedFileNames = loaded.map { schema ->
@@ -131,11 +138,6 @@ object SchemaBuildEngine {
             fileName to source
         }.toSortedMap()
 
-        val absoluteOutputDirectory = resolveOutputDirectory(outputDirectory)
-        verifyOutputDirectoryLocation(absoluteOutputDirectory, projectDirectory, sourceDirectories)
-        val parentDirectory = absoluteOutputDirectory.parent
-            ?: throw SchemaBuildException("Maryk generator output directory must have a parent")
-        Files.createDirectories(parentDirectory)
         verifyManagedOutputDirectory(absoluteOutputDirectory)
         val stagingDirectory = Files.createTempDirectory(parentDirectory, ".maryk-generator-")
         try {
@@ -244,6 +246,33 @@ object SchemaBuildEngine {
         }
     }
 
+    private fun recoverManagedOutputDirectory(outputDirectory: Path) {
+        val backupDirectory = managedBackupDirectory(outputDirectory)
+        if (Files.notExists(backupDirectory)) return
+
+        verifyManagedBackupDirectory(backupDirectory)
+        if (Files.notExists(outputDirectory)) {
+            Files.move(backupDirectory, outputDirectory, ATOMIC_MOVE)
+            return
+        }
+
+        verifyManagedBackupDirectory(outputDirectory)
+        clearManagedDirectory(backupDirectory)
+        Files.deleteIfExists(backupDirectory)
+    }
+
+    private fun verifyManagedBackupDirectory(directory: Path) {
+        val marker = directory.resolve(managedOutputMarker)
+        if (
+            Files.isSymbolicLink(directory) ||
+            !Files.isDirectory(directory) ||
+            Files.notExists(marker) ||
+            marker.readText() != managedOutputMarkerContents
+        ) {
+            throw SchemaBuildException("Refusing to recover non-managed Maryk generator backup directory: $directory")
+        }
+    }
+
     private fun verifyOutputDirectoryLocation(
         outputDirectory: Path,
         projectDirectory: Path?,
@@ -286,8 +315,13 @@ object SchemaBuildEngine {
             return
         }
 
-        val backupDirectory = Files.createTempDirectory(outputDirectory.parent, ".maryk-generator-backup-")
-        Files.delete(backupDirectory)
+        val backupDirectory = managedBackupDirectory(outputDirectory)
+        check(Files.notExists(backupDirectory)) {
+            "Maryk generator backup directory already exists: $backupDirectory"
+        }
+        if (Files.list(outputDirectory).use { it.findAny().isEmpty }) {
+            outputDirectory.resolve(managedOutputMarker).writeText(managedOutputMarkerContents)
+        }
         var hasBackup = false
         try {
             Files.move(outputDirectory, backupDirectory, ATOMIC_MOVE)
@@ -308,4 +342,7 @@ object SchemaBuildEngine {
             }
         }
     }
+
+    private fun managedBackupDirectory(outputDirectory: Path): Path =
+        outputDirectory.resolveSibling(".${outputDirectory.fileName}-maryk-generator-backup")
 }

@@ -48,40 +48,30 @@ private fun List<KotlinForProperty>.generatePropertyNamesForConstructor(): Strin
     return properties.joinToString(", ")
 }
 
-private fun List<KotlinForProperty>.generateObjectValuesForProperties(): String {
-    var properties = ""
-    for (it in this) {
-        if (properties.isNotEmpty()) properties += ",\n"
-        properties += "val ${it.value}"
-    }
-    return properties
-}
+private fun List<KotlinForProperty>.generateObjectValuesForProperties(): String =
+    joinToString(",\n") { "val ${it.value}" }
 
-private fun List<KotlinForProperty>.generateInvokesForProperties(): String {
-    var properties = ""
-    for (it in this) {
-        if (properties.isNotEmpty()) properties += ",\n"
-        properties += """${it.name} = ${it.invoke}"""
-    }
-    return properties.prependIndent()
-}
+private fun List<KotlinForProperty>.generateInvokesForProperties(): String =
+    joinToString(",\n") { "${it.name} = ${it.invoke}" }.prependIndent()
 
 private fun List<KotlinForProperty>.generateDefinitionsForObjectProperties(
     modelName: String,
     addImport: (String) -> Unit
 ): String {
-    var properties = ""
-    for (it in this) {
-        addImport("maryk.core.properties.definitions."+it.wrapName)
-        val alternativeNames = it.altNames?.let { altNames ->
-            "\n            alternativeNames = setOf(${altNames.joinToString(", ") { it.kotlinStringLiteral() }}),"
-        } ?: ""
-        properties += """
-        val ${it.name} by ${it.wrapName}(
-            index = ${it.index}u,
-            getter = $modelName::${it.name},$alternativeNames
-            ${it.definition.prependIndent().prependIndent().prependIndent().trimStart()}
-        )"""
+    return buildString {
+        for (property in this@generateDefinitionsForObjectProperties) {
+            addImport("maryk.core.properties.definitions." + property.wrapName)
+            val alternativeNames = property.altNames?.let { altNames ->
+                "\n            alternativeNames = setOf(${altNames.joinToString(", ") { it.kotlinStringLiteral() }}),"
+            } ?: ""
+            append("\n        val ").append(property.name).append(" by ").append(property.wrapName).append("(\n")
+            append("            index = ").append(property.index).append("u,\n")
+            append("            getter = ").append(modelName).append("::").append(property.name).append(',')
+                .append(alternativeNames).append('\n')
+            append("            ")
+                .append(property.definition.prependIndent().prependIndent().prependIndent().trimStart())
+                .append('\n')
+            append("        )")
+        }
     }
-    return properties
 }

@@ -21,8 +21,10 @@ import io.ktor.utils.io.readRemaining
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
@@ -677,10 +679,7 @@ class RemoteDataStore private constructor(
                     }
                 }
             }
-            listeners.add(job)
-
-            job.invokeOnCompletion { cause ->
-                launch { listeners.remove(job) }
+            listeners.track(job) { cause ->
                 close(cause)
             }
 
@@ -837,8 +836,9 @@ private fun HeadersBuilder.appendBearerToken(bearerToken: String?) {
     }
 }
 
-private class RemoteListenerRegistry {
+internal class RemoteListenerRegistry {
     private val mutex = Mutex()
+    private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val listeners = mutableSetOf<RemoteFlowHandle>()
     private val jobs = mutableSetOf<Job>()
     private var closed = false
@@ -854,6 +854,18 @@ private class RemoteListenerRegistry {
     }
 
     suspend fun remove(job: Job) = mutex.withLock { jobs.remove(job) }
+
+    suspend fun track(job: Job, onCompletion: (Throwable?) -> Unit) {
+        add(job)
+        job.invokeOnCompletion { cause ->
+            cleanupScope.launch {
+                remove(job)
+            }
+            onCompletion(cause)
+        }
+    }
+
+    internal suspend fun trackedJobCount(): Int = mutex.withLock { jobs.size }
 
     suspend fun closeAll() {
         val (handles, flowJobs) = mutex.withLock {
@@ -878,10 +890,11 @@ private class RemoteListenerRegistry {
         }
         handles.forEach { it.close() }
         flowJobs.forEach { it.cancel() }
+        cleanupScope.cancel()
     }
 }
 
-private data class RemoteFlowHandle(
+internal data class RemoteFlowHandle(
     val response: HttpResponse,
     val channel: ByteReadChannel,
 ) {

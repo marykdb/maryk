@@ -4,6 +4,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
@@ -820,20 +821,16 @@ private class CancellationBeforeReadWorkerTestStore(
 }
 
 private class QueuedReadWorkerDispatcher : CoroutineDispatcher() {
-    private val blocks = ArrayDeque<Runnable>()
+    private val blocks = Channel<Runnable>(Channel.UNLIMITED)
     val dispatched = CompletableDeferred<Unit>()
 
     override fun dispatch(context: kotlin.coroutines.CoroutineContext, block: Runnable) {
-        synchronized(blocks) {
-            blocks.addLast(block)
-        }
+        check(blocks.trySend(block).isSuccess)
         dispatched.complete(Unit)
     }
 
     fun runNext() {
-        val block = synchronized(blocks) {
-            blocks.removeFirst()
-        }
+        val block = blocks.tryReceive().getOrThrow()
         block.run()
     }
 }

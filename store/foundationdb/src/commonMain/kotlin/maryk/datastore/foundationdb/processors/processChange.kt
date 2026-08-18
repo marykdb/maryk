@@ -214,6 +214,15 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                             ) as T?
                         }
 
+                        is ListReference<*, *> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            tr.getList(
+                                tableDirs,
+                                key,
+                                propertyReference as ListReference<Any, IsPropertyContext>,
+                            ) as T?
+                        }
+
                         else -> {
                             @Suppress("UNCHECKED_CAST")
                             tr.getValue(
@@ -420,9 +429,8 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                         }
                                     } catch (error: Throwable) {
                                         error.rethrowIfFatal()
-                                        // Fallback to decoded compare if not a simple value definition
-                                        var readIndex = 0
-                                        val actual = readValue(reference.comparablePropertyDefinition, { stored[readIndex++] }) { stored.size - readIndex }
+                                        // Collections and embedded values are stored across multiple rows.
+                                        val actual = storeGetter[reference]
                                         if (actual != expected) {
                                             addValidation(InvalidValueException(reference, expected.toString()))
                                         }

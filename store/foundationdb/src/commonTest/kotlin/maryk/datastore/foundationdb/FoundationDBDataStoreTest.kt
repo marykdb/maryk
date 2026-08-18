@@ -104,7 +104,12 @@ class FoundationDBDataStoreTest {
             val key = assertIs<AddSuccess<TestMarykModel>>(
                 dataStore.execute(
                     TestMarykModel.add(TestMarykModel.create {
-                        string with "before check"
+                        string with "happy"
+                        int with 1
+                        uint with 1u
+                        double with 1.0
+                        dateTime with LocalDateTime(2020, 1, 1, 0, 0)
+                        bool with false
                         list with listOf(1, 2)
                     })
                 ).statuses.single()
@@ -115,13 +120,13 @@ class FoundationDBDataStoreTest {
                     TestMarykModel.change(
                         key.change(
                             Check(TestMarykModel { list::ref } with listOf(3)),
-                            Change(TestMarykModel { string::ref } with "must not commit"),
+                            Change(TestMarykModel { string::ref } with "happier"),
                         )
                     )
                 ).statuses.single()
             )
             assertEquals(
-                "before check",
+                "happy",
                 dataStore.execute(TestMarykModel.get(key)).values.single().values { string }
             )
         } finally {

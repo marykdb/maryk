@@ -216,7 +216,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                     operations.addHistoricIndexRows(historicIndexStoreName, historicIndexCleanupStoreName, keyBytes, oldIndexRows, version.timestamp, active = false)
                     operations.addHistoricIndexRows(historicIndexStoreName, historicIndexCleanupStoreName, keyBytes, storagePlan.indexRows, version.timestamp, active = true)
                     operations.addHistoricUniqueRows(historicUniqueStoreName, historicUniqueCleanupStoreName, oldUniqueRows, version.timestamp, active = false)
-                    operations.addHistoricUniqueRows(historicUniqueStoreName, historicUniqueCleanupStoreName, storagePlan.uniqueRows, version.timestamp, active = !targetIsDeleted)
+                    operations.addHistoricUniqueRows(historicUniqueStoreName, historicUniqueCleanupStoreName, storagePlan.uniqueRows, version.timestamp, active = true)
                 }
                 val changePayload = operations.addChangeLog(
                     dataModel = request.dataModel,

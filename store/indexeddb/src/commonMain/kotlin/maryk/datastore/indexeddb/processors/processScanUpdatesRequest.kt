@@ -468,110 +468,82 @@ private suspend fun <DM : IsRootDataModel> IndexedDbDataStore.collectHardDeleteS
     direction: Direction,
 ): List<RemovalUpdate<DM>> {
     val hardDeletes = mutableListOf<RemovalUpdate<DM>>()
-    val toVersion = request.toVersion
-    if (toVersion != null) {
-        val ranges = if (direction == ASC) keyScanRange.ranges else keyScanRange.ranges.asReversed()
-        rangeLoop@ for (range in ranges) {
-            val rangeStart = if (direction == ASC) {
-                range.getAscendingStartKey(keyScanRange.startKey, keyScanRange.includeStart)
-            } else {
-                range.getAscendingStartKey()
-            }
-            val rangeEnd = if (direction == ASC) {
-                range.getDescendingStartKey()
-            } else {
-                val configuredRangeEnd = range.end
-                keyScanRange.startKey?.takeIf { startKey ->
-                    configuredRangeEnd == null || configuredRangeEnd.isEmpty() || startKey < configuredRangeEnd
-                }?.let { startKey ->
-                    if (keyScanRange.includeStart) keyPrefixUpperBound(startKey) else startKey
-                } ?: range.getDescendingStartKey()
-            }
-            var rawHistoryRow = byteStore.scan(
-                storeName = "hdk:$modelId",
-                startKey = rangeStart,
-                endKey = rangeEnd,
-                includeEnd = false,
-                reverse = direction == DESC,
-                limit = 1u,
-            ).firstOrNull()
-
-            while (rawHistoryRow != null && hardDeletes.size.toUInt() < request.limit) {
-                hardDeleteHistoryRowReadObserver?.invoke(rawHistoryRow.first)
-                val keyBytes = rawHistoryRow.first.copyOfRange(0, rawHistoryRow.first.size - ULong.SIZE_BYTES)
-                if (direction == ASC && range.keyOutOfRange(keyBytes)) break
-                if (direction == DESC && range.keyBeforeStart(keyBytes)) break
-
-                if (
-                    keyScanRange.keyWithinRanges(keyBytes, 0) &&
-                    keyScanRange.matchesPartials(keyBytes, 0) &&
-                    request.includesHardDeleteStartKey(keyBytes, direction)
-                ) {
-                    val matchingDelete = byteStore.scan(
-                        storeName = "hdk:$modelId",
-                        startKey = createHardDeleteHistoryRowKey(keyBytes, toVersion),
-                        endKey = keyPrefixUpperBound(keyBytes),
-                        includeEnd = false,
-                        limit = 1u,
-                    ).firstOrNull()
-                    if (matchingDelete != null) {
-                        hardDeleteHistoryRowReadObserver?.invoke(matchingDelete.first)
-                        val version = matchingDelete.first.readTrailingInvertedVersion()
-                        if (version >= request.fromVersion) {
-                            hardDeletes += RemovalUpdate(
-                                key = request.dataModel.key(keyBytes),
-                                version = version,
-                                reason = HardDelete,
-                            )
-                        }
-                    }
-                }
-
-                rawHistoryRow = if (direction == ASC) {
-                    byteStore.scan(
-                        storeName = "hdk:$modelId",
-                        startKey = keyPrefixUpperBound(keyBytes),
-                        endKey = rangeEnd,
-                        includeEnd = false,
-                        limit = 1u,
-                    ).firstOrNull()
-                } else {
-                    byteStore.scan(
-                        storeName = "hdk:$modelId",
-                        startKey = rangeStart,
-                        endKey = keyBytes,
-                        includeEnd = false,
-                        reverse = true,
-                        limit = 1u,
-                    ).firstOrNull()
-                }
-            }
-            if (hardDeletes.size.toUInt() == request.limit) break@rangeLoop
-        }
-        return hardDeletes
-    }
+    val toVersion = request.toVersion ?: ULong.MAX_VALUE
     val ranges = if (direction == ASC) keyScanRange.ranges else keyScanRange.ranges.asReversed()
     rangeLoop@ for (range in ranges) {
-        byteStore.scanInBatches(
-            storeName = "hd:$modelId",
-            startKey = if (direction == ASC) range.getAscendingStartKey(keyScanRange.startKey, keyScanRange.includeStart) else range.start.takeUnless { it.isEmpty() },
-            endKey = if (direction == ASC) range.end else range.getDescendingStartKey(keyScanRange.startKey, keyScanRange.includeStart),
-            includeEnd = direction == DESC || range.endInclusive,
+        val rangeStart = if (direction == ASC) {
+            range.getAscendingStartKey(keyScanRange.startKey, keyScanRange.includeStart)
+        } else {
+            range.getAscendingStartKey()
+        }
+        val rangeEnd = if (direction == ASC) {
+            range.getDescendingStartKey()
+        } else {
+            val configuredRangeEnd = range.end
+            keyScanRange.startKey?.takeIf { startKey ->
+                configuredRangeEnd == null || configuredRangeEnd.isEmpty() || startKey < configuredRangeEnd
+            }?.let { startKey ->
+                if (keyScanRange.includeStart) keyPrefixUpperBound(startKey) else startKey
+            } ?: range.getDescendingStartKey()
+        }
+        var rawHistoryRow = byteStore.scan(
+            storeName = "hdk:$modelId",
+            startKey = rangeStart,
+            endKey = rangeEnd,
+            includeEnd = false,
             reverse = direction == DESC,
-            targetLimit = UInt.MAX_VALUE,
-        ) { keyBytes, versionBytes ->
-            if (direction == ASC && range.keyOutOfRange(keyBytes)) return@scanInBatches false
-            if (direction == DESC && range.keyBeforeStart(keyBytes)) return@scanInBatches false
-            if (!keyScanRange.keyWithinRanges(keyBytes, 0) || !keyScanRange.matchesPartials(keyBytes, 0)) return@scanInBatches true
+            limit = 1u,
+        ).firstOrNull()
 
-            val version = versionBytes.readTrailingVersion()
-            if (version < request.fromVersion) return@scanInBatches true
-            hardDeletes += RemovalUpdate(
-                key = request.dataModel.key(keyBytes),
-                version = version,
-                reason = HardDelete,
-            )
-            hardDeletes.size.toUInt() < request.limit
+        while (rawHistoryRow != null && hardDeletes.size.toUInt() < request.limit) {
+            hardDeleteHistoryRowReadObserver?.invoke(rawHistoryRow.first)
+            val keyBytes = rawHistoryRow.first.copyOfRange(0, rawHistoryRow.first.size - ULong.SIZE_BYTES)
+            if (direction == ASC && range.keyOutOfRange(keyBytes)) break
+            if (direction == DESC && range.keyBeforeStart(keyBytes)) break
+
+            if (
+                keyScanRange.keyWithinRanges(keyBytes, 0) &&
+                keyScanRange.matchesPartials(keyBytes, 0) &&
+                request.includesHardDeleteStartKey(keyBytes, direction)
+            ) {
+                val matchingDelete = byteStore.scan(
+                    storeName = "hdk:$modelId",
+                    startKey = createHardDeleteHistoryRowKey(keyBytes, toVersion),
+                    endKey = keyPrefixUpperBound(keyBytes),
+                    includeEnd = false,
+                    limit = 1u,
+                ).firstOrNull()
+                if (matchingDelete != null) {
+                    hardDeleteHistoryRowReadObserver?.invoke(matchingDelete.first)
+                    val version = matchingDelete.first.readTrailingInvertedVersion()
+                    if (version >= request.fromVersion) {
+                        hardDeletes += RemovalUpdate(
+                            key = request.dataModel.key(keyBytes),
+                            version = version,
+                            reason = HardDelete,
+                        )
+                    }
+                }
+            }
+
+            rawHistoryRow = if (direction == ASC) {
+                byteStore.scan(
+                    storeName = "hdk:$modelId",
+                    startKey = keyPrefixUpperBound(keyBytes),
+                    endKey = rangeEnd,
+                    includeEnd = false,
+                    limit = 1u,
+                ).firstOrNull()
+            } else {
+                byteStore.scan(
+                    storeName = "hdk:$modelId",
+                    startKey = rangeStart,
+                    endKey = keyBytes,
+                    includeEnd = false,
+                    reverse = true,
+                    limit = 1u,
+                ).firstOrNull()
+            }
         }
         if (hardDeletes.size.toUInt() == request.limit) break@rangeLoop
     }

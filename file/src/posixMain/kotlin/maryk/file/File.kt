@@ -85,6 +85,7 @@ actual object File {
         return readBytes(path, Int.MAX_VALUE)
     }
 
+    @OptIn(ExperimentalForeignApi::class)
     actual fun readBytes(path: String, maxBytes: Int): ByteArray? {
         require(maxBytes >= 0) { "Maximum byte count cannot be negative" }
         if (!fileExists(path)) return null

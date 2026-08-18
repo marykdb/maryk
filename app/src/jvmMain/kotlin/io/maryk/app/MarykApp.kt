@@ -163,56 +163,54 @@ private fun runMarykApp() = application {
             }
         }
 
-        sessions.forEach { session ->
-            BrowserSessionScope(session.id) {
-                val sessionWindowState = rememberWindowState(
-                    width = defaultWidth.dp,
-                    height = defaultHeight.dp,
-                    position = WindowPosition(Alignment.Center),
-                )
-                Window(
-                    onCloseRequest = { closeBrowserWindow(session) },
-                    title = "Maryk - ${session.store.name}",
-                    state = sessionWindowState,
-                ) {
-                    val scope = rememberCoroutineScope()
-                    val connector = remember { StoreConnector() }
-                    val browserState = remember(session.id) { BrowserState(connector, scope) }
+        BrowserSessionScopes(sessions, { it.id }) { session ->
+            val sessionWindowState = rememberWindowState(
+                width = defaultWidth.dp,
+                height = defaultHeight.dp,
+                position = WindowPosition(Alignment.Center),
+            )
+            Window(
+                onCloseRequest = { closeBrowserWindow(session) },
+                title = "Maryk - ${session.store.name}",
+                state = sessionWindowState,
+            ) {
+                val scope = rememberCoroutineScope()
+                val connector = remember { StoreConnector() }
+                val browserState = remember(session.id) { BrowserState(connector, scope) }
 
-                    LaunchedEffect(session.id) {
-                        browserState.connect(session.store)
-                    }
-
-                    DisposableEffect(Unit) {
-                        onDispose { browserState.disconnect() }
-                    }
-
-                    MenuBar {
-                        Menu("File") {
-                            Item("Close Window", onClick = { closeBrowserWindow(session) }, shortcut = shortcutClose)
-                        }
-                        Menu("Data") {
-                            Item("Reload Results", onClick = { browserState.scanFromStart() }, shortcut = shortcutReload)
-                            Item("Import data…", onClick = { browserState.requestImportDataDialog() })
-                            Item("Export all models…", onClick = { browserState.requestExportAllDialog() })
-                            Item("Export data…", onClick = { browserState.requestExportDataDialog() })
-                        }
-                        Menu("Operations") {
-                            Item("Migrations…", onClick = { browserState.requestMigrationDialog() })
-                        }
-                        Menu("Stores") {
-                            Item("New Store", onClick = { openStoreEditor() }, shortcut = shortcutNew)
-                            if (!storesWindowOpen.value) {
-                                Item("Show Stores", onClick = { storesWindowOpen.value = true })
-                            }
-                        }
-                    }
-
-                    BrowserWindowContent(
-                        state = browserState,
-                        onClose = { closeBrowserWindow(session) },
-                    )
+                LaunchedEffect(session.id) {
+                    browserState.connect(session.store)
                 }
+
+                DisposableEffect(Unit) {
+                    onDispose { browserState.disconnect() }
+                }
+
+                MenuBar {
+                    Menu("File") {
+                        Item("Close Window", onClick = { closeBrowserWindow(session) }, shortcut = shortcutClose)
+                    }
+                    Menu("Data") {
+                        Item("Reload Results", onClick = { browserState.scanFromStart() }, shortcut = shortcutReload)
+                        Item("Import data…", onClick = { browserState.requestImportDataDialog() })
+                        Item("Export all models…", onClick = { browserState.requestExportAllDialog() })
+                        Item("Export data…", onClick = { browserState.requestExportDataDialog() })
+                    }
+                    Menu("Operations") {
+                        Item("Migrations…", onClick = { browserState.requestMigrationDialog() })
+                    }
+                    Menu("Stores") {
+                        Item("New Store", onClick = { openStoreEditor() }, shortcut = shortcutNew)
+                        if (!storesWindowOpen.value) {
+                            Item("Show Stores", onClick = { storesWindowOpen.value = true })
+                        }
+                    }
+                }
+
+                BrowserWindowContent(
+                    state = browserState,
+                    onClose = { closeBrowserWindow(session) },
+                )
             }
         }
     }
@@ -224,9 +222,15 @@ private data class BrowserSession(
 )
 
 @Composable
-internal fun BrowserSessionScope(sessionId: String, content: @Composable () -> Unit) {
-    key(sessionId) {
-        content()
+internal fun <S> BrowserSessionScopes(
+    sessions: Iterable<S>,
+    sessionId: (S) -> String,
+    content: @Composable (S) -> Unit,
+) {
+    sessions.forEach { session ->
+        key(sessionId(session)) {
+            content(session)
+        }
     }
 }
 

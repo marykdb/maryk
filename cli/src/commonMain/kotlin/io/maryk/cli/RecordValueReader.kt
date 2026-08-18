@@ -237,23 +237,20 @@ private fun readTextInput(path: String): String {
     }
 }
 
-private fun readBytesInput(path: String): ByteArray {
+internal fun readBytesInput(path: String, maxBytes: Int = MAX_STDIN_BYTES): ByteArray {
     return if (path == "-") {
         readStdinBytes()
     } else {
-        ensureInputFileSize(path)
-        val bytes = File.readBytes(path) ?: throw IllegalArgumentException("File not found: $path")
-        if (bytes.size > MAX_STDIN_BYTES) {
-            throw IllegalArgumentException("input file exceeds max size: ${bytes.size} > $MAX_STDIN_BYTES bytes")
+        val bytes = File.readBytes(path, maxBytes)
+        if (bytes != null) {
+            bytes
+        } else {
+            val size = File.size(path) ?: throw IllegalArgumentException("File not found: $path")
+            if (size > maxBytes) {
+                throw IllegalArgumentException("input file exceeds max size: $size > $maxBytes bytes")
+            }
+            throw IllegalArgumentException("Could not read input file within max size: $maxBytes bytes")
         }
-        bytes
-    }
-}
-
-private fun ensureInputFileSize(path: String) {
-    val size = File.size(path) ?: return
-    if (size > MAX_STDIN_BYTES) {
-        throw IllegalArgumentException("input file exceeds max size: $size > $MAX_STDIN_BYTES bytes")
     }
 }
 

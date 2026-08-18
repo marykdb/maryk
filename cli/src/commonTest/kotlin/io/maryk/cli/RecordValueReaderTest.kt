@@ -1,8 +1,11 @@
 package io.maryk.cli
 
+import maryk.file.File
 import maryk.json.JsonReader
 import maryk.json.JsonToken
+import kotlin.random.Random
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
@@ -38,6 +41,22 @@ class RecordValueReaderTest {
                 reader()
                 reader()
             }
+        }
+    }
+
+    @Test
+    fun fileInputIsReadWithTheConfiguredByteLimit() {
+        val path = "cli-record-input-${Random.nextInt()}.json"
+        try {
+            File.writeText(path, "123456")
+
+            val error = assertFailsWith<IllegalArgumentException> {
+                readBytesInput(path, maxBytes = 5)
+            }
+
+            assertEquals("input file exceeds max size: 6 > 5 bytes", error.message)
+        } finally {
+            File.delete(path)
         }
     }
 }

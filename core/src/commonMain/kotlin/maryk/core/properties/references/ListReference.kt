@@ -49,7 +49,7 @@ open class ListReference<T : Any, CX : IsPropertyContext> internal constructor(
         reader: () -> Byte,
         context: IsPropertyContext?
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
-        val protoKey = ProtoBuf.readKey(reader)
+        val protoKey = ProtoBuf.readReferenceKey(reader)
         val index = protoKey.tag
         return when (index) {
             0u ->

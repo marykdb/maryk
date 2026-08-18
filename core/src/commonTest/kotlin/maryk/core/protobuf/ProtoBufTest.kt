@@ -63,6 +63,13 @@ class ProtoBufTest {
     }
 
     @Test
+    fun readKeyRejectsFieldNumberZero() {
+        assertFailsWith<ParseException> {
+            ProtoBuf.readKey { 0 }
+        }
+    }
+
+    @Test
     fun skipField() {
         val bc = ByteCollector()
 

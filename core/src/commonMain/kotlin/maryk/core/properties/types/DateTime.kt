@@ -48,10 +48,14 @@ fun LocalDateTime.Companion.fromByteReader(length: Int, reader: () -> Byte) = wh
         initLong(reader, 7),
         initShort(reader) * 1000000
     )
-    11 -> Instant.fromEpochSeconds(
-        initLong(reader, 7),
-        initUInt(reader).toInt()
-    )
+    11 -> {
+        val epochSeconds = initLong(reader, 7)
+        val nanosecond = initUInt(reader)
+        require(nanosecond <= 999_999_999u) {
+            "Invalid nanosecond fraction for DateTime conversion: $nanosecond"
+        }
+        Instant.fromEpochSeconds(epochSeconds, nanosecond.toInt())
+    }
     else ->
         throw IllegalArgumentException("Invalid length for bytes for DateTime conversion: $length")
 }.toLocalDateTime(TimeZone.UTC)

@@ -1,6 +1,7 @@
 package maryk.core.properties.types
 
 import kotlinx.datetime.LocalDateTime
+import maryk.core.extensions.bytes.writeBytes
 import maryk.core.properties.definitions.DateTimeDefinition
 import maryk.test.ByteCollector
 import kotlin.test.Test
@@ -61,6 +62,18 @@ internal class DateTimeTest {
             LocalDateTime.fromByteReader(22) {
                 1
             }
+        }
+    }
+
+    @Test
+    fun rejectsMalformedNanosecondFraction() {
+        val bc = ByteCollector()
+        bc.reserve(11)
+        0L.writeBytes(bc::write, 7)
+        1_000_000_000u.writeBytes(bc::write)
+
+        assertFailsWith<IllegalArgumentException> {
+            LocalDateTime.fromByteReader(11, bc::read)
         }
     }
 }

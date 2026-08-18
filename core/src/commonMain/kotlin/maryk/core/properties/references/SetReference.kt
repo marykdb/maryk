@@ -56,7 +56,7 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
     }
 
     override fun getEmbeddedRef(reader: () -> Byte, context: IsPropertyContext?): AnyPropertyReference {
-        val protoKey = ProtoBuf.readKey(reader)
+        val protoKey = ProtoBuf.readReferenceKey(reader)
         return when (protoKey.tag) {
             0u -> {
                 SetItemReference(

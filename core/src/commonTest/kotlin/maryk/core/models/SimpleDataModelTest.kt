@@ -106,7 +106,7 @@ internal class SimpleDataModelTest {
 
     @Test
     fun convertProtoBufBytesToMap() {
-        val bytes = ("0a036861790008102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501").hexToByteArray()
+        val bytes = ("0a03686179102019400c70a3d70a3d7220ccf794d105280130026a09010501050105010501").hexToByteArray()
         var index = 0
 
         val map = SimpleMarykModel.Serializer.readProtoBuf(bytes.size, {

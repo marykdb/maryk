@@ -25,7 +25,19 @@ internal object ProtoBuf {
 
     /** Reads the key of a ProtoBuf based field from [reader] into a ProtoBufKey */
     internal fun readKey(reader: () -> Byte): ProtoBufKey {
+        return readKey(reader, allowZeroFieldNumber = false)
+    }
+
+    /** Reads a Maryk property-reference key, whose zero tag identifies a collection item. */
+    internal fun readReferenceKey(reader: () -> Byte): ProtoBufKey {
+        return readKey(reader, allowZeroFieldNumber = true)
+    }
+
+    private fun readKey(reader: () -> Byte, allowZeroFieldNumber: Boolean): ProtoBufKey {
         return initUIntByVarWithExtraInfo(reader) { result, wireByte ->
+            if (result == 0u && !allowZeroFieldNumber) {
+                throw ParseException("ProtoBuf field number cannot be zero")
+            }
             ProtoBufKey(result, wireTypeOf(wireByte and 0b111))
         }
     }

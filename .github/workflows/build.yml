@@ -112,11 +112,11 @@ jobs:
         shell: bash
         run: npm ci
 
-      - name: Install Firefox and WebKit
-        if: matrix.os == 'ubuntu-latest' && steps.playwright-browsers.outputs.cache-hit != 'true'
+      - name: Install Firefox, WebKit, and system dependencies
+        if: matrix.os == 'ubuntu-latest'
         working-directory: store/indexeddb/browser-smoke
         shell: bash
-        run: npx playwright install firefox webkit
+        run: npx playwright install --with-deps firefox webkit
 
       - name: Configure Firefox
         if: matrix.os == 'ubuntu-latest'

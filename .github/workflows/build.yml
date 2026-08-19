@@ -129,8 +129,28 @@ jobs:
       - name: Run Gradle tasks
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx3g
+          MARYK_KARMA_DIAGNOSTICS_DIR: ${{ github.workspace }}/build/karma-diagnostics
+          MOZ_CRASHREPORTER: '1'
+          MOZ_CRASHREPORTER_DATA_DIRECTORY: ${{ runner.temp }}/firefox-crash-reports
         shell: bash
         run: ./gradlew ${{ matrix.gradle_task }} --dependency-verification=strict --stacktrace --build-cache --no-parallel
+
+      - name: Capture Linux browser test diagnostics
+        if: failure() && matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          mkdir -p build/ci-diagnostics
+          {
+            date --iso-8601=seconds
+            echo '=== processes ==='
+            ps auxww | grep -E '[f]irefox|[c]hrome|[k]arma|[n]ode' || true
+            echo '=== memory ==='
+            free -h
+            echo '=== disk ==='
+            df -h
+            echo '=== kernel messages ==='
+            journalctl -k --no-pager -n 250 || true
+          } > build/ci-diagnostics/browser-test-host.txt
 
       - name: Run native WebKit Maryk IndexedDB smoke
         if: matrix.os == 'ubuntu-latest'
@@ -146,6 +166,9 @@ jobs:
           path: |
             **/build/reports/**
             **/build/test-results/**
+            build/karma-diagnostics/**
+            build/ci-diagnostics/**
+            ${{ runner.temp }}/firefox-crash-reports/**
           if-no-files-found: ignore
           compression-level: 9
 

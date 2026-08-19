@@ -3,6 +3,7 @@ package maryk.datastore.foundationdb
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collect
@@ -424,10 +425,11 @@ class ClusterUpdateLogReliabilityTest {
             )
         )
 
+        var collector: Job? = null
         try {
             // Activate model listener so tail loop reads this model/shards.
             val initialReceived = CompletableDeferred<Unit>()
-            val collector = launch {
+            collector = launch {
                 reader.executeFlow(Log.scanUpdates(fromVersion = 0uL)).collect {
                     initialReceived.complete(Unit)
                 }
@@ -453,6 +455,7 @@ class ClusterUpdateLogReliabilityTest {
             }
         } finally {
             reader.closeAllListeners()
+            collector?.cancelAndJoin()
             reader.close()
             writer.close()
         }

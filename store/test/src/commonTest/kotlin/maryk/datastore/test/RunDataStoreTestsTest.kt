@@ -57,6 +57,7 @@ class RunDataStoreTestsTest {
                 dataStore = NoOpDataStore,
                 testClasses = arrayOf("TimeoutTest" to { testClass }),
                 caseTimeout = 1.milliseconds,
+                printFailureStackTraces = false,
             )
         }
 
@@ -88,6 +89,7 @@ class RunDataStoreTestsTest {
                 dataStore = NoOpDataStore,
                 testClasses = arrayOf("ResetTest" to { testClass }),
                 caseTimeout = 1.milliseconds,
+                printFailureStackTraces = false,
             )
         }
 
@@ -202,6 +204,7 @@ class RunDataStoreTestsTest {
                 testClasses = arrayOf("TimeoutTest" to { testClass }),
                 runOnlyTests = setOf("TimeoutTest.stalled"),
                 caseTimeout = 1.milliseconds,
+                printFailureStackTraces = false,
             )
         }
 
@@ -231,6 +234,7 @@ class RunDataStoreTestsTest {
                 testClasses = arrayOf("DiscoveryTest" to { testClass }),
                 runOnlyTests = setOf("DiscoveryTest.selected"),
                 caseTimeout = 1.milliseconds,
+                printFailureStackTraces = false,
             )
         }
 

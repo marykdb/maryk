@@ -85,6 +85,7 @@ internal suspend fun runDataStoreTestClasses(
     testClasses: Array<Pair<String, DataStoreTestConstructor>>,
     runOnlyTest: String? = null,
     caseTimeout: Duration = 60.seconds,
+    printFailureStackTraces: Boolean = true,
 ) {
     val exceptionList = mutableMapOf<String, Throwable>()
     var executedTests = 0
@@ -108,14 +109,14 @@ internal suspend fun runDataStoreTestClasses(
 
             var phase = "init"
             try {
-                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }) {
+                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, printFailureStackTraces = printFailureStackTraces) {
                     testClass.initData()
                     phase = "test"
                     test()
                 }
             } finally {
                 phase = "reset"
-                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, cleanup = true) {
+                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, cleanup = true, printFailureStackTraces = printFailureStackTraces) {
                     testClass.resetData()
                 }
             }
@@ -151,6 +152,7 @@ internal suspend fun runDataStoreTestClassesIsolated(
     testClasses: Array<Pair<String, DataStoreTestConstructor>>,
     runOnlyTests: Set<String>? = null,
     caseTimeout: Duration = 60.seconds,
+    printFailureStackTraces: Boolean = true,
 ) {
     val exceptionList = mutableMapOf<String, Throwable>()
     val testCases = testClasses.flatMap { (testClassName, testClassConstructor) ->
@@ -160,7 +162,7 @@ internal suspend fun runDataStoreTestClassesIsolated(
                 Triple(testClassName, testClassConstructor, testName)
             }
         } finally {
-            runBoundedCasePhase(caseTimeout, exceptionList, testClassName, "discovery", { "close" }, cleanup = true) {
+            runBoundedCasePhase(caseTimeout, exceptionList, testClassName, "discovery", { "close" }, cleanup = true, printFailureStackTraces = printFailureStackTraces) {
                 dataStore.close()
             }
         }
@@ -194,19 +196,19 @@ internal suspend fun runDataStoreTestClassesIsolated(
 
             var phase = "init"
             try {
-                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }) {
+                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, printFailureStackTraces = printFailureStackTraces) {
                     testClass.initData()
                     phase = "test"
                     test()
                 }
             } finally {
                 phase = "reset"
-                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, cleanup = true) {
+                runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { phase }, cleanup = true, printFailureStackTraces = printFailureStackTraces) {
                     testClass.resetData()
                 }
             }
         } finally {
-            runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { "close" }, cleanup = true) {
+            runBoundedCasePhase(caseTimeout, exceptionList, testClassName, testName, { "close" }, cleanup = true, printFailureStackTraces = printFailureStackTraces) {
                 dataStore.close()
             }
         }
@@ -233,6 +235,7 @@ private suspend fun runBoundedCasePhase(
     testName: String,
     phase: () -> String,
     cleanup: Boolean = false,
+    printFailureStackTraces: Boolean,
     action: suspend () -> Unit,
 ) {
     try {
@@ -250,7 +253,9 @@ private suspend fun runBoundedCasePhase(
         val failedPhase = phase()
         println("  FAILED $failedPhase")
         exceptionList["$testClassName.$testName.$failedPhase"] = throwable
-        throwable.printStackTrace()
+        if (printFailureStackTraces) {
+            throwable.printStackTrace()
+        }
     }
 }
 

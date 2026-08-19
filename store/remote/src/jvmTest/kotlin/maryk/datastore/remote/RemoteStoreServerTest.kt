@@ -22,6 +22,7 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlinx.io.readByteArray
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.seconds
 import maryk.core.models.key
@@ -1346,4 +1347,6 @@ private suspend fun flowStatus(client: HttpClient, baseUrl: String): HttpStatusC
     client.preparePost("$baseUrl${RemoteStoreProtocol.flowPath}") {
         header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
         setBody(fetchRequestPayload())
-    }.execute { response -> response.status }
+    }.execute { response ->
+        response.status.also { response.call.cancel() }
+    }

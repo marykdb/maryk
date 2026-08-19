@@ -12,7 +12,8 @@ suspend fun runIndexedDbBrowserSmoke(
         initial.put("records", byteArrayOf(1), byteArrayOf(10))
         initial.put("records", byteArrayOf(2), byteArrayOf(20))
         check(initial.get("records", byteArrayOf(1))!!.contentEquals(byteArrayOf(10))) { "put/get" }
-        check(initial.scan("records").map { it.first.single() } == listOf(1, 2)) { "scan" }
+        val scannedKeys = initial.scan("records").map { it.first.single() }
+        check(scannedKeys == listOf<Byte>(1, 2)) { "scan: $scannedKeys" }
         initial.delete("records", byteArrayOf(1))
         check(initial.get("records", byteArrayOf(1)) == null) { "delete" }
     } finally {

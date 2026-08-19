@@ -133,27 +133,31 @@ class RequestExecutionTest {
 
     @Test
     fun boundaryCallbackFailureClosesPreparedReadContext() = runTest {
-        val store = BoundaryFailureReadTestStore()
-        try {
-            assertFailsWith<IllegalStateException> {
-                store.executeWithFailingBoundaryCallback()
+        withContext(Dispatchers.Default) {
+            val store = BoundaryFailureReadTestStore()
+            try {
+                assertFailsWith<IllegalStateException> {
+                    store.executeWithFailingBoundaryCallback()
+                }
+                withTimeout(2.seconds) { store.readContextClosed.await() }
+            } finally {
+                store.close()
             }
-            withTimeout(2.seconds) { store.readContextClosed.await() }
-        } finally {
-            store.close()
         }
     }
 
     @Test
     fun snapshotBoundaryPreparationFailureClosesPreparedReadContext() = runTest {
-        val store = SnapshotBoundaryPreparationFailureReadTestStore()
-        try {
-            assertFailsWith<IllegalStateException> {
-                store.execute(SimpleMarykModel.scan())
+        withContext(Dispatchers.Default) {
+            val store = SnapshotBoundaryPreparationFailureReadTestStore()
+            try {
+                assertFailsWith<IllegalStateException> {
+                    store.execute(SimpleMarykModel.scan())
+                }
+                withTimeout(2.seconds) { store.readContextClosed.await() }
+            } finally {
+                store.close()
             }
-            withTimeout(2.seconds) { store.readContextClosed.await() }
-        } finally {
-            store.close()
         }
     }
 

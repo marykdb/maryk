@@ -12,20 +12,30 @@ if (process.env.MARYK_KARMA_DIAGNOSTICS_DIR) {
         fs.appendFileSync(path.join(diagnosticsDirectory, fileName), message);
     }
 
+    function record(action) {
+        try {
+            action();
+        } catch (error) {
+            console.error(`Maryk Karma diagnostics reporter failed: ${error}`);
+        }
+    }
+
     function MarykKarmaDiagnosticsReporter() {
-        this.onBrowserStart = (browser) => writeDiagnostic('browser-start', browser, '');
+        this.onBrowserStart = (browser) => record(() => writeDiagnostic('browser-start', browser, ''));
         this.onSpecComplete = (browser, result) => {
-            const description = result.description.join(' > ');
-            lastCompletedTests.set(browser.id, description);
-            if (!result.success) {
-                writeDiagnostic('test-failed', browser, description);
-            }
+            record(() => {
+                const description = Array.isArray(result.description) ? result.description.join(' > ') : result.description;
+                lastCompletedTests.set(browser.id, description);
+                if (!result.success) {
+                    writeDiagnostic('test-failed', browser, description);
+                }
+            });
         };
         this.onBrowserError = (browser, error) => {
-            writeDiagnostic('browser-error', browser, `${error}; last-test=${lastCompletedTests.get(browser.id) || 'none'}`);
+            record(() => writeDiagnostic('browser-error', browser, `${error}; last-test=${lastCompletedTests.get(browser.id) || 'none'}`));
         };
         this.onBrowserComplete = (browser, result) => {
-            writeDiagnostic('browser-complete', browser, `${JSON.stringify(result)}; last-test=${lastCompletedTests.get(browser.id) || 'none'}`);
+            record(() => writeDiagnostic('browser-complete', browser, `${JSON.stringify(result)}; last-test=${lastCompletedTests.get(browser.id) || 'none'}`));
         };
     }
 

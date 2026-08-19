@@ -140,7 +140,7 @@ internal class HistoricStoreIndexValuesWalker(
                 if (!qualifier.matchesRangePart(0, keyAndReference)) {
                     break
                 }
-                if (qualifier.size < keyAndReference.size + VERSION_BYTE_SIZE) {
+                if (qualifier.size <= keyAndReference.size + VERSION_BYTE_SIZE) {
                     iterator.next()
                     continue
                 }
@@ -200,7 +200,7 @@ internal class HistoricStoreIndexValuesWalker(
                 if (!qualifier.matchesRangePart(0, keyAndReference)) {
                     break
                 }
-                if (qualifier.size < keyAndReference.size + VERSION_BYTE_SIZE) {
+                if (qualifier.size <= keyAndReference.size + VERSION_BYTE_SIZE) {
                     iterator.next()
                     continue
                 }

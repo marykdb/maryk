@@ -10461,6 +10461,9 @@
          <artifact name="node-25.0.0-darwin-arm64.tar.gz">
             <sha256 value="e3734fe04ebebf5b88cb6e1db770d3fbf736bd861748597ca008ad3d51f165f8" origin="Downloaded from nodejs.org"/>
          </artifact>
+         <artifact name="node-25.0.0-linux-x64.tar.gz">
+            <sha256 value="28dd46a6733192647d7c8267343f5a3f1c616f773c448e2c0d2539ae70724b40" origin="Downloaded from nodejs.org"/>
+         </artifact>
       </component>
       <component group="org.opentest4j" name="opentest4j" version="1.3.0">
          <artifact name="opentest4j-1.3.0.jar">

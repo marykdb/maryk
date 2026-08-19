@@ -19,6 +19,7 @@ build/
 
 # Local test dependencies
 /store/foundationdb/bin/
+node_modules/
 
 !gradle/wrapper/gradle-wrapper.jar
 !gradle/wrapper/gradle-wrapper.properties

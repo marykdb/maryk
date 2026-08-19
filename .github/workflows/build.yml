@@ -98,13 +98,30 @@ jobs:
           cache-cleanup: on-success
           cache-read-only: ${{ github.event_name == 'pull_request' }}
 
-      - name: Install Firefox and WebKit
+      - name: Cache Playwright browsers
+        id: playwright-browsers
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-browsers-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('store/indexeddb/browser-smoke/package-lock.json') }}
+
+      - name: Install browser smoke dependencies
         if: matrix.os == 'ubuntu-latest'
         working-directory: store/indexeddb/browser-smoke
         shell: bash
+        run: npm ci
+
+      - name: Install Firefox and WebKit
+        if: matrix.os == 'ubuntu-latest' && steps.playwright-browsers.outputs.cache-hit != 'true'
+        working-directory: store/indexeddb/browser-smoke
+        shell: bash
+        run: npx playwright install --with-deps firefox webkit
+
+      - name: Configure Firefox
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
         run: |
-          npm ci
-          npx playwright install --with-deps firefox webkit
           FIREFOX_BIN="$(find "$HOME/.cache/ms-playwright" -path '*/firefox/firefox' -type f -print -quit)"
           test -n "$FIREFOX_BIN"
           echo "FIREFOX_BIN=$FIREFOX_BIN" >> "$GITHUB_ENV"

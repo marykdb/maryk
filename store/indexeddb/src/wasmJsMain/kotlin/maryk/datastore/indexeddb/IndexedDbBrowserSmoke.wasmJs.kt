@@ -20,7 +20,7 @@ fun runMarykIndexedDbWasmBrowserSmoke(
             override val context = EmptyCoroutineContext
 
             override fun resumeWith(result: Result<Unit>) {
-                result.fold(onSuccess) { error -> onError(error.message ?: error.toString()) }
+                result.fold({ onSuccess() }) { error -> onError(error.message ?: error.toString()) }
             }
         },
     )

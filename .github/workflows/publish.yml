@@ -29,6 +29,7 @@ jobs:
       packages: write
     env:
       EXPECTED_REF: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ref }}
+      BUILD_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || '' }}
       GH_TOKEN: ${{ github.token }}
 
     steps:

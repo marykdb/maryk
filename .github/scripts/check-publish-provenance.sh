@@ -27,6 +27,7 @@ check_required "$build_verifier" \
 check_required "$publish_workflow" \
   'github.event.workflow_run.head_sha' \
   'ref: ${{ env.EXPECTED_REF }}' \
+  'BUILD_RUN_ID: ${{ github.event_name == '\''workflow_run'\'' && github.event.workflow_run.id || '\'''\'' }}' \
   'actions: read' \
   'GH_TOKEN: ${{ github.token }}' \
   'bash .github/scripts/verify-build-provenance.sh' \

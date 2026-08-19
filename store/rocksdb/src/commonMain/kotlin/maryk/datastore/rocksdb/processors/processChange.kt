@@ -388,28 +388,17 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                             }
                         }
 
-                        dataModel.Meta.indexes?.let { indexes ->
-                            indexes.forEach { indexable ->
+                        if (!change.isDeleted) {
+                            dataModel.Meta.indexes?.forEach { indexable ->
                                 val indexReference = indexable.referenceStorageByteArray.bytes
                                 initialIndexValues[indexable].orEmpty().forEach { valueAndKeyBytes ->
-                                    if (change.isDeleted) {
-                                        deleteIndexValue(
-                                            transaction,
-                                            columnFamilies,
-                                            indexReference,
-                                            valueAndKeyBytes,
-                                            versionBytes,
-                                            historicValue = TRUE_ARRAY
-                                        )
-                                    } else {
-                                        setIndexValue(
-                                            transaction,
-                                            columnFamilies,
-                                            indexReference,
-                                            valueAndKeyBytes,
-                                            versionBytes
-                                        )
-                                    }
+                                    setIndexValue(
+                                        transaction,
+                                        columnFamilies,
+                                        indexReference,
+                                        valueAndKeyBytes,
+                                        versionBytes,
+                                    )
                                 }
                             }
                         }
@@ -965,24 +954,55 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
 
             for (index in indexes) {
                 val oldValues = initialIndexValues[index].orEmpty()
-                val newValues = if (targetIsDeleted) {
-                    emptyList()
-                } else {
-                    try {
-                        index.toStorageByteArraysForIndex(transactionGetter, key.bytes)
-                    } catch (error: Throwable) {
-                        error.rethrowIfFatal()
-                        if (
-                            !error.isSkippableDataError() ||
-                            index.isAffectedByAnyReference(requestedChangedReferences)
-                        ) {
-                            throw error
-                        }
-                        oldValues
+                val finalValues = try {
+                    index.toStorageByteArraysForIndex(transactionGetter, key.bytes)
+                } catch (error: Throwable) {
+                    error.rethrowIfFatal()
+                    if (
+                        !error.isSkippableDataError() ||
+                        index.isAffectedByAnyReference(requestedChangedReferences)
+                    ) {
+                        throw error
                     }
+                    oldValues
                 }
 
-                val (removed, added) = diffIndexValues(oldValues, newValues)
+                if (targetIsDeleted) {
+                    val removedHistoricValues = diffIndexValues(oldValues, finalValues).removed
+                    oldValues.forEach { oldValue ->
+                        deleteIndexValue(
+                            transaction,
+                            columnFamilies,
+                            index.referenceStorageByteArray.bytes,
+                            oldValue,
+                            versionBytes,
+                            hardDelete = true,
+                        )
+                        indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldValue)))
+                    }
+                    removedHistoricValues.forEach { oldValue ->
+                        deleteIndexValue(
+                            transaction,
+                            columnFamilies,
+                            index.referenceStorageByteArray.bytes,
+                            oldValue,
+                            versionBytes,
+                        )
+                    }
+                    finalValues.forEach { finalValue ->
+                        deleteIndexValue(
+                            transaction,
+                            columnFamilies,
+                            index.referenceStorageByteArray.bytes,
+                            finalValue,
+                            versionBytes,
+                            historicValue = TRUE_ARRAY,
+                        )
+                    }
+                    continue
+                }
+
+                val (removed, added) = diffIndexValues(oldValues, finalValues)
 
                 if (removed.size == 1 && added.size == 1) {
                     val oldValue = removed.first()

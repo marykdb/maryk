@@ -391,17 +391,15 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 }
                             }
 
-                            dataModel.Meta.indexes?.forEach { index ->
-                                val indexReference = index.referenceStorageByteArray.bytes
-                                initialIndexValues[index].orEmpty().forEach { valueAndKey ->
-                                    if (change.isDeleted) {
-                                        tr.clear(packKey(tableDirs.indexPrefix, indexReference, valueAndKey))
-                                        writeHistoricIndex(tr, tableDirs, indexReference, valueAndKey, versionBytes, EMPTY_BYTEARRAY)
-                                    } else {
+                            if (!change.isDeleted) {
+                                dataModel.Meta.indexes?.forEach { index ->
+                                    val indexReference = index.referenceStorageByteArray.bytes
+                                    initialIndexValues[index].orEmpty().forEach { valueAndKey ->
                                         setIndexValue(tr, tableDirs, indexReference, valueAndKey, versionBytes)
                                     }
                                 }
                             }
+
                             isChanged = true
                         }
                         is Check -> {
@@ -805,24 +803,49 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 indexUpdates = mutableListOf()
                 for (index in indexes) {
                     val oldValues = initialIndexValues[index].orEmpty()
-                    val newValues = if (targetIsDeleted) {
-                        emptyList()
-                    } else {
-                        try {
-                            index.toStorageByteArraysForIndex(overlayGetter, key.bytes)
-                        } catch (error: Throwable) {
-                            error.rethrowIfFatal()
-                            if (
-                                !error.isSkippableDataError() ||
-                                index.isAffectedByAnyReference(requestedChangedReferences)
-                            ) {
-                                throw error
-                            }
-                            oldValues
+                    val finalValues = try {
+                        index.toStorageByteArraysForIndex(overlayGetter, key.bytes)
+                    } catch (error: Throwable) {
+                        error.rethrowIfFatal()
+                        if (
+                            !error.isSkippableDataError() ||
+                            index.isAffectedByAnyReference(requestedChangedReferences)
+                        ) {
+                            throw error
                         }
+                        oldValues
                     }
 
-                    val (removed, added) = diffIndexValues(oldValues, newValues)
+                    if (targetIsDeleted) {
+                        val removedHistoricValues = diffIndexValues(oldValues, finalValues).removed
+                        oldValues.forEach { oldValue ->
+                            tr.clear(packKey(tableDirs.indexPrefix, index.referenceStorageByteArray.bytes, oldValue))
+                            indexUpdates.add(IndexDelete(index.referenceStorageByteArray, Bytes(oldValue)))
+                        }
+                        removedHistoricValues.forEach { oldValue ->
+                            writeHistoricIndex(
+                                tr,
+                                tableDirs,
+                                index.referenceStorageByteArray.bytes,
+                                oldValue,
+                                versionBytes,
+                                HISTORIC_REMOVAL_MARKER,
+                            )
+                        }
+                        finalValues.forEach { finalValue ->
+                            writeHistoricIndex(
+                                tr,
+                                tableDirs,
+                                index.referenceStorageByteArray.bytes,
+                                finalValue,
+                                versionBytes,
+                                EMPTY_BYTEARRAY,
+                            )
+                        }
+                        continue
+                    }
+
+                    val (removed, added) = diffIndexValues(oldValues, finalValues)
 
                     if (removed.size == 1 && added.size == 1) {
                         val oldValue = removed.first()

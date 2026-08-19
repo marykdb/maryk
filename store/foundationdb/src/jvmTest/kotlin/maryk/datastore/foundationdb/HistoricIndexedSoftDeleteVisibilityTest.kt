@@ -130,6 +130,67 @@ class HistoricIndexedSoftDeleteVisibilityTest {
     }
 
     @Test
+    fun historicIndexTracksFinalValueWhenChangeAlsoSoftDeletes() = runTest(timeout = 3.minutes) {
+        val store = FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = listOf("maryk", "test", "historic-index-change-value-and-soft-delete", Uuid.random().toString()),
+            dataModelsById = mapOf(1u to TestMarykModel),
+            keepAllVersions = true,
+        )
+
+        try {
+            val addStatus = assertIs<AddSuccess<TestMarykModel>>(
+                store.execute(
+                    TestMarykModel.add(
+                        TestMarykModel.create {
+                            int with 5
+                            uint with 1u
+                            double with 1.2
+                            dateTime with LocalDateTime(2024, 1, 1, 0, 0)
+                            bool with true
+                            enum with Option.V1
+                        }
+                    )
+                ).statuses.single()
+            )
+
+            val changeStatus = assertIs<ChangeSuccess<TestMarykModel>>(
+                store.execute(
+                    TestMarykModel.change(
+                        addStatus.key.change(
+                            Change(TestMarykModel { int::ref } with 6),
+                            ObjectSoftDeleteChange(true),
+                        )
+                    )
+                ).statuses.single()
+            )
+
+            assertEquals(
+                0,
+                store.execute(
+                    TestMarykModel.scan(
+                        where = Equals(TestMarykModel { int::ref } with 5),
+                        toVersion = changeStatus.version,
+                        filterSoftDeleted = false,
+                    )
+                ).values.size,
+            )
+
+            val scanFinalValue = store.execute(
+                TestMarykModel.scan(
+                    where = Equals(TestMarykModel { int::ref } with 6),
+                    toVersion = changeStatus.version,
+                    filterSoftDeleted = false,
+                )
+            )
+            assertEquals(1, scanFinalValue.values.size)
+            assertTrue(scanFinalValue.values.single().isDeleted)
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
     fun softDeleteSucceedsWithMalformedCurrentIndexedValueRow() = runTest(timeout = 3.minutes) {
         val store = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",

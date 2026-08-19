@@ -1114,6 +1114,8 @@ class FoundationDBDataStore private constructor(
 
         var nextStart = updateHistoryPrefix
         val end = updateHistoryPrefix.nextByteInSameLength()
+        val expectedHistoryKeySize = updateHistoryPrefix.size + ULong.SIZE_BYTES +
+            dataModelsById.getValue(modelId).Meta.keyByteSize
         while (true) {
             val next = runTransaction(modelId) { tr ->
                 val iterator = tr.getRange(
@@ -1125,7 +1127,11 @@ class FoundationDBDataStore private constructor(
                 while (iterator.hasNext()) {
                     val entry = iterator.nextBlocking()
                     lastKey = entry.key
-                    if (entry.value.size != 1 || entry.value[0] != 1.toByte()) continue
+                    if (
+                        entry.key.size != expectedHistoryKeySize ||
+                        entry.value.size != 1 ||
+                        entry.value[0] != 1.toByte()
+                    ) continue
                     val version = entry.key.readReversedVersionBytes(updateHistoryPrefix.size)
                     val key = entry.key.copyOfRange(updateHistoryPrefix.size + ULong.SIZE_BYTES, entry.key.size)
                     val tombstoneKey = packKey(tableDirectories.replicationTombstonePrefix, key)

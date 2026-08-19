@@ -20,7 +20,9 @@ import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
 import platform.posix.AF_INET
 import platform.posix.INADDR_ANY
+import platform.posix.SO_REUSEADDR
 import platform.posix.SOCK_STREAM
+import platform.posix.SOL_SOCKET
 import platform.posix.SIGKILL
 import platform.posix.SIGTERM
 import platform.posix.WNOHANG
@@ -33,6 +35,7 @@ import platform.posix.kill
 import platform.posix.sockaddr_in
 import platform.posix.socket
 import platform.posix.socklen_tVar
+import platform.posix.setsockopt
 import platform.posix.strerror
 import platform.posix.usleep
 import platform.posix.waitpid
@@ -156,6 +159,11 @@ private fun isLocalPortAvailable(localPort: Int): Boolean = memScoped {
     val fd = socket(AF_INET, SOCK_STREAM, 0)
     if (fd < 0) return@memScoped false
     try {
+        val reuseAddress = alloc<IntVar>()
+        reuseAddress.value = 1
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, reuseAddress.ptr, sizeOf<IntVar>().convert()) != 0) {
+            return@memScoped false
+        }
         val addr = alloc<sockaddr_in>()
         addr.sin_family = AF_INET.convert()
         addr.sin_port = portToNetwork(localPort)

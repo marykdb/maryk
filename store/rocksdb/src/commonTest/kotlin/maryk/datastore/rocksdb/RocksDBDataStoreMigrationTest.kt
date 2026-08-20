@@ -24,6 +24,7 @@ import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.NoopMigrationLease
+import maryk.datastore.rocksdb.model.RocksDBLocalMigrationLease
 import maryk.datastore.rocksdb.model.modelMigrationStateKey
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.number
@@ -1009,6 +1010,18 @@ class RocksDBDataStoreMigrationTest {
             )
         }
         canceledStore.close()
+
+        val leaseProbe = RocksDBLocalMigrationLease(path)
+        val leaseProbeMigrationId = "lease-release-probe"
+        try {
+            withTimeout(5_000.milliseconds) {
+                while (!leaseProbe.tryAcquire(1u, leaseProbeMigrationId)) {
+                    delay(10.milliseconds)
+                }
+            }
+        } finally {
+            leaseProbe.release(1u, leaseProbeMigrationId)
+        }
 
         val resumedStore = RocksDBDataStore.open(
             keepAllVersions = true,

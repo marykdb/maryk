@@ -19,7 +19,7 @@ kotlin {
         }
         jsMain {
             dependencies {
-                api(npm("crypto-browserify", "3.12.0"))
+                api(npm("crypto-browserify", "3.12.1"))
             }
         }
     }

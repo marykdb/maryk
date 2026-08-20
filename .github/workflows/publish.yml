@@ -39,13 +39,18 @@ jobs:
           fetch-depth: 0
 
       - name: Verify publish provenance
+        id: provenance
         shell: bash
         run: |
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && ! "$EXPECTED_REF" =~ ^[0-9a-fA-F]{40}$ ]]; then
             echo "Manual publish ref must be a full 40-character commit SHA" >&2
             exit 1
           fi
-          bash .github/scripts/verify-build-provenance.sh
+          EXPECTED_SHA="$EXPECTED_REF" bash .github/scripts/verify-build-provenance.sh
+
+      - name: Record publish provenance
+        shell: bash
+        run: |
           echo "MARYK_PUBLISH_SHA=$MARYK_BUILD_SHA" >> "$GITHUB_ENV"
           {
             echo "commit_sha=$MARYK_BUILD_SHA"
@@ -84,7 +89,7 @@ jobs:
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{secrets.MARYK_SIGNING_PASSWORD}}
 
       - name: Upload publish provenance
-        if: always()
+        if: ${{ always() && env.MARYK_PUBLISH_SHA != '' }}
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: publish-provenance-${{ env.MARYK_PUBLISH_SHA }}

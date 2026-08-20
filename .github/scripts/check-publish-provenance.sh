@@ -27,10 +27,14 @@ check_required "$build_verifier" \
 check_required "$publish_workflow" \
   'github.event.workflow_run.head_sha' \
   'ref: ${{ env.EXPECTED_REF }}' \
+  'EXPECTED_SHA="$EXPECTED_REF" bash .github/scripts/verify-build-provenance.sh' \
   'BUILD_RUN_ID: ${{ github.event_name == '\''workflow_run'\'' && github.event.workflow_run.id || '\'''\'' }}' \
   'actions: read' \
   'GH_TOKEN: ${{ github.token }}' \
-  'bash .github/scripts/verify-build-provenance.sh' \
+  'id: provenance' \
+  'name: Record publish provenance' \
+  'MARYK_PUBLISH_SHA=$MARYK_BUILD_SHA' \
+  'env.MARYK_PUBLISH_SHA !=' \
   'build_run_id=$MARYK_BUILD_RUN_ID'
 
 check_required "$release_workflow" \

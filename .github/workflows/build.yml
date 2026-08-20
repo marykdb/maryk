@@ -20,7 +20,7 @@ jobs:
     name: Publish workflow provenance check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check action pins
         run: .github/scripts/check-action-pins.sh
       - name: Check publish workflow structure
@@ -50,18 +50,18 @@ jobs:
       FDB_VERSION: '7.3.75'
 
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
 
       - name: Setup JDK 21
-        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: zulu
           java-version: 21
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        uses: gradle/actions/wrapper-validation@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
 
       - name: Detect Kotlin version
         id: detect-kotlin
@@ -75,7 +75,7 @@ jobs:
           echo "KOTLIN_VERSION=${V:-unknown}" >> "$GITHUB_ENV"
 
       - name: Cache Kotlin/Native dependencies
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             ~/.konan/dependencies/cache/**
@@ -85,7 +85,7 @@ jobs:
             konan-deps-${{ runner.os }}-${{ runner.arch }}
 
       - name: Cache FoundationDB binaries
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: |
             store/foundationdb/bin/**
@@ -93,7 +93,7 @@ jobs:
           restore-keys: |
             fdb-${{ runner.os }}-${{ runner.arch }}
 
-      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+      - uses: gradle/actions/setup-gradle@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
         with:
           cache-cleanup: on-success
           cache-read-only: ${{ github.event_name == 'pull_request' }}
@@ -106,7 +106,7 @@ jobs:
 
       - name: Upload build reports
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: final-build-report-${{ runner.os }}-${{ runner.arch }}
           path: |
@@ -124,18 +124,18 @@ jobs:
       image: mcr.microsoft.com/playwright:v1.62.1-noble
       options: --user 1001
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup JDK 21
-        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: zulu
           java-version: 21
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        uses: gradle/actions/wrapper-validation@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
 
-      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+      - uses: gradle/actions/setup-gradle@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
         with:
           cache-cleanup: on-success
           cache-read-only: ${{ github.event_name == 'pull_request' }}
@@ -196,7 +196,7 @@ jobs:
 
       - name: Upload browser test reports
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: browser-test-report-Linux-X64
           path: |
@@ -213,20 +213,20 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 2
 
       - name: Setup JDK 21
-        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
         with:
           distribution: zulu
           java-version: 21
 
       - name: Validate Gradle wrapper
-        uses: gradle/actions/wrapper-validation@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+        uses: gradle/actions/wrapper-validation@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
 
-      - uses: gradle/actions/setup-gradle@ed408507eac070d1f99cc633dbcf757c94c7933a # v4
+      - uses: gradle/actions/setup-gradle@67621b124fd2e251c5e8a0e6e3b91318f2287669 # v6.3.0
         with:
           cache-cleanup: on-success
           cache-read-only: ${{ github.event_name == 'pull_request' }}
@@ -238,7 +238,7 @@ jobs:
           sudo udevadm trigger --name-match=kvm
 
       - name: Run Android tests
-        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2
+        uses: reactivecircus/android-emulator-runner@c9c93e6ba9c4194322e114c40970d5983d9a07cc # v2.38.0
         with:
           api-level: 35
           target: google_apis
@@ -251,7 +251,7 @@ jobs:
 
       - name: Upload Android test reports
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: android-test-report-${{ runner.os }}-${{ runner.arch }}
           path: |

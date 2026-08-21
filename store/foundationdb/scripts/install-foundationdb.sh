@@ -4,7 +4,7 @@ set -euo pipefail
 # Install or link FoundationDB locally for the current platform.
 # - Installs/symlinks into: store/foundationdb/bin
 # - Version selector via FDB_VERSION env var or --version flag. Only releases with
-#   pinned checksums are accepted (currently 7.3.75).
+#   pinned checksums are accepted (currently 7.3.79).
 # - Strategy:
 #   * Always rebuild the CLI bundle from pinned release artifacts and verify
 #     their checksums before extraction. Cached, PATH, and package-manager
@@ -18,7 +18,7 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 BIN_DIR="$ROOT_DIR/store/foundationdb/bin"
 LIB_DIR="$BIN_DIR/lib"
 
-FDB_VERSION_DEFAULT="7.3.75"
+FDB_VERSION_DEFAULT="7.3.79"
 FDB_VERSION="${FDB_VERSION:-$FDB_VERSION_DEFAULT}"
 
 if [[ "${1:-}" == "--version" && -n "${2:-}" ]]; then
@@ -56,18 +56,18 @@ compute_sha256() {
 }
 pinned_sha256() {
   case "$FDB_VERSION/$1" in
-    "7.3.75/FoundationDB-7.3.75_arm64.pkg") echo "6b162b0bebefd49873ce2e7d7db7bb001515c80ce3a90545585859c26362488f" ;;
-    "7.3.75/FoundationDB-7.3.75_x86_64.pkg") echo "62a19eddf0a46df7b835d55309c27040853530460087804b07390fefa925d0ab" ;;
-    "7.3.75/foundationdb-clients_7.3.75-1_aarch64.deb") echo "ab58b30f6bc2fa2c8ba0a30e156e292be1322b804340e089e55d21de878398c0" ;;
-    "7.3.75/foundationdb-clients_7.3.75-1_amd64.deb") echo "642841a90acd7f2cc0ae08297245f4f9df76fe250b7b1331f2f99702fec3bee8" ;;
-    "7.3.75/foundationdb-server_7.3.75-1_aarch64.deb") echo "8189d4aaf5eb29e4a79819700a08096a3853ec8806693729e3f69a91a75c6a0e" ;;
-    "7.3.75/foundationdb-server_7.3.75-1_amd64.deb") echo "2cc48b1863125dadc834f0678c3cb54191d637fdc6502d571d63a1628937721e" ;;
+    "7.3.79/FoundationDB-7.3.79_arm64.pkg") echo "5104ade94d1e1b62119f49e3e16d43bd9ffb8b5ec604b1730f46f680c0c1890e" ;;
+    "7.3.79/FoundationDB-7.3.79_x86_64.pkg") echo "0bcd0f9430984ab72d7ba47f8ed95c85f14d237f3878ab1521feff14e074dbc4" ;;
+    "7.3.79/foundationdb-clients_7.3.79-1_aarch64.deb") echo "52de6931803c322e131c5e84cebb35d647237ef51a7df3df6fbe32b9b971e7fb" ;;
+    "7.3.79/foundationdb-clients_7.3.79-1_amd64.deb") echo "52cc22565c42e7eb60c08f395a0626483735c311be0d80b7c035ac8e328e2fff" ;;
+    "7.3.79/foundationdb-server_7.3.79-1_aarch64.deb") echo "d92ecf9ebb5cba4b4c06ee3c74c44d31871957a1fb35a1efb662836ae7c87025" ;;
+    "7.3.79/foundationdb-server_7.3.79-1_amd64.deb") echo "f85a4126a76919a4dd6194e69bc29200d0d4fa3d7b5261e7eb91c090b7fdba55" ;;
     *) return 1 ;;
   esac
 }
 validate_pinned_version() {
   case "$FDB_VERSION" in
-    7.3.75) ;;
+    7.3.79) ;;
     *) err "No pinned SHA-256 checksums for FoundationDB version $FDB_VERSION." ;;
   esac
 }

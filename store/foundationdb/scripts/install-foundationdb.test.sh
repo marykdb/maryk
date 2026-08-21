@@ -108,12 +108,12 @@ while read -r artifact expected; do
     exit 1
   }
 done <<'EOF'
-FoundationDB-7.3.75_arm64.pkg 6b162b0bebefd49873ce2e7d7db7bb001515c80ce3a90545585859c26362488f
-FoundationDB-7.3.75_x86_64.pkg 62a19eddf0a46df7b835d55309c27040853530460087804b07390fefa925d0ab
-foundationdb-clients_7.3.75-1_aarch64.deb ab58b30f6bc2fa2c8ba0a30e156e292be1322b804340e089e55d21de878398c0
-foundationdb-clients_7.3.75-1_amd64.deb 642841a90acd7f2cc0ae08297245f4f9df76fe250b7b1331f2f99702fec3bee8
-foundationdb-server_7.3.75-1_aarch64.deb 8189d4aaf5eb29e4a79819700a08096a3853ec8806693729e3f69a91a75c6a0e
-foundationdb-server_7.3.75-1_amd64.deb 2cc48b1863125dadc834f0678c3cb54191d637fdc6502d571d63a1628937721e
+FoundationDB-7.3.79_arm64.pkg 5104ade94d1e1b62119f49e3e16d43bd9ffb8b5ec604b1730f46f680c0c1890e
+FoundationDB-7.3.79_x86_64.pkg 0bcd0f9430984ab72d7ba47f8ed95c85f14d237f3878ab1521feff14e074dbc4
+foundationdb-clients_7.3.79-1_aarch64.deb 52de6931803c322e131c5e84cebb35d647237ef51a7df3df6fbe32b9b971e7fb
+foundationdb-clients_7.3.79-1_amd64.deb 52cc22565c42e7eb60c08f395a0626483735c311be0d80b7c035ac8e328e2fff
+foundationdb-server_7.3.79-1_aarch64.deb d92ecf9ebb5cba4b4c06ee3c74c44d31871957a1fb35a1efb662836ae7c87025
+foundationdb-server_7.3.79-1_amd64.deb f85a4126a76919a4dd6194e69bc29200d0d4fa3d7b5261e7eb91c090b7fdba55
 EOF
 
 if bash -c 'source "$1"; pinned_sha256 unsupported-artifact' _ "$INSTALLER" >/dev/null; then
@@ -161,7 +161,7 @@ grep -Fq 'Checksum mismatch' <<< "$output" || {
 # Even a forged manifest cannot make arbitrary cached binaries reusable.
 printf '#!/usr/bin/env bash\nexit 0\n' > "$CACHED_BIN/fdbserver"
 chmod +x "$CACHED_BIN/fdbserver"
-printf 'version 7.3.75\n%s fdbserver\n' "$(shasum -a 256 "$CACHED_BIN/fdbserver" | awk '{print $1}')" > "$CACHED_BIN/.maryk-foundationdb-integrity"
+printf 'version 7.3.79\n%s fdbserver\n' "$(shasum -a 256 "$CACHED_BIN/fdbserver" | awk '{print $1}')" > "$CACHED_BIN/.maryk-foundationdb-integrity"
 if output="$(PATH="$FAKE_BIN:/usr/bin:/bin" bash "$CACHED_SCRIPTS/install-foundationdb.sh" 2>&1)"; then
   echo "Expected a forged cached FoundationDB bundle to be rejected, but it succeeded." >&2
   exit 1

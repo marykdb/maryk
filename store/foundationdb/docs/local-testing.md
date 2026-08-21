@@ -18,7 +18,7 @@ This module can automatically install and run a local FoundationDB server for JV
 
 ### Configuration
 
-- **`FDB_VERSION`:** Optional FoundationDB release selector. The only supported pinned release is `7.3.75`; any other version fails before local/system installation, download, or extraction. If unset, scripts use the project default matching the client dependency.
+- **`FDB_VERSION`:** Optional FoundationDB release selector. The only supported pinned release is `7.3.79`; any other version fails before local/system installation, download, or extraction. If unset, scripts use the project default matching the client dependency.
 - **`FDB_CLEAN_MODE`:** Post‑test cleanup (default `data`). Options:
     - `data`: delete `build/testdatastore/data` (database wiped).
     - `all`: delete `build/testdatastore/data` and `build/testdatastore/logs`.

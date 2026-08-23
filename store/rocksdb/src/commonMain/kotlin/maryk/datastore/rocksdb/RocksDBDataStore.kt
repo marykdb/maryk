@@ -420,13 +420,13 @@ class RocksDBDataStore private constructor(
 
         startFlows()
 
+        storeInitializationComplete.value = true
+        migrateStoredIndexKeyFormatIfReady()
+
         scheduledVersionUpdateHandlers.forEach {
             it()
             writeStoreMeta()
         }
-
-        storeInitializationComplete.value = true
-        migrateStoredIndexKeyFormatIfReady()
     }
 
     private suspend fun writeStoreMeta(indexKeyFormatVersion: Int? = null) {

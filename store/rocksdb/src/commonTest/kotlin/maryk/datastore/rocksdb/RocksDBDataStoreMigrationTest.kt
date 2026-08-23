@@ -167,6 +167,34 @@ class RocksDBDataStoreMigrationTest {
     }
 
     @Test
+    fun freshStoreVersionUpdateHandlerCanWriteAfterIndexKeyFormatIsReady() = runTest {
+        val path = createTestDBFolder("freshStoreVersionUpdateWrite")
+        var seeded = false
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            versionUpdateHandler = { store, oldModel, _ ->
+                assertNull(oldModel)
+                val response = store.execute(
+                    ModelV2.add(
+                        ModelV2.create { value with "haSeed"; newNumber with 1 },
+                    )
+                )
+                assertIs<AddSuccess<ModelV2>>(response.statuses.single())
+                seeded = true
+            },
+        )
+
+        try {
+            assertTrue(seeded)
+        } finally {
+            dataStore.close()
+            deleteFolder(path)
+        }
+    }
+
+    @Test
     fun testMigration() = runTest {
         val path = createTestDBFolder("migration")
         var didRunUpdateHandler = false

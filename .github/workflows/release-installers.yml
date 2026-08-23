@@ -32,6 +32,12 @@ jobs:
           ref: ${{ env.RELEASE_TAG }}
           fetch-depth: 0
 
+      - name: Setup JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5.7.0
+        with:
+          distribution: zulu
+          java-version: 21
+
       - name: Verify published release and version
         id: provenance
         shell: bash
@@ -61,7 +67,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
+          - os: macos-15
             name: macOS arm64 DMG and CLI
             gradle_task: :app:packageDmg :cli:nativeDistZipMacosArm64
             cli_platform: macos-arm64
@@ -77,11 +83,19 @@ jobs:
     env:
       RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
       RELEASE_SHA: ${{ needs.verify-release.outputs.source_sha }}
+      WORKFLOW_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.RELEASE_SHA }}
           fetch-depth: 0
+
+      - name: Use dispatch dependency verification metadata
+        if: github.event_name == 'workflow_dispatch'
+        shell: bash
+        run: |
+          git show "$WORKFLOW_SHA:gradle/verification-metadata.xml" > gradle/verification-metadata.xml
+          git show "$WORKFLOW_SHA:cli/scripts/verify-native-bundle.sh" > cli/scripts/verify-native-bundle.sh
 
       - name: Reassert release tag provenance
         shell: bash
@@ -211,6 +225,7 @@ jobs:
           }
           trap cleanup EXIT
 
+          sudo install -d -m 0755 /usr/share/desktop-directories
           install_attempted=true
           sudo dpkg --install "$deb"
           launcher=$(dpkg-query --listfiles "$package_name" | awk '/\/bin\/[^/]+$/ { print; exit }')

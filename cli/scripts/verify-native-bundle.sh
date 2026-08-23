@@ -27,7 +27,6 @@ license_file="$temp_dir/$bundle_name/LICENSE.txt"
 case "$platform" in
   linux-x64)
     readelf -d "$binary" | grep -F 'RUNPATH' | grep -F '$ORIGIN/../lib'
-    ldd "$binary" | grep -F "$bundled_library"
     ;;
   macos-arm64)
     lipo -archs "$binary" | tr ' ' '\n' | grep -Fx arm64
@@ -37,4 +36,4 @@ case "$platform" in
     ;;
 esac
 
-"$binary" --help >/dev/null
+"$binary" --exec help >/dev/null

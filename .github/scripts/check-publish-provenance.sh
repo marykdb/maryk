@@ -40,16 +40,22 @@ check_required "$publish_workflow" \
 check_required "$release_workflow" \
   'types: [published]' \
   'description: Existing release tag to build and attach' \
+  'os: macos-15' \
   'ref: ${{ env.RELEASE_TAG }}' \
   'actions: read' \
   'is_draft=$(gh release view "$TAG" --json isDraft --jq '\''.isDraft'\'')' \
   'if [[ "$is_draft" != "false" ]]; then' \
+  'WORKFLOW_SHA: ${{ github.sha }}' \
+  "if: github.event_name == 'workflow_dispatch'" \
+  'git show "$WORKFLOW_SHA:gradle/verification-metadata.xml" > gradle/verification-metadata.xml' \
+  'git show "$WORKFLOW_SHA:cli/scripts/verify-native-bundle.sh" > cli/scripts/verify-native-bundle.sh' \
   'EXPECTED_SHA="$ACTUAL_SHA" bash .github/scripts/verify-build-provenance.sh' \
   ':app:verifyDistributionVersion' \
   '-PreleaseTag="$RELEASE_TAG"' \
   'Smoke test packaged macOS app' \
   'hdiutil attach "$dmg"' \
   'Smoke test packaged Linux app' \
+  'sudo install -d -m 0755 /usr/share/desktop-directories' \
   'sudo dpkg --install "$deb"' \
   'Smoke test packaged Windows app' \
   'Start-Process msiexec.exe' \

@@ -76,6 +76,14 @@ data class TypeReference<E : TypeEnum<T>, T: Any, in CX : IsPropertyContext> int
         return propertyReference == this
     }
 
+    override fun equals(other: Any?) = when {
+        this === other -> true
+        other !is AnyPropertyReference -> false
+        else -> other.completeName == this.completeName
+    }
+
+    override fun hashCode() = this.completeName.hashCode()
+
     override fun toQualifierStorageByteArray() = this.toStorageByteArray()
 
     override fun calculateReferenceStorageByteLength(): Int {

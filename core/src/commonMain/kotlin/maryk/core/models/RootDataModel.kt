@@ -14,6 +14,7 @@ import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.index.IsIndexable
 import maryk.core.properties.definitions.index.UUIDv4Key
+import maryk.core.properties.definitions.index.hasSameKeyEncodingAs
 import maryk.core.properties.definitions.wrapper.AnyDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.EmbeddedObjectDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
@@ -110,7 +111,7 @@ open class RootDataModel<DM: IsValuesDataModel> internal constructor(
                 migrationReasons += "Major version was increased: ${storedDataModel.Meta.version} -> ${this.Meta.version}"
             }
 
-            if (storedDataModel.Meta.keyDefinition != this.Meta.keyDefinition) {
+            if (!storedDataModel.Meta.keyDefinition.hasSameKeyEncodingAs(this.Meta.keyDefinition)) {
                 migrationReasons += "Key definition was not the same"
             }
         } else {

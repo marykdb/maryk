@@ -91,6 +91,15 @@ interface IsIndexable {
     fun isCompatibleWithModel(dataModel: IsRootDataModel): Boolean
 }
 
+/**
+ * Checks whether this key definition has the same persisted encoding as [other].
+ *
+ * Migration decisions must use this canonical signature instead of Kotlin object equality,
+ * because stored definitions are reconstructed as different object instances.
+ */
+internal fun IsIndexable.hasSameKeyEncodingAs(other: IsIndexable): Boolean =
+    this.referenceStorageByteArray == other.referenceStorageByteArray
+
 /** Convert indexable to a ByteArray so it can be referenced */
 internal fun IsIndexable.toReferenceStorageByteArray(): ByteArray {
     var index = 0

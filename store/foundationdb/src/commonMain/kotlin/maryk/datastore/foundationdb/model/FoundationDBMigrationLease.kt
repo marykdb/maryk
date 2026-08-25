@@ -1,5 +1,3 @@
-@file:Suppress("DEPRECATION")
-
 package maryk.datastore.foundationdb.model
 
 import kotlinx.atomicfu.atomic
@@ -15,8 +13,8 @@ import maryk.foundationdb.Transaction
 import maryk.core.models.migration.MigrationLease
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
-import kotlinx.datetime.Clock
 import kotlin.random.Random
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class FoundationDBMigrationLease(

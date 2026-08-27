@@ -1,12 +1,12 @@
 ## Version catalog for the Maryk build.
 [versions]
-android = "9.3.1"
+android = "9.3.2"
 androidDesugarJdkLibs = "2.1.5"
 androidxTestCore = "1.7.0"
 androidxTestRunner = "1.7.0"
 atomicfu = "0.33.0"
 benManesVersions = "0.61.0"
-compose = "1.12.0-beta03"
+compose = "1.12.0"
 composeMaterial3 = "1.12.0-alpha03"
 composeMaterialIcons = "1.7.3"
 cryptography = "0.6.0"
@@ -18,9 +18,9 @@ kotter = "1.4.0"
 ktor = "3.5.2"
 marykFoundationdb = "7.3.79"
 marykRocksdb = "10.10.1.3"
-protobuf = "4.35.1"
+protobuf = "4.36.0"
 protobufPlugin = "0.10.0"
-protoc = "4.35.1"
+protoc = "4.36.0"
 versionCatalogUpdate = "1.1.1"
 vico = "2.5.2"
 
@@ -38,8 +38,8 @@ compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.re
 compose-ui = { module = "org.jetbrains.compose.ui:ui", version.ref = "compose" }
 cryptography-core = { module = "dev.whyoleg.cryptography:cryptography-core", version.ref = "cryptography" }
 cryptography-provider-optimal = { module = "dev.whyoleg.cryptography:cryptography-provider-optimal", version.ref = "cryptography" }
-kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlin-compiler-embeddable = { module = "org.jetbrains.kotlin:kotlin-compiler-embeddable", version.ref = "kotlin" }
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 kotlinx-collections-immutable = { module = "org.jetbrains.kotlinx:kotlinx-collections-immutable", version.ref = "kotlinxCollectionsImmutable" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
@@ -47,8 +47,8 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 kotter = { module = "com.varabyte.kotter:kotter", version.ref = "kotter" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
-ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 ktor-client-curl = { module = "io.ktor:ktor-client-curl", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 ktor-server-cio = { module = "io.ktor:ktor-server-cio", version.ref = "ktor" }
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-test-host = { module = "io.ktor:ktor-server-test-host", version.ref = "ktor" }

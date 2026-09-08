@@ -219,7 +219,9 @@ internal class FoundationDBMigrationLease(
         val fencingToken: ULong,
     ) {
         fun toPersistedBytes(): ByteArray = buildString {
-            append("v=2\n")
+            // Keep the established header version so rolling-upgrade readers retain ownership
+            // semantics. Older readers ignore the additional fencing field.
+            append("v=1\n")
             append("owner=").append(ownerToken).append('\n')
             append("migration=").append(migrationId).append('\n')
             append("expires=").append(expiresAtMs).append('\n')
@@ -242,7 +244,7 @@ internal class FoundationDBMigrationLease(
                 val migration = entries["migration"] ?: return null
                 val expires = entries["expires"]?.toLongOrNull() ?: return null
                 val fencingToken = when (version) {
-                    "1" -> 0uL
+                    "1" -> entries["fence"]?.toULongOrNull() ?: 0uL
                     else -> entries["fence"]?.toULongOrNull() ?: return null
                 }
                 return LeaseRecord(owner, migration, expires, fencingToken)

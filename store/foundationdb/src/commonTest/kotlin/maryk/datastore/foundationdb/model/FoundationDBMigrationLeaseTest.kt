@@ -179,6 +179,11 @@ class FoundationDBMigrationLeaseTest {
         val lease = FoundationDBMigrationLease(dataStore.tc, mapOf(1u to modelPrefix), scope)
         try {
             assertTrue(lease.tryAcquire(1u, "migration-v1-v2"))
+            val persistedLease = dataStore.tc.run { transaction ->
+                transaction.get(leaseKey).awaitResult()?.decodeToString()
+            }
+            assertTrue(persistedLease?.startsWith("v=1\n") == true)
+            assertTrue(persistedLease.contains("fence="))
             dataStore.tc.run { transaction ->
                 transaction.set(
                     leaseKey,

@@ -82,7 +82,7 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel, T : Any>(
     /** Delete any index of [value] to [record] and return true if an index value was deleted */
     fun deleteHardFromIndex(record: DataRecord<DM>, value: T): Boolean {
         val i = indexValues.binarySearch { it.value.compareTo(value) }
-        return if (i >= 0) {
+        return if (i >= 0 && indexValues[i].record == record) {
             val oldValue = indexValues[i]
             if (oldValue is HistoricalIndexValue<DM, T>) {
                 oldValue.records.removeAll { it.record == record }
@@ -113,4 +113,3 @@ internal abstract class AbstractIndexValues<DM : IsRootDataModel, T : Any>(
             }
         }
 }
-

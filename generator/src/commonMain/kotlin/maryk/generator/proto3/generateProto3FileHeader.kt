@@ -30,5 +30,8 @@ private fun String.requireProto3PackageName() {
 }
 
 private fun String.requireProto3ImportName() {
-    require(matches(proto3Identifier)) { "Proto3 import name is invalid: $this" }
+    require(split('/').all { component ->
+        component.isNotEmpty() && component != "." && component != ".." &&
+            component.all { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' || it in "_-." }
+    }) { "Proto3 import name is invalid: $this" }
 }

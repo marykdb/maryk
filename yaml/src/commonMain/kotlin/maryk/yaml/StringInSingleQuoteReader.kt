@@ -31,6 +31,11 @@ internal fun IsYamlCharReader.singleQuoteString(
             } else {
                 if (aQuoteFound) {
                     break@loop
+                } else if (lastChar == '\r') {
+                    storedValue.append('\n')
+                    read()
+                    if (lastChar == '\n') read()
+                    continue@loop
                 } else {
                     validateRawYamlScalarCharacter(lastChar)
                     storedValue.append(lastChar)

@@ -4,6 +4,16 @@ import kotlin.test.Test
 
 class StringInSingleQuoteReaderTest {
     @Test
+    fun normalizesRawLineBreaks() {
+        listOf("\n", "\r\n", "\r").forEach { lineBreak ->
+            createYamlReader("'first${lineBreak}second'").apply {
+                assertValue("first\nsecond")
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
     fun readLongSingleQuotedString() {
         val value = "a".repeat(100_000)
 

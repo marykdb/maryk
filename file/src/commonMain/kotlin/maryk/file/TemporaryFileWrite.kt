@@ -33,8 +33,7 @@ private fun File.writeAtomically(
     contents: ByteArray,
     syncTemporaryFile: (String) -> Boolean = ::syncFile,
 ) {
-    val parent = path.substringBeforeLast('/', path.substringBeforeLast('\\', ""))
-    val temporaryPath = "${if (parent.isEmpty()) "" else "$parent/"}.maryk-${Random.nextLong().toString(16)}.tmp"
+    val temporaryPath = temporarySiblingPath(path)
     try {
         writeBytesExclusively(temporaryPath, contents)
         check(syncTemporaryFile(temporaryPath)) { "Could not sync temporary file: $temporaryPath" }
@@ -43,4 +42,10 @@ private fun File.writeAtomically(
     } finally {
         delete(temporaryPath)
     }
+}
+
+internal fun temporarySiblingPath(path: String): String {
+    val separator = path.indexOfLast { it == '/' || it == '\\' }
+    val parent = if (separator < 0) "" else path.substring(0, separator + 1)
+    return "${parent}.maryk-${Random.nextLong().toString(16)}.tmp"
 }

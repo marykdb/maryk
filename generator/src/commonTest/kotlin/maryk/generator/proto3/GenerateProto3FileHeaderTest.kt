@@ -4,6 +4,7 @@ import maryk.generator.kotlin.GenerationContext
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
 import kotlin.test.Test
+import kotlin.test.assertTrue
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -78,9 +79,29 @@ class GenerateProto3FileHeaderTest {
         assertEquals(0, writes)
 
         val importException = assertFailsWith<IllegalArgumentException> {
-            generateProto3FileHeader("maryk", listOf("valid", "invalid-import")) { writes++ }
+            generateProto3FileHeader("maryk", listOf("valid", "../invalid-import")) { writes++ }
         }
-        assertEquals("Proto3 import name is invalid: invalid-import", importException.message)
+        assertEquals("Proto3 import name is invalid: ../invalid-import", importException.message)
         assertEquals(0, writes)
+    }
+
+    @Test
+    fun acceptsRelativeImportPathsAndHyphenatedFileNames() {
+        val output = buildString {
+            generateProto3FileHeader("maryk", listOf("google/protobuf/timestamp", "common-types")) { append(it) }
+        }
+        assertTrue(output.contains("import \"google/protobuf/timestamp.proto\";"))
+        assertTrue(output.contains("import \"common-types.proto\";"))
+    }
+
+    @Test
+    fun rejectsUnsafeImportPathsBeforeWriting() {
+        listOf("/absolute", "../outside", "folder/../outside", "folder//empty", "quote\"", "line\nfeed", "back\\slash", "C:/absolute").forEach { name ->
+            var writes = 0
+            assertFailsWith<IllegalArgumentException> {
+                generateProto3FileHeader("maryk", listOf(name)) { writes++ }
+            }
+            assertEquals(0, writes)
+        }
     }
 }

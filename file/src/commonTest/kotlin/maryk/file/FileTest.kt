@@ -10,6 +10,14 @@ import kotlin.test.assertNull
 
 class FileTest {
     @Test
+    fun temporaryFilesRemainBesideRootAndNestedDestinations() {
+        listOf("/file" to "/", "file" to "", "/folder/file" to "/folder/", "C:\\file" to "C:\\", "C:\\folder/file" to "C:\\folder/").forEach { (destination, parent) ->
+            val temporary = temporarySiblingPath(destination)
+            assertEquals(parent, temporary.substring(0, temporary.lastIndexOf(".maryk-")))
+        }
+    }
+
+    @Test
     fun writeAndReadBack() {
         val path = "fileStoreTest-${Random.nextInt()}.txt"
 

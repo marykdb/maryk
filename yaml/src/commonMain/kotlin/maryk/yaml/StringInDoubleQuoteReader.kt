@@ -31,6 +31,13 @@ internal fun IsYamlCharReader.doubleQuoteString(
 
         var skipChar: SkipCharType = None
         loop@ while (lastChar != '"' || skipChar == StartNewEscaped) {
+            if (lastChar == '\r' && (skipChar == None || skipChar == StartNewEscaped)) {
+                if (skipChar == None) foundValue.append('\n')
+                skipChar = None
+                read()
+                if (lastChar == '\n') read()
+                continue@loop
+            }
             skipChar = when (skipChar) {
                 None -> when (lastChar) {
                     '\\' -> StartNewEscaped

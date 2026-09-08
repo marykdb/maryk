@@ -4,6 +4,26 @@ import kotlin.test.Test
 
 class StringInDoubleQuoteReaderTest {
     @Test
+    fun escapedRawLineBreaksRemainContinuations() {
+        listOf("\n", "\r\n", "\r").forEach { lineBreak ->
+            createYamlReader("\"first\\${lineBreak}second\"").apply {
+                assertValue("firstsecond")
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
+    fun normalizesRawLineBreaks() {
+        listOf("\n", "\r\n", "\r").forEach { lineBreak ->
+            createYamlReader("\"first${lineBreak}second\"").apply {
+                assertValue("first\nsecond")
+                assertEndDocument()
+            }
+        }
+    }
+
+    @Test
     fun readDoubleQuote() {
         createYamlReader(""""test"""").apply {
             assertValue("test")

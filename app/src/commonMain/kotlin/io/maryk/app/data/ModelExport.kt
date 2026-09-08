@@ -158,25 +158,45 @@ private fun serializeModelAsProto(
 }
 
 private fun List<IsRootDataModel>.sharedProtoEnums(): List<IsIndexedEnumDefinition<*>> {
-    val usages = mutableMapOf<IsIndexedEnumDefinition<*>, Int>()
+    val usages = mutableListOf<Pair<IsIndexedEnumDefinition<*>, Int>>()
     for (model in this) {
-        val modelEnums = linkedSetOf<IsIndexedEnumDefinition<*>>()
+        val modelEnums = mutableListOf<IsIndexedEnumDefinition<*>>()
         for (property in model) {
             val definition = property.definition as? IsSerializablePropertyDefinition<*, *> ?: continue
             definition.collectProtoEnums(modelEnums)
         }
         for (enum in modelEnums) {
-            usages[enum] = usages[enum]?.plus(1) ?: 1
+            val previousIndex = usages.indexOfFirst { (other) -> other.name == enum.name && other == enum }
+            if (previousIndex < 0) usages += enum to 1
+            else usages[previousIndex] = enum to (usages[previousIndex].second + 1)
         }
     }
-    return usages.filterValues { it > 1 }.keys.toList()
+    val shared = usages.filter { it.second > 1 }.map { it.first }
+        .filter { enum ->
+            // GenerationContext uses enum equality, which ignores the name for
+            // declared cases. Such enums must stay local to avoid suppressing
+            // a different type's declaration in another generated file.
+            usages.none { (other) ->
+                (other.name == enum.name && other != enum) || (other.name != enum.name && other == enum)
+            }
+        }
+    // Proto enum cases share their enclosing scope with their enum type. Keep
+    // colliding definitions inside each model instead of introducing invalid
+    // top-level symbols when unrelated models use the same case names.
+    val symbols = shared.associate { enum ->
+        enum.name to (listOf(enum.name, "UNKNOWN_${enum.name.uppercase()}") + enum.cases().map { it.name })
+    }
+    val symbolCounts = (symbols.values.flatten() + map { it.Meta.name }).groupingBy { it }.eachCount()
+    return shared.filter { enum -> symbols.getValue(enum.name).all { symbolCounts.getValue(it) == 1 } }
 }
 
 private fun IsSerializablePropertyDefinition<*, *>.collectProtoEnums(
-    output: MutableSet<IsIndexedEnumDefinition<*>>,
+    output: MutableList<IsIndexedEnumDefinition<*>>,
 ) {
     when (this) {
-        is EnumDefinition<*> -> output += enum
+        is EnumDefinition<*> -> {
+            if (output.none { it.name == enum.name && it == enum }) output += enum
+        }
         is IsCollectionDefinition<*, *, *, *> -> valueDefinition.collectProtoEnums(output)
         is IsMapDefinition<*, *, *> -> {
             keyDefinition.collectProtoEnums(output)

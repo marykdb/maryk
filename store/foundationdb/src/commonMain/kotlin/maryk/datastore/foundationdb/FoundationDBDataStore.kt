@@ -679,6 +679,7 @@ class FoundationDBDataStore private constructor(
                 dataModelsById = dataModelsById,
                 consumerId = consumerId,
                 retention = clusterUpdateLogConfiguration.clusterUpdateLogRetention,
+                allowDeletedAdditions = clusterUpdateLogConfiguration.clusterUpdateLogAllowDeletedAdditions,
             )
         }
 
@@ -1361,6 +1362,16 @@ class FoundationDBDataStore private constructor(
         readStoredModelNames(tc, metadataPrefix)
 
     internal var clusterUpdateLog: ClusterUpdateLog? = null
+
+    internal fun requireDeletedAdditionCompatibility(isDeleted: Boolean) {
+        require(
+            !isDeleted ||
+                !clusterUpdateLogConfiguration.enableClusterUpdateLog ||
+                clusterUpdateLogConfiguration.clusterUpdateLogAllowDeletedAdditions
+        ) {
+            "Deleted additions require clusterUpdateLogAllowDeletedAdditions after all cluster-log consumers are upgraded"
+        }
+    }
     internal val afterDeleteUpdatePrepared = atomic<((Transaction) -> Unit)?>(null)
     internal val beforeUpdateEmission = atomic<(suspend () -> Unit)?>(null)
 

@@ -45,6 +45,7 @@ internal class ClusterUpdateLog(
     private val dataModelsById: Map<UInt, IsRootDataModel>,
     private val consumerId: String,
     private val retention: Duration,
+    private val allowDeletedAdditions: Boolean = false,
 ) {
     private val originBytes = originId.encodeToByteArray()
 
@@ -61,6 +62,9 @@ internal class ClusterUpdateLog(
     )
 
     fun append(tr: Transaction, modelId: UInt, update: ClusterLogUpdate) {
+        require(update !is ClusterLogAddition || !update.isDeleted || allowDeletedAdditions) {
+            "Deleted cluster-log additions require clusterUpdateLogAllowDeletedAdditions after all consumers are upgraded"
+        }
         val shard = shardFor(modelId, update.keyBytes.bytes)
         val hlcBytes = update.version.toBigEndianBytes()
         val versionstamp = Versionstamp.incomplete()

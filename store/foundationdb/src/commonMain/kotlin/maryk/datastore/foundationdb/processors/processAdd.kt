@@ -54,6 +54,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 ): IsAddResponseStatus<DM> = try {
     val dataModelId = getDataModelId(dataModel)
     objectToAdd.validate()
+    requireDeletedAdditionCompatibility(isDeleted)
 
     var updateToEmit: Update<DM>? = null
 

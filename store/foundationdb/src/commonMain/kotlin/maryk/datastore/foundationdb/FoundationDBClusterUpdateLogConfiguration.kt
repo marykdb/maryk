@@ -16,6 +16,11 @@ data class FoundationDBClusterUpdateLogConfiguration(
     val clusterUpdateLogRetention: Duration = 60.minutes,
     val clusterUpdateLogBatchSize: Int = 256,
     val clusterUpdateLogPollInterval: Duration = 250.milliseconds,
+    /**
+     * Allows deleted additions in the cluster-log payload. Enable only after every cluster-log
+     * consumer understands this extension; older consumers otherwise skip the entry.
+     */
+    val clusterUpdateLogAllowDeletedAdditions: Boolean = false,
 ) {
     init {
         require(clusterUpdateLogShardCount in 1..MAX_CLUSTER_UPDATE_LOG_SHARD_COUNT) {

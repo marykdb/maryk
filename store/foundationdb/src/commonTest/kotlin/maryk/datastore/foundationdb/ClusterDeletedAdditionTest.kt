@@ -14,6 +14,7 @@ import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.minutes
@@ -24,17 +25,35 @@ class ClusterDeletedAdditionTest {
     fun replicatedDeletedAdditionKeepsDeletionFlagOnOtherNode() = runTest(timeout = 3.minutes) {
         withContext(Dispatchers.Default) {
             val root = listOf("maryk", "test", "cluster-deleted-addition", Uuid.random().toString())
+            val incompatibleStore = FoundationDBDataStore.open(
+                directoryPath = root + "incompatible",
+                dataModelsById = mapOf(1u to SimpleMarykModel),
+                clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                    enableClusterUpdateLog = true, clusterUpdateLogConsumerId = "incompatible",
+                ),
+            )
+            try {
+                val version = HLC().timestamp
+                val key = Key<SimpleMarykModel>(ByteArray(16) { 15 })
+                assertFailsWith<IllegalArgumentException> {
+                    incompatibleStore.processUpdate(UpdateResponse(SimpleMarykModel, AdditionUpdate(
+                        key, version, version, 0, true, SimpleMarykModel.create { value with "deleted" },
+                    )))
+                }
+            } finally {
+                incompatibleStore.close()
+            }
             val first = FoundationDBDataStore.open(
                 directoryPath = root, dataModelsById = mapOf(1u to SimpleMarykModel),
                 clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
-                    enableClusterUpdateLog = true, clusterUpdateLogConsumerId = "writer",
+                    enableClusterUpdateLog = true, clusterUpdateLogConsumerId = "writer", clusterUpdateLogAllowDeletedAdditions = true,
                 ),
             )
             try {
                 val second = FoundationDBDataStore.open(
                     directoryPath = root, dataModelsById = mapOf(1u to SimpleMarykModel),
                     clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
-                        enableClusterUpdateLog = true, clusterUpdateLogConsumerId = "reader",
+                        enableClusterUpdateLog = true, clusterUpdateLogConsumerId = "reader", clusterUpdateLogAllowDeletedAdditions = true,
                     ),
                 )
                 try {

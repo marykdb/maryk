@@ -29,5 +29,6 @@ internal val mapOfChangeDefinitions = mapOf(
     ChangeType.SetChange to EmbeddedObjectDefinition(dataModel = { SetChange }),
     ChangeType.TypeChange to EmbeddedObjectDefinition(dataModel = { MultiTypeChange }),
     ChangeType.IncMapChange to EmbeddedObjectDefinition(dataModel = { IncMapChange }),
-    ChangeType.IncMapAddition to EmbeddedObjectDefinition(dataModel = { IncMapAddition })
+    ChangeType.IncMapAddition to EmbeddedObjectDefinition(dataModel = { IncMapAddition }),
+    ChangeType.IndexChange to EmbeddedObjectDefinition(dataModel = { IndexChange })
 )

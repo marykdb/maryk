@@ -8,6 +8,7 @@ import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.PropertyDefinitionType
+import maryk.core.properties.definitions.wrapper.IsSensitiveValueDefinitionWrapper
 
 internal fun IsTypedDataModel<*>.generateKotlin(
     addImport: (String) -> Unit,
@@ -29,6 +30,9 @@ internal fun IsTypedDataModel<*>.generateKotlin(
                     addEnumDefinition?.invoke(
                         enumDefinition.generateKotlinClass(addImport)
                     )
+                    if (addEnumDefinition != null) {
+                        generationContext?.enums?.add(enumDefinition)
+                    }
                 }
             }
         } else if (definition.propertyDefinitionType == PropertyDefinitionType.MultiType) {
@@ -37,6 +41,9 @@ internal fun IsTypedDataModel<*>.generateKotlin(
                     addEnumDefinition?.invoke(
                         typeEnumDefinition.generateKotlinClass(addImport)
                     )
+                    if (addEnumDefinition != null) {
+                        generationContext?.enums?.add(typeEnumDefinition)
+                    }
                 }
             }
         }
@@ -65,7 +72,11 @@ internal fun IsTypedDataModel<*>.generateKotlin(
                 index = propertyDefinitionWrapper.index,
                 altNames = propertyDefinitionWrapper.alternativeNames,
                 value = "${propertyDefinitionWrapper.name.kotlinIdentifier()}$nativeTypeName$default",
-                definition = kotlinDescriptor.definitionToKotlinFields(definition, addImport),
+                definition = kotlinDescriptor.definitionToKotlinFields(
+                    definition,
+                    addImport,
+                    (propertyDefinitionWrapper as? IsSensitiveValueDefinitionWrapper<*, *, *, *>)?.sensitive == true,
+                ),
                 invoke = "values(${propertyDefinitionWrapper.index}u)"
             )
         )

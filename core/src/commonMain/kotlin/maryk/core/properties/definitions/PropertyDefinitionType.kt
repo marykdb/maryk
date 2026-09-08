@@ -73,33 +73,46 @@ internal val mapOfPropertyDefEmbeddedObjectDefinitions =
     )
 
 typealias WrapperCreator = (index: UInt, name: String, altNames: Set<String>?, definition: IsPropertyDefinition<out Any>) -> IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
+internal typealias SensitiveWrapperCreator = (index: UInt, name: String, altNames: Set<String>?, sensitive: Boolean, definition: IsPropertyDefinition<out Any>) -> IsDefinitionWrapper<out Any, out Any, IsPropertyContext, Any>
 
 @Suppress("UNCHECKED_CAST")
 val createFixedBytesWrapper: WrapperCreator = { index, name, altNames, definition ->
+    createFixedBytesWrapperWithSensitivity(index, name, altNames, false, definition)
+}
+
+@Suppress("UNCHECKED_CAST")
+internal val createFixedBytesWrapperWithSensitivity: SensitiveWrapperCreator = { index, name, altNames, sensitive, definition ->
     FixedBytesDefinitionWrapper(
         index,
         name,
         definition as IsSerializableFixedBytesEncodable<Any, IsPropertyContext>,
-        altNames
+        altNames,
+        sensitive,
     )
 }
 
 @Suppress("UNCHECKED_CAST")
 val createFlexBytesWrapper: WrapperCreator = { index, name, altNames, definition ->
+    createFlexBytesWrapperWithSensitivity(index, name, altNames, false, definition)
+}
+
+@Suppress("UNCHECKED_CAST")
+internal val createFlexBytesWrapperWithSensitivity: SensitiveWrapperCreator = { index, name, altNames, sensitive, definition ->
     FlexBytesDefinitionWrapper(
         index,
         name,
         definition as IsSerializableFlexBytesEncodable<Any, IsPropertyContext>,
-        altNames
+        altNames,
+        sensitive,
     )
 }
 
-internal val mapOfPropertyDefWrappers = mapOf(
-    PropertyDefinitionType.Boolean to createFixedBytesWrapper,
-    PropertyDefinitionType.Date to createFixedBytesWrapper,
-    PropertyDefinitionType.DateTime to createFixedBytesWrapper,
-    PropertyDefinitionType.Decimal to createFixedBytesWrapper,
-    PropertyDefinitionType.Embed to { index, name, altNames, definition ->
+internal val mapOfPropertyDefWrappers = mapOf<PropertyDefinitionType, SensitiveWrapperCreator>(
+    PropertyDefinitionType.Boolean to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.Date to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.DateTime to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.Decimal to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.Embed to { index, name, altNames, _, definition ->
         @Suppress("UNCHECKED_CAST")
         EmbeddedValuesDefinitionWrapper(
             index,
@@ -108,11 +121,11 @@ internal val mapOfPropertyDefWrappers = mapOf(
             altNames
         )
     },
-    PropertyDefinitionType.Enum to createFixedBytesWrapper,
-    PropertyDefinitionType.FixedBytes to createFixedBytesWrapper,
-    PropertyDefinitionType.FlexBytes to createFlexBytesWrapper,
-    PropertyDefinitionType.GeoPoint to createFixedBytesWrapper,
-    PropertyDefinitionType.IncMap to { index, name, altNames, definition ->
+    PropertyDefinitionType.Enum to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.FixedBytes to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.FlexBytes to createFlexBytesWrapperWithSensitivity,
+    PropertyDefinitionType.GeoPoint to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.IncMap to { index, name, altNames, _, definition ->
         @Suppress("UNCHECKED_CAST")
         MapDefinitionWrapper(
             index,
@@ -121,7 +134,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
             altNames
         )
     },
-    PropertyDefinitionType.List to { index, name, altNames, definition ->
+    PropertyDefinitionType.List to { index, name, altNames, _, definition ->
         @Suppress("UNCHECKED_CAST")
         ListDefinitionWrapper<Any, List<Any>, IsPropertyContext, Any>(
             index,
@@ -130,7 +143,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
             altNames
         )
     },
-    PropertyDefinitionType.Map to { index, name, altNames, definition ->
+    PropertyDefinitionType.Map to { index, name, altNames, _, definition ->
         @Suppress("UNCHECKED_CAST")
         MapDefinitionWrapper(
             index,
@@ -139,7 +152,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
             altNames
         )
     },
-    PropertyDefinitionType.MultiType to { index, name, altNames, definition ->
+    PropertyDefinitionType.MultiType to { index, name, altNames, _, definition ->
         @Suppress("UNCHECKED_CAST")
         MultiTypeDefinitionWrapper(
             index,
@@ -148,9 +161,9 @@ internal val mapOfPropertyDefWrappers = mapOf(
             altNames
         )
     },
-    PropertyDefinitionType.Number to createFixedBytesWrapper,
-    PropertyDefinitionType.Reference to createFixedBytesWrapper,
-    PropertyDefinitionType.Set to { index, name, altNames, definition ->
+    PropertyDefinitionType.Number to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.Reference to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.Set to { index, name, altNames, _, definition ->
         @Suppress("UNCHECKED_CAST")
         SetDefinitionWrapper(
             index,
@@ -159,7 +172,7 @@ internal val mapOfPropertyDefWrappers = mapOf(
             altNames
         )
     },
-    PropertyDefinitionType.String to createFlexBytesWrapper,
-    PropertyDefinitionType.Time to createFixedBytesWrapper,
-    PropertyDefinitionType.Value to createFixedBytesWrapper
+    PropertyDefinitionType.String to createFlexBytesWrapperWithSensitivity,
+    PropertyDefinitionType.Time to createFixedBytesWrapperWithSensitivity,
+    PropertyDefinitionType.Value to createFixedBytesWrapperWithSensitivity
 )

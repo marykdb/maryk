@@ -5,6 +5,7 @@ import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.extensions.bytes.MAX_BYTE
 import maryk.core.extensions.bytes.ZERO_BYTE
+import maryk.core.properties.exceptions.InvalidSizeException
 import maryk.core.properties.types.Key
 import maryk.core.query.DefinitionsContext
 import maryk.lib.exceptions.ParseException
@@ -79,6 +80,13 @@ internal class ReferenceDefinitionTest {
 
         assertFailsWith<ParseException> {
             def.readStorageBytes(8) { ZERO_BYTE }
+        }
+    }
+
+    @Test
+    fun rejectsKeyWithInvalidFixedByteSizeDuringValidation() {
+        assertFailsWith<InvalidSizeException> {
+            def.validateWithRef(newValue = Key(ByteArray(6)))
         }
     }
 

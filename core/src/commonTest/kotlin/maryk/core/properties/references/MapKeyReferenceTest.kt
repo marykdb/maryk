@@ -4,6 +4,7 @@ import kotlinx.datetime.LocalTime
 import maryk.core.exceptions.UnexpectedValueException
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
+import maryk.test.models.ComplexModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -49,6 +50,22 @@ class MapKeyReferenceTest {
         val converted = TestMarykModel.getPropertyReferenceByBytes(bc.size, bc::read)
         assertEquals(keyReference, converted)
         bc.reset()
+    }
+
+    @Test
+    fun convertsLengthDelimitedMapKeyReferenceToProtoBufAndBack() {
+        val stringKeyReference = ComplexModel { mapStringString refToKey "key" }
+
+        ByteCollector().apply {
+            val cache = WriteCache()
+
+            reserve(
+                stringKeyReference.calculateTransportByteLength(cache)
+            )
+            stringKeyReference.writeTransportBytes(cache, ::write)
+
+            expect(stringKeyReference) { ComplexModel.getPropertyReferenceByBytes(size, ::read) }
+        }
     }
 
     @Test

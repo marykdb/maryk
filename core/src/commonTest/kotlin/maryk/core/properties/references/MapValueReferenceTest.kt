@@ -6,6 +6,7 @@ import maryk.core.processors.datastore.matchers.QualifierExactMatcher
 import maryk.core.protobuf.WriteCache
 import maryk.lib.exceptions.ParseException
 import maryk.test.ByteCollector
+import maryk.test.models.ComplexModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
 import kotlin.test.assertFailsWith
@@ -50,6 +51,22 @@ class MapValueReferenceTest {
             valReference.writeTransportBytes(cache, ::write)
 
             expect(valReference) { TestMarykModel.getPropertyReferenceByBytes(size, ::read) }
+        }
+    }
+
+    @Test
+    fun convertsLengthDelimitedMapKeyReferenceToProtoBufAndBack() {
+        val stringKeyReference = ComplexModel { mapStringString refAt "key" }
+
+        ByteCollector().apply {
+            val cache = WriteCache()
+
+            reserve(
+                stringKeyReference.calculateTransportByteLength(cache)
+            )
+            stringKeyReference.writeTransportBytes(cache, ::write)
+
+            expect(stringKeyReference) { ComplexModel.getPropertyReferenceByBytes(size, ::read) }
         }
     }
 

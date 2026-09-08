@@ -1,6 +1,7 @@
 package maryk.core.properties.definitions.wrapper
 
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsSerializableFlexBytesEncodable
 import maryk.core.properties.graph.PropRefGraphType.PropRef
 import maryk.core.properties.references.AnyPropertyReference
@@ -32,6 +33,16 @@ data class FlexBytesDefinitionWrapper<T : Any, TO : Any, CX : IsPropertyContext,
     override fun ref(parentRef: AnyPropertyReference?) = cacheRef(parentRef) {
         ValueWithFlexBytesPropertyReference(this, parentRef)
     }
+
+    override fun compatibleWith(
+        definition: IsPropertyDefinition<*>,
+        checkedDataModelNames: MutableList<String>?,
+        addIncompatibilityReason: ((String) -> Unit)?
+    ) = super<IsSensitiveValueDefinitionWrapper>.compatibleWith(
+        definition,
+        checkedDataModelNames,
+        addIncompatibilityReason,
+    )
 
     // For delegation in definition
     @Suppress("unused")

@@ -6,8 +6,10 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlModelReader
 import maryk.test.models.CompleteMarykModel
 import maryk.test.models.EmbeddedModel
+import maryk.test.models.Log
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Option
+import maryk.test.models.Severity
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum
 import maryk.test.models.ValueMarykObject
@@ -91,6 +93,17 @@ class GenerateKotlinForDefinitionsTest {
         expect(generatedKotlinForEmbeddedDataModel) { mapOfWriters["EmbeddedModel"]!!.output }
         expect(generatedKotlinForCompleteDataModel) { mapOfWriters["CompleteMarykModel"]!!.output }
         expect(generatedKotlinForSimpleDataModel) { mapOfWriters["SimpleMarykModel"]!!.output }
+    }
+
+    @Test
+    fun generatesNamedEnumOnceWhenItsModelPrecedesIt() {
+        val outputs = mutableMapOf<String, Writer>()
+
+        Definitions(Log, Severity).generateKotlin("maryk.test.models") { name ->
+            outputs.getOrPut(name, ::Writer)::writer
+        }
+
+        assertEquals(1, Regex("sealed class Severity").findAll(outputs.values.joinToString { it.output }).count())
     }
 }
 

@@ -4,6 +4,7 @@ import maryk.checkJsonConversion
 import maryk.checkProtoBufConversion
 import maryk.checkYamlConversion
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.types.Bytes
 import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.test.models.EmbeddedMarykModel
@@ -38,6 +39,27 @@ class VersionedChangesTest {
     @Test
     fun convertToProtoBufAndBack() {
         checkProtoBufConversion(this.versionedChanges, VersionedChanges, { this.context })
+    }
+
+    @Test
+    fun convertsIndexChangeToProtoBufAndBack() {
+        checkProtoBufConversion(
+            VersionedChanges(
+                version = 1uL,
+                changes = listOf(
+                    IndexChange(
+                        listOf(
+                            IndexDelete(
+                                index = Bytes(byteArrayOf(1)),
+                                indexKey = Bytes(byteArrayOf(2))
+                            )
+                        )
+                    )
+                )
+            ),
+            VersionedChanges,
+            { this.context }
+        )
     }
 
     @Test

@@ -16,6 +16,8 @@ import maryk.core.properties.definitions.wrapper.FixedBytesDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectDefinitionWrapperDelegateLoader
 import maryk.core.properties.definitions.wrapper.ReferenceDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.contextual
+import maryk.core.properties.exceptions.InvalidSizeException
+import maryk.core.properties.references.IsPropertyReference
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -56,9 +58,15 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         internalDataModelReference.get()
     }
 
-    override fun calculateStorageByteLength(value: Key<DM>) = this.byteSize
+    override fun calculateStorageByteLength(value: Key<DM>): Int {
+        validateByteSize(value)
+        return this.byteSize
+    }
 
-    override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit) = value.writeBytes(writer)
+    override fun writeStorageBytes(value: Key<DM>, writer: (byte: Byte) -> Unit) {
+        validateByteSize(value)
+        value.writeBytes(writer)
+    }
 
     override fun readStorageBytes(length: Int, reader: () -> Byte): Key<DM> {
         if (length != byteSize) {
@@ -68,7 +76,21 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         return dataModel.key(reader)
     }
 
-    override fun calculateTransportByteLength(value: Key<DM>) = this.byteSize
+    override fun calculateTransportByteLength(value: Key<DM>) = calculateStorageByteLength(value)
+
+    override fun validateWithRef(
+        previousValue: Key<DM>?,
+        newValue: Key<DM>?,
+        refGetter: () -> IsPropertyReference<Key<DM>, IsPropertyDefinition<Key<DM>>, *>?
+    ) {
+        if (newValue != null && newValue.size != byteSize) {
+            throw InvalidSizeException(
+                refGetter(), newValue.toHex(), byteSize.toUInt(), byteSize.toUInt()
+            )
+        }
+
+        super<IsReferenceDefinition>.validateWithRef(previousValue, newValue, refGetter)
+    }
 
     override fun fromString(string: String) = try {
         dataModel.key(string)
@@ -82,6 +104,12 @@ class ReferenceDefinition<DM : IsRootDataModel>(
         } else {
             null
         }
+
+    private fun validateByteSize(value: Key<DM>) {
+        if (value.size != byteSize) {
+            throw ParseException("Invalid storage byte length for Reference: ${value.size} != $byteSize")
+        }
+    }
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

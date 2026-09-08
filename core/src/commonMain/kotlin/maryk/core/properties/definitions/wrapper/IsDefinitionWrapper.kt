@@ -12,6 +12,7 @@ import maryk.core.properties.definitions.IsSerializablePropertyDefinition
 import maryk.core.properties.definitions.IsTransportablePropertyDefinitionType
 import maryk.core.properties.definitions.PropertyDefinitionType
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.boolean
 import maryk.core.properties.definitions.internalMultiType
 import maryk.core.properties.definitions.mapOfPropertyDefEmbeddedObjectDefinitions
 import maryk.core.properties.definitions.mapOfPropertyDefWrappers
@@ -210,6 +211,11 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
             getter = IsDefinitionWrapper<*, *, *, *>::alternativeNames,
             valueDefinition = StringDefinition()
         )
+        val sensitive by boolean(
+            index = 5u,
+            getter = { if ((it as? IsSensitiveValueDefinitionWrapper<*, *, *, *>)?.sensitive == true) true else null },
+            default = false,
+        )
         val definition by internalMultiType(
             index = 4u,
             getter = {
@@ -231,6 +237,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                 values(index.index),
                 values(name.index),
                 values(alternativeNames.index),
+                values(sensitive.index),
                 typedDefinition.value
             ) ?: throw DefNotFoundException("Property type $type not found")
         }
@@ -248,7 +255,12 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                         definition.getPropertyAndSerialize(obj, context as ContainsDefinitionsContext)
                             ?: throw DefNotFoundException("Unknown type ${obj.definition} so cannot serialize contents")
 
-                    writer.writeNamedIndexField(obj.name, obj.index, obj.alternativeNames)
+                    writer.writeNamedIndexField(
+                        obj.name,
+                        obj.index,
+                        obj.alternativeNames,
+                        (obj as? IsSensitiveValueDefinitionWrapper<*, *, *, *>)?.sensitive == true,
+                    )
 
                     definition.writeJsonValue(typedDefinition, writer, context)
                 } else {
@@ -264,7 +276,7 @@ interface IsDefinitionWrapper<T : Any, TO : Any, in CX : IsPropertyContext, in D
                 return if (reader is IsYamlReader) {
                     val valueMap = MutableValueItems()
 
-                    reader.readNamedIndexField(valueMap, name, index, alternativeNames)
+                    reader.readNamedIndexField(valueMap, name, index, alternativeNames, sensitive)
                     valueMap[definition.index] =
                         definition.readJson(reader, context as ContainsDefinitionsContext)
 

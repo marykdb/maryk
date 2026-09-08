@@ -1,5 +1,7 @@
 package maryk.generator.kotlin
 
+import maryk.core.models.DataModel
+import maryk.core.properties.definitions.string
 import maryk.test.models.EmbeddedMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -43,4 +45,37 @@ class GenerateKotlinForDataModelTest {
 
         assertEquals(generatedKotlinForDataModel, output)
     }
+
+    @Test
+    fun generateKotlinRetainsSensitivePropertyFlag() {
+        val output = buildString {
+            SensitiveMarykModel.generateKotlin("maryk.test.models") {
+                append(it)
+            }
+        }
+
+        assertEquals(
+            """
+            package maryk.test.models
+
+            import maryk.core.models.DataModel
+            import maryk.core.properties.definitions.string
+
+            object SensitiveMarykModel : DataModel<SensitiveMarykModel>() {
+                val secret by string(
+                    index = 1u,
+                    sensitive = true
+                )
+            }
+            """.trimIndent(),
+            output,
+        )
+    }
+}
+
+private object SensitiveMarykModel : DataModel<SensitiveMarykModel>() {
+    val secret by string(
+        index = 1u,
+        sensitive = true,
+    )
 }

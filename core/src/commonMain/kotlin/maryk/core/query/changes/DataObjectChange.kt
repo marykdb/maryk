@@ -61,7 +61,7 @@ data class DataObjectChange<out DM : IsRootDataModel> internal constructor(
                     typeEnum = ChangeType,
                     definitionMap = mapOfChangeDefinitions
                 ),
-                capturer = { context, value ->
+                capturer = { context: RequestContext?, value ->
                     if (value.type == IncMapChange) {
                         context?.collectIncMapChange(value.value as maryk.core.query.changes.IncMapChange)
                     }

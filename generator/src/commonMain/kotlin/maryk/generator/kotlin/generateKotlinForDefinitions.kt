@@ -6,6 +6,7 @@ import maryk.core.models.DataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.IsValueDataModel
 import maryk.core.properties.enum.IndexedEnumDefinition
+import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.core.properties.enum.MultiTypeEnumDefinition
 
 fun Definitions.generateKotlin(
@@ -28,7 +29,9 @@ fun Definitions.generateKotlin(
             )
         }
 
-    val kotlinGenerationContext = GenerationContext()
+    val kotlinGenerationContext = GenerationContext(
+        enums = definitions.filterIsInstance<IsIndexedEnumDefinition<*>>().toMutableList(),
+    )
 
     for (obj in this.definitions) {
         when (obj) {

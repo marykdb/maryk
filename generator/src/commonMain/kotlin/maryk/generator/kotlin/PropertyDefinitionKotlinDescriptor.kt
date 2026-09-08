@@ -45,7 +45,11 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
      * Create kotlin code to define given property [definition]
      * [addImport] is called if any imports need to be added
      */
-    fun definitionToKotlinFields(definition: D, addImport: (String) -> Unit): String {
+    fun definitionToKotlinFields(
+        definition: D,
+        addImport: (String) -> Unit,
+        sensitive: Boolean = false,
+    ): String {
         val output = mutableListOf<String>()
 
         properties@ for (property in definitionModel) {
@@ -73,6 +77,10 @@ internal open class PropertyDefinitionKotlinDescriptor<in T : Any, D : IsTranspo
                     output.add("""$propertyName = ${generateKotlinValue(defToSend, value, addImport, addGenerics = true)}""")
                 }
             }
+        }
+
+        if (sensitive) {
+            output.add("sensitive = true")
         }
 
         return if (output.isEmpty()) "" else output.joinToString(",\n")

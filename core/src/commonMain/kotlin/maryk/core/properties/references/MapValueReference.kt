@@ -10,10 +10,10 @@ import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsMapDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.IsSubDefinition
-import maryk.core.protobuf.ProtoBuf
-import maryk.core.protobuf.WireType.VAR_INT
 import maryk.core.protobuf.WriteCacheReader
 import maryk.core.protobuf.WriteCacheWriter
+import maryk.core.protobuf.calculateKeyAndContentLength
+import maryk.core.protobuf.writeKeyWithLength
 import maryk.core.query.pairs.ReferenceNullPair
 import maryk.core.query.pairs.ReferenceValuePair
 import kotlin.js.JsName
@@ -60,13 +60,14 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
 
     override fun calculateTransportByteLength(cacher: WriteCacheWriter): Int {
         val parentLength = this.parentReference?.calculateTransportByteLength(cacher) ?: 0
-        val valueLength = mapDefinition.keyDefinition.calculateTransportByteLength(key, cacher)
-        return parentLength + 1 + valueLength
+        return parentLength + calculateKeyAndContentLength(mapDefinition.keyDefinition.wireType, 0u, cacher) {
+            mapDefinition.keyDefinition.calculateTransportByteLength(key, cacher)
+        }
     }
 
     override fun writeTransportBytes(cacheGetter: WriteCacheReader, writer: (byte: Byte) -> Unit) {
         this.parentReference?.writeTransportBytes(cacheGetter, writer)
-        ProtoBuf.writeKey(0u, VAR_INT, writer)
+        writeKeyWithLength(mapDefinition.keyDefinition.wireType, 0u, writer, cacheGetter)
         mapDefinition.keyDefinition.writeTransportBytes(key, cacheGetter, writer)
     }
 

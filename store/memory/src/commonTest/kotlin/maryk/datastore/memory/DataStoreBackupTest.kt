@@ -24,7 +24,6 @@ import maryk.datastore.shared.DataStoreBackupManifest
 import maryk.datastore.shared.DataStoreBackupReader
 import maryk.datastore.shared.DataStoreBackupWriter
 import maryk.datastore.shared.DataStoreRestoreOptions
-import maryk.datastore.shared.RepeatableDataStoreBackupReader
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
@@ -54,11 +53,11 @@ class DataStoreBackupTest {
             source.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha ${"x".repeat(1024)}" }))
             val backup = CollectingBackup()
             source.backup(backup, batchSize = 1u)
-            val repeatable = object : RepeatableDataStoreBackupReader {
+            val stagedReader = object : DataStoreBackupReader {
                 override val manifest get() = backup.manifest
                 override suspend fun read(consumer: suspend (DataStoreBackupChunk) -> Unit) = backup.read(consumer)
             }
-            for (reader in listOf(backup, repeatable)) {
+            for (reader in listOf(backup, stagedReader)) {
                 assertFailsWith<RequestException> {
                     target.restore(reader, true, DataStoreRestoreOptions(maxReplayBytes = 512))
                 }
@@ -71,7 +70,7 @@ class DataStoreBackupTest {
     }
 
     @Test
-    fun repeatableRestoreStagesOnceAndBoundsRequests() = runTest {
+    fun restoreStagesReadersOnceAndBoundsRequests() = runTest {
         val models = mapOf(1u to SimpleMarykModel)
         val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
         val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
@@ -94,14 +93,14 @@ class DataStoreBackupTest {
             }
             val backup = CollectingBackup()
             source.backup(backup, batchSize = 2u)
-            val repeatable = object : RepeatableDataStoreBackupReader {
+            val stagedReader = object : DataStoreBackupReader {
                 override val manifest get() = backup.manifest
                 override suspend fun read(consumer: suspend (DataStoreBackupChunk) -> Unit) {
                     passes++
                     backup.read(consumer)
                 }
             }
-            assertEquals(25uL, boundedTarget.restore(repeatable, true,
+            assertEquals(25uL, boundedTarget.restore(stagedReader, true,
                 DataStoreRestoreOptions(maxReplayBytes = 1024)).records)
             assertEquals(1, passes)
             assertTrue(requests > 1)

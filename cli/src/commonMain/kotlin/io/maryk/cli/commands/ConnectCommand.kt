@@ -338,9 +338,11 @@ class ConnectCommand(
         val finalDirectory = directory
         return if (finalDirectory.isNullOrEmpty()) {
             ParseFoundationOptionsResult.Error("Directory is required.")
+        } else if (cluster != null && cluster.isBlank()) {
+            ParseFoundationOptionsResult.Error("Cluster file cannot be blank.")
         } else {
             val dirParts = finalDirectory.split('/').filter { it.isNotEmpty() }
-            val clusterFileResolved = cluster?.ifEmpty { null } ?: defaultClusterFile()
+            val clusterFileResolved = cluster ?: defaultClusterFile()
             ParseFoundationOptionsResult.Success(
                 FoundationOptions(
                     directoryPath = dirParts.ifEmpty { listOf(finalDirectory) },

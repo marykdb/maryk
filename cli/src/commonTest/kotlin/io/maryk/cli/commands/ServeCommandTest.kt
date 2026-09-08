@@ -13,6 +13,40 @@ import kotlin.test.assertTrue
 
 class ServeCommandTest {
     @Test
+    fun reusesMatchingActiveConnection() {
+        var connectorCalled = false
+        val store = FakeDataStore()
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data", store))
+        }
+        val command = ServeCommand(
+            rocksDbConnector = RocksDbConnector {
+                connectorCalled = true
+                error("Matching active connection should be reused")
+            },
+            serverStarter = { _, _, _, _, _ -> },
+        )
+
+        val result = command.execute(
+            CommandContext(CommandRegistry(state, TestServeEnvironment), state, TestServeEnvironment),
+            listOf("rocksdb", "--dir", "/data"),
+        )
+
+        assertFalse(result.isError)
+        assertFalse(connectorCalled)
+        assertFalse(store.closed)
+    }
+
+    @Test
+    fun rejectsBlankFoundationDbClusterFile() {
+        val result = assertIs<ServeParseResult.Error>(
+            parseServeOptions(TestServeEnvironment, listOf("foundationdb", "--dir", "maryk/test", "--cluster=")),
+        )
+
+        assertTrue(result.reason.contains("cluster file cannot be blank", ignoreCase = true))
+    }
+
+    @Test
     fun reportsServerStartFailureAndClosesStore() {
         val store = FakeDataStore()
         val command = ServeCommand(

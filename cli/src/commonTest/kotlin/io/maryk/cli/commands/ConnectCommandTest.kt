@@ -9,6 +9,7 @@ import io.maryk.cli.RocksDbStoreConnection
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -143,6 +144,15 @@ class ConnectCommandTest {
         assertFalse(result.isError)
         assertTrue(foundationConnector.called)
         assertEquals(listOf( "maryk", "test"), (state.currentConnection as FoundationDbStoreConnection).directoryPath)
+    }
+
+    @Test
+    fun rejectsBlankFoundationDbClusterFile() {
+        val result = ConnectCommand(FakeRocksDbConnector(), FakeFoundationDbConnector())
+            .execute(buildContext(CliState(), FakeEnvironment { DirectoryResolution.Success("/store") }), listOf("foundationdb", "--dir", "maryk/test", "--cluster="))
+
+        assertTrue(result.isError)
+        assertTrue(result.lines.any { it.contains("Cluster file cannot be blank") })
     }
 
     @Test

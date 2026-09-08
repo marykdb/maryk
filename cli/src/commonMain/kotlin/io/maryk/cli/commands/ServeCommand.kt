@@ -2,6 +2,9 @@ package io.maryk.cli.commands
 
 import io.maryk.cli.CliEnvironment
 import io.maryk.cli.DirectoryResolution
+import io.maryk.cli.FoundationDbStoreConnection
+import io.maryk.cli.RocksDbStoreConnection
+import io.maryk.cli.StoreConnection
 import io.maryk.cli.StoreType
 import io.maryk.cli.readEnvironmentVariable
 import io.maryk.cli.readStdinText
@@ -45,7 +48,8 @@ class ServeCommand(
             is ServeParseResult.Success -> parseResult.options
         }
 
-        val connection = when (options.store) {
+        val activeConnection = context.state.currentConnection?.takeIf { it.matches(options.store) }
+        val connection = activeConnection ?: when (options.store) {
             is ServeStore.RocksDb -> when (val outcome = rocksDbConnector.connect(options.store.directory)) {
                 is ConnectCommand.RocksDbConnectionOutcome.Success -> outcome.connection
                 is ConnectCommand.RocksDbConnectionOutcome.Error -> return CommandResult(
@@ -89,7 +93,9 @@ class ServeCommand(
                 )
             }
         } finally {
-            closeFailure = runCatchingNonFatal { connection.close() }.exceptionOrNull()
+            if (activeConnection == null) {
+                closeFailure = runCatchingNonFatal { connection.close() }.exceptionOrNull()
+            }
         }
         val cleanupFailure = closeFailure
         return if (cleanupFailure == null) {
@@ -101,6 +107,13 @@ class ServeCommand(
             )
         }
     }
+}
+
+private fun StoreConnection.matches(store: ServeStore): Boolean = when {
+    this is RocksDbStoreConnection && store is ServeStore.RocksDb -> directory == store.directory
+    this is FoundationDbStoreConnection && store is ServeStore.FoundationDb ->
+        directoryPath == store.options.directoryPath && clusterFilePath == store.options.clusterFile
+    else -> false
 }
 
 internal sealed class ServeParseResult {
@@ -229,7 +242,10 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
         StoreType.FOUNDATION_DB -> {
             val dirParts = directory.split('/').filter { it.isNotBlank() }
             if (dirParts.isEmpty()) return ServeParseResult.Error("FoundationDB directory path is required.")
-            val clusterFile = merged.clusterFile?.ifBlank { null } ?: defaultClusterFile()
+            if (merged.clusterFile != null && merged.clusterFile.isBlank()) {
+                return ServeParseResult.Error("FoundationDB cluster file cannot be blank.")
+            }
+            val clusterFile = merged.clusterFile ?: defaultClusterFile()
             val options = ConnectCommand.FoundationOptions(
                 directoryPath = dirParts,
                 clusterFile = clusterFile,

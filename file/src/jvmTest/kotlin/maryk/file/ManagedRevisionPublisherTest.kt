@@ -72,6 +72,59 @@ class ManagedRevisionPublisherTest {
     }
 
     @Test
+    fun rejectsCaseAliasesBeforeWritingRevision() {
+        val output = Files.createTempDirectory("managed-export-")
+        publishManagedRevision(
+            output.toString(),
+            listOf(ManagedExportFile("safe.txt", "old".encodeToByteArray())),
+            revisionId = "previous",
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            publishManagedRevision(
+                output.toString(),
+                listOf(
+                    ManagedExportFile("A.json", "first".encodeToByteArray()),
+                    ManagedExportFile("a.json", "second".encodeToByteArray()),
+                ),
+                revisionId = "case-alias",
+            )
+        }
+
+        assertEquals("previous\n", Files.readString(output.resolve(".maryk-export/current")))
+        assertTrue(Files.notExists(output.resolve(".maryk-export/revisions/case-alias")))
+    }
+
+    @Test
+    fun rejectsCaseAliasesWhileStagingStreamingWrites() {
+        val output = Files.createTempDirectory("managed-export-")
+
+        assertFailsWith<IllegalArgumentException> {
+            publishManagedRevision(output.toString(), revisionId = "streaming-case-alias") {
+                writeText("A.json", "first")
+                writeText("a.json", "second")
+            }
+        }
+
+        assertNull(File.readText(output.resolve(".maryk-export/current").toString()))
+        assertTrue(Files.notExists(output.resolve(".maryk-export/revisions/streaming-case-alias")))
+    }
+
+    @Test
+    fun rejectsCaseAliasesOfTheManagedManifestPath() {
+        val output = Files.createTempDirectory("managed-export-")
+
+        assertFailsWith<IllegalArgumentException> {
+            publishManagedRevision(output.toString(), revisionId = "manifest-alias") {
+                writeText("MANIFEST.SHA256", "forbidden")
+            }
+        }
+
+        assertNull(File.readText(output.resolve(".maryk-export/current").toString()))
+        assertTrue(Files.notExists(output.resolve(".maryk-export/revisions/manifest-alias")))
+    }
+
+    @Test
     fun rejectsExistingPartialRevisionDirectory() {
         val output = Files.createTempDirectory("managed-export-")
         Files.createDirectories(output.resolve(".maryk-export/revisions/partial"))

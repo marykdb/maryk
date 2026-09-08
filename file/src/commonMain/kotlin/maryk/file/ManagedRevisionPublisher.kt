@@ -122,6 +122,7 @@ class ManagedExportStaging internal constructor(
     internal val directory: String,
 ) {
     internal val paths = linkedSetOf<String>()
+    private val canonicalPaths = linkedSetOf<String>()
 
     fun writeText(relativePath: String, contents: String) {
         File.writeText(pathForWrite(relativePath), contents)
@@ -149,13 +150,22 @@ class ManagedExportStaging internal constructor(
 
     private fun reservePath(relativePath: String): String {
         val path = pathOf(relativePath)
-        require(paths.add(relativePath)) { "Duplicate managed export path: $relativePath" }
+        require(relativePath !in paths) { "Duplicate managed export path: $relativePath" }
+        require(canonicalPaths.add(relativePath.canonicalExportPath())) {
+            "Managed export path aliases an existing path: $relativePath"
+        }
+        paths += relativePath
         return path
     }
 
     private fun pathForAppend(relativePath: String): String {
         val path = pathOf(relativePath)
-        paths += relativePath
+        if (relativePath !in paths) {
+            require(canonicalPaths.add(relativePath.canonicalExportPath())) {
+                "Managed export path aliases an existing path: $relativePath"
+            }
+            paths += relativePath
+        }
         return path
     }
 
@@ -183,7 +193,7 @@ private fun String.managedExportRoot(): String {
 }
 
 private fun String.isSafeExportPath(): Boolean {
-    if (isEmpty() || this == "manifest.sha256" || startsWith('/') || startsWith('\\') || contains('\\') || contains('\u0000')) return false
+    if (isEmpty() || equals("manifest.sha256", ignoreCase = true) || startsWith('/') || startsWith('\\') || contains('\\') || contains('\u0000')) return false
     return split('/').all { component ->
         component.isNotEmpty() && component != "." && component != ".." &&
             !component.endsWith('.') && !component.endsWith(' ') &&
@@ -195,12 +205,18 @@ private fun String.isSafeExportPath(): Boolean {
 private val windowsReservedFileNames = setOf("CON", "PRN", "AUX", "NUL") +
     (1..9).map { "COM$it" } + (1..9).map { "LPT$it" }
 
+private fun String.canonicalExportPath(): String = uppercase()
+
 private fun validateExportPaths(paths: List<String>) {
     require(paths.isNotEmpty()) { "Managed export revision cannot be empty" }
     val uniquePaths = HashSet<String>(paths.size)
+    val canonicalPaths = HashSet<String>(paths.size)
     paths.forEach { relativePath ->
         require(relativePath.isSafeExportPath()) { "Invalid managed export path: $relativePath" }
         require(uniquePaths.add(relativePath)) { "Duplicate managed export path: $relativePath" }
+        require(canonicalPaths.add(relativePath.canonicalExportPath())) {
+            "Managed export path aliases an existing path: $relativePath"
+        }
     }
 }
 

@@ -181,6 +181,21 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun executeReportsCompletedBatchPrefixWhenLaterReadEncodingFails() = runBoundedIntegrationTest {
+        val delegate = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        withServer(dataStore = MismatchedSecondResponseStore(delegate)) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(addThenGetPayload())
+            }
+
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
+            assertEquals("1", response.headers[RemoteStoreProtocol.completedRequestCountHeader])
+        }
+    }
+
+    @Test
     fun executeClosesConnectionWhenRejectingUnreadBody() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
@@ -1560,6 +1575,21 @@ private class MismatchedResponseStore(
     }
 }
 
+private class MismatchedSecondResponseStore(
+    private val delegate: IsDataStore,
+) : IsDataStore by delegate {
+    private var executions = 0
+
+    override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+        request: RQ,
+    ): RP {
+        executions++
+        if (executions == 1) return delegate.execute(request)
+        @Suppress("UNCHECKED_CAST")
+        return AddResponse(request.dataModel, emptyList()) as RP
+    }
+}
+
 private suspend fun withServer(
     config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
     limits: RemoteStoreServerLimits = RemoteStoreServerLimits(),
@@ -1625,6 +1655,18 @@ private fun multipleStoreRequestsPayload(): ByteArray =
             listOf(
                 SimpleMarykModel.add(SimpleMarykModel.create { value with "a" }),
                 SimpleMarykModel.add(SimpleMarykModel.create { value with "b" }),
+            )
+        ),
+        testRequestContext(),
+    )
+
+private fun addThenGetPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            listOf(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "a" }),
+                SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16))),
             )
         ),
         testRequestContext(),

@@ -362,6 +362,9 @@ internal fun Application.remoteStoreModule(
                         if (executableRequest.requestType.isMutationRequestType()) {
                             throw MutationOutcomeUnknownException(error)
                         }
+                        if (index > 0) {
+                            throw PartialBatchRequestException(index, error)
+                        }
                         throw error
                     }
                     if (responseBytes.isEmpty()) {
@@ -1145,7 +1148,10 @@ private suspend inline fun ApplicationCall.respondValidationErrors(
                 respondText(cause.message, status = cause.status)
             }
             is RequestException -> respondText(cause.message ?: "Remote request is invalid", status = HttpStatusCode.BadRequest)
-            else -> throw error
+            else -> respondText(
+                "Remote execute response could not be encoded",
+                status = HttpStatusCode.InternalServerError,
+            )
         }
     } catch (error: RequestException) {
         respondText(error.message ?: "Remote request is invalid", status = HttpStatusCode.BadRequest)

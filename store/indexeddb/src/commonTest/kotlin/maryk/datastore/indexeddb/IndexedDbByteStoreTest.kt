@@ -1,5 +1,6 @@
 package maryk.datastore.indexeddb
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Deferred
@@ -15,6 +16,7 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -331,6 +333,44 @@ class IndexedDbByteStoreTest {
         } finally {
             first.close()
             second.close()
+        }
+    }
+
+    @Test
+    fun writeTransactionsSerializeOnTheSameStoreInstance() = runTest {
+        installIndexedDbForTests()
+
+        val store = openIndexedDbByteStore(
+            databaseName = "maryk-indexeddb-byte-same-instance-write-lock-test-${Random.nextInt()}",
+            objectStoreNames = setOf("rows"),
+        )
+        val firstEntered = CompletableDeferred<Unit>()
+        val releaseFirst = CompletableDeferred<Unit>()
+        val secondEntered = CompletableDeferred<Unit>()
+
+        try {
+            val first = async {
+                store.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) {
+                    firstEntered.complete(Unit)
+                    releaseFirst.await()
+                }
+            }
+            firstEntered.await()
+
+            val second = async(start = CoroutineStart.UNDISPATCHED) {
+                store.transaction(setOf("rows"), IndexedDbTransactionMode.READWRITE) {
+                    secondEntered.complete(Unit)
+                }
+            }
+
+            assertFalse(secondEntered.isCompleted)
+            releaseFirst.complete(Unit)
+            first.await()
+            second.await()
+            assertTrue(secondEntered.isCompleted)
+        } finally {
+            releaseFirst.complete(Unit)
+            store.close()
         }
     }
 

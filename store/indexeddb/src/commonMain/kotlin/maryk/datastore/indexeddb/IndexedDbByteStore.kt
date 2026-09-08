@@ -1,5 +1,10 @@
 package maryk.datastore.indexeddb
 
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
+
 interface IndexedDbByteStore {
     /**
      * Logical request scope.
@@ -95,3 +100,22 @@ internal expect suspend fun openPlatformIndexedDbByteStore(
 internal expect suspend fun <T> IndexedDbByteStore.withStartupWriteLock(
     block: suspend (IndexedDbByteStore) -> T,
 ): T
+
+internal suspend fun <T> IndexedDbByteStore.withIndexedDbWriteContext(
+    ownerId: String,
+    block: suspend (IndexedDbByteStore) -> T,
+): T = withContext(IndexedDbWriteContext(this, ownerId)) {
+    block(this@withIndexedDbWriteContext)
+}
+
+internal suspend fun IndexedDbByteStore.currentIndexedDbWriteOwnerId(): String? =
+    currentCoroutineContext()[IndexedDbWriteContext]
+        ?.takeIf { it.store === this }
+        ?.ownerId
+
+private class IndexedDbWriteContext(
+    val store: IndexedDbByteStore,
+    val ownerId: String,
+) : AbstractCoroutineContextElement(Key) {
+    companion object Key : CoroutineContext.Key<IndexedDbWriteContext>
+}

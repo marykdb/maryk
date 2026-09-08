@@ -77,44 +77,36 @@ private class BrowserIndexedDbByteStore(
     private val databaseName: String,
     private val lockName: String,
 ) : IndexedDbByteStore {
-    private var activeLeaseOwnerId: String? = null
-    private var writeScopeActive = false
+    // Startup handlers can call the datastore actor, which runs in a separate coroutine.
+    // The store is not exposed to general callers until this startup-only owner is cleared.
+    private var startupLeaseOwnerId: String? = null
     private var committedUpdateChannel: dynamic = null
     private val committedUpdateSenderId = createLeaseOwnerId()
 
     suspend fun <T> withStartupWriteLock(block: suspend (IndexedDbByteStore) -> T): T =
         withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
-            activeLeaseOwnerId = leaseOwnerId
-            writeScopeActive = true
+            startupLeaseOwnerId = leaseOwnerId
             try {
-                block(this)
+                withIndexedDbWriteContext(leaseOwnerId, block)
             } finally {
-                writeScopeActive = false
-                activeLeaseOwnerId = null
+                startupLeaseOwnerId = null
             }
         }
+
+    private suspend fun activeLeaseOwnerId() = currentIndexedDbWriteOwnerId() ?: startupLeaseOwnerId
 
     override suspend fun <T> transaction(
         storeNames: Set<String>,
         mode: IndexedDbTransactionMode,
         block: suspend (IndexedDbByteStore) -> T,
-    ): T =
-        if (mode == IndexedDbTransactionMode.READWRITE && writeScopeActive) {
-            block(this)
-        } else if (mode == IndexedDbTransactionMode.READWRITE) {
-            withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
-                activeLeaseOwnerId = leaseOwnerId
-                writeScopeActive = true
-                try {
-                    block(this)
-                } finally {
-                    writeScopeActive = false
-                    activeLeaseOwnerId = null
-                }
-            }
-        } else {
-            block(this)
+    ): T {
+        if (mode != IndexedDbTransactionMode.READWRITE) return block(this)
+        if (activeLeaseOwnerId() != null) return block(this)
+
+        return withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
+            withIndexedDbWriteContext(leaseOwnerId, block)
         }
+    }
 
     override suspend fun get(storeName: String, key: ByteArray): ByteArray? {
         val transaction = database.transaction(arrayOf(storeName), "readonly")
@@ -124,7 +116,7 @@ private class BrowserIndexedDbByteStore(
     }
 
     override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) {
-        activeLeaseOwnerId?.let { ownerId ->
+        activeLeaseOwnerId()?.let { ownerId ->
             writeBatchWithLease(
                 listOf(IndexedDbWriteOperation.Put(storeName, key, value)),
                 ownerId,
@@ -139,7 +131,7 @@ private class BrowserIndexedDbByteStore(
     }
 
     override suspend fun delete(storeName: String, key: ByteArray) {
-        activeLeaseOwnerId?.let { ownerId ->
+        activeLeaseOwnerId()?.let { ownerId ->
             writeBatchWithLease(
                 listOf(IndexedDbWriteOperation.Delete(storeName, key)),
                 ownerId,
@@ -156,7 +148,7 @@ private class BrowserIndexedDbByteStore(
     override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) {
         if (operations.isEmpty()) return
 
-        activeLeaseOwnerId?.let { ownerId ->
+        activeLeaseOwnerId()?.let { ownerId ->
             writeBatchWithLease(operations, ownerId)
             return
         }

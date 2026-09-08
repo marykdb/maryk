@@ -100,8 +100,6 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetChanges
             },
         )
 
-        if (versionedChanges.isEmpty()) continue
-
         val record = request.toVersion?.let { toVersion ->
             readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, key.bytes, toVersion, null)
         } ?: (
@@ -111,6 +109,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processGetChanges
             ?: continue
         if (request.filterSoftDeleted && record.isDeleted) continue
         if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) continue
+        if (versionedChanges.isEmpty() && !storeAction.isFlowSnapshotRead) continue
 
         changes += DataObjectVersionedChange(
             key = key,

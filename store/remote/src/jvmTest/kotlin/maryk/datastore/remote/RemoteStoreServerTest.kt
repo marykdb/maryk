@@ -16,6 +16,7 @@ import io.ktor.server.engine.EmbeddedServer
 import io.ktor.server.engine.embeddedServer
 import io.ktor.utils.io.readRemaining
 import java.net.Socket
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -23,13 +24,23 @@ import kotlin.test.assertTrue
 import kotlinx.io.readByteArray
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.seconds
+import maryk.core.aggregations.Aggregations
+import maryk.core.aggregations.metric.ValueCount
+import maryk.core.models.IsRootDataModel
+import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationRuntimeState
 import maryk.core.models.migration.MigrationRuntimeStatus
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.index.AnyOf
+import maryk.core.properties.definitions.reference
+import maryk.core.properties.definitions.string
+import maryk.core.properties.types.Bytes
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.Change
@@ -37,20 +48,31 @@ import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.VersionedChanges
+import maryk.core.query.filters.And
+import maryk.core.query.filters.Equals
+import maryk.core.query.filters.Exists
+import maryk.core.query.filters.Matches
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.CollectRequest
+import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
 import maryk.core.query.requests.add
 import maryk.core.query.requests.get
+import maryk.core.query.requests.scan
 import maryk.core.query.responses.AddResponse
+import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
 import maryk.core.query.responses.updates.InitialChangesUpdate
+import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
 import maryk.datastore.memory.InMemoryDataStore
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.migration.MigrationAdmin
+import maryk.test.models.CompleteMarykModel
 import maryk.test.models.SimpleMarykModel
 
 class RemoteStoreServerTest {
@@ -169,6 +191,30 @@ class RemoteStoreServerTest {
             } finally {
                 socket.close()
             }
+        }
+    }
+
+    @Test
+    fun flowDoesNotBufferManyLargeUpdateFramesAheadOfSlowClient() = runBoundedIntegrationTest {
+        val delegate = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val emitted = AtomicInteger()
+        val store = FastLargeFlowStore(delegate, emitted)
+        val (server, port) = startTestServer { remoteStoreModule(store) }
+        val socket = openRawFlow("http://127.0.0.1:$port")
+        try {
+            withTimeout(2.seconds) {
+                while (emitted.get() == 0) delay(10)
+            }
+            delay(250)
+
+            assertTrue(
+                emitted.get() <= 8,
+                "Remote flow buffered ${emitted.get()} large updates ahead of a client that read none",
+            )
+        } finally {
+            socket.close()
+            server.stop(500, 500)
+            store.close()
         }
     }
 
@@ -470,6 +516,164 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun executeRejectsMoreThan256Requests() = runBoundedIntegrationTest {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(tooManyStoreRequestsPayload())
+            }
+
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertTrue(response.bodyAsText().contains("request count"))
+        }
+    }
+
+    @Test
+    fun executeRejectsMoreThan1024FilterWorkUnits() = runBoundedIntegrationTest {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(filterWorkPayload())
+            }
+
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertTrue(response.bodyAsText().contains("filter work"))
+        }
+    }
+
+    @Test
+    fun executeRejectsMoreThan128Aggregations() = runBoundedIntegrationTest {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(aggregationWorkPayload())
+            }
+
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertTrue(response.bodyAsText().contains("aggregation count"))
+        }
+    }
+
+    @Test
+    fun executeDoesNotAuthorizeReferenceTargetWhenFilterOnlyComparesItsKey() = runBoundedIntegrationTest {
+        val authorizedModels = mutableListOf<String?>()
+        withServer(
+            config = RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    authorizedModels += request.modelName
+                    request.modelName != NamedIndexTargetModel.Meta.name
+                },
+            ),
+            dataModelsById = mapOf(
+                1u to NamedIndexSourceModel,
+                2u to NamedIndexTargetModel,
+            ),
+        ) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(terminalReferenceFilterPayload())
+            }
+
+            assertEquals(HttpStatusCode.OK, response.status, response.bodyAsText())
+        }
+
+        assertEquals(listOf<String?>(NamedIndexSourceModel.Meta.name), authorizedModels)
+    }
+
+    @Test
+    fun executePreflightsLaterAuthorizationBeforeMutatingBatchPrefix() = runBoundedIntegrationTest {
+        val store = InMemoryDataStore.open(
+            dataModelsById = mapOf(
+                1u to SimpleMarykModel,
+                2u to CompleteMarykModel,
+            )
+        )
+        val config = RemoteStoreServerConfig(
+            authorizer = RemoteStoreAuthorizer { request ->
+                request.modelName != CompleteMarykModel.Meta.name
+            }
+        )
+        val (server, port) = startTestServer { remoteStoreModule(store, config) }
+        val client = HttpClient(CIO) { expectSuccess = false }
+        try {
+            val response = client.post("http://127.0.0.1:$port${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(addThenDeniedScanPayload())
+            }
+
+            assertEquals(HttpStatusCode.Forbidden, response.status, response.bodyAsText())
+            val stored = store.execute(SimpleMarykModel.scan(allowTableScan = true))
+            assertTrue(stored.values.isEmpty())
+        } finally {
+            client.close()
+            server.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun executePreflightsLaterWorkLimitBeforeMutatingBatchPrefix() = runBoundedIntegrationTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val (server, port) = startTestServer { remoteStoreModule(store) }
+        val client = HttpClient(CIO) { expectSuccess = false }
+        try {
+            val response = client.post("http://127.0.0.1:$port${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(addThenOversizedFilterPayload())
+            }
+
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status, response.bodyAsText())
+            val stored = store.execute(SimpleMarykModel.scan(allowTableScan = true))
+            assertTrue(stored.values.isEmpty())
+        } finally {
+            client.close()
+            server.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun executeDeniesNamedIndexWhichMayTraverseUnauthorizedModel() = runBoundedIntegrationTest {
+        val authorizedModels = mutableListOf<String?>()
+        withServer(
+            config = RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    authorizedModels += request.modelName
+                    request.modelName != NamedIndexTargetModel.Meta.name
+                }
+            ),
+            dataModelsById = mapOf(
+                1u to NamedIndexSourceModel,
+                2u to NamedIndexTargetModel,
+            ),
+        ) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(crossModelNamedIndexPayload())
+            }
+
+            assertEquals(HttpStatusCode.Forbidden, response.status, response.bodyAsText())
+        }
+
+        assertEquals(
+            listOf<String?>(NamedIndexSourceModel.Meta.name, NamedIndexTargetModel.Meta.name),
+            authorizedModels,
+        )
+    }
+
+    @Test
+    fun executeDeniesUnknownNamedSearchIndex() = runBoundedIntegrationTest {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(unknownNamedIndexPayload())
+            }
+
+            assertEquals(HttpStatusCode.Forbidden, response.status, response.bodyAsText())
+        }
+    }
+
+    @Test
     fun executeKeepsLegacySingleResponseUnframed() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
@@ -724,6 +928,19 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun flowRejectsMoreThan1024FilterWorkUnits() = runBoundedIntegrationTest {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(filterWorkPayload())
+            }
+
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertTrue(response.bodyAsText().contains("filter work"))
+        }
+    }
+
+    @Test
     fun flowTypeWildcardFallsThroughToPayloadValidation() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.flowPath}") {
@@ -871,6 +1088,31 @@ class RemoteStoreServerTest {
                 setBody(byteArrayOf(4, 5, 6))
             }
             assertEquals(HttpStatusCode.BadRequest, response.status)
+        }
+    }
+
+    @Test
+    fun processUpdateRejectsVersionWithoutTwoSafeSuccessors() = runBoundedIntegrationTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val (server, port) = startTestServer { remoteStoreModule(store) }
+        val client = HttpClient(CIO) { expectSuccess = false }
+        try {
+            val response = client.post("http://127.0.0.1:$port${RemoteStoreProtocol.processUpdatePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(unsafeAdditionProcessUpdatePayload())
+            }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            val rejected = store.execute(SimpleMarykModel.get(rejectedProcessUpdateKey()))
+            assertTrue(rejected.values.isEmpty())
+            val add = store.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "haha-after-rejection" })
+            )
+            assertTrue(add.statuses.single() is AddSuccess<*>)
+        } finally {
+            client.close()
+            server.stop(500, 500)
+            store.close()
         }
     }
 
@@ -1094,12 +1336,35 @@ private class TestMigrationAdminStore(
     }
 }
 
+private class FastLargeFlowStore(
+    private val delegate: IsDataStore,
+    private val emitted: AtomicInteger,
+) : IsDataStore by delegate {
+    override suspend fun <DM : IsRootDataModel, RQ, RP> executeFlow(
+        request: RQ,
+    ): Flow<IsUpdateResponse<DM>> where RQ : IsFlowRequest<DM, RP>,
+                                      RP : IsDataResponse<DM> = flow {
+        val sortingKey = Bytes(ByteArray(1024 * 1024))
+        repeat(100) { index ->
+            emitted.incrementAndGet()
+            emit(
+                OrderedKeysUpdate(
+                    keys = emptyList(),
+                    version = index.toULong() + 1uL,
+                    sortingKeys = listOf(sortingKey),
+                )
+            )
+        }
+    }
+}
+
 private suspend fun withServer(
     config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
     limits: RemoteStoreServerLimits = RemoteStoreServerLimits(),
+    dataModelsById: Map<UInt, IsRootDataModel> = mapOf(1u to SimpleMarykModel),
     block: suspend (String, HttpClient) -> Unit,
 ) {
-    val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+    val store = InMemoryDataStore.open(dataModelsById = dataModelsById)
     val (server, port) = startTestServer {
         remoteStoreModule(store, config, limits)
     }
@@ -1162,6 +1427,114 @@ private fun multipleStoreRequestsPayload(): ByteArray =
         testRequestContext(),
     )
 
+private fun tooManyStoreRequestsPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            List(257) {
+                SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
+            }
+        ),
+        testRequestContext(),
+    )
+
+private fun addThenDeniedScanPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            SimpleMarykModel.add(SimpleMarykModel.create { value with "haha-prefix" }),
+            CompleteMarykModel.scan(allowTableScan = true),
+        ),
+        RequestContext(
+            DefinitionsContext(
+                dataModels = mutableMapOf(
+                    SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel),
+                    CompleteMarykModel.Meta.name to DataModelReference(CompleteMarykModel),
+                )
+            ),
+            dataModel = SimpleMarykModel,
+        ),
+    )
+
+private fun addThenOversizedFilterPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            SimpleMarykModel.add(SimpleMarykModel.create { value with "haha-prefix" }),
+            SimpleMarykModel.scan(
+                where = And(List(1_024) { Exists(SimpleMarykModel { value::ref }) }),
+                allowTableScan = true,
+            ),
+        ),
+        testRequestContext(),
+    )
+
+private fun filterWorkPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            SimpleMarykModel.scan(
+                where = And(List(1_024) { Exists(SimpleMarykModel { value::ref }) }),
+                allowTableScan = true,
+            )
+        ),
+        testRequestContext(),
+    )
+
+private fun aggregationWorkPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            SimpleMarykModel.get(
+                SimpleMarykModel.key(ByteArray(16)),
+                aggregations = Aggregations(
+                    *(0 until 129).map { index ->
+                        "aggregation-$index" to ValueCount(SimpleMarykModel { value::ref })
+                    }.toTypedArray()
+                ),
+            )
+        ),
+        testRequestContext(),
+    )
+
+private fun terminalReferenceFilterPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            NamedIndexSourceModel.scan(
+                where = Equals(
+                    NamedIndexSourceModel { target::ref } with NamedIndexTargetModel.key(ByteArray(16))
+                ),
+                allowTableScan = true,
+            )
+        ),
+        authorizationRequestContext(),
+    )
+
+private fun crossModelNamedIndexPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            NamedIndexSourceModel.scan(
+                where = Matches("related-value" with "classified"),
+                allowTableScan = true,
+            )
+        ),
+        namedIndexRequestContext(),
+    )
+
+private fun unknownNamedIndexPayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        Requests.Serializer,
+        Requests(
+            SimpleMarykModel.scan(
+                where = Matches("missing-index" with "classified"),
+                allowTableScan = true,
+            )
+        ),
+        testRequestContext(),
+    )
+
 private fun collectStoreRequestPayload(): ByteArray =
     RemoteStoreCodec.encode(
         Requests.Serializer,
@@ -1186,14 +1559,35 @@ private fun multipleFetchRequestsPayload(): ByteArray =
         testRequestContext(),
     )
 
-private fun validProcessUpdatePayload(): ByteArray =
+private fun validProcessUpdatePayload(): ByteArray = processUpdatePayload(1uL)
+
+private fun processUpdatePayload(version: ULong): ByteArray =
     RemoteStoreCodec.encode(
         UpdateResponse.Serializer,
         UpdateResponse(
             dataModel = SimpleMarykModel,
             update = OrderedKeysUpdate(
                 keys = listOf(SimpleMarykModel.key(ByteArray(16))),
-                version = 1uL,
+                version = version,
+            ),
+        ),
+        testRequestContext(),
+    )
+
+private fun rejectedProcessUpdateKey() = SimpleMarykModel.key(ByteArray(16) { 1 })
+
+private fun unsafeAdditionProcessUpdatePayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        UpdateResponse.Serializer,
+        UpdateResponse(
+            dataModel = SimpleMarykModel,
+            update = AdditionUpdate(
+                key = rejectedProcessUpdateKey(),
+                version = ULong.MAX_VALUE - 1uL,
+                firstVersion = ULong.MAX_VALUE - 1uL,
+                insertionIndex = 0,
+                isDeleted = false,
+                values = SimpleMarykModel.create { value with "haha-unsafe" },
             ),
         ),
         testRequestContext(),
@@ -1289,6 +1683,50 @@ private fun testRequestContext(): RequestContext =
         ),
         dataModel = SimpleMarykModel,
     )
+
+private fun authorizationRequestContext(): RequestContext =
+    RequestContext(
+        DefinitionsContext(
+            dataModels = mutableMapOf(
+                NamedIndexSourceModel.Meta.name to DataModelReference(NamedIndexSourceModel),
+                NamedIndexTargetModel.Meta.name to DataModelReference(NamedIndexTargetModel),
+            )
+        ),
+        dataModel = NamedIndexSourceModel,
+    )
+
+private fun namedIndexRequestContext(): RequestContext =
+    RequestContext(
+        DefinitionsContext(
+            dataModels = mutableMapOf(
+                NamedIndexSourceModel.Meta.name to DataModelReference(NamedIndexSourceModel),
+                NamedIndexTargetModel.Meta.name to DataModelReference(NamedIndexTargetModel),
+            )
+        ),
+        dataModel = NamedIndexSourceModel,
+    )
+
+private object NamedIndexTargetModel : RootDataModel<NamedIndexTargetModel>() {
+    val value by string(index = 1u)
+}
+
+private object NamedIndexSourceModel : RootDataModel<NamedIndexSourceModel>(
+    indexes = {
+        NamedIndexSourceModel.run {
+            listOf(
+                AnyOf(
+                    "related-value",
+                    NamedIndexSourceModel { target { value::ref } },
+                )
+            )
+        }
+    }
+) {
+    val target by reference(
+        index = 1u,
+        dataModel = { NamedIndexTargetModel },
+    )
+}
 
 private fun oversizedPayload(): ByteArray = ByteArray((16 * 1024 * 1024) + 1) { 0x01 }
 

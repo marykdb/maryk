@@ -181,7 +181,7 @@ val remote = RemoteDataStore.connect(
 Notes:
 - `remotePort`/`remoteHost` default to the `baseUrl` host/port if omitted.
 - `localPort` can be omitted to auto-select a free port.
-- Uses `ssh -N -L localPort:remoteHost:remotePort` with `ExitOnForwardFailure=yes`.
+- Uses `ssh -N -L 127.0.0.1:localPort:remoteHost:remotePort` with `ExitOnForwardFailure=yes`, so the forwarded port is never exposed on other local interfaces.
 - An SSH tunnel can safely connect to a loopback-bound server without bearer authentication.
 
 ## HTTP protocol overview
@@ -192,8 +192,17 @@ Request requirements:
 - `Content-Type: application/x-maryk-protobuf` on all `POST` endpoints.
 - Empty request bodies are rejected.
 - Request body max size is 16 MiB.
+- Execute batches are limited to 256 requests. Query filters are limited to
+  1,024 work units and fetches to 128 aggregations.
+- Statically resolvable request type, work, and authorization checks are
+  preflighted for the full batch before execution. Mutation batches cannot
+  depend on an earlier collected result. Execution is not transactional:
+  datastore or response-encoding failures can still occur after an earlier
+  request has completed.
 - Each response frame is limited to 16 MiB; a batched execute response is limited
   to 64 MiB total.
+- Flow updates use rendezvous delivery into the response writer, preventing an
+  additional application-level queue of updates from growing ahead of a slow client.
 
 - `GET /v1/info` → `RemoteStoreInfo` (definitions + model id map + capabilities)
 - `GET /v1/snapshot-version` → authoritative 8-byte point-in-time read boundary

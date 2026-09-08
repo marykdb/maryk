@@ -2214,6 +2214,36 @@ class IndexedDbDataStoreTest {
     }
 
     @Test
+    fun providerCancellationFailsOnlyTheCurrentRequest() = runTest {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-provider-cancellation-${Random.nextInt()}",
+            dataModelsById = mapOf(901u to SensitiveRecord),
+            fieldEncryptionProvider = CancellingOnceFieldEncryptionProvider(),
+        )
+
+        try {
+            assertFailsWith<CancellationException> {
+                dataStore.execute(
+                    SensitiveRecord.add(
+                        SensitiveRecord(Bytes(ByteArray(16) { it.toByte() }), "public", "secret")
+                    )
+                )
+            }
+
+            val scan = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5.seconds) {
+                    dataStore.execute(SensitiveRecord.scan())
+                }
+            }
+            assertTrue(scan.values.isEmpty())
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun sensitiveAddAndChangeLogsStayEncryptedAndReplayAcrossContexts() = runTest {
         installIndexedDbForTests()
 
@@ -2866,6 +2896,35 @@ private class CancellationBlockingFieldEncryptionProvider(
         encrypt(value, offset, length)
     override suspend fun decrypt(context: FieldEncryptionContext, value: ByteArray, offset: Int, length: Int): ByteArray =
         decrypt(value, offset, length)
+}
+
+private class CancellingOnceFieldEncryptionProvider : ContextualFieldEncryptionProvider {
+    private var cancelNextEncryption = true
+
+    override suspend fun encrypt(value: ByteArray, offset: Int, length: Int): ByteArray {
+        if (cancelNextEncryption) {
+            cancelNextEncryption = false
+            throw CancellationException("provider operation cancelled")
+        }
+        return value.copyOfRange(offset, offset + length)
+    }
+
+    override suspend fun decrypt(value: ByteArray, offset: Int, length: Int): ByteArray =
+        value.copyOfRange(offset, offset + length)
+
+    override suspend fun encrypt(
+        context: FieldEncryptionContext,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray = encrypt(value, offset, length)
+
+    override suspend fun decrypt(
+        context: FieldEncryptionContext,
+        value: ByteArray,
+        offset: Int,
+        length: Int,
+    ): ByteArray = decrypt(value, offset, length)
 }
 
 private object CancellationMigrationV1 : RootDataModel<CancellationMigrationV1>(

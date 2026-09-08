@@ -877,6 +877,7 @@ class RemoteDataStoreTest {
             assertEquals(2, responses.size)
             assertIs<AddResponse<*>>(responses[0])
             assertIs<AddResponse<*>>(responses[1])
+            Unit
         } finally {
             remote.close()
             engine.stop(500, 500)

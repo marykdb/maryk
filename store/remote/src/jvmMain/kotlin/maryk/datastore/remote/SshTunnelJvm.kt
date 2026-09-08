@@ -47,7 +47,7 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
             "-o",
             "ExitOnForwardFailure=yes",
             "-L",
-            "$localPort:${target.host.forSshForwarding()}:${target.port}",
+            "127.0.0.1:$localPort:${target.host.forSshForwarding()}:${target.port}",
         )
 
         if (config.port != 22) {

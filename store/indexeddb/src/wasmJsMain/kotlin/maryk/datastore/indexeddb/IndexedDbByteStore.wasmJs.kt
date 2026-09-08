@@ -82,44 +82,36 @@ private class WasmIndexedDbByteStore(
     private val databaseName: String,
     private val lockName: String,
 ) : IndexedDbByteStore {
-    private var activeLeaseOwnerId: String? = null
-    private var writeScopeActive = false
+    // Startup handlers can call the datastore actor, which runs in a separate coroutine.
+    // The store is not exposed to general callers until this startup-only owner is cleared.
+    private var startupLeaseOwnerId: String? = null
     private var committedUpdateChannel: JsAny? = null
     private val committedUpdateSenderId = createLeaseOwnerId()
 
     suspend fun <T> withStartupWriteLock(block: suspend (IndexedDbByteStore) -> T): T =
         withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
-            activeLeaseOwnerId = leaseOwnerId
-            writeScopeActive = true
+            startupLeaseOwnerId = leaseOwnerId
             try {
-                block(this)
+                withIndexedDbWriteContext(leaseOwnerId, block)
             } finally {
-                writeScopeActive = false
-                activeLeaseOwnerId = null
+                startupLeaseOwnerId = null
             }
         }
+
+    private suspend fun activeLeaseOwnerId() = currentIndexedDbWriteOwnerId() ?: startupLeaseOwnerId
 
     override suspend fun <T> transaction(
         storeNames: Set<String>,
         mode: IndexedDbTransactionMode,
         block: suspend (IndexedDbByteStore) -> T,
-    ): T =
-        if (mode == IndexedDbTransactionMode.READWRITE && writeScopeActive) {
-            block(this)
-        } else if (mode == IndexedDbTransactionMode.READWRITE) {
-            withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
-                activeLeaseOwnerId = leaseOwnerId
-                writeScopeActive = true
-                try {
-                    block(this)
-                } finally {
-                    writeScopeActive = false
-                    activeLeaseOwnerId = null
-                }
-            }
-        } else {
-            block(this)
+    ): T {
+        if (mode != IndexedDbTransactionMode.READWRITE) return block(this)
+        if (activeLeaseOwnerId() != null) return block(this)
+
+        return withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
+            withIndexedDbWriteContext(leaseOwnerId, block)
         }
+    }
 
     override suspend fun get(storeName: String, key: ByteArray): ByteArray? {
         val result = suspendCancellableCoroutine<JsAny?> { continuation ->
@@ -136,7 +128,7 @@ private class WasmIndexedDbByteStore(
     }
 
     override suspend fun put(storeName: String, key: ByteArray, value: ByteArray) {
-        if (activeLeaseOwnerId != null) {
+        activeLeaseOwnerId()?.let {
             writeBatch(listOf(IndexedDbWriteOperation.Put(storeName, key, value)))
             return
         }
@@ -154,7 +146,7 @@ private class WasmIndexedDbByteStore(
     }
 
     override suspend fun delete(storeName: String, key: ByteArray) {
-        if (activeLeaseOwnerId != null) {
+        activeLeaseOwnerId()?.let {
             writeBatch(listOf(IndexedDbWriteOperation.Delete(storeName, key)))
             return
         }
@@ -173,6 +165,7 @@ private class WasmIndexedDbByteStore(
     override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) {
         if (operations.isEmpty()) return
 
+        val leaseOwnerId = activeLeaseOwnerId()?.toJsString()
         val indexedOperations = JsArray<JsAny>().also { array ->
             operations.forEachIndexed { index, operation ->
                 array[index] = when (operation) {
@@ -195,7 +188,7 @@ private class WasmIndexedDbByteStore(
                 operations = indexedOperations,
                 leaseStoreName = writeLeaseStoreName,
                 lockName = lockName,
-                leaseOwnerId = activeLeaseOwnerId?.toJsString(),
+                leaseOwnerId = leaseOwnerId,
                 onSuccess = { continuation.resume(Unit) },
                 onError = { continuation.resumeWithException(IllegalStateException(it)) },
             )

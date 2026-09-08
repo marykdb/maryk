@@ -5,7 +5,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -423,8 +425,12 @@ class IndexedDbDataStore private constructor(
                             process()
                         }
                     } catch (e: CancellationException) {
-                        storeAction.response.cancel(e)
-                        throw e
+                        if (currentCoroutineContext().isActive) {
+                            storeAction.response.completeExceptionally(e)
+                        } else {
+                            storeAction.response.cancel(e)
+                            throw e
+                        }
                     } catch (e: Throwable) {
                         e.rethrowIfFatal()
                         storeAction.response.completeExceptionally(e)

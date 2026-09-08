@@ -23,6 +23,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.io.readByteArray
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.produceIn
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.TimeoutCancellationException
@@ -30,22 +31,42 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import io.ktor.utils.io.readRemaining
 import io.ktor.utils.io.writeFully
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsObjectDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.asValues
 import maryk.core.models.serializers.IsObjectDataModelSerializer
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.index.Normalize
+import maryk.core.properties.definitions.index.Split
+import maryk.core.properties.definitions.index.namedSearchIndex
+import maryk.core.properties.references.AnyPropertyReference
+import maryk.core.properties.references.IsIndexablePropertyReference
+import maryk.core.properties.references.IsPropertyReference
+import maryk.core.properties.references.ObjectReferencePropertyReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.query.RequestContext
 import maryk.core.query.changes.IsChange
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.ObjectSoftDeleteChange
+import maryk.core.query.filters.Exists
+import maryk.core.query.filters.GeoWithinBox
+import maryk.core.query.filters.GeoWithinPolygon
+import maryk.core.query.filters.GeoWithinRadius
+import maryk.core.query.filters.IsFilter
+import maryk.core.query.filters.IsFilterList
+import maryk.core.query.filters.IsReferenceAnyPairsFilter
+import maryk.core.query.filters.Matches
+import maryk.core.query.filters.MatchesPrefix
+import maryk.core.query.filters.MatchesRegEx
+import maryk.core.query.filters.ValueIn
 import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.AddRequest
 import maryk.core.query.requests.ChangeRequest
 import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.IsFlowRequest
+import maryk.core.query.requests.IsFetchRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.IsTransportableRequest
 import maryk.core.query.requests.Requests
@@ -69,6 +90,7 @@ import maryk.core.values.ObjectValues
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.migration.MigrationAdmin
+import maryk.datastore.shared.requireSafeUpdateVersion
 import maryk.datastore.shared.rethrowIfFatal
 
 class RemoteStoreServer(
@@ -242,40 +264,66 @@ internal fun Application.remoteStoreModule(
                 )
 
                 @Suppress("UNCHECKED_CAST")
-                val rawRequests = (
-                    requests.original(Requests.requests.index) as? List<TypedValue<*, Any>>
-                )?.map { it.value }.orEmpty()
+                val rawTypedRequests = (
+                    requests.original(Requests.requests.index) as? List<TypedValue<RequestType, Any>>
+                ).orEmpty()
+                val rawRequests = rawTypedRequests.map { it.value }
                 if (rawRequests.isEmpty()) {
                     throw RequestValidationException(HttpStatusCode.BadRequest, "Remote execute request list cannot be empty")
+                }
+                if (rawRequests.size > MAX_EXECUTE_REQUESTS) {
+                    throw RequestValidationException(
+                        HttpStatusCode.PayloadTooLarge,
+                        "Remote execute request count exceeds max size: ${rawRequests.size} > $MAX_EXECUTE_REQUESTS",
+                    )
                 }
                 val useBatchProtocol =
                     call.request.headers[RemoteStoreProtocol.executeProtocolHeader] ==
                         RemoteStoreProtocol.batchExecuteProtocol ||
                         rawRequests.size > 1
+                val preparedRequests = rawRequests.map { rawRequest ->
+                    try {
+                        call.prepareExecuteRequest(
+                            rawRequest = rawRequest,
+                            config = config,
+                            principal = principal,
+                        )
+                    } catch (error: RequestValidationException) {
+                        if (!error.mayNeedCollectedResult) throw error
+                        null
+                    }
+                }
+                if (preparedRequests.any { it == null }) {
+                    val mayMutate = preparedRequests.any { it?.executableRequest?.requestType.isMutationRequestType() } ||
+                        rawTypedRequests.indices.any { index ->
+                            preparedRequests[index] == null &&
+                                rawTypedRequests[index].type.isMutationOrCollectRequestType()
+                        }
+                    if (mayMutate) {
+                        throw RequestValidationException(
+                            HttpStatusCode.BadRequest,
+                            "Remote mutation batch cannot depend on an unresolved collected result",
+                        )
+                    }
+                }
+                if (rawRequests.size > 1 && preparedRequests.any { it?.authorized == false }) {
+                    throw RequestValidationException(
+                        HttpStatusCode.Forbidden,
+                        "Remote execute batch is not authorized",
+                    )
+                }
                 val responseChunks = ArrayList<ByteArray>(rawRequests.size * 2)
                 var totalSize = 0
-                for (rawRequest in rawRequests) {
-                    val request = resolveRequest(rawRequest, operation = "execute")
-                    val executableRequest = if (request is CollectRequest<*, *>) {
-                        request.request
-                    } else {
-                        request
-                    }
-                    @Suppress("UNCHECKED_CAST")
-                    val storeRequest = executableRequest as? IsStoreRequest<IsRootDataModel, IsResponse>
-                        ?: throw RequestValidationException(
-                            HttpStatusCode.BadRequest,
-                            "Remote execute only accepts store requests"
-                        )
-                    val authorized = config.authorizer?.authorize(
-                        RemoteStoreAuthorizationRequest(
-                            principal = principal,
-                            operation = RemoteStoreOperation.Execute,
-                            requestType = executableRequest.requestType,
-                            modelName = storeRequest.dataModel.Meta.name,
-                        )
-                    ) ?: true
-                    val response = if (authorized) {
+                for ((index, rawRequest) in rawRequests.withIndex()) {
+                    val preparedRequest = preparedRequests[index] ?: call.prepareExecuteRequest(
+                        rawRequest = rawRequest,
+                        config = config,
+                        principal = principal,
+                    )
+                    val request = preparedRequest.request
+                    val executableRequest = preparedRequest.executableRequest
+                    val storeRequest = preparedRequest.storeRequest
+                    val response = if (preparedRequest.authorized) {
                         dataStore.execute(storeRequest)
                     } else {
                         authorizationFailure(storeRequest)
@@ -357,13 +405,15 @@ internal fun Application.remoteStoreModule(
                 val rawRequests = requests.requests as List<Any>
                 val fetchRequest = rawRequests.singleOrNull()?.let { resolveRequest(it, operation = "flow") } as? IsFlowRequest<*, *>
                     ?: throw RequestValidationException(HttpStatusCode.BadRequest, "Remote flow expects a single flow request")
+                validateRequestWork(fetchRequest)
                 if (
-                    !call.authorize(
+                    !call.authorizeRequestModels(
                         config = config,
                         principal = principal,
                         operation = RemoteStoreOperation.Flow,
-                        requestType = (fetchRequest as? IsTransportableRequest<*>)?.requestType,
-                        modelName = fetchRequest.dataModel.Meta.name,
+                        request = fetchRequest,
+                        primaryModelName = fetchRequest.dataModel.Meta.name,
+                        respondOnFailure = true,
                     )
                 ) return@respondValidationErrors
 
@@ -381,7 +431,7 @@ internal fun Application.remoteStoreModule(
                 try {
                     call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                         coroutineScope {
-                            val updateChannel = updates.produceIn(this)
+                            val updateChannel = updates.buffer(capacity = 0).produceIn(this)
                             try {
                                 while (true) {
                                     val updateResult = if (heartbeatMillis == null) {
@@ -434,6 +484,14 @@ internal fun Application.remoteStoreModule(
                 )
                 @Suppress("UNCHECKED_CAST")
                 val updateRequest = decodedUpdateRequest as UpdateResponse<IsRootDataModel>
+                try {
+                    requireSafeUpdateVersion(updateRequest.update.version)
+                } catch (error: RequestException) {
+                    throw RequestValidationException(
+                        HttpStatusCode.BadRequest,
+                        error.message ?: "Remote process-update version is unsafe",
+                    )
+                }
                 val requestTypes = when (val update = updateRequest.update) {
                     is AdditionUpdate<*> -> setOf(RequestType.Add)
                     is ChangeUpdate<*> -> authorizationRequestTypes(update.changes)
@@ -584,6 +642,49 @@ private suspend fun ApplicationCall.authenticate(
     return principal
 }
 
+private data class PreparedExecuteRequest(
+    val request: IsTransportableRequest<*>,
+    val executableRequest: IsTransportableRequest<*>,
+    val storeRequest: IsStoreRequest<IsRootDataModel, IsResponse>,
+    val authorized: Boolean,
+)
+
+private suspend fun ApplicationCall.prepareExecuteRequest(
+    rawRequest: Any,
+    config: RemoteStoreServerConfig,
+    principal: RemoteStorePrincipal,
+): PreparedExecuteRequest {
+    val request = resolveRequest(rawRequest, operation = "execute")
+    val executableRequest = if (request is CollectRequest<*, *>) request.request else request
+    validateRequestWork(executableRequest)
+    @Suppress("UNCHECKED_CAST")
+    val storeRequest = executableRequest as? IsStoreRequest<IsRootDataModel, IsResponse>
+        ?: throw RequestValidationException(
+            HttpStatusCode.BadRequest,
+            "Remote execute only accepts store requests",
+        )
+    return PreparedExecuteRequest(
+        request = request,
+        executableRequest = executableRequest,
+        storeRequest = storeRequest,
+        authorized = authorizeRequestModels(
+            config = config,
+            principal = principal,
+            operation = RemoteStoreOperation.Execute,
+            request = executableRequest,
+            primaryModelName = storeRequest.dataModel.Meta.name,
+        ),
+    )
+}
+
+private fun RequestType?.isMutationRequestType(): Boolean = when (this) {
+    RequestType.Add, RequestType.Change, RequestType.Delete -> true
+    else -> false
+}
+
+private fun RequestType.isMutationOrCollectRequestType(): Boolean =
+    isMutationRequestType() || this == RequestType.Collect
+
 private fun bearerTokenMatches(authorization: String, bearerToken: String): Boolean {
     val separator = authorization.indexOf(' ')
     return separator > 0 &&
@@ -612,6 +713,142 @@ private suspend fun ApplicationCall.authorize(
     }
     return authorized
 }
+
+private suspend fun ApplicationCall.authorizeRequestModels(
+    config: RemoteStoreServerConfig,
+    principal: RemoteStorePrincipal,
+    operation: RemoteStoreOperation,
+    request: Any,
+    primaryModelName: String,
+    respondOnFailure: Boolean = false,
+): Boolean {
+    val requestType = (request as? IsTransportableRequest<*>)?.requestType
+    if (
+        !authorize(
+            config = config,
+            principal = principal,
+            operation = operation,
+            requestType = requestType,
+            modelName = primaryModelName,
+            respondOnFailure = respondOnFailure,
+        )
+    ) return false
+
+    val referencedModelNames = (request as? IsFetchRequest<*, *>)
+        ?.let { fetchRequest ->
+            fetchRequest.where?.referencedModelNames(fetchRequest.dataModel)
+        }
+        .orEmpty()
+    for (referencedModelName in referencedModelNames) {
+        if (referencedModelName == primaryModelName) continue
+        if (
+            !authorize(
+                config = config,
+                principal = principal,
+                operation = operation,
+                requestType = requestType,
+                modelName = referencedModelName,
+                respondOnFailure = respondOnFailure,
+            )
+        ) return false
+    }
+    return true
+}
+
+private fun validateRequestWork(request: Any) {
+    val fetchRequest = request as? IsFetchRequest<*, *> ?: return
+    fetchRequest.where?.validateFilterWork(MAX_FILTER_WORK)
+    val aggregationCount = fetchRequest.aggregations?.namedAggregations?.size ?: 0
+    if (aggregationCount > MAX_AGGREGATION_COUNT) {
+        throw RequestValidationException(
+            HttpStatusCode.PayloadTooLarge,
+            "Remote query aggregation count exceeds max size: $aggregationCount > $MAX_AGGREGATION_COUNT",
+        )
+    }
+}
+
+private fun IsFilter.validateFilterWork(maxWork: Int) {
+    val pending = mutableListOf(this)
+    var work = 0
+    while (pending.isNotEmpty()) {
+        val filter = pending.removeLast()
+        val currentWork = when (filter) {
+            is IsFilterList -> {
+                pending.addAll(filter.filters)
+                1
+            }
+            is ValueIn -> filter.referenceValuePairs.sumOf { maxOf(1, it.values.size) }
+            is Matches -> maxOf(1, filter.nameValuePairs.size)
+            is MatchesPrefix -> maxOf(1, filter.nameValuePairs.size)
+            is MatchesRegEx -> maxOf(1, filter.nameRegexPairs.size)
+            is GeoWithinPolygon -> maxOf(1, filter.vertices.size)
+            is IsReferenceAnyPairsFilter<*> -> maxOf(1, filter.referenceValuePairs.size)
+            is Exists -> maxOf(1, filter.references.size)
+            else -> 1
+        }
+        if (work > maxWork - currentWork) {
+            throw RequestValidationException(
+                HttpStatusCode.PayloadTooLarge,
+                "Remote query filter work exceeds max size: more than $maxWork",
+            )
+        }
+        work += currentWork
+    }
+}
+
+private fun IsFilter.referencedModelNames(dataModel: IsRootDataModel): Set<String> {
+    val references = mutableListOf<AnyPropertyReference>()
+    val pending = mutableListOf(this)
+    while (pending.isNotEmpty()) {
+        when (val filter = pending.removeLast()) {
+            is IsFilterList -> pending.addAll(filter.filters)
+            is IsReferenceAnyPairsFilter<*> -> filter.referenceValuePairs.forEach { references += it.reference }
+            is Exists -> references += filter.references
+            is GeoWithinBox -> references += filter.reference
+            is GeoWithinRadius -> references += filter.reference
+            is GeoWithinPolygon -> references += filter.reference
+            is Matches -> filter.nameValuePairs.forEach { pair ->
+                references += dataModel.requireNamedSearchIndexReferences(pair.name)
+            }
+            is MatchesPrefix -> filter.nameValuePairs.forEach { pair ->
+                references += dataModel.requireNamedSearchIndexReferences(pair.name)
+            }
+            is MatchesRegEx -> filter.nameRegexPairs.forEach { pair ->
+                references += dataModel.requireNamedSearchIndexReferences(pair.name)
+            }
+        }
+    }
+
+    return buildSet {
+        references.forEach { reference ->
+            reference.unwrap().dropLast(1).forEach { part ->
+                if (part is ObjectReferencePropertyReference<*, *, *, *>) {
+                    add(part.propertyDefinition.dataModel.Meta.name)
+                }
+            }
+        }
+    }
+}
+
+private fun IsRootDataModel.requireNamedSearchIndexReferences(name: String): List<AnyPropertyReference> {
+    val namedIndex = namedSearchIndex(name) ?: throw unauthorizedNamedSearchIndex()
+    return namedIndex.references.map { indexReference ->
+        indexReference.toPropertyReferenceOrNull() ?: throw unauthorizedNamedSearchIndex()
+    }
+}
+
+private tailrec fun IsIndexablePropertyReference<String>.toPropertyReferenceOrNull(): AnyPropertyReference? =
+    when (this) {
+        is Normalize -> reference.toPropertyReferenceOrNull()
+        is Split -> reference.toPropertyReferenceOrNull()
+        is IsPropertyReference<*, *, *> -> this
+        else -> null
+    }
+
+private fun unauthorizedNamedSearchIndex() = RequestValidationException(
+    HttpStatusCode.Forbidden,
+    "Remote query named search index is not authorized",
+)
 
 private fun constantTimeEquals(left: String, right: String): Boolean {
     val leftBytes = left.encodeToByteArray()
@@ -691,7 +928,8 @@ private fun resolveRequest(rawRequest: Any, operation: String): IsTransportableR
         error.rethrowIfFatal()
         throw RequestValidationException(
             HttpStatusCode.BadRequest,
-            "Remote $operation request contains invalid transportable payload"
+            "Remote $operation request contains invalid transportable payload",
+            mayNeedCollectedResult = true,
         )
     }
     else -> throw RequestValidationException(
@@ -800,6 +1038,7 @@ private inline fun <T> decodeRequest(operation: String, decode: () -> T): T {
 private class RequestValidationException(
     val status: HttpStatusCode,
     override val message: String,
+    val mayNeedCollectedResult: Boolean = false,
 ) : IllegalArgumentException(message)
 
 private val RemoteStoreCallAdmissionPermitKey = AttributeKey<RequestAdmissionPermit>("RemoteStoreCallAdmissionPermit")
@@ -835,6 +1074,9 @@ private class RequestAdmissionPermit(
 private const val MAX_REQUEST_BODY_BYTES = 16 * 1024 * 1024
 private const val MAX_FRAME_SIZE_BYTES = 16 * 1024 * 1024
 private const val MAX_BATCH_RESPONSE_BODY_BYTES = 64 * 1024 * 1024
+private const val MAX_EXECUTE_REQUESTS = 256
+private const val MAX_FILTER_WORK = 1_024
+private const val MAX_AGGREGATION_COUNT = 128
 
 private suspend inline fun ApplicationCall.respondValidationErrors(
     crossinline block: suspend () -> Unit,

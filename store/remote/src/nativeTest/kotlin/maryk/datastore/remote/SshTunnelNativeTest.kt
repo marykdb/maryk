@@ -67,7 +67,7 @@ class SshTunnelNativeTest {
     }
 
     @Test
-    fun sshProcessTunnelReleasesPortOnClose() {
+    fun sshProcessTunnelBindsLoopbackAndReleasesPortOnClose() {
         val directory = "/tmp/maryk-remote-ssh-${Random.nextInt()}"
         val sshPath = "$directory/ssh"
         val originalPath = getenv("PATH")?.toKString().orEmpty()
@@ -84,7 +84,11 @@ class SshTunnelNativeTest {
                 fi
                 shift
             done
-            port="${'$'}{forward%%:*}"
+            case "${'$'}forward" in
+                127.0.0.1:*) remainder="${'$'}{forward#127.0.0.1:}" ;;
+                *) exit 74 ;;
+            esac
+            port="${'$'}{remainder%%:*}"
             exec python3 -c 'import socket, sys; listener = socket.socket(); listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1); listener.bind(("127.0.0.1", int(sys.argv[1]))); listener.listen(); [listener.accept()[0].close() for _ in iter(int, 1)]' "${'$'}port"
             """.trimIndent() + "\n",
         )

@@ -54,6 +54,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
                 changeStoreName = changeStoreName,
                 keyScanRange = keyScanRange,
                 indexScan = scanType,
+                includeEmptyMembers = storeAction.isFlowSnapshotRead,
             )
         )
         return
@@ -119,7 +120,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanChange
                     sensitiveFields.decryptChangeLogPayloadIfNeeded(modelId, keyBytes, version, value)
                 },
             )
-            if (versionedChanges.isEmpty()) return@scanInBatches true
+            if (versionedChanges.isEmpty() && !storeAction.isFlowSnapshotRead) return@scanInBatches true
 
             changes += DataObjectVersionedChange(
                 key = request.dataModel.key(keyBytes),
@@ -153,6 +154,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
     changeStoreName: String,
     keyScanRange: KeyScanRanges,
     indexScan: IndexScan,
+    includeEmptyMembers: Boolean,
 ): ChangesResponse<DM> {
     val changes = ArrayList<DataObjectVersionedChange<DM>>(request.limit.toInt().coerceAtLeast(4))
     val seenKeys = mutableSetOf<String>()
@@ -293,7 +295,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScanC
             ).ifEmpty {
                 record.toCreationChanges(request.fromVersion, request.toVersion, request.select)
             }
-            if (versionedChanges.isEmpty()) return true
+            if (versionedChanges.isEmpty() && !includeEmptyMembers) return true
 
             changes += DataObjectVersionedChange(
                 key = request.dataModel.key(keyBytes),

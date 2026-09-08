@@ -70,8 +70,7 @@ class ScanViewerInteraction(
     private var endReached = false
     private var statusMessage: String? = null
     private var statusInPrompt = false
-    private var pendingDelete = false
-    private var pendingHardDelete = false
+    private var pendingDelete: PendingDelete? = null
     private var displayFields: List<DisplayField> = emptyList()
     private val referencePaths by lazy { collectReferencePaths(dataModel) }
 
@@ -83,7 +82,7 @@ class ScanViewerInteraction(
             val endsWithSpace = input.lastOrNull()?.isWhitespace() == true
             val currentToken = if (endsWithSpace) "" else tokens.lastOrNull().orEmpty()
 
-            if (pendingDelete) {
+            if (pendingDelete != null) {
                 return completeToken(currentToken, YES_NO_OPTIONS)
             }
 
@@ -201,7 +200,7 @@ class ScanViewerInteraction(
             return InteractionResult.Stay()
         }
 
-        if (pendingDelete) {
+        if (pendingDelete != null) {
             return handleDeleteConfirmation(trimmed)
         }
 
@@ -392,12 +391,12 @@ class ScanViewerInteraction(
             return InteractionResult.Stay(lines = statusLines())
         }
         val resolved = (options as DeleteOptionsResult.Success).options
-        pendingDelete = true
-        pendingHardDelete = resolved.hardDelete
-        statusMessage = if (pendingHardDelete) {
-            "Delete ${currentRowLabel()} (hard)? Type yes or no."
+        val row = currentRow() ?: return InteractionResult.Stay(lines = listOf("No row selected."))
+        pendingDelete = PendingDelete(row.key, resolved.hardDelete)
+        statusMessage = if (resolved.hardDelete) {
+            "Delete ${dataModel.Meta.name} ${row.key} (hard)? Type yes or no."
         } else {
-            "Delete ${currentRowLabel()}? Type yes or no."
+            "Delete ${dataModel.Meta.name} ${row.key}? Type yes or no."
         }
         return InteractionResult.Stay(lines = statusLines())
     }
@@ -680,32 +679,26 @@ class ScanViewerInteraction(
 
     private fun currentRow(): ScanRow? = rows.getOrNull(selectedIndex)
 
-    private fun currentRowLabel(): String =
-        currentRow()?.let { "${dataModel.Meta.name} ${it.key}" } ?: dataModel.Meta.name
-
     private fun handleDeleteConfirmation(input: String): InteractionResult {
-        val row = currentRow()
-            ?: return InteractionResult.Stay(lines = listOf("No row selected."))
+        val pending = pendingDelete ?: return InteractionResult.Stay(lines = listOf("No delete pending."))
         return when (input.lowercase()) {
             "yes", "y" -> {
-                pendingDelete = false
-                val label = "${dataModel.Meta.name} ${row.key}"
+                pendingDelete = null
+                val label = "${dataModel.Meta.name} ${pending.key}"
                 val message = try {
-                    val request = dataModel.delete(row.key, hardDelete = pendingHardDelete)
+                    val request = dataModel.delete(pending.key, hardDelete = pending.hardDelete)
                     val response = runBlocking { dataStore.execute(request) }
-                    formatDeleteResult(response, label, pendingHardDelete).lines.single()
+                    formatDeleteResult(response, label, pending.hardDelete).lines.single()
                 } catch (e: Throwable) {
                     e.rethrowIfFatal()
                     "Delete failed: ${e.message ?: e::class.simpleName}"
                 }
-                pendingHardDelete = false
                 reloadFromStart()
                 statusMessage = message
                 InteractionResult.Stay(lines = statusLines())
             }
             "no", "n", "cancel" -> {
-                pendingDelete = false
-                pendingHardDelete = false
+                pendingDelete = null
                 InteractionResult.Stay(lines = listOf("Delete cancelled."))
             }
             else -> InteractionResult.Stay(lines = listOf("Type yes or no."))
@@ -731,6 +724,11 @@ class ScanViewerInteraction(
         val values: Values<IsRootDataModel>,
         val isDeleted: Boolean,
         val lastVersion: ULong,
+    )
+
+    private data class PendingDelete(
+        val key: MarykKey<IsRootDataModel>,
+        val hardDelete: Boolean,
     )
 
     private data class DisplayField(

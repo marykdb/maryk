@@ -5,10 +5,12 @@ import io.maryk.cli.CliState
 import io.maryk.cli.DirectoryResolution
 import io.maryk.cli.InteractionResult
 import io.maryk.cli.RocksDbStoreConnection
+import com.varabyte.kotter.foundation.input.Keys
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.key
 import maryk.core.properties.types.Key
 import maryk.core.query.ValuesWithMetaData
+import maryk.core.query.requests.DeleteRequest
 import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.ScanRequest
 import maryk.core.query.responses.IsResponse
@@ -188,6 +190,63 @@ class ScanCommandTest {
         val outcome = interaction.onInput("undelete")
         val stay = assertIs<InteractionResult.Stay>(outcome)
         assertEquals(listOf("Restore failed: boom"), stay.lines)
+    }
+
+    @Test
+    fun interactiveDeleteKeepsTheConfirmedRowWhenSelectionChanges() {
+        val first = SimpleMarykModel.create { value with "first" }
+        val second = SimpleMarykModel.create { value with "second" }
+        val firstKey = SimpleMarykModel.key(first)
+        val secondKey = SimpleMarykModel.key(second)
+        var deletedKey: Key<SimpleMarykModel>? = null
+        val store = object : FakeDataStore(
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        ) {
+            @Suppress("UNCHECKED_CAST")
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ,
+            ): RP = when (request) {
+                is ScanRequest<*> -> ValuesResponse(
+                    dataModel = request.dataModel,
+                    values = listOf(
+                        ValuesWithMetaData(
+                            key = firstKey as Key<DM>,
+                            values = first as Values<DM>,
+                            firstVersion = 1uL,
+                            lastVersion = 1uL,
+                            isDeleted = false,
+                        ),
+                        ValuesWithMetaData(
+                            key = secondKey as Key<DM>,
+                            values = second as Values<DM>,
+                            firstVersion = 1uL,
+                            lastVersion = 1uL,
+                            isDeleted = false,
+                        ),
+                    ),
+                ) as RP
+                is DeleteRequest<*> -> {
+                    deletedKey = request.keys.single() as Key<SimpleMarykModel>
+                    throw IllegalStateException("stop after capturing request")
+                }
+                else -> throw IllegalStateException("Unexpected request: ${request::class.simpleName}")
+            }
+        }
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+        val result = ScanCommand().execute(
+            CommandContext(CommandRegistry(state, environment), state, environment),
+            listOf("SimpleMarykModel"),
+        )
+        assertFalse(result.isError)
+        val interaction = checkNotNull(state.currentInteraction)
+
+        interaction.onInput("delete")
+        interaction.onKeyPressed(Keys.Down)
+        interaction.onInput("yes")
+
+        assertEquals(firstKey, deletedKey)
     }
 
     private fun connectedState(): CliState {

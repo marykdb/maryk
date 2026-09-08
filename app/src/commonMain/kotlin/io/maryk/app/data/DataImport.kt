@@ -64,6 +64,14 @@ internal data class ImportResult(
     val failed: Int,
 )
 
+internal class ImportPartialFailure(
+    val outcome: ImportResult,
+    cause: Throwable,
+) : IllegalStateException(
+    "Import stopped after ${outcome.imported} imported and ${outcome.failed} failed records: ${cause.message ?: cause::class.simpleName}",
+    cause,
+)
+
 internal class ImportSnapshot private constructor(
     private val bytes: ByteArray,
 ) {
@@ -135,8 +143,15 @@ internal suspend fun importDataFromSnapshot(
     readRecords { values ->
         ValuesWithMetaData(values)
     }
-    readRecords(::handleRecord)
-    if (records.isNotEmpty()) importBatch(records)
+    try {
+        readRecords(::handleRecord)
+        if (records.isNotEmpty()) importBatch(records)
+    } catch (e: Throwable) {
+        e.rethrowIfFatal()
+        val outcome = ImportResult(imported = imported, failed = failed)
+        if (outcome.imported > 0 || outcome.failed > 0) throw ImportPartialFailure(outcome, e)
+        throw e
+    }
     return ImportResult(imported = imported, failed = failed)
 }
 
@@ -185,7 +200,14 @@ internal suspend fun importVersionedDataFromSnapshot(
     readRecords { values ->
         normalizeVersionedRecord(model, DataObjectVersionedChange(values), requestContext)
     }
-    readRecords(::handleRecord)
+    try {
+        readRecords(::handleRecord)
+    } catch (e: Throwable) {
+        e.rethrowIfFatal()
+        val outcome = ImportResult(imported = imported, failed = failed)
+        if (outcome.imported > 0 || outcome.failed > 0) throw ImportPartialFailure(outcome, e)
+        throw e
+    }
     return ImportResult(imported = imported, failed = failed)
 }
 

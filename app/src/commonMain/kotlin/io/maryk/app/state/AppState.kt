@@ -15,6 +15,7 @@ import io.maryk.app.data.ApplyResult
 import io.maryk.app.data.DataExportFormat
 import io.maryk.app.data.DataImportScope
 import io.maryk.app.data.ImportSnapshot
+import io.maryk.app.data.ImportPartialFailure
 import io.maryk.app.data.ModelExportFormat
 import io.maryk.app.data.ScanQueryParser
 import io.maryk.app.data.applyChanges
@@ -28,7 +29,8 @@ import io.maryk.app.data.exportModelDataToFolder
 import io.maryk.app.data.exportModelToFolder
 import io.maryk.app.data.fileNameHash
 import io.maryk.app.data.modelExportFileNames
-import io.maryk.app.data.serializeModel
+import io.maryk.app.data.serializeModels
+import io.maryk.app.data.serializeProtoModels
 import io.maryk.app.data.exportRowDataToFolder
 import io.maryk.app.data.extensionsForImport
 import io.maryk.app.data.importDataFromSnapshot
@@ -1189,9 +1191,7 @@ class BrowserState(
                 }
             }
             migrationStatusMessage = result.fold(
-                onSuccess = { accepted ->
-                    if (accepted) "Migration $operation accepted." else "Migration $operation is not applicable."
-                },
+                onSuccess = { accepted -> formatMigrationControlMessage(operation, accepted) },
                 onFailure = { it.message ?: "Migration control failed." },
             )
             isMigrationAdminWorking = false
@@ -1290,10 +1290,15 @@ class BrowserState(
             val result = withContext(Dispatchers.IO) {
                 runCatchingNonFatal {
                     publishManagedRevision(folder) {
-                        val fileNames = modelExportFileNames(allModels.keys, format)
-                        allModels.values.forEach { model ->
-                            val content = serializeModel(model, format, allModels)
-                            writeText(fileNames.getValue(model.Meta.name), content)
+                        if (format == ModelExportFormat.PROTO) {
+                            serializeProtoModels(allModels.values).forEach { (fileName, content) ->
+                                writeText(fileName, content)
+                            }
+                        } else {
+                            val fileNames = modelExportFileNames(allModels.keys, format)
+                            serializeModels(allModels.values, format, allModels).forEach { (model, content) ->
+                                writeText(fileNames.getValue(model.Meta.name), content)
+                            }
                         }
                     }
                 }
@@ -1471,6 +1476,12 @@ class BrowserState(
                 scanFromStart()
             } else {
                 val error = result.exceptionOrNull()
+                val partial = error as? ImportPartialFailure
+                if (partial != null) {
+                    reportPartialImport(partial)
+                    isWorking = false
+                    return@launch
+                }
                 if (allowRetryOnModelMismatch && error.hasDefNotFound()) {
                     dataImportModelDialog = ImportModelDialogRequest(
                         path = filePath,
@@ -1485,6 +1496,12 @@ class BrowserState(
             }
             isWorking = false
         }
+    }
+
+    internal fun reportPartialImport(partial: ImportPartialFailure) {
+        exportToastMessage = "Imported ${partial.outcome.imported} records."
+        lastActionMessage = partial.message
+        scanFromStart()
     }
 
     fun startImportFromPath(path: String) {
@@ -1692,6 +1709,12 @@ internal fun resolveModelIdFromImportPath(path: String, models: List<ModelEntry>
         models.firstOrNull { candidate == it.name || candidate == "${it.name}-${it.name.fileNameHash()}" }?.id
             ?: models.singleOrNull { it.name.equals(candidate, ignoreCase = true) }?.id
     }
+}
+
+internal fun formatMigrationControlMessage(operation: String, accepted: Boolean): String = when {
+    !accepted -> "Migration $operation is not applicable."
+    operation == "cancel" -> "Migration cancel accepted. The model remains blocked until the store is reopened."
+    else -> "Migration $operation accepted."
 }
 
 data class ModelEntry(

@@ -1,6 +1,8 @@
 package io.maryk.app.state
 
 import io.maryk.app.config.StoreConnector
+import io.maryk.app.data.ImportPartialFailure
+import io.maryk.app.data.ImportResult
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import maryk.core.models.IsRootDataModel
@@ -106,5 +108,32 @@ class AppStateScanConfigTest {
 
         assertEquals("Delete failed: version mismatch", result.message)
         assertEquals(false, result.success)
+    }
+
+    @Test
+    fun migrationCancellationReportsThatTheModelStaysBlockedUntilReopen() {
+        assertEquals(
+            "Migration cancel accepted. The model remains blocked until the store is reopened.",
+            formatMigrationControlMessage("cancel", accepted = true),
+        )
+    }
+
+    @Test
+    fun partialImportReportsCommittedRecordsAndRefreshesTheBrowser() {
+        val state = BrowserState(StoreConnector(), CoroutineScope(SupervisorJob()))
+        val refreshGeneration = state.scanGeneration
+        val partial = ImportPartialFailure(
+            outcome = ImportResult(imported = 3, failed = 1),
+            cause = IllegalStateException("destination unavailable"),
+        )
+
+        state.reportPartialImport(partial)
+
+        assertEquals("Imported 3 records.", state.exportToastMessage)
+        assertEquals(
+            "Import stopped after 3 imported and 1 failed records: destination unavailable",
+            state.lastActionMessage,
+        )
+        assertEquals(refreshGeneration + 1, state.scanGeneration)
     }
 }

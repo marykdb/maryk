@@ -2,6 +2,7 @@
 
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
+import org.gradle.api.tasks.testing.Test
 
 fun nativePackageVersionFor(releaseVersionParts: List<Int>): String {
     check(releaseVersionParts.size == 3) {
@@ -37,6 +38,13 @@ check(releaseVersionParts.size == 3) {
     "Root release version must have three numeric components: $releaseVersion"
 }
 val nativePackageVersion = nativePackageVersionFor(releaseVersionParts)
+val protocPlatform = when {
+    System.getProperty("os.name").contains("Mac", ignoreCase = true) && System.getProperty("os.arch") == "aarch64" -> "osx-aarch_64"
+    System.getProperty("os.name").contains("Mac", ignoreCase = true) -> "osx-x86_64"
+    System.getProperty("os.name").contains("Windows", ignoreCase = true) -> "windows-x86_64"
+    else -> "linux-x86_64"
+}
+val protocForJvmTests by configurations.creating
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
@@ -91,6 +99,17 @@ kotlin {
                 implementation(projects.testmodels)
             }
         }
+    }
+}
+
+dependencies {
+    add(protocForJvmTests.name, "${libs.protoc.get()}:$protocPlatform@exe")
+}
+
+tasks.withType<Test>().configureEach {
+    inputs.files(protocForJvmTests)
+    doFirst {
+        systemProperty("maryk.protoc.path", protocForJvmTests.singleFile.absolutePath)
     }
 }
 

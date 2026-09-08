@@ -2,6 +2,7 @@ package io.maryk.app.data
 
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.RootDataModel
+import maryk.core.models.IsRootDataModel
 import maryk.core.models.asValues
 import maryk.core.models.key
 import maryk.core.extensions.bytes.toVarBytes
@@ -11,10 +12,15 @@ import maryk.core.properties.types.numeric.UInt32
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.AddRequest
+import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.scan
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.requests.add
+import maryk.core.query.responses.IsResponse
+import maryk.core.query.responses.UpdateResponse
 import maryk.datastore.memory.InMemoryDataStore
+import maryk.datastore.shared.IsDataStore
 import maryk.yaml.YamlWriter
 import java.nio.file.Files
 import kotlin.coroutines.cancellation.CancellationException
@@ -24,6 +30,125 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DataImportProtoScopeTest {
+    @Test
+    fun preservesPartialOutcomeWhenVersionedRecordApplicationFails() = runBlocking {
+        val source = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to ProtoScopeModel),
+        )
+        val destination = InMemoryDataStore.open(
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to ProtoScopeModel),
+        )
+        val folder = Files.createTempDirectory("maryk-import-versioned-partial-outcome-")
+        try {
+            source.execute(
+                ProtoScopeModel.add(
+                    ProtoScopeModel.create {
+                        id with 1u
+                        number with 1u
+                    },
+                    ProtoScopeModel.create {
+                        id with 2u
+                        number with 2u
+                    },
+                ),
+            )
+            exportModelDataToFolder(
+                dataStore = source,
+                model = ProtoScopeModel,
+                format = DataExportFormat.JSON,
+                folder = folder.toString(),
+                includeVersionHistory = true,
+            )
+            val failingStore = object : IsDataStore by destination {
+                var versionedUpdates = 0
+
+                override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                    request: RQ,
+                ): RP {
+                    if (request is UpdateResponse<*>) {
+                        versionedUpdates += 1
+                        if (versionedUpdates == 2) throw IllegalStateException("second versioned record failed")
+                    }
+                    return destination.execute(request)
+                }
+            }
+            val path = folder.resolve("${ProtoScopeModel.Meta.name}.data.versions.json")
+
+            val failure = assertFailsWith<ImportPartialFailure> {
+                importVersionedDataFromFile(
+                    dataStore = failingStore,
+                    model = ProtoScopeModel,
+                    format = DataExportFormat.JSON,
+                    scope = DataImportScope.MULTIPLE,
+                    path = path.toString(),
+                )
+            }
+
+            assertEquals(ImportResult(imported = 1, failed = 0), failure.outcome)
+            assertEquals(1, destination.execute(ProtoScopeModel.scan(allowTableScan = true)).values.size)
+        } finally {
+            source.close()
+            destination.close()
+            folder.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun preservesPartialOutcomeWhenABatchFailsAfterEarlierBatchesImported() = runBlocking {
+        val source = InMemoryDataStore.open(dataModelsById = mapOf(1u to ProtoScopeModel))
+        val destination = InMemoryDataStore.open(dataModelsById = mapOf(1u to ProtoScopeModel))
+        val folder = Files.createTempDirectory("maryk-import-partial-outcome-")
+        try {
+            source.execute(
+                ProtoScopeModel.add(*Array(101) { index ->
+                    ProtoScopeModel.create {
+                        id with index.toUInt()
+                        number with index.toUInt()
+                    }
+                }),
+            )
+            exportModelDataToFolder(
+                dataStore = source,
+                model = ProtoScopeModel,
+                format = DataExportFormat.JSON,
+                folder = folder.toString(),
+            )
+            val failingStore = object : IsDataStore by destination {
+                var addCalls = 0
+
+                override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                    request: RQ,
+                ): RP {
+                    if (request is AddRequest<*>) {
+                        addCalls += 1
+                        if (addCalls == 2) throw IllegalStateException("second batch failed")
+                    }
+                    return destination.execute(request)
+                }
+            }
+            val path = folder.resolve("${ProtoScopeModel.Meta.name}.data.json")
+
+            val failure = assertFailsWith<ImportPartialFailure> {
+                importDataFromFile(
+                    dataStore = failingStore,
+                    model = ProtoScopeModel,
+                    format = DataExportFormat.JSON,
+                    scope = DataImportScope.MULTIPLE,
+                    path = path.toString(),
+                )
+            }
+
+            assertEquals(ImportResult(imported = 100, failed = 0), failure.outcome)
+            assertEquals(100, destination.execute(ProtoScopeModel.scan(allowTableScan = true)).values.size)
+        } finally {
+            source.close()
+            destination.close()
+            folder.toFile().deleteRecursively()
+        }
+    }
+
     @Test
     fun trailingYamlRecordDoesNotMutateTheDestination() = runBlocking {
         val destination = InMemoryDataStore.open(dataModelsById = mapOf(1u to ProtoScopeModel))

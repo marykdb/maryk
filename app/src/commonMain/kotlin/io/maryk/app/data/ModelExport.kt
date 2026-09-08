@@ -1,11 +1,17 @@
 package io.maryk.app.data
 
 import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.EnumDefinition
+import maryk.core.properties.definitions.IsCollectionDefinition
+import maryk.core.properties.definitions.IsMapDefinition
+import maryk.core.properties.definitions.IsSerializablePropertyDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.DefinitionsContext
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.contextual.IsDataModelReference
+import maryk.core.properties.enum.IsIndexedEnumDefinition
 import maryk.generator.kotlin.GenerationContext
 import maryk.generator.kotlin.generateKotlin
 import maryk.generator.proto3.generateProto3FileHeader
@@ -26,6 +32,7 @@ enum class ModelExportFormat(
 }
 
 private const val defaultExportPackage = "maryk.exported"
+private const val sharedProtoDefinitionsFileStem = "maryk_shared_definitions"
 
 internal inline fun <T> preflightAndPublish(
     values: Iterable<T>,
@@ -68,12 +75,50 @@ internal fun serializeModel(
     model: IsRootDataModel,
     format: ModelExportFormat,
     allModels: Map<String, IsRootDataModel>,
+    generationContext: GenerationContext? = null,
 ): String {
     return when (format) {
         ModelExportFormat.JSON -> serializeModelAsJson(model, allModels)
         ModelExportFormat.YAML -> serializeModelAsYaml(model, allModels)
-        ModelExportFormat.PROTO -> serializeModelAsProto(model)
-        ModelExportFormat.KOTLIN -> serializeModelAsKotlin(model)
+        ModelExportFormat.PROTO -> serializeModelAsProto(model, generationContext)
+        ModelExportFormat.KOTLIN -> serializeModelAsKotlin(model, generationContext)
+    }
+}
+
+internal fun serializeModels(
+    models: Iterable<IsRootDataModel>,
+    format: ModelExportFormat,
+    allModels: Map<String, IsRootDataModel>,
+): List<Pair<IsRootDataModel, String>> {
+    val generationContext = when (format) {
+        ModelExportFormat.KOTLIN -> GenerationContext()
+        else -> null
+    }
+    return models.map { model ->
+        model to serializeModel(model, format, allModels, generationContext)
+    }
+}
+
+internal fun serializeProtoModels(
+    models: Iterable<IsRootDataModel>,
+): List<Pair<String, String>> {
+    val modelsList = models.toList()
+    val modelFileNames = modelExportFileNames(modelsList.map { it.Meta.name }, ModelExportFormat.PROTO)
+    val sharedEnums = modelsList.sharedProtoEnums()
+    val sharedFileName = sharedEnums.takeIf { it.isNotEmpty() }
+        ?.let { sharedProtoDefinitionsFileName(modelFileNames.values) }
+    val generationContext = GenerationContext(sharedEnums.toMutableList())
+    val modelOutputs = modelsList.map { model ->
+        modelFileNames.getValue(model.Meta.name) to serializeModelAsProto(
+            model,
+            generationContext,
+            sharedFileName?.removeSuffix(".proto")?.let(::listOf).orEmpty(),
+        )
+    }
+    return if (sharedFileName == null) {
+        modelOutputs
+    } else {
+        listOf(sharedFileName to serializeSharedProtoEnums(sharedEnums)) + modelOutputs
     }
 }
 
@@ -103,20 +148,70 @@ private fun serializeModelAsYaml(
 
 private fun serializeModelAsProto(
     model: IsRootDataModel,
+    generationContext: GenerationContext?,
+    protosToImport: List<String> = emptyList(),
 ): String {
-    val generationContext = GenerationContext()
     return buildString {
-        generateProto3FileHeader(defaultExportPackage) { append(it) }
-        model.generateProto3Schema(generationContext) { append(it) }
+        generateProto3FileHeader(defaultExportPackage, protosToImport) { append(it) }
+        model.generateProto3Schema(generationContext ?: GenerationContext()) { append(it) }
+    }
+}
+
+private fun List<IsRootDataModel>.sharedProtoEnums(): List<IsIndexedEnumDefinition<*>> {
+    val usages = mutableMapOf<IsIndexedEnumDefinition<*>, Int>()
+    for (model in this) {
+        val modelEnums = linkedSetOf<IsIndexedEnumDefinition<*>>()
+        for (property in model) {
+            val definition = property.definition as? IsSerializablePropertyDefinition<*, *> ?: continue
+            definition.collectProtoEnums(modelEnums)
+        }
+        for (enum in modelEnums) {
+            usages[enum] = usages[enum]?.plus(1) ?: 1
+        }
+    }
+    return usages.filterValues { it > 1 }.keys.toList()
+}
+
+private fun IsSerializablePropertyDefinition<*, *>.collectProtoEnums(
+    output: MutableSet<IsIndexedEnumDefinition<*>>,
+) {
+    when (this) {
+        is EnumDefinition<*> -> output += enum
+        is IsCollectionDefinition<*, *, *, *> -> valueDefinition.collectProtoEnums(output)
+        is IsMapDefinition<*, *, *> -> {
+            keyDefinition.collectProtoEnums(output)
+            valueDefinition.collectProtoEnums(output)
+        }
+        is MultiTypeDefinition<*, *> -> {
+            for (type in typeEnum.cases()) {
+                type.definition?.collectProtoEnums(output)
+            }
+        }
+    }
+}
+
+private fun sharedProtoDefinitionsFileName(modelFileNames: Collection<String>): String {
+    var stem = sharedProtoDefinitionsFileStem
+    while (modelFileNames.any { it.equals("$stem.proto", ignoreCase = true) }) {
+        stem += '_'
+    }
+    return "$stem.proto"
+}
+
+private fun serializeSharedProtoEnums(enums: List<IsIndexedEnumDefinition<*>>): String = buildString {
+    generateProto3FileHeader(defaultExportPackage) { append(it) }
+    enums.forEachIndexed { index, enum ->
+        if (index > 0) append("\n\n")
+        enum.generateProto3Schema(::append)
     }
 }
 
 private fun serializeModelAsKotlin(
     model: IsRootDataModel,
+    generationContext: GenerationContext?,
 ): String {
-    val generationContext = GenerationContext()
     return buildString {
-        model.generateKotlin(defaultExportPackage, generationContext) { append(it) }
+        model.generateKotlin(defaultExportPackage, generationContext ?: GenerationContext()) { append(it) }
     }
 }
 

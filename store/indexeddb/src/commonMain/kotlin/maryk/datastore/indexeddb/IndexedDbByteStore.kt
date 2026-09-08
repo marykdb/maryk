@@ -63,6 +63,10 @@ interface IndexedDbByteStore {
     suspend fun close()
 }
 
+internal interface IndexedDbLifecycleAware {
+    fun setCloseListener(listener: (() -> Unit)?)
+}
+
 enum class IndexedDbTransactionMode {
     READONLY,
     READWRITE,

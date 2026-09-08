@@ -19,6 +19,7 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
 import maryk.core.models.migration.MigrationException
@@ -143,6 +144,48 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 class IndexedDbDataStoreTest {
+
+    @Test
+    fun nativeVersionChangeClosesDataStore() = runTest {
+        installIndexedDbForTests()
+        val databaseName = "maryk-indexeddb-versionchange-${Random.nextInt()}"
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = databaseName,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+
+        try {
+            upgradeNativeIndexedDbForTests(databaseName)
+            assertFailsWith<StorageException> {
+                dataStore.execute(SimpleMarykModel.get(SimpleMarykModel.key(SimpleMarykModel.create { value with "hard-delete" })))
+            }
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun malformedJournalConsumerPreventsMutationCommit() = runTest {
+        installIndexedDbForTests()
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-malformed-journal-consumer-${Random.nextInt()}",
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+
+        try {
+            dataStore.byteStore.put(CommitConsumerStoreName, byteArrayOf(42), byteArrayOf())
+            val values = SimpleMarykModel.create { value with "hard-delete" }
+            val add = SimpleMarykModel.add(values)
+
+            assertFailsWith<StorageException> {
+                dataStore.execute(add)
+            }
+            dataStore.byteStore.delete(CommitConsumerStoreName, byteArrayOf(42))
+            assertTrue(dataStore.execute(SimpleMarykModel.get(SimpleMarykModel.key(values))).values.isEmpty())
+        } finally {
+            dataStore.close()
+        }
+    }
 
     @Test
     fun canceledCloseRemovesJournalConsumer() = runTest {

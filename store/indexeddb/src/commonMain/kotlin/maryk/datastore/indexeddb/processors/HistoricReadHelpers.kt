@@ -157,17 +157,25 @@ internal suspend fun IndexedDbByteStore.readHistoricUniqueKey(
     uniqueKey: ByteArray,
     toVersion: ULong,
 ): ByteArray? {
-    val rows = scan(
+    var resolvedKey: ByteArray? = null
+    scanInBatches(
         storeName = storeName,
         startKey = createHistoricVersionedRowKey(uniqueKey, toVersion),
         endKey = keyPrefixUpperBound(uniqueKey),
         includeEnd = false,
-        limit = 1u,
-    ).filter { (rowKey, _) ->
-        rowKey.matchesRangePart(0, uniqueKey, sourceLength = rowKey.size, length = uniqueKey.size)
+        targetLimit = UInt.MAX_VALUE,
+    ) { rowKey, rowValue ->
+        if (
+            rowKey.size == uniqueKey.size + ULong.SIZE_BYTES &&
+            rowKey.matchesRangePart(0, uniqueKey, sourceLength = rowKey.size, length = uniqueKey.size)
+        ) {
+            resolvedKey = rowValue.takeUnless { it.isEmpty() }
+            false
+        } else {
+            true
+        }
     }
-
-    return rows.firstOrNull()?.second?.takeUnless { it.isEmpty() }
+    return resolvedKey
 }
 
 internal suspend fun IndexedDbByteStore.readHistoricIndexRows(

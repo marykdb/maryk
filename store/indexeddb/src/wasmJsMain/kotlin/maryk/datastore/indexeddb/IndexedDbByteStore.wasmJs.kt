@@ -3,6 +3,7 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -77,16 +78,38 @@ internal actual suspend fun <T> IndexedDbByteStore.withStartupWriteLock(
     (this@withStartupWriteLock as WasmIndexedDbByteStore).withStartupWriteLock(block)
 }
 
+private fun setIndexedDbVersionChangeListener(database: JsAny, listener: () -> Unit) {
+    js(
+        """
+        database.onversionchange = () => {
+            database.close();
+            listener();
+        };
+        """
+    )
+}
+
 private class WasmIndexedDbByteStore(
     private val database: JsAny,
     private val databaseName: String,
     private val lockName: String,
-) : IndexedDbByteStore {
+) : IndexedDbByteStore, IndexedDbLifecycleAware {
     // Startup handlers can call the datastore actor, which runs in a separate coroutine.
     // The store is not exposed to general callers until this startup-only owner is cleared.
     private var startupLeaseOwnerId: String? = null
     private var committedUpdateChannel: JsAny? = null
     private val committedUpdateSenderId = createLeaseOwnerId()
+    private var closeListener: (() -> Unit)? = null
+
+    init {
+        setIndexedDbVersionChangeListener(database) {
+            closeListener?.invoke()
+        }
+    }
+
+    override fun setCloseListener(listener: (() -> Unit)?) {
+        closeListener = listener
+    }
 
     suspend fun <T> withStartupWriteLock(block: suspend (IndexedDbByteStore) -> T): T =
         withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
@@ -141,6 +164,7 @@ private class WasmIndexedDbByteStore(
                 value = value.toIndexedDbValue(),
                 onSuccess = { continuation.resume(Unit) },
                 onError = { continuation.resumeWithException(IllegalStateException(it)) },
+                onCancel = { cancel -> continuation.invokeOnCancellation { cancel() } },
             )
         }
     }
@@ -158,6 +182,7 @@ private class WasmIndexedDbByteStore(
                 key = key.toIndexedDbKey(),
                 onSuccess = { continuation.resume(Unit) },
                 onError = { continuation.resumeWithException(IllegalStateException(it)) },
+                onCancel = { cancel -> continuation.invokeOnCancellation { cancel() } },
             )
         }
     }
@@ -191,6 +216,7 @@ private class WasmIndexedDbByteStore(
                 leaseOwnerId = leaseOwnerId,
                 onSuccess = { continuation.resume(Unit) },
                 onError = { continuation.resumeWithException(IllegalStateException(it)) },
+                onCancel = { cancel -> continuation.invokeOnCancellation { cancel() } },
             )
         }
     }
@@ -360,7 +386,13 @@ private fun openIndexedDb(
                     db.close();
                     return;
                 }
-                if (missingStores(db).length > 0) {
+                const missing = missingStores(db);
+                if (missing.length > 0) {
+                    if (version !== 1) {
+                        db.close();
+                        finishError("IndexedDB database " + databaseName + " at explicit version " + version + " is missing object stores: " + missing.join(", "));
+                        return;
+                    }
                     const nextVersion = db.version + 1;
                     db.close();
                     startOpen(nextVersion);
@@ -400,6 +432,7 @@ private fun writeIndexedDbBatch(
     leaseOwnerId: JsString?,
     onSuccess: () -> Unit,
     onError: (String) -> Unit,
+    onCancel: ((() -> Unit) -> Unit),
 ) {
     js(
         """
@@ -424,6 +457,7 @@ private fun writeIndexedDbBatch(
                 storeNames.sort();
             }
             transaction = database.transaction(storeNames, "readwrite");
+            onCancel(() => { try { transaction.abort(); } catch (_) {} });
             transaction.oncomplete = () => succeed();
             transaction.onerror = () => fail(transaction.error?.message ?? "IndexedDB transaction failed");
             transaction.onabort = () => fail(transaction.error?.message ?? "IndexedDB transaction aborted");
@@ -448,14 +482,14 @@ private fun writeIndexedDbBatch(
                     const lease = leaseRequest.result;
                     if (!lease || lease.ownerId !== leaseOwnerId || lease.expiresAt <= Date.now()) {
                         fail("Lost IndexedDB write lease");
-                        transaction.abort();
+                        try { transaction.abort(); } catch (_) {}
                     } else {
                         queueOperations();
                     }
                 };
                 leaseRequest.onerror = () => {
                     fail(leaseRequest.error?.message ?? "IndexedDB write lease check failed");
-                    transaction.abort();
+                    try { transaction.abort(); } catch (_) {}
                 };
             }
         } catch (error) {
@@ -508,6 +542,7 @@ private fun putIndexedDbValue(
     value: JsArray<JsNumber>,
     onSuccess: () -> Unit,
     onError: (String) -> Unit,
+    onCancel: ((() -> Unit) -> Unit),
 ) {
     js(
         """
@@ -525,6 +560,7 @@ private fun putIndexedDbValue(
             }
         };
         const transaction = database.transaction([storeName], "readwrite");
+        onCancel(() => { try { transaction.abort(); } catch (_) {} });
         const request = transaction.objectStore(storeName).put(value, key);
         request.onerror = () => fail(request.error?.message ?? "IndexedDB put failed");
         transaction.oncomplete = () => succeed();
@@ -540,6 +576,7 @@ private fun deleteIndexedDbValue(
     key: JsArray<JsNumber>,
     onSuccess: () -> Unit,
     onError: (String) -> Unit,
+    onCancel: ((() -> Unit) -> Unit),
 ) {
     js(
         """
@@ -557,6 +594,7 @@ private fun deleteIndexedDbValue(
             }
         };
         const transaction = database.transaction([storeName], "readwrite");
+        onCancel(() => { try { transaction.abort(); } catch (_) {} });
         const request = transaction.objectStore(storeName).delete(key);
         request.onerror = () => fail(request.error?.message ?? "IndexedDB delete failed");
         transaction.oncomplete = () => succeed();
@@ -657,16 +695,27 @@ private suspend fun <T> withBrowserWriteLock(
                     releaseWebLock(release)
                     return@requestWebLock
                 }
-                val blockJob = CoroutineScope(continuation.context).launch {
+                var released = false
+                fun releaseOnce() {
+                    if (!released) {
+                        released = true
+                        releaseWebLock(release)
+                    }
+                }
+                var blockJob: Job? = null
+                continuation.invokeOnCancellation {
+                    blockJob?.cancel()
+                    releaseOnce()
+                }
+                blockJob = CoroutineScope(continuation.context).launch {
                     try {
                         continuation.resume(withIndexedDbWriteLease(database, databaseName, lockName, block))
                     } catch (cause: Throwable) {
                         continuation.resumeWithException(cause)
                     } finally {
-                        releaseWebLock(release)
+                        releaseOnce()
                     }
                 }
-                continuation.invokeOnCancellation { blockJob.cancel() }
             },
             onError = {
                 if (!continuation.isActive) return@requestWebLock

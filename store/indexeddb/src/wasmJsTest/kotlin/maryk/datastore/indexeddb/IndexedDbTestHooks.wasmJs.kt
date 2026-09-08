@@ -4,6 +4,9 @@ package maryk.datastore.indexeddb
 
 import kotlin.js.JsAny
 import kotlin.js.js
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 private fun installFakeIndexedDb(indexedDb: JsAny, idbKeyRange: JsAny) {
     js(
@@ -22,6 +25,33 @@ internal actual fun installIndexedDbForTests() {
     if (!indexedDbAvailable()) {
         installFakeIndexedDb(nodeFakeIndexedDb(), nodeFakeIdbKeyRange())
     }
+}
+
+internal actual suspend fun upgradeNativeIndexedDbForTests(databaseName: String) = suspendCancellableCoroutine<Unit> { continuation ->
+    upgradeNativeIndexedDbForTests(
+        databaseName = databaseName,
+        onSuccess = { continuation.resume(Unit) },
+        onError = { continuation.resumeWithException(IllegalStateException(it)) },
+    )
+}
+
+private fun upgradeNativeIndexedDbForTests(
+    databaseName: String,
+    onSuccess: () -> Unit,
+    onError: (String) -> Unit,
+) {
+    js(
+        """
+        const request = globalThis.indexedDB.open(databaseName, 2);
+        request.onupgradeneeded = () => {
+            if (!request.result.objectStoreNames.contains("versionchange-test")) {
+                request.result.createObjectStore("versionchange-test");
+            }
+        };
+        request.onsuccess = () => { request.result.close(); onSuccess(); };
+        request.onerror = () => onError((request.error && request.error.message) || "IndexedDB upgrade failed");
+        """
+    )
 }
 
 internal actual suspend fun <T> withoutWebLocksPlatform(block: suspend () -> T): T {

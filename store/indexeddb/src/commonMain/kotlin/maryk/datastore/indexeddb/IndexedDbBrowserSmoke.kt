@@ -1,6 +1,11 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.delay
+import maryk.core.models.RootDataModel
+import maryk.core.models.key
+import maryk.core.properties.definitions.string
+import maryk.core.query.requests.add
+import maryk.core.query.requests.get
 import kotlin.random.Random
 
 /** Executes a representative Maryk IndexedDB flow from a browser entrypoint. */
@@ -33,4 +38,31 @@ suspend fun runIndexedDbBrowserSmoke(
     } finally {
         migrated.close()
     }
+
+    val dataStore = IndexedDbDataStore.open(
+        databaseName = "$databaseName-datastore",
+        dataModelsById = mapOf(1u to IndexedDbBrowserSmokeModel),
+    )
+    try {
+        val values = IndexedDbBrowserSmokeModel.create { value with "browser" }
+        dataStore.execute(IndexedDbBrowserSmokeModel.add(values))
+
+        val secondContext = IndexedDbDataStore.open(
+            databaseName = "$databaseName-datastore",
+            dataModelsById = mapOf(1u to IndexedDbBrowserSmokeModel),
+        )
+        try {
+            check(secondContext.execute(IndexedDbBrowserSmokeModel.get(IndexedDbBrowserSmokeModel.key(values))).values.isNotEmpty()) {
+                "datastore cross-context read"
+            }
+        } finally {
+            secondContext.close()
+        }
+    } finally {
+        dataStore.close()
+    }
+}
+
+private object IndexedDbBrowserSmokeModel : RootDataModel<IndexedDbBrowserSmokeModel>() {
+    val value by string(index = 1u)
 }

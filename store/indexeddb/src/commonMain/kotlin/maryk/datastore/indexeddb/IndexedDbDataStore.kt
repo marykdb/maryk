@@ -1,9 +1,11 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
@@ -89,6 +91,11 @@ class IndexedDbDataStore private constructor(
     dataModelsById: Map<UInt, IsRootDataModel>,
     internal val sensitiveFields: IndexedDbSensitiveFieldSupport,
 ) : AbstractDataStore(dataModelsById, DISPATCHER), SnapshotVersionProvider, ReplicationTombstoneCompactor {
+    init {
+        (byteStore as? IndexedDbLifecycleAware)?.setCloseListener {
+            CoroutineScope(DISPATCHER + SupervisorJob()).launch { closeInvalidatedByteStore() }
+        }
+    }
     private val indexedDbModelsById = dataModelsById
     override val supportsFuzzyQualifierFiltering: Boolean = true
     override val supportsSubReferenceFiltering: Boolean = true
@@ -113,6 +120,7 @@ class IndexedDbDataStore private constructor(
         journalPayload: ByteArray? = null,
     ) = journalCursorMutex.withLock {
         drainExternalCommitsLocked()
+        validateJournalConsumersLocked()
         val persistedVersion = maxOf(mutationClock.timestamp, update.version)
         val journalKey = createCommitJournalKey(persistedVersion, journalSequence++)
         operations += IndexedDbWriteOperation.Put("meta", CommitClockMetadataKey, persistedVersion.toBigEndianBytes())
@@ -161,10 +169,15 @@ class IndexedDbDataStore private constructor(
         for ((key, value) in entries) {
             val update = try {
                 decodeCommitJournalEntry(indexedDbModelsById, sensitiveFields, key, value)
-            } catch (exception: StorageException) {
+            } catch (exception: Throwable) {
+                exception.rethrowIfFatal()
                 lastJournalKey = key
-                failAllListeners(exception)
-                throw exception
+                val error = exception as? StorageException ?: StorageException(
+                    "IndexedDB update journal contains an invalid entry; resubscribe to obtain a fresh snapshot",
+                    exception,
+                )
+                failAllListeners(error)
+                throw error
             }
             lastJournalKey = key
             if (update == null) {
@@ -182,13 +195,30 @@ class IndexedDbDataStore private constructor(
         encodeJournalConsumer(byteStore.currentEpochMillis(), cursor),
     )
 
+    private suspend fun validateJournalConsumersLocked() {
+        for ((consumerKey, encoded) in byteStore.scan(CommitConsumerStoreName)) {
+            decodeJournalConsumerOrThrow(consumerKey, encoded)
+        }
+    }
+
+    private fun decodeJournalConsumerOrThrow(consumerKey: ByteArray, encoded: ByteArray): JournalConsumer =
+        try {
+            decodeJournalConsumer(encoded)
+        } catch (exception: Throwable) {
+            exception.rethrowIfFatal()
+            throw StorageException(
+                "IndexedDB update journal contains invalid consumer metadata for ${consumerKey.size} byte key",
+                exception,
+            )
+        }
+
     private suspend fun collectCommittedJournalEntriesLocked() {
         val now = byteStore.currentEpochMillis()
         val consumers = byteStore.scan(CommitConsumerStoreName)
         val operations = mutableListOf<IndexedDbWriteOperation>()
         val activeCursors = mutableListOf<ByteArray>()
         for ((consumerKey, encoded) in consumers) {
-            val consumer = decodeJournalConsumer(encoded)
+            val consumer = decodeJournalConsumerOrThrow(consumerKey, encoded)
             if (now >= consumer.heartbeatMillis && now - consumer.heartbeatMillis > JournalConsumerTimeoutMillis) {
                 operations += IndexedDbWriteOperation.Delete(CommitConsumerStoreName, consumerKey)
             } else {
@@ -621,6 +651,16 @@ class IndexedDbDataStore private constructor(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun closeInvalidatedByteStore() {
+        withContext(NonCancellable) {
+            if (!startClosingDataStore()) return@withContext
+            byteStore.setExternalCommitListener(null)
+            journalPollingJob?.cancelAndJoin()
+            externalCommitDrainJob?.cancelAndJoin()
+            cancelAndJoinDataStoreScope()
         }
     }
 

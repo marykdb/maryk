@@ -11,6 +11,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.matchesRangePart
+import maryk.datastore.indexeddb.processors.createHistoricVersionedRowKey
+import maryk.datastore.indexeddb.processors.readHistoricUniqueKey
 import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
@@ -218,6 +220,64 @@ class IndexedDbByteStoreTest {
             assertContentEquals(byteArrayOf(20), reopened.get("second", byteArrayOf(2)))
         } finally {
             reopened.close()
+        }
+    }
+
+    @Test
+    fun explicitVersionDoesNotSilentlyUpgradeForAdditionalObjectStores() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-explicit-schema-version-${Random.nextInt()}"
+        val initial = openIndexedDbByteStore(
+            databaseName = databaseName,
+            objectStoreNames = setOf("first"),
+            version = 2,
+        )
+        initial.close()
+
+        assertFailsWith<IllegalStateException> {
+            openIndexedDbByteStore(
+                databaseName = databaseName,
+                objectStoreNames = setOf("first", "second"),
+                version = 2,
+            )
+        }
+    }
+
+    @Test
+    fun historicUniqueLookupSkipsPrefixSiblingBeforeExactOlderRow() = runTest {
+        installIndexedDbForTests()
+
+        val databaseName = "maryk-indexeddb-historic-unique-prefix-${Random.nextInt()}"
+        val store = openIndexedDbByteStore(databaseName, setOf("historic-unique"))
+        val uniqueKey = byteArrayOf(1)
+        val requestedVersion = 1uL
+        val expectedObjectKey = byteArrayOf(10)
+        try {
+            store.writeBatch(
+                listOf(
+                    IndexedDbWriteOperation.Put(
+                        "historic-unique",
+                        createHistoricVersionedRowKey(uniqueKey, 0uL),
+                        expectedObjectKey,
+                    ),
+                    IndexedDbWriteOperation.Put(
+                        "historic-unique",
+                        createHistoricVersionedRowKey(
+                            createHistoricVersionedRowKey(uniqueKey, requestedVersion),
+                            0uL,
+                        ),
+                        byteArrayOf(99),
+                    ),
+                ),
+            )
+
+            assertContentEquals(
+                expectedObjectKey,
+                store.readHistoricUniqueKey("historic-unique", uniqueKey, requestedVersion),
+            )
+        } finally {
+            store.close()
         }
     }
 

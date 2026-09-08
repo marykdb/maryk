@@ -3,7 +3,9 @@
 package maryk.datastore.indexeddb
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
@@ -24,6 +26,13 @@ internal actual suspend fun openPlatformIndexedDbByteStore(
     var database = openDatabase(databaseName, requiredStoreNames, version)
     val missingStoreNames = missingObjectStoreNames(database, requiredStoreNames)
     if (missingStoreNames.isNotEmpty()) {
+        if (version != 1) {
+            database.close()
+            throw IllegalStateException(
+                "IndexedDB database $databaseName at explicit version $version is missing object stores: " +
+                    missingStoreNames.joinToString(),
+            )
+        }
         val nextVersion = database.version.unsafeCast<Int>() + 1
         database.close()
         database = openDatabase(databaseName, requiredStoreNames, nextVersion)
@@ -76,12 +85,24 @@ private class BrowserIndexedDbByteStore(
     private val database: dynamic,
     private val databaseName: String,
     private val lockName: String,
-) : IndexedDbByteStore {
+) : IndexedDbByteStore, IndexedDbLifecycleAware {
     // Startup handlers can call the datastore actor, which runs in a separate coroutine.
     // The store is not exposed to general callers until this startup-only owner is cleared.
     private var startupLeaseOwnerId: String? = null
     private var committedUpdateChannel: dynamic = null
     private val committedUpdateSenderId = createLeaseOwnerId()
+    private var closeListener: (() -> Unit)? = null
+
+    init {
+        database.onversionchange = { _: dynamic ->
+            database.close()
+            closeListener?.invoke()
+        }
+    }
+
+    override fun setCloseListener(listener: (() -> Unit)?) {
+        closeListener = listener
+    }
 
     suspend fun <T> withStartupWriteLock(block: suspend (IndexedDbByteStore) -> T): T =
         withBrowserWriteLock(database, databaseName, lockName) { leaseOwnerId ->
@@ -126,8 +147,10 @@ private class BrowserIndexedDbByteStore(
 
         val transaction = database.transaction(arrayOf(storeName), "readwrite")
         val completion = observeCompletion(transaction)
-        awaitResult(transaction.objectStore(storeName).put(value.toIndexedDbValue(), key.toIndexedDbKey()))
-        completion.await()
+        awaitWriteCompletion(transaction) {
+            awaitResult(transaction.objectStore(storeName).put(value.toIndexedDbValue(), key.toIndexedDbKey()))
+            completion.await()
+        }
     }
 
     override suspend fun delete(storeName: String, key: ByteArray) {
@@ -141,8 +164,10 @@ private class BrowserIndexedDbByteStore(
 
         val transaction = database.transaction(arrayOf(storeName), "readwrite")
         val completion = observeCompletion(transaction)
-        awaitResult(transaction.objectStore(storeName).delete(key.toIndexedDbKey()))
-        completion.await()
+        awaitWriteCompletion(transaction) {
+            awaitResult(transaction.objectStore(storeName).delete(key.toIndexedDbKey()))
+            completion.await()
+        }
     }
 
     override suspend fun writeBatch(operations: List<IndexedDbWriteOperation>) {
@@ -169,7 +194,7 @@ private class BrowserIndexedDbByteStore(
             abortTransaction(transaction)
             throw cause
         }
-        completion.await()
+        awaitWriteCompletion(transaction) { completion.await() }
     }
 
     private suspend fun writeBatchWithLease(
@@ -211,7 +236,7 @@ private class BrowserIndexedDbByteStore(
             abortTransaction(transaction)
         }
 
-        completion.await()
+        awaitWriteCompletion(transaction) { completion.await() }
     }
 
     private fun queueWriteOperations(
@@ -442,6 +467,14 @@ private fun observeCompletion(transaction: dynamic): CompletableDeferred<Unit> {
     return completion
 }
 
+private suspend fun <T> awaitWriteCompletion(transaction: dynamic, block: suspend () -> T): T =
+    try {
+        block()
+    } catch (exception: CancellationException) {
+        abortTransaction(transaction)
+        throw exception
+    }
+
 private fun abortTransaction(transaction: dynamic) {
     try {
         transaction.abort()
@@ -468,16 +501,27 @@ private suspend fun <T> withBrowserWriteLock(
                     releaseWebLock(release)
                     return@requestWebLock
                 }
-                val blockJob = CoroutineScope(continuation.context).launch {
+                var released = false
+                fun releaseOnce() {
+                    if (!released) {
+                        released = true
+                        releaseWebLock(release)
+                    }
+                }
+                var blockJob: Job? = null
+                continuation.invokeOnCancellation {
+                    blockJob?.cancel()
+                    releaseOnce()
+                }
+                blockJob = CoroutineScope(continuation.context).launch {
                     try {
                         continuation.resume(withIndexedDbWriteLease(database, databaseName, lockName, block))
                     } catch (cause: Throwable) {
                         continuation.resumeWithException(cause)
                     } finally {
-                        releaseWebLock(release)
+                        releaseOnce()
                     }
                 }
-                continuation.invokeOnCancellation { blockJob.cancel() }
             },
             onError = {
                 if (!continuation.isActive) return@requestWebLock

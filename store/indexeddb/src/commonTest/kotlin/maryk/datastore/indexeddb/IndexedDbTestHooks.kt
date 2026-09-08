@@ -5,6 +5,8 @@ import kotlinx.coroutines.sync.withLock
 
 internal expect fun installIndexedDbForTests()
 
+internal expect suspend fun upgradeNativeIndexedDbForTests(databaseName: String)
+
 private val webLocksTestMutex = Mutex()
 
 internal suspend fun <T> withoutWebLocks(block: suspend () -> T): T = webLocksTestMutex.withLock {

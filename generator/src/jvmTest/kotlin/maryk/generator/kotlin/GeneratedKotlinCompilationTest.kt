@@ -16,6 +16,7 @@ import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlModelReader
+import maryk.test.models.ValueMarykObject
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.jetbrains.kotlin.cli.jvm.K2JVMCompiler
 
@@ -57,6 +58,28 @@ private object SecondSharedEnumModel : RootDataModel<SecondSharedEnumModel>() {
 }
 
 class GeneratedKotlinCompilationTest {
+    @Test
+    fun compilesGeneratedValueDataModelInConsumerContext() {
+        val source = buildString {
+            ValueMarykObject.generateKotlin("example.generated") { append(it) }
+        }
+        val sourceDirectory = createTempDirectory()
+        val outputDirectory = createTempDirectory()
+        val sourceFile = sourceDirectory.resolve("GeneratedValue.kt").also { it.writeText(source) }
+        val compilerOutput = ByteArrayOutputStream()
+
+        val result = K2JVMCompiler().exec(
+            PrintStream(compilerOutput),
+            "-classpath", System.getProperty("java.class.path"),
+            "-no-stdlib", "-no-reflect",
+            "-d", outputDirectory.toString(),
+            "-jvm-target", "17",
+            sourceFile.toString(),
+        )
+
+        assertEquals(ExitCode.OK, result, compilerOutput.toString())
+    }
+
     @Test
     fun compilesModelsWithSharedInlineEnumOnce() {
         val packageName = "example.generated"

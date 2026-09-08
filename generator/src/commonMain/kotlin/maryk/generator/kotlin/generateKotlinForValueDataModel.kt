@@ -13,7 +13,7 @@ fun IsValueDataModel<*, *>.generateKotlin(
     )
     val importsToAdd = mutableSetOf(
         "maryk.core.values.ObjectValues",
-        "maryk.core.properties.ValueModel",
+        "maryk.core.models.ValueDataModel",
         "maryk.core.properties.types.ValueDataObject"
     )
     val addImport: (String) -> Unit = { importsToAdd.add(it) }

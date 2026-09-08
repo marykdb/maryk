@@ -32,7 +32,7 @@ val generatedKotlinForValueDataModel = """
 package maryk.test.models
 
 import kotlinx.datetime.LocalDate
-import maryk.core.properties.ValueModel
+import maryk.core.models.ValueDataModel
 import maryk.core.properties.definitions.date
 import maryk.core.properties.definitions.number
 import maryk.core.properties.types.ValueDataObject

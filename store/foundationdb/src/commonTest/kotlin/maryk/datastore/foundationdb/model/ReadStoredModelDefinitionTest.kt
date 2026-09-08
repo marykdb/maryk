@@ -2,9 +2,15 @@ package maryk.datastore.foundationdb.model
 
 import kotlinx.coroutines.test.runTest
 import maryk.core.exceptions.StorageException
+import maryk.core.models.RootDataModel
+import maryk.core.models.migration.MigrationConfiguration
+import maryk.core.models.migration.MigrationOutcome
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.string
+import maryk.core.properties.types.Version
 import maryk.core.query.DefinitionsConversionContext
 import maryk.datastore.foundationdb.FoundationDBDataStore
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.test.models.ModelWithDependents
 import maryk.test.models.SimpleMarykModel
@@ -77,6 +83,39 @@ class ReadStoredModelDefinitionTest {
     }
 
     @Test
+    fun replacingDefinitionWithoutDependentsClearsStaleDependentMetadata() = runTest {
+        val dirPath = listOf("maryk", "test", "fdb-clear-stale-dependents", Uuid.random().toString())
+        val dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelWithDependents),
+        )
+        try {
+            dataStore.close()
+            val migratedDataStore = FoundationDBDataStore.open(
+                keepAllVersions = true,
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelWithoutDependentsV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Success },
+                ),
+            )
+            try {
+                val modelPrefix = migratedDataStore.getTableDirs(1u).modelPrefix
+                migratedDataStore.tc.run { transaction ->
+                    assertNull(transaction.get(packKey(modelPrefix, modelDependentsDefinitionKey)).awaitResult())
+                }
+            } finally {
+                migratedDataStore.close()
+            }
+        } finally {
+            // The initial store may already be closed after its definition is written.
+        }
+    }
+
+    @Test
     fun readsStoredModelDefinitionsFromDirectoryWithoutConfiguredMap() = runTest {
         val dirPath = listOf("maryk", "test", "fdb-read-model-from-directory", Uuid.random().toString())
         val dataStore = FoundationDBDataStore.open(
@@ -143,4 +182,11 @@ class ReadStoredModelDefinitionTest {
 
         assertTrue(storedModels.isEmpty())
     }
+}
+
+private object ModelWithoutDependentsV2 : RootDataModel<ModelWithoutDependentsV2>(
+    name = "ModelWithDependents",
+    version = Version(2),
+) {
+    val value by string(index = 1u)
 }

@@ -77,5 +77,7 @@ internal fun storeModelDefinition(
     transaction.set(packKey(model, modelDefinitionKey), definition.model)
     if (definition.dependents != null) {
         transaction.set(packKey(model, modelDependentsDefinitionKey), definition.dependents)
+    } else {
+        transaction.clear(packKey(model, modelDependentsDefinitionKey))
     }
 }

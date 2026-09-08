@@ -50,7 +50,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         ((Transaction) -> Unit)?,
         (Transaction) -> Unit,
     ) -> Unit,
-    deferStartupFinalization: (suspend () -> Unit) -> Unit,
+    deferStartupFinalization: (suspend () -> Unit, suspend () -> Unit) -> Unit,
 ) {
     if (
         migrationConfiguration.migrationExpandHandler == null &&
@@ -417,10 +417,18 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                 pendingMigrationReasons.update { it + (index to reason) }
                 failPendingMigration(index, reason)
             } finally {
+                var releaseFailure: Throwable? = null
                 if (hasLease) {
-                    effectiveMigrationLease.release(index, migrationId)
+                    try {
+                        effectiveMigrationLease.release(index, migrationId)
+                    } catch (error: Throwable) {
+                        releaseFailure = error
+                        val reason = "Migration lease release failed for ${dataModel.Meta.name}: ${error.message ?: "unknown error"}"
+                        pendingMigrationReasons.update { it + (index to reason) }
+                        failPendingMigration(index, reason)
+                    }
                 }
-                if (completeAfterLeaseRelease) {
+                if (completeAfterLeaseRelease && releaseFailure == null) {
                     completePendingMigration(index)
                 }
             }
@@ -461,14 +469,17 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
 
             val previousState = readMigrationState()
             if (previousState?.isFinalizationPending() == true) {
-                deferStartupFinalization {
-                    try {
-                        bindLeaseOwner()
-                        finalizeCompletedPhases(previousState)
-                    } finally {
-                        effectiveMigrationLease.release(index, migrationId)
-                    }
-                }
+                deferStartupFinalization(
+                    {
+                        try {
+                            bindLeaseOwner()
+                            finalizeCompletedPhases(previousState)
+                        } finally {
+                            effectiveMigrationLease.release(index, migrationId)
+                        }
+                    },
+                    { effectiveMigrationLease.release(index, migrationId) },
+                )
                 releaseLeaseInFinally = false
                 deferredFinalization = true
                 break
@@ -508,14 +519,17 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                         message = finalizationPendingMessage,
                     )
                     writeMigrationState(finalizationState)
-                    deferStartupFinalization {
-                        try {
-                            bindLeaseOwner()
-                            finalizeCompletedPhases(finalizationState)
-                        } finally {
-                            effectiveMigrationLease.release(index, migrationId)
-                        }
-                    }
+                    deferStartupFinalization(
+                        {
+                            try {
+                                bindLeaseOwner()
+                                finalizeCompletedPhases(finalizationState)
+                            } finally {
+                                effectiveMigrationLease.release(index, migrationId)
+                            }
+                        },
+                        { effectiveMigrationLease.release(index, migrationId) },
+                    )
                     releaseLeaseInFinally = false
                     deferredFinalization = true
                     break

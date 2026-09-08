@@ -27,10 +27,12 @@ internal data class FoundationDBSchemaFence(
     val target: String,
 )
 
-/** Stable target identity, including the serialized definition rather than just version. */
+/** Stable target identity, including root and dependent serialized definitions rather than just version. */
 internal fun modelSchemaTarget(dataModel: IsRootDataModel): String {
     val definition = encodeModelDefinition(dataModel)
-    return "${dataModel.Meta.name}@${dataModel.Meta.version}#${definition.model.schemaFingerprint()}"
+    val rootFingerprint = definition.model.schemaFingerprint()
+    val dependentsFingerprint = definition.dependents?.schemaFingerprint() ?: "none"
+    return "${dataModel.Meta.name}@${dataModel.Meta.version}#$rootFingerprint:$dependentsFingerprint"
 }
 
 internal fun readModelSchemaState(

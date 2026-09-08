@@ -374,6 +374,7 @@ class FoundationDBDataStore private constructor(
         }
 
         val orderedMigrationModelIds = orderMigrationModelIds(dataModelsById)
+        val deferredMigrationReleaseCleanups = mutableListOf<suspend () -> Unit>()
         val modelIdsByName = dataModelsById.entries.associate { (modelId, model) -> model.Meta.name to modelId }
         val migrationDependenciesByModelId = dataModelsById.mapValues { (_, model) ->
             mutableListOf<MarykPrimitive>().also { model.getAllDependencies(it) }
@@ -489,15 +490,23 @@ class FoundationDBDataStore private constructor(
                                 clearMigrationState(transaction)
                             }
                         },
-                        deferStartupFinalization = { finalizer ->
-                            deferFinalization(finalizer)
+                        deferStartupFinalization = { finalizer, releaseCleanup ->
+                            deferredMigrationReleaseCleanups += releaseCleanup
+                            deferFinalization {
+                                try {
+                                    finalizer()
+                                } finally {
+                                    deferredMigrationReleaseCleanups.remove(releaseCleanup)
+                                }
+                            }
                         },
                     )
                 }
             }
         }
 
-        for (index in orderedMigrationModelIds) {
+        try {
+            for (index in orderedMigrationModelIds) {
             val dependencyIds = migrationDependenciesByModelId[index].orEmpty()
             if (dependencyIds.isEmpty()) {
                 processModelMigration(index) { finalizer ->
@@ -593,9 +602,6 @@ class FoundationDBDataStore private constructor(
             val headDir = runTransaction { tr ->
                 rootDirectory.createOrOpen(tr, listOf("__updates__", "v1", "heads")).awaitResult()
             }
-            val hlcDir = runTransaction { tr ->
-                rootDirectory.createOrOpen(tr, listOf("__updates__", "v1", "hlc")).awaitResult()
-            }
             val hlcMaxDir = runTransaction { tr ->
                 rootDirectory.createOrOpen(tr, listOf("__updates__", "v1", "hlc_max")).awaitResult()
             }
@@ -608,7 +614,6 @@ class FoundationDBDataStore private constructor(
                 consumerPrefix = consumerDir.pack(),
                 headPrefix = headDir.pack(),
                 headGroupCount = headGroupCount,
-                hlcPrefix = hlcDir.pack(),
                 hlcMaxPrefix = hlcMaxDir.pack(),
                 shardCount = shardCount,
                 originId = originId,
@@ -841,7 +846,17 @@ class FoundationDBDataStore private constructor(
             }
         }
 
-        scheduledVersionUpdateHandlers.forEach { it() }
+            scheduledVersionUpdateHandlers.forEach { it() }
+        } catch (failure: Throwable) {
+            deferredMigrationReleaseCleanups.asReversed().forEach { releaseCleanup ->
+                try {
+                    releaseCleanup()
+                } catch (cleanupFailure: Throwable) {
+                    failure.addSuppressed(cleanupFailure)
+                }
+            }
+            throw failure
+        }
     }
 
     private fun openTableDirs(
@@ -1732,16 +1747,6 @@ class FoundationDBDataStore private constructor(
         val shardIt = tr.getRange(log.hlcMaxRange()).iterator()
         while (shardIt.hasNext()) {
             val kv = shardIt.nextBlocking()
-            if (kv.value.size >= 8) {
-                val v = readULongBigEndian(kv.value)
-                if (v > maxSeen) maxSeen = v
-            }
-        }
-
-        // Backward compatibility / bootstrap: include per-node markers.
-        val nodeIt = tr.getRange(log.hlcRange()).iterator()
-        while (nodeIt.hasNext()) {
-            val kv = nodeIt.nextBlocking()
             if (kv.value.size >= 8) {
                 val v = readULongBigEndian(kv.value)
                 if (v > maxSeen) maxSeen = v

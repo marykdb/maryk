@@ -98,11 +98,13 @@ internal class HistoricStoreIndexValuesWalker(
         val encodedParent = encodeZeroFreeUsing01(parentReference.toStorageByteArray())
         val prefix = packKey(tableDirs.historicTablePrefix, key, encodedParent)
         val iterator = tr.getRange(Range.startsWith(prefix)).iterator()
-        val pendingEvents = mutableListOf<Pair<ULong, Boolean>>()
         var currentMapKey: Any? = null
+        var candidateVersion: ULong? = null
 
-        fun flushPendingEvents(mapKey: Any?) {
-            if (mapKey == null || pendingEvents.isEmpty()) return
+        fun flushCandidate(mapKey: Any?) {
+            val version = candidateVersion
+            candidateVersion = null
+            if (mapKey == null || version == null) return
 
             val valueAndKey = try {
                 val valueLength = typedIndexable.calculateStorageByteLength(mapKey)
@@ -113,29 +115,15 @@ internal class HistoricStoreIndexValuesWalker(
                     key.copyInto(bytes, writeIndex)
                 }
             } catch (_: ValidationException) {
-                pendingEvents.clear()
                 return
             } catch (_: ParseException) {
-                pendingEvents.clear()
                 return
             } catch (_: StorageException) {
-                pendingEvents.clear()
                 return
             } catch (e: DefNotFoundException) {
                 throw e
             }
-
-            var present = false
-            for (i in pendingEvents.lastIndex downTo 0) {
-                val (version, isDelete) = pendingEvents[i]
-                if (isDelete) {
-                    present = false
-                } else if (!present) {
-                    handleIndex(valueAndKey, version)
-                    present = true
-                }
-            }
-            pendingEvents.clear()
+            handleIndex(valueAndKey, version)
         }
 
         while (iterator.hasNext()) {
@@ -155,10 +143,16 @@ internal class HistoricStoreIndexValuesWalker(
                 if (readIndex != mapKeyBytes.size) continue
 
                 if (currentMapKey != null && currentMapKey != mapKey) {
-                    flushPendingEvents(currentMapKey)
+                    flushCandidate(currentMapKey)
                 }
                 currentMapKey = mapKey
-                pendingEvents += historicKey.readReversedVersionBytes(versionOffset) to kv.value.isHistoricDeleteMarker()
+                if (kv.value.isHistoricDeleteMarker()) {
+                    flushCandidate(mapKey)
+                } else {
+                    // Historical keys are newest-first. Keep only the oldest addition in
+                    // this present interval; value-only updates overwrite this candidate.
+                    candidateVersion = historicKey.readReversedVersionBytes(versionOffset)
+                }
             } catch (_: ValidationException) {
                 // Skip historical values no longer valid for the current index
             } catch (_: ParseException) {
@@ -172,7 +166,7 @@ internal class HistoricStoreIndexValuesWalker(
             }
         }
 
-        flushPendingEvents(currentMapKey)
+        flushCandidate(currentMapKey)
     }
 
     private fun walkSetAnyValueHistory(

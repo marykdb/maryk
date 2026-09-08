@@ -39,7 +39,6 @@ internal class ClusterUpdateLog(
     private val consumerPrefix: ByteArray,
     private val headPrefix: ByteArray?,
     private val headGroupCount: Int,
-    private val hlcPrefix: ByteArray?,
     private val hlcMaxPrefix: ByteArray?,
     private val shardCount: Int,
     private val originId: String,
@@ -88,9 +87,6 @@ internal class ClusterUpdateLog(
         }
         tr.mutate(MutationType.SET_VERSIONSTAMPED_KEY, retentionKey, byteArrayOf())
 
-        hlcPrefix?.also {
-            tr.set(hlcNodeKey(), hlcBytes)
-        }
         hlcMaxPrefix?.also {
             tr.mutate(MutationType.BYTE_MAX, hlcMaxShardKey(shard), hlcBytes)
         }
@@ -238,16 +234,6 @@ internal class ClusterUpdateLog(
     fun headKey(group: Int): ByteArray {
         require(headPrefix != null) { "headPrefix missing" }
         return combineToByteArray(headPrefix, Tuple.from(group).pack())
-    }
-
-    fun hlcNodeKey(): ByteArray {
-        require(hlcPrefix != null) { "hlcPrefix missing" }
-        return combineToByteArray(hlcPrefix, Tuple.from(consumerId).pack())
-    }
-
-    fun hlcRange(): Range {
-        require(hlcPrefix != null) { "hlcPrefix missing" }
-        return Range.startsWith(hlcPrefix)
     }
 
     fun hlcMaxShardKey(shard: Int): ByteArray {
@@ -431,22 +417,18 @@ internal class ClusterUpdateLog(
 
     private fun decodeStoredEntry(tr: Transaction, key: ByteArray, value: ByteArray): DecodedUpdate? {
         if (!value.isChunkManifest()) return decodeEntry(key, value)
-        val manifest = requireNotNull(decodeChunkManifest(value)) { "Invalid cluster-log chunk manifest" }
-        val chunkPrefix = requireNotNull(chunkPrefixForMainKey(key)) { "Invalid chunked cluster-log key" }
+        val manifest = decodeChunkManifest(value) ?: return null
+        val chunkPrefix = chunkPrefixForMainKey(key) ?: return null
         val reconstructed = ByteArray(manifest.totalSize)
         var offset = 0
         for (index in 0 until manifest.chunkCount) {
-            val chunk = requireNotNull(tr.get(chunkKey(chunkPrefix, index)).awaitResult()) {
-                "Missing cluster-log chunk $index of ${manifest.chunkCount}"
-            }
+            val chunk = tr.get(chunkKey(chunkPrefix, index)).awaitResult() ?: return null
             val expectedSize = minOf(maxChunkValueSize, manifest.totalSize - offset)
-            require(chunk.size == expectedSize) {
-                "Invalid cluster-log chunk $index size: ${chunk.size}, expected $expectedSize"
-            }
+            if (chunk.size != expectedSize) return null
             chunk.copyInto(reconstructed, offset)
             offset += chunk.size
         }
-        require(offset == manifest.totalSize) { "Incomplete cluster-log chunk reconstruction" }
+        if (offset != manifest.totalSize) return null
         return decodeEntry(key, reconstructed)
     }
 
@@ -755,9 +737,13 @@ internal class ClusterUpdateLog(
         fun skewMarginDefault(): Duration = 5.minutes
 
         fun cutoffTimestamp(retention: Duration): ULong {
-            val nowMs = HLC().toPhysicalUnixTime()
+            return cutoffTimestamp(retention, HLC().toPhysicalUnixTime())
+        }
+
+        internal fun cutoffTimestamp(retention: Duration, nowMs: ULong): ULong {
             // Keep a skew margin to avoid early deletion when writers/readers have clock drift.
-            val cutoffMs = nowMs - (retention + skewMarginDefault()).inWholeMilliseconds.toULong()
+            val retentionMs = (retention + skewMarginDefault()).inWholeMilliseconds.toULong()
+            val cutoffMs = if (retentionMs >= nowMs) 0uL else nowMs - retentionMs
             return HLC(cutoffMs, 0u).timestamp
         }
     }

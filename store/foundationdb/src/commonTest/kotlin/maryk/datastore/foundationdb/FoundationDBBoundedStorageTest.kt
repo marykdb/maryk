@@ -103,12 +103,11 @@ class FoundationDBBoundedStorageTest {
             val activation = reader.runTransaction { transaction ->
                 log.tailOnce(transaction, populatedShard, 1u, cursorKey = null, limit = 1)
             }
-            val clusterFailure = assertFails {
-                reader.runTransaction { transaction ->
-                    log.tailOnce(transaction, populatedShard, 1u, assertNotNull(activation.lastKey), limit = 1)
-                }
+            val skippedCorruptEntry = reader.runTransaction { transaction ->
+                log.tailOnce(transaction, populatedShard, 1u, assertNotNull(activation.lastKey), limit = 1)
             }
-            assertTrue(clusterFailure.message.orEmpty().contains("Missing cluster-log chunk"))
+            assertTrue(skippedCorruptEntry.decoded.isEmpty())
+            assertNotNull(skippedCorruptEntry.lastKey)
             writer.runTransaction { transaction ->
                 transaction.set(chunkEntries.first().key, chunkEntries.first().value)
             }

@@ -15,8 +15,17 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.minutes
 
 class ClusterUpdateLogCodecTest {
+    @Test
+    fun cutoffTimestampSaturatesAtUnixEpochWhenRetentionPredatesClock() {
+        assertEquals(
+            HLC(0uL, 0u).timestamp,
+            ClusterUpdateLog.cutoffTimestamp(1.minutes, nowMs = 1uL),
+        )
+    }
+
     private val modelId = 2u
     private val models = mapOf(modelId to SimpleMarykModel)
 
@@ -25,7 +34,6 @@ class ClusterUpdateLogCodecTest {
         consumerPrefix = byteArrayOf(4, 5, 6),
         headPrefix = byteArrayOf(7, 8, 9),
         headGroupCount = 2,
-        hlcPrefix = byteArrayOf(10, 11, 12),
         hlcMaxPrefix = byteArrayOf(13, 14, 15),
         shardCount = 4,
         originId = "node-a",
@@ -253,7 +261,6 @@ class ClusterUpdateLogCodecTest {
                 consumerPrefix = byteArrayOf(4, 5, 6),
                 headPrefix = byteArrayOf(7, 8, 9),
                 headGroupCount = 2,
-                hlcPrefix = byteArrayOf(10, 11, 12),
                 hlcMaxPrefix = byteArrayOf(13, 14, 15),
                 shardCount = 0,
                 originId = "node-a",
@@ -269,7 +276,6 @@ class ClusterUpdateLogCodecTest {
                 consumerPrefix = byteArrayOf(4, 5, 6),
                 headPrefix = byteArrayOf(7, 8, 9),
                 headGroupCount = 2,
-                hlcPrefix = byteArrayOf(10, 11, 12),
                 hlcMaxPrefix = byteArrayOf(13, 14, 15),
                 shardCount = 4,
                 originId = "a".repeat(0x1_0000),

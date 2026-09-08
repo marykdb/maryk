@@ -1521,6 +1521,90 @@ class FoundationDBDataStoreMigrationTest {
     }
 
     @Test
+    fun backgroundMigrationReportsLeaseReleaseFailureToWaiters() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-release-after-success", Uuid.random().toString())
+
+        FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1)
+        ).close()
+
+        val lease = ScriptedMigrationLease(
+            mutableMapOf(1u to ArrayDeque(listOf(false, true))),
+            throwOnRelease = true,
+        )
+        val dataStore = FoundationDBDataStore.open(
+            keepAllVersions = true,
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                continueMigrationsInBackground = true,
+                migrationLease = lease,
+                migrationHandler = { MigrationOutcome.Success },
+            )
+        )
+
+        try {
+            val exception = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                assertFailsWith<MigrationException> {
+                    withTimeout(5_000.milliseconds) {
+                        dataStore.awaitMigration(1u)
+                    }
+                }
+            }
+            assertTrue(exception.message.orEmpty().contains("lease release failed"))
+            assertEquals(1, lease.releaseCalls.value)
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun startupFailureReleasesEarlierDeferredMigrationLease() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-deferred-migration-release", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(
+                1u to DeferredFinalizerModelV1,
+                2u to FailingStartupModelV1,
+            ),
+        ).close()
+
+        val lease = ScriptedMigrationLease(
+            mutableMapOf(
+                1u to ArrayDeque(listOf(true)),
+                2u to ArrayDeque(listOf(true)),
+            ),
+        )
+        assertFailsWith<MigrationException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(
+                    1u to DeferredFinalizerModelV2,
+                    2u to FailingStartupModelV2,
+                ),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationLease = lease,
+                    migrationHandler = { context ->
+                        if (context.newDataModel.Meta.name == FailingStartupModelV2.Meta.name) {
+                            MigrationOutcome.Fatal("later migration failed")
+                        } else {
+                            MigrationOutcome.Success
+                        }
+                    },
+                ),
+            )
+        }
+
+        assertEquals(2, lease.releaseCalls.value)
+    }
+
+    @Test
     fun failedBackgroundAuditAfterAcquisitionDoesNotAbandonRenewingLease() = runTest(timeout = 3.minutes) {
         val dirPath = listOf("maryk", "test", "fdb-migration-audit-acquire-failure", Uuid.random().toString())
         val controlStore = FoundationDBDataStore.open(
@@ -1863,6 +1947,7 @@ class FoundationDBDataStoreMigrationTest {
 
 private class ScriptedMigrationLease(
     private val outcomesByModelId: MutableMap<UInt, ArrayDeque<Boolean>> = mutableMapOf(),
+    private val throwOnRelease: Boolean = false,
 ) : MigrationLease {
     val tryAcquireCalls = atomic(0)
     val releaseCalls = atomic(0)
@@ -1874,6 +1959,7 @@ private class ScriptedMigrationLease(
 
     override suspend fun release(modelId: UInt, migrationId: String) {
         releaseCalls.incrementAndGet()
+        if (throwOnRelease) error("release failed")
     }
 }
 
@@ -1899,6 +1985,36 @@ private class TrackingMigrationLease : MigrationLease {
         isHeld = false
         releaseCalls.incrementAndGet()
     }
+}
+
+private object DeferredFinalizerModelV1 : RootDataModel<DeferredFinalizerModelV1>(
+    name = "DeferredFinalizerModel",
+    version = Version(1),
+) {
+    val value by string(index = 1u)
+}
+
+private object DeferredFinalizerModelV2 : RootDataModel<DeferredFinalizerModelV2>(
+    name = "DeferredFinalizerModel",
+    version = Version(2),
+) {
+    val value by string(index = 1u)
+    val added by string(index = 2u, required = false)
+}
+
+private object FailingStartupModelV1 : RootDataModel<FailingStartupModelV1>(
+    name = "FailingStartupModel",
+    version = Version(1),
+) {
+    val value by string(index = 1u)
+}
+
+private object FailingStartupModelV2 : RootDataModel<FailingStartupModelV2>(
+    name = "FailingStartupModel",
+    version = Version(2),
+) {
+    val value by string(index = 1u)
+    val added by string(index = 2u, required = false)
 }
 
 private object Phase6OrderBaseV1 : RootDataModel<Phase6OrderBaseV1>(

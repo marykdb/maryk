@@ -53,6 +53,44 @@ PATH="$path_only/bin:/usr/bin:/bin" \
   bash "$path_only/repo/store/foundationdb/scripts/run-fdb-for-tests.sh" >/dev/null
 SERVER_PIDS+=("$(cat "$path_only/repo/build/testdatastore/fdbserver.pid")")
 
+mismatched_listen="$(new_fixture mismatched-listen)"
+write_server "$mismatched_listen/bin"
+cp "$path_only/bin/fdbcli" "$mismatched_listen/bin/fdbcli"
+mkdir -p "$mismatched_listen/repo/store/foundationdb"
+printf 'test@127.0.0.1:4500\n' > "$mismatched_listen/repo/store/foundationdb/fdb.cluster"
+if output="$(PATH="$mismatched_listen/bin:/usr/bin:/bin" FDB_LISTEN=127.0.0.1:4501 \
+  bash "$mismatched_listen/repo/store/foundationdb/scripts/run-fdb-for-tests.sh" 2>&1)"; then
+  echo "Expected mismatched FDB_LISTEN to fail before starting a server." >&2
+  exit 1
+fi
+grep -Fq 'does not match' <<<"$output" || {
+  echo "Expected explicit cluster-address mismatch, got:" >&2
+  echo "$output" >&2
+  exit 1
+}
+
+foreign_pid_fixture="$(new_fixture foreign-pid)"
+write_server "$foreign_pid_fixture/bin"
+cp "$path_only/bin/fdbcli" "$foreign_pid_fixture/bin/fdbcli"
+sleep 1000 &
+FOREIGN_PID=$!
+SERVER_PIDS+=("$FOREIGN_PID")
+mkdir -p "$foreign_pid_fixture/repo/build/testdatastore"
+echo "$FOREIGN_PID" > "$foreign_pid_fixture/repo/build/testdatastore/fdbserver.pid"
+PATH="$foreign_pid_fixture/bin:/usr/bin:/bin" \
+  FDB_READY_ATTEMPTS=1 FDB_READY_DELAY_SECONDS=0 FDB_STARTUP_PROBE_DELAY_SECONDS=0 \
+  bash "$foreign_pid_fixture/repo/store/foundationdb/scripts/run-fdb-for-tests.sh" >/dev/null
+REPLACED_PID="$(cat "$foreign_pid_fixture/repo/build/testdatastore/fdbserver.pid")"
+[[ "$REPLACED_PID" != "$FOREIGN_PID" ]] || {
+  echo "Expected launcher to replace an unrelated live PID." >&2
+  exit 1
+}
+kill -0 "$FOREIGN_PID" 2>/dev/null || {
+  echo "Launcher killed an unrelated process." >&2
+  exit 1
+}
+SERVER_PIDS+=("$REPLACED_PID")
+
 missing_cli="$(new_fixture missing-cli)"
 write_server "$missing_cli/bin"
 if output="$(PATH="$missing_cli/bin:/usr/bin:/bin" \
@@ -84,7 +122,10 @@ if output="$(PATH="$unready/bin:/usr/bin:/bin" \
   echo "Expected unavailable fdbcli status to fail readiness, but launcher succeeded." >&2
   exit 1
 fi
-SERVER_PIDS+=("$(cat "$unready/repo/build/testdatastore/fdbserver.pid")")
+[[ ! -e "$unready/repo/build/testdatastore/fdbserver.pid" ]] || {
+  echo "Expected unavailable launcher cleanup to remove its PID file." >&2
+  exit 1
+}
 grep -Fq 'did not become ready' <<<"$output" || {
   echo "Expected authoritative readiness failure, got:" >&2
   echo "$output" >&2

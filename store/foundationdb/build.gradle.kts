@@ -46,19 +46,10 @@ kotlin {
         }
 
         if (libExt != null && envVar != null) {
-            val libFile = rootProject.projectDir.resolve("store/foundationdb/bin/lib/libfdb_c.$libExt")
-
             binaries.withType<TestExecutable>().configureEach {
                 linkerOpts("-L$libDir", "-lfdb_c", "-rpath", libDir)
                 linkTaskProvider.configure {
                     dependsOn(installFoundationDB)
-                    onlyIf {
-                        val available = libFile.exists()
-                        if (!available) {
-                            logger.lifecycle("Skipping ${name} because ${libFile.name} is absent (FoundationDB native client not installed for ${target.konanTarget.family}).")
-                        }
-                        available
-                    }
                 }
             }
         }
@@ -134,9 +125,9 @@ val resetFoundationDBTestData = tasks.register("resetFoundationDBTestData", Dele
     description = "Stop local fdbserver and reset FoundationDB test data directory"
     doNotTrackState("Always reset FoundationDB test data before local runs.")
     delete(
-        layout.buildDirectory.dir("testdatastore/data"),
-        layout.buildDirectory.dir("testdatastore/logs"),
-        layout.buildDirectory.file("testdatastore/fdbserver.pid")
+        rootProject.layout.buildDirectory.dir("testdatastore/data"),
+        rootProject.layout.buildDirectory.dir("testdatastore/logs"),
+        rootProject.layout.buildDirectory.file("testdatastore/fdbserver.pid")
     )
     doFirst {
         stopFoundationDBForReset?.result?.get()
@@ -168,20 +159,12 @@ tasks.withType<KotlinNativeTest>().configureEach {
 
     if (libExt != null) {
         val libDir = rootProject.projectDir.resolve("store/foundationdb/bin/lib").absolutePath
-        val libFile = rootProject.projectDir.resolve("store/foundationdb/bin/lib/libfdb_c.$libExt")
         environment("DYLD_LIBRARY_PATH", libDir)
         environment("LD_LIBRARY_PATH", libDir)
         environment("FDB_CLUSTER_FILE", rootProject.projectDir.resolve("store/foundationdb/fdb.cluster").absolutePath)
         dependsOn(installFoundationDB, startFoundationDBForTests)
         finalizedBy(stopFoundationDBForTests)
 
-        onlyIf {
-            val available = libFile.exists()
-            if (!available && family != null) {
-                logger.lifecycle("Skipping ${name} because ${libFile.name} is absent (FoundationDB native client not installed for $family).")
-            }
-            available
-        }
     } else {
         onlyIf { false }
     }

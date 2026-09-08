@@ -52,24 +52,62 @@ case "$(uname -s)" in
   Linux) export LD_LIBRARY_PATH="$LIB_DIR:${LD_LIBRARY_PATH:-}" ;;
 esac
 
+validate_cluster_address() {
+  if [[ ! -f "$CLUSTER_FILE" ]]; then
+    printf 'test@%s\n' "$FDB_LISTEN" > "$CLUSTER_FILE"
+    return
+  fi
+
+  local configured_address
+  configured_address="$(sed -n '1{s/^[^@]*@//;p;}' "$CLUSTER_FILE")"
+  if [[ -z "$configured_address" || "$configured_address" != "$FDB_LISTEN" ]]; then
+    echo "FDB_LISTEN=$FDB_LISTEN does not match $CLUSTER_FILE ($configured_address). Update the cluster file or use its configured address." >&2
+    exit 1
+  fi
+}
+
 have() { command -v "$1" >/dev/null 2>&1; }
 
 server_started=false
 
+pid_is_managed_server() {
+  local pid="$1"
+  local command
+  command="$(ps -p "$pid" -o command= 2>/dev/null || true)"
+  [[ "$command" == *"$FDBSERVER_BIN"* ]] &&
+    [[ "$command" == *"--cluster-file $CLUSTER_FILE"* ]] &&
+    [[ "$command" == *"--datadir $DATA_DIR"* ]]
+}
+
+cleanup_failed_start() {
+  if [[ "$server_started" != "true" ]] || [[ ! -f "$PID_FILE" ]]; then
+    return
+  fi
+  local pid
+  pid="$(cat "$PID_FILE" 2>/dev/null || true)"
+  if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null && pid_is_managed_server "$pid"; then
+    kill "$pid" 2>/dev/null || true
+  fi
+  rm -f "$PID_FILE"
+}
+
+trap cleanup_failed_start EXIT
+
 start_server() {
+  validate_cluster_address
   if [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null; then
-    server_started=false
-    return 0
+    local existing_pid
+    existing_pid="$(cat "$PID_FILE")"
+    if pid_is_managed_server "$existing_pid"; then
+      server_started=false
+      return 0
+    fi
+    echo "Ignoring unrelated process in $PID_FILE (PID $existing_pid)" >&2
   fi
   rm -f "$PID_FILE"
 
   # Ensure log file exists before redirect
   touch "$LOG_DIR/fdbserver.out" || true
-
-  # Create a minimal cluster file if missing; fdbserver will update it.
-  if [[ ! -f "$CLUSTER_FILE" ]]; then
-    echo "test@$FDB_LISTEN" > "$CLUSTER_FILE"
-  fi
 
   set -x
   "$FDBSERVER_BIN" \
@@ -148,4 +186,5 @@ if ! wait_ready; then
   exit 1
 fi
 
+trap - EXIT
 echo "FoundationDB is ready for tests (PID $(cat "$PID_FILE"))"

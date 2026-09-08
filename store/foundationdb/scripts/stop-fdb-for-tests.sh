@@ -13,9 +13,17 @@ LOG_DIR="$ROOT_DIR/build/testdatastore/logs"
 #   FDB_CLEAN_MODE=none  keeps both
 FDB_CLEAN_MODE="${FDB_CLEAN_MODE:-data}"
 
+pid_is_managed_server() {
+  local pid="$1"
+  local command
+  command="$(ps -p "$pid" -o command= 2>/dev/null || true)"
+  [[ "$command" == *"fdbserver"* ]] &&
+    [[ "$command" == *"--datadir $DATA_DIR"* ]]
+}
+
 if [[ -f "$PID_FILE" ]]; then
   PID="$(cat "$PID_FILE")"
-  if kill -0 "$PID" 2>/dev/null; then
+  if kill -0 "$PID" 2>/dev/null && pid_is_managed_server "$PID"; then
     kill "$PID" || true
     # Give it a moment to shut down
     for i in {1..20}; do
@@ -25,6 +33,8 @@ if [[ -f "$PID_FILE" ]]; then
         break
       fi
     done
+  elif kill -0 "$PID" 2>/dev/null; then
+    echo "Ignoring unrelated process in $PID_FILE (PID $PID)" >&2
   fi
   rm -f "$PID_FILE"
   echo "Stopped fdbserver (PID $PID)"

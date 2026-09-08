@@ -55,7 +55,8 @@ data class TimeDefinition(
         return LocalTime.fromByteReader(length, reader)
     }
 
-    override fun writeStorageBytes(value: LocalTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
+    override fun writeStorageBytes(value: LocalTime, writer: (byte: Byte) -> Unit) =
+        value.atPrecision(precision).writeBytes(precision, writer)
 
     override fun readTransportBytes(
         length: Int,
@@ -70,9 +71,9 @@ data class TimeDefinition(
         }
 
     override fun calculateTransportByteLength(value: LocalTime) = when (this.precision) {
-        TimePrecision.SECONDS -> value.toSecondOfDay().calculateVarByteLength()
-        TimePrecision.MILLIS -> value.toMillisecondOfDay().calculateVarByteLength()
-        TimePrecision.NANOS -> value.toNanosecondOfDay().calculateVarByteLength()
+        TimePrecision.SECONDS -> value.atPrecision(precision).toSecondOfDay().calculateVarByteLength()
+        TimePrecision.MILLIS -> value.atPrecision(precision).toMillisecondOfDay().calculateVarByteLength()
+        TimePrecision.NANOS -> value.atPrecision(precision).toNanosecondOfDay().calculateVarByteLength()
     }
 
     override fun writeTransportBytes(
@@ -81,15 +82,18 @@ data class TimeDefinition(
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
+        val normalized = value.atPrecision(precision)
         when (this.precision) {
-            TimePrecision.SECONDS -> value.toSecondOfDay().writeVarBytes(writer)
-            TimePrecision.MILLIS -> value.toMillisecondOfDay().writeVarBytes(writer)
-            TimePrecision.NANOS -> value.toNanosecondOfDay().writeVarBytes(writer)
+            TimePrecision.SECONDS -> normalized.toSecondOfDay().writeVarBytes(writer)
+            TimePrecision.MILLIS -> normalized.toMillisecondOfDay().writeVarBytes(writer)
+            TimePrecision.NANOS -> normalized.toNanosecondOfDay().writeVarBytes(writer)
         }
     }
 
+    override fun asString(value: LocalTime) = value.atPrecision(precision).toString()
+
     override fun fromString(string: String) = try {
-        LocalTime.parse(string)
+        LocalTime.parse(string).atPrecision(precision)
     } catch (e: IllegalArgumentException) {
         throw ParseException(e.message ?: "Issue with parsing time: $string")
     }
@@ -97,7 +101,8 @@ data class TimeDefinition(
     override fun fromNativeType(value: Any) = when (value) {
         is Long -> LocalTime.fromSecondOfDay(value.toInt())
         is Int -> LocalTime.fromSecondOfDay(value)
-        else -> value as? LocalTime
+        is LocalTime -> value.atPrecision(precision)
+        else -> null
     }
 
     object Model : ContextualDataModel<TimeDefinition, Model, ContainsDefinitionsContext, TimeDefinitionContext>(
@@ -161,6 +166,12 @@ data class TimeDefinition(
 
         fun nowUTC() = Clock.System.now().toLocalDateTime(TimeZone.UTC).time
     }
+}
+
+private fun LocalTime.atPrecision(precision: TimePrecision) = when (precision) {
+    TimePrecision.SECONDS -> LocalTime(hour, minute, second)
+    TimePrecision.MILLIS -> LocalTime(hour, minute, second, nanosecond / 1_000_000 * 1_000_000)
+    TimePrecision.NANOS -> this
 }
 
 class TimeDefinitionContext : TimePrecisionContext() {

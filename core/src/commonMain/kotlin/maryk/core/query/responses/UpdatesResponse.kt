@@ -3,7 +3,9 @@ package maryk.core.query.responses
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.SimpleQueryModel
 import maryk.core.properties.definitions.InternalMultiTypeDefinition
+import maryk.core.properties.definitions.MultiTypeDefinition
 import maryk.core.properties.definitions.list
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.types.TypedValue
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.UpdateResponseType
@@ -29,10 +31,19 @@ data class UpdatesResponse<DM : IsRootDataModel>(
             toSerializable = { TypedValue(it.type, it) },
             fromSerializable = { it.value }
         )
+        internal val dataFetchType = MultiTypeDefinitionWrapper(
+            3u,
+            "dataFetchType",
+            MultiTypeDefinition(required = false, typeEnum = DataFetchTypeType),
+            getter = UpdatesResponse<*>::dataFetchType,
+            toSerializable = { value, _ -> value?.let { TypedValue(it.type, it) } },
+            fromSerializable = { it?.value },
+        ).also(::addSingle)
 
         override fun invoke(values: SimpleObjectValues<UpdatesResponse<*>>) = UpdatesResponse(
             dataModel = values(1u),
-            updates = values(2u)
+            updates = values(2u),
+            dataFetchType = values(dataFetchType.index),
         )
     }
 }

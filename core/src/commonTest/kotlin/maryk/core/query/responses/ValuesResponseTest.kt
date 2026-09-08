@@ -10,6 +10,7 @@ import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.query.RequestContext
 import maryk.core.query.ValuesWithMetaData
+import maryk.core.query.orders.Direction
 import maryk.core.query.requests.createCursor
 import maryk.core.query.requests.scan
 import maryk.test.models.SimpleMarykModel
@@ -37,7 +38,8 @@ class ValuesResponseTest {
         ),
         AggregationsResponse(
             "total" to ValueCountResponse(SimpleMarykObject { value::ref }, 1uL)
-        )
+        ),
+        dataFetchType = FetchByKey,
     )
 
     private val context = RequestContext(mapOf(
@@ -77,10 +79,26 @@ class ValuesResponseTest {
               total: !ValueCount
                 of: value
                 value: 1
+            dataFetchType: !Key
 
             """.trimIndent()
         ) {
             checkYamlConversion(this.objectsResponse, ValuesResponse, { this.context })
+        }
+    }
+
+    @Test
+    fun preservesEveryDataFetchTypeAcrossResponseFormats() {
+        listOf(
+            FetchByTableScan(Direction.ASC, byteArrayOf(1), byteArrayOf(2)),
+            FetchByIndexScan(byteArrayOf(3), Direction.DESC, byteArrayOf(4), byteArrayOf(5)),
+            FetchByUpdateHistoryIndex(),
+            FetchByUniqueKey(byteArrayOf(6)),
+        ).forEach { dataFetchType ->
+            val response = objectsResponse.copy(dataFetchType = dataFetchType)
+            checkProtoBufConversion(response, ValuesResponse, { context })
+            checkJsonConversion(response, ValuesResponse, { context })
+            checkYamlConversion(response, ValuesResponse, { context })
         }
     }
 

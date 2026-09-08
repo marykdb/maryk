@@ -32,7 +32,8 @@ class UpdatesResponseTest {
                 )
             )),
             RemovalUpdate(key, 1236uL, SoftDelete)
-        )
+        ),
+        dataFetchType = FetchByKey,
     )
 
     private val context = RequestContext(
@@ -86,6 +87,7 @@ class UpdatesResponseTest {
               key: AAACKwEAAg
               version: 1236
               reason: SoftDelete
+            dataFetchType: !Key
 
             """.trimIndent()
         ) {

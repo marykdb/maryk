@@ -5,6 +5,8 @@ import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.IsSimpleValueDefinition
 import maryk.core.properties.definitions.IsValueDefinition
 import maryk.core.properties.definitions.KeyValueDefinitionContext
+import maryk.core.properties.definitions.NumberDefinition
+import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
 import maryk.core.protobuf.WriteCache
@@ -31,6 +33,29 @@ class ContextualMapDefinitionTest {
         definitionsContext = null,
         keyDefinition = TestMarykModel.map.keyDefinition as IsSimpleValueDefinition<Any, IsPropertyContext>,
         valueDefinition = TestMarykModel.map.valueDefinition as IsValueDefinition<Any, IsPropertyContext>
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    private val contextualScalarValueDefinition = ContextualValueDefinition<IsPropertyContext, IsPropertyContext, Any, IsValueDefinition<Any, IsPropertyContext>>(
+        contextualResolver = { _: IsPropertyContext? ->
+            NumberDefinition(type = UInt32) as IsValueDefinition<Any, IsPropertyContext>
+        }
+    )
+
+    @Suppress("UNCHECKED_CAST")
+    private val contextualScalarContext = KeyValueDefinitionContext(
+        definitionsContext = null,
+        keyDefinition = TestMarykModel.map.keyDefinition as IsSimpleValueDefinition<Any, IsPropertyContext>,
+        valueDefinition = contextualScalarValueDefinition
+    )
+
+    private val contextualScalarMapToTest = mapOf<Any, Any>(
+        LocalTime(1, 55, 33) to 12u,
+        LocalTime(14, 22, 23) to 42u,
+    )
+
+    private val contextualScalarMapDefinition = ContextualMapDefinition<Any, Any, KeyValueDefinitionContext>(
+        contextualResolver = { it!!.mapDefinition }
     )
 
     @Test
@@ -78,5 +103,31 @@ class ContextualMapDefinitionTest {
         val converted = def.readJson(reader, this.context)
 
         expect(this.mapToTest) { converted }
+    }
+
+    @Test
+    fun readsContextualScalarMapValuesWithTheirResolvedWireType() {
+        val bytes = ByteCollector()
+        val cache = WriteCache()
+
+        bytes.reserve(
+            contextualScalarMapDefinition.calculateTransportByteLengthWithKey(8, contextualScalarMapToTest, cache, contextualScalarContext)
+        )
+        contextualScalarMapDefinition.writeTransportBytesWithKey(8, contextualScalarMapToTest, cache, bytes::write, contextualScalarContext)
+
+        val actual = mutableMapOf<Any, Any>()
+        repeat(contextualScalarMapToTest.size) {
+            val field = ProtoBuf.readKey(bytes::read)
+            expect(LENGTH_DELIMITED) { field.wireType }
+            expect(8u) { field.tag }
+            contextualScalarMapDefinition.readTransportBytes(
+                ProtoBuf.getLength(field.wireType, bytes::read),
+                bytes::read,
+                contextualScalarContext,
+                actual
+            )
+        }
+
+        expect(contextualScalarMapToTest) { actual }
     }
 }

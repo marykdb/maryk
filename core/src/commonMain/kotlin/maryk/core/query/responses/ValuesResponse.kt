@@ -6,7 +6,10 @@ import maryk.core.models.QueryModel
 import maryk.core.properties.definitions.EmbeddedObjectDefinition
 import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.embedObject
+import maryk.core.properties.definitions.MultiTypeDefinition
+import maryk.core.properties.definitions.wrapper.MultiTypeDefinitionWrapper
 import maryk.core.properties.definitions.wrapper.ObjectListDefinitionWrapper
+import maryk.core.properties.types.TypedValue
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.requests.ScanCursor
 import maryk.core.values.ObjectValues
@@ -46,12 +49,21 @@ data class ValuesResponse<DM : IsRootDataModel>(
             getter = ValuesResponse<*>::nextCursor,
             dataModel = { ScanCursor.Model },
         )
+        internal val dataFetchType = MultiTypeDefinitionWrapper(
+            5u,
+            "dataFetchType",
+            MultiTypeDefinition(required = false, typeEnum = DataFetchTypeType),
+            getter = ValuesResponse<*>::dataFetchType,
+            toSerializable = { value, _ -> value?.let { TypedValue(it.type, it) } },
+            fromSerializable = { it?.value },
+        ).also(::addSingle)
 
         override fun invoke(values: ObjectValues<ValuesResponse<*>, Companion>) = ValuesResponse(
             dataModel = values(1u),
             values = values(2u),
             aggregations = values(3u),
             nextCursor = values(4u),
+            dataFetchType = values(dataFetchType.index),
         )
     }
 }

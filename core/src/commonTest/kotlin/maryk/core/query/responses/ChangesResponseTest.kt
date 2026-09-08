@@ -55,7 +55,8 @@ class ChangesResponseTest {
                     )
                 )
             )
-        )
+        ),
+        dataFetchType = FetchByKey,
     )
 
     private val context = RequestContext(
@@ -103,6 +104,7 @@ class ChangesResponseTest {
                   embeddedValues.value: null
                 - !Check
                   embeddedValues.value: current
+            dataFetchType: !Key
 
             """.trimIndent()
         ) {

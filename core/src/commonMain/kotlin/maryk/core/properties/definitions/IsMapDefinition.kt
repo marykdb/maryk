@@ -4,6 +4,7 @@ import maryk.core.definitions.MarykPrimitive
 import maryk.core.extensions.bytes.calculateVarByteLength
 import maryk.core.extensions.bytes.writeVarBytes
 import maryk.core.properties.IsPropertyContext
+import maryk.core.properties.definitions.contextual.ContextualValueDefinition
 import maryk.core.properties.definitions.wrapper.IsDefinitionWrapper
 import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.TooManyItemsException
@@ -218,7 +219,22 @@ interface IsMapDefinition<K : Any, V : Any, CX : IsPropertyContext> :
                     )
                 }
                 2u -> {
-                    val valueWireType = (valueDefinition as? IsValueDefinition<*, *>)?.wireType ?: LENGTH_DELIMITED
+                    val valueWireType = when (val definition = valueDefinition) {
+                        is ContextualValueDefinition<*, *, *, *> -> {
+                            @Suppress("UNCHECKED_CAST")
+                            val contextual = definition as ContextualValueDefinition<
+                                IsPropertyContext,
+                                IsPropertyContext,
+                                *,
+                                IsValueDefinition<*, IsPropertyContext>,
+                            >
+                            contextual.contextualResolver(
+                                contextual.contextTransformer(context) as IsPropertyContext
+                            ).wireType
+                        }
+                        is IsValueDefinition<*, *> -> definition.wireType
+                        else -> LENGTH_DELIMITED
+                    }
                     if (entryField.wireType != valueWireType) {
                         throw ParseException("Map value wire type does not match definition")
                     }

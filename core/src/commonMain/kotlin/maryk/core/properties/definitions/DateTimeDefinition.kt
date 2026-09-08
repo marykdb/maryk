@@ -61,7 +61,8 @@ data class DateTimeDefinition(
         return LocalDateTime.fromByteReader(length, reader)
     }
 
-    override fun writeStorageBytes(value: LocalDateTime, writer: (byte: Byte) -> Unit) = value.writeBytes(precision, writer)
+    override fun writeStorageBytes(value: LocalDateTime, writer: (byte: Byte) -> Unit) =
+        value.atPrecision(precision).writeBytes(precision, writer)
 
     override fun readTransportBytes(
         length: Int,
@@ -76,7 +77,7 @@ data class DateTimeDefinition(
         }.toLocalDateTime(UTC)
 
     override fun calculateTransportByteLength(value: LocalDateTime): Int {
-        val utcValue = value.toInstant(UTC)
+        val utcValue = value.atPrecision(precision).toInstant(UTC)
         return when (this.precision) {
             TimePrecision.SECONDS -> utcValue.epochSeconds.calculateVarByteLength()
             TimePrecision.MILLIS -> utcValue.toEpochMilliseconds().calculateVarByteLength()
@@ -90,7 +91,7 @@ data class DateTimeDefinition(
         writer: (byte: Byte) -> Unit,
         context: IsPropertyContext?
     ) {
-        val utcValue = value.toInstant(UTC)
+        val utcValue = value.atPrecision(precision).toInstant(UTC)
         when (this.precision) {
             TimePrecision.SECONDS -> utcValue.epochSeconds.writeVarBytes(writer)
             TimePrecision.MILLIS -> utcValue.toEpochMilliseconds().writeVarBytes(writer)
@@ -101,13 +102,15 @@ data class DateTimeDefinition(
         }
     }
 
+    override fun asString(value: LocalDateTime) = value.atPrecision(precision).toString()
+
     override fun fromString(string: String) = try {
-        LocalDateTime.parse(string)
+        LocalDateTime.parse(string).atPrecision(precision)
     } catch (e: IllegalArgumentException) {
         throw ParseException(string, e)
     }
 
-    override fun fromNativeType(value: Any) = value as? LocalDateTime
+    override fun fromNativeType(value: Any) = (value as? LocalDateTime)?.atPrecision(precision)
 
     override fun writeJsonValue(value: LocalDateTime, writer: IsJsonLikeWriter, context: IsPropertyContext?) {
         val stringValue = this.asString(value, context)
@@ -179,6 +182,12 @@ data class DateTimeDefinition(
 
         fun nowUTC() = Clock.System.now().toLocalDateTime(UTC)
     }
+}
+
+private fun LocalDateTime.atPrecision(precision: TimePrecision) = when (precision) {
+    TimePrecision.SECONDS -> LocalDateTime(year, month, day, hour, minute, second)
+    TimePrecision.MILLIS -> LocalDateTime(year, month, day, hour, minute, second, nanosecond / 1_000_000 * 1_000_000)
+    TimePrecision.NANOS -> this
 }
 
 class DateTimeDefinitionContext : TimePrecisionContext() {

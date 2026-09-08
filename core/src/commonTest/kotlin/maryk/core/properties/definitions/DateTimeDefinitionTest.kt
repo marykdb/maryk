@@ -173,8 +173,20 @@ internal class DateTimeDefinitionTest {
     fun convertValuesToStringAndBack() {
         for (dateTime in dateTimesNanosToTest) {
             val b = def.asString(dateTime)
-            expect(dateTime) { def.fromString(b) }
+            expect(def.fromString(dateTime.toString())) { def.fromString(b) }
         }
+    }
+
+    @Test
+    fun normalizesValuesToDeclaredPrecision() {
+        val source = LocalDateTime(2024, 5, 6, 12, 13, 14, 987_654_321)
+
+        expect(LocalDateTime(2024, 5, 6, 12, 13, 14)) { def.fromString(source.toString()) }
+        expect("2024-05-06T12:13:14") { def.asString(source) }
+        expect(LocalDateTime(2024, 5, 6, 12, 13, 14, 987_000_000)) {
+            defMilli.fromString(source.toString())
+        }
+        expect("2024-05-06T12:13:14.987") { defMilli.asString(source) }
     }
 
     @Test

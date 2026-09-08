@@ -158,8 +158,18 @@ internal class TimeDefinitionTest {
     fun convertValuesToStringAndBack() {
         for (time in timesToTestMillis) {
             val b = def.asString(time)
-            expect(time) { def.fromString(b) }
+            expect(def.fromString(time.toString())) { def.fromString(b) }
         }
+    }
+
+    @Test
+    fun normalizesValuesToDeclaredPrecision() {
+        val source = LocalTime(12, 13, 14, 987_654_321)
+
+        expect(LocalTime(12, 13, 14)) { def.fromString(source.toString()) }
+        expect("12:13:14") { def.asString(source) }
+        expect(LocalTime(12, 13, 14, 987_000_000)) { defMilli.fromString(source.toString()) }
+        expect("12:13:14.987") { defMilli.asString(source) }
     }
 
     @Test

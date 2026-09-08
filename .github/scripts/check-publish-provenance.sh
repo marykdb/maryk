@@ -57,13 +57,7 @@ check_required "$release_workflow" \
   'EXPECTED_SHA="$ACTUAL_SHA" bash .github/scripts/verify-build-provenance.sh' \
   'name: Verify matching Maven publication' \
   'SOURCE_SHA: ${{ steps.provenance.outputs.source_sha }}' \
-  'publication_name="publish-provenance-$SOURCE_SHA"' \
-  'actions/artifacts?name=$publication_name&per_page=100' \
-  'actions/runs/$run_id' \
-  '"$run_path" != .github/workflows/publish.yml@*' \
-  'artifacts/$artifact_id/zip' \
-  'commit_sha=$SOURCE_SHA' \
-  'no matching successful Maven publication' \
+  'bash .github/scripts/verify-publish-provenance.sh' \
   ':app:verifyDistributionVersion' \
   '-PreleaseTag="$RELEASE_TAG"' \
   'Smoke test packaged macOS app' \

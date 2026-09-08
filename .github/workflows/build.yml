@@ -24,7 +24,10 @@ jobs:
       - name: Check action pins
         run: .github/scripts/check-action-pins.sh
       - name: Check publish workflow structure
-        run: .github/scripts/check-publish-provenance.sh
+        run: |
+          bash .github/scripts/check-publish-provenance.sh
+          bash .github/scripts/verify-build-provenance.test.sh
+          bash .github/scripts/verify-publish-provenance.test.sh
 
   build:
     strategy:

@@ -73,6 +73,11 @@ class TypesTest {
     }
 
     @Test
+    fun rejectsOverflowingBase60Integer() {
+        createYamlReader("999999999999999999:59").assertInvalidYaml()
+    }
+
+    @Test
     fun preservesTimestampFractionsFromOneToNineDigits() {
         (1..9).forEach { digits ->
             val fraction = "123456789".take(digits)

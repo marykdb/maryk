@@ -250,6 +250,24 @@ class YamlWriter(
     /** Writes a [value] excluding quotes */
     override fun writeValue(value: String) = writeValueInternal(value, quoteStrings = false)
 
+    override fun writeDouble(double: Double) = writeValue(
+        when {
+            double.isNaN() -> ".nan"
+            double == Double.POSITIVE_INFINITY -> ".inf"
+            double == Double.NEGATIVE_INFINITY -> "-.inf"
+            else -> double.toString()
+        }
+    )
+
+    override fun writeFloat(float: Float) = writeValue(
+        when {
+            float.isNaN() -> ".nan"
+            float == Float.POSITIVE_INFINITY -> ".inf"
+            float == Float.NEGATIVE_INFINITY -> "-.inf"
+            else -> float.toString()
+        }
+    )
+
     private fun writeValueInternal(value: String, quoteStrings: Boolean) {
         value.requirePairedSurrogates()
         writePendingObjectStart()

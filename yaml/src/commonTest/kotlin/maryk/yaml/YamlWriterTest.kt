@@ -10,6 +10,13 @@ import kotlin.test.assertTrue
 
 internal class YamlWriterTest {
     @Test
+    fun writesCanonicalNonFiniteFloatScalars() {
+        assertEquals(".nan", buildString { YamlWriter(::append).writeDouble(Double.NaN) })
+        assertEquals(".inf", buildString { YamlWriter(::append).writeDouble(Double.POSITIVE_INFINITY) })
+        assertEquals("-.inf", buildString { YamlWriter(::append).writeFloat(Float.NEGATIVE_INFINITY) })
+    }
+
+    @Test
     fun rejectsUnpairedSurrogatesInWrittenText() {
         val invalidValues = listOf("\uD800", "\uDC00", "before\uD800after")
 

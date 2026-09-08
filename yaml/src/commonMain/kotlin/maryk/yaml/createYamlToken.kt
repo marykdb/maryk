@@ -191,10 +191,10 @@ private fun findInt(value: String): Value<Long>? {
     base60RegEx.find(value)?.let {
         val segments = value.replace("_", "").split(':')
         var result = 0L
-        val power = segments.size - 1
-        segments.forEachIndexed { index, segment ->
-            val component = (segment.toInt() * 60.0.pow(power - index)).toLong()
-            result = result.checkedAdd(component, value)
+        segments.forEach { segment ->
+            val component = segment.toLongOrNull()
+                ?: throw InvalidYamlContent("Integer value is out of range: $value")
+            result = result.checkedMultiply(60, value).checkedAdd(component, value)
         }
         return Value(result, ValueType.Int)
     }
@@ -215,6 +215,15 @@ private fun Long.checkedAdd(other: Long, source: String): Long =
         other < 0 && this < Long.MIN_VALUE - other -> throw InvalidYamlContent("Integer value is out of range: $source")
         else -> this + other
     }
+
+private fun Long.checkedMultiply(other: Long, source: String): Long {
+    if (this == 0L || other == 0L) return 0L
+    val result = this * other
+    if (result / other != this) {
+        throw InvalidYamlContent("Integer value is out of range: $source")
+    }
+    return result
+}
 
 /** Tries to find float value in [value] and returns a Double if found */
 private fun findFloat(value: String): Value<Double>? {

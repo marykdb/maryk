@@ -60,6 +60,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
                     objectChange = change,
                     sortingKey = sortingKey,
                     toVersion = scanRequest.toVersion,
+                    maxVersions = scanRequest.maxVersions,
                 )
             } else {
                 change

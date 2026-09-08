@@ -217,3 +217,7 @@ Environment variable `FDB_CLUSTER_FILE` is set by Gradle to `store/foundationdb/
 ## License
 
 Maryk is licensed under the Apache 2.0 License. See the repository's LICENSE file for details.
+
+### Hard deletion and history
+
+A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.

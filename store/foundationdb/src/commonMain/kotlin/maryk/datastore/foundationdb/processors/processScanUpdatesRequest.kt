@@ -190,6 +190,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                     objectChange = objectChange,
                     sortingKey = sortingKey,
                     toVersion = scanRequest.toVersion,
+                    maxVersions = scanRequest.maxVersions,
                 )
             } else {
                 objectChange
@@ -399,6 +400,7 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                     fromVersion = scanRequest.fromVersion,
                     objectChange = objectChange,
                     toVersion = scanRequest.toVersion,
+                    maxVersions = scanRequest.maxVersions,
                 )
             } else {
                 objectChange

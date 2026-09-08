@@ -71,6 +71,39 @@ import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
     @Test
+    fun legacyClockRecoveryDoesNotAssumeTargetKeyWidth() = runTest(timeout = 3.minutes) {
+        for (source in 0..2) {
+            val directory = listOf("maryk", "test", "legacy-key-width-clock", Uuid.random().toString())
+            var store = FoundationDBDataStore.open(directoryPath = directory, dataModelsById = mapOf(1u to SimpleMarykModel))
+            val future = HLC(HLC().toPhysicalUnixTime() + 60_000uL, 0u)
+            try {
+                val dirs = store.getTableDirs(1u)
+                val prefix = when (source) {
+                    0 -> dirs.keysPrefix
+                    1 -> dirs.tablePrefix
+                    else -> dirs.replicationTombstonePrefix
+                }
+                // Legacy records can still have the old key width before migration finalizes.
+                store.runTransaction { transaction ->
+                    transaction.set(packKey(prefix, byteArrayOf(42)), HLC.toStorageBytes(future))
+                    transaction.clear(Range.startsWith(packKey(dirs.modelPrefix, modelHlcWatermarkPrefix)))
+                }
+            } finally {
+                store.close()
+            }
+            store = FoundationDBDataStore.open(directoryPath = directory, dataModelsById = mapOf(1u to SimpleMarykModel))
+            try {
+                val added = assertIs<AddSuccess<SimpleMarykModel>>(
+                    store.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha recovered clock" })).statuses.single()
+                )
+                assertTrue(added.version > future.timestamp)
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
     fun reopenAdvancesLocalMutationClockBeyondStoredVersion() = runTest(timeout = 3.minutes) {
         val directoryPath = listOf("maryk", "test", "reopen-clock-floor", Uuid.random().toString())
         var store = FoundationDBDataStore.open(

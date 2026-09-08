@@ -27,6 +27,7 @@ import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.models.migration.MigrationAuditEventType
 import maryk.core.models.migration.MigrationAuditLogStore
 import maryk.core.models.migration.MigrationConfiguration
+import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationRuntimeStatus
@@ -204,6 +205,8 @@ class FoundationDBDataStore private constructor(
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val updateHistoryReadyModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationModelIds = atomic(setOf<UInt>())
+    internal val dependencyWaitingMigrationModelIds = atomic(setOf<UInt>())
+    private val storeInitializationReady = CompletableDeferred<Unit>()
     internal val pendingMigrationReasons = atomic(mapOf<UInt, String>())
     internal val pausedMigrationModelIds = atomic(setOf<UInt>())
     internal val canceledMigrationReasons = atomic(mapOf<UInt, String>())
@@ -353,9 +356,6 @@ class FoundationDBDataStore private constructor(
         }
         schemaFenceReady.value = true
 
-        val conversionContext = DefinitionsConversionContext().apply {
-            addDataModelReferences(dataModelsById.values)
-        }
         val startupStarted = TimeSource.Monotonic.markNow()
         val effectiveMigrationLease = migrationConfiguration.migrationLease ?: FoundationDBMigrationLease(
             tc = tc,
@@ -380,9 +380,11 @@ class FoundationDBDataStore private constructor(
         val orderedMigrationModelIds = orderMigrationModelIds(dataModelsById)
         val deferredMigrationReleaseCleanups = mutableListOf<suspend () -> Unit>()
         val modelIdsByName = dataModelsById.entries.associate { (modelId, model) -> model.Meta.name to modelId }
-        val migrationDependenciesByModelId = dataModelsById.mapValues { (_, model) ->
+        val migrationDependenciesByModelId = dataModelsById.mapValues { (modelId, model) ->
             mutableListOf<MarykPrimitive>().also { model.getAllDependencies(it) }
-                .mapNotNullTo(linkedSetOf()) { modelIdsByName[it.Meta.name] }
+                .mapNotNullTo(linkedSetOf()) { dependency ->
+                    modelIdsByName[dependency.Meta.name]?.takeIf { it != modelId }
+                }
         }
 
         suspend fun processModelMigration(
@@ -399,7 +401,9 @@ class FoundationDBDataStore private constructor(
                         tableDirectories.modelPrefix,
                         dataModel,
                         onlyCheckModelVersion,
-                        conversionContext
+                        DefinitionsConversionContext().apply {
+                            addDataModelReferences(dataModelsById.values)
+                        }
                     )
                 ) {
                     UpToDate, MigrationStatus.AlreadyProcessed -> {
@@ -473,7 +477,7 @@ class FoundationDBDataStore private constructor(
                             } else {
                                 migrationTransactionGuards.update { it + (index to transactionGuard) }
                                 try {
-                                    withContext(FoundationDBMigrationRequestContext(transactionGuard)) {
+                                    withContext(FoundationDBMigrationRequestContext(transactionGuard, index)) {
                                         versionUpdateHandler?.invoke(this@FoundationDBDataStore, storedModel, dataModel)
                                     }
                                 } finally {
@@ -495,12 +499,13 @@ class FoundationDBDataStore private constructor(
                             }
                         },
                         deferStartupFinalization = { finalizer, releaseCleanup ->
-                            deferredMigrationReleaseCleanups += releaseCleanup
+                            val duringStartup = !storeInitializationReady.isCompleted
+                            if (duringStartup) deferredMigrationReleaseCleanups += releaseCleanup
                             deferFinalization {
                                 try {
                                     finalizer()
                                 } finally {
-                                    deferredMigrationReleaseCleanups.remove(releaseCleanup)
+                                    if (duringStartup) deferredMigrationReleaseCleanups.remove(releaseCleanup)
                                 }
                             }
                         },
@@ -509,30 +514,78 @@ class FoundationDBDataStore private constructor(
             }
         }
 
-        try {
-            for (index in orderedMigrationModelIds) {
-            val dependencyIds = migrationDependenciesByModelId[index].orEmpty()
-            if (dependencyIds.isEmpty()) {
-                processModelMigration(index) { finalizer ->
-                    scheduledVersionUpdateHandlers.add(finalizer)
+        suspend fun initializeDependentModel(index: UInt) {
+            withContext(FoundationDBMigrationRequestContext(modelId = index)) {
+                val immediateFinalizers = mutableListOf<suspend () -> Unit>()
+                processModelMigration(index, immediateFinalizers::add)
+                immediateFinalizers.forEach { it() }
+            }
+            if (index !in pendingMigrationModelIds.value) {
+                if (keepUpdateHistoryIndex) {
+                    ensureUpdateHistoryIndexReady(index, getTableDirs(index))
+                    backfillReplicationTombstones(index, getTableDirs(index))
                 }
+                dependencyWaitingMigrationModelIds.update { it - index }
+                pendingMigrationReasons.update { it - index }
+                completePendingMigration(index)
             } else {
-                scheduledVersionUpdateHandlers.add {
-                    dependencyIds.forEach { dependencyId ->
-                        if (pendingMigrationModelIds.value.contains(dependencyId)) {
-                            awaitMigrationInternal(dependencyId)
-                        }
-                    }
-                    val immediateFinalizers = mutableListOf<suspend () -> Unit>()
-                    processModelMigration(index, immediateFinalizers::add)
-                    immediateFinalizers.forEach { it() }
-                }
+                // The coordinator has taken ownership of readiness and its waiter.
+                dependencyWaitingMigrationModelIds.update { it - index }
             }
         }
 
+        try {
+            for (index in orderedMigrationModelIds) {
+                val dependencyIds = migrationDependenciesByModelId[index].orEmpty()
+                if (dependencyIds.isEmpty()) {
+                    processModelMigration(index) { finalizer ->
+                        scheduledVersionUpdateHandlers.add(finalizer)
+                    }
+                } else {
+                    dependencyWaitingMigrationModelIds.update { it + index }
+                    ensurePendingMigrationWaiter(index)
+                    scheduledVersionUpdateHandlers.add {
+                        // Earlier synchronous finalizers have now finished. A remaining
+                        // dependency is one that actually continued in the background,
+                        // rather than merely another deferred startup finalizer.
+                        val pendingDependencies = dependencyIds.filter {
+                            it in pendingMigrationModelIds.value || it in dependencyWaitingMigrationModelIds.value
+                        }
+                        if (pendingDependencies.isEmpty()) {
+                            initializeDependentModel(index)
+                        } else {
+                            pendingMigrationReasons.update {
+                                it + (index to "Migration is waiting for dependencies ${pendingDependencies.joinToString()}")
+                            }
+                            launch {
+                                try {
+                                    storeInitializationReady.await()
+                                    pendingDependencies.forEach { awaitMigrationInternal(it) }
+                                    while (index in pausedMigrationModelIds.value && index !in canceledMigrationReasons.value) {
+                                        delay(250.milliseconds)
+                                    }
+                                    canceledMigrationReasons.value[index]?.let { throw MigrationException(it) }
+                                    initializeDependentModel(index)
+                                } catch (error: CancellationException) {
+                                    throw error
+                                } catch (error: Throwable) {
+                                    error.rethrowIfFatal()
+                                    val reason = "Migration dependency failed for ${dataModelsById.getValue(index).Meta.name}: ${error.message}"
+                                    pendingMigrationModelIds.update { it + index }
+                                    pendingMigrationReasons.update { it + (index to reason) }
+                                    failPendingMigration(index, reason)
+                                } finally {
+                                    dependencyWaitingMigrationModelIds.update { it - index }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
         if (keepUpdateHistoryIndex) {
             for ((index, _) in dataModelsById) {
-                if (index !in pendingMigrationModelIds.value) {
+                if (index !in pendingMigrationModelIds.value && index !in dependencyWaitingMigrationModelIds.value) {
                     ensureUpdateHistoryIndexReady(index, getTableDirs(index))
                     backfillReplicationTombstones(index, getTableDirs(index))
                 }
@@ -853,6 +906,7 @@ class FoundationDBDataStore private constructor(
         }
 
             scheduledVersionUpdateHandlers.forEach { it() }
+            storeInitializationReady.complete(Unit)
         } catch (failure: Throwable) {
             deferredMigrationReleaseCleanups.asReversed().forEach { releaseCleanup ->
                 try {
@@ -1089,7 +1143,7 @@ class FoundationDBDataStore private constructor(
             transaction.publishModelSchemaReady(tableDirectories.modelPrefix, fence)
             scratchPrefix?.let { transaction.clear(Range.startsWith(it)) }
         }
-        expectedSchemaEpochs.value += dataModelId to fence.epoch
+        expectedSchemaEpochs.update { it + (dataModelId to fence.epoch) }
     }
 
     internal fun canUseUpdateHistoryIndex(dbIndex: UInt) =
@@ -1109,7 +1163,7 @@ class FoundationDBDataStore private constructor(
             tr.get(markerKey).awaitResult()?.firstOrNull() == 1.toByte()
         }
         if (complete) {
-            updateHistoryReadyModelIds.value += dbIndex
+            updateHistoryReadyModelIds.update { it + dbIndex }
             return
         }
 
@@ -1118,7 +1172,7 @@ class FoundationDBDataStore private constructor(
             transactionGuard?.invoke(tr)
             tr.set(markerKey, byteArrayOf(1))
         }
-        updateHistoryReadyModelIds.value += dbIndex
+        updateHistoryReadyModelIds.update { it + dbIndex }
     }
 
     private fun backfillUpdateHistoryIndex(
@@ -1336,19 +1390,23 @@ class FoundationDBDataStore private constructor(
     }
 
     private fun initializeDurableClockWatermark() {
+        // These raw version reads do not interpret the model schema or indexes. They
+        // must also run while a persisted rebuild is waiting for startup recovery.
+        // Ordinary requests remain protected by their schema readiness guards.
         var storeWatermark = 0uL
-        for ((modelId, tableDirectories) in directoriesByDataModelIndex) {
-            val watermark = runTransaction(modelId) { transaction ->
+        for (tableDirectories in directoriesByDataModelIndex.values) {
+            val watermark = runTransaction { transaction ->
                 readMaximumStoredWatermark(transaction, tableDirectories)
-            }.takeIf { it > 0uL } ?: recoverMaximumStoredVersion(tableDirectories).also { recovered ->
+            }.takeIf { it > 0uL } ?: recoverMaximumStoredVersion(tableDirectories).let { recovered ->
                 if (recovered > 0uL) {
-                    runTransaction(modelId) { transaction ->
-                        transaction.set(
-                            packKey(tableDirectories.modelPrefix, modelHlcRecoveryWatermarkKey),
-                            HLC.toStorageBytes(HLC(recovered)),
-                        )
+                    runTransaction { transaction ->
+                        val recoveryKey = packKey(tableDirectories.modelPrefix, modelHlcRecoveryWatermarkKey)
+                        val previous = transaction.get(recoveryKey).awaitResult()?.readHLCTimestampIfExact() ?: 0uL
+                        val maximum = maxOf(previous, recovered)
+                        transaction.set(recoveryKey, HLC.toStorageBytes(HLC(maximum)))
+                        maximum
                     }
-                }
+                } else recovered
             }
             storeWatermark = maxOf(storeWatermark, watermark)
         }
@@ -1373,14 +1431,13 @@ class FoundationDBDataStore private constructor(
     }
 
     private fun recoverMaximumStoredVersion(tableDirectories: IsTableDirectories): ULong {
-        val keyByteSize = dataModelsById.getValue(tableDirectories.modelId).Meta.keyByteSize
         var maximum = 0uL
 
         fun recoverFrom(prefix: ByteArray) {
             var start = prefix
             val end = prefix.nextByteInSameLength()
             while (true) {
-                val next = runTransaction(tableDirectories.modelId) { transaction ->
+                val next = runTransaction { transaction ->
                     // Values under tablePrefix can contain full property payloads. Keep this
                     // well below FoundationDB's transaction result-size limit.
                     val iterator = transaction.getRange(Range(start, end), 64, false).iterator()
@@ -1388,10 +1445,10 @@ class FoundationDBDataStore private constructor(
                     while (iterator.hasNext()) {
                         val entry = iterator.nextBlocking()
                         lastKey = entry.key
-                        if (entry.key.size == prefix.size + keyByteSize) {
-                            entry.value.readHLCTimestampIfExact()?.let { version ->
-                                maximum = maxOf(maximum, version)
-                            }
+                        // Root versions and tombstones have exact eight-byte payloads.
+                        // Do not assume the target schema's key width during migration.
+                        entry.value.readHLCTimestampIfExact()?.let { version ->
+                            maximum = maxOf(maximum, version)
                         }
                     }
                     lastKey?.let { it + nextKeySuffix }
@@ -1932,6 +1989,12 @@ class FoundationDBDataStore private constructor(
             throw StorageException("DataStore is closed")
         }
         assertModelReadyForMigrations(dataModelId)
+    }
+
+    override suspend fun assertRequestModelReady(dataModelId: UInt) {
+        if (isClosing.value) throw StorageException("DataStore is closed")
+        if (currentCoroutineContext()[FoundationDBMigrationRequestContext]?.modelId == dataModelId) return
+        assertModelReady(dataModelId)
     }
 
     override suspend fun requestExecutionContext(): Any? =

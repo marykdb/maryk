@@ -125,6 +125,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                         fromVersion = version,
                         objectChange = objectChange,
                         toVersion = version,
+                        maxVersions = 1u,
                     )
                 } else {
                     objectChange

@@ -134,3 +134,7 @@ Notes:
   `maryk.datastore.shared.encryption.SensitiveIndexTokenProvider`.
 - Sensitive+indexed is not supported.
 - Pass `fieldEncryptionProvider = encryptionProvider` to `RocksDBDataStore.open(...)`.
+
+### Hard deletion and history
+
+A hard delete permanently removes a record's current and historic values, including when `keepAllVersions` is enabled. An earlier `toVersion` query cannot recover erased values. Use soft deletion when historical recovery is required.

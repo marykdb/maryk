@@ -71,6 +71,8 @@ Use:
 Behavior:
 - Startup can hand migration over to background.
 - Pending models remain request-blocked until completion.
+- Dependents waiting on a background migration remain blocked too; they do not delay opening the store or access to unrelated models.
+- Startup clock recovery reads raw version metadata before resuming an unfinished schema rebuild. Request-level schema fencing remains active.
 
 ## Operator APIs
 

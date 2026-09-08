@@ -24,7 +24,7 @@ class DataStoreSoftDeleteTimeTravelTest(
 
     override val allTests = mapOf(
         "softDeleteRespectsToVersion" to ::softDeleteRespectsToVersion,
-        "hardDeleteRespectsToVersion" to ::hardDeleteRespectsToVersion,
+        "hardDeleteRemovesAtDeletionVersion" to ::hardDeleteRemovesAtDeletionVersion,
     )
 
     override suspend fun resetData() {
@@ -116,7 +116,7 @@ class DataStoreSoftDeleteTimeTravelTest(
         assertTrue(scanAtDeleteAll.values.first().isDeleted)
     }
 
-    private suspend fun hardDeleteRespectsToVersion() {
+    private suspend fun hardDeleteRemovesAtDeletionVersion() {
         if (!dataStore.keepAllVersions) return
 
         val marker = "haha-hard-delete-time-travel"
@@ -125,10 +125,6 @@ class DataStoreSoftDeleteTimeTravelTest(
         val addVersion = assertIs<AddSuccess<*>>(
             dataStore.execute(SimpleMarykModel.add(key to values)).statuses.single()
         ).version
-        val deleteVersion = assertIs<DeleteSuccess<*>>(
-            dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true)).statuses.single()
-        ).version
-
         val beforeDeletion = dataStore.execute(
             SimpleMarykModel.scan(
                 toVersion = addVersion,
@@ -137,6 +133,12 @@ class DataStoreSoftDeleteTimeTravelTest(
             )
         )
         assertEquals(listOf(key), beforeDeletion.values.map { it.key })
+
+        // Persistent stores permanently erase historic rows on hard delete. Check the
+        // earlier snapshot before erasure; retention after erasure is not a shared contract.
+        val deleteVersion = assertIs<DeleteSuccess<*>>(
+            dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true)).statuses.single()
+        ).version
 
         val atDeletion = dataStore.execute(
             SimpleMarykModel.scan(

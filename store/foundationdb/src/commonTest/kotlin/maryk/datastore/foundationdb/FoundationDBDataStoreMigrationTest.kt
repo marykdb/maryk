@@ -82,6 +82,49 @@ class FoundationDBDataStoreMigrationTest {
     class CustomException : Error()
 
     @Test
+    fun migrationAuditReporterAndMetricsDoNotRequirePersistence() = runTest(timeout = 3.minutes) {
+        for (persistAudit in listOf(false, true)) {
+            val directory = listOf("maryk", "test", "migration-audit-reporting", Uuid.random().toString())
+            FoundationDBDataStore.open(
+                directoryPath = directory,
+                dataModelsById = mapOf(1u to ModelV1_1),
+            ).close()
+            val reported = mutableListOf<MigrationAuditEvent>()
+            var attempts = 0
+            val store = FoundationDBDataStore.open(
+                directoryPath = directory,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    persistMigrationAuditEvents = persistAudit,
+                    migrationAuditEventReporter = reported::add,
+                    migrationHandler = {
+                        when (++attempts) {
+                            1 -> MigrationOutcome.Partial()
+                            2 -> MigrationOutcome.Retry()
+                            else -> MigrationOutcome.Success
+                        }
+                    },
+                ),
+            )
+            try {
+                val types = reported.map { it.type }
+                assertEquals(1, types.count { it == MigrationAuditEventType.LeaseAcquired })
+                assertEquals(1, types.count { it == MigrationAuditEventType.Completed })
+                assertEquals(1, types.count { it == MigrationAuditEventType.Partial })
+                assertEquals(1, types.count { it == MigrationAuditEventType.RetryScheduled })
+                assertEquals(4, types.count { it == MigrationAuditEventType.PhaseCompleted })
+                assertEquals(1u, store.migrationMetrics(1u).partials)
+                assertEquals(1u, store.migrationMetrics(1u).retries)
+                assertEquals(1u, store.migrationMetrics(1u).completed)
+                val persisted = store.migrationAuditEvents(1u)
+                assertEquals(if (persistAudit) reported else emptyList(), persisted)
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
     fun migrationStateAndAuditEventCommitTogether() = runTest(timeout = 3.minutes) {
         val store = FoundationDBDataStore.open(
             fdbClusterFilePath = "fdb.cluster",
@@ -1285,6 +1328,46 @@ class FoundationDBDataStoreMigrationTest {
     }
 
     @Test
+    fun selfReferencingModelDoesNotWaitForItsOwnMigration() = runTest(timeout = 3.minutes) {
+        val model = dataModelsForTests.getValue(1u)
+        val store = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "self-referencing-startup", Uuid.random().toString()),
+            dataModelsById = mapOf(1u to model),
+        )
+        try {
+            assertTrue(store.pendingMigrations().isEmpty())
+            assertTrue(store.dependencyWaitingMigrationModelIds.value.isEmpty())
+            store.execute(model.scan(allowTableScan = true))
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
+    fun ordinaryOpenFinalizesAllDependenciesBeforeReturning() = runTest(timeout = 3.minutes) {
+        for (allowBackground in listOf(false, true)) {
+            val finalized = mutableSetOf<String>()
+            val store = FoundationDBDataStore.open(
+                directoryPath = listOf("maryk", "test", "synchronous-dependent-startup", Uuid.random().toString()),
+                dataModelsById = dataModelsForTests,
+                keepUpdateHistoryIndex = true,
+                migrationConfiguration = MigrationConfiguration(continueMigrationsInBackground = allowBackground),
+                versionUpdateHandler = { _, _, model -> finalized += model.Meta.name },
+            )
+            try {
+                assertEquals(dataModelsForTests.values.map { it.Meta.name }.toSet(), finalized)
+                assertTrue(store.pendingMigrations().isEmpty())
+                assertTrue(store.dependencyWaitingMigrationModelIds.value.isEmpty())
+                for (model in dataModelsForTests.values) {
+                    store.execute(model.scan(allowTableScan = true))
+                }
+            } finally {
+                store.close()
+            }
+        }
+    }
+
+    @Test
     fun dependentMigrationWaitsForBackgroundDependencyFinalization() = runTest(timeout = 3.minutes) {
         val dirPath = listOf("maryk", "test", "fdb-migration-dependency-completion", Uuid.random().toString())
         FoundationDBDataStore.open(
@@ -1329,18 +1412,73 @@ class FoundationDBDataStoreMigrationTest {
             delay(250.milliseconds)
         }
         assertTrue(!dependentStarted.isCompleted, "dependent migration started before its dependency finalized")
-        releaseBase.complete(Unit)
-
         val store = withContext(Dispatchers.Default.limitedParallelism(1)) {
             withTimeout(5_000.milliseconds) { opening.await() }
         }
         try {
+            assertTrue(store.pendingMigrations().containsKey(1u))
+            assertFailsWith<RequestException> {
+                store.execute(Phase6OrderDependentV2.scan(allowTableScan = true))
+            }
+            releaseBase.complete(Unit)
             withContext(Dispatchers.Default.limitedParallelism(1)) {
                 withTimeout(5_000.milliseconds) { store.awaitMigration(2u) }
                 withTimeout(5_000.milliseconds) { store.awaitMigration(1u) }
             }
             assertTrue(dependentStarted.isCompleted)
         } finally {
+            releaseBase.complete(Unit)
+            store.close()
+        }
+    }
+
+    @Test
+    fun dependentNewModelStaysBlockedUntilItsVersionHookFinishes() = runTest(timeout = 3.minutes) {
+        val directory = listOf("maryk", "test", "dependent-new-model-readiness", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            directoryPath = directory,
+            dataModelsById = mapOf(2u to Phase6OrderBaseV1, 3u to SimpleMarykModel),
+        ).close()
+        val releaseBase = CompletableDeferred<Unit>()
+        val hookStarted = CompletableDeferred<Unit>()
+        val releaseHook = CompletableDeferred<Unit>()
+        val store = FoundationDBDataStore.open(
+            directoryPath = directory,
+            dataModelsById = mapOf(2u to Phase6OrderBaseV2, 1u to Phase6OrderDependentV2, 3u to SimpleMarykModel),
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                migrationHandler = {
+                    releaseBase.await()
+                    MigrationOutcome.Success
+                },
+            ),
+            versionUpdateHandler = { currentStore, _, model ->
+                if (model.Meta.name == Phase6OrderDependentV2.Meta.name) {
+                    // The hook can use its own model; other callers must still be fenced.
+                    currentStore.execute(Phase6OrderDependentV2.scan(allowTableScan = true))
+                    hookStarted.complete(Unit)
+                    releaseHook.await()
+                }
+            },
+        )
+        try {
+            store.execute(SimpleMarykModel.scan(allowTableScan = true))
+            releaseBase.complete(Unit)
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { hookStarted.await() }
+            }
+            assertFailsWith<RequestException> {
+                store.execute(Phase6OrderDependentV2.scan(allowTableScan = true))
+            }
+            releaseHook.complete(Unit)
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { store.awaitMigration(1u) }
+            }
+            store.execute(Phase6OrderDependentV2.scan(allowTableScan = true))
+        } finally {
+            releaseBase.complete(Unit)
+            releaseHook.complete(Unit)
             store.close()
         }
     }

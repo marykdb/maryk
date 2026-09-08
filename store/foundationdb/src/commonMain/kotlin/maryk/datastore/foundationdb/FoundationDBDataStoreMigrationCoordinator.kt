@@ -37,7 +37,8 @@ import maryk.foundationdb.Transaction
 import kotlin.time.Duration.Companion.milliseconds
 
 internal class FoundationDBMigrationRequestContext(
-    val transactionGuard: (Transaction) -> Unit,
+    val transactionGuard: ((Transaction) -> Unit)? = null,
+    val modelId: UInt? = null,
 ) : AbstractCoroutineContextElement(FoundationDBMigrationRequestContext) {
     companion object : CoroutineContext.Key<FoundationDBMigrationRequestContext>
 }
@@ -103,6 +104,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                     foundationDBMigrationLease?.requireOwnership(transaction, index, migrationId)
                 }
             }
+            runCatchingNonFatal { migrationConfiguration.migrationAuditEventReporter(event) }
             incrementMigrationMetricInternal(index, type)
         }
     }
@@ -166,10 +168,12 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         val auditStore = migrationAuditLogStore as? FoundationDBMigrationAuditLogStore
         if (event != null && auditStore != null) {
             migrationStateStore.writeWithAudit(index, state, auditStore, event, guard)
-            runCatchingNonFatal { migrationConfiguration.migrationAuditEventReporter(event) }
-            incrementMigrationMetricInternal(index, event.type)
         } else {
             migrationStateStore.write(index, state, guard)
+        }
+        if (event != null) {
+            runCatchingNonFatal { migrationConfiguration.migrationAuditEventReporter(event) }
+            incrementMigrationMetricInternal(index, event.type)
         }
         updateMigrationRuntimeDetails(index, state)
     }
@@ -230,7 +234,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         } else {
             migrationTransactionGuards.update { it + (index to transactionGuard) }
             try {
-                withContext(FoundationDBMigrationRequestContext(transactionGuard)) {
+                withContext(FoundationDBMigrationRequestContext(transactionGuard, index)) {
                     when (phase) {
                         MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
                         MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success

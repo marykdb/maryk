@@ -47,7 +47,7 @@ internal fun FoundationDBDataStore.migrationStatusesInternal(): Map<UInt, Migrat
     }
 
 internal fun FoundationDBDataStore.pauseMigrationInternal(modelId: UInt): Boolean {
-    if (!pendingMigrationModelIds.value.contains(modelId)) return false
+    if (modelId !in pendingMigrationModelIds.value && modelId !in dependencyWaitingMigrationModelIds.value) return false
     pausedMigrationModelIds.update { it + modelId }
     pendingMigrationReasons.update { it + (modelId to "Migration paused by operator") }
     migrationRuntimeDetailsByModelId.value[modelId]?.let { details ->
@@ -69,7 +69,7 @@ internal fun FoundationDBDataStore.resumeMigrationInternal(modelId: UInt): Boole
     val wasPaused = pausedMigrationModelIds.value.contains(modelId)
     if (!wasPaused) return false
     pausedMigrationModelIds.update { it - modelId }
-    if (pendingMigrationModelIds.value.contains(modelId)) {
+    if (modelId in pendingMigrationModelIds.value || modelId in dependencyWaitingMigrationModelIds.value) {
         pendingMigrationReasons.update { it + (modelId to "Migration resumed") }
     }
     migrationRuntimeDetailsByModelId.value[modelId]?.let { details ->
@@ -88,7 +88,7 @@ internal fun FoundationDBDataStore.resumeMigrationInternal(modelId: UInt): Boole
 }
 
 internal fun FoundationDBDataStore.cancelMigrationInternal(modelId: UInt, reason: String): Boolean {
-    if (!pendingMigrationModelIds.value.contains(modelId)) return false
+    if (modelId !in pendingMigrationModelIds.value && modelId !in dependencyWaitingMigrationModelIds.value) return false
     val cancellationReason = "$reason. Reopen store to resume migration."
     canceledMigrationReasons.update { it + (modelId to cancellationReason) }
     pausedMigrationModelIds.update { it - modelId }
@@ -213,7 +213,7 @@ internal fun FoundationDBDataStore.incrementMigrationMetricInternal(modelId: UIn
 }
 
 internal fun FoundationDBDataStore.assertModelReadyForMigrations(dataModelId: UInt) {
-    if (pendingMigrationModelIds.value.contains(dataModelId)) {
+    if (dataModelId in pendingMigrationModelIds.value || dataModelId in dependencyWaitingMigrationModelIds.value) {
         val modelName = dataModelsById[dataModelId]?.Meta?.name ?: dataModelId.toString()
         val reason = pendingMigrationReasons.value[dataModelId] ?: "Migration in progress"
         throw RequestException("Model $modelName is unavailable while migration is running: $reason")

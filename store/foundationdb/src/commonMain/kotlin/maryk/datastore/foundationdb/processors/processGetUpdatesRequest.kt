@@ -119,6 +119,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                                 fromVersion = getRequest.fromVersion,
                                 objectChange = objChanges,
                                 toVersion = getRequest.toVersion,
+                                maxVersions = getRequest.maxVersions,
                             )
                         } else {
                             objChanges

@@ -330,7 +330,7 @@ class DataStoreScanUpdatesAndFlowTest(
     }
 
     private suspend fun executeHistoryStyleScanUpdatesRequestFallsBackWithoutUpdateHistoryIndex() {
-        if (!dataStore.keepUpdateHistoryIndex) return
+        if (dataStore.keepUpdateHistoryIndex) return
 
         val change = Change(TestMarykModel { string::ref } with "ha history change update")
         assertStatusIs<ChangeSuccess<*>>(

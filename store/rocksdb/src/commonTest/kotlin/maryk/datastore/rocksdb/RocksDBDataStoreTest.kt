@@ -1,11 +1,18 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.invert
+import maryk.core.models.migration.MigrationAuditEventType
+import maryk.core.models.migration.MigrationConfiguration
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ListChange
 import maryk.core.query.changes.MultiTypeChange
 import maryk.core.query.changes.change
 import maryk.core.query.pairs.with
@@ -50,6 +57,39 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class RocksDBDataStoreTest {
+    @Test
+    fun concurrentMigrationAuditAppendsKeepEveryEvent() = runTest {
+        val folder = createTestDBFolder("concurrent-migration-audit")
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = mapOf(1u to TestMarykModel),
+            migrationConfiguration = MigrationConfiguration(persistMigrationAuditEvents = true),
+        )
+
+        try {
+            coroutineScope {
+                (0 until 100).map { eventNumber ->
+                    async(Dispatchers.Default) {
+                        dataStore.appendMigrationAuditEvent(
+                            modelId = 1u,
+                            migrationId = "concurrent-audit",
+                            type = MigrationAuditEventType.Partial,
+                            message = eventNumber.toString(),
+                        )
+                    }
+                }.awaitAll()
+            }
+
+            assertEquals(
+                (0 until 100).map(Int::toString).toSet(),
+                dataStore.migrationAuditEvents(1u, limit = 100).mapNotNull { it.message }.toSet(),
+            )
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
     @Test
     fun replicationTombstoneSurvivesReopen() = runTest {
         val folder = createTestDBFolder("durable-replication-tombstones")
@@ -243,6 +283,47 @@ class RocksDBDataStoreTest {
                     TestMarykModel.get(addStatus.key, toVersion = shiftStatus.version)
                 ).values.single().values { listOfString },
             )
+        } finally {
+            dataStore.close()
+            deleteFolder(folder)
+        }
+    }
+
+    @Test
+    fun addingToAnAbsentListCreatesTheList() = runTest {
+        val folder = createTestDBFolder("absent-list")
+        val dataStore = RocksDBDataStore.open(
+            relativePath = folder,
+            dataModelsById = mapOf(1u to TestMarykModel),
+        )
+
+        try {
+            val added = assertStatusIs<AddSuccess<TestMarykModel>>(
+                dataStore.execute(
+                    TestMarykModel.add(
+                        TestMarykModel.create {
+                            int with 1
+                            uint with 1u
+                            double with 1.0
+                            dateTime with LocalDateTime(2026, 1, 1, 0, 0)
+                            bool with false
+                        }
+                    )
+                ).statuses.single()
+            )
+
+            val result = dataStore.execute(
+                    TestMarykModel.change(
+                        added.key.change(
+                            ListChange(
+                                TestMarykModel { listOfString::ref }.change(
+                                    addValuesAtIndex = mapOf(0u to "first"),
+                                )
+                            )
+                        )
+                    )
+                ).statuses.single()
+            assertStatusIs<ChangeSuccess<TestMarykModel>>(result)
         } finally {
             dataStore.close()
             deleteFolder(folder)

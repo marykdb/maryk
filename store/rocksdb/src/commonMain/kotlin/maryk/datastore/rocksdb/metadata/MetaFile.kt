@@ -94,6 +94,7 @@ fun readModelKeySizes(storePath: String): Map<UInt, Int> =
 private fun parseMeta(text: String): StoreMeta {
     val models = mutableMapOf<UInt, ModelMeta>()
     var indexKeyFormatVersion = LEGACY_INDEX_KEY_FORMAT_VERSION
+    var metaFileVersion: Int? = null
 
     val reader = YamlReader(text)
 
@@ -111,7 +112,9 @@ private fun parseMeta(text: String): StoreMeta {
         if (token is JsonToken.FieldName) {
             when (token.value) {
                 "version" -> {
-                    reader.nextToken() // consume version value
+                    val valueToken = reader.nextToken() as? JsonToken.Value<*>
+                    metaFileVersion = (valueToken?.value as? Number)?.toIntExact()
+                        ?: throw IllegalArgumentException("Store metadata version should be an integer")
                 }
                 "indexKeyFormatVersion" -> {
                     val valueToken = reader.nextToken() as? JsonToken.Value<*>
@@ -165,6 +168,10 @@ private fun parseMeta(text: String): StoreMeta {
             }
         }
         token = reader.nextToken()
+    }
+
+    require(metaFileVersion == null || metaFileVersion <= CURRENT_VERSION) {
+        "Unsupported RocksDB metadata version $metaFileVersion; this Maryk version supports up to $CURRENT_VERSION"
     }
 
     return StoreMeta(models, indexKeyFormatVersion)

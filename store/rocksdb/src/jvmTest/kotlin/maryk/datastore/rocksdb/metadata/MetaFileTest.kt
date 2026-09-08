@@ -171,4 +171,21 @@ class MetaFileTest {
         assertEquals(LEGACY_INDEX_KEY_FORMAT_VERSION, storeMeta.indexKeyFormatVersion)
         assertEquals(mapOf(1u to ModelMeta("Legacy", 8)), storeMeta.models)
     }
+
+    @Test
+    fun rejectsUnsupportedFutureMetaFileVersion() {
+        File.writeText(
+            "$path/MARYK_META.yml",
+            """
+                |version: 2
+                |indexKeyFormatVersion: 2
+                |models: {}
+                |
+            """.trimMargin()
+        )
+
+        assertFailsWith<IllegalArgumentException> {
+            readStoreMetaFile(path)
+        }
+    }
 }

@@ -27,12 +27,11 @@ internal fun <T : Any> getList(
         iterator.seek(keyAndReference)
 
         // First handle the count
-        var ref = iterator.key()
-        val count = if (!iterator.isValid() || !ref.matchesRangePart(0, keyAndReference)) {
+        if (!iterator.isValid()) {
             return mutableListOf()
-        } else {
-            readStoredListCount(iterator.value())
         }
+        var ref = iterator.key()
+        val count = if (!ref.matchesRangePart(0, keyAndReference)) return mutableListOf() else readStoredListCount(iterator.value())
 
         val list = ArrayList<T>(count)
 

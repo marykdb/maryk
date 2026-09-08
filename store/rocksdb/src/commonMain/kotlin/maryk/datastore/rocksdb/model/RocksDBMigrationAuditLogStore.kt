@@ -1,5 +1,7 @@
 package maryk.datastore.rocksdb.model
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.models.migration.MigrationAuditLogStore
 import maryk.rocksdb.ColumnFamilyHandle
@@ -10,12 +12,14 @@ internal class RocksDBMigrationAuditLogStore(
     private val modelColumnFamiliesById: Map<UInt, ColumnFamilyHandle>,
     private val maxEntries: Int = 1000,
 ) : MigrationAuditLogStore {
+    private val appendMutex = Mutex()
+
     init {
         require(maxEntries > 0) { "maxEntries should be positive but was $maxEntries" }
     }
 
-    override suspend fun append(modelId: UInt, event: MigrationAuditEvent) {
-        val handle = modelColumnFamiliesById[modelId] ?: return
+    override suspend fun append(modelId: UInt, event: MigrationAuditEvent) = appendMutex.withLock {
+        val handle = modelColumnFamiliesById[modelId] ?: return@withLock
         val current = rocksDB.get(handle, modelMigrationAuditLogKey)
             ?.decodeToString()
             ?.lineSequence()

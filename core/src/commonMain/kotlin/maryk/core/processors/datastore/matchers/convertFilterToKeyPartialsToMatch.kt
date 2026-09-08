@@ -56,7 +56,7 @@ fun convertFilterToIndexPartsToMatch(
     when (filter) {
         null -> return
         is Equals -> handleEquals(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, listOfEqualPairs, listOfUniqueFilters)
-        is Prefix -> handlePrefix(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts, listOfUniqueFilters)
+        is Prefix -> handlePrefix(filter, indexable, convertIndex, keySize, totalIndexPartCount, listOfIndexParts)
         is Matches -> handleMatches(filter, indexable, keySize, totalIndexPartCount, listOfIndexParts)
         is MatchesPrefix -> handleMatchesPrefix(filter, indexable, keySize, totalIndexPartCount, listOfIndexParts)
         is MatchesRegEx -> handleMatchesRegEx(filter, indexable, keySize, totalIndexPartCount, listOfIndexParts)
@@ -212,10 +212,10 @@ private fun handlePrefix(
     convertIndex: ((Int) -> Int)?,
     keySize: Int,
     indexPartCount: Int,
-    listOfIndexParts: MutableList<IsIndexPartialToMatch>,
-    listOfUniqueFilters: MutableList<UniqueToMatch>?
+    listOfIndexParts: MutableList<IsIndexPartialToMatch>
 ) {
-    walkFilterReferencesAndValues(filter, indexable, listOfUniqueFilters) { index, _, byteArray ->
+    // A prefix may identify several unique values, so it cannot use an exact lookup.
+    walkFilterReferencesAndValues(filter, indexable) { index, _, byteArray ->
         val keyIndex = convertIndex?.invoke(index)
         listOfIndexParts.add(IndexPartialToMatch(index, keyIndex, keySize, indexPartCount, byteArray, partialMatch = true))
     }
@@ -306,10 +306,9 @@ private fun handleValueIn(
 
         listOfUniqueFilters?.let {
             reference.comparablePropertyDefinition.let {
-                if (it is IsComparableDefinition<*, *> && it.unique) {
-                    value.forEach { uniqueToMatch ->
-                        listOfUniqueFilters.add(createUniqueToMatch(reference, it, uniqueToMatch))
-                    }
+                // Unique matchers are conjunctive single-record lookups, not alternatives.
+                if (it is IsComparableDefinition<*, *> && it.unique && value.size == 1) {
+                    listOfUniqueFilters.add(createUniqueToMatch(reference, it, value.single()))
                 }
             }
         }

@@ -7,6 +7,8 @@ import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
+import maryk.core.query.filters.Prefix
+import maryk.core.query.filters.ValueIn
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
@@ -34,6 +36,9 @@ class DataStoreScanUniqueTest(
 
     override val allTests = mapOf(
         "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
+        "executeUniquePrefixReturnsAllMatches" to ::executeUniquePrefixReturnsAllMatches,
+        "executeUniqueValueInReturnsAllMatches" to ::executeUniqueValueInReturnsAllMatches,
+        "executeUniqueValueInWithAbsentFirstValue" to ::executeUniqueValueInWithAbsentFirstValue,
         "executeSimpleScanFilterWithToVersionRequest" to ::executeSimpleScanFilterWithToVersionRequest,
         "executeHistoricalUniqueDoesNotMatchPrefixCollision" to ::executeHistoricalUniqueDoesNotMatchPrefixCollision,
         "executeHistoricalUniqueCanIncludeSoftDeletedObject" to ::executeHistoricalUniqueCanIncludeSoftDeletedObject,
@@ -142,6 +147,51 @@ class DataStoreScanUniqueTest(
                 expect(keys[0]) { it.key }
             }
         }
+    }
+
+    private suspend fun addSecondPrefixMatch() {
+        val secondObject = objects[0].change(listOf(Change(
+            CompleteMarykModel.string.ref() with "haas2",
+            CompleteMarykModel.number.ref() with 25u,
+            CompleteMarykModel.enum.ref() with null,
+            CompleteMarykModel.date.ref() with null,
+            CompleteMarykModel.dateTime.ref() with null,
+            CompleteMarykModel.time.ref() with null,
+            CompleteMarykModel.fixedBytes.ref() with null,
+            CompleteMarykModel.flexBytes.ref() with null,
+            CompleteMarykModel.reference.ref() with null,
+            CompleteMarykModel.dateForKey.ref() with LocalDate(2018, 3, 30)
+        )))
+        val status = assertStatusIs<AddSuccess<CompleteMarykModel>>(
+            dataStore.execute(CompleteMarykModel.add(secondObject)).statuses.single()
+        )
+        keys.add(status.key)
+    }
+
+    private suspend fun executeUniquePrefixReturnsAllMatches() {
+        addSecondPrefixMatch()
+        val response = dataStore.execute(CompleteMarykModel.scan(
+            where = Prefix(CompleteMarykModel.string.ref() with "haa"),
+            allowTableScan = true
+        ))
+        expect(keys.toSet()) { response.values.map { it.key }.toSet() }
+    }
+
+    private suspend fun executeUniqueValueInReturnsAllMatches() {
+        addSecondPrefixMatch()
+        val response = dataStore.execute(CompleteMarykModel.scan(
+            where = ValueIn(CompleteMarykModel.string.ref() with linkedSetOf("haas", "haas2")),
+            allowTableScan = true
+        ))
+        expect(keys.toSet()) { response.values.map { it.key }.toSet() }
+    }
+
+    private suspend fun executeUniqueValueInWithAbsentFirstValue() {
+        val response = dataStore.execute(CompleteMarykModel.scan(
+            where = ValueIn(CompleteMarykModel.string.ref() with linkedSetOf("absent", "haas")),
+            allowTableScan = true
+        ))
+        expect(keys.toSet()) { response.values.map { it.key }.toSet() }
     }
 
     private suspend fun executeHistoricalUniqueDoesNotMatchPrefixCollision() {

@@ -8,6 +8,7 @@ import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.IsDeleteResponseStatus
 import maryk.core.query.responses.statuses.ServerFail
+import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.RocksDBDataStore
 import maryk.datastore.rocksdb.TableColumnFamilies
@@ -16,6 +17,7 @@ import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.deleteCurrentUniqueIndexEntryForKeyByScan
 import maryk.datastore.rocksdb.processors.helpers.deleteIndexValue
 import maryk.datastore.rocksdb.processors.helpers.deleteUniqueIndexValue
+import maryk.datastore.rocksdb.processors.helpers.getLastVersion
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
 import maryk.datastore.rocksdb.processors.helpers.requireVersionedValueSize
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
@@ -26,7 +28,6 @@ import maryk.datastore.shared.rethrowIfFatal
 import maryk.datastore.shared.updates.Update.Deletion
 import maryk.lib.bytes.combineToByteArray
 import maryk.lib.extensions.compare.matchesRangePart
-import maryk.lib.extensions.compare.nextByteInSameLength
 import maryk.lib.recyclableByteArray
 import maryk.rocksdb.ReadOptions
 import maryk.rocksdb.rocksDBNotFound
@@ -51,7 +52,9 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
 
     if (ignoreIfVersionNotNewer) {
         val currentVersion = if (exists) {
-            db.get(columnFamilies.table, defaultReadOptions, key.bytes)?.readVersionBytesIfExact()
+            DBAccessor(this).use {
+                getLastVersion(it, columnFamilies, defaultReadOptions, key)
+            }
         } else null
         val tombstoneVersion = db.get(
             columnFamilies.replicationTombstones,
@@ -206,17 +209,9 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processDelete(
                 if (hardDelete) {
                     transaction.put(columnFamilies.replicationTombstones, key.bytes, versionBytes)
                     transaction.delete(columnFamilies.keys, key.bytes)
-                    transaction.deleteRange(
-                        columnFamilies.table,
-                        key.bytes,
-                        key.bytes.nextByteInSameLength()
-                    )
+                    transaction.deletePrefix(columnFamilies.table, key.bytes)
                     if (columnFamilies is HistoricTableColumnFamilies) {
-                        transaction.deleteRange(
-                            columnFamilies.historic.table,
-                            key.bytes,
-                            key.bytes.nextByteInSameLength()
-                        )
+                        transaction.deletePrefix(columnFamilies.historic.table, key.bytes)
                     }
                 } else {
                     setLatestVersion(transaction, columnFamilies, key, versionBytes)

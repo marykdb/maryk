@@ -204,7 +204,10 @@ internal fun RocksDBDataStore.incrementMigrationMetricInternal(modelId: UInt, ty
 }
 
 internal fun RocksDBDataStore.assertModelReadyForMigrations(dataModelId: UInt) {
-    if (pendingMigrationModelIds.value.contains(dataModelId)) {
+    if (
+        pendingMigrationModelIds.value.contains(dataModelId) ||
+        dependencyWaitingMigrationModelIds.value.contains(dataModelId)
+    ) {
         val modelName = dataModelsById[dataModelId]?.Meta?.name ?: dataModelId.toString()
         val reason = pendingMigrationReasons.value[dataModelId] ?: "Migration in progress"
         throw RequestException("Model $modelName is unavailable while migration is running: $reason")

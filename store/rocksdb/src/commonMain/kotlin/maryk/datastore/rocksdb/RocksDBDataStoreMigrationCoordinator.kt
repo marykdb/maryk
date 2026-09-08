@@ -1,10 +1,13 @@
 package maryk.datastore.rocksdb
 
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 import kotlin.time.TimeMark
 import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationContext
 import maryk.core.models.migration.MigrationAuditEventType
@@ -24,6 +27,12 @@ import maryk.datastore.shared.migration.nextMigrationAttemptOrNull
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import kotlin.time.Duration.Companion.milliseconds
 
+internal class RocksDBMigrationRequestContext(
+    val modelId: UInt,
+) : AbstractCoroutineContextElement(RocksDBMigrationRequestContext) {
+    companion object : CoroutineContext.Key<RocksDBMigrationRequestContext>
+}
+
 internal suspend fun RocksDBDataStore.handleRequiredMigration(
     index: UInt,
     dataModel: IsRootDataModel,
@@ -33,7 +42,7 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
     migrationStateStore: RocksDBMigrationStateStore,
     recheckMigrationStatus: suspend () -> MigrationStatus,
     finalizeMigration: suspend (StoredRootDataModelDefinition) -> Unit,
-    deferStartupFinalization: (suspend () -> Unit) -> Unit,
+    deferStartupFinalization: suspend (suspend () -> Unit) -> Unit,
 ) {
     if (
         migrationConfiguration.migrationExpandHandler == null &&
@@ -145,11 +154,13 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
             previousState = previousState,
             attempt = attempt,
         )
-        val outcome = when (phase) {
-            MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
-            MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
-            MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
-            MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
+        val outcome = withContext(RocksDBMigrationRequestContext(index)) {
+            when (phase) {
+                MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
+                MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
+                MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
+                MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
+            }
         }
         return phase to outcome
     }

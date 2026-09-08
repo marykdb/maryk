@@ -111,8 +111,10 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processGetChangesRequest(
                             } else {
                                 objectChange
                             }
-                            updatedObjectChange?.also {
-                                objectChanges.add(it)
+                            if (updatedObjectChange != null) {
+                                objectChanges.add(updatedObjectChange)
+                            } else if (storeAction.isFlowSnapshotRead) {
+                                objectChanges.add(DataObjectVersionedChange(key, changes = emptyList()))
                             }
                     }
                 }

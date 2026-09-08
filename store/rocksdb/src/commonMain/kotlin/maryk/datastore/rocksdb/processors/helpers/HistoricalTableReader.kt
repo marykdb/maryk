@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.datastore.rocksdb.DBAccessor
 import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
-import maryk.datastore.shared.TypeIndicator
 import maryk.lib.extensions.compare.compareToRange
 import maryk.lib.extensions.compare.matchesRange
 import maryk.lib.extensions.compare.matchesRangePart
@@ -99,6 +98,3 @@ internal class HistoricalTableReader(
         iterator.seek(target)
     }
 }
-
-private fun ByteArray.isHistoricDeleteMarker() =
-    this.size == 1 && this[0] == TypeIndicator.DeletedIndicator.byte

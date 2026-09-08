@@ -7,13 +7,16 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import maryk.core.clock.HLC
+import maryk.core.definitions.MarykPrimitive
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
@@ -92,6 +95,7 @@ import maryk.datastore.rocksdb.processors.LAST_VERSION_INDICATOR
 import maryk.datastore.rocksdb.model.RocksDBMigrationAuditLogStore
 import maryk.datastore.rocksdb.model.RocksDBMigrationStateStore
 import maryk.datastore.rocksdb.model.checkModelIfMigrationIsNeeded
+import maryk.datastore.rocksdb.model.modelHlcWatermarkKey
 import maryk.datastore.rocksdb.model.modelUpdateHistoryBackfillCompleteKey
 import maryk.datastore.rocksdb.model.modelReplicationTombstoneBackfillCompleteKey
 import maryk.datastore.rocksdb.model.storeModelDefinition
@@ -127,6 +131,7 @@ import maryk.datastore.rocksdb.processors.processScanUpdateHistoryRequest
 import maryk.datastore.rocksdb.processors.processScanUpdatesRequest
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfExact
+import maryk.datastore.rocksdb.processors.helpers.readVersionBytesIfPresent
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
@@ -237,6 +242,7 @@ class RocksDBDataStore private constructor(
     private val scheduledVersionUpdateHandlers = mutableListOf<suspend () -> Unit>()
     private val updateHistoryReadyModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationModelIds = atomic(setOf<UInt>())
+    internal val dependencyWaitingMigrationModelIds = atomic(setOf<UInt>())
     internal val pendingMigrationReasons = atomic(mapOf<UInt, String>())
     internal val pausedMigrationModelIds = atomic(setOf<UInt>())
     internal val canceledMigrationReasons = atomic(mapOf<UInt, String>())
@@ -244,6 +250,7 @@ class RocksDBDataStore private constructor(
     internal val migrationRuntimeDetailsByModelId = atomic(mapOf<UInt, MigrationRuntimeDetails>())
     internal val migrationMetricsByModelId = atomic(mapOf<UInt, MigrationMetrics>())
     internal var migrationAuditLogStore: MigrationAuditLogStore? = null
+    private val storeInitializationReady = CompletableDeferred<Unit>()
 
     init {
         val descriptors: MutableList<ColumnFamilyDescriptor> = mutableListOf()
@@ -323,9 +330,6 @@ class RocksDBDataStore private constructor(
             )
         }
 
-        val conversionContext = DefinitionsConversionContext().apply {
-            addDataModelReferences(dataModelsById.values)
-        }
         val startupStarted = TimeSource.Monotonic.markNow()
         val effectiveMigrationLease = migrationConfiguration.migrationLease ?: RocksDBLocalMigrationLease(storePath)
         val migrationStateStore = RocksDBMigrationStateStore(
@@ -340,7 +344,13 @@ class RocksDBDataStore private constructor(
             )
         }
 
-        for (index in orderMigrationModelIds(dataModelsById)) {
+        initializeDurableClockWatermark()
+        startFlows()
+
+        suspend fun processModelMigration(
+            index: UInt,
+            deferFinalization: suspend (suspend () -> Unit) -> Unit,
+        ) {
             val dataModel = dataModelsById.getValue(index)
             columnFamilyHandlesByDataModelIndex[index]?.let { tableColumnFamilies ->
                 when (
@@ -351,25 +361,27 @@ class RocksDBDataStore private constructor(
                         tableColumnFamilies.model,
                         dataModel,
                         onlyCheckModelVersion,
-                        conversionContext
+                        DefinitionsConversionContext().apply {
+                            addDataModelReferences(dataModelsById.values)
+                        }
                     )
                 ) {
                     UpToDate, MigrationStatus.AlreadyProcessed -> Unit // Do nothing since no work is needed
                     NewModel -> {
-                        scheduledVersionUpdateHandlers.add {
+                        deferFinalization {
                             versionUpdateHandler?.invoke(this, null, dataModel)
                             storeDataModelDefinition(index, tableColumnFamilies.model, dataModel)
                         }
                     }
                     is OnlySafeAdds -> {
-                        scheduledVersionUpdateHandlers.add {
+                        deferFinalization {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                             storeDataModelDefinition(index, tableColumnFamilies.model, dataModel)
                         }
                     }
                     is NewIndicesOnExistingProperties -> {
                         fillIndex(migrationStatus.indexesToIndex, tableColumnFamilies)
-                        scheduledVersionUpdateHandlers.add {
+                        deferFinalization {
                             versionUpdateHandler?.invoke(this, migrationStatus.storedDataModel as StoredRootDataModelDefinition, dataModel)
                             storeModelDefinition(db, modelMetas, index, tableColumnFamilies.model, dataModel)
                         }
@@ -401,24 +413,82 @@ class RocksDBDataStore private constructor(
                             writeStoreMeta()
                             storeDataModelDefinition(index, tableColumnFamilies.model, dataModel)
                         },
-                        deferStartupFinalization = { finalizer ->
-                            scheduledVersionUpdateHandlers.add(finalizer)
-                        },
+                        deferStartupFinalization = deferFinalization,
                     )
+                }
+            }
+        }
+
+        val modelIdsByName = dataModelsById.entries.associate { (modelId, model) -> model.Meta.name to modelId }
+        val dependencyIdsByModelId = dataModelsById.mapValues { (modelId, dataModel) ->
+            val dependencies = mutableListOf<MarykPrimitive>()
+            dataModel.getAllDependencies(dependencies)
+            dependencies.mapNotNullTo(linkedSetOf()) { dependency ->
+                modelIdsByName[dependency.Meta.name]?.takeIf { it != modelId }
+            }
+        }
+
+        for (index in orderMigrationModelIds(dataModelsById)) {
+            val pendingDependencies = dependencyIdsByModelId[index].orEmpty().filter { dependencyId ->
+                dependencyId in pendingMigrationModelIds.value ||
+                    dependencyId in dependencyWaitingMigrationModelIds.value
+            }
+            if (pendingDependencies.isEmpty()) {
+                processModelMigration(index) { finalizer ->
+                    scheduledVersionUpdateHandlers.add(finalizer)
+                }
+                continue
+            }
+
+            dependencyWaitingMigrationModelIds.update { it + index }
+            pendingMigrationReasons.update {
+                it + (index to "Migration is waiting for dependencies ${pendingDependencies.joinToString()}")
+            }
+            ensurePendingMigrationWaiter(index)
+            launch {
+                try {
+                    pendingDependencies.forEach { dependencyId -> awaitMigration(dependencyId) }
+                    storeInitializationReady.await()
+                    processModelMigration(index) { finalizer ->
+                        finalizer()
+                        writeStoreMeta()
+                    }
+
+                    if (index !in pendingMigrationModelIds.value) {
+                        if (keepUpdateHistoryIndex) {
+                            val columnFamilies = getColumnFamilies(index)
+                            ensureUpdateHistoryIndexReady(index, columnFamilies)
+                            backfillReplicationTombstones(columnFamilies)
+                        }
+                        migrateStoredIndexKeyFormatIfReady(index)
+                        pendingMigrationReasons.update { it - index }
+                        dependencyWaitingMigrationModelIds.update { it - index }
+                        completePendingMigration(index)
+                    }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Throwable) {
+                    val reason = "Migration dependency failed for ${dataModelsById.getValue(index).Meta.name}: ${error.message ?: "unknown error"}"
+                    pendingMigrationModelIds.update { it + index }
+                    pendingMigrationReasons.update { it + (index to reason) }
+                    failPendingMigration(index, reason)
+                } finally {
+                    dependencyWaitingMigrationModelIds.update { it - index }
                 }
             }
         }
 
         if (keepUpdateHistoryIndex) {
             for ((index, _) in dataModelsById) {
-                if (index !in pendingMigrationModelIds.value) {
+                if (
+                    index !in pendingMigrationModelIds.value &&
+                    index !in dependencyWaitingMigrationModelIds.value
+                ) {
                     ensureUpdateHistoryIndexReady(index, getColumnFamilies(index))
                     backfillReplicationTombstones(getColumnFamilies(index))
                 }
             }
         }
-
-        startFlows()
 
         storeInitializationComplete.value = true
         migrateStoredIndexKeyFormatIfReady()
@@ -427,6 +497,7 @@ class RocksDBDataStore private constructor(
             it()
             writeStoreMeta()
         }
+        storeInitializationReady.complete(Unit)
     }
 
     private suspend fun writeStoreMeta(indexKeyFormatVersion: Int? = null) {
@@ -483,9 +554,13 @@ class RocksDBDataStore private constructor(
             }
             if (!storeInitializationComplete.value) return@withLock
 
-            val migrationsStillPending = pendingMigrationModelIds.value.let { pending ->
+            val modelMigrationsStillPending = pendingMigrationModelIds.value.let { pending ->
                 if (completingModelId == null) pending else pending - completingModelId
             }
+            val dependencyWaitsStillPending = dependencyWaitingMigrationModelIds.value.let { pending ->
+                if (completingModelId == null) pending else pending - completingModelId
+            }
+            val migrationsStillPending = modelMigrationsStillPending + dependencyWaitsStillPending
             if (migrationsStillPending.isNotEmpty()) {
                 if (completingModelId != null) {
                     pendingMigrationModelIds.update { it - completingModelId }
@@ -704,6 +779,10 @@ class RocksDBDataStore private constructor(
                                 clock,
                                 (storeAction.request as? UpdateResponse<*>)?.update?.version,
                             )
+                            persistDurableClockWatermark(
+                                getDataModelId(storeAction.request.dataModel),
+                                clock.timestamp,
+                            )
                             observeCommittedVersion(clock.timestamp)
                         }
 
@@ -897,6 +976,54 @@ class RocksDBDataStore private constructor(
             }
         }
         db.put(tableColumnFamilies.model, modelReplicationTombstoneBackfillCompleteKey, byteArrayOf(1))
+    }
+
+    private fun initializeDurableClockWatermark() {
+        var storeWatermark = 0uL
+        for (columnFamilies in columnFamilyHandlesByDataModelIndex.values) {
+            val storedWatermark = db.get(columnFamilies.model, defaultReadOptions, modelHlcWatermarkKey)
+                ?.readVersionBytesIfExact()
+            val modelWatermark = storedWatermark ?: findMaximumStoredVersion(columnFamilies).also { version ->
+                if (version > 0uL) {
+                    db.put(columnFamilies.model, modelHlcWatermarkKey, HLC.toStorageBytes(HLC(version)))
+                }
+            }
+            storeWatermark = maxOf(storeWatermark, modelWatermark)
+        }
+        observeCommittedVersion(storeWatermark)
+    }
+
+    private fun findMaximumStoredVersion(columnFamilies: TableColumnFamilies): ULong {
+        var maximumVersion = 0uL
+
+        fun observeValues(columnFamily: ColumnFamilyHandle, exact: Boolean) {
+            db.newIterator(columnFamily, sequentialReadOptions).use { iterator ->
+                iterator.seekToFirst()
+                while (iterator.isValid()) {
+                    val value = iterator.value()
+                    val version = if (exact) {
+                        value.readVersionBytesIfExact()
+                    } else {
+                        value.readVersionBytesIfPresent(value.size)
+                    }
+                    if (version != null) maximumVersion = maxOf(maximumVersion, version)
+                    iterator.next()
+                }
+            }
+        }
+
+        observeValues(columnFamilies.keys, exact = true)
+        observeValues(columnFamilies.table, exact = false)
+        observeValues(columnFamilies.replicationTombstones, exact = true)
+        return maximumVersion
+    }
+
+    private fun persistDurableClockWatermark(dataModelId: UInt, version: ULong) {
+        db.put(
+            getColumnFamilies(dataModelId).model,
+            modelHlcWatermarkKey,
+            HLC.toStorageBytes(HLC(version)),
+        )
     }
 
     private fun createColumnFamilyHandles(descriptors: MutableList<ColumnFamilyDescriptor>, tableIndex: UInt, db: IsRootDataModel) {
@@ -1106,7 +1233,7 @@ class RocksDBDataStore private constructor(
         if (!isSensitiveReference(modelId, reference)) return value
         val provider = fieldEncryptionProvider as? ContextualFieldEncryptionProvider
             ?: throw RequestException("No contextual fieldEncryptionProvider configured for sensitive property write")
-        val encrypted = runBlocking { provider.encrypt(FieldEncryptionContext(modelId, key, reference), value) }
+        val encrypted = runProviderBlocking { provider.encrypt(FieldEncryptionContext(modelId, key, reference), value) }
         return FieldEncryptionEnvelope.Contextual.magic + encrypted
     }
 
@@ -1131,11 +1258,11 @@ class RocksDBDataStore private constructor(
         val payloadOffset = offset + envelope.magic.size
         val payloadLength = length - envelope.magic.size
         return when (envelope) {
-            FieldEncryptionEnvelope.Legacy -> runBlocking { provider.decrypt(value, payloadOffset, payloadLength) }
+            FieldEncryptionEnvelope.Legacy -> runProviderBlocking { provider.decrypt(value, payloadOffset, payloadLength) }
             FieldEncryptionEnvelope.Contextual -> {
                 val contextualProvider = provider as? ContextualFieldEncryptionProvider
                     ?: throw RequestException("Contextual encrypted value encountered but no contextual fieldEncryptionProvider configured")
-                runBlocking { contextualProvider.decrypt(FieldEncryptionContext(modelId, key, reference), value, payloadOffset, payloadLength) }
+                runProviderBlocking { contextualProvider.decrypt(FieldEncryptionContext(modelId, key, reference), value, payloadOffset, payloadLength) }
             }
         }
     }
@@ -1160,7 +1287,7 @@ class RocksDBDataStore private constructor(
         if (!isSensitiveUniqueReference(modelId, reference)) return value
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
             ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
-        return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value) }
+        return runProviderBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value) }
     }
 
     internal fun mapUniqueValueByteCandidates(
@@ -1171,7 +1298,7 @@ class RocksDBDataStore private constructor(
         if (!isSensitiveUniqueReference(modelId, reference)) return listOf(value)
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
             ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
-        return runBlocking {
+        return runProviderBlocking {
             tokenProvider.deriveDeterministicTokenCandidates(modelId, reference, value)
         }
     }
@@ -1190,7 +1317,7 @@ class RocksDBDataStore private constructor(
         }
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
             ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
-        return runBlocking {
+        return runProviderBlocking {
             tokenProvider.deriveDeterministicTokenCandidates(modelId, reference, value, offset, length)
         }
     }
@@ -1207,8 +1334,11 @@ class RocksDBDataStore private constructor(
         }
         val tokenProvider = fieldEncryptionProvider as? SensitiveIndexTokenProvider
             ?: throw RequestException("Sensitive unique property requires SensitiveIndexTokenProvider")
-        return runBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value, offset, length) }
+        return runProviderBlocking { tokenProvider.deriveDeterministicToken(modelId, reference, value, offset, length) }
     }
+
+    private fun <T> runProviderBlocking(block: suspend () -> T): T =
+        runBlocking(requireNotNull(coroutineContext[Job])) { block() }
 
     private fun isSensitiveReference(modelId: UInt, reference: ByteArray): Boolean =
         sensitiveReferencePrefixesByModelId[modelId]?.any { prefix -> reference.hasPrefix(prefix) } == true
@@ -1412,6 +1542,17 @@ class RocksDBDataStore private constructor(
             throw MigrationException("RocksDB index key format migration is pending")
         }
         assertModelReadyForMigrations(dataModelId)
+    }
+
+    override suspend fun assertRequestModelReady(dataModelId: UInt) {
+        val migrationRequest = currentCoroutineContext()[RocksDBMigrationRequestContext]
+        if (migrationRequest?.modelId == dataModelId) {
+            if (!indexKeyFormatReady.value) {
+                throw MigrationException("RocksDB index key format migration is pending")
+            }
+            return
+        }
+        assertModelReady(dataModelId)
     }
 
     companion object {

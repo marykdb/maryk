@@ -192,7 +192,7 @@ internal fun <T : Any> deleteByReference(
                 // Delete if not a list or no further list items
                 if (toShiftListCount <= 0u) {
                     if (shouldNotDeleteCompletely) {
-                        setValue(transaction, columnFamilies, ref, version, TypeIndicator.DeletedIndicator.byteArray)
+                        setDeletedValue(transaction, columnFamilies, ref, version)
                     } else {
                         deleteValue(transaction, columnFamilies, ref, version)
                     }

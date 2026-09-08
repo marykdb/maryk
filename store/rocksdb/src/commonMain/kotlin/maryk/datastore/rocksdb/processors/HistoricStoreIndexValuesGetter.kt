@@ -17,9 +17,9 @@ import maryk.datastore.rocksdb.DBIterator
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.createHistoricIndexKey
+import maryk.datastore.rocksdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.rocksdb.processors.helpers.readReversedVersionBytes
 import maryk.datastore.rocksdb.processors.helpers.toReversedVersionBytes
-import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.helpers.convertToValueOrNull
 import maryk.lib.extensions.compare.matchesRangePart
 import maryk.lib.exceptions.ParseException
@@ -146,7 +146,7 @@ internal class HistoricStoreIndexValuesWalker(
                 }
 
                 val valueBytes = iterator.value()
-                val isDelete = valueBytes.size == 1 && valueBytes[0] == TypeIndicator.DeletedIndicator.byte
+                val isDelete = valueBytes.isHistoricDeleteMarker()
 
                 try {
                     var readIndex = keyAndReference.size
@@ -206,7 +206,7 @@ internal class HistoricStoreIndexValuesWalker(
                 }
 
                 val valueBytes = iterator.value()
-                if (valueBytes.size == 1 && valueBytes[0] == TypeIndicator.DeletedIndicator.byte) {
+                if (valueBytes.isHistoricDeleteMarker()) {
                     iterator.next()
                     continue
                 }

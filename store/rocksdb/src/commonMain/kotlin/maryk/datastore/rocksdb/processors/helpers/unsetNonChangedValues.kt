@@ -3,7 +3,6 @@ package maryk.datastore.rocksdb.processors.helpers
 import maryk.core.properties.types.Key
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
-import maryk.datastore.shared.TypeIndicator
 import maryk.lib.extensions.compare.compareTo
 import maryk.lib.extensions.compare.compareToRange
 
@@ -25,7 +24,7 @@ internal fun unsetNonChangedValues(
         }
         if (index < 0) {
             // Delete the value by setting it to the DeletedIndicator
-            setValue(transaction, columnFamilies, qualifier, versionBytes, TypeIndicator.DeletedIndicator.byteArray)
+            setDeletedValue(transaction, columnFamilies, qualifier, versionBytes)
             deleted = true
         } else {
             // Start next time comparing with next value in qualifiersToKeep as they are ordered

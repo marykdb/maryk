@@ -4,6 +4,7 @@ import maryk.core.extensions.bytes.invert
 import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
+import maryk.datastore.shared.TypeIndicator
 
 /** Set [keyAndReference] = [value] (ByteArray) at [version] for object at [keyAndReference] */
 internal fun setValue(
@@ -40,6 +41,30 @@ internal fun setValue(
             columnFamilies.historic.table,
             historicReference,
             valueBytes
+        )
+    }
+}
+
+/** Mark [keyAndReference] as deleted without colliding with a historic encoded zero value. */
+internal fun setDeletedValue(
+    transaction: Transaction,
+    columnFamilies: TableColumnFamilies,
+    keyAndReference: ByteArray,
+    version: ByteArray,
+) {
+    transaction.put(
+        columnFamilies.table,
+        keyAndReference,
+        version + TypeIndicator.DeletedIndicator.byteArray,
+    )
+
+    if (columnFamilies is HistoricTableColumnFamilies) {
+        val historicReference = keyAndReference + version
+        historicReference.invert(historicReference.size - version.size)
+        transaction.put(
+            columnFamilies.historic.table,
+            historicReference,
+            HISTORIC_DELETE_MARKER,
         )
     }
 }

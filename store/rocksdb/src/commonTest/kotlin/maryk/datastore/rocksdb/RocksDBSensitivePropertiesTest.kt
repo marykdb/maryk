@@ -1,10 +1,14 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.yield
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
 import maryk.core.properties.definitions.fixedBytes
 import maryk.core.properties.definitions.string
@@ -43,8 +47,49 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class RocksDBSensitivePropertiesTest {
+    @Test
+    fun closeCancelsBlockedEncryptionProvider() = runTest {
+        val folder = createTestDBFolder("close-blocked-encryption-provider")
+        val encryptionProvider = BlockingEncryptFieldEncryptionProvider()
+        val store = RocksDBDataStore.open(
+            relativePath = folder,
+            keepAllVersions = true,
+            dataModelsById = mapOf(1u to SensitiveRocksModel),
+            fieldEncryptionProvider = encryptionProvider,
+        )
+        val mutation = async(Dispatchers.Default) {
+            runCatching {
+                store.execute(
+                    SensitiveRocksModel.add(
+                        SensitiveRocksModel(Bytes(ByteArray(16) { it.toByte() }), "secret")
+                    )
+                )
+            }
+        }
+
+        encryptionProvider.encryptStarted.await()
+        val close = async(Dispatchers.Default) { store.close() }
+        val closedWithoutReleasingProvider = withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeoutOrNull(1_000.milliseconds) {
+                close.await()
+                true
+            } ?: false
+        }
+
+        encryptionProvider.releaseEncrypt.complete(Unit)
+        close.await()
+
+        try {
+            assertTrue(closedWithoutReleasingProvider)
+            assertIs<StorageException>(mutation.await().exceptionOrNull())
+        } finally {
+            deleteFolder(folder)
+        }
+    }
+
     @Test
     fun snapshotCaptureWaitsForMutationCompletion() = runTest {
         val folder = createTestDBFolder("mutation-version-publication")

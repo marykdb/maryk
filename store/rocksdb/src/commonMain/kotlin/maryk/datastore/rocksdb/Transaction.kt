@@ -1,6 +1,7 @@
 package maryk.datastore.rocksdb
 
 import maryk.lib.extensions.compare.compareTo
+import maryk.lib.extensions.compare.matchesRangePart
 import maryk.rocksdb.ColumnFamilyHandle
 import maryk.rocksdb.GetStatus
 import maryk.rocksdb.ReadOptions
@@ -33,6 +34,28 @@ class Transaction(val rocksDBDataStore: RocksDBDataStore): DBAccessor(rocksDBDat
                 while (
                     iterator.isValid() &&
                     iterator.key() < end &&
+                    keysToDelete.size < DELETE_RANGE_BATCH_SIZE
+                ) {
+                    keysToDelete.add(iterator.key())
+                    iterator.next()
+                }
+            }
+
+            for (key in keysToDelete) {
+                transaction.delete(columnFamilyHandle, key)
+            }
+        } while (keysToDelete.size == DELETE_RANGE_BATCH_SIZE)
+    }
+
+    fun deletePrefix(columnFamilyHandle: ColumnFamilyHandle, prefix: ByteArray) {
+        val transaction = currentTransaction()
+        do {
+            val keysToDelete = ArrayList<ByteArray>(DELETE_RANGE_BATCH_SIZE)
+            transaction.getIterator(rocksDBDataStore.defaultReadOptions, columnFamilyHandle).use { iterator ->
+                iterator.seek(prefix)
+                while (
+                    iterator.isValid() &&
+                    iterator.key().matchesRangePart(0, prefix) &&
                     keysToDelete.size < DELETE_RANGE_BATCH_SIZE
                 ) {
                     keysToDelete.add(iterator.key())

@@ -3,6 +3,7 @@ package maryk.datastore.rocksdb.processors
 import kotlinx.coroutines.runBlocking
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
@@ -92,8 +93,14 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processScanChangesRequest(
                 } else {
                     objectChange
                 }
-                updatedObjectChange?.let {
-                    objectChanges += it
+                if (updatedObjectChange != null) {
+                    objectChanges += updatedObjectChange
+                } else if (storeAction.isFlowSnapshotRead) {
+                    objectChanges += DataObjectVersionedChange(
+                        key = key,
+                        sortingKey = sortingKey?.let(::Bytes),
+                        changes = emptyList()
+                    )
                 }
             }
 

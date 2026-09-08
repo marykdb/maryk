@@ -98,7 +98,6 @@ import maryk.datastore.rocksdb.processors.helpers.getList
 import maryk.datastore.rocksdb.processors.helpers.getValue
 import maryk.datastore.rocksdb.processors.helpers.setIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setLatestVersion
-import maryk.datastore.rocksdb.processors.helpers.setListValue
 import maryk.datastore.rocksdb.processors.helpers.setTypedValue
 import maryk.datastore.rocksdb.processors.helpers.setUniqueIndexValue
 import maryk.datastore.rocksdb.processors.helpers.setValue
@@ -778,15 +777,63 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                     }
                                 )
 
-                                setListValue(
+                                val referenceAsBytes = listReference.toStorageByteArray()
+                                val currentValues = getCurrentValues(
                                     transaction,
                                     columnFamilies,
                                     key,
-                                    listReference,
+                                    referenceAsBytes,
+                                )
+                                if (
+                                    (listReference.propertyDefinition.valueDefinition as? IsComparableDefinition<*, *>)?.unique == true
+                                ) {
+                                    for (index in 0 until originalCount) {
+                                        if (list.getOrNull(index) == originalList[index]) continue
+                                        val itemReference = listReference.propertyDefinition
+                                            .itemRef(index.toUInt(), listReference)
+                                            .toStorageByteArray()
+                                        deleteCurrentUniqueIndexEntryForKey(
+                                            dataModel = dataModel,
+                                            dbIndex = dbIndex,
+                                            transaction = transaction,
+                                            columnFamilies = columnFamilies,
+                                            readOptions = defaultReadOptions,
+                                            reference = itemReference,
+                                            key = key.bytes,
+                                            versionBytes = versionBytes,
+                                        )
+                                    }
+                                }
+
+                                val qualifiersToKeep = mutableListOf<ByteArray>()
+                                var didWrite = false
+                                val valueWriter = createValueWriter(
+                                    dbIndex = dbIndex,
+                                    transaction = transaction,
+                                    columnFamilies = columnFamilies,
+                                    key = key,
+                                    versionBytes = versionBytes,
+                                    qualifiersToKeep = qualifiersToKeep,
+                                    shouldWrite = doesCurrentNotContainExactQualifierAndValue(key.bytes, currentValues),
+                                    onWrite = { didWrite = true },
+                                    skipCurrentUniqueOwnership = targetIsDeleted,
+                                )
+                                writeListToStorage(
+                                    listReference.calculateStorageByteLength(),
+                                    listReference::writeStorageBytes,
+                                    valueWriter,
+                                    listReference.propertyDefinition,
                                     list,
-                                    originalCount,
-                                    versionBytes
-                                ).also(setChanged)
+                                )
+                                val didDelete = unsetNonChangedValues(
+                                    transaction,
+                                    columnFamilies,
+                                    key,
+                                    currentValues,
+                                    qualifiersToKeep,
+                                    versionBytes,
+                                )
+                                setChanged(didWrite || didDelete)
                             } catch (e: ValidationException) {
                                 addValidationFail(e)
                             }
@@ -814,9 +861,19 @@ private fun <DM : IsRootDataModel> RocksDBDataStore.applyChanges(
                                             } ?: countChange++ // Add 1 because does not exist
 
                                             @Suppress("UNCHECKED_CAST")
-                                            val valueBytes = (setItemRef.propertyDefinition as IsStorageBytesEncodable<Any>).toStorageBytes(value, TypeIndicator.NoTypeIndicator.byte)
-
-                                            setValue(transaction, columnFamilies, keyAndReference, versionBytes, valueBytes)
+                                            createValueWriter(
+                                                dbIndex = dbIndex,
+                                                transaction = transaction,
+                                                columnFamilies = columnFamilies,
+                                                key = key,
+                                                versionBytes = versionBytes,
+                                                skipCurrentUniqueOwnership = targetIsDeleted,
+                                            )(
+                                                Value,
+                                                setItemRef.toStorageByteArray(),
+                                                setItemRef.propertyDefinition,
+                                                value,
+                                            )
                                             setChanged(true)
                                         } catch (e: ValidationException) {
                                             addException(e)

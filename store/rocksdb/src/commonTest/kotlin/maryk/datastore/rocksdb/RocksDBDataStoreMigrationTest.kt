@@ -3,6 +3,7 @@
 package maryk.datastore.rocksdb
 
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
@@ -11,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
@@ -40,6 +42,7 @@ import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
+import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
@@ -55,6 +58,7 @@ import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
@@ -422,6 +426,103 @@ class RocksDBDataStoreMigrationTest {
         ).close()
 
         deleteFolder(path)
+    }
+
+    @Test
+    fun startupMigrationHandlerCanUseItsStoreApi() = runTest {
+        val path = createTestDBFolder("migrationHandlerStoreApiStartup")
+        val initialStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        )
+        val key = assertIs<AddSuccess<ModelV1_1>>(
+            initialStore.execute(
+                ModelV1_1.add(ModelV1_1.create { value with "ha-startup"; newNumber with 1 })
+            ).statuses.single()
+        ).key
+        initialStore.close()
+        val migratedKey = Key<ModelV2>(key.bytes)
+
+        val migratedStore = withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000.milliseconds) {
+                RocksDBDataStore.open(
+                    keepAllVersions = true,
+                    relativePath = path,
+                    dataModelsById = mapOf(1u to ModelV2),
+                    migrationConfiguration = MigrationConfiguration(
+                        migrationHandler = { context ->
+                            assertEquals(
+                                1,
+                                context.store.execute(ModelV2.get(migratedKey)).values.single().values { newNumber },
+                            )
+                            val response = context.store.execute(
+                                ModelV2.change(migratedKey.change(Change(ModelV2 { newNumber::ref } with 2)))
+                            )
+                            assertIs<ChangeSuccess<ModelV2>>(response.statuses.single())
+                            MigrationOutcome.Success
+                        },
+                    ),
+                )
+            }
+        }
+
+        try {
+            assertEquals(2, migratedStore.execute(ModelV2.get(migratedKey)).values.single().values { newNumber })
+        } finally {
+            migratedStore.close()
+            deleteFolder(path)
+        }
+    }
+
+    @Test
+    fun backgroundMigrationHandlerCanUseItsStoreApi() = runTest {
+        val path = createTestDBFolder("migrationHandlerStoreApiBackground")
+        val initialStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        )
+        val key = assertIs<AddSuccess<ModelV1_1>>(
+            initialStore.execute(
+                ModelV1_1.add(ModelV1_1.create { value with "ha-background"; newNumber with 1 })
+            ).statuses.single()
+        ).key
+        initialStore.close()
+        val migratedKey = Key<ModelV2>(key.bytes)
+
+        val migratedStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                migrationHandler = { context ->
+                    assertEquals(
+                        1,
+                        context.store.execute(ModelV2.get(migratedKey)).values.single().values { newNumber },
+                    )
+                    val response = context.store.execute(
+                        ModelV2.change(migratedKey.change(Change(ModelV2 { newNumber::ref } with 3)))
+                    )
+                    assertIs<ChangeSuccess<ModelV2>>(response.statuses.single())
+                    MigrationOutcome.Success
+                },
+            ),
+        )
+
+        try {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) {
+                    migratedStore.awaitMigration(1u)
+                }
+            }
+            assertEquals(3, migratedStore.execute(ModelV2.get(migratedKey)).values.single().values { newNumber })
+        } finally {
+            migratedStore.close()
+            deleteFolder(path)
+        }
     }
 
     @Test
@@ -884,6 +985,72 @@ class RocksDBDataStoreMigrationTest {
 
         assertEquals(listOf("Phase6OrderBase", "Phase6OrderDependent"), migratedModels)
         deleteFolder(path)
+    }
+
+    @Test
+    fun backgroundMigrationWaitsForDependencyCompletion() = runTest {
+        val path = createTestDBFolder("migrationBackgroundDependencyCompletion")
+        RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(
+                2u to Phase6OrderBaseV1,
+                1u to Phase6OrderDependentV1,
+            ),
+        ).close()
+
+        val baseStarted = CompletableDeferred<Unit>()
+        val releaseBase = CompletableDeferred<Unit>()
+        val dependentStarted = CompletableDeferred<Unit>()
+        val dataStore = RocksDBDataStore.open(
+            keepAllVersions = true,
+            relativePath = path,
+            dataModelsById = mapOf(
+                2u to Phase6OrderBaseV2,
+                1u to Phase6OrderDependentV2,
+            ),
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                migrationHandler = { context ->
+                    when (context.newDataModel.Meta.name) {
+                        "Phase6OrderBase" -> {
+                            baseStarted.complete(Unit)
+                            releaseBase.await()
+                        }
+                        "Phase6OrderDependent" -> dependentStarted.complete(Unit)
+                    }
+                    MigrationOutcome.Success
+                },
+            ),
+        )
+
+        try {
+            baseStarted.await()
+            val dependentStartedBeforeRelease = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeoutOrNull(250.milliseconds) {
+                    dependentStarted.await()
+                    true
+                } ?: false
+            }
+            assertFalse(dependentStartedBeforeRelease)
+            assertFailsWith<RequestException> {
+                dataStore.execute(Phase6OrderDependentV2.scan())
+            }
+
+            releaseBase.complete(Unit)
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) {
+                    dataStore.awaitMigration(2u)
+                    dataStore.awaitMigration(1u)
+                }
+            }
+            assertTrue(dependentStarted.isCompleted)
+        } finally {
+            releaseBase.complete(Unit)
+            dataStore.close()
+            deleteFolder(path)
+        }
     }
 
     @Test

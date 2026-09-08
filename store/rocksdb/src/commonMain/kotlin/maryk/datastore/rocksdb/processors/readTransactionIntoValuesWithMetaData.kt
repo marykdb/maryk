@@ -27,9 +27,9 @@ import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
 import maryk.datastore.rocksdb.processors.helpers.checkExistence
 import maryk.datastore.rocksdb.processors.helpers.historicQualifierRetriever
+import maryk.datastore.rocksdb.processors.helpers.isHistoricDeleteMarker
 import maryk.datastore.rocksdb.processors.helpers.nonHistoricQualifierRetriever
 import maryk.datastore.rocksdb.processors.helpers.readVersionBytes
-import maryk.datastore.shared.TypeIndicator
 import maryk.datastore.shared.readValue
 
 /**
@@ -201,7 +201,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                             }
                             ListSize -> {
                                 val valueBytes = iterator.value()
-                                if (valueBytes.isHistoricDeleteMarker()) {
+                                if (valueBytes.isHistoricDeleteMarker(allowLegacyMarker = false)) {
                                     return@cachedRead null
                                 }
                                 index = 0
@@ -209,7 +209,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                             }
                             SetSize -> {
                                 val valueBytes = iterator.value()
-                                if (valueBytes.isHistoricDeleteMarker()) {
+                                if (valueBytes.isHistoricDeleteMarker(allowLegacyMarker = false)) {
                                     return@cachedRead null
                                 }
                                 index = 0
@@ -217,7 +217,7 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
                             }
                             MapSize -> {
                                 val valueBytes = iterator.value()
-                                if (valueBytes.isHistoricDeleteMarker()) {
+                                if (valueBytes.isHistoricDeleteMarker(allowLegacyMarker = false)) {
                                     return@cachedRead null
                                 }
                                 index = 0
@@ -247,6 +247,3 @@ internal fun <DM : IsRootDataModel> DM.readTransactionIntoValuesWithMetaData(
         lastVersion = maxVersion
     )
 }
-
-private fun ByteArray.isHistoricDeleteMarker() =
-    this.size == 1 && this[0] == TypeIndicator.DeletedIndicator.byte

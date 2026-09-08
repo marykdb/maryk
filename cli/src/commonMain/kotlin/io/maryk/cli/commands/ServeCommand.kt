@@ -171,6 +171,7 @@ private const val defaultHost = "127.0.0.1"
 private const val defaultPort = 8210
 private const val MAX_SERVE_CONFIG_BYTES = 1024 * 1024
 private const val MAX_BEARER_TOKEN_FILE_BYTES = 16 * 1024
+private val environmentVariableName = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
 internal fun parseServeOptions(environment: CliEnvironment, arguments: List<String>): ServeParseResult {
     val cliInput = when (val parsed = parseServeArguments(arguments)) {
@@ -201,8 +202,13 @@ internal fun parseServeOptions(environment: CliEnvironment, arguments: List<Stri
     val bearerToken = when (val source = merged.bearerTokenSource) {
         null -> null
         is BearerTokenSource.Literal -> source.token
-        is BearerTokenSource.Environment -> readEnvironmentVariable(source.variable)
-            ?: return ServeParseResult.Error("Bearer token environment variable `${source.variable}` is not set.")
+        is BearerTokenSource.Environment -> {
+            if (!source.variable.matches(environmentVariableName)) {
+                return ServeParseResult.Error("Bearer token environment variable name is invalid.")
+            }
+            readEnvironmentVariable(source.variable)
+                ?: return ServeParseResult.Error("Bearer token environment variable `${source.variable}` is not set.")
+        }
         is BearerTokenSource.File -> File.readText(source.path, MAX_BEARER_TOKEN_FILE_BYTES) ?: return if (File.size(source.path) != null) {
             ServeParseResult.Error("Bearer token file exceeds max size: $MAX_BEARER_TOKEN_FILE_BYTES bytes")
         } else {

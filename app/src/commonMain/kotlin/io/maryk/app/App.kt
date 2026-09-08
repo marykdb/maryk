@@ -124,7 +124,7 @@ fun StoresWindowContent(
                                 isOpen = openStoreIds.contains(store.id),
                                 onOpen = { onOpenBrowser(store) },
                                 onEdit = { storesState.openStoreEditor(store) },
-                                onRemove = { storesState.removeStore(store) },
+                                onRemove = { storesState.requestStoreRemoval(store) },
                             )
                         }
                     }
@@ -135,6 +135,28 @@ fun StoresWindowContent(
 
     if (storesState.showStoreEditor) {
         StoreEditorDialog(storesState)
+    }
+    storesState.pendingRemovalStore?.let { store ->
+        ModalSurface(onDismiss = { storesState.cancelStoreRemoval() }) {
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text("Remove store?", style = MaterialTheme.typography.titleMedium)
+                Text(
+                    "Remove \"${store.name}\" from the saved connection list? This does not delete store data.",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    ModalSecondaryButton(label = "Cancel", onClick = { storesState.cancelStoreRemoval() })
+                    Spacer(modifier = Modifier.width(8.dp))
+                    ModalPrimaryButton(label = "Remove", onClick = { storesState.confirmStoreRemoval() })
+                }
+            }
+        }
     }
 }
 
@@ -169,10 +191,20 @@ private fun StoreRow(
     ) {
         ContextMenuArea(
             items = {
-                listOf(
-                    ContextMenuItem("Edit", onEdit),
-                    ContextMenuItem("Remove", onRemove),
-                )
+                if (isOpen) {
+                    listOf(
+                        ContextMenuItem(
+                            label = "Close the browser before editing or removing",
+                            enabled = false,
+                            onClick = {},
+                        )
+                    )
+                } else {
+                    listOf(
+                        ContextMenuItem("Edit", onEdit),
+                        ContextMenuItem("Remove", onRemove),
+                    )
+                }
             },
         ) {
             Row(
@@ -213,6 +245,11 @@ private fun StoreRow(
                             .size(10.dp)
                             .background(connectedColor, shape = CircleShape)
                             .border(1.dp, connectedColor.copy(alpha = 0.4f), shape = CircleShape),
+                    )
+                    Text(
+                        "Open",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = connectedColor,
                     )
                 }
             }

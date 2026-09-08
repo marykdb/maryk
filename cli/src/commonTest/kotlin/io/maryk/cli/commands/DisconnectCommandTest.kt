@@ -11,6 +11,23 @@ import kotlin.test.assertTrue
 
 class DisconnectCommandTest {
     @Test
+    fun rejectsArgumentsWithoutDisconnecting() {
+        val dataStore = FakeDataStore()
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", dataStore))
+        }
+
+        val result = DisconnectCommand().execute(
+            CommandContext(CommandRegistry(state, TestEnvironment), state, TestEnvironment),
+            listOf("unexpected"),
+        )
+
+        assertTrue(result.isError)
+        assertFalse(dataStore.closed)
+        assertTrue(state.currentConnection != null)
+    }
+
+    @Test
     fun disconnectsAndClosesStore() {
         val dataStore = FakeDataStore()
         val state = CliState().apply {

@@ -1,5 +1,7 @@
 package io.maryk.cli.commands
 
+import io.maryk.cli.toTerminalText
+
 class ListCommand : Command {
     override val name: String = "list"
     override val description: String = "List models stored in the connected datastore."
@@ -24,7 +26,7 @@ class ListCommand : Command {
                 .sortedBy { it.key }
                 .forEach { (id, model) ->
                     val paddedId = id.toString().padStart(maxDigits, ' ')
-                    add("$paddedId - ${model.Meta.name}")
+                    add("$paddedId - ${model.Meta.name.toTerminalText()}")
                 }
         }
 

@@ -13,6 +13,18 @@ import kotlin.test.assertTrue
 
 class ServeCommandTest {
     @Test
+    fun rejectsInvalidBearerTokenEnvironmentName() {
+        val result = parseServeOptions(
+            environment = object : CliEnvironment {
+                override fun resolveDirectory(path: String) = DirectoryResolution.Success(path)
+            },
+            arguments = listOf("rocksdb", "--dir", "/store", "--bearer-token-env", "bad=name"),
+        )
+
+        assertIs<ServeParseResult.Error>(result)
+    }
+
+    @Test
     fun reusesMatchingActiveConnection() {
         var connectorCalled = false
         val store = FakeDataStore()

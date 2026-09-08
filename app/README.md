@@ -10,7 +10,7 @@ Built with Compose Multiplatform.
 - Record scan/filter/sort + pinned columns.
 - Record inspector (data tree, YAML, history/diff).
 - Typed form editor.
-- Import/export for schemas and data.
+- Schema export plus data import/export.
 
 ## Run
 

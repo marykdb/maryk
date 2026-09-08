@@ -733,6 +733,13 @@ private fun DeleteDialog(state: BrowserState) {
                     )
                     Text("Hard delete", style = MaterialTheme.typography.bodySmall)
                 }
+                if (state.pendingHardDelete) {
+                    Text(
+                        "Hard delete is permanent and cannot be recovered.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
             }
         },
         confirmButton = {

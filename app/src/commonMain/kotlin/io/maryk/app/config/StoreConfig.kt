@@ -42,7 +42,7 @@ data class StoreDefinition(
     }
 }
 
-class StoreRepository(
+open class StoreRepository(
     private val path: String = storesFilePath(),
 ) {
     fun load(): List<StoreDefinition> {
@@ -61,7 +61,7 @@ class StoreRepository(
             .toList()
     }
 
-    fun save(stores: List<StoreDefinition>) {
+    open fun save(stores: List<StoreDefinition>) {
         ensureParentDirectory(path)
         val body = buildString {
             append("# Maryk app store connections\n")

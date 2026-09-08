@@ -43,6 +43,8 @@ import io.maryk.app.data.resolveDisplayFields
 import io.maryk.app.data.serializeRecordToYaml
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -54,6 +56,7 @@ import maryk.core.aggregations.AggregationsResponse
 import maryk.core.clock.HLC
 import maryk.core.exceptions.DefNotFoundException
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.graph
 import maryk.core.models.key
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.types.Key
@@ -155,6 +158,10 @@ class BrowserState(
 
     private var modelCountGeneration = 0
 
+    private var connectJob: Job? = null
+
+    private var modelCountJob: Job? = null
+
     fun currentTimeTravelVersion(): ULong? {
         if (!timeTravelEnabled) return null
         return checkNotNull(timeTravelVersion) {
@@ -229,12 +236,21 @@ class BrowserState(
     private val aggregationConfigByModel = mutableStateMapOf<UInt, AggregationConfig>()
 
     fun connect(definition: StoreDefinition) {
+        connectJob?.cancel()
         isWorking = true
         lastActionMessage = null
         scanStatus = null
-        scope.launch {
+        connectJob = scope.launch {
+            var unclaimedConnection: StoreConnection? = null
+            try {
             val result = runCatchingNonFatal {
-                withContext(Dispatchers.IO) { connector.connect(definition) }
+                withContext(Dispatchers.IO + NonCancellable) {
+                    connector.connect(definition).also { connectionResult ->
+                        if (connectionResult is ConnectResult.Success) {
+                            unclaimedConnection = connectionResult.connection
+                        }
+                    }
+                }
             }.getOrElse { error ->
                 lastActionMessage = error.message ?: error::class.simpleName ?: "Unknown error"
                 isWorking = false
@@ -248,6 +264,7 @@ class BrowserState(
                 is ConnectResult.Success -> {
                     val closeFailure = runCatchingNonFatal { activeConnection?.close() }.exceptionOrNull()
                     activeConnection = result.connection
+                    unclaimedConnection = null
                     models = collectModels(result.connection.dataStore)
                     refreshModelCounts(result.connection.dataStore)
                     aggregationConfigByModel.clear()
@@ -273,10 +290,20 @@ class BrowserState(
                     }
                 }
             }
+            } finally {
+                unclaimedConnection?.let { connection ->
+                    runCatchingNonFatal { connection.close() }
+                }
+            }
         }
     }
 
     fun disconnect() {
+        connectJob?.cancel()
+        connectJob = null
+        modelCountJob?.cancel()
+        modelCountJob = null
+        isWorking = false
         val closeFailure = runCatchingNonFatal { activeConnection?.close() }.exceptionOrNull()
         activeConnection = null
         invalidateScanRequests()
@@ -558,11 +585,14 @@ class BrowserState(
             scanStatus = timeTravelInputError
             invalidateAggregations(timeTravelInputError)
             modelCountGeneration += 1
+            modelCountJob?.cancel()
+            modelCountJob = null
             modelRowCounts.clear()
             return
         }
         invalidateAggregations()
         modelCountGeneration += 1
+        modelCountJob?.cancel()
         modelRowCounts.clear()
         scanFromStart()
         activeConnection?.let { refreshModelCounts(it.dataStore) }
@@ -1562,7 +1592,8 @@ class BrowserState(
         modelRowCounts.clear()
         val requestGeneration = ++modelCountGeneration
         val toVersion = currentTimeTravelVersion()
-        scope.launch {
+        modelCountJob?.cancel()
+        modelCountJob = scope.launch {
             modelsSnapshot.forEach { entry ->
                 val count = withContext(Dispatchers.IO) {
                     fetchModelRowCount(dataStore, entry.id, toVersion)
@@ -1583,6 +1614,7 @@ class BrowserState(
         return try {
             val response = dataStore.execute(
                 dataModel.scan(
+                    select = dataModel.graph { emptyList() },
                     limit = 101u,
                     filterSoftDeleted = true,
                     allowTableScan = true,

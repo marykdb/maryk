@@ -72,7 +72,8 @@ class AddCommand : Command {
             )
         }
 
-        val request = when (parsed) {
+        val request = try {
+            when (parsed) {
             is AddInput.Single -> {
                 val explicitKey = parsed.keyToken?.let { token ->
                     try {
@@ -110,6 +111,13 @@ class AddCommand : Command {
                 }
                 dataModel.add(*parsed.values.toTypedArray())
             }
+            }
+        } catch (e: Throwable) {
+            e.rethrowIfFatal()
+            return CommandResult(
+                lines = listOf("Add failed: ${e.message ?: e::class.simpleName}"),
+                isError = true,
+            )
         }
 
         val response: AddResponse<IsRootDataModel> = try {

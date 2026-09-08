@@ -10,6 +10,9 @@ class DisconnectCommand : Command {
     override val description: String = "Disconnect from the current store."
 
     override fun execute(context: CommandContext, arguments: List<String>): CommandResult {
+        if (arguments.isNotEmpty()) {
+            return CommandResult(lines = listOf("Usage: disconnect"), isError = true)
+        }
         val connection = context.state.currentConnection
             ?: return CommandResult(
                 lines = listOf("No active store connection to disconnect."),

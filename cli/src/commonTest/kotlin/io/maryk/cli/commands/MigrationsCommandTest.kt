@@ -15,6 +15,25 @@ import kotlin.test.assertTrue
 
 class MigrationsCommandTest {
     @Test
+    fun rejectsTrailingArgumentsForPauseAndResume() {
+        val store = RecordingMigrationAdminStore()
+        val state = CliState().apply {
+            replaceConnection(RocksDbStoreConnection("/data/store", store))
+        }
+        val context = CommandContext(CommandRegistry(state, migrationTestEnvironment), state, migrationTestEnvironment)
+
+        listOf("pause", "resume").forEach { operation ->
+            val result = MigrationsCommand().execute(
+                context,
+                listOf(operation, SimpleMarykModel.Meta.name, "--dry-run"),
+            )
+
+            assertTrue(result.isError)
+            assertEquals(0, store.requests)
+        }
+    }
+
+    @Test
     fun reportsRemoteAdministrationFailuresAsCommandErrors() {
         val state = CliState().apply {
             replaceConnection(RocksDbStoreConnection("/data/store", FailingMigrationAdminStore()))
@@ -47,4 +66,16 @@ private class FailingMigrationAdminStore : FakeDataStore(
     override suspend fun requestMigrationResume(modelId: UInt): Boolean = error("unavailable")
 
     override suspend fun requestMigrationCancel(modelId: UInt, reason: String): Boolean = error("unavailable")
+}
+
+private class RecordingMigrationAdminStore : FakeDataStore(
+    dataModelsById = mapOf(1u to SimpleMarykModel),
+), MigrationAdmin {
+    var requests = 0
+
+    override suspend fun getMigrationStatuses(): Map<UInt, MigrationRuntimeStatus> = emptyMap()
+    override suspend fun getMigrationMetrics(): Map<UInt, MigrationMetrics> = emptyMap()
+    override suspend fun requestMigrationPause(modelId: UInt): Boolean = true.also { requests++ }
+    override suspend fun requestMigrationResume(modelId: UInt): Boolean = true.also { requests++ }
+    override suspend fun requestMigrationCancel(modelId: UInt, reason: String): Boolean = true.also { requests++ }
 }

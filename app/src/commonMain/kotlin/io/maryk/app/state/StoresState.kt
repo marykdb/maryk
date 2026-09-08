@@ -20,6 +20,9 @@ class StoresState(
     var editingStore by mutableStateOf<StoreDefinition?>(null)
         private set
 
+    var pendingRemovalStore by mutableStateOf<StoreDefinition?>(null)
+        private set
+
     fun loadStores() {
         stores = repository.load().sortedBy { it.name.lowercase() }
     }
@@ -42,12 +45,24 @@ class StoresState(
         } else {
             updated.add(definition)
         }
-        stores = updated.sortedBy { it.name.lowercase() }
-        repository.save(stores)
+        val candidate = updated.sortedBy { it.name.lowercase() }
+        repository.save(candidate)
+        stores = candidate
     }
 
-    fun removeStore(definition: StoreDefinition) {
-        stores = stores.filterNot { it.id == definition.id }
-        repository.save(stores)
+    fun requestStoreRemoval(definition: StoreDefinition) {
+        pendingRemovalStore = definition
+    }
+
+    fun cancelStoreRemoval() {
+        pendingRemovalStore = null
+    }
+
+    fun confirmStoreRemoval() {
+        val definition = pendingRemovalStore ?: return
+        val candidate = stores.filterNot { it.id == definition.id }
+        repository.save(candidate)
+        stores = candidate
+        pendingRemovalStore = null
     }
 }

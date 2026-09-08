@@ -64,6 +64,9 @@ class MigrationsCommand : Command {
         val modelId = modelToken.toUIntOrNull()
             ?: store.dataModelIdsByString[modelToken]
             ?: return error("Unknown model `$modelToken`.")
+        if (operation in setOf("pause", "resume") && arguments.size != 2) {
+            return error("Migration $operation accepts only a model name or id.")
+        }
 
         val changed = try {
             runBlocking {

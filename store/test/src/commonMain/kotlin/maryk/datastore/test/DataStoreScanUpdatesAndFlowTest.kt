@@ -10,6 +10,7 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import maryk.core.models.graph
+import maryk.core.models.key
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
@@ -29,6 +30,7 @@ import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanChanges
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
+import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -112,6 +114,7 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeLimitedTableScanFlowRefillsValueThatEnteredAfterInitialScan" to ::executeLimitedTableScanFlowRefillsValueThatEnteredAfterInitialScan,
         "executeLimitedTableScanFlowEvictsLastValueWhenEarlierValueEnters" to ::executeLimitedTableScanFlowEvictsLastValueWhenEarlierValueEnters,
         "executeScanValuesAsFlowRequest" to ::executeScanValuesAsFlowRequest,
+        "executeLiveScanIgnoresInitiallyDeletedReplicatedAddition" to ::executeLiveScanIgnoresInitiallyDeletedReplicatedAddition,
         "uncollectedFlowDoesNotBlockWritesOrLaterListeners" to ::uncollectedFlowDoesNotBlockWritesOrLaterListeners,
         "returnedFlowGivesConcurrentCollectorsIndependentListeners" to ::returnedFlowGivesConcurrentCollectorsIndependentListeners,
         "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill" to ::executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill,
@@ -161,6 +164,41 @@ class DataStoreScanUpdatesAndFlowTest(
         testKeys.clear()
         lowestVersion = ULong.MAX_VALUE
         highestInitVersion = ULong.MIN_VALUE
+    }
+
+    private suspend fun executeLiveScanIgnoresInitiallyDeletedReplicatedAddition() {
+        val deletedValues = TestMarykModel.create {
+            string with "ha replicated deleted"
+            int with 99
+            uint with 900_001u
+            bool with true
+            double with 1.0
+            dateTime with LocalDateTime(2026, 9, 5, 0, 0)
+        }
+        val key = TestMarykModel.key(deletedValues)
+        try {
+            updateListenerTester(
+                dataStore,
+                TestMarykModel.scan(allowTableScan = true),
+                2
+            ) { responses ->
+                assertIs<InitialValuesUpdate<*>>(responses[0].await())
+
+                dataStore.processUpdate(
+                    UpdateResponse(
+                        TestMarykModel,
+                        AdditionUpdate(key, 10uL, 10uL, 0, true, deletedValues),
+                    )
+                )
+
+                val unexpectedResponse = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                    withTimeoutOrNull(250.milliseconds) { responses[1].await() }
+                }
+                assertNull(unexpectedResponse)
+            }
+        } finally {
+            dataStore.execute(TestMarykModel.delete(key, hardDelete = true))
+        }
     }
 
     private suspend fun uncollectedFlowDoesNotBlockWritesOrLaterListeners() {

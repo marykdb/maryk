@@ -2,6 +2,7 @@ package maryk.datastore.rocksdb.processors
 
 import maryk.core.clock.HLC
 import maryk.core.extensions.bytes.toVarBytes
+import maryk.core.extensions.bytes.invert
 import maryk.core.models.IsRootDataModel
 import maryk.core.processors.datastore.StorageTypeEnum.Embed
 import maryk.core.processors.datastore.StorageTypeEnum.ListSize
@@ -24,6 +25,7 @@ import maryk.core.query.responses.statuses.ServerFail
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.core.values.Values
 import maryk.datastore.rocksdb.RocksDBDataStore
+import maryk.datastore.rocksdb.HistoricTableColumnFamilies
 import maryk.datastore.rocksdb.TableColumnFamilies
 import maryk.datastore.rocksdb.Transaction
 import maryk.datastore.rocksdb.processors.helpers.VERSION_BYTE_SIZE
@@ -182,6 +184,11 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
 
             if (isDeleted) {
                 transaction.put(columnFamilies.table, key.bytes + SOFT_DELETE_INDICATOR, versionBytes + TRUE)
+                if (columnFamilies is HistoricTableColumnFamilies) {
+                    val historicReference = key.bytes + SOFT_DELETE_INDICATOR + versionBytes
+                    historicReference.invert(historicReference.size - versionBytes.size)
+                    transaction.put(columnFamilies.historic.table, historicReference, byteArrayOf(TRUE))
+                }
             }
 
             for (check in checksBeforeWrite) {
@@ -190,7 +197,7 @@ internal fun <DM : IsRootDataModel> RocksDBDataStore.processAdd(
 
             val changes = listOf<IsChange>()
 
-            updateHandler?.invoke(Addition(dataModel, key, version.timestamp, objectToAdd.change(changes)))
+            updateHandler?.invoke(Addition(dataModel, key, version.timestamp, objectToAdd.change(changes), isDeleted))
 
             AddSuccess(key, version.timestamp, changes)
         } else {

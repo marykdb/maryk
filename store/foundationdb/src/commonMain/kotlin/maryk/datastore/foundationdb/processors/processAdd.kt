@@ -190,7 +190,8 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                 dataModel,
                 key,
                 version.timestamp,
-                finalValues
+                finalValues,
+                isDeleted,
             )
 
             clusterUpdateLog?.append(

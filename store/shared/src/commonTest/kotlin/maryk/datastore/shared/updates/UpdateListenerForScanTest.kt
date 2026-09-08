@@ -1,22 +1,31 @@
 package maryk.datastore.shared.updates
 
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.yield
 import maryk.core.models.IsRootDataModel
+import maryk.core.models.graph
 import maryk.core.models.key
 import maryk.core.processors.datastore.scanRange.createScanRange
+import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Bytes
 import maryk.core.query.ValuesWithMetaData
 import maryk.core.query.changes.IndexChange
 import maryk.core.query.changes.IndexDelete
 import maryk.core.query.changes.IndexUpdate
+import maryk.core.query.orders.Direction
 import maryk.core.query.orders.ascending
+import maryk.core.query.orders.descending
 import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsStoreRequest
+import maryk.core.query.requests.GetRequest
+import maryk.core.query.requests.ScanRequest
 import maryk.core.query.requests.ScanUpdatesRequest
+import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.IsDataResponse
@@ -24,6 +33,7 @@ import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.UpdatesResponse
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
 import maryk.core.query.responses.updates.IsUpdateResponse
 import maryk.core.query.responses.updates.OrderedKeysUpdate
@@ -36,8 +46,157 @@ import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 
 class UpdateListenerForScanTest {
+    @Test
+    fun projectedIndexScansKeepOrderingStateWhenDeleteRefillsResult() = runTest {
+        listOf(Direction.ASC, Direction.DESC).forEach { direction ->
+            listOf(1u, 2u).forEach { limit ->
+                projectedIndexScanDeleteRefill(direction, limit)
+            }
+        }
+    }
+
+    private suspend fun projectedIndexScanDeleteRefill(direction: Direction, limit: UInt) {
+        val valuesByKey = listOf(
+            AnyValueMapIndexModel.key(ByteArray(16) { 1 }) to AnyValueMapIndexModel.create {
+                name with "first"
+                mapValues with mapOf("a" to "a")
+            },
+            AnyValueMapIndexModel.key(ByteArray(16) { 2 }) to AnyValueMapIndexModel.create {
+                name with "second"
+                mapValues with mapOf("b" to "b")
+            },
+            AnyValueMapIndexModel.key(ByteArray(16) { 3 }) to AnyValueMapIndexModel.create {
+                name with "third"
+                mapValues with mapOf("c" to "c")
+            }
+        )
+        val orderedValues = when (direction) {
+            Direction.ASC -> valuesByKey
+            Direction.DESC -> valuesByKey.reversed()
+        }
+        val initialValues = orderedValues.take(limit.toInt())
+        val deleted = initialValues.first()
+        val refill = orderedValues[limit.toInt()]
+        val updatedRefillValues = refill.second.copy {
+            mapValues with mapOf("z" to "z")
+        }
+        val select = AnyValueMapIndexModel.graph { listOf(name) }
+        val orderReference = AnyValueMapIndexModel { mapValues.refToAnyKey() }
+        val request = AnyValueMapIndexModel.scan(
+            select = select,
+            order = when (direction) {
+                Direction.ASC -> orderReference.ascending()
+                Direction.DESC -> orderReference.descending()
+            },
+            limit = limit
+        )
+        val listener = UpdateListenerForScan(
+            request = request,
+            scanRange = AnyValueMapIndexModel.createScanRange(request.where, request.startKey?.bytes, request.includeStart),
+            response = ValuesResponse(
+                dataModel = AnyValueMapIndexModel,
+                values = initialValues.map { (key, values) ->
+                    ValuesWithMetaData(key, values, firstVersion = 1uL, lastVersion = 1uL, isDeleted = false)
+                }
+            )
+        )
+        var refillSelect: RootPropRefGraph<AnyValueMapIndexModel>? = select
+        val dataStore = object : IsDataStore {
+            override val dataModelsById = emptyMap<UInt, IsRootDataModel>()
+            override val dataModelIdsByString = emptyMap<String, UInt>()
+            override val keepAllVersions = false
+            override val keepUpdateHistoryIndex = false
+            override val supportsFuzzyQualifierFiltering = false
+            override val supportsSubReferenceFiltering = false
+
+            @Suppress("UNCHECKED_CAST")
+            override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+                request: RQ
+            ): RP {
+                return when (request) {
+                    is ScanRequest<*> -> {
+                        refillSelect = (request as ScanRequest<AnyValueMapIndexModel>).select
+                        ValuesResponse(
+                            dataModel = AnyValueMapIndexModel,
+                            values = listOf(
+                                ValuesWithMetaData(
+                                    key = refill.first,
+                                    values = refill.second.filterWithSelect(refillSelect),
+                                    firstVersion = 1uL,
+                                    lastVersion = 2uL,
+                                    isDeleted = false
+                                )
+                            )
+                        ) as RP
+                    }
+                    is GetRequest<*> -> ValuesResponse(
+                        dataModel = AnyValueMapIndexModel,
+                        values = listOf(
+                            ValuesWithMetaData(
+                                key = refill.first,
+                                values = updatedRefillValues,
+                                firstVersion = 1uL,
+                                lastVersion = 3uL,
+                                isDeleted = false
+                            )
+                        )
+                    ) as RP
+                    else -> error("unexpected request $request")
+                }
+            }
+
+            override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
+                request: RQ
+            ): Flow<IsUpdateResponse<DM>> = error("unused")
+
+            override suspend fun <DM : IsRootDataModel> processUpdate(
+                updateResponse: UpdateResponse<DM>
+            ): ProcessResponse<DM> = error("unused")
+
+            override suspend fun close() = Unit
+
+            override suspend fun closeAllListeners() = Unit
+        }
+
+        listener.process(
+            Update.Deletion(AnyValueMapIndexModel, deleted.first, version = 2uL, isHardDelete = true),
+            dataStore
+        )
+        val index = AnyValueMapIndexModel.Meta.indexes!!.first()
+        val oldIndexKey = index.toStorageByteArraysForIndex(refill.second, refill.first.bytes).single()
+        val updatedIndexKey = index.toStorageByteArraysForIndex(updatedRefillValues, refill.first.bytes).single()
+        listener.process(
+            Update.Change(
+                dataModel = AnyValueMapIndexModel,
+                key = refill.first,
+                version = 3uL,
+                changes = listOf(
+                    IndexChange(
+                        listOf(IndexUpdate(index.referenceStorageByteArray, Bytes(updatedIndexKey), Bytes(oldIndexKey)))
+                    )
+                )
+            ),
+            dataStore
+        )
+        val additions = withTimeout(200.milliseconds) {
+            listener.getFlow().take(3).toList().filterIsInstance<AdditionUpdate<*>>()
+        }
+
+        assertEquals(null, refillSelect)
+        assertEquals(
+            when (direction) {
+                Direction.ASC -> initialValues.drop(1).map { it.first } + refill.first
+                Direction.DESC -> listOf(refill.first) + initialValues.drop(1).map { it.first }
+            },
+            listener.matchingKeys.value
+        )
+        assertEquals(refill.first, additions.single().key)
+        assertEquals(refill.second.filterWithSelect(select), additions.single().values)
+    }
+
     @Test
     fun closeCompletesFlowAfterInitialResponse() = runTest {
         val key = AnyValueMapIndexModel.key(ByteArray(16) { 1 })

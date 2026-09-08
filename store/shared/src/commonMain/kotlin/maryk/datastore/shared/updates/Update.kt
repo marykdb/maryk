@@ -15,8 +15,16 @@ sealed class Update<DM: IsRootDataModel>(
         dataModel: DM,
         key: Key<DM>,
         version: ULong,
-        val values: Values<DM>
-    ): Update<DM>(dataModel, key, version)
+        val values: Values<DM>,
+        val isDeleted: Boolean,
+    ): Update<DM>(dataModel, key, version) {
+        constructor(
+            dataModel: DM,
+            key: Key<DM>,
+            version: ULong,
+            values: Values<DM>,
+        ) : this(dataModel, key, version, values, false)
+    }
 
     class Deletion<DM: IsRootDataModel>(
         dataModel: DM,

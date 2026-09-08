@@ -100,7 +100,7 @@ internal suspend fun <DM : IsRootDataModel> processAdd(
         val changes = listOf<IsChange>()
 
         updateSharedFlow(
-            Addition(dataModel, key, version.timestamp, objectToAdd.change(changes))
+            Addition(dataModel, key, version.timestamp, objectToAdd.change(changes), isDeleted)
         )
 
         AddSuccess(key, version.timestamp, changes)

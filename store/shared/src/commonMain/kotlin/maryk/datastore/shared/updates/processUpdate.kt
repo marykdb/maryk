@@ -41,32 +41,34 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
     if (request !is IsChangesRequest<*, *> || request.fromVersion <= version) {
         when (this) {
             is Addition<DM> -> {
-                if (values.matches(request.where)) {
-                    val insertIndex = updateListener.addValues(key, values)
-                    if (insertIndex != null) {
-                        sharedFlow.send(
-                            AdditionUpdate(
-                                key = key,
-                                version = version,
-                                firstVersion = version,
-                                insertionIndex = insertIndex,
-                                values = values.filterWithSelect(request.select),
-                                isDeleted = false
-                            )
-                        )
-
-                        // Remove any values after the limit
-                        if (updateListener is UpdateListenerForScan<DM, *> && updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit) {
-                            val keyToRemove = updateListener.getLast()
-                            updateListener.removeKey(keyToRemove)
-
+                if (!isDeleted || !request.filterSoftDeleted) {
+                    if (values.matches(request.where)) {
+                        val insertIndex = updateListener.addValues(key, values)
+                        if (insertIndex != null) {
                             sharedFlow.send(
-                                RemovalUpdate(
-                                    key = keyToRemove,
+                                AdditionUpdate(
+                                    key = key,
                                     version = version,
-                                    reason = NotInRange
+                                    firstVersion = version,
+                                    insertionIndex = insertIndex,
+                                    values = values.filterWithSelect(request.select),
+                                    isDeleted = isDeleted
                                 )
                             )
+
+                            // Remove any values after the limit
+                            if (updateListener is UpdateListenerForScan<DM, *> && updateListener.matchingKeys.value.size.toUInt() > updateListener.request.limit) {
+                                val keyToRemove = updateListener.getLast()
+                                updateListener.removeKey(keyToRemove)
+
+                                sharedFlow.send(
+                                    RemovalUpdate(
+                                        key = keyToRemove,
+                                        version = version,
+                                        reason = NotInRange
+                                    )
+                                )
+                            }
                         }
                     }
                 }
@@ -325,11 +327,14 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
         nextValue?.also { additionUpdate ->
             // Always at the end so no need to order
             updateListener.addValuesAtEnd(additionUpdate.key, additionUpdate.values)
+            val selectedAddition = additionUpdate.copy(
+                values = additionUpdate.values.filterWithSelect(updateListener.request.select)
+            )
 
             if (change is Change<DM>) {
                 if (additionUpdate.key != change.key) { // if not same key, remove old & add new
                     sendRemoval()
-                    sharedFlow.send(additionUpdate)
+                    sharedFlow.send(selectedAddition)
                 } else if (originalIndex != additionUpdate.insertionIndex) {
                     // If same key send an order change
                     change.createChangeUpdate(
@@ -340,7 +345,7 @@ private suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> handleDelet
                 } // else no change because still the last
             } else {
                 sendRemoval()
-                sharedFlow.send(additionUpdate)
+                sharedFlow.send(selectedAddition)
             }
         } ?: sendRemoval()
     } else {
@@ -357,7 +362,7 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
         val nextResults = execute(
             request.dataModel.scanUpdates(
                 startKey = request.startKey,
-                select = request.select,
+                select = null,
                 where = request.where,
                 filterSoftDeleted = request.filterSoftDeleted,
                 limit = request.limit,
@@ -378,7 +383,7 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
         execute(
             request.dataModel.scan(
                 startKey = request.startKey,
-                select = request.select,
+                select = null,
                 where = request.where,
                 order = request.order,
                 limit = 1u,
@@ -392,7 +397,7 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
         execute(
             request.dataModel.scan(
                 startKey = currentKeys.last(),
-                select = request.select,
+                select = null,
                 where = request.where,
                 order = request.order,
                 limit = 1u,

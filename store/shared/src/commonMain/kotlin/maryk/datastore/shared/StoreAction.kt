@@ -13,6 +13,23 @@ class StoreAction<DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResp
     val onBeforeReadContext: (suspend () -> Unit)? = null,
     val onFlowSnapshotBoundary: (suspend (FlowSnapshotBoundary) -> Unit)? = null,
 ) {
+    /** Opaque backend context captured when the request is submitted. */
+    val executionContext: Any?
+        get() = capturedExecutionContext
+
+    private var capturedExecutionContext: Any? = null
+
+    /** Adds backend request context without changing the legacy JVM constructor. */
+    constructor(
+        request: RQ,
+        response: CompletableDeferred<RP>,
+        onBeforeReadContext: (suspend () -> Unit)?,
+        onFlowSnapshotBoundary: (suspend (FlowSnapshotBoundary) -> Unit)?,
+        executionContext: Any?,
+    ) : this(request, response, onBeforeReadContext, onFlowSnapshotBoundary) {
+        capturedExecutionContext = executionContext
+    }
+
     /** Whether this read establishes live-listener membership at a snapshot boundary. */
     val isFlowSnapshotRead get() = onFlowSnapshotBoundary != null
 }

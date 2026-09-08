@@ -3,6 +3,9 @@ package maryk.datastore.foundationdb
 import kotlin.time.TimeMark
 import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.AbstractCoroutineContextElement
+import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import maryk.core.models.IsRootDataModel
@@ -27,6 +30,12 @@ import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
 import maryk.datastore.foundationdb.model.MIGRATION_FINALIZATION_PENDING_MESSAGE
 import maryk.foundationdb.Transaction
 import kotlin.time.Duration.Companion.milliseconds
+
+internal class FoundationDBMigrationRequestContext(
+    val transactionGuard: (Transaction) -> Unit,
+) : AbstractCoroutineContextElement(FoundationDBMigrationRequestContext) {
+    companion object : CoroutineContext.Key<FoundationDBMigrationRequestContext>
+}
 
 internal suspend fun FoundationDBDataStore.handleRequiredMigration(
     index: UInt,
@@ -188,18 +197,25 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         val transactionGuard = foundationDBMigrationLease?.let { lease ->
             { transaction: Transaction -> lease.requireOwnership(transaction, index, migrationId) }
         }
-        if (transactionGuard != null) {
-            migrationTransactionGuards.update { it + (index to transactionGuard) }
-        }
-        val outcome = try {
+        val outcome = if (transactionGuard == null) {
             when (phase) {
                 MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
                 MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
                 MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
                 MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
             }
-        } finally {
-            if (transactionGuard != null) {
+        } else {
+            migrationTransactionGuards.update { it + (index to transactionGuard) }
+            try {
+                withContext(FoundationDBMigrationRequestContext(transactionGuard)) {
+                    when (phase) {
+                        MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
+                        MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
+                        MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
+                        MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
+                    }
+                }
+            } finally {
                 migrationTransactionGuards.update { it - index }
             }
         }

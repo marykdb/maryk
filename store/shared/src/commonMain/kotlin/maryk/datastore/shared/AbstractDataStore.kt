@@ -152,7 +152,7 @@ abstract class AbstractDataStore(
         trackPendingResponse(response)
         try {
             storeChannel.send(
-                StoreAction(request, response)
+                StoreAction(request, response, null, null, requestExecutionContext())
             )
             return response.await()
         } catch (error: Throwable) {
@@ -175,7 +175,7 @@ abstract class AbstractDataStore(
         trackPendingResponse(response)
         try {
             storeChannel.send(
-                StoreAction(updateResponse, response)
+                StoreAction(updateResponse, response, null, null, requestExecutionContext())
             )
             return response.await()
         } catch (error: Throwable) {
@@ -240,6 +240,7 @@ abstract class AbstractDataStore(
                                 }
                                 snapshotBoundary.complete(boundary)
                             },
+                            executionContext = requestExecutionContext(),
                         )
                     )
                     response.await()
@@ -303,6 +304,8 @@ abstract class AbstractDataStore(
     protected open suspend fun onBeforeFlowSnapshotBoundary() {}
     /** Backend hook for coroutine-scoped request permissions such as migration handlers. */
     protected open suspend fun assertRequestModelReady(dataModelId: UInt) = assertModelReady(dataModelId)
+    /** Backend hook to carry coroutine-scoped permissions to the request processor. */
+    protected open suspend fun requestExecutionContext(): Any? = null
     protected open fun assertModelReady(dataModelId: UInt) {}
 
     /** Allocate an update position before its backend publishes it to the listener actor. */

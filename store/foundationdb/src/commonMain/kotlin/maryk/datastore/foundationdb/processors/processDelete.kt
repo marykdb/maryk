@@ -59,7 +59,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
     ignoreIfVersionNotNewer: Boolean = false,
 ): IsDeleteResponseStatus<DM> = try {
     var updateToEmit: Update<DM>? = null
-    runTransaction(dbIndex) { tr ->
+    runRequestTransaction(dbIndex) { tr ->
         val keyBytes = key.bytes
         val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, keyBytes)
         val tombstoneVersion = tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
@@ -72,7 +72,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
             } else null
             val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
             if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
-                return@runTransaction DeleteSuccess(lastAppliedVersion)
+                return@runRequestTransaction DeleteSuccess(lastAppliedVersion)
             }
 
             if (!exists && hardDelete) {
@@ -87,12 +87,12 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                     modelId = dbIndex,
                     update = ClusterLogDeletion(Bytes(key.bytes), version.timestamp, true),
                 )
-                return@runTransaction DeleteSuccess(version.timestamp)
+                return@runRequestTransaction DeleteSuccess(version.timestamp)
             }
         }
 
         if (!exists) {
-            return@runTransaction DoesNotExist(key)
+            return@runRequestTransaction DoesNotExist(key)
         }
 
         val versionBytes = HLC.toStorageBytes(version)

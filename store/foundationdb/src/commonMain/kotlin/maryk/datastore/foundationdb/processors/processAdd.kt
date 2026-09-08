@@ -57,7 +57,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
 
     var updateToEmit: Update<DM>? = null
 
-    runTransaction(dataModelId) { tr ->
+    runRequestTransaction(dataModelId) { tr ->
         val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
         val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, key.bytes)
 
@@ -69,7 +69,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             } else null
             val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
             if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
-                return@runTransaction AddSuccess(key, version.timestamp, emptyList())
+                return@runRequestTransaction AddSuccess(key, version.timestamp, emptyList())
             }
         }
         if (existing != null) {

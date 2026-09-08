@@ -97,7 +97,7 @@ Operator semantics:
 Default lease is `FoundationDBMigrationLease`.
 - Lease key per model in metadata subspace
 - owner token
-- monotonically increasing fencing token, checked in each FoundationDB datastore write made by a migration hook
+- monotonically increasing fencing token, checked in every datastore mutation transaction submitted by a migration or version hook, including mutations for another registered model
 - TTL via `migrationLeaseConfiguration.migrationLeaseTimeoutMs`
 - heartbeat via `migrationLeaseConfiguration.migrationLeaseHeartbeatMs`
 - automatic takeover after TTL expiry

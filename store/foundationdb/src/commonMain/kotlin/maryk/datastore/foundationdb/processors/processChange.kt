@@ -138,7 +138,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
     val result: IsChangeResponseStatus<DM> = try {
         var updateToEmit: Update<DM>? = null
 
-        runTransaction(dataModelId) { tr ->
+        runRequestTransaction(dataModelId) { tr ->
             val keyBytes = key.bytes
             val tombstoneVersion = if (ignoreIfVersionNotNewer) {
                 tr.get(packKey(tableDirs.replicationTombstonePrefix, keyBytes))
@@ -147,7 +147,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             } else null
             val createdBytes = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
             if (createdBytes?.readHLCTimestampIfExact() == null) {
-                return@runTransaction if (tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
+                return@runRequestTransaction if (tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
                     ChangeSuccess(tombstoneVersion, emptyList())
                 } else {
                     DoesNotExist(key)
@@ -156,14 +156,14 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
             // Validate expected last version if provided
             val latest = tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()
-                ?: return@runTransaction DoesNotExist(key)
-            val latestVersion = latest.readHLCTimestampIfExact() ?: return@runTransaction DoesNotExist(key)
+                ?: return@runRequestTransaction DoesNotExist(key)
+            val latestVersion = latest.readHLCTimestampIfExact() ?: return@runRequestTransaction DoesNotExist(key)
             val lastAppliedVersion = maxOf(latestVersion, tombstoneVersion ?: 0uL)
             if (ignoreIfVersionNotNewer && version.timestamp <= lastAppliedVersion) {
-                return@runTransaction ChangeSuccess(lastAppliedVersion, emptyList())
+                return@runRequestTransaction ChangeSuccess(lastAppliedVersion, emptyList())
             }
             if (lastVersion != null && latestVersion != lastVersion) {
-                return@runTransaction ValidationFail(
+                return@runRequestTransaction ValidationFail(
                     listOf(InvalidValueException(null, "Version of object was different than given: $lastVersion < $latestVersion"))
                 )
             }
@@ -279,7 +279,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 if (exceptions.isNotEmpty()) {
                     throw EarlyStatus(ValidationFail<DM>(exceptions))
                 } else {
-                    return@runTransaction ChangeSuccess(latestVersion, emptyList())
+                    return@runRequestTransaction ChangeSuccess(latestVersion, emptyList())
                 }
             }
 
@@ -766,7 +766,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                                 }
                             }
                         }
-                        else -> return@runTransaction ServerFail("Unsupported operation $change")
+                        else -> return@runRequestTransaction ServerFail("Unsupported operation $change")
                     }
                 }
             } catch (e: ValidationUmbrellaException) {
@@ -791,7 +791,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             }
 
             if (!isChanged) {
-                return@runTransaction ChangeSuccess(latestVersion, outChanges)
+                return@runRequestTransaction ChangeSuccess(latestVersion, outChanges)
             }
 
             // Update latest version if anything changed

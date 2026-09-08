@@ -4,6 +4,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.IO
@@ -152,6 +153,7 @@ import maryk.lib.extensions.compare.nextByteInSameLength
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.TimeSource
+import kotlin.coroutines.EmptyCoroutineContext
 
 private val storeMetadataModelsByIdDirectoryPath = listOf("__meta__", "models_by_id")
 private val CONTEXTUAL_ENCRYPTED_VALUE_MAGIC = FieldEncryptionEnvelope.Contextual.magic
@@ -257,8 +259,28 @@ class FoundationDBDataStore private constructor(
         }
     }
 
-    private fun requireModelSchemaReady(transaction: Transaction, dataModelId: UInt) {
+    internal suspend inline fun <T> runRequestTransaction(
+        dataModelId: UInt? = null,
+        crossinline block: (Transaction) -> T,
+    ): T {
+        if (isClosing.value) throw CancellationException("Datastore closing")
+        val migrationRequest = currentCoroutineContext()[FoundationDBMigrationRequestContext]
+        return tc.run { tr ->
+            dataModelId?.let { requireModelSchemaReady(tr, it, migrationRequest?.transactionGuard) }
+            block(tr)
+        }
+    }
+
+    private fun requireModelSchemaReady(transaction: Transaction, dataModelId: UInt) =
+        requireModelSchemaReady(transaction, dataModelId, null)
+
+    private fun requireModelSchemaReady(
+        transaction: Transaction,
+        dataModelId: UInt,
+        migrationTransactionGuard: ((Transaction) -> Unit)?,
+    ) {
         migrationTransactionGuards.value[dataModelId]?.invoke(transaction)
+        migrationTransactionGuard?.invoke(transaction)
         schemaRebuildTransactionGuards.value[dataModelId]?.let { rebuildOwnerGuard ->
             rebuildOwnerGuard(transaction)
             return
@@ -441,13 +463,17 @@ class FoundationDBDataStore private constructor(
                                 transactionGuard = transactionGuard,
                                 persistModelDefinition = false,
                             )
-                            if (transactionGuard != null) {
-                                migrationTransactionGuards.update { it + (index to transactionGuard) }
-                            }
-                            try {
+                            if (transactionGuard == null) {
                                 versionUpdateHandler?.invoke(this, storedModel, dataModel)
-                            } finally {
-                                migrationTransactionGuards.update { it - index }
+                            } else {
+                                migrationTransactionGuards.update { it + (index to transactionGuard) }
+                                try {
+                                    withContext(FoundationDBMigrationRequestContext(transactionGuard)) {
+                                        versionUpdateHandler?.invoke(this@FoundationDBDataStore, storedModel, dataModel)
+                                    }
+                                } finally {
+                                    migrationTransactionGuards.update { it - index }
+                                }
                             }
                             val definition = encodeModelDefinition(dataModel)
                             tc.run { transaction ->
@@ -885,8 +911,10 @@ class FoundationDBDataStore private constructor(
                         this@FoundationDBDataStore.createFlowSnapshotBoundary(readContext?.readVersion)
                     },
                 ) { storeAction, readContext ->
-                    val cache = Cache()
-                    try {
+                    val requestContext = storeAction.executionContext as? FoundationDBMigrationRequestContext
+                    withContext(requestContext ?: EmptyCoroutineContext) {
+                        val cache = Cache()
+                        try {
                         if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
                             val observed = observedClusterHlc.value
                             val requestVersion = (storeAction.request as? UpdateResponse<*>)?.update?.version ?: 0uL
@@ -935,14 +963,15 @@ class FoundationDBDataStore private constructor(
                             }
                             else -> throw TypeException("Unsupported request type ${request::class.simpleName}")
                         }
-                    } catch (e: CancellationException) {
-                        storeAction.response.cancel(e)
-                        if (!isActive) {
-                            throw e
+                        } catch (e: CancellationException) {
+                            storeAction.response.cancel(e)
+                            if (!isActive) {
+                                throw e
+                            }
+                        } catch (e: Throwable) {
+                            e.rethrowIfFatal()
+                            storeAction.response.completeExceptionally(e.unwrapFdb())
                         }
-                    } catch (e: Throwable) {
-                        e.rethrowIfFatal()
-                        storeAction.response.completeExceptionally(e.unwrapFdb())
                     }
                 }
             } finally {
@@ -1798,6 +1827,9 @@ class FoundationDBDataStore private constructor(
         }
         assertModelReadyForMigrations(dataModelId)
     }
+
+    override suspend fun requestExecutionContext(): Any? =
+        currentCoroutineContext()[FoundationDBMigrationRequestContext]
 
     companion object {
         /**

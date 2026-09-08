@@ -640,6 +640,66 @@ class FoundationDBDataStoreMigrationTest {
     }
 
     @Test
+    fun ownershipReplacementFencesMigrationHookWriteToAnotherModelWithoutBlockingOrdinaryWrite() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-handler-cross-model-write-fence", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1, 2u to SimpleMarykModel),
+        ).close()
+        var handlerWriteKey: ByteArray? = null
+
+        assertFailsWith<FoundationDBMigrationLeaseLostException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2, 2u to SimpleMarykModel),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { MigrationOutcome.Success },
+                ),
+                versionUpdateHandler = { store, oldModel, _ ->
+                    if (oldModel != null) {
+                        val modelPrefix = store.getTableDirs(1u).modelPrefix
+                        val leaseKey = packKey(modelPrefix, modelMigrationLeaseKey)
+                        handlerWriteKey = packKey(store.getTableDirs(2u).modelPrefix, byteArrayOf(99))
+                        store.tc.run { transaction ->
+                            transaction.set(
+                                leaseKey,
+                                "v=1\nowner=contender\nmigration=Model:1.1->2\nexpires=0\n".encodeToByteArray(),
+                            )
+                        }
+                        assertFailsWith<FoundationDBMigrationLeaseLostException> {
+                            store.runRequestTransaction(2u) { transaction ->
+                                transaction.set(
+                                    requireNotNull(handlerWriteKey),
+                                    byteArrayOf(1),
+                                )
+                            }
+                        }
+                    }
+                },
+            )
+        }
+        val resumed = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2, 2u to SimpleMarykModel),
+            migrationConfiguration = MigrationConfiguration(
+                migrationHandler = { MigrationOutcome.Success },
+            ),
+        )
+        try {
+            assertNull(
+                resumed.runTransaction(2u) { transaction ->
+                    transaction.get(requireNotNull(handlerWriteKey)).awaitResult()
+                },
+            )
+        } finally {
+            resumed.close()
+        }
+    }
+
+    @Test
     fun ownershipReplacementFencesRealMigrationPhaseHandlerWrite() = runTest(timeout = 3.minutes) {
         val dirPath = listOf("maryk", "test", "fdb-migration-phase-write-fence", Uuid.random().toString())
         var protectedKey: ByteArray? = null

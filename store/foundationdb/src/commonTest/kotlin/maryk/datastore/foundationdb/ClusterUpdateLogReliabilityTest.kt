@@ -11,18 +11,25 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.datetime.LocalDateTime
 import maryk.core.clock.HLC
+import maryk.core.exceptions.StorageException
 import maryk.core.properties.types.Bytes
 import maryk.core.query.requests.add
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.datastore.foundationdb.clusterlog.ClusterLogDeletion
 import maryk.datastore.foundationdb.clusterlog.ClusterUpdateLog
+import maryk.datastore.foundationdb.processors.helpers.awaitResult
+import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.test.dataModelsForTests
 import maryk.foundationdb.MutationType
+import maryk.foundationdb.directory.DirectoryLayer
+import maryk.foundationdb.tuple.Tuple
+import maryk.lib.bytes.combineToByteArray
 import maryk.test.models.Log
 import maryk.test.models.Severity.INFO
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -30,6 +37,87 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.uuid.Uuid
 
 class ClusterUpdateLogReliabilityTest {
+    @Test
+    fun legacyHighShardBacklogWithoutPersistedConfigurationIsRejected() = runBoundedIntegrationTest {
+        val root = listOf("maryk", "test", "cluster-log", "legacy-high-shard", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = root,
+            dataModelsById = dataModelsForTests,
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "seed-${Uuid.random()}",
+                clusterUpdateLogShardCount = 64,
+            ),
+        ).close()
+
+        val maintenance = FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = root,
+            dataModelsById = dataModelsForTests,
+        )
+        val rootDirectory = maintenance.runTransaction { transaction ->
+            DirectoryLayer.getDefault().createOrOpen(transaction, root).awaitResult()
+        }
+        val logDirectory = maintenance.runTransaction { transaction ->
+            rootDirectory.createOrOpen(transaction, listOf("__updates__", "v1", "log")).awaitResult()
+        }
+        val configDirectory = maintenance.runTransaction { transaction ->
+            rootDirectory.createOrOpen(transaction, listOf("__updates__", "v1", "config")).awaitResult()
+        }
+        maintenance.runTransaction { transaction ->
+            transaction.clear(packKey(configDirectory.pack(), byteArrayOf(0)))
+            transaction.set(
+                combineToByteArray(logDirectory.pack(), Tuple.from(63L).pack(), byteArrayOf(1)),
+                byteArrayOf(1),
+            )
+        }
+        maintenance.close()
+
+        val error = assertFailsWith<StorageException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = root,
+                dataModelsById = dataModelsForTests,
+                clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                    enableClusterUpdateLog = true,
+                    clusterUpdateLogConsumerId = "lower-${Uuid.random()}",
+                    clusterUpdateLogShardCount = 32,
+                ),
+            )
+        }
+        assertTrue(error.message.orEmpty().contains("Legacy cluster update log contains backlog"))
+    }
+
+    @Test
+    fun reopeningClusterLogWithDifferentShardCountIsRejected() = runBoundedIntegrationTest {
+        val root = listOf("maryk", "test", "cluster-log", "shard-count", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "./fdb.cluster",
+            directoryPath = root,
+            dataModelsById = dataModelsForTests,
+            clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                enableClusterUpdateLog = true,
+                clusterUpdateLogConsumerId = "first-${Uuid.random()}",
+                clusterUpdateLogShardCount = 64,
+            ),
+        ).close()
+
+        val error = assertFailsWith<StorageException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "./fdb.cluster",
+                directoryPath = root,
+                dataModelsById = dataModelsForTests,
+                clusterUpdateLogConfiguration = FoundationDBClusterUpdateLogConfiguration(
+                    enableClusterUpdateLog = true,
+                    clusterUpdateLogConsumerId = "second-${Uuid.random()}",
+                    clusterUpdateLogShardCount = 32,
+                ),
+            )
+        }
+        assertTrue(error.message.orEmpty().contains("shard count"))
+    }
+
     @Test
     fun clusterLogCursorUsesCommitOrderWhenHlcDecreases() = runBoundedIntegrationTest {
         val root = listOf("maryk", "test", "cluster-log", "commit-order", Uuid.random().toString())

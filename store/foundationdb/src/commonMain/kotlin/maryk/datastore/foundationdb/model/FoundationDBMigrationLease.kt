@@ -23,10 +23,12 @@ internal class FoundationDBMigrationLease(
     private val scope: CoroutineScope,
     private val leaseTimeoutMs: Long = 30_000L,
     private val heartbeatIntervalMs: Long = 10_000L,
+    private val isStoreClosing: () -> Boolean = { false },
 ) : MigrationLease {
     private val ownerToken = Random.nextLong().toString()
     private val heartbeatJobs = atomic<Map<UInt, Job>>(emptyMap())
     private val ownerships = atomic<Map<UInt, LeaseOwnership>>(emptyMap())
+    private val fencingTokens = atomic<Map<UInt, ULong>>(emptyMap())
     private val lossReasons = atomic<Map<UInt, String>>(emptyMap())
 
     override suspend fun tryAcquire(modelId: UInt, migrationId: String): Boolean {
@@ -37,19 +39,22 @@ internal class FoundationDBMigrationLease(
             val expiresAtMs = nowMs.plusSaturating(leaseTimeoutMs)
             val existing = tr.get(key).awaitResult()?.let(LeaseRecord::fromPersistedBytes)
             if (existing != null && existing.expiresAtMs > nowMs && existing.ownerToken != ownerToken) {
-                false
+                null
             } else {
-                tr.set(key, LeaseRecord(ownerToken, migrationId, expiresAtMs).toPersistedBytes())
-                true
+                val fencingToken = existing?.fencingToken.nextFencingToken(modelId, migrationId)
+                LeaseRecord(ownerToken, migrationId, expiresAtMs, fencingToken).also { record ->
+                    tr.set(key, record.toPersistedBytes())
+                }
             }
         }
 
-        if (acquired) {
+        if (acquired != null) {
             lossReasons.update { it - modelId }
+            fencingTokens.update { it + (modelId to acquired.fencingToken) }
             bindOwner(modelId, migrationId)
             startHeartbeat(modelId, migrationId, key)
         }
-        return acquired
+        return acquired != null
     }
 
     suspend fun bindOwner(modelId: UInt, migrationId: String) {
@@ -76,10 +81,12 @@ internal class FoundationDBMigrationLease(
         val key = modelPrefixesById[modelId]?.let { packKey(it, modelMigrationLeaseKey) }
             ?: throw leaseLost(modelId, migrationId, "model lease key is unavailable")
         val existing = transaction.get(key).awaitResult()?.let(LeaseRecord::fromPersistedBytes)
+        val expectedFencingToken = fencingTokens.value[modelId]
         val nowMs = Clock.System.now().toEpochMilliseconds()
         if (
             existing?.ownerToken != ownerToken ||
             existing.migrationId != migrationId ||
+            existing.fencingToken != expectedFencingToken ||
             existing.expiresAtMs <= nowMs
         ) {
             val cause = leaseLost(modelId, migrationId, "persisted ownership changed or expired")
@@ -91,13 +98,26 @@ internal class FoundationDBMigrationLease(
         heartbeatJobs.value[modelId]?.cancel()
         heartbeatJobs.update { it - modelId }
         ownerships.update { it - modelId }
+        val expectedFencingToken = fencingTokens.value[modelId]
+        fencingTokens.update { it - modelId }
 
         val key = modelPrefixesById[modelId]?.let { packKey(it, modelMigrationLeaseKey) } ?: return
-        tc.run { tr ->
-            val existing = tr.get(key).awaitResult()?.let(LeaseRecord::fromPersistedBytes)
-            if (existing?.ownerToken == ownerToken && existing.migrationId == migrationId) {
-                tr.clear(key)
+        try {
+            tc.run { tr ->
+                val existing = tr.get(key).awaitResult()?.let(LeaseRecord::fromPersistedBytes)
+                if (
+                    existing?.ownerToken == ownerToken &&
+                    existing.migrationId == migrationId &&
+                    existing.fencingToken == expectedFencingToken
+                ) {
+                    // Retain the last fencing token so a later acquisition is strictly monotonic.
+                    tr.set(key, existing.copy(expiresAtMs = 0L).toPersistedBytes())
+                }
             }
+        } catch (error: IllegalStateException) {
+            // Native close may be required to abort a blocking FDB future before this canceled
+            // background job reaches finally. The live lease then expires normally.
+            if (!isStoreClosing()) throw error
         }
     }
 
@@ -114,6 +134,7 @@ internal class FoundationDBMigrationLease(
                         if (
                             existing?.ownerToken == ownerToken &&
                             existing.migrationId == migrationId &&
+                            existing.fencingToken == fencingTokens.value[modelId] &&
                             existing.expiresAtMs > nowMs
                         ) {
                             tr.set(key, existing.copy(expiresAtMs = nextExpiry).toPersistedBytes())
@@ -125,6 +146,7 @@ internal class FoundationDBMigrationLease(
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Throwable) {
+                    if (isStoreClosing()) return@launch
                     cancelOwner(modelId, migrationId, "heartbeat failed: ${error.message ?: "unknown error"}")
                     return@launch
                 }
@@ -146,11 +168,13 @@ internal class FoundationDBMigrationLease(
                 val existing = tr.get(key).awaitResult()?.let(LeaseRecord::fromPersistedBytes)
                 existing?.ownerToken == ownerToken &&
                     existing.migrationId == migrationId &&
+                    existing.fencingToken == fencingTokens.value[modelId] &&
                     existing.expiresAtMs > nowMs
             }
         } catch (error: CancellationException) {
             throw error
         } catch (error: Throwable) {
+            if (isStoreClosing()) throw CancellationException("Datastore closing")
             val cause = leaseLost(modelId, migrationId, "ownership check failed: ${error.message ?: "unknown error"}")
             cancelOwner(modelId, migrationId, cause)
             throw cause
@@ -192,12 +216,14 @@ internal class FoundationDBMigrationLease(
         val ownerToken: String,
         val migrationId: String,
         val expiresAtMs: Long,
+        val fencingToken: ULong,
     ) {
         fun toPersistedBytes(): ByteArray = buildString {
-            append("v=1\n")
+            append("v=2\n")
             append("owner=").append(ownerToken).append('\n')
             append("migration=").append(migrationId).append('\n')
             append("expires=").append(expiresAtMs).append('\n')
+            append("fence=").append(fencingToken).append('\n')
         }.encodeToByteArray()
 
         companion object {
@@ -210,14 +236,27 @@ internal class FoundationDBMigrationLease(
                     }
                     .toMap()
 
-                if (entries["v"] != "1") return null
+                val version = entries["v"]
+                if (version != "1" && version != "2") return null
                 val owner = entries["owner"] ?: return null
                 val migration = entries["migration"] ?: return null
                 val expires = entries["expires"]?.toLongOrNull() ?: return null
-                return LeaseRecord(owner, migration, expires)
+                val fencingToken = when (version) {
+                    "1" -> 0uL
+                    else -> entries["fence"]?.toULongOrNull() ?: return null
+                }
+                return LeaseRecord(owner, migration, expires, fencingToken)
             }
         }
     }
+}
+
+private fun ULong?.nextFencingToken(modelId: UInt, migrationId: String): ULong = when (this) {
+    null -> 1uL
+    ULong.MAX_VALUE -> throw IllegalStateException(
+        "FoundationDB migration fencing token exhausted for model $modelId migration $migrationId"
+    )
+    else -> this + 1uL
 }
 
 internal class FoundationDBMigrationLeaseLostException(message: String) : CancellationException(message)

@@ -2,6 +2,7 @@ package maryk.datastore.foundationdb.processors
 
 import maryk.core.models.IsRootDataModel
 import maryk.core.properties.references.IsPropertyReferenceForCache
+import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.requests.ScanChangesRequest
 import maryk.core.query.responses.ChangesResponse
@@ -62,8 +63,14 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
             } else {
                 change
             }
-            updated?.let {
+            if (updated != null) {
                 objectChanges += updated
+            } else if (storeAction.isFlowSnapshotRead) {
+                objectChanges += DataObjectVersionedChange(
+                    key = key,
+                    sortingKey = sortingKey?.let(::Bytes),
+                    changes = emptyList()
+                )
             }
         }
 

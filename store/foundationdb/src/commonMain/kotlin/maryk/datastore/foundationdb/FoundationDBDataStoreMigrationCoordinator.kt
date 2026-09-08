@@ -24,6 +24,7 @@ import maryk.datastore.shared.migration.nextMigrationAttemptOrNull
 import maryk.datastore.foundationdb.model.FoundationDBMigrationLease
 import maryk.datastore.foundationdb.model.FoundationDBMigrationLeaseLostException
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
+import maryk.datastore.foundationdb.model.MIGRATION_FINALIZATION_PENDING_MESSAGE
 import maryk.foundationdb.Transaction
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -35,7 +36,11 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
     effectiveMigrationLease: MigrationLease,
     migrationStateStore: FoundationDBMigrationStateStore,
     recheckMigrationStatus: suspend () -> MigrationStatus,
-    finalizeMigration: suspend (StoredRootDataModelDefinition, ((Transaction) -> Unit)?) -> Unit,
+    finalizeMigration: suspend (
+        StoredRootDataModelDefinition,
+        ((Transaction) -> Unit)?,
+        (Transaction) -> Unit,
+    ) -> Unit,
     deferStartupFinalization: (suspend () -> Unit) -> Unit,
 ) {
     if (
@@ -48,7 +53,7 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
     }
     val storedModel = migrationStatus.storedDataModel as StoredRootDataModelDefinition
     val migrationId = "${dataModel.Meta.name}:${storedModel.Meta.version}->${dataModel.Meta.version}"
-    val finalizationPendingMessage = "Migration phases complete; finalization pending"
+    val finalizationPendingMessage = MIGRATION_FINALIZATION_PENDING_MESSAGE
     val foundationDBMigrationLease = effectiveMigrationLease as? FoundationDBMigrationLease
 
     fun MigrationState.isFinalizationPending() =
@@ -180,11 +185,23 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
             attempt = attempt,
         )
         assertLeaseOwnership()
-        val outcome = when (phase) {
-            MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
-            MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
-            MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
-            MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
+        val transactionGuard = foundationDBMigrationLease?.let { lease ->
+            { transaction: Transaction -> lease.requireOwnership(transaction, index, migrationId) }
+        }
+        if (transactionGuard != null) {
+            migrationTransactionGuards.update { it + (index to transactionGuard) }
+        }
+        val outcome = try {
+            when (phase) {
+                MigrationPhase.Expand -> migrationConfiguration.migrationExpandHandler?.invoke(context) ?: MigrationOutcome.Success
+                MigrationPhase.Backfill -> migrationConfiguration.migrationHandler?.invoke(context) ?: MigrationOutcome.Success
+                MigrationPhase.Verify -> migrationConfiguration.migrationVerifyHandler?.invoke(context) ?: MigrationOutcome.Success
+                MigrationPhase.Contract -> migrationConfiguration.migrationContractHandler?.invoke(context) ?: MigrationOutcome.Success
+            }
+        } finally {
+            if (transactionGuard != null) {
+                migrationTransactionGuards.update { it - index }
+            }
         }
         return phase to outcome
     }
@@ -200,13 +217,13 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
 
     suspend fun finalizeCompletedPhases(state: MigrationState) {
         assertLeaseOwnership()
-        finalizeMigration(storedModel, foundationDBMigrationLease?.let { lease ->
-            { transaction -> lease.requireOwnership(transaction, index, migrationId) }
-        })
+        finalizeMigration(
+            storedModel,
+            foundationDBMigrationLease?.let { lease ->
+                { transaction -> lease.requireOwnership(transaction, index, migrationId) }
+            },
+        ) { transaction -> migrationStateStore.clear(transaction, index) }
         assertLeaseOwnership()
-        migrationStateStore.clear(index) { transaction ->
-            foundationDBMigrationLease?.requireOwnership(transaction, index, migrationId)
-        }
         migrationRuntimeDetailsByModelId.update { it - index }
         appendOwnedAuditEvent(
             MigrationAuditEventType.Completed,
@@ -232,11 +249,11 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
                         continue
                     }
                     if (effectiveMigrationLease.tryAcquire(index, migrationId)) {
+                        hasLease = true
                         appendOwnedAuditEvent(MigrationAuditEventType.LeaseAcquired)
                         pendingMigrationReasons.update {
                             it + (index to "Migration for ${dataModel.Meta.name} is running in background")
                         }
-                        hasLease = true
                         break
                     }
                     pendingMigrationReasons.update {
@@ -407,11 +424,11 @@ internal suspend fun FoundationDBDataStore.handleRequiredMigration(
         throw MigrationException("Migration lease could not be acquired for ${dataModel.Meta.name}: $migrationId")
     }
 
-    appendOwnedAuditEvent(MigrationAuditEventType.LeaseAcquired)
     var releaseLeaseInFinally = true
     var deferredFinalization = false
 
     try {
+        appendOwnedAuditEvent(MigrationAuditEventType.LeaseAcquired)
         while (true) {
             val startupBudgetMs = migrationConfiguration.migrationStartupBudgetMs
             if (startupBudgetMs != null && startupStarted.elapsedNow().inWholeMilliseconds > startupBudgetMs) {

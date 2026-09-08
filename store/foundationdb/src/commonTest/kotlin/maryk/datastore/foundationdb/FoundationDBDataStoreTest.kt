@@ -3,14 +3,19 @@ package maryk.datastore.foundationdb
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.produceIn
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
+import maryk.core.exceptions.StorageException
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.invoke
 import maryk.core.query.changes.Change
@@ -40,6 +45,8 @@ import maryk.datastore.test.UniqueModel
 import maryk.datastore.test.UniqueOwnershipTest
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.foundationdb.Transaction
+import maryk.foundationdb.TransactionContext
 import maryk.test.models.Log
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
@@ -51,10 +58,85 @@ import kotlin.test.assertFalse
 import kotlin.test.assertIs
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
+    @Test
+    fun closeReportsTimeoutWhenNativeWorkCannotBeCancelled() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "close-noncancellable-native-work", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+        )
+        val started = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val blocked = dataStore.launch(Dispatchers.Default) {
+            started.complete(Unit)
+            // Models an in-flight native commit future which Transaction.close() cannot guarantee to cancel.
+            withContext(NonCancellable) { release.await() }
+        }
+
+        try {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { started.await() }
+            }
+            val error = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(7_000.milliseconds) {
+                    assertFailsWith<StorageException> { dataStore.close() }
+                }
+            }
+            assertContains(error.message.orEmpty(), "native work may still be in flight")
+        } finally {
+            release.complete(Unit)
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { blocked.join() }
+            }
+        }
+    }
+
+    @Test
+    fun trackedTransactionRemainsCancelableThroughImplicitCommit() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "tracked-transaction-commit", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+        )
+        val key = packKey(dataStore.getTableDirs(1u).modelPrefix, byteArrayOf(126))
+        val callbackReturned = CompletableDeferred<Unit>()
+        val allowImplicitCommit = CompletableDeferred<Unit>()
+        val commitBarrier = object : TransactionContext by dataStore.tc {
+            override fun <T> run(block: (Transaction) -> T): T = dataStore.tc.run { transaction ->
+                block(transaction).also {
+                    callbackReturned.complete(Unit)
+                    runBlocking { allowImplicitCommit.await() }
+                }
+            }
+        }
+        val tracked = TrackingTransactionContext(commitBarrier)
+
+        try {
+            val write = async(Dispatchers.Default) {
+                runCatching {
+                    tracked.run { transaction -> transaction.set(key, byteArrayOf(1)) }
+                }
+            }
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { callbackReturned.await() }
+            }
+            tracked.cancelActive()
+            allowImplicitCommit.complete(Unit)
+            val result = withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { write.await() }
+            }
+
+            assertTrue(result.isFailure, "canceling during implicit commit must abort the transaction")
+            assertNull(dataStore.tc.run { transaction -> transaction.get(key).awaitResult() })
+        } finally {
+            allowImplicitCommit.complete(Unit)
+            dataStore.close()
+        }
+    }
+
     @Test
     fun replicationTombstoneSurvivesReopen() = runTest(timeout = 3.minutes) {
         val directoryPath = listOf("maryk", "test", "durable-replication-tombstones", Uuid.random().toString())
@@ -440,6 +522,35 @@ class FoundationDBDataStoreTest {
         } finally {
             dataStore.close()
         }
+    }
+
+    @Test
+    fun closeAbortsBlockedFoundationDbFutureBeforeJoiningStoreScope() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "close-blocked-fdb-future", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+        )
+        val started = CompletableDeferred<Unit>()
+        val watchKey = packKey(dataStore.getTableDirs(1u).modelPrefix, byteArrayOf(127))
+        val blocked = dataStore.launch(Dispatchers.Default) {
+            started.complete(Unit)
+            runCatching {
+                dataStore.tc.run { transaction -> transaction.watch(watchKey).awaitResult() }
+            }
+        }
+
+        withTimeout(5_000.milliseconds) { started.await() }
+        delay(100.milliseconds)
+        val closeFailure = runCatching {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(1_000.milliseconds) { dataStore.close() }
+            }
+        }.exceptionOrNull()
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000.milliseconds) { blocked.join() }
+        }
+
+        assertNull(closeFailure, "close must abort the FDB future before waiting for its coroutine")
     }
 }
 

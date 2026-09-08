@@ -3,6 +3,9 @@ package maryk.datastore.foundationdb.model
 import maryk.foundationdb.TransactionContext
 import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStore
+import maryk.core.models.migration.MigrationPhase
+import maryk.core.models.migration.MigrationStateStatus
+import maryk.core.properties.types.Version
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.foundationdb.Transaction
@@ -39,10 +42,37 @@ internal class FoundationDBMigrationStateStore(
 
     suspend fun clear(modelId: UInt, guard: ((Transaction) -> Unit)?) {
         val modelPrefix = modelPrefixesById[modelId] ?: return
-        val key = packKey(modelPrefix, modelMigrationStateKey)
         tc.run { tr ->
             guard?.invoke(tr)
-            tr.clear(key)
+            clear(tr, modelId)
         }
     }
+
+    suspend fun clearFinalizedForPublishedVersion(modelId: UInt, publishedVersion: Version) {
+        val modelPrefix = modelPrefixesById[modelId] ?: return
+        val stateKey = packKey(modelPrefix, modelMigrationStateKey)
+        val versionKey = packKey(modelPrefix, modelVersionKey)
+        val expectedVersion = publishedVersion.toByteArray()
+        tc.run { transaction ->
+            val stateBytes = transaction.get(stateKey).awaitResult() ?: return@run
+            val storedVersion = transaction.get(versionKey).awaitResult() ?: return@run
+            if (!storedVersion.contentEquals(expectedVersion)) return@run
+            val state = MigrationState.requireFromPersistedBytes(stateBytes)
+            if (
+                state.toVersion == publishedVersion.toString() &&
+                state.phase == MigrationPhase.Contract &&
+                state.status == MigrationStateStatus.Running &&
+                state.message == MIGRATION_FINALIZATION_PENDING_MESSAGE
+            ) {
+                transaction.clear(stateKey)
+            }
+        }
+    }
+
+    fun clear(transaction: Transaction, modelId: UInt) {
+        val modelPrefix = modelPrefixesById[modelId] ?: return
+        transaction.clear(packKey(modelPrefix, modelMigrationStateKey))
+    }
 }
+
+internal const val MIGRATION_FINALIZATION_PENDING_MESSAGE = "Migration phases complete; finalization pending"

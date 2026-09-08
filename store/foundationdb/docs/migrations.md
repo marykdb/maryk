@@ -53,10 +53,13 @@ Current handler hooks:
 - `Verify`: runs `migrationVerifyHandler`
 - `Contract`: runs `migrationContractHandler`
 
+For a compatible index addition, `versionUpdateHandler` runs while the model remains fenced as `Rebuilding`. Writes through the same `FoundationDBDataStore` are allowed only after each transaction proves ownership of that exact rebuild fence. Other open stores remain blocked until the hook succeeds and the definition and `Ready` epoch publish together.
+
 ## Dependency ordering and cycles
 
 Model migrations are ordered by dependency graph.
 - Referenced models migrate first.
+- A dependent handler does not start until each referenced model has completed finalization and definition publication.
 - Dependency cycles are detected and rejected up front with `MigrationException`.
 
 ## Startup budget and background continuation
@@ -94,11 +97,14 @@ Operator semantics:
 Default lease is `FoundationDBMigrationLease`.
 - Lease key per model in metadata subspace
 - owner token
+- monotonically increasing fencing token, checked in each FoundationDB datastore write made by a migration hook
 - TTL via `migrationLeaseConfiguration.migrationLeaseTimeoutMs`
 - heartbeat via `migrationLeaseConfiguration.migrationLeaseHeartbeatMs`
 - automatic takeover after TTL expiry
 
 Use custom `migrationLease` only if external orchestrator semantics are needed.
+
+The fencing token protects FoundationDB transactions made through the datastore. It cannot roll back or fence arbitrary external side effects. Hooks that call external systems must be idempotent or use an external coordinator/fencing token appropriate to that system; do not rely on host wall-clock lease expiry alone for those effects.
 
 ## Observability
 

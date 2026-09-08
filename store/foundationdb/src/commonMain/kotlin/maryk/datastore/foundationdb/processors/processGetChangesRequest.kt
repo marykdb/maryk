@@ -35,6 +35,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
 
     runReadTransaction(readContext, dbIndex) { tr ->
         keyWalk@ for (key in getRequest.keys) {
+            var isMember = false
             val changes: DataObjectVersionedChange<DM>? = run {
                 val creationVersion = tr.readCreationVersion(tableDirs, key.bytes, getRequest.toVersion)
                 if (creationVersion == null) {
@@ -53,6 +54,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
                     ) {
                         null
                     } else {
+                        isMember = true
                         val cacheReader =
                             { reference: IsPropertyReferenceForCache<*, *>, version: ULong, valueReader: () -> Any? ->
                                 cache.readValue(dbIndex, key, reference, version, valueReader)
@@ -87,8 +89,11 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetChangesReque
                 }
             }
 
-            if (changes == null) continue@keyWalk
-            objectChanges += changes
+            if (changes != null) {
+                objectChanges += changes
+            } else if (storeAction.isFlowSnapshotRead && isMember) {
+                objectChanges += DataObjectVersionedChange(key, changes = emptyList())
+            }
         }
     }
 

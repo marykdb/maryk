@@ -3,9 +3,13 @@
 package maryk.datastore.foundationdb
 
 import kotlinx.atomicfu.atomic
+import kotlinx.coroutines.async
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -26,9 +30,13 @@ import maryk.core.models.migration.MigrationStateStatus
 import maryk.core.models.migration.NoopMigrationLease
 import maryk.datastore.foundationdb.model.modelMigrationStateKey
 import maryk.datastore.foundationdb.model.modelMigrationLeaseKey
+import maryk.datastore.foundationdb.model.modelMigrationAuditLogKey
+import maryk.datastore.foundationdb.model.FoundationDBMigrationLease
 import maryk.datastore.foundationdb.model.FoundationDBMigrationLeaseLostException
+import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.model.modelVersionKey
 import maryk.core.properties.definitions.embed
 import maryk.core.properties.definitions.number
 import maryk.core.properties.definitions.reference
@@ -46,7 +54,10 @@ import maryk.core.query.requests.change
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.ServerFail
 import maryk.datastore.test.dataModelsForTests
+import maryk.foundationdb.Transaction
+import maryk.foundationdb.TransactionContext
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
@@ -67,6 +78,164 @@ import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreMigrationTest {
     class CustomException : Error()
+
+    @Test
+    fun newModelDefinitionIsPublishedOnlyAfterVersionHandlerSucceeds() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-new-model-handler-publication", Uuid.random().toString())
+
+        assertFailsWith<IllegalStateException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV1),
+                versionUpdateHandler = { _, _, _ -> error("first handler failure") },
+            )
+        }
+
+        var retryCalls = 0
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1),
+            versionUpdateHandler = { _, oldModel, _ ->
+                assertNull(oldModel)
+                retryCalls++
+            },
+        ).close()
+
+        assertEquals(1, retryCalls)
+    }
+
+    @Test
+    fun safeAddDefinitionIsPublishedOnlyAfterVersionHandlerSucceeds() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-safe-add-handler-publication", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1),
+        ).close()
+
+        assertFailsWith<IllegalStateException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV1_1),
+                versionUpdateHandler = { _, _, _ -> error("first handler failure") },
+            )
+        }
+
+        var retryCalls = 0
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+            versionUpdateHandler = { _, oldModel, _ ->
+                assertNotNull(oldModel)
+                retryCalls++
+            },
+        ).close()
+
+        assertEquals(1, retryCalls)
+    }
+
+    @Test
+    fun newIndexDefinitionIsPublishedOnlyAfterVersionHandlerSucceeds() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-index-handler-publication", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+        ).close()
+
+        assertFailsWith<IllegalStateException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2ExtraIndex),
+                versionUpdateHandler = { _, _, _ -> error("first handler failure") },
+            )
+        }
+
+        var retryCalls = 0
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2ExtraIndex),
+            versionUpdateHandler = { _, oldModel, _ ->
+                assertNotNull(oldModel)
+                retryCalls++
+            },
+        ).close()
+
+        assertEquals(1, retryCalls)
+    }
+
+    @Test
+    fun newIndexVersionHookAllowsOwnerWritesWhileLegacyWritersRemainFenced() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-index-handler-fence", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+        ).close()
+
+        val hookStarted = CompletableDeferred<Unit>()
+        val releaseHook = CompletableDeferred<Unit>()
+        val upgrading = async(Dispatchers.Default) {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2ExtraIndex),
+                versionUpdateHandler = { store, _, _ ->
+                    hookStarted.complete(Unit)
+                    releaseHook.await()
+                    val response = store.execute(
+                        ModelV2ExtraIndex.add(ModelV2ExtraIndex.create {
+                            value with "ha-owner"
+                            newNumber with 2
+                        })
+                    )
+                    assertIs<AddSuccess<ModelV2ExtraIndex>>(response.statuses.single())
+                },
+            )
+        }
+
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000.milliseconds) { hookStarted.await() }
+        }
+        val legacyStore = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+        )
+        try {
+            val response = legacyStore.execute(
+                ModelV2.add(ModelV2.create {
+                    value with "ha-legacy"
+                    newNumber with 1
+                })
+            )
+            val failure = assertIs<ServerFail<ModelV2>>(response.statuses.single())
+            assertTrue(failure.reason.contains("Model schema is rebuilding"))
+        } finally {
+            legacyStore.close()
+            releaseHook.complete(Unit)
+        }
+
+        val upgradedStore = withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000.milliseconds) { upgrading.await() }
+        }
+        try {
+            assertEquals(
+                1,
+                upgradedStore.execute(
+                    ModelV2ExtraIndex.scan(order = ModelV2ExtraIndex { newNumber::ref }.ascending())
+                ).values.size,
+            )
+        } finally {
+            upgradedStore.close()
+        }
+    }
 
     @Test
     fun backgroundMigrationFailsPromptlyForInvalidPersistedState() = runTest(timeout = 3.minutes) {
@@ -466,6 +635,58 @@ class FoundationDBDataStoreMigrationTest {
         )
         assertTrue(
             resumed.execute(ModelV2.scan(order = ModelV2 { value::ref }.ascending())).values.isEmpty()
+        )
+        resumed.close()
+    }
+
+    @Test
+    fun ownershipReplacementFencesRealMigrationPhaseHandlerWrite() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-phase-write-fence", Uuid.random().toString())
+        var protectedKey: ByteArray? = null
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        ).close()
+
+        assertFailsWith<FoundationDBMigrationLeaseLostException> {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(1u to ModelV2),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationHandler = { context ->
+                        val store = context.store
+                        val modelPrefix = store.getTableDirs(1u).modelPrefix
+                        val leaseKey = packKey(modelPrefix, modelMigrationLeaseKey)
+                        protectedKey = packKey(modelPrefix, byteArrayOf(98))
+                        store.tc.run { transaction ->
+                            transaction.set(
+                                leaseKey,
+                                "v=1\nowner=contender\nmigration=Model:1.1->2.0\nexpires=0\n".encodeToByteArray(),
+                            )
+                        }
+                        store.runTransaction(1u) { transaction ->
+                            transaction.set(requireNotNull(protectedKey), byteArrayOf(1))
+                        }
+                        MigrationOutcome.Success
+                    },
+                ),
+            )
+        }
+
+        val resumed = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationHandler = { MigrationOutcome.Success },
+            ),
+        )
+        assertNull(
+            resumed.runTransaction { transaction ->
+                transaction.get(requireNotNull(protectedKey)).awaitResult()
+            }
         )
         resumed.close()
     }
@@ -965,6 +1186,168 @@ class FoundationDBDataStoreMigrationTest {
     }
 
     @Test
+    fun dependentMigrationWaitsForBackgroundDependencyFinalization() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-dependency-completion", Uuid.random().toString())
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(
+                2u to Phase6OrderBaseV1,
+                1u to Phase6OrderDependentV1,
+            ),
+        ).close()
+
+        val baseStarted = CompletableDeferred<Unit>()
+        val releaseBase = CompletableDeferred<Unit>()
+        val dependentStarted = CompletableDeferred<Unit>()
+        val opening = async(Dispatchers.Default) {
+            FoundationDBDataStore.open(
+                fdbClusterFilePath = "fdb.cluster",
+                directoryPath = dirPath,
+                dataModelsById = mapOf(
+                    2u to Phase6OrderBaseV2,
+                    1u to Phase6OrderDependentV2,
+                ),
+                migrationConfiguration = MigrationConfiguration(
+                    migrationStartupBudgetMs = -1L,
+                    continueMigrationsInBackground = true,
+                    migrationHandler = { context ->
+                        when (context.newDataModel.Meta.name) {
+                            Phase6OrderBaseV2.Meta.name -> {
+                                baseStarted.complete(Unit)
+                                releaseBase.await()
+                            }
+                            Phase6OrderDependentV2.Meta.name -> dependentStarted.complete(Unit)
+                        }
+                        MigrationOutcome.Success
+                    },
+                ),
+            )
+        }
+
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000.milliseconds) { baseStarted.await() }
+            delay(250.milliseconds)
+        }
+        assertTrue(!dependentStarted.isCompleted, "dependent migration started before its dependency finalized")
+        releaseBase.complete(Unit)
+
+        val store = withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000.milliseconds) { opening.await() }
+        }
+        try {
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) { store.awaitMigration(2u) }
+                withTimeout(5_000.milliseconds) { store.awaitMigration(1u) }
+            }
+            assertTrue(dependentStarted.isCompleted)
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
+    fun staleCompletedMigrationStateIsClearedBeforeTheNextUpgrade() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-stale-completed-migration-state", Uuid.random().toString())
+        val v2Store = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to CrashRecoveryModelV2),
+        )
+        val stateKey = packKey(v2Store.getTableDirs(1u).modelPrefix, modelMigrationStateKey)
+        v2Store.runTransaction { transaction ->
+            transaction.set(
+                stateKey,
+                MigrationState(
+                    migrationId = "CrashRecoveryModel:1.0->${CrashRecoveryModelV2.Meta.version}",
+                    phase = MigrationPhase.Contract,
+                    status = MigrationStateStatus.Running,
+                    attempt = 4u,
+                    fromVersion = "1.0",
+                    toVersion = CrashRecoveryModelV2.Meta.version.toString(),
+                    message = "Migration phases complete; finalization pending",
+                ).toPersistedBytes(),
+            )
+        }
+        v2Store.close()
+
+        val recoveredV2Store = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to CrashRecoveryModelV2),
+        )
+        try {
+            assertNull(recoveredV2Store.runTransaction { transaction -> transaction.get(stateKey).awaitResult() })
+        } finally {
+            recoveredV2Store.close()
+        }
+
+        FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to CrashRecoveryModelV3),
+            migrationConfiguration = MigrationConfiguration(
+                migrationHandler = { MigrationOutcome.Success },
+            ),
+        ).close()
+    }
+
+    @Test
+    fun staleV2CleanupDoesNotClearConcurrentV3MigrationState() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-stale-v2-v3-interleaving", Uuid.random().toString())
+        val store = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to CrashRecoveryModelV2),
+        )
+        val modelPrefix = store.getTableDirs(1u).modelPrefix
+        val stateKey = packKey(modelPrefix, modelMigrationStateKey)
+        val versionKey = packKey(modelPrefix, modelVersionKey)
+        val v2State = MigrationState(
+            migrationId = "CrashRecoveryModel:1.0->2.0",
+            phase = MigrationPhase.Contract,
+            status = MigrationStateStatus.Running,
+            attempt = 1u,
+            fromVersion = "1.0",
+            toVersion = CrashRecoveryModelV2.Meta.version.toString(),
+            message = "Migration phases complete; finalization pending",
+        )
+        val v3State = MigrationState(
+            migrationId = "CrashRecoveryModel:2.0->3.0",
+            phase = MigrationPhase.Backfill,
+            status = MigrationStateStatus.Running,
+            attempt = 2u,
+            fromVersion = CrashRecoveryModelV2.Meta.version.toString(),
+            toVersion = CrashRecoveryModelV3.Meta.version.toString(),
+        )
+        store.tc.run { transaction -> transaction.set(stateKey, v2State.toPersistedBytes()) }
+
+        var injectV3 = true
+        val racingContext = object : TransactionContext by store.tc {
+            override fun <T> run(block: (Transaction) -> T): T = store.tc.run { transaction ->
+                block(transaction).also {
+                    if (injectV3) {
+                        injectV3 = false
+                        store.tc.run { concurrent ->
+                            concurrent.set(versionKey, CrashRecoveryModelV3.Meta.version.toByteArray())
+                            concurrent.set(stateKey, v3State.toPersistedBytes())
+                        }
+                    }
+                }
+            }
+        }
+        val stateStore = FoundationDBMigrationStateStore(racingContext, mapOf(1u to modelPrefix))
+
+        try {
+            stateStore.clearFinalizedForPublishedVersion(1u, CrashRecoveryModelV2.Meta.version)
+            val persisted = store.tc.run { transaction -> transaction.get(stateKey).awaitResult() }
+            assertEquals(v3State, MigrationState.requireFromPersistedBytes(requireNotNull(persisted)))
+        } finally {
+            store.close()
+        }
+    }
+
+    @Test
     fun reopensStoredModelWithReferenceToLaterSortedModel() = runTest(timeout = 3.minutes) {
         val dirPath = listOf("maryk", "test", "fdb-migration-reference-later-model", Uuid.random().toString())
         val models = mapOf(
@@ -1074,6 +1457,79 @@ class FoundationDBDataStoreMigrationTest {
             assertEquals(1, lease.releaseCalls.value)
         } finally {
             dataStore.close()
+        }
+    }
+
+    @Test
+    fun failedBackgroundAuditAfterAcquisitionDoesNotAbandonRenewingLease() = runTest(timeout = 3.minutes) {
+        val dirPath = listOf("maryk", "test", "fdb-migration-audit-acquire-failure", Uuid.random().toString())
+        val controlStore = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV1_1),
+        )
+        val modelPrefix = controlStore.getTableDirs(1u).modelPrefix
+        val migrationId = "Model:1.1->2"
+        val blockerScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        val contenderScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        val blocker = FoundationDBMigrationLease(
+            controlStore.tc,
+            mapOf(1u to modelPrefix),
+            blockerScope,
+            leaseTimeoutMs = 400,
+            heartbeatIntervalMs = 50,
+        )
+        val contender = FoundationDBMigrationLease(
+            controlStore.tc,
+            mapOf(1u to modelPrefix),
+            contenderScope,
+            leaseTimeoutMs = 400,
+            heartbeatIntervalMs = 50,
+        )
+        assertTrue(blocker.tryAcquire(1u, migrationId))
+
+        val migratingStore = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = dirPath,
+            dataModelsById = mapOf(1u to ModelV2),
+            migrationLeaseConfiguration = FoundationDBMigrationLeaseConfiguration(
+                migrationLeaseTimeoutMs = 400,
+                migrationLeaseHeartbeatMs = 50,
+            ),
+            migrationConfiguration = MigrationConfiguration(
+                continueMigrationsInBackground = true,
+                persistMigrationAuditEvents = true,
+                migrationHandler = { MigrationOutcome.Success },
+            ),
+        )
+
+        try {
+            val auditKey = packKey(modelPrefix, modelMigrationAuditLogKey)
+            controlStore.runTransaction { transaction ->
+                transaction.set(
+                    auditKey,
+                    byteArrayOf(0, 0x4d, 0x41, 0x55, 1, 0, 0, 0, 0, 0, 0, 0, 0),
+                )
+            }
+            blocker.release(1u, migrationId)
+
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                assertFailsWith<MigrationException> {
+                    withTimeout(5_000.milliseconds) { migratingStore.awaitMigration(1u) }
+                }
+                withTimeout(5_000.milliseconds) {
+                    while (!contender.tryAcquire(1u, migrationId)) {
+                        delay(50.milliseconds)
+                    }
+                }
+            }
+        } finally {
+            contender.release(1u, migrationId)
+            blocker.release(1u, migrationId)
+            migratingStore.close()
+            controlStore.close()
+            blockerScope.cancel()
+            contenderScope.cancel()
         }
     }
 
@@ -1441,4 +1897,18 @@ private object Phase6ReferenceTargetModel : RootDataModel<Phase6ReferenceTargetM
     version = Version(1),
 ) {
     val value by string(index = 1u)
+}
+
+private object CrashRecoveryModelV2 : RootDataModel<CrashRecoveryModelV2>(
+    name = "CrashRecoveryModel",
+    version = Version(2),
+) {
+    val value by number(index = 1u, type = SInt32, required = true)
+}
+
+private object CrashRecoveryModelV3 : RootDataModel<CrashRecoveryModelV3>(
+    name = "CrashRecoveryModel",
+    version = Version(3),
+) {
+    val value by string(index = 1u, required = true)
 }

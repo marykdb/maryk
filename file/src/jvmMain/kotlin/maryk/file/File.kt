@@ -4,6 +4,8 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.channels.FileChannel
+import java.nio.channels.WritableByteChannel
+import java.nio.ByteBuffer
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.READ
@@ -112,7 +114,14 @@ internal actual fun writeBytesExclusively(path: String, contents: ByteArray) {
     val target = Path.of(path)
     target.parent?.let(Files::createDirectories)
     Files.newByteChannel(target, CREATE_NEW, WRITE).use { channel ->
-        channel.write(java.nio.ByteBuffer.wrap(contents))
+        writeFully(channel, contents)
+    }
+}
+
+internal fun writeFully(channel: WritableByteChannel, contents: ByteArray) {
+    val buffer = ByteBuffer.wrap(contents)
+    while (buffer.hasRemaining()) {
+        check(channel.write(buffer) > 0) { "Could not write complete file contents" }
     }
 }
 

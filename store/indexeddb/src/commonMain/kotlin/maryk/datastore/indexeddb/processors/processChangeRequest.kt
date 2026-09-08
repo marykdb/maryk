@@ -128,8 +128,33 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processChangeRequ
                 }
 
                 if (changedValues == currentValues && targetIsDeleted == currentMeta.isDeleted) {
+                    if (ignoreIfVersionNotNewer) {
+                        val operations = mutableListOf<IndexedDbWriteOperation>()
+                        val currentRows = scanTableRows(tableStoreName, keyBytes)
+                        operations.put(
+                            keyStoreName,
+                            keyBytes,
+                            encodeCurrentSnapshot(
+                                IndexedDbRecordMeta(currentMeta.firstVersion, version.timestamp, targetIsDeleted),
+                                currentRows.map { (rowKey, rowValue) ->
+                                    tableQualifierFromRowKey(rowKey, keyBytes) to rowValue
+                                },
+                            ),
+                        )
+                        val update = Update.Change(request.dataModel, objectChange.key, version.timestamp, emptyList())
+                        val journalPayload = encodeChangeJournalPayload(
+                            request.dataModel,
+                            modelId,
+                            sensitiveFields,
+                            keyBytes,
+                            version.timestamp,
+                            changePayload = null,
+                            changes = update.changes,
+                        )
+                        commitIndexedDbUpdate(operations, update, journalPayload)
+                    }
                     statuses += ChangeSuccess(
-                        version = currentMeta.lastVersion,
+                        version = if (ignoreIfVersionNotNewer) version.timestamp else currentMeta.lastVersion,
                         changes = materializedChanges.generatedChanges.ifEmpty { null }
                     )
                     return@transaction

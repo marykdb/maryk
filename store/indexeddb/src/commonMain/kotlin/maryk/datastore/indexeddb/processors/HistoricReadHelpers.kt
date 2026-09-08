@@ -6,6 +6,7 @@ import maryk.core.models.emptyValues
 import maryk.core.models.key
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.query.ValuesWithMetaData
+import maryk.core.query.changes.Change
 import maryk.core.query.changes.ObjectCreate
 import maryk.core.query.changes.VersionedChanges
 import maryk.core.query.changes.change
@@ -77,7 +78,7 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
             if (toVersion != null && versionedChanges.version > toVersion) continue
 
             val filteredChanges = versionedChanges.changes.mapNotNull { change ->
-                select?.let { change.filterWithSelect(it) } ?: change
+                if (select == null) change else change.filterWithSelect(select)
             }
             if (filteredChanges.isEmpty()) continue
 
@@ -96,12 +97,23 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbByteStore.readChangeLog(
         nonCreationChanges.takeLast(maxVersions.toInt())
     }
 
-    val returnedCreationChanges = if (limitedNonCreationChanges.isEmpty()) {
+    val laterChangedReferences = limitedNonCreationChanges.flatMapTo(mutableSetOf()) { versionedChanges ->
+        versionedChanges.changes.filterIsInstance<Change>().flatMap { it.referenceValuePairs.map { pair -> pair.reference } }
+    }
+    val returnedCreationChanges = if (limitedNonCreationChanges.isEmpty() || laterChangedReferences.isEmpty()) {
         creationChanges
     } else {
         creationChanges.map { versionedChanges ->
             versionedChanges.copy(
-                changes = versionedChanges.changes.filterIsInstance<ObjectCreate>()
+                changes = versionedChanges.changes.mapNotNull { change ->
+                    when (change) {
+                        is Change -> change.referenceValuePairs
+                            .filterNot { it.reference in laterChangedReferences }
+                            .takeIf { it.isNotEmpty() }
+                            ?.let { Change(*it.toTypedArray()) }
+                        else -> change
+                    }
+                }
             )
         }.filter { it.changes.isNotEmpty() }
     }

@@ -5,6 +5,7 @@ import maryk.core.properties.definitions.string
 import maryk.test.models.EmbeddedMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 val generatedKotlinForDataModel = """
 package maryk.test.models
@@ -70,6 +71,18 @@ class GenerateKotlinForDataModelTest {
             """.trimIndent(),
             output,
         )
+    }
+
+    @Test
+    fun generateKotlinRejectsInvalidPackageBeforeWriting() {
+        var writes = 0
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            EmbeddedMarykModel.generateKotlin("maryk.invalid-package") { writes++ }
+        }
+
+        assertEquals("Kotlin package name is invalid: maryk.invalid-package", exception.message)
+        assertEquals(0, writes)
     }
 }
 

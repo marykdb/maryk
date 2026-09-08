@@ -5,6 +5,7 @@ import java.nio.file.Files
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.exists
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.test.Test
@@ -195,6 +196,40 @@ class MarykGeneratorPluginTest {
 
         val second = runner(project, "marykGenerateModels", "--configuration-cache").build()
         assertTrue(second.output.contains("Reusing configuration cache."))
+    }
+
+    @Test
+    fun generatedSourcesCompileInJvmConsumer() {
+        val project = fixtureWithSchema()
+        project.resolve("build.gradle.kts").writeText(
+            consumerBuildScript("""
+                kotlin("jvm") version "2.4.0"
+            """.trimIndent()),
+        )
+
+        val result = runner(project, "compileKotlin", "--configuration-cache").build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":compileKotlin")?.outcome)
+        assertTrue(project.resolve("build/generated/maryk/Person.kt").exists())
+    }
+
+    @Test
+    fun generatedSourcesCompileInKmpConsumer() {
+        val project = fixtureWithSchema()
+        project.resolve("build.gradle.kts").writeText(
+            consumerBuildScript("""
+                kotlin("multiplatform") version "2.4.0"
+            """.trimIndent(), """
+                kotlin {
+                    jvm()
+                }
+            """.trimIndent(), "jvmMainImplementation"),
+        )
+
+        val result = runner(project, "compileKotlinJvm", "--configuration-cache").build()
+
+        assertEquals(TaskOutcome.SUCCESS, result.task(":compileKotlinJvm")?.outcome)
+        assertTrue(project.resolve("build/generated/maryk/Person.kt").exists())
     }
 
     @Test
@@ -465,6 +500,54 @@ class MarykGeneratorPluginTest {
             """.trimIndent(),
         )
         return project
+    }
+
+    private fun fixtureWithSchema(): Path = fixture().also { project ->
+        project.resolve("src/main/maryk").createDirectories()
+            .resolve("person.yaml").writeText(schema("Person"))
+    }
+
+    private fun consumerBuildScript(
+        kotlinPlugin: String,
+        kotlinConfiguration: String = "",
+        dependencyConfiguration: String = "implementation",
+    ): String = """
+        plugins {
+            $kotlinPlugin
+            id("io.maryk.generator")
+        }
+
+        $kotlinConfiguration
+
+        repositories {
+            mavenCentral()
+        }
+
+        dependencies {
+            add("$dependencyConfiguration", files("${coreJvmJar()}"))
+        }
+
+        marykGenerator {
+            packageName.set("example.generated")
+        }
+    """.trimIndent()
+
+    private fun coreJvmJar(): Path {
+        val root = generateSequence(Path.of(System.getProperty("user.dir")).toAbsolutePath()) { it.parent }
+            .firstOrNull { it.resolve("build.gradle.kts").exists() && it.resolve("core/build/libs").exists() }
+            ?: error("Could not find Maryk repository root")
+        val version = Regex("""^version\s*=\s*"([^"]+)""", RegexOption.MULTILINE)
+            .find(root.resolve("build.gradle.kts").readText())
+            ?.groupValues
+            ?.get(1)
+            ?: error("Could not determine the current Core artifact version")
+
+        val directory = root.resolve("core/build/libs")
+        return Files.list(directory).use { files ->
+            files.filter { path ->
+                path.fileName.toString() == "core-jvm-$version.jar" && path.isRegularFile()
+            }.findFirst().orElse(null)
+        } ?: error("Could not find current Core JVM artifact")
     }
 
     private fun Path.configureSchemas(vararg roots: String) {

@@ -6,9 +6,14 @@ import maryk.core.models.IsStorableDataModel
 import maryk.core.properties.definitions.IsEmbeddedDefinition
 import maryk.core.properties.definitions.IsMultiTypeDefinition
 import maryk.core.properties.definitions.index.IsIndexable
+import maryk.core.properties.definitions.index.LegacyNormalize
 import maryk.core.properties.definitions.index.Multiple
+import maryk.core.properties.definitions.index.AnyOf
+import maryk.core.properties.definitions.index.GeoHash
+import maryk.core.properties.definitions.index.Normalize
 import maryk.core.properties.definitions.index.ReferenceToMax
 import maryk.core.properties.definitions.index.Reversed
+import maryk.core.properties.definitions.index.Split
 import maryk.core.properties.definitions.index.UUIDv4Key
 import maryk.core.properties.definitions.index.UUIDv7Key
 import maryk.core.properties.references.IsPropertyReferenceForValues
@@ -67,13 +72,23 @@ fun IsRootDataModel.generateKotlin(
             else -> "reservedNames = listOf(${names.joinToString(", ") { it.kotlinStringLiteral() }})"
         }
     }
+    val minimumKeyScanByteRange = Meta.minimumKeyScanByteRange?.let {
+        "minimumKeyScanByteRange = ${it}u"
+    }
 
     val enumKotlinDefinitions = mutableSetOf<String>()
     val propertiesKotlin = this.generateKotlin(addImport, generationContext) {
         enumKotlinDefinitions.add(it)
     }
 
-    val constructorParameters = arrayOf(versionAsKotlin, keyDefAsKotlin, indexesAsKotlin, reservedIndices, reservedNames)
+    val constructorParameters = arrayOf(
+        versionAsKotlin,
+        keyDefAsKotlin,
+        indexesAsKotlin,
+        reservedIndices,
+        reservedNames,
+        minimumKeyScanByteRange,
+    )
         .filterNotNull()
         .joinToString(",\n        ")
         .let { if (it.isBlank()) "" else "\n        $it\n    " }
@@ -134,6 +149,31 @@ private fun IsIndexable.generateKotlin(
         }
 
         "Multiple(\n${output.joinToString(",\n").prependIndent()}\n)"
+    }
+    is Normalize -> {
+        addImport("maryk.core.properties.definitions.index.Normalize")
+        "Normalize(${this.reference.generateKotlin(packageName, name, addImport)})"
+    }
+    is LegacyNormalize -> {
+        addImport("maryk.core.properties.definitions.index.LegacyNormalize")
+        "LegacyNormalize(${this.reference.generateKotlin(packageName, name, addImport)})"
+    }
+    is Split -> {
+        addImport("maryk.core.properties.definitions.index.Split")
+        addImport("maryk.core.properties.definitions.index.SplitOn")
+        "Split(${this.reference.generateKotlin(packageName, name, addImport)}, SplitOn.${this.on.name.kotlinIdentifier()})"
+    }
+    is AnyOf -> {
+        addImport("maryk.core.properties.definitions.index.AnyOf")
+        val values = this.references.joinToString(",\n") {
+            it.generateKotlin(packageName, name, addImport)
+        }
+        val namedArgument = this.name?.let { "${it.kotlinStringLiteral()},\n" }.orEmpty()
+        "AnyOf(\n${(namedArgument + values).prependIndent()}\n)"
+    }
+    is GeoHash -> {
+        addImport("maryk.core.properties.definitions.index.GeoHash")
+        "GeoHash(${this.reference.generateKotlin(packageName, name, addImport)}, ${this.precisionBits}u)"
     }
     else -> throw TypeException("Unknown IsIndexable type: $this")
 }

@@ -15,7 +15,7 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.core.values.ObjectValues
 
 /** Reads the index signature emitted by Normalize before deterministic NFD. */
-internal class LegacyNormalize(
+class LegacyNormalize(
     val reference: IsIndexablePropertyReference<String>,
 ) : IsIndexablePropertyReference<String> by reference {
     override val indexKeyPartType = IndexKeyPartType.Normalize

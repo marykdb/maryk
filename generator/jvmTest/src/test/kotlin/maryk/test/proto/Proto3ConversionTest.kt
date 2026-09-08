@@ -5,22 +5,55 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import maryk.MarykTestProtos
+import maryk.core.definitions.Definitions
 import maryk.core.properties.types.Bytes
 import maryk.core.properties.types.Key
 import maryk.core.properties.types.invoke
 import maryk.core.protobuf.WriteCache
 import maryk.test.ByteCollector
 import maryk.test.models.CompleteMarykModel
+import maryk.test.models.EmbeddedMarykModel
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykEnumEmbedded.E2
 import maryk.test.models.NumericMarykModel
+import maryk.test.models.Option
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum.S1
+import maryk.test.models.TestMarykModel
+import maryk.test.models.ValueMarykObject
+import maryk.generator.proto3.generateProto3
+import kotlin.test.assertTrue
 import kotlin.test.Test
 import kotlin.test.expect
 import kotlin.time.ExperimentalTime
 
 class Proto3ConversionTest {
+    @Test
+    fun compiledFixtureContainsCurrentGeneratedProtoGraph() {
+        val generated = mutableMapOf<String, StringBuilder>()
+        Definitions(
+            Option,
+            NumericMarykModel,
+            SimpleMarykModel,
+            ValueMarykObject,
+            TestMarykModel,
+            EmbeddedMarykModel,
+            CompleteMarykModel,
+        ).generateProto3 { name ->
+            generated.getOrPut(name, ::StringBuilder)::append
+        }
+
+        val compiledFixture = checkNotNull(javaClass.getResource("/MarykTestProtos.proto"))
+            .readText()
+            .canonicalProto()
+        generated.forEach { (name, schema) ->
+            assertTrue(
+                compiledFixture.contains(schema.toString().canonicalProto()),
+                "Compiled fixture is stale for generated $name schema",
+            )
+        }
+    }
+
     @Test
     fun testSimpleMarykModel(){
         // SimpleObject to convert
@@ -154,3 +187,9 @@ class Proto3ConversionTest {
         expect(bc.bytes!!.toHexString()) { protoBytes.toHexString() }
     }
 }
+
+private fun String.canonicalProto(): String =
+    lineSequence()
+        .map(String::trim)
+        .filter(String::isNotEmpty)
+        .joinToString("\n")

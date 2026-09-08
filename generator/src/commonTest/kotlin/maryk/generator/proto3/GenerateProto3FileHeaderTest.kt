@@ -5,6 +5,7 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.MarykTypeEnum
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class GenerateProto3FileHeaderTest {
     @Test
@@ -65,5 +66,21 @@ class GenerateProto3FileHeaderTest {
             """.trimIndent(),
             output
         )
+    }
+
+    @Test
+    fun fileHeaderRejectsInvalidPackageAndImportsBeforeWriting() {
+        var writes = 0
+        val packageException = assertFailsWith<IllegalArgumentException> {
+            generateProto3FileHeader("maryk.invalid-package") { writes++ }
+        }
+        assertEquals("Proto3 package name is invalid: maryk.invalid-package", packageException.message)
+        assertEquals(0, writes)
+
+        val importException = assertFailsWith<IllegalArgumentException> {
+            generateProto3FileHeader("maryk", listOf("valid", "invalid-import")) { writes++ }
+        }
+        assertEquals("Proto3 import name is invalid: invalid-import", importException.message)
+        assertEquals(0, writes)
     }
 }

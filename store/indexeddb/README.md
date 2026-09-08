@@ -14,7 +14,7 @@ The store uses real IndexedDB object stores, keys, key ranges, transactions, and
 Open the store with the data models used by the app:
 
 ```kotlin
-val dataStore = IndexedDbDataStore.open(
+suspend fun openStore() = IndexedDbDataStore.open(
     databaseName = "my-maryk-store",
     dataModelsById = mapOf(1u to Person),
     keepAllVersions = true,

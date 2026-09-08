@@ -7,6 +7,9 @@ import maryk.core.properties.definitions.ListDefinition
 import maryk.core.properties.definitions.NumberDefinition
 import maryk.core.properties.definitions.SetDefinition
 import maryk.core.properties.definitions.StringDefinition
+import maryk.core.properties.definitions.geoPoint
+import maryk.core.properties.definitions.index.GeoHash
+import maryk.core.properties.definitions.index.LegacyNormalize
 import maryk.core.properties.definitions.list
 import maryk.core.properties.definitions.map
 import maryk.core.properties.definitions.incrementingMap
@@ -25,12 +28,14 @@ import maryk.core.query.DefinitionsConversionContext
 import maryk.core.yaml.MarykYamlModelReader
 import maryk.generator.DecimalGeneratorModel
 import maryk.test.models.CompleteMarykModel
+import maryk.test.models.CaseInsensitivePerson
 import maryk.test.models.MarykTypeEnum
 import maryk.test.models.Measurement
 import maryk.test.models.Option
 import maryk.test.models.Person
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.SimpleMarykTypeEnum
+import maryk.test.models.TestMarykModel
 import maryk.test.models.ValueMarykObject
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -106,6 +111,18 @@ private object IncMapOnly : RootDataModel<IncMapOnly>() {
         keyNumberDescriptor = UInt32,
         valueDefinition = StringDefinition()
     )
+}
+
+private object LegacyNormalizedModel : RootDataModel<LegacyNormalizedModel>(
+    indexes = { listOf(LegacyNormalize(LegacyNormalizedModel.value.ref())) },
+) {
+    val value by string(index = 1u)
+}
+
+private object GeoHashIndexedModel : RootDataModel<GeoHashIndexedModel>(
+    indexes = { listOf(GeoHash(GeoHashIndexedModel.location.ref(), 32u)) },
+) {
+    val location by geoPoint(index = 1u)
 }
 
 private object NonFiniteFloatingPointValues : RootDataModel<NonFiniteFloatingPointValues>() {
@@ -827,6 +844,45 @@ class GenerateKotlinForRootDataModelTest {
         assertTrue(output.contains("keyDefinition = {\n        Measurement.run {"))
         assertTrue(output.contains("indexes = {\n        Measurement.run {"))
         assertTrue(!output.contains(",,"))
+    }
+
+    @Test
+    fun generatesSupportedComplexIndexParts() {
+        val output = buildString {
+            CaseInsensitivePerson.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertTrue(output.contains("Normalize(surname.ref())"))
+        assertTrue(output.contains("AnyOf(\n"))
+        assertTrue(output.contains("Split("))
+        assertTrue(output.contains("SplitOn.WordBoundary"))
+    }
+
+    @Test
+    fun preservesMinimumKeyScanByteRange() {
+        val output = buildString {
+            TestMarykModel.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertTrue(output.contains("minimumKeyScanByteRange = 0u"))
+    }
+
+    @Test
+    fun generatesLegacyNormalizeIndexPart() {
+        val output = buildString {
+            LegacyNormalizedModel.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertTrue(output.contains("LegacyNormalize(value.ref())"))
+    }
+
+    @Test
+    fun generatesGeoHashIndexPart() {
+        val output = buildString {
+            GeoHashIndexedModel.generateKotlin("maryk.test.models") { append(it) }
+        }
+
+        assertTrue(output.contains("GeoHash(location.ref(), 32u)"))
     }
 }
 

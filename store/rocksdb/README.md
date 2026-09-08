@@ -9,26 +9,30 @@ For migration runtime and operations, see [Migrations](documentation/migrations.
 
 Use the following snippet:
 ```kotlin
-RocksDBDataStore.open(
-    keepAllVersions = false,
-    keepUpdateHistoryIndex = false,
-    relativePath = "path/to/folder/on/disk/for/store", 
-    dataModelsById = mapOf(
-        1u to Account,
-        2u to Course
-    )
-).use {
-    // Run operations on the store
-    
-    execute(
-        Account.add(
-            Account(
-                username="test1",
-                password="test1234"
-            ),
-            Account(
-                username="test2",
-                password="test1234"
+import kotlinx.coroutines.runBlocking
+
+fun main() = runBlocking {
+    RocksDBDataStore.open(
+        keepAllVersions = false,
+        keepUpdateHistoryIndex = false,
+        relativePath = "path/to/folder/on/disk/for/store",
+        dataModelsById = mapOf(
+            1u to Account,
+            2u to Course
+        )
+    ).use {
+        // Run operations on the store
+
+        execute(
+            Account.add(
+                Account(
+                    username="test1",
+                    password="test1234"
+                ),
+                Account(
+                    username="test2",
+                    password="test1234"
+                )
             )
         )
     )

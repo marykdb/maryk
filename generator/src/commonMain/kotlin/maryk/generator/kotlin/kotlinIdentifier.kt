@@ -15,3 +15,11 @@ internal fun String.kotlinIdentifier(): String {
     require(none { it in escapedKotlinIdentifierForbiddenCharacters }) { "Kotlin identifiers contain JVM-forbidden characters: $this" }
     return if (matches(Regex("[A-Za-z_][A-Za-z0-9_]*")) && this !in kotlinKeywords) this else "`$this`"
 }
+
+internal fun String.requireKotlinPackageName(): String {
+    val isValid = isNotBlank() && split('.').all { segment ->
+        segment.isNotEmpty() && runCatching { segment.kotlinIdentifier() == segment }.getOrDefault(false)
+    }
+    require(isValid) { "Kotlin package name is invalid: $this" }
+    return this
+}

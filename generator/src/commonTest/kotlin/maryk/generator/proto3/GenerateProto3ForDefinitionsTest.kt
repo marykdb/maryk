@@ -1,6 +1,8 @@
 package maryk.generator.proto3
 
 import maryk.core.definitions.Definitions
+import maryk.core.models.RootDataModel
+import maryk.core.properties.definitions.string
 import maryk.core.properties.enum.IndexedEnumDefinition
 import maryk.core.properties.enum.IndexedEnumImpl
 import maryk.test.models.CompleteMarykModel
@@ -25,6 +27,21 @@ class MixedKotlinGenerationTest {
         }
 
         assertEquals("Proto3 identifier is invalid: invalid-output-name", exception.message)
+        assertEquals(0, writerSelections)
+    }
+
+    @Test
+    fun validatesAllOutputNamesBeforeSelectingAnyWriter() {
+        var writerSelections = 0
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            Definitions(DuplicateProtoName, DifferentModelWithDuplicateProtoName).generateProto3 {
+                writerSelections++
+                Writer()::writer
+            }
+        }
+
+        assertEquals("Proto3 definitions generate duplicate output name DuplicateProtoName", exception.message)
         assertEquals(0, writerSelections)
     }
 
@@ -64,6 +81,21 @@ private sealed class `invalid-output-name`(index: UInt) : IndexedEnumImpl<`inval
         `invalid-output-name`::class,
         values = { listOf(Value) },
     )
+}
+
+private sealed class DuplicateProtoName(index: UInt) : IndexedEnumImpl<DuplicateProtoName>(index) {
+    data object Value : DuplicateProtoName(1u)
+
+    companion object : IndexedEnumDefinition<DuplicateProtoName>(
+        DuplicateProtoName::class,
+        values = { listOf(Value) },
+    )
+}
+
+private object DifferentModelWithDuplicateProtoName : RootDataModel<DifferentModelWithDuplicateProtoName>(
+    name = "DuplicateProtoName",
+) {
+    val value by string(index = 1u)
 }
 
 private class Writer {

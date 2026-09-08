@@ -1,6 +1,6 @@
 package maryk.generator.proto3
 
-private val proto3Identifier = Regex("[A-Za-z_][A-Za-z0-9_]*")
+internal val proto3Identifier = Regex("[A-Za-z_][A-Za-z0-9_]*")
 
 internal fun String.requireProto3Identifier(): String {
     require(matches(proto3Identifier)) { "Proto3 identifier is invalid: $this" }

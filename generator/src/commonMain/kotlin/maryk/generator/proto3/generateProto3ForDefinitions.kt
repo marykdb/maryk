@@ -9,6 +9,20 @@ import maryk.generator.kotlin.GenerationContext
 fun Definitions.generateProto3(
     writerConstructor: (String) -> ((String) -> Unit)
 ) {
+    val outputNames = definitions.map { definition ->
+        when (definition) {
+            is IsIndexedEnumDefinition<*> -> definition.name.requireProto3Identifier()
+            is IsStorableDataModel<*> -> definition.Meta.name.requireProto3Identifier()
+            else -> throw TypeException("Unknown Maryk Primitive $definition")
+        }
+    }
+    outputNames.groupBy { it }
+        .entries
+        .firstOrNull { it.value.size > 1 }
+        ?.let { (name) ->
+            throw IllegalArgumentException("Proto3 definitions generate duplicate output name $name")
+        }
+
     val kotlinGenerationContext = GenerationContext()
 
     for (obj in this.definitions) {

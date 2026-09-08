@@ -16,6 +16,13 @@ runs:
         node-version: "22.23.2"
         cache: yarn
         cache-dependency-path: website/yarn.lock
+    - name: Activate pinned Yarn
+      run: |
+        corepack enable
+        corepack prepare yarn@1.22.22 --activate
+        test "$(yarn --version)" = "1.22.22"
+      shell: bash
+      working-directory: website
     - name: Install dependencies
       run: yarn install --frozen-lockfile
       shell: bash

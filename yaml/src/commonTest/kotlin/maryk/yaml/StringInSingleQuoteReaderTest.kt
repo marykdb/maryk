@@ -27,4 +27,11 @@ class StringInSingleQuoteReaderTest {
             assertInvalidYaml()
         }
     }
+
+    @Test
+    fun rejectsRawControlCharactersAndUnpairedSurrogates() {
+        listOf("'value\u0001'", "'\uD800'").forEach { input ->
+            createYamlReader(input).assertInvalidYaml()
+        }
+    }
 }

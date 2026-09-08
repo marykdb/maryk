@@ -173,6 +173,11 @@ internal class YamlReaderImpl(
     internal var hasException: Boolean = false
     internal val tags: MutableMap<String, String> = mutableMapOf()
 
+    internal fun resetDocumentDirectives() {
+        this.version = null
+        this.tags.clear()
+    }
+
     private val anchorReaders = mutableListOf<AnchorRecorder>()
 
     private val tokenStack = YamlTokenQueue()

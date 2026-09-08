@@ -32,18 +32,23 @@ internal fun IsYamlCharReader.singleQuoteString(
                 if (aQuoteFound) {
                     break@loop
                 } else {
+                    validateRawYamlScalarCharacter(lastChar)
                     storedValue.append(lastChar)
                 }
             }
             read()
         }
 
-        return jsonTokenCreator(storedValue.toString(), false, tag, extraIndentAtStart)
+        val value = storedValue.toString()
+        validateYamlScalar(value)
+        return jsonTokenCreator(value, false, tag, extraIndentAtStart)
     } catch (e: ExceptionWhileReadingJson) {
         this.yamlReader.hasException = true
 
         if (aQuoteFound) {
-            return jsonTokenCreator(storedValue.toString(), false, tag, extraIndentAtStart)
+            val value = storedValue.toString()
+            validateYamlScalar(value)
+            return jsonTokenCreator(value, false, tag, extraIndentAtStart)
         } else {
             throw InvalidYamlContent("Single quoted string was never closed")
         }

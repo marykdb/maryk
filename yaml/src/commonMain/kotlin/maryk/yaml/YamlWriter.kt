@@ -476,7 +476,7 @@ class YamlWriter(
                         '\u001B' -> "\\e"
                         '"' -> "\\\""
                         '\\' -> "\\\\"
-                        else -> if (character.code in 0x7F..0x9F) {
+                        else -> if (character.code in 0x00..0x1F || character.code in 0x7F..0x9F) {
                             "\\x${character.code.toString(16).padStart(2, '0')}"
                         } else {
                             character.toString()

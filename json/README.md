@@ -82,8 +82,8 @@ Here's an example of how to construct a reader to read JSON data from a string:
 val json = ... // Json String
 var index = 0
 
-val reader = JsonReader { 
-    json[index++] 
+val reader = JsonReader {
+    json.getOrNull(index++)
 }
 ```
 

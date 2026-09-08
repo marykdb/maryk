@@ -29,12 +29,15 @@ internal fun IsYamlCharWithIndentsReader.plainStringReader(
     val storedValue = StringBuilder(startWith)
 
     fun storeCharAndProceed() {
+        validateRawYamlScalarCharacter(lastChar)
         storedValue.append(lastChar)
         read()
     }
 
     fun createToken(): JsonToken {
-        return jsonTokenCreator(storedValue.toString().trim(), true, tag, extraIndent)
+        val value = storedValue.toString().trim()
+        validateYamlScalar(value)
+        return jsonTokenCreator(value, true, tag, extraIndent)
     }
 
     try {

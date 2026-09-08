@@ -152,6 +152,7 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
     }
 
     protected fun storeCharAndProceed() {
+        validateRawYamlScalarCharacter(lastChar)
         this.storedValue += lastChar
         read()
     }
@@ -175,7 +176,7 @@ internal open class LiteralStringReader<P: IsYamlCharWithIndentsReader>(
         }
 
         this.currentReader = this.parentReader
-
+        validateYamlScalar(this.storedValue)
         return this.jsonTokenConstructor(this.storedValue)
     }
 }

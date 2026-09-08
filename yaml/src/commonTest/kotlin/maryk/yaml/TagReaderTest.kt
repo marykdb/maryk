@@ -10,6 +10,20 @@ import kotlin.test.assertFailsWith
 
 class TagReaderTest {
     @Test
+    fun acceptsMixedCaseTagHandles() {
+        createYamlReader(
+            """
+            |%TAG !AbY! tag:yaml.org,2002:
+            |---
+            |!AbY!str value
+            """.trimMargin()
+        ).apply {
+            assertValue("value", ValueType.String)
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun rejectsOversizedTag() {
         val reader = YamlReader(
             yaml = "!${"x".repeat(1025)} value",

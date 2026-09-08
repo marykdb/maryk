@@ -69,6 +69,8 @@ internal class DocumentReader(
                                 return if (this.firstDocumentContentWasFound) {
                                     this.contentWasFound = false
                                     this.indentCount = 0
+                                    this.finishedWithDirectives = null
+                                    this.yamlReader.resetDocumentDirectives()
                                     StartDocument
                                 } else {
                                     // First found document open before content

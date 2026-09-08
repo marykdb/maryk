@@ -11,6 +11,11 @@ class LiteralStringReaderTest {
     }
 
     @Test
+    fun rejectsUnpairedSurrogates() {
+        createYamlReader("|\n \uD800").assertInvalidYaml()
+    }
+
+    @Test
     fun failOnInvalidIndent() {
         createYamlReader("""
             |   |

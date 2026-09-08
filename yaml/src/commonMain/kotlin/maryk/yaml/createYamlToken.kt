@@ -28,11 +28,15 @@ private val falseValues = setOf("False", "FALSE", "false")
 private val nullValues = setOf("~", "Null", "null", "NULL")
 private val nanValues = setOf(".nan", ".NAN", ".Nan")
 private val infinityRegEx = Regex("^([-+]?)(\\.inf|\\.Inf|\\.INF)$")
-private val base2RegEx = Regex("^[-+]?0b([0-1_]+)$")
-private val base8RegEx = Regex("^[-+]?0([0-7_]+)$")
-private val base10RegEx = Regex("^[-+]?(0|[1-9][0-9_]*)$")
-private val base16RegEx = Regex("^[-+]?0x([0-9a-fA-F_]+)$")
-private val base60RegEx = Regex("^[-+]?([1-9][0-9_]*)(:([0-5]?[0-9]))+$")
+private const val binaryDigits = "[01](?:_?[01])*"
+private const val octalDigits = "[0-7](?:_?[0-7])*"
+private const val decimalDigits = "[0-9](?:_?[0-9])*"
+private const val hexadecimalDigits = "[0-9a-fA-F](?:_?[0-9a-fA-F])*"
+private val base2RegEx = Regex("^[-+]?0b($binaryDigits)$")
+private val base8RegEx = Regex("^[-+]?0($octalDigits)$")
+private val base10RegEx = Regex("^[-+]?(0|[1-9](?:_?[0-9])*)$")
+private val base16RegEx = Regex("^[-+]?0x($hexadecimalDigits)$")
+private val base60RegEx = Regex("^[-+]?([1-9](?:_?[0-9])*)(:([0-5]?[0-9]))+$")
 private val floatRegEx = Regex("^[-+]?(\\.[0-9]+|[0-9]+(\\.[0-9]*)?)([eE][-+]?[0-9]+)?$")
 private val timestampRegex = Regex(
     "^([0-9][0-9][0-9][0-9])" + // year
@@ -244,15 +248,19 @@ private fun findFloat(value: String): Value<Double>? {
 /** Tries to find timestamp in [value] and returns a DateTime if found */
 private fun findTimestamp(value: String): Value<LocalDateTime>? =
     timestampRegex.find(value)?.let { match ->
-        val nanoseconds = parseNanoseconds(match.groups[10]?.value)
-        val dateTime = when {
-            match.groups[4] == null ->
-                parseDate(value)
-            match.groups[11] == null || match.groups[11]!!.value == "Z" || match.groups[11]!!.value.isEmpty() ->
-                parseLocalDateTime(match, nanoseconds)
-            else -> Instant.parse(value).toLocalDateTime(TimeZone.UTC)
+        try {
+            val nanoseconds = parseNanoseconds(match.groups[10]?.value)
+            val dateTime = when {
+                match.groups[4] == null ->
+                    parseDate(value)
+                match.groups[11] == null || match.groups[11]!!.value == "Z" || match.groups[11]!!.value.isEmpty() ->
+                    parseLocalDateTime(match, nanoseconds)
+                else -> Instant.parse(value).toLocalDateTime(TimeZone.UTC)
+            }
+            Value(dateTime, TimeStamp)
+        } catch (_: IllegalArgumentException) {
+            throw InvalidYamlContent("Invalid timestamp: $value")
         }
-        Value(dateTime, TimeStamp)
     }
 
 private fun parseDate(value: String): LocalDateTime =

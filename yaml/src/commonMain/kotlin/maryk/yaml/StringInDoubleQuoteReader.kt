@@ -34,7 +34,10 @@ internal fun IsYamlCharReader.doubleQuoteString(
             skipChar = when (skipChar) {
                 None -> when (lastChar) {
                     '\\' -> StartNewEscaped
-                    else -> addCharAndResetSkipChar("$lastChar")
+                    else -> {
+                        validateRawYamlScalarCharacter(lastChar)
+                        addCharAndResetSkipChar("$lastChar")
+                    }
                 }
                 StartNewEscaped -> when (lastChar) {
                     '0' -> addCharAndResetSkipChar("\u0000")
@@ -80,34 +83,13 @@ internal fun IsYamlCharReader.doubleQuoteString(
         }
 
         val value = foundValue.toString()
-        if (value.hasUnpairedSurrogates()) {
-            throw InvalidYamlContent("Double quoted string contains invalid Unicode surrogate")
-        }
+        validateYamlScalar(value)
 
         return jsonTokenCreator(value, false, tag, indentAtStart)
     } catch (_: ExceptionWhileReadingJson) {
         throw InvalidYamlContent("Double quoted string was never closed")
     }
 }
-
-private fun String.hasUnpairedSurrogates(): Boolean {
-    var index = 0
-    while (index < length) {
-        val char = this[index]
-        when {
-            char.isHighSurrogate() -> {
-                if (index + 1 >= length || !this[index + 1].isLowSurrogate()) {
-                    return true
-                }
-                index++
-            }
-            char.isLowSurrogate() -> return true
-        }
-        index++
-    }
-    return false
-}
-
 
 /** Defines type of Char skipping mode */
 private sealed class SkipCharType {

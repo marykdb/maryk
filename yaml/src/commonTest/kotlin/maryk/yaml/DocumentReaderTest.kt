@@ -2,8 +2,34 @@ package maryk.yaml
 
 import maryk.json.ValueType
 import kotlin.test.Test
+import kotlin.test.assertFailsWith
 
 class DocumentReaderTest {
+    @Test
+    fun resetsDirectivesBetweenDocuments() {
+        createYamlReader(
+            """
+            |%YAML 1.2
+            |---
+            | first
+            |---
+            |%YAML 1.2
+            |---
+            """.trimMargin()
+        ).apply {
+            assertValue("first")
+            assertStartDocument()
+            assertEndDocument()
+        }
+    }
+
+    @Test
+    fun rejectsYamlDirectiveWithNonDotVersionSeparator() {
+        assertFailsWith<InvalidYamlContent> {
+            createYamlReader("%YAML 1x2\n---").nextToken()
+        }
+    }
+
     @Test
     fun readDocument() {
         createYamlReader("""

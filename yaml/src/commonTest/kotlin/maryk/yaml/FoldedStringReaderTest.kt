@@ -4,6 +4,11 @@ import kotlin.test.Test
 
 class FoldedStringReaderTest {
     @Test
+    fun rejectsUnpairedSurrogates() {
+        createYamlReader(">\n \uD800").assertInvalidYaml()
+    }
+
+    @Test
     fun failOnFoldedStringWithoutBreak() {
         createYamlReader("  > test").apply {
             assertInvalidYaml()

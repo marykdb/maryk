@@ -714,9 +714,9 @@ class RemoteDataStore private constructor(
             awaitClose {
                 job.cancel()
             }
-        // A reconnect can replay the initial state before a newly scheduled collector runs.
-        // Keep that small burst without allowing a slow collector to retain an unbounded stream.
-        }.buffer(8)
+        // A reconnect can replay a three-update initial state before a newly scheduled collector runs.
+        // Keep that minimal burst without allowing a slow collector to retain large update frames.
+        }.buffer(3)
     }
 
     private suspend fun reopenInactiveSshTunnel() {

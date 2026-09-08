@@ -703,7 +703,8 @@ class FoundationDBDataStoreTest {
         val blocked = dataStore.launch(Dispatchers.Default) {
             started.complete(Unit)
             runCatching {
-                dataStore.tc.run { transaction -> transaction.watch(watchKey).awaitResult() }
+                // The tracker owns futures returned from runAsync and can cancel them during close.
+                dataStore.tc.runAsync { transaction -> transaction.watch(watchKey) }.awaitResult()
             }
         }
 

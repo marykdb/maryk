@@ -568,7 +568,9 @@ class FoundationDBDataStoreTest {
             }
         }
 
-        withTimeout(5_000.milliseconds) { started.await() }
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(5_000.milliseconds) { started.await() }
+        }
         delay(100.milliseconds)
         val closeFailure = runCatching {
             withContext(Dispatchers.Default.limitedParallelism(1)) {

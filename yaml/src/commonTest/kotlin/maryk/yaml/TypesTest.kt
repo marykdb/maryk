@@ -11,6 +11,14 @@ import kotlin.test.assertFailsWith
 
 class TypesTest {
     @Test
+    fun readsYaml11IntegerUnderscoresAtDigitBoundaries() {
+        createYamlReader("!!int 0x_0A_74_AE").apply {
+            assertValue(685230, ValueType.Int)
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun readAutoTypedValues() {
         createYamlReader("""
         |- [true, True, TRUE]

@@ -42,7 +42,7 @@ internal fun IsYamlCharReader.doubleQuoteString(
                 None -> when (lastChar) {
                     '\\' -> StartNewEscaped
                     else -> {
-                        validateRawYamlScalarCharacter(lastChar)
+                        validateRawYamlScalarCharacter(lastChar, allowQuotedNonC0 = true)
                         addCharAndResetSkipChar("$lastChar")
                     }
                 }

@@ -7,8 +7,8 @@ import kotlin.test.assertFailsWith
 
 class CreateYamlTokenTest {
     @Test
-    fun rejectsMalformedIntegerUnderscores() {
-        listOf("1__", "0_", "0x1_").forEach { value ->
+    fun rejectsNonNumericIntegerCharacters() {
+        listOf("1_a", "0x_g", "0b_2").forEach { value ->
             assertFailsWith<InvalidYamlContent> {
                 createYamlValueToken(value, ValueType.Int, true)
             }

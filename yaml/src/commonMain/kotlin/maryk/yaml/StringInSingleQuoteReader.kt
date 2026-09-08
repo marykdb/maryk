@@ -37,7 +37,7 @@ internal fun IsYamlCharReader.singleQuoteString(
                     if (lastChar == '\n') read()
                     continue@loop
                 } else {
-                    validateRawYamlScalarCharacter(lastChar)
+                    validateRawYamlScalarCharacter(lastChar, allowQuotedNonC0 = true)
                     storedValue.append(lastChar)
                 }
             }

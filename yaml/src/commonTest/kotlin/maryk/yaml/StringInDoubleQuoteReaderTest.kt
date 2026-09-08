@@ -47,6 +47,14 @@ class StringInDoubleQuoteReaderTest {
     }
 
     @Test
+    fun readsRawNextLineCharacter() {
+        createYamlReader("\"first\u0085second\"").apply {
+            assertValue("first\u0085second")
+            assertEndDocument()
+        }
+    }
+
+    @Test
     fun rejectUnknownDoubleQuoteEscape() {
         createYamlReader(""""bad\G"""").apply {
             assertInvalidYaml()

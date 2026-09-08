@@ -35,6 +35,18 @@ internal fun modelSchemaTarget(dataModel: IsRootDataModel): String {
     return "${dataModel.Meta.name}@${dataModel.Meta.version}#$rootFingerprint:$dependentsFingerprint"
 }
 
+/** Target format written before dependent definitions became part of the identity. */
+private fun legacyModelSchemaTarget(dataModel: IsRootDataModel): String {
+    val definition = encodeModelDefinition(dataModel)
+    return "${dataModel.Meta.name}@${dataModel.Meta.version}#${definition.model.schemaFingerprint()}"
+}
+
+private fun isCompatibleRebuildTarget(current: String, dataModel: IsRootDataModel, target: String): Boolean =
+    current == target || (
+        encodeModelDefinition(dataModel).dependents == null &&
+            current == legacyModelSchemaTarget(dataModel)
+        )
+
 internal fun readModelSchemaState(
     transaction: Transaction,
     modelPrefix: ByteArray,
@@ -61,7 +73,7 @@ internal fun beginModelSchemaRebuild(
         val current = readModelSchemaState(transaction, modelPrefix)
         val fence = when (current) {
             is FoundationDBSchemaState.Rebuilding -> {
-                if (current.target != target) {
+                if (!isCompatibleRebuildTarget(current.target, dataModel, target)) {
                     throw StorageException(
                         "Model ${dataModel.Meta.name} is rebuilding for ${current.target}; cannot take over $target"
                     )

@@ -36,6 +36,8 @@ import maryk.datastore.foundationdb.model.FoundationDBMigrationLease
 import maryk.datastore.foundationdb.model.FoundationDBMigrationLeaseLostException
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
 import maryk.datastore.foundationdb.model.FoundationDBMigrationAuditLogStore
+import maryk.datastore.foundationdb.model.beginModelSchemaRebuild
+import maryk.datastore.foundationdb.model.modelSchemaStateKey
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.model.modelVersionKey
@@ -79,6 +81,27 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreMigrationTest {
+    @Test
+    fun legacyRootOnlyRebuildTargetResumesWithoutDependents() = runTest {
+        val store = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "legacy-rebuild-target", Uuid.random().toString()),
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+        try {
+            val prefix = store.getTableDirs(1u).modelPrefix
+            val fence = beginModelSchemaRebuild(store.tc, prefix, SimpleMarykModel)
+            store.runTransaction { transaction ->
+                val key = packKey(prefix, modelSchemaStateKey)
+                val state = transaction.get(key).awaitResult()!!.decodeToString()
+                transaction.set(key, state.replace("target=${fence.target}", "target=${fence.target.substringBeforeLast(':')}").encodeToByteArray())
+            }
+
+            beginModelSchemaRebuild(store.tc, prefix, SimpleMarykModel)
+        } finally {
+            store.close()
+        }
+    }
+
     class CustomException : Error()
 
     @Test

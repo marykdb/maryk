@@ -40,7 +40,7 @@ internal fun <DM : IsRootDataModel> processScanChangesRequest(
             maxVersions = scanRequest.maxVersions,
             sortingKey = sortingKey,
             historyRecords = dataStore.getRecordHistoryByKey(record.key.bytes, scanRequest.toVersion?.let(::HLC))
-        ).map { it.versionedChange }.takeIf { it.isNotEmpty() }?.let {
+        ).map { it.versionedChange }.takeIf { it.isNotEmpty() || storeAction.isFlowSnapshotRead }?.let {
             objectChanges += DataObjectVersionedChange(record.key, sortingKey?.let(::Bytes), it)
         }
     }

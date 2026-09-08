@@ -36,7 +36,13 @@ internal class DataStore<DM : IsRootDataModel>(
 
     internal fun addToUpdateHistory(version: HLC, keyBytes: ByteArray, isHardDelete: Boolean = false) {
         if (keepUpdateHistoryIndex) {
-            updateHistory.add(0, UpdateHistoryRecord(version.timestamp, keyBytes.copyOf(), isHardDelete))
+            val historyRecord = UpdateHistoryRecord(version.timestamp, keyBytes.copyOf(), isHardDelete)
+            val insertionIndex = updateHistory.indexOfFirst { it.version <= version.timestamp }
+            if (insertionIndex < 0) {
+                updateHistory.add(historyRecord)
+            } else {
+                updateHistory.add(insertionIndex, historyRecord)
+            }
         }
     }
 

@@ -2,6 +2,7 @@ package maryk.datastore.test
 
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.changes.change
 import maryk.core.query.filters.Equals
 import maryk.core.query.filters.Not
@@ -47,6 +48,10 @@ class DataStoreGetUpdatesAndFlowTest(
         "executeGetUpdatesAsFlowWithMutableWhereRequest" to ::executeGetUpdatesAsFlowWithMutableWhereRequest,
         "executeGetFlowTracksInitiallyMissingAndReaddedRequestedKey" to ::executeGetFlowTracksInitiallyMissingAndReaddedRequestedKey,
         "executeGetFlowTracksRequestedKeyEnteringMutableFilter" to ::executeGetFlowTracksRequestedKeyEnteringMutableFilter,
+        "executeGetChangesFlowTracksKeyWithEmptyInitialHistory" to ::executeGetChangesFlowTracksKeyWithEmptyInitialHistory,
+        "executeGetFlowTracksSoftDeleteAndUndelete" to ::executeGetFlowTracksSoftDeleteAndUndelete,
+        "executeGetFlowIncludingSoftDeletedTracksDeleteState" to ::executeGetFlowIncludingSoftDeletedTracksDeleteState,
+        "executeGetFlowUsesFinalSoftDeleteState" to ::executeGetFlowUsesFinalSoftDeleteState,
         "executeGetUpdatesWithInitChangesAsFlowRequest" to ::executeGetUpdatesWithInitChangesAsFlowRequest
     )
 
@@ -341,6 +346,93 @@ class DataStoreGetUpdatesAndFlowTest(
         assertIs<AdditionUpdate<*>>(responses[3].await()).apply {
             assertEquals(testKeys[0], key)
             assertEquals(0, insertionIndex)
+        }
+    }
+
+    private suspend fun executeGetChangesFlowTracksKeyWithEmptyInitialHistory() = updateListenerTester(
+        dataStore,
+        SimpleMarykModel.getChanges(
+            testKeys[0],
+            fromVersion = highestInitVersion + 1uL
+        ),
+        2
+    ) { responses ->
+        assertIs<InitialChangesUpdate<*>>(responses[0].await()).apply {
+            assertEquals(emptyList(), changes)
+        }
+
+        val change = Change(SimpleMarykModel { value::ref } with "ha after empty history")
+        dataStore.execute(SimpleMarykModel.change(testKeys[0].change(change)))
+
+        assertIs<ChangeUpdate<*>>(responses[1].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(listOf(change), changes)
+        }
+    }
+
+    private suspend fun executeGetFlowTracksSoftDeleteAndUndelete() = updateListenerTester(
+        dataStore,
+        SimpleMarykModel.get(testKeys[0]),
+        3
+    ) { responses ->
+        assertIs<InitialValuesUpdate<*>>(responses[0].await())
+
+        dataStore.execute(SimpleMarykModel.delete(testKeys[0]))
+        assertIs<RemovalUpdate<*>>(responses[1].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(SoftDelete, reason)
+        }
+
+        dataStore.execute(
+            SimpleMarykModel.change(testKeys[0].change(ObjectSoftDeleteChange(false)))
+        )
+        assertIs<AdditionUpdate<*>>(responses[2].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(false, isDeleted)
+        }
+    }
+
+    private suspend fun executeGetFlowIncludingSoftDeletedTracksDeleteState() = updateListenerTester(
+        dataStore,
+        SimpleMarykModel.get(testKeys[0], filterSoftDeleted = false),
+        3
+    ) { responses ->
+        assertIs<InitialValuesUpdate<*>>(responses[0].await())
+
+        dataStore.execute(SimpleMarykModel.delete(testKeys[0]))
+        assertIs<ChangeUpdate<*>>(responses[1].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(listOf(ObjectSoftDeleteChange(true)), changes)
+        }
+
+        dataStore.execute(
+            SimpleMarykModel.change(testKeys[0].change(ObjectSoftDeleteChange(false)))
+        )
+        assertIs<ChangeUpdate<*>>(responses[2].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(listOf(ObjectSoftDeleteChange(false)), changes)
+        }
+    }
+
+    private suspend fun executeGetFlowUsesFinalSoftDeleteState() = updateListenerTester(
+        dataStore,
+        SimpleMarykModel.get(testKeys[0]),
+        2
+    ) { responses ->
+        assertIs<InitialValuesUpdate<*>>(responses[0].await())
+
+        val deleteTransitions = listOf(
+            ObjectSoftDeleteChange(true),
+            ObjectSoftDeleteChange(false)
+        )
+        dataStore.execute(
+            SimpleMarykModel.change(testKeys[0].change(*deleteTransitions.toTypedArray()))
+        )
+
+        assertIs<ChangeUpdate<*>>(responses[1].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(0, index)
+            assertEquals(deleteTransitions, changes)
         }
     }
 

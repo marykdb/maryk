@@ -85,7 +85,11 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
      * Calls changedHandler with an index at which index the value should be and boolean if order changed or
      * null if it was deleted
      */
-    abstract suspend fun changeOrder(change: Change<DM>, changedHandler: suspend (Int?, Boolean) -> Unit)
+    abstract suspend fun changeOrder(
+        change: Change<DM>,
+        currentValues: Values<DM>? = null,
+        changedHandler: suspend (Int?, Boolean) -> Unit
+    )
 
     /** Get flow with update responses */
     fun getFlow() = channelFlow {
@@ -106,13 +110,15 @@ abstract class UpdateListener<DM: IsRootDataModel, RQ: IsFlowRequest<DM, *>>(
             is ValuesResponse<DM> -> send(
                 InitialValuesUpdate(
                     version = responseVersion,
-                    values = response.values
+                    values = response.values.map { value ->
+                        value.copy(values = value.values.filterWithSelect(request.select))
+                    }
                 )
             )
             is ChangesResponse<DM> -> send(
                 InitialChangesUpdate(
                     version = responseVersion,
-                    changes = response.changes
+                    changes = response.changes.filter { it.changes.isNotEmpty() }
                 )
             )
             else -> throw IllegalArgumentException("Unknown response type $response. Cannot process its values")

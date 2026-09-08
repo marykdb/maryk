@@ -3,7 +3,6 @@ package maryk.datastore.shared.updates
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.yield
 import maryk.core.models.IsRootDataModel
-import maryk.core.models.graph
 import maryk.core.properties.graph.RootPropRefGraph
 import maryk.core.properties.types.Key
 import maryk.core.query.changes.IndexChange
@@ -24,6 +23,7 @@ import maryk.core.query.responses.updates.RemovalReason.HardDelete
 import maryk.core.query.responses.updates.RemovalReason.NotInRange
 import maryk.core.query.responses.updates.RemovalReason.SoftDelete
 import maryk.core.query.responses.updates.RemovalUpdate
+import maryk.core.values.Values
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.updates.Update.Addition
 import maryk.datastore.shared.updates.Update.Change
@@ -72,24 +72,24 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                 }
             }
             is Change<DM> -> {
-                val shouldDelete = changes.firstOrNull {
-                    it is ObjectSoftDeleteChange
-                }?.let {
-                    (it as ObjectSoftDeleteChange).isDeleted && request.filterSoftDeleted
-                } == true
+                val softDeleteChange = changes.filterIsInstance<ObjectSoftDeleteChange>().lastOrNull()
+                val shouldDelete = softDeleteChange?.isDeleted == true && request.filterSoftDeleted
+                val isUndelete = softDeleteChange?.isDeleted == false
 
                 if (currentKeys.contains(key)) {
                     if (shouldDelete) {
                         handleDeletion(dataStore, this, SoftDelete, updateListener, sharedFlow)
                     } else {
+                        var currentValues: Values<DM>? = null
                         if (
                             updateListener.filterContainsMutableValues ||
-                            updateListener is UpdateListenerForGet<DM, *> && request.where != null
+                            updateListener is UpdateListenerForGet<DM, *> && request.where != null ||
+                            updateListener is UpdateListenerForScan<DM, *> && updateListener.usesIndexScan
                         ) {
                             val response = dataStore.execute(
                                 dataModel.get(
                                     key,
-                                    select = dataModel.graph { emptyList() },
+                                    select = null,
                                     where = request.where,
                                     filterSoftDeleted = request.filterSoftDeleted
                                 )
@@ -99,9 +99,10 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                                 handleDeletion(dataStore, this, NotInRange, updateListener, sharedFlow)
                                 return
                             }
+                            currentValues = response.values.single().values
                         }
 
-                        updateListener.changeOrder(this) { newIndex, orderChanged ->
+                        updateListener.changeOrder(this, currentValues) { newIndex, orderChanged ->
                             if (newIndex == null) {
                                 handleDeletion(dataStore, this, NotInRange, updateListener, sharedFlow)
                             } else {
@@ -114,13 +115,13 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                 } else if (
                     !shouldDelete &&
                     (
-                        updateListener.filterContainsMutableValues ||
+                        isUndelete ||
+                            updateListener.filterContainsMutableValues ||
                             updateListener is UpdateListenerForGet<DM, *> && request.where != null
                     ) &&
                     (
                         updateListener is UpdateListenerForGet<DM, *> ||
                             updateListener is UpdateListenerForScan<DM, *> &&
-                            updateListener.usesTableScan &&
                             updateListener.request.limit > 0u
                     )
                 ) {
@@ -129,7 +130,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                     val response = dataStore.execute(
                         request.dataModel.get(
                             key,
-                            select = request.select,
+                            select = null,
                             where = request.where,
                             filterSoftDeleted = request.filterSoftDeleted
                         )
@@ -140,7 +141,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                             sharedFlow.send(
                                 AdditionUpdate(
                                     key = addition.key,
-                                    values = addition.values,
+                                    values = addition.values.filterWithSelect(request.select),
                                     insertionIndex = insertionIndex,
                                     version = version,
                                     firstVersion = addition.firstVersion,
@@ -182,7 +183,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                             val response = dataStore.execute(
                                 request.dataModel.get(
                                     key,
-                                    select = request.select,
+                                    select = null,
                                     where = request.where,
                                     filterSoftDeleted = request.filterSoftDeleted
                                 )
@@ -214,7 +215,7 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                                 sharedFlow.send(
                                     AdditionUpdate(
                                         key = addition.key,
-                                        values = addition.values,
+                                        values = addition.values.filterWithSelect(request.select),
                                         insertionIndex = newIndex,
                                         version = this.version,
                                         firstVersion = addition.firstVersion,
@@ -239,6 +240,31 @@ internal suspend fun <DM : IsRootDataModel, RQ: IsFlowRequest<DM, *>> Update<DM>
                         updateListener,
                         sharedFlow
                     )
+                } else if (currentKeys.contains(key) && !isHardDelete) {
+                    val softDelete = Change(
+                        dataModel = dataModel,
+                        key = key,
+                        version = version,
+                        changes = listOf(ObjectSoftDeleteChange(true))
+                    )
+                    var currentValues: Values<DM>? = null
+                    if (updateListener is UpdateListenerForScan<DM, *> && updateListener.usesIndexScan) {
+                        currentValues = dataStore.execute(
+                            dataModel.get(
+                                key,
+                                select = null,
+                                where = request.where,
+                                filterSoftDeleted = false
+                            )
+                        ).values.singleOrNull()?.values
+                    }
+                    updateListener.changeOrder(softDelete, currentValues) { newIndex, orderChanged ->
+                        if (newIndex != null) {
+                            softDelete.createChangeUpdate(request.select, orderChanged, newIndex)?.let {
+                                sharedFlow.send(it)
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -21,6 +21,7 @@ import maryk.core.query.orders.Direction.DESC
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.responses.ChangesResponse
 import maryk.core.query.responses.FetchByIndexScan
+import maryk.core.query.responses.FetchByTableScan
 import maryk.core.query.responses.FetchByUpdateHistoryIndex
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.UpdatesResponse
@@ -47,12 +48,29 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
     internal val usesUpdateHistoryIndex =
         response is UpdatesResponse<DM> && response.dataFetchType is FetchByUpdateHistoryIndex
 
+    private val responseDataFetchType = when (response) {
+        is UpdatesResponse<DM> -> response.dataFetchType
+        is ValuesResponse<DM> -> response.dataFetchType
+        is ChangesResponse<DM> -> response.dataFetchType
+        else -> null
+    }
+
     private val scanType = when {
         usesUpdateHistoryIndex -> UpdateHistoryScan()
+        responseDataFetchType is FetchByIndexScan -> {
+            val indexReference = responseDataFetchType.index
+                ?: throw StorageException("Index scan response did not identify its index")
+            val index = request.dataModel.Meta.indexes?.firstOrNull {
+                it.referenceStorageByteArray.bytes.contentEquals(indexReference)
+            } ?: throw StorageException("Index scan response refers to an unknown index")
+            IndexScan(index, responseDataFetchType.direction)
+        }
+        responseDataFetchType is FetchByTableScan -> TableScan(responseDataFetchType.direction)
         else -> request.dataModel.orderToScanType(request.order, scanRange.equalPairs)
     }
 
     internal val usesTableScan get() = scanType is TableScan
+    internal val usesIndexScan get() = scanType is IndexScan
 
     internal val indexScanRange = (scanType as? IndexScan)?.index?.createScanRange(request.where, scanRange)
     private val indexStartBoundary = when (response) {
@@ -228,7 +246,11 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         return index
     }
 
-    override suspend fun changeOrder(change: Change<DM>, changedHandler: suspend (Int?, Boolean) -> Unit) {
+    override suspend fun changeOrder(
+        change: Change<DM>,
+        currentValues: Values<DM>?,
+        changedHandler: suspend (Int?, Boolean) -> Unit
+    ) {
         when (scanType) {
             is TableScan -> {
                 val index = findKeyIndexForTableScan(change.key)
@@ -273,7 +295,8 @@ class UpdateListenerForScan<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
                         }
                     }
                     else -> { // Was changed in order
-                        val indexKey = resolveIndexKeyFromChanges(existingIndexKey, relevantIndexChanges)
+                        val indexKey = currentValues?.let { resolveIndexKey(it, change.key.bytes) }
+                            ?: resolveIndexKeyFromChanges(existingIndexKey, relevantIndexChanges)
 
                         // check if key is valid according to filters
                         if (indexKey != null) {

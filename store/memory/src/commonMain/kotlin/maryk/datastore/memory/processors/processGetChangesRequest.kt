@@ -44,7 +44,7 @@ internal fun <DM : IsRootDataModel> processGetChangesRequest(
             maxVersions = getRequest.maxVersions,
             sortingKey = null,
             historyRecords = records
-        ).map { it.versionedChange }.takeIf { it.isNotEmpty() }?.let {
+        ).map { it.versionedChange }.takeIf { it.isNotEmpty() || storeAction.isFlowSnapshotRead }?.let {
             objectChanges += DataObjectVersionedChange(key, changes = it)
         }
     }

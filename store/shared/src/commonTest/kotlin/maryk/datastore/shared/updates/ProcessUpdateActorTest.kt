@@ -490,6 +490,7 @@ class ProcessUpdateActorTest {
 
         override suspend fun changeOrder(
             change: Update.Change<SimpleMarykModel>,
+            currentValues: Values<SimpleMarykModel>?,
             changedHandler: suspend (Int?, Boolean) -> Unit
         ) = Unit
     }
@@ -525,6 +526,7 @@ class ProcessUpdateActorTest {
 
         override suspend fun changeOrder(
             change: Update.Change<SimpleMarykModel>,
+            currentValues: Values<SimpleMarykModel>?,
             changedHandler: suspend (Int?, Boolean) -> Unit
         ) = Unit
     }
@@ -560,6 +562,7 @@ class ProcessUpdateActorTest {
 
         override suspend fun changeOrder(
             change: Update.Change<SimpleMarykModel>,
+            currentValues: Values<SimpleMarykModel>?,
             changedHandler: suspend (Int?, Boolean) -> Unit
         ) = Unit
     }
@@ -607,6 +610,7 @@ class ProcessUpdateActorTest {
 
         override suspend fun changeOrder(
             change: Update.Change<SimpleMarykModel>,
+            currentValues: Values<SimpleMarykModel>?,
             changedHandler: suspend (Int?, Boolean) -> Unit
         ) = Unit
     }

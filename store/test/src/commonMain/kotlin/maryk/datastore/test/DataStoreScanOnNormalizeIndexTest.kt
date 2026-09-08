@@ -50,6 +50,9 @@ class DataStoreScanOnNormalizeIndexTest(
         "executeIndexOnlyNormalizesConfiguredPart" to ::executeIndexOnlyNormalizesConfiguredPart,
         "executeNamedAnyOfMatchesWithoutOrder" to ::executeNamedAnyOfMatchesWithoutOrder,
         "executeGetFlowTracksNamedMatchMembership" to ::executeGetFlowTracksNamedMatchMembership,
+        "executeScanFlowTracksNamedMatchMembership" to ::executeScanFlowTracksNamedMatchMembership,
+        "executeScanFlowTracksNamedPrefixMembership" to ::executeScanFlowTracksNamedPrefixMembership,
+        "executeScanFlowTracksNamedRegexMembership" to ::executeScanFlowTracksNamedRegexMembership,
         "executeNamedAnyOfMultiTermMatchesWithoutOrder" to ::executeNamedAnyOfMultiTermMatchesWithoutOrder,
         "executeNamedAnyOfMatchesPrefixWithoutOrder" to ::executeNamedAnyOfMatchesPrefixWithoutOrder,
         "executeNamedAnyOfMultiTermMatchesPrefixWithoutOrder" to ::executeNamedAnyOfMultiTermMatchesPrefixWithoutOrder,
@@ -346,6 +349,58 @@ class DataStoreScanOnNormalizeIndexTest(
             keys[0],
             where = Matches("name" with "smith")
         ),
+        4
+    ) { responses ->
+        assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+            assertEquals(emptyList(), values)
+        }
+
+        dataStore.execute(
+            CaseInsensitivePerson.change(
+                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Smith"))
+            )
+        )
+        assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
+            assertEquals(keys[0], key)
+            assertEquals(0, insertionIndex)
+        }
+
+        dataStore.execute(
+            CaseInsensitivePerson.change(
+                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Jones"))
+            )
+        )
+        assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
+            assertEquals(keys[0], key)
+            assertEquals(NotInRange, reason)
+        }
+
+        dataStore.execute(
+            CaseInsensitivePerson.change(
+                keys[0].change(Change(CaseInsensitivePerson { surname::ref } with "Smith"))
+            )
+        )
+        assertIs<AdditionUpdate<*>>(responses[3].await()).apply {
+            assertEquals(keys[0], key)
+            assertEquals(0, insertionIndex)
+        }
+    }
+
+    private suspend fun executeScanFlowTracksNamedMatchMembership() = executeNamedSearchFlowMembership(
+        Matches("name" with "smith")
+    )
+
+    private suspend fun executeScanFlowTracksNamedPrefixMembership() = executeNamedSearchFlowMembership(
+        MatchesPrefix("name" with "smi")
+    )
+
+    private suspend fun executeScanFlowTracksNamedRegexMembership() = executeNamedSearchFlowMembership(
+        MatchesRegEx("name" with Regex("^smi.*$"))
+    )
+
+    private suspend fun executeNamedSearchFlowMembership(filter: maryk.core.query.filters.IsFilter) = updateListenerTester(
+        dataStore,
+        CaseInsensitivePerson.scan(where = filter),
         4
     ) { responses ->
         assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {

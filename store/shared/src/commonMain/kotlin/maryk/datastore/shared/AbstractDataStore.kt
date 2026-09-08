@@ -35,6 +35,8 @@ import maryk.core.query.requests.IsFlowRequest
 import maryk.core.query.requests.IsGetRequest
 import maryk.core.query.requests.IsScanRequest
 import maryk.core.query.requests.IsStoreRequest
+import maryk.core.query.requests.ScanRequest
+import maryk.core.query.requests.scan
 import maryk.core.query.responses.IsDataResponse
 import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
@@ -143,7 +145,7 @@ abstract class AbstractDataStore(
         request: RQ
     ): RP {
         waitForInit()
-        assertModelReady(getDataModelId(request.dataModel))
+        assertRequestModelReady(getDataModelId(request.dataModel))
 
         val response = CompletableDeferred<RP>()
 
@@ -165,7 +167,8 @@ abstract class AbstractDataStore(
         updateResponse: UpdateResponse<DM>
     ): ProcessResponse<DM> {
         waitForInit()
-        assertModelReady(getDataModelId(updateResponse.dataModel))
+        assertRequestModelReady(getDataModelId(updateResponse.dataModel))
+        requireSafeUpdateVersion(updateResponse.update.version)
 
         val response = CompletableDeferred<ProcessResponse<DM>>()
 
@@ -191,13 +194,13 @@ abstract class AbstractDataStore(
         }
 
         waitForInit()
-        assertModelReady(getDataModelId(request.dataModel))
+        assertRequestModelReady(getDataModelId(request.dataModel))
 
         return flow {
             waitForInit()
 
             val dataModelId = getDataModelId(request.dataModel)
-            assertModelReady(dataModelId)
+            assertRequestModelReady(dataModelId)
 
             val pendingListener = PendingUpdateListener()
             var listenerAddedToStore = false
@@ -209,7 +212,7 @@ abstract class AbstractDataStore(
                 val initialResponse = try {
                     storeChannel.send(
                         StoreAction(
-                            request = request,
+                            request = request.withFullValuesForListener(),
                             response = response,
                             onBeforeReadContext = {
                                 val pendingListenerAdded = CompletableDeferred<Unit>()
@@ -298,6 +301,8 @@ abstract class AbstractDataStore(
     protected open fun onUpdateListenerRemoved(dataModelId: UInt) {}
     protected open fun onAllUpdateListenersRemoved() {}
     protected open suspend fun onBeforeFlowSnapshotBoundary() {}
+    /** Backend hook for coroutine-scoped request permissions such as migration handlers. */
+    protected open suspend fun assertRequestModelReady(dataModelId: UInt) = assertModelReady(dataModelId)
     protected open fun assertModelReady(dataModelId: UInt) {}
 
     /** Allocate an update position before its backend publishes it to the listener actor. */
@@ -574,4 +579,29 @@ private fun <DM: IsRootDataModel, RP: IsDataResponse<DM>> IsFlowRequest<DM, RP>.
             )
         }
         else -> throw RequestException("Unsupported request type for update listener: $this")
+    }
+
+/**
+ * Index listeners need complete initial values to retain ordering independently from the public projection.
+ * The listener applies the original projection when emitting the initial values update.
+ */
+@Suppress("UNCHECKED_CAST")
+private fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> RQ.withFullValuesForListener(): RQ =
+    when (this) {
+        is ScanRequest<*> -> (this as ScanRequest<DM>).let { request ->
+            request.dataModel.scan(
+                startKey = request.startKey,
+                select = null,
+                where = request.where,
+                order = request.order,
+                limit = request.limit,
+                includeStart = request.includeStart,
+                toVersion = request.toVersion,
+                filterSoftDeleted = request.filterSoftDeleted,
+                aggregations = request.aggregations,
+                allowTableScan = request.allowTableScan,
+                cursor = request.cursor,
+            ) as RQ
+        }
+        else -> this
     }

@@ -116,6 +116,7 @@ class DataStoreScanUpdatesAndFlowTest(
         "returnedFlowGivesConcurrentCollectorsIndependentListeners" to ::returnedFlowGivesConcurrentCollectorsIndependentListeners,
         "executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill" to ::executeScanValuesAsFlowRequestWithUpdateHistoryIndexRefill,
         "executeScanChangesAsFlowRequest" to ::executeScanChangesAsFlowRequest,
+        "executeScanChangesFlowTracksKeyWithEmptyInitialHistory" to ::executeScanChangesFlowTracksKeyWithEmptyInitialHistory,
         "executeScanUpdatesAsFlowRequest" to ::executeScanUpdatesAsFlowRequest,
         "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex" to ::executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex,
         "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey" to ::executeScanUpdatesAsFlowRequestWithUpdateHistoryIndexTracksNewTopKey,
@@ -128,6 +129,8 @@ class DataStoreScanUpdatesAndFlowTest(
         "executeOrderedScanUpdatesAsFlowRequest" to ::executeOrderedScanUpdatesAsFlowRequest,
         "executeReverseOrderedScanUpdatesAsFlowRequest" to ::executeReverseOrderedScanUpdatesAsFlowRequest,
         "executeEmptyIndexedScanValuesAsFlowAddsChangedValue" to ::executeEmptyIndexedScanValuesAsFlowAddsChangedValue,
+        "executeIndexedScanValuesFlowAdmitsMutableFilterMatch" to ::executeIndexedScanValuesFlowAdmitsMutableFilterMatch,
+        "executeProjectedOrderedLimitedScanFlowMaintainsWindow" to ::executeProjectedOrderedLimitedScanFlowMaintainsWindow,
         "executeOrderedScanValuesAsFlowAddsNewTopValue" to ::executeOrderedScanValuesAsFlowAddsNewTopValue,
         "executeReverseOrderedScanValuesAsFlowAddsNewTopValue" to ::executeReverseOrderedScanValuesAsFlowAddsNewTopValue
     )
@@ -732,6 +735,98 @@ class DataStoreScanUpdatesAndFlowTest(
                 assertEquals(testKeys[1], key)
                 assertEquals(listOf(change1), changes)
             }
+        }
+    }
+
+    private suspend fun executeScanChangesFlowTracksKeyWithEmptyInitialHistory() = updateListenerTester(
+        dataStore,
+        TestMarykModel.scanChanges(
+            limit = 2u,
+            fromVersion = highestInitVersion + 1uL
+        ),
+        2
+    ) { responses ->
+        assertIs<InitialChangesUpdate<*>>(responses[0].await()).apply {
+            assertEquals(emptyList(), changes)
+        }
+
+        val change = Change(TestMarykModel { string::ref } with "ha after empty scan history")
+        dataStore.execute(TestMarykModel.change(testKeys[0].change(change)))
+
+        assertIs<ChangeUpdate<*>>(responses[1].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(listOf(change), changes)
+        }
+    }
+
+    private suspend fun executeIndexedScanValuesFlowAdmitsMutableFilterMatch() = updateListenerTester(
+        dataStore,
+        TestMarykModel.scan(
+            where = Equals(TestMarykModel { string::ref } with "ha target"),
+            order = TestMarykModel { int::ref }.ascending(),
+            limit = 2u
+        ),
+        2
+    ) { responses ->
+        assertIs<InitialValuesUpdate<*>>(responses[0].await()).apply {
+            assertEquals(emptyList(), values)
+        }
+
+        dataStore.execute(
+            TestMarykModel.change(
+                testKeys[0].change(Change(TestMarykModel { string::ref } with "ha target"))
+            )
+        )
+
+        assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
+            assertEquals(testKeys[0], key)
+            assertEquals(0, insertionIndex)
+        }
+    }
+
+    private suspend fun executeProjectedOrderedLimitedScanFlowMaintainsWindow() = updateListenerTester(
+        dataStore,
+        TestMarykModel.scan(
+            select = TestMarykModel.graph { listOf(string) },
+            order = TestMarykModel { int::ref }.ascending(),
+            limit = 2u
+        ),
+        3
+    ) { responses ->
+        assertIs<InitialValuesUpdate<TestMarykModel>>(responses[0].await()).apply {
+            assertEquals(listOf(testKeys[1], testKeys[3]), values.map { it.key })
+            assertEquals(
+                listOf(
+                    TestMarykModel.create(setDefaults = false) { string with "ha world 2" },
+                    TestMarykModel.create(setDefaults = false) { string with "ha world 4" }
+                ),
+                values.map { it.values }
+            )
+        }
+
+        val addedKey = assertStatusIs<AddSuccess<TestMarykModel>>(
+            dataStore.execute(
+                TestMarykModel.add(
+                    TestMarykModel.create {
+                        string with "ha projected middle"
+                        int with -7
+                        uint with 9001u
+                        bool with true
+                        double with 1.0
+                        dateTime with LocalDateTime(2026, 8, 31, 0, 0)
+                    }
+                )
+            ).statuses.single()
+        ).key
+        testKeys += addedKey
+
+        assertIs<AdditionUpdate<*>>(responses[1].await()).apply {
+            assertEquals(addedKey, key)
+            assertEquals(1, insertionIndex)
+        }
+        assertIs<RemovalUpdate<*>>(responses[2].await()).apply {
+            assertEquals(testKeys[3], key)
+            assertEquals(NotInRange, reason)
         }
     }
 

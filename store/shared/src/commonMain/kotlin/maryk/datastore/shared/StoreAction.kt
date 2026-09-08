@@ -12,4 +12,7 @@ class StoreAction<DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResp
     val response: CompletableDeferred<RP>,
     val onBeforeReadContext: (suspend () -> Unit)? = null,
     val onFlowSnapshotBoundary: (suspend (FlowSnapshotBoundary) -> Unit)? = null,
-)
+) {
+    /** Whether this read establishes live-listener membership at a snapshot boundary. */
+    val isFlowSnapshotRead get() = onFlowSnapshotBoundary != null
+}

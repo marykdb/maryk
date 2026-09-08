@@ -66,6 +66,7 @@ class DataStoreScanOnAnyValueIndexTest(
         "executeOrderedScanFlowUsesVisibleAnyValuePastStartBoundary" to ::executeOrderedScanFlowUsesVisibleAnyValuePastStartBoundary,
         "executeOrderedScanUpdatesFlowUsesVisibleAnyValuePastStartBoundary" to ::executeOrderedScanUpdatesFlowUsesVisibleAnyValuePastStartBoundary,
         "executeOrderedScanFlowUpdatesSortedValueWhenPositionStaysSame" to ::executeOrderedScanFlowUpdatesSortedValueWhenPositionStaysSame,
+        "executeOrderedScanFlowReportsSelectedAnyValueDeletion" to ::executeOrderedScanFlowReportsSelectedAnyValueDeletion,
         "executeChangeUpdatesMapRefToAnyIndexRequest" to ::executeChangeUpdatesMapRefToAnyIndexRequest,
         "executeChangeUpdatesIncMapRefToAnyIndexRequest" to ::executeChangeUpdatesIncMapRefToAnyIndexRequest,
         "executeChangeUpdatesSetRefToAnyIndexRequest" to ::executeChangeUpdatesSetRefToAnyIndexRequest,
@@ -601,6 +602,41 @@ class DataStoreScanOnAnyValueIndexTest(
         } finally {
             dataStore.closeAllListeners()
             listenJob.cancelAndJoin()
+        }
+    }
+
+    private suspend fun executeOrderedScanFlowReportsSelectedAnyValueDeletion() {
+        dataStore.execute(
+            AnyValueMapIndexModel.change(
+                mapKeys[0].change(
+                    Change(AnyValueMapIndexModel { mapValues refAt "k1x" } with "m4")
+                )
+            )
+        )
+
+        updateListenerTester(
+            dataStore,
+            AnyValueMapIndexModel.scan(
+                order = AnyValueMapIndexModel { mapValues.refToAnyKey() }.ascending(),
+                limit = 3u
+            ),
+            2
+        ) { responses ->
+            assertIs<InitialValuesUpdate<*>>(responses[0].await())
+
+            val selectedCandidateDelete = Change(
+                AnyValueMapIndexModel { mapValues refAt "k1" } with null
+            )
+            dataStore.execute(
+                AnyValueMapIndexModel.change(
+                    mapKeys[0].change(selectedCandidateDelete)
+                )
+            )
+
+            assertIs<ChangeUpdate<AnyValueMapIndexModel>>(responses[1].await()).apply {
+                expect(mapKeys[0]) { key }
+                expect(true) { selectedCandidateDelete in changes }
+            }
         }
     }
 

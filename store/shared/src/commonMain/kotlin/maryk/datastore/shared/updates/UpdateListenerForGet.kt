@@ -44,7 +44,11 @@ class UpdateListenerForGet<DM: IsRootDataModel, RP: IsDataResponse<DM>>(
         if (index >= 0) keyIndex.remove(key)
     }
 
-    override suspend fun changeOrder(change: Change<DM>, changedHandler: suspend (Int?, Boolean) -> Unit) {
+    override suspend fun changeOrder(
+        change: Change<DM>,
+        currentValues: Values<DM>?,
+        changedHandler: suspend (Int?, Boolean) -> Unit
+    ) {
         val keyIndex = matchingKeys.value.indexOfFirst { it compareTo change.key == 0 }
 
         if (keyIndex >= 0) {

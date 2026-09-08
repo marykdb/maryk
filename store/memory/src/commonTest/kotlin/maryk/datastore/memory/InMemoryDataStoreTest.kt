@@ -199,6 +199,30 @@ class InMemoryDataStoreTest {
     }
 
     @Test
+    fun updateHistoryFlowPreservesDescendingTieOrder() = runTest(timeout = 1.minutes) {
+        val dataStore = InMemoryDataStore.open(
+            keepAllVersions = true,
+            keepUpdateHistoryIndex = true,
+            dataModelsById = dataModelsForTests
+        )
+        try {
+            runDataStoreTests(dataStore, "executeScanUpdatesAsFlowRequestWithUpdateHistoryIndex")
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun getFlowUsesFinalSoftDeleteState() = runTest(timeout = 1.minutes) {
+        val dataStore = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
+        try {
+            runDataStoreTests(dataStore, "executeGetFlowUsesFinalSoftDeleteState")
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun replicatedUpdatesRespectHardDeleteTombstones() = runTest(timeout = 1.minutes) {
         val dataStore = InMemoryDataStore.open(dataModelsById = dataModelsForTests)
         try {

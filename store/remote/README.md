@@ -11,7 +11,7 @@ It lets the desktop App and programmatic clients connect to a store running else
 
 Platform notes:
 - Server runs with Ktor CIO on JVM and Kotlin/Native desktop targets.
-- Native client uses Ktor curl engine and the system `ssh` binary for tunnels.
+- Native client uses Ktor CIO and the system `ssh` binary for tunnels.
 
 ## Start a server
 

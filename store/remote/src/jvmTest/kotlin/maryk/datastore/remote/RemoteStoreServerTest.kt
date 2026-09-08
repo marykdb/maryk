@@ -166,6 +166,21 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun executeReportsCompletedBatchPrefixWhenLaterRequestIsRejected() = runBoundedIntegrationTest {
+        val delegate = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        withServer(dataStore = FailSecondExecuteStore(delegate)) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(multipleStoreRequestsPayload())
+            }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+            assertEquals("1", response.headers[RemoteStoreProtocol.completedRequestCountHeader])
+        }
+    }
+
+    @Test
     fun executeClosesConnectionWhenRejectingUnreadBody() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
@@ -1515,6 +1530,20 @@ private class RequestExceptionStore(
     override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
         request: RQ,
     ): RP = throw RequestException("Rejected by datastore")
+}
+
+private class FailSecondExecuteStore(
+    private val delegate: IsDataStore,
+) : IsDataStore by delegate {
+    private var executions = 0
+
+    override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+        request: RQ,
+    ): RP {
+        executions++
+        if (executions == 2) throw RequestException("Second request rejected")
+        return delegate.execute(request)
+    }
 }
 
 private class MismatchedResponseStore(

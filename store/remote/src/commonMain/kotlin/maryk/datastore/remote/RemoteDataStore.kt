@@ -33,6 +33,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -118,7 +119,9 @@ class RemoteDataStore private constructor(
 ) : IsDataStore, MigrationAdmin, SnapshotVersionProvider {
     private val definitionsMutex = Mutex()
     private val sshTunnelMutex = Mutex()
+    private val lifecycleMutex = Mutex()
     private val localDataModelsByName = mutableMapOf<String, IsRootDataModel>()
+    private var closed = false
 
     override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (id, model) ->
         model.Meta.name to id
@@ -449,6 +452,7 @@ class RemoteDataStore private constructor(
 
     /** Execute an ordered request batch containing unresolved Inject values. */
     suspend fun execute(requests: ObjectValues<Requests, Requests.Companion>): List<IsResponse> {
+        requireOpen()
         @Suppress("UNCHECKED_CAST")
         val typedRequests = requests.original(Requests.requests.index)
             as? List<TypedValue<RequestType, Any>>
@@ -522,6 +526,7 @@ class RemoteDataStore private constructor(
         val payload = RemoteStoreCodec.encode(Requests.Serializer, Requests(transportable), context, MAX_REQUEST_BODY_BYTES)
 
         return callbackFlow {
+            requireOpen()
             val job = launch(Dispatchers.Default) {
                 val useFlowProtocolV2 = flowRetryPolicy.maxReconnectAttempts > 0u ||
                     flowRetryPolicy.heartbeatTimeoutMillis != null
@@ -706,7 +711,7 @@ class RemoteDataStore private constructor(
             awaitClose {
                 job.cancel()
             }
-        }
+        }.buffer(2)
     }
 
     private suspend fun reopenInactiveSshTunnel() {
@@ -719,6 +724,7 @@ class RemoteDataStore private constructor(
     override suspend fun <DM : IsRootDataModel> processUpdate(
         updateResponse: UpdateResponse<DM>,
     ): ProcessResponse<DM> {
+        requireOpen()
         registerLocalDataModels(listOf(updateResponse.dataModel))
         val context = requestContext(updateResponse.dataModel)
         val payload = RemoteStoreCodec.encode(UpdateResponse.Serializer, updateResponse, context, MAX_REQUEST_BODY_BYTES)
@@ -743,6 +749,7 @@ class RemoteDataStore private constructor(
     }
 
     override suspend fun captureSnapshotVersion(): ULong {
+        requireOpen()
         val responseBytes = readNonFlowResponseBytes("snapshot version") {
             httpClient.get(buildUrl(baseUrl, RemoteStoreProtocol.snapshotVersionPath)) {
                 headers {
@@ -779,6 +786,7 @@ class RemoteDataStore private constructor(
         executeMigrationAdmin(RemoteMigrationRequest(RemoteMigrationOperation.Cancel, modelId, reason)).accepted == true
 
     private suspend fun executeMigrationAdmin(request: RemoteMigrationRequest): RemoteMigrationResponse {
+        requireOpen()
         val responseBytes = readNonFlowResponseBytes("migration administration") {
             httpClient.post(buildUrl(baseUrl, RemoteStoreProtocol.migrationsPath)) {
                 headers {
@@ -797,6 +805,13 @@ class RemoteDataStore private constructor(
 
     override suspend fun close() {
         withContext(NonCancellable) {
+            if (!lifecycleMutex.withLock {
+                if (closed) false else {
+                    closed = true
+                    true
+                }
+            }
+            ) return@withContext
             try {
                 listeners.close()
             } finally {
@@ -831,6 +846,10 @@ class RemoteDataStore private constructor(
                 localDataModelsByName[model.Meta.name] = model
             }
         }
+    }
+
+    private suspend fun requireOpen() {
+        check(lifecycleMutex.withLock { !closed }) { "Remote store is closed" }
     }
 
     private fun validateLocalModelCompatibility(model: IsRootDataModel) {
@@ -879,6 +898,12 @@ private class RemoteHttpStatusException(
 /** The remote server reports that a mutation may have committed but its result is unavailable. */
 class RemoteMutationOutcomeUnknownException(message: String) : IllegalStateException(message)
 
+/** The server completed the leading requests in a batch but could not return the full batch response. */
+class RemoteBatchOutcomeUnknownException(
+    val completedRequestCount: Int,
+    message: String,
+) : IllegalStateException(message)
+
 private fun HeadersBuilder.appendBearerToken(bearerToken: String?) {
     if (bearerToken != null) {
         append(HttpHeaders.Authorization, "Bearer $bearerToken")
@@ -924,8 +949,8 @@ internal class RemoteListenerRegistry {
             jobs.clear()
             handles to flowJobs
         }
-        flowJobs.forEach { it.cancel() }
         handles.forEach { it.close() }
+        cancelAndJoin(flowJobs)
     }
 
     suspend fun close() {
@@ -938,8 +963,14 @@ internal class RemoteListenerRegistry {
             handles to flowJobs
         }
         handles.forEach { it.close() }
-        flowJobs.forEach { it.cancel() }
+        cancelAndJoin(flowJobs)
         cleanupScope.cancel()
+    }
+
+    private suspend fun cancelAndJoin(flowJobs: List<Job>) {
+        val currentJob = currentCoroutineContext()[Job]
+        flowJobs.forEach { it.cancel() }
+        flowJobs.filterNot { it === currentJob }.forEach { it.join() }
     }
 }
 
@@ -960,6 +991,16 @@ private data class InfoResult(
 
 private suspend fun requireSuccess(response: HttpResponse, operation: String) {
     if (response.status.value !in 200..299) {
+        response.headers[RemoteStoreProtocol.completedRequestCountHeader]
+            ?.toIntOrNull()
+            ?.takeIf { it > 0 }
+            ?.let { completedRequestCount ->
+                response.call.cancel()
+                throw RemoteBatchOutcomeUnknownException(
+                    completedRequestCount,
+                    "Remote store $operation completed the first $completedRequestCount batch request(s), but did not return the full batch response",
+                )
+            }
         if (response.headers[RemoteStoreProtocol.mutationOutcomeHeader] == "unknown") {
             response.call.cancel()
             throw RemoteMutationOutcomeUnknownException(

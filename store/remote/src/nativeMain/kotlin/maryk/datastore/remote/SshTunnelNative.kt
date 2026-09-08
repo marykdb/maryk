@@ -19,6 +19,8 @@ import kotlinx.cinterop.sizeOf
 import kotlinx.cinterop.toKString
 import kotlinx.cinterop.value
 import platform.posix.AF_INET
+import platform.posix.ECHILD
+import platform.posix.EINTR
 import platform.posix.INADDR_ANY
 import platform.posix.SO_REUSEADDR
 import platform.posix.SOCK_STREAM
@@ -226,7 +228,8 @@ private fun waitForExit(pid: Int, attempts: Int, sleepMicros: UInt): Boolean {
         val status = alloc<IntVar>()
         repeat(attempts) {
             val result = waitpid(pid, status.ptr, WNOHANG)
-            if (result == pid || result < 0) return true
+            if (result == pid || (result < 0 && errno == ECHILD)) return true
+            if (result < 0 && errno != EINTR) return false
             usleep(sleepMicros)
         }
     }

@@ -2,6 +2,7 @@ package maryk.datastore.remote
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.request.get
 import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
@@ -32,19 +33,20 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import kotlinx.io.readByteArray
 import maryk.core.inject.Inject
@@ -81,6 +83,58 @@ import maryk.test.models.TestMarykModel
 import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteDataStoreTest {
+    @Test
+    fun closeMakesCallerOwnedClientRemoteStoreTerminal() = runBoundedIntegrationTest {
+        val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val port = ServerSocket(0).use { it.localPort }
+        val server = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val client = HttpClient()
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port", httpClient = client),
+        )
+
+        try {
+            remote.close()
+
+            val exception = assertFailsWith<IllegalStateException> {
+                remote.captureSnapshotVersion()
+            }
+            assertTrue(exception.message.orEmpty().contains("closed"))
+            assertEquals(HttpStatusCode.OK, client.get("http://127.0.0.1:$port${RemoteStoreProtocol.infoPath}").status)
+        } finally {
+            client.close()
+            server.stop(500, 500)
+            store.close()
+        }
+    }
+
+    @Test
+    fun listenerRegistryCloseWaitsForCanceledFlowJobs() = runBoundedIntegrationTest {
+        val registry = RemoteListenerRegistry()
+        val cancellationStarted = CompletableDeferred<Unit>()
+        val allowCompletion = CompletableDeferred<Unit>()
+        val job = launch {
+            try {
+                awaitCancellation()
+            } finally {
+                withContext(NonCancellable) {
+                    cancellationStarted.complete(Unit)
+                    allowCompletion.await()
+                }
+            }
+        }
+        registry.track(job) {}
+
+        val close = async { registry.close() }
+        try {
+            cancellationStarted.await()
+            assertTrue(!close.isCompleted)
+        } finally {
+            allowCompletion.complete(Unit)
+            close.await()
+        }
+    }
+
     @Test
     fun completedFlowJobIsRemovedWithoutCollectorScope() = runBoundedIntegrationTest {
         val registry = RemoteListenerRegistry()
@@ -893,7 +947,7 @@ class RemoteDataStoreTest {
                 withTimeout(5_000.milliseconds) {
                     remote.executeFlow(
                         SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
-                    ).buffer(0).collect {
+                    ).collect {
                         delay(50)
                     }
                 }

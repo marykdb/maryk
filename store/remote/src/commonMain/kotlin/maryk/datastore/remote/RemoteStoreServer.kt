@@ -325,7 +325,12 @@ internal fun Application.remoteStoreModule(
                     val executableRequest = preparedRequest.executableRequest
                     val storeRequest = preparedRequest.storeRequest
                     val response = if (preparedRequest.authorized) {
-                        dataStore.execute(storeRequest)
+                        try {
+                            dataStore.execute(storeRequest)
+                        } catch (error: RequestException) {
+                            if (index == 0) throw error
+                            throw PartialBatchRequestException(index, error)
+                        }
                     } else {
                         authorizationFailure(storeRequest)
                             ?: throw RequestValidationException(
@@ -370,6 +375,15 @@ internal fun Application.remoteStoreModule(
                     val lengthPrefix = RemoteStoreCodec.lengthPrefix(responseBytes.size)
                     val chunkSize = lengthPrefix.size + responseBytes.size
                     if (totalSize > MAX_BATCH_RESPONSE_BODY_BYTES - chunkSize) {
+                        if (index > 0) {
+                            throw PartialBatchRequestException(
+                                index,
+                                RequestValidationException(
+                                    HttpStatusCode.PayloadTooLarge,
+                                    "Remote execute response exceeds max size: ${totalSize + chunkSize} > $MAX_BATCH_RESPONSE_BODY_BYTES",
+                                ),
+                            )
+                        }
                         throw RequestValidationException(
                             HttpStatusCode.PayloadTooLarge,
                             "Remote execute response exceeds max size: ${totalSize + chunkSize} > $MAX_BATCH_RESPONSE_BODY_BYTES"
@@ -1073,6 +1087,11 @@ private class RequestValidationException(
 
 private class MutationOutcomeUnknownException(cause: Throwable) : IllegalStateException(cause)
 
+private class PartialBatchRequestException(
+    val completedRequestCount: Int,
+    val failure: Throwable,
+) : IllegalStateException(failure)
+
 private val RemoteStoreCallAdmissionPermitKey = AttributeKey<RequestAdmissionPermit>("RemoteStoreCallAdmissionPermit")
 
 private class RequestAdmission(maxConcurrentRequests: Int) {
@@ -1118,6 +1137,16 @@ private suspend inline fun ApplicationCall.respondValidationErrors(
     } catch (error: RequestValidationException) {
         response.header(HttpHeaders.Connection, "close")
         respondText(error.message, status = error.status)
+    } catch (error: PartialBatchRequestException) {
+        response.header(RemoteStoreProtocol.completedRequestCountHeader, error.completedRequestCount.toString())
+        when (val cause = error.failure) {
+            is RequestValidationException -> {
+                response.header(HttpHeaders.Connection, "close")
+                respondText(cause.message, status = cause.status)
+            }
+            is RequestException -> respondText(cause.message ?: "Remote request is invalid", status = HttpStatusCode.BadRequest)
+            else -> throw error
+        }
     } catch (error: RequestException) {
         respondText(error.message ?: "Remote request is invalid", status = HttpStatusCode.BadRequest)
     } catch (_: MutationOutcomeUnknownException) {

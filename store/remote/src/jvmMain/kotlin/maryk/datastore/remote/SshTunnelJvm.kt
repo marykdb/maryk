@@ -20,9 +20,10 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
             .redirectErrorStream(true)
             .start()
 
-        drainOutput(process.inputStream)
+        val diagnostics = SshDiagnostics()
+        drainOutput(process.inputStream, diagnostics)
         try {
-            waitForLocalPort(process, localPort)
+            waitForLocalPort(process, localPort, diagnostics)
         } catch (error: Throwable) {
             destroyProcess(process)
             throw error
@@ -68,12 +69,14 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
         return command
     }
 
-    private fun drainOutput(stream: InputStream) {
+    private fun drainOutput(stream: InputStream, diagnostics: SshDiagnostics) {
         Thread {
             runCatchingNonFatal {
                 val buffer = ByteArray(4096)
-                while (stream.read(buffer) >= 0) {
-                    // Discard ssh output while keeping pipe drained.
+                while (true) {
+                    val count = stream.read(buffer)
+                    if (count < 0) break
+                    diagnostics.append(buffer, count)
                 }
             }
         }.apply {
@@ -82,16 +85,16 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
         }
     }
 
-    private fun waitForLocalPort(process: Process, localPort: Int) {
+    private fun waitForLocalPort(process: Process, localPort: Int, diagnostics: SshDiagnostics) {
         val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
         while (System.nanoTime() < deadline) {
             if (!process.isAlive) {
-                throw IllegalStateException("SSH tunnel process exited with code ${process.exitValue()}")
+                throw IllegalStateException("SSH tunnel process exited with code ${process.exitValue()}${diagnostics.suffix()}")
             }
             if (runCatchingNonFatal {
                 Socket("127.0.0.1", localPort).use {}
             }.isSuccess) {
-                waitForStableProcess(process, localPort)
+                waitForStableProcess(process, localPort, diagnostics)
                 return
             }
             Thread.sleep(50)
@@ -99,15 +102,40 @@ private object ProcessSshTunnelFactory : SshTunnelFactory {
         throw IllegalStateException("SSH tunnel did not open local port $localPort within timeout")
     }
 
-    private fun waitForStableProcess(process: Process, localPort: Int) {
+    private fun waitForStableProcess(process: Process, localPort: Int, diagnostics: SshDiagnostics) {
         repeat(5) {
             Thread.sleep(50)
             if (!process.isAlive) {
-                throw IllegalStateException("SSH tunnel process exited after opening local port $localPort with code ${process.exitValue()}")
+                throw IllegalStateException(
+                    "SSH tunnel process exited after opening local port $localPort with code ${process.exitValue()}${diagnostics.suffix()}"
+                )
             }
         }
     }
 }
+
+internal class SshDiagnostics {
+    private val output = StringBuilder()
+
+    fun append(bytes: ByteArray, count: Int) = synchronized(output) {
+        val remaining = maxDiagnosticsBytes - output.length
+        if (remaining > 0) output.append(bytes.decodeToString(0, minOf(count, remaining)))
+    }
+
+    fun suffix(): String = synchronized(output) {
+        output.toString()
+            .replace(sshDiagnosticSecret, "\$1\$2<redacted>")
+            .replace(sshDiagnosticWhitespace, " ")
+            .trim()
+            .takeIf { it.isNotEmpty() }
+            ?.let { ": $it" }
+            ?: ""
+    }
+}
+
+private const val maxDiagnosticsBytes = 4_096
+private val sshDiagnosticSecret = Regex("(?i)\\b(password|passphrase|token|authorization)\\s*([=:])\\s*\\S+")
+private val sshDiagnosticWhitespace = Regex("[\\r\\n\\t]+")
 
 private fun String.forSshForwarding(): String =
     if (':' in this && !startsWith("[")) "[$this]" else this

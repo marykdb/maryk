@@ -1,7 +1,13 @@
 package maryk.datastore.test
 
 import maryk.core.query.changes.Change
+import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.changes.change
+import maryk.core.models.IsRootDataModel
+import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.protobuf.WriteCache
+import maryk.core.query.DefinitionsContext
+import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
@@ -37,7 +43,7 @@ class DataStoreBackupRoundTripTest(
         )
         val latestVersion = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(change.statuses.single()).version
 
-        val backup = InMemoryBackup()
+        val backup = SerializedBackup(source)
         source.backup(
             backup,
             snapshotVersion = if (useAutomaticSnapshot) null else latestVersion + 1uL,
@@ -56,24 +62,77 @@ class DataStoreBackupRoundTripTest(
     }
 }
 
-private class InMemoryBackup : DataStoreBackupWriter, DataStoreBackupReader {
+/**
+ * Test transport which forces backup records through the same protobuf model encoding used by
+ * portable consumers. This prevents the contract test from accidentally restoring object refs.
+ */
+private class SerializedBackup(
+    private val source: IsDataStore,
+) : DataStoreBackupWriter, DataStoreBackupReader {
     private lateinit var storedManifest: DataStoreBackupManifest
-    private val chunks = mutableListOf<DataStoreBackupChunk>()
+    private val chunks = mutableListOf<SerializedBackupChunk>()
 
     override val manifest: DataStoreBackupManifest
         get() = storedManifest
 
     override suspend fun begin(manifest: DataStoreBackupManifest) {
-        storedManifest = manifest
+        storedManifest = manifest.copy(
+            modelNames = manifest.modelNames.toList(),
+            modelMajorVersions = manifest.modelMajorVersions.toMap(),
+        )
     }
 
     override suspend fun write(chunk: DataStoreBackupChunk) {
-        chunks += chunk
+        chunks += SerializedBackupChunk(
+            modelName = chunk.modelName,
+            records = chunk.records.map { encode(it, chunk.modelName) },
+        )
     }
 
     override suspend fun complete() = Unit
 
     override suspend fun read(consumer: suspend (DataStoreBackupChunk) -> Unit) {
-        chunks.forEach { consumer(it) }
+        chunks.forEach { chunk ->
+            consumer(
+                DataStoreBackupChunk(
+                    modelName = chunk.modelName,
+                    records = chunk.records.map { decode(it, chunk.modelName) },
+                )
+            )
+        }
+    }
+
+    private fun context(modelName: String): RequestContext {
+        val dataModels = source.dataModelsById.values.associateBy(
+            keySelector = { it.Meta.name },
+            valueTransform = ::DataModelReference,
+        )
+        val model = dataModels[modelName]?.get?.invoke()
+            ?: error("Backup model `$modelName` is not registered")
+        return RequestContext(DefinitionsContext(dataModels.toMutableMap()), model)
+    }
+
+    private fun encode(
+        record: DataObjectVersionedChange<IsRootDataModel>,
+        modelName: String,
+    ): ByteArray {
+        val context = context(modelName)
+        val cache = WriteCache()
+        val size = DataObjectVersionedChange.Serializer.calculateObjectProtoBufLength(record, cache, context)
+        var index = 0
+        return ByteArray(size).also { bytes ->
+            DataObjectVersionedChange.Serializer.writeObjectProtoBuf(record, cache, { bytes[index++] = it }, context)
+        }
+    }
+
+    private fun decode(bytes: ByteArray, modelName: String): DataObjectVersionedChange<IsRootDataModel> {
+        var index = 0
+        return DataObjectVersionedChange.Serializer.readProtoBuf(bytes.size, { bytes[index++] }, context(modelName))
+            .toDataObject()
     }
 }
+
+private data class SerializedBackupChunk(
+    val modelName: String,
+    val records: List<ByteArray>,
+)

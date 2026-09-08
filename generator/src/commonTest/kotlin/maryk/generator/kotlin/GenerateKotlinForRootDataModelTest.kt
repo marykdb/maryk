@@ -287,7 +287,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         unique = true,
         minValue = "a",
         maxValue = "zzzz",
-        default = "string",
+        default = "haha",
         minSize = 1u,
         maxSize = 10u,
         regEx = "ha.*"
@@ -382,7 +382,7 @@ object CompleteMarykModel : RootDataModel<CompleteMarykModel>(
         final = true,
         dataModel = { SimpleMarykModel },
         default = SimpleMarykModel(
-            value = "a default"
+            value = "haha"
         )
     )
     val valueModel by valueObject(

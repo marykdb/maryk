@@ -11,6 +11,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 private object RegistryModel : RootDataModel<RegistryModel>(name = "RegistryModel")
+private object SameNameRegistryModel : RootDataModel<SameNameRegistryModel>(name = "RegistryModel")
 private object DuplicateRegistryModelA : RootDataModel<DuplicateRegistryModelA>(name = "DuplicateRegistryModel")
 private object DuplicateRegistryModelB : RootDataModel<DuplicateRegistryModelB>(name = "DuplicateRegistryModel")
 private object BlankRegistryModel : RootDataModel<BlankRegistryModel>(name = "")
@@ -35,6 +36,15 @@ private object ReservedAlternativeNameRegistryModel : RootDataModel<ReservedAlte
 }
 
 class DataModelRegistryTest {
+    @Test
+    fun rejectsSameNameModelWithDifferentDefinition() {
+        val registry = validatedDataModelRegistry(mapOf(1u to RegistryModel))
+
+        assertFailsWith<StorageException> {
+            registry.getDataModelId(SameNameRegistryModel)
+        }
+    }
+
     @Test
     fun rejectsReservedPropertiesWithoutManualModelCheck() {
         assertFailsWith<IllegalArgumentException> {

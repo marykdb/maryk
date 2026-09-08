@@ -25,7 +25,6 @@ import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
-import maryk.core.exceptions.DefNotFoundException
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.clock.HLC
@@ -473,8 +472,7 @@ abstract class AbstractDataStore(
 
     /** Get [dataModel] id to identify it for storage */
     fun getDataModelId(dataModel: IsRootDataModel) =
-        dataModelIdsByString[dataModel.Meta.name] ?:
-        throw DefNotFoundException("DataStore not found ${dataModel.Meta.name}")
+        dataModelRegistry.getDataModelId(dataModel)
 
     override suspend fun close() {
         if (!startClosingDataStore()) return

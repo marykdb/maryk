@@ -8,6 +8,16 @@ internal data class DataModelRegistry(
     val dataModelIdsByString: Map<String, UInt>,
 )
 
+internal fun DataModelRegistry.getDataModelId(dataModel: IsRootDataModel): UInt {
+    val dataModelId = dataModelIdsByString[dataModel.Meta.name]
+        ?: throw StorageException("DataStore not found ${dataModel.Meta.name}")
+    val registeredModel = dataModelsById.getValue(dataModelId)
+    if (registeredModel !== dataModel) {
+        throw StorageException("DataStore model ${dataModel.Meta.name} does not match the registered definition")
+    }
+    return dataModelId
+}
+
 internal fun validatedDataModelRegistry(
     suppliedDataModelsById: Map<UInt, IsRootDataModel>,
 ): DataModelRegistry {

@@ -103,7 +103,7 @@ class Proto3ConversionTest {
             .setFixedBytes(ByteString.copyFrom(Bytes("AAECAwQ").bytes))
             .setFlexBytes(ByteString.copyFrom(Bytes("AAECAw").bytes))
             .setReference(ByteString.copyFrom(Key<SimpleMarykModel>("AAECAQAAECAQAAECAQAAEA").bytes))
-            .setSubModel(MarykTestProtos.SimpleMarykModel.newBuilder().setValue("a default"))
+            .setSubModel(MarykTestProtos.SimpleMarykModel.newBuilder().setValue("haha"))
             .setValueModel(ByteString.copyFrom(completeObject { valueModel }!!.toByteArray()))
             .addAllList(mutableListOf("ha1", "ha2", "ha3"))
             .addAllSet(mutableListOf(1, 2, 3))

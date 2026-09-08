@@ -22,7 +22,11 @@ import maryk.core.properties.definitions.StringDefinition
 import maryk.core.properties.definitions.TimeDefinition
 import maryk.core.properties.definitions.ValueObjectDefinition
 import maryk.core.properties.definitions.contextual.DataModelReference
+import maryk.core.properties.definitions.embed
+import maryk.core.properties.definitions.string
+import maryk.core.properties.exceptions.ValidationException
 import maryk.core.properties.types.Key
+import maryk.core.properties.types.invoke
 import maryk.core.properties.types.numeric.SInt32
 import maryk.core.protobuf.WriteCache
 import maryk.core.query.DefinitionsConversionContext
@@ -40,7 +44,29 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.expect
 
+private class DefaultValidationChild : RootDataModel<DefaultValidationChild>() {
+    val value by string(index = 1u, regEx = "ha.*")
+}
+
+private class InvalidScalarDefaultModel : RootDataModel<InvalidScalarDefaultModel>() {
+    val value by string(index = 1u, default = "invalid", regEx = "ha.*")
+}
+
+private class InvalidEmbeddedDefaultModel : RootDataModel<InvalidEmbeddedDefaultModel>() {
+    val child by embed(
+        index = 1u,
+        dataModel = { DefaultValidationChild() },
+        default = DefaultValidationChild().create { value with "invalid" }
+    )
+}
+
 internal class RootDataModelTest {
+    @Test
+    fun invalidDefaultsAreRejectedWhenTheModelIsRegistered() {
+        assertFailsWith<ValidationException> { InvalidScalarDefaultModel() }
+        assertFailsWith<ValidationException> { InvalidEmbeddedDefaultModel() }
+    }
+
     @Test
     fun testKey() {
         expect(

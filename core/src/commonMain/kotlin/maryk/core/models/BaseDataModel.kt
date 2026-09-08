@@ -62,7 +62,8 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
     /** Add a single property definition wrapper */
     override fun addSingle(propertyDefinitionWrapper: IsDefinitionWrapper<out Any, *, *, DO>) {
         @Suppress("UNCHECKED_CAST")
-        _allProperties.add(propertyDefinitionWrapper as IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>)
+        val wrapper = propertyDefinitionWrapper as IsDefinitionWrapper<Any, Any, IsPropertyContext, DO>
+        _allProperties.add(wrapper)
 
         require(propertyDefinitionWrapper.index <= Short.MAX_VALUE.toUInt()) { "${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} is outside range $(0..Short.MAX_VALUE)" }
         require(indexToDefinition[propertyDefinitionWrapper.index] == null) { "Duplicate index ${propertyDefinitionWrapper.index} for ${propertyDefinitionWrapper.name} and ${indexToDefinition[propertyDefinitionWrapper.index]?.name}" }
@@ -77,6 +78,10 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
 
         propertyDefinitionWrapper.name.let(addName)
         propertyDefinitionWrapper.alternativeNames?.forEach(addName)
+
+        (wrapper.definition as? HasDefaultValueDefinition<*>)?.default?.let {
+            wrapper.validate(newValue = it)
+        }
     }
 
     /** Get PropertyReference by [referenceName] */

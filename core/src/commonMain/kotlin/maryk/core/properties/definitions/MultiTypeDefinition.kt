@@ -60,6 +60,10 @@ data class MultiTypeDefinition<E : MultiTypeEnum<out T>, T: Any>(
 
         if (definition is MultiTypeDefinition<*, *>) {
             compatible = typeEnum.compatibleWith(definition.typeEnum, checkedDataModelNames, addIncompatibilityReason) && compatible
+            if (this.typeIsFinal && !definition.typeIsFinal) {
+                addIncompatibilityReason?.invoke("Multi type with changeable type was made type final")
+                compatible = false
+            }
         }
 
         return compatible

@@ -71,6 +71,28 @@ class MapValueReferenceTest {
     }
 
     @Test
+    fun stringMapKeysWithDotsOrEmptyValuesRoundTripByName() {
+        listOf("a.b", "").forEach { key ->
+            val reference = ComplexModel { mapStringString refAt key }
+
+            expect(reference) {
+                ComplexModel.getPropertyReferenceByName(reference.completeName)
+            }
+        }
+    }
+
+    @Test
+    fun stringMapKeyReferencesWithDotsOrEmptyValuesRoundTripByName() {
+        listOf("a.b", "").forEach { key ->
+            val reference = ComplexModel { mapStringString refToKey key }
+
+            expect(reference) {
+                ComplexModel.getPropertyReferenceByName(reference.completeName)
+            }
+        }
+    }
+
+    @Test
     fun testStringConversion() {
         expect("map.@15:22:55") { valReference.completeName }
         expect(valReference) { TestMarykModel.getPropertyReferenceByName(valReference.completeName) }

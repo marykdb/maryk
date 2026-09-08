@@ -26,4 +26,15 @@ internal class IsPropertyDefinitionTest {
             StringDefinition(maxValue = "a").compatibleWith(DateDefinition(maxValue = LocalDate(2010, 1, 1)))
         }
     }
+
+    @Test
+    fun addingFinalConstraintIsNotCompatible() {
+        assertFalse {
+            StringDefinition(final = true).compatibleWith(StringDefinition(final = false))
+        }
+
+        assertTrue {
+            StringDefinition(final = false).compatibleWith(StringDefinition(final = true))
+        }
+    }
 }

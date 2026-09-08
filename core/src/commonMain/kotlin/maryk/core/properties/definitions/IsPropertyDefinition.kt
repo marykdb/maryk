@@ -59,6 +59,11 @@ interface IsPropertyDefinition<T : Any> {
             compatible = false
         }
 
+        if (this.final && !definition.final) {
+            addIncompatibilityReason?.invoke("Not final property was made final")
+            compatible = false
+        }
+
         return compatible
     }
 

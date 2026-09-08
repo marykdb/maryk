@@ -28,8 +28,8 @@ class SetItemReference<T : Any, CX : IsPropertyContext> internal constructor(
     IsPropertyReferenceWithParent<T, IsValueDefinition<T, CX>, CanContainSetItemReference<*, *, *>, Set<T>> {
     override val completeName: String by lazy {
         this.parentReference?.let {
-            "${it.completeName}.#$value"
-        } ?: "#$value"
+            "${it.completeName}.#${setDefinition.valueDefinition.asString(value).escapeReferenceSegment()}"
+        } ?: "#${setDefinition.valueDefinition.asString(value).escapeReferenceSegment()}"
     }
 
     @Suppress("UNCHECKED_CAST")

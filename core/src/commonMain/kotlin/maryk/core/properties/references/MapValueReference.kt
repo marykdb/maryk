@@ -33,8 +33,8 @@ class MapValueReference<K : Any, V : Any, CX : IsPropertyContext> internal const
     HasEmbeddedPropertyReference<V> {
     override val completeName by lazy {
         this.parentReference?.let {
-            "${it.completeName}.@$key"
-        } ?: "@$key"
+            "${it.completeName}.@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment()}"
+        } ?: "@${mapDefinition.keyDefinition.asString(key).escapeReferenceSegment()}"
     }
 
     /** Convenience infix method to create Reference [value] pairs */

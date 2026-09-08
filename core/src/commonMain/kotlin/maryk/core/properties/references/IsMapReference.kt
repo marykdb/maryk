@@ -30,7 +30,7 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
                 }
                 MapValueReference(
                     propertyDefinition.definition.keyDefinition.fromString(
-                        name.substring(1)
+                        name.substring(1).unescapeReferenceSegment()
                     ),
                     propertyDefinition.definition,
                     this
@@ -42,7 +42,7 @@ interface IsMapReference<K : Any, V : Any, CX : IsPropertyContext, D: IsMapDefin
                 }
                 MapKeyReference(
                     propertyDefinition.definition.keyDefinition.fromString(
-                        name.substring(1)
+                        name.substring(1).unescapeReferenceSegment()
                     ),
                     propertyDefinition.definition,
                     this

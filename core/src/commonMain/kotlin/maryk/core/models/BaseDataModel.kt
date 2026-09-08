@@ -5,6 +5,7 @@ import maryk.core.exceptions.DefNotFoundException
 import maryk.core.extensions.bytes.initUIntByVar
 import maryk.core.properties.IsPropertyContext
 import maryk.core.properties.definitions.HasDefaultValueDefinition
+import maryk.core.properties.references.splitReferenceName
 import maryk.core.properties.definitions.IsListDefinition
 import maryk.core.properties.definitions.IsPropertyDefinition
 import maryk.core.properties.definitions.IsUsableInMultiType
@@ -83,7 +84,7 @@ abstract class BaseDataModel<DO : Any> : IsTypedDataModel<DO> {
         referenceName: String,
         context: IsPropertyContext?
     ): IsPropertyReference<*, IsPropertyDefinition<*>, *> {
-        val names = referenceName.split(".")
+        val names = referenceName.splitReferenceName()
 
         var propertyReference: AnyPropertyReference? = null
         for (name in names) {

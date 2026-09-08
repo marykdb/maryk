@@ -418,5 +418,11 @@ internal class MultiTypeDefinitionTest {
                 MultiTypeDefinition(typeEnum = enum1)
             )
         }
+
+        assertFalse {
+            MultiTypeDefinition(typeEnum = enum1, typeIsFinal = true).compatibleWith(
+                MultiTypeDefinition(typeEnum = enum1, typeIsFinal = false)
+            )
+        }
     }
 }

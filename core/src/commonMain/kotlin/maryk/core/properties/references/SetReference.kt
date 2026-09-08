@@ -36,7 +36,7 @@ open class SetReference<T : Any, CX : IsPropertyContext> internal constructor(
                 }
                 SetItemReference(
                     propertyDefinition.definition.valueDefinition.fromString(
-                        name.substring(1)
+                        name.substring(1).unescapeReferenceSegment()
                     ),
                     propertyDefinition.definition,
                     this

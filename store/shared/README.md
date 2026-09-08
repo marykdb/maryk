@@ -91,14 +91,12 @@ Requirements and operation:
   restored history is not silently collapsed to current state.
 - Restore validates creation history, ordering, and snapshot bounds before replay,
   and rejects unexpected or incomplete backend responses.
-- Existing one-pass readers use serialized staging capped at 64 MiB and 100,000
+- Restore uses serialized staging capped at 64 MiB and 100,000
   records by default. Exceeding either bound fails before changing the target.
   `restore(reader, requireEmpty, DataStoreRestoreOptions(...))` adjusts these bounds.
-- Large file/object-storage backups should implement `RepeatableDataStoreBackupReader`:
-  each `read` reopens the same immutable data and emits identical chunks/records in
-  the same order. Restore selects the next globally ordered batch on each pass,
-  retaining at most one input chunk plus a bounded batch. This trades repeated
-  input scans for bounded memory; the reader must also bound its decoded chunks.
+- `RepeatableDataStoreBackupReader` remains useful to callers that reopen immutable
+  backup data, but restore stages it once before replay. This avoids repeated scans
+  for every atomic version while preserving global source-version order.
 - Replay emits one atomic version per request, bounded to 8 MiB by default and
   preserving source-version order even when models are interleaved. A version
   cannot be split atomically; one exceeding `maxReplayBytes` fails explicitly.

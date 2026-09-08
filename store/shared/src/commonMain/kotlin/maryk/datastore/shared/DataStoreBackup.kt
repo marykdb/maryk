@@ -216,7 +216,7 @@ suspend fun IsDataStore.restore(
     }
 
     val codec = RestoreCodec(dataModelsById.values.associateBy { it.Meta.name })
-    val staged = if (reader is RepeatableDataStoreBackupReader) null else StagedBackupReader(manifest, codec, options)
+    val staged = StagedBackupReader(codec, options)
     var restored = 0uL
     reader.read { chunk ->
         if (chunk.modelName !in models) {
@@ -230,36 +230,23 @@ suspend fun IsDataStore.restore(
                     throw RequestException("One backup version exceeds maxReplayBytes; a single atomic version cannot be split")
                 }
             }
-            staged?.add(chunk.modelName, record)
+            staged.add(chunk.modelName, record)
             restored++
         }
     }
-    val replayReader = staged ?: reader as RepeatableDataStoreBackupReader
-    var after: RestoreEvent? = null
-    while (true) {
-        val batch = nextRestoreBatch(replayReader, after, codec, options)
-        if (batch.isEmpty()) break
-        var start = 0
-        while (start < batch.size) {
-            val modelName = batch[start].modelName
-            var end = start + 1
-            while (end < batch.size && batch[end].modelName == modelName) end++
-            val changes = batch.subList(start, end).map { it.record }
-            val response = processUpdate(
-                UpdateResponse(models.getValue(modelName), InitialChangesUpdate(manifest.snapshotVersion, changes))
-            )
-            val result = response.result as? AddOrChangeResponse<*>
-                ?: throw RequestException("Could not restore `$modelName`: unexpected ${response.result::class.simpleName} response")
-            if (result.statuses.size != changes.size) {
-                throw RequestException("Could not restore `$modelName`: expected ${changes.size} statuses, received ${result.statuses.size}")
-            }
-            val failures = result.statuses.filterNot { it is AddSuccess<*> || it is ChangeSuccess<*> }
-            if (failures.isNotEmpty()) {
-                throw RequestException("Could not restore `$modelName`: ${failures.joinToString()}")
-            }
-            start = end
+    for (event in staged.orderedEvents()) {
+        val response = processUpdate(
+            UpdateResponse(models.getValue(event.modelName), InitialChangesUpdate(manifest.snapshotVersion, listOf(event.record)))
+        )
+        val result = response.result as? AddOrChangeResponse<*>
+            ?: throw RequestException("Could not restore `${event.modelName}`: unexpected ${response.result::class.simpleName} response")
+        if (result.statuses.size != 1) {
+            throw RequestException("Could not restore `${event.modelName}`: expected one status, received ${result.statuses.size}")
         }
-        after = batch.last()
+        val failures = result.statuses.filterNot { it is AddSuccess<*> || it is ChangeSuccess<*> }
+        if (failures.isNotEmpty()) {
+            throw RequestException("Could not restore `${event.modelName}`: ${failures.joinToString()}")
+        }
     }
 
     return DataStoreRestoreResult(models.size, restored)

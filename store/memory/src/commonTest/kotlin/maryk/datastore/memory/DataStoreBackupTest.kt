@@ -71,7 +71,7 @@ class DataStoreBackupTest {
     }
 
     @Test
-    fun repeatableRestoreBoundsEncodedBatchesWithoutStagingInput() = runTest {
+    fun repeatableRestoreStagesOnceAndBoundsRequests() = runTest {
         val models = mapOf(1u to SimpleMarykModel)
         val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
         val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
@@ -102,8 +102,8 @@ class DataStoreBackupTest {
                 }
             }
             assertEquals(25uL, boundedTarget.restore(repeatable, true,
-                DataStoreRestoreOptions(maxStagedBytes = 1, maxStagedRecords = 1, maxReplayBytes = 1024)).records)
-            assertTrue(passes > 2)
+                DataStoreRestoreOptions(maxReplayBytes = 1024)).records)
+            assertEquals(1, passes)
             assertTrue(requests > 1)
             assertEquals(25, target.execute(SimpleMarykModel.scan(allowTableScan = true)).values.size)
         } finally {

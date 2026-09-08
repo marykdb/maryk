@@ -13,11 +13,10 @@ import maryk.core.query.responses.updates.InitialChangesUpdate
 /**
  * A reader that can reopen the same immutable backup on every [read] call.
  * Each call must emit identical chunks, records and versions in the same order.
- * File/object-storage readers can implement this without retaining decoded history.
  */
 interface RepeatableDataStoreBackupReader : DataStoreBackupReader
 
-/** Resource bounds for staging one-pass input and replaying an atomic version. */
+/** Resource bounds for serialized input staging and replaying an atomic version. */
 data class DataStoreRestoreOptions(
     val maxStagedBytes: Int = 64 * 1024 * 1024,
     val maxStagedRecords: Int = 100_000,
@@ -41,7 +40,7 @@ internal class RestoreCodec(private val models: Map<String, IsRootDataModel>) {
         val cache = WriteCache()
         val size = DataObjectVersionedChange.Serializer.calculateObjectProtoBufLength(record, cache, context)
         if (size < 0 || size > remainingBytes) {
-            throw RequestException("Backup exceeds restore staging limit; use a RepeatableDataStoreBackupReader or increase maxStagedBytes")
+            throw RequestException("Backup exceeds restore staging limit; increase maxStagedBytes")
         }
         var index = 0
         return ByteArray(size).also { bytes ->
@@ -66,7 +65,6 @@ internal data class RestoreEvent(
     val modelName: String,
     val ordinal: ULong,
     val record: DataObjectVersionedChange<IsRootDataModel>,
-    val encodedSize: Int,
 ) : Comparable<RestoreEvent> {
     val version get() = record.changes.single().version
     override fun compareTo(other: RestoreEvent): Int =
@@ -75,56 +73,30 @@ internal data class RestoreEvent(
 
 /** Serialized staging bounds retained bytes and prevents a reader's mutable buffers being retained. */
 internal class StagedBackupReader(
-    override val manifest: DataStoreBackupManifest,
     private val codec: RestoreCodec,
     private val options: DataStoreRestoreOptions,
-) : RepeatableDataStoreBackupReader {
+) {
     private val records = mutableListOf<Pair<String, ByteArray>>()
     private var bytes = 0
 
     fun add(modelName: String, record: DataObjectVersionedChange<IsRootDataModel>) {
         if (records.size >= options.maxStagedRecords) {
-            throw RequestException("Backup exceeds restore staging record limit; use a RepeatableDataStoreBackupReader or increase maxStagedRecords")
+            throw RequestException("Backup exceeds restore staging record limit; increase maxStagedRecords")
         }
         val encoded = codec.encode(modelName, record, options.maxStagedBytes - bytes)
         records += modelName to encoded
         bytes += encoded.size
     }
 
-    override suspend fun read(consumer: suspend (DataStoreBackupChunk) -> Unit) {
+    fun orderedEvents(): List<RestoreEvent> {
+        val events = mutableListOf<RestoreEvent>()
+        var ordinal = 0uL
         for ((modelName, bytes) in records) {
-            consumer(DataStoreBackupChunk(modelName, listOf(codec.decode(modelName, bytes))))
-        }
-    }
-}
-
-/**
- * Select one globally earliest atomic version without retaining the whole input or assuming
- * record-key order is version order. One request per version keeps the replay order exact even
- * when models are interleaved, and keeps each RemoteDataStore request bounded.
- */
-internal suspend fun nextRestoreBatch(
-    reader: RepeatableDataStoreBackupReader,
-    after: RestoreEvent?,
-    codec: RestoreCodec,
-    options: DataStoreRestoreOptions,
-): List<RestoreEvent> {
-    var selected: RestoreEvent? = null
-    var ordinal = 0uL
-    reader.read { chunk ->
-        for (record in chunk.records) {
+            val record = codec.decode(modelName, bytes)
             for (change in record.changes) {
-                val position = ordinal++
-                if (after != null && (change.version < after.version || change.version == after.version && position <= after.ordinal)) continue
-                val event = RestoreEvent(chunk.modelName, position, record.copy(changes = listOf(change)), 0)
-                if (selected?.let { event >= it } == true) continue
-                val size = codec.replaySize(chunk.modelName, reader.manifest.snapshotVersion, listOf(event.record))
-                if (size < 0 || size > options.maxReplayBytes) {
-                    throw RequestException("One backup version exceeds maxReplayBytes; a single atomic version cannot be split")
-                }
-                selected = event.copy(encodedSize = size)
+                events += RestoreEvent(modelName, ordinal++, record.copy(changes = listOf(change)))
             }
         }
+        return events.sorted()
     }
-    return selected?.let(::listOf).orEmpty()
 }

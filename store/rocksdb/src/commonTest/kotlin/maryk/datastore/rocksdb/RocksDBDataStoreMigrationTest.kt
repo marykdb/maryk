@@ -68,6 +68,40 @@ import kotlin.time.Duration.Companion.milliseconds
 
 class RocksDBDataStoreMigrationTest {
 
+    @Test
+    fun dependentNewModelVersionHookCanReadOwnModel() = runTest {
+        val path = createTestDBFolder("dependentNewModelVersionHook")
+        RocksDBDataStore.open(relativePath = path, dataModelsById = mapOf(2u to Phase6OrderBaseV1)).close()
+        val releaseMigration = CompletableDeferred<Unit>()
+        val dependentHookCompleted = CompletableDeferred<Unit>()
+        val store = RocksDBDataStore.open(
+            relativePath = path,
+            dataModelsById = mapOf(2u to Phase6OrderBaseV2, 1u to Phase6OrderDependentV2),
+            migrationConfiguration = MigrationConfiguration(
+                migrationStartupBudgetMs = -1L,
+                continueMigrationsInBackground = true,
+                migrationHandler = { releaseMigration.await(); MigrationOutcome.Success },
+            ),
+            versionUpdateHandler = { currentStore, _, model ->
+                if (model.Meta.name == Phase6OrderDependentV2.Meta.name) {
+                    currentStore.execute(Phase6OrderDependentV2.scan(allowTableScan = true))
+                    dependentHookCompleted.complete(Unit)
+                }
+            },
+        )
+        try {
+            releaseMigration.complete(Unit)
+            withContext(Dispatchers.Default) {
+                withTimeout(5_000) { store.awaitMigration(1u) }
+                withTimeout(5_000) { dependentHookCompleted.await() }
+            }
+        } finally {
+            releaseMigration.complete(Unit)
+            store.close()
+            deleteFolder(path)
+        }
+    }
+
     class CustomException : Error()
 
     @Test

@@ -449,9 +449,11 @@ class RocksDBDataStore private constructor(
                 try {
                     pendingDependencies.forEach { dependencyId -> awaitMigration(dependencyId) }
                     storeInitializationReady.await()
-                    processModelMigration(index) { finalizer ->
-                        finalizer()
-                        writeStoreMeta()
+                    withContext(RocksDBMigrationRequestContext(index)) {
+                        processModelMigration(index) { finalizer ->
+                            finalizer()
+                            writeStoreMeta()
+                        }
                     }
 
                     if (index !in pendingMigrationModelIds.value) {

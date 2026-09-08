@@ -5,6 +5,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.time.TimeMark
 import kotlinx.atomicfu.update
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -345,7 +346,9 @@ internal suspend fun RocksDBDataStore.handleRequiredMigration(
                 failPendingMigration(index, reason)
             } finally {
                 if (hasLease) {
-                    effectiveMigrationLease.release(index, migrationId)
+                    withContext(NonCancellable) {
+                        effectiveMigrationLease.release(index, migrationId)
+                    }
                 }
                 if (completeAfterLeaseRelease) {
                     completePendingMigration(index)

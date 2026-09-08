@@ -128,7 +128,7 @@ actual object File {
                         val count = read(fd, probePinned.addressOf(0), 1.convert())
                         if (count < 0 && errno == EINTR) continue
                         if (count < 0) return null
-                        return if (count == 0L) buffer else null
+                        return if (count.toLong() == 0L) buffer else null
                     }
                 }
                 return null

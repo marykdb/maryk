@@ -21,6 +21,8 @@ import kotlinx.datetime.LocalDateTime
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
+import maryk.core.models.emptyValues
+import maryk.core.models.graph
 import maryk.core.models.key
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationConfiguration
@@ -123,6 +125,7 @@ import maryk.test.models.CompleteMarykModel
 import maryk.test.models.AnyValueSetIndexModel
 import maryk.test.models.MarykEnumEmbedded.E1
 import maryk.test.models.MarykTypeEnum.T2
+import maryk.test.models.Log
 import maryk.test.models.ModelV1
 import maryk.test.models.ModelV1_1
 import maryk.test.models.ModelV2
@@ -1503,6 +1506,55 @@ class IndexedDbDataStoreTest {
         } finally {
             if (keys.isNotEmpty()) {
                 dataStore.execute(TestMarykModel.delete(*keys.toTypedArray(), hardDelete = true))
+            }
+            dataStore.close()
+        }
+    }
+
+    @Test
+    fun scanFiltersBeforeApplyingProjection() = runTest {
+        installIndexedDbForTests()
+
+        val dataStore = IndexedDbDataStore.open(
+            databaseName = "maryk-indexeddb-filter-before-projection-${Random.nextInt()}",
+            dataModelsById = dataModelsForTests,
+        )
+        val includedTimestamp = LocalDateTime(2021, 1, 1, 12, 0)
+        val logs = arrayOf(
+            Log("include", timestamp = includedTimestamp),
+            Log("exclude", timestamp = LocalDateTime(2021, 1, 2, 12, 0)),
+        )
+        val keys = mutableListOf<Key<Log>>()
+        val select = Log.graph { listOf(timestamp) }
+        val expectedProjection = Log.emptyValues().copy { timestamp with includedTimestamp }
+
+        try {
+            dataStore.execute(Log.add(*logs)).statuses.forEach { status ->
+                keys += assertStatusIs<AddSuccess<Log>>(status).key
+            }
+
+            listOf(
+                dataStore.execute(
+                    Log.scan(
+                        where = Equals(Log.message.ref() with "include"),
+                        select = select,
+                        allowTableScan = true,
+                    )
+                ),
+                dataStore.execute(
+                    Log.scan(
+                        where = Equals(Log.message.ref() with "include"),
+                        select = select,
+                        order = Log.severity.ref().ascending(),
+                    )
+                ),
+            ).forEach { scan ->
+                assertEquals(listOf(keys.first()), scan.values.map { it.key })
+                assertEquals(expectedProjection, scan.values.single().values)
+            }
+        } finally {
+            if (keys.isNotEmpty()) {
+                dataStore.execute(Log.delete(*keys.toTypedArray(), hardDelete = true))
             }
             dataStore.close()
         }

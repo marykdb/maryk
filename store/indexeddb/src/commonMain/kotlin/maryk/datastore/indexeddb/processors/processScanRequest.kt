@@ -78,17 +78,17 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
         val keyBytes = keyScanRange.ranges.first().start
         val toVersion = request.toVersion
         val record = if (toVersion != null) {
-            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)
+            readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
         } else {
-            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, request.select)
-                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
+            readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, null)
+                ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
         }
         if (
             record != null &&
             (!request.filterSoftDeleted || !record.isDeleted) &&
             valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)
         ) {
-            values += record
+            values += record.copy(values = record.values.filterWithSelect(request.select))
             aggregator?.aggregate { reference -> record.values[reference] }
         }
 
@@ -142,17 +142,17 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
         if (keyBytes != null) {
             val toVersion = request.toVersion
             val record = if (toVersion != null) {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
             } else {
-                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, request.select)
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
+                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, null)
+                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
             }
             if (
                 record != null &&
                 (!request.filterSoftDeleted || !record.isDeleted) &&
                 valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)
             ) {
-                values += record
+                values += record.copy(values = record.values.filterWithSelect(request.select))
                 aggregator?.aggregate { reference -> record.values[reference] }
             }
         }
@@ -224,23 +224,23 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
 
                     val toVersion = request.toVersion
                     val record = if (toVersion != null) {
-                        readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)
+                        readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
                     } else {
                         decodeCurrentSnapshotRecord(
                             request.dataModel,
                             keyBytes,
                             snapshotBytes,
-                            request.select,
+                            null,
                             { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
                         )
-                            ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
+                            ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
                     }
                         ?: return@scanInBatches true
                     if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true
                     if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) return@scanInBatches true
 
                     if (values.size.toUInt() < request.limit) {
-                        values += record
+                        values += record.copy(values = record.values.filterWithSelect(request.select))
                         lastEmittedKey = request.dataModel.key(keyBytes)
                     }
                     aggregator?.aggregate { reference -> record.values[reference] }
@@ -268,23 +268,23 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processScanReques
 
                     val toVersion = request.toVersion
                     val record = if (toVersion != null) {
-                        readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)
+                        readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
                     } else {
                         decodeCurrentSnapshotRecord(
                             request.dataModel,
                             keyBytes,
                             snapshotBytes,
-                            request.select,
+                            null,
                             { qualifier, value -> sensitiveFields.decryptValueIfNeeded(modelId, keyBytes, qualifier, value) },
                         )
-                            ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
+                            ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
                     }
                         ?: return@scanInBatches true
                     if (request.filterSoftDeleted && record.isDeleted) return@scanInBatches true
                     if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion)) return@scanInBatches true
 
                     if (values.size.toUInt() < request.limit) {
-                        values += record
+                        values += record.copy(values = record.values.filterWithSelect(request.select))
                         lastEmittedKey = request.dataModel.key(keyBytes)
                     }
                     aggregator?.aggregate { reference -> record.values[reference] }
@@ -447,53 +447,23 @@ internal suspend fun <DM : IsRootDataModel> IndexedDbDataStore.processIndexScan(
 
             val toVersion = request.toVersion
             val record = if (toVersion != null) {
-                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, request.select)
+                readHistoricRecordDecrypted(byteStore, request.dataModel, historicTableStoreName, keyBytes, toVersion, null)
             } else {
-                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, request.select)
-                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, request.select)
+                readCurrentSnapshotDecrypted(byteStore, request.dataModel, keyStoreName, keyBytes, null)
+                    ?: readRecordDecrypted(byteStore, request.dataModel, keyStoreName, tableStoreName, keyBytes, null)
             }
                 ?: return true
             if (request.filterSoftDeleted && record.isDeleted) return true
             if (!valuesMatchFilter(request.dataModel, record.values, request.where, request.toVersion, indexScan.index)) return true
 
             if (continuation != null) {
-                val canonicalValues = if (request.select == null) {
-                    record.values
-                } else {
-                    val completeRecord = if (toVersion != null) {
-                        readHistoricRecordDecrypted(
-                            byteStore,
-                            request.dataModel,
-                            historicTableStoreName,
-                            keyBytes,
-                            toVersion,
-                            null,
-                        )
-                    } else {
-                        readCurrentSnapshotDecrypted(
-                            byteStore,
-                            request.dataModel,
-                            keyStoreName,
-                            keyBytes,
-                            null,
-                        ) ?: readRecordDecrypted(
-                            byteStore,
-                            request.dataModel,
-                            keyStoreName,
-                            tableStoreName,
-                            keyBytes,
-                            null,
-                        )
-                    }
-                    completeRecord?.values ?: return true
-                }
-                if (selectCanonicalIndexValue(canonicalValues, keyBytes)?.contentEquals(valueAndKey) != true) {
+                if (selectCanonicalIndexValue(record.values, keyBytes)?.contentEquals(valueAndKey) != true) {
                     return true
                 }
             }
 
             if (values.size.toUInt() < request.limit) {
-                values += record
+                values += record.copy(values = record.values.filterWithSelect(request.select))
                 lastEmittedKey = request.dataModel.key(keyBytes)
                 lastEmittedOrderKey = valueAndKey
             }

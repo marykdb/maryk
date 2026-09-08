@@ -12,7 +12,9 @@ on:
         type: string
 
 concurrency:
-  group: "${{ github.workflow }}-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.ref }}"
+  # Gradle derives the version at runtime. Serialize this Maven Central coordinate
+  # namespace so separate commits cannot concurrently update the same -SNAPSHOT metadata.
+  group: "${{ github.workflow }}-maven-central-io.maryk"
   cancel-in-progress: false
 
 jobs:

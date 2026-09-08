@@ -25,6 +25,7 @@ check_required "$build_verifier" \
   'MARYK_BUILD_RUN_ID'
 
 check_required "$publish_workflow" \
+  'group: "${{ github.workflow }}-maven-central-io.maryk"' \
   'github.event.workflow_run.head_sha' \
   'github.event.workflow_run.event == '\''push'\''' \
   'github.event.workflow_run.repository.full_name == github.repository' \
@@ -54,6 +55,15 @@ check_required "$release_workflow" \
   'git show "$WORKFLOW_SHA:gradle/verification-metadata.xml" > gradle/verification-metadata.xml' \
   'git show "$WORKFLOW_SHA:cli/scripts/verify-native-bundle.sh" > cli/scripts/verify-native-bundle.sh' \
   'EXPECTED_SHA="$ACTUAL_SHA" bash .github/scripts/verify-build-provenance.sh' \
+  'name: Verify matching Maven publication' \
+  'SOURCE_SHA: ${{ steps.provenance.outputs.source_sha }}' \
+  'publication_name="publish-provenance-$SOURCE_SHA"' \
+  'actions/artifacts?name=$publication_name&per_page=100' \
+  'actions/runs/$run_id' \
+  '"$run_path" != .github/workflows/publish.yml@*' \
+  'artifacts/$artifact_id/zip' \
+  'commit_sha=$SOURCE_SHA' \
+  'no matching successful Maven publication' \
   ':app:verifyDistributionVersion' \
   '-PreleaseTag="$RELEASE_TAG"' \
   'Smoke test packaged macOS app' \

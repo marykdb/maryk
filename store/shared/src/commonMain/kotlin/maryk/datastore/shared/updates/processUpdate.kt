@@ -384,7 +384,8 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
                 limit = 1u,
                 includeStart = request.includeStart,
                 toVersion = request.toVersion,
-                filterSoftDeleted = request.filterSoftDeleted
+                filterSoftDeleted = request.filterSoftDeleted,
+                allowTableScan = request.allowTableScan
             )
         )
     } else {
@@ -397,7 +398,8 @@ private suspend fun <DM : IsRootDataModel> IsDataStore.requestNextValues(
                 limit = 1u,
                 includeStart = false,
                 toVersion = request.toVersion,
-                filterSoftDeleted = request.filterSoftDeleted
+                filterSoftDeleted = request.filterSoftDeleted,
+                allowTableScan = request.allowTableScan
             )
         )
     }

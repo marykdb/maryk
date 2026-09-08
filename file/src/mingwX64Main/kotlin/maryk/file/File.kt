@@ -10,6 +10,7 @@ import kotlinx.cinterop.usePinned
 import kotlinx.cinterop.value
 import platform.windows.CloseHandle
 import platform.windows.CREATE_ALWAYS
+import platform.windows.CREATE_NEW
 import platform.windows.CreateDirectoryW
 import platform.windows.CreateFileW
 import platform.windows.DWORDVar
@@ -41,6 +42,22 @@ private fun isDirectory(path: String): Boolean {
     val attributes = GetFileAttributesW(path)
     return attributes != invalidFileAttributes && (attributes and FILE_ATTRIBUTE_DIRECTORY.toUInt()) != 0u
 }
+
+@OptIn(ExperimentalForeignApi::class)
+internal actual fun writeBytesExclusively(path: String, contents: ByteArray) {
+    if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
+    val handle = CreateFileW(path, GENERIC_WRITE.toUInt(), 0u, null, CREATE_NEW.toUInt(), FILE_ATTRIBUTE_NORMAL.toUInt(), null)
+    if (handle == null || handle == INVALID_HANDLE_VALUE) {
+        throw IllegalStateException("Could not create temporary file: $path (${GetLastError()})")
+    }
+    try {
+        writeAll(handle, contents)
+    } finally {
+        CloseHandle(handle)
+    }
+}
+
+internal actual fun pathExists(path: String): Boolean = GetFileAttributesW(path) != invalidFileAttributes
 
 private fun createParentDirectories(path: String): Boolean {
     for (directory in windowsParentDirectories(path)) {

@@ -15,27 +15,28 @@ import kotlin.random.Random
  * writing multiple files must still define their own set publication contract.
  */
 fun File.writeTextViaTemporaryFile(path: String, contents: String) {
-    writeAtomically(path) { temporaryPath -> writeText(temporaryPath, contents) }
+    writeAtomically(path, contents.encodeToByteArray())
 }
 
 /** Internal seam for exercising failed durable publication without platform-specific fault injection. */
 internal fun File.writeTextViaTemporaryFile(path: String, contents: String, syncTemporaryFile: (String) -> Boolean) {
-    writeAtomically(path, syncTemporaryFile) { temporaryPath -> writeText(temporaryPath, contents) }
+    writeAtomically(path, contents.encodeToByteArray(), syncTemporaryFile)
 }
 
 /** See [writeTextViaTemporaryFile]. */
 fun File.writeBytesViaTemporaryFile(path: String, contents: ByteArray) {
-    writeAtomically(path) { temporaryPath -> writeBytes(temporaryPath, contents) }
+    writeAtomically(path, contents)
 }
 
-private inline fun File.writeAtomically(
+private fun File.writeAtomically(
     path: String,
+    contents: ByteArray,
     syncTemporaryFile: (String) -> Boolean = ::syncFile,
-    write: (temporaryPath: String) -> Unit,
 ) {
-    val temporaryPath = "$path.${Random.nextLong().toString(16)}.tmp"
+    val parent = path.substringBeforeLast('/', path.substringBeforeLast('\\', ""))
+    val temporaryPath = "${if (parent.isEmpty()) "" else "$parent/"}.maryk-${Random.nextLong().toString(16)}.tmp"
     try {
-        write(temporaryPath)
+        writeBytesExclusively(temporaryPath, contents)
         check(syncTemporaryFile(temporaryPath)) { "Could not sync temporary file: $temporaryPath" }
         moveReplace(temporaryPath, path)
         syncParentDirectory(path)

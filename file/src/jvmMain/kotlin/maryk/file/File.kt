@@ -7,6 +7,8 @@ import java.nio.channels.FileChannel
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardOpenOption.READ
+import java.nio.file.StandardOpenOption.CREATE_NEW
+import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.StandardCopyOption.ATOMIC_MOVE
 import java.nio.file.StandardCopyOption.REPLACE_EXISTING
 
@@ -105,3 +107,14 @@ actual object File {
 
     actual fun delete(path: String): Boolean = File(path).delete()
 }
+
+internal actual fun writeBytesExclusively(path: String, contents: ByteArray) {
+    val target = Path.of(path)
+    target.parent?.let(Files::createDirectories)
+    Files.newByteChannel(target, CREATE_NEW, WRITE).use { channel ->
+        channel.write(java.nio.ByteBuffer.wrap(contents))
+    }
+}
+
+internal actual fun pathExists(path: String): Boolean =
+    Files.exists(Path.of(path), java.nio.file.LinkOption.NOFOLLOW_LINKS)

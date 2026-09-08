@@ -48,11 +48,11 @@ fun publishManagedRevision(
     write: ManagedExportStaging.() -> Unit,
 ): ManagedExportRevision {
     require(revisionId.isSafeRevisionId()) { "Invalid export revision id: $revisionId" }
-    val root = outputDirectory.trimEnd('/', '\\') + "/.maryk-export"
+    val root = outputDirectory.managedExportRoot()
     val revisionDirectory = "$root/revisions/$revisionId"
     val manifestPath = "$revisionDirectory/manifest.sha256"
-    require(File.size(manifestPath) == null) { "Managed export revision already exists: $revisionId" }
-    val stagingDirectory = "$root/revisions/.staging-$revisionId-${Random.nextLong().toString(16)}"
+    require(!pathExists(revisionDirectory)) { "Managed export revision already exists: $revisionId" }
+    val stagingDirectory = "$root/revisions/.staging-${Random.nextLong().toString(16)}"
     val staging = ManagedExportStaging(stagingDirectory)
     try {
         staging.write()
@@ -70,10 +70,10 @@ suspend fun publishManagedRevisionStreaming(
     write: suspend ManagedExportStaging.() -> Unit,
 ): ManagedExportRevision {
     require(revisionId.isSafeRevisionId()) { "Invalid export revision id: $revisionId" }
-    val root = outputDirectory.trimEnd('/', '\\') + "/.maryk-export"
+    val root = outputDirectory.managedExportRoot()
     val revisionDirectory = "$root/revisions/$revisionId"
-    require(File.size("$revisionDirectory/manifest.sha256") == null) { "Managed export revision already exists: $revisionId" }
-    val staging = ManagedExportStaging("$root/revisions/.staging-$revisionId-${Random.nextLong().toString(16)}")
+    require(!pathExists(revisionDirectory)) { "Managed export revision already exists: $revisionId" }
+    val staging = ManagedExportStaging("$root/revisions/.staging-${Random.nextLong().toString(16)}")
     try {
         staging.write()
         return publishStagedRevision(root, revisionDirectory, revisionId, staging)
@@ -176,10 +176,24 @@ class ManagedExportStaging internal constructor(
 private fun String.isSafeRevisionId(): Boolean =
     isNotEmpty() && all { it.isLetterOrDigit() || it == '-' || it == '_' }
 
+private fun String.managedExportRoot(): String {
+    val directory = trimEnd('/', '\\')
+    require(directory.isNotBlank()) { "Managed export output directory cannot be blank" }
+    return "$directory/.maryk-export"
+}
+
 private fun String.isSafeExportPath(): Boolean {
     if (isEmpty() || this == "manifest.sha256" || startsWith('/') || startsWith('\\') || contains('\\') || contains('\u0000')) return false
-    return split('/').all { it.isNotEmpty() && it != "." && it != ".." && !it.contains('\t') && !it.contains('\n') && !it.contains('\r') }
+    return split('/').all { component ->
+        component.isNotEmpty() && component != "." && component != ".." &&
+            !component.endsWith('.') && !component.endsWith(' ') &&
+            !component.contains('\t') && !component.contains('\n') && !component.contains('\r') &&
+            component.substringBefore('.').uppercase() !in windowsReservedFileNames
+    }
 }
+
+private val windowsReservedFileNames = setOf("CON", "PRN", "AUX", "NUL") +
+    (1..9).map { "COM$it" } + (1..9).map { "LPT$it" }
 
 private fun validateExportPaths(paths: List<String>) {
     require(paths.isNotEmpty()) { "Managed export revision cannot be empty" }

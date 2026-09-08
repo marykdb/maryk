@@ -23,3 +23,9 @@ expect object File {
     fun syncParentDirectory(path: String): Boolean
     fun delete(path: String): Boolean
 }
+
+/** Writes a new file only when its path was absent at creation time. */
+internal expect fun writeBytesExclusively(path: String, contents: ByteArray)
+
+/** Checks whether any directory entry currently occupies [path]. */
+internal expect fun pathExists(path: String): Boolean

@@ -92,6 +92,22 @@ class FileTest {
     }
 
     @Test
+    fun exclusiveWritesDoNotReplaceExistingFiles() {
+        val path = "fileStoreExclusive-${Random.nextInt()}.txt"
+        try {
+            File.writeText(path, "old")
+
+            assertFailsWith<Exception> {
+                writeBytesExclusively(path, "new".encodeToByteArray())
+            }
+
+            assertEquals("old", File.readText(path))
+        } finally {
+            File.delete(path)
+        }
+    }
+
+    @Test
     fun moveReplaceReplacesExistingContents() {
         val sourcePath = "fileStoreMoveSource-${Random.nextInt()}.txt"
         val destinationPath = "fileStoreMoveDestination-${Random.nextInt()}.txt"

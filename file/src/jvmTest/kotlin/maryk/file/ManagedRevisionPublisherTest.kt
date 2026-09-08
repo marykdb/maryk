@@ -72,6 +72,41 @@ class ManagedRevisionPublisherTest {
     }
 
     @Test
+    fun rejectsExistingPartialRevisionDirectory() {
+        val output = Files.createTempDirectory("managed-export-")
+        Files.createDirectories(output.resolve(".maryk-export/revisions/partial"))
+        Files.writeString(output.resolve(".maryk-export/revisions/partial/incomplete.json"), "{")
+
+        assertFailsWith<IllegalArgumentException> {
+            publishManagedRevision(output.toString(), listOf(ManagedExportFile("data.json", byteArrayOf())), revisionId = "partial")
+        }
+        assertEquals("{", Files.readString(output.resolve(".maryk-export/revisions/partial/incomplete.json")))
+    }
+
+    @Test
+    fun rejectsBlankOutputAndWindowsReservedPathComponents() {
+        assertFailsWith<IllegalArgumentException> {
+            publishManagedRevision("", listOf(ManagedExportFile("data.json", byteArrayOf())), revisionId = "blank")
+        }
+        val output = Files.createTempDirectory("managed-export-")
+        listOf("CON", "aux.txt", "folder/NUL", "trailing.", "trailing ").forEach { path ->
+            assertFailsWith<IllegalArgumentException> {
+                publishManagedRevision(output.toString(), listOf(ManagedExportFile(path, byteArrayOf())), revisionId = "bad")
+            }
+        }
+    }
+
+    @Test
+    fun supportsMaximumLengthRevisionIdsWithoutOversizedStagingNames() {
+        val output = Files.createTempDirectory("managed-export-")
+        val revisionId = "a".repeat(255)
+
+        publishManagedRevision(output.toString(), listOf(ManagedExportFile("data.json", byteArrayOf())), revisionId)
+
+        assertEquals("$revisionId\n", Files.readString(output.resolve(".maryk-export/current")))
+    }
+
+    @Test
     fun stagesStreamingWritesBeforePublishingCurrentPointer() {
         val output = Files.createTempDirectory("managed-export-")
         publishManagedRevision(

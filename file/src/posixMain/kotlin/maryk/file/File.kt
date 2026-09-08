@@ -14,6 +14,7 @@ import platform.posix.EINTR
 import platform.posix.F_OK
 import platform.posix.O_APPEND
 import platform.posix.O_CREAT
+import platform.posix.O_EXCL
 import platform.posix.O_RDONLY
 import platform.posix.O_TRUNC
 import platform.posix.O_WRONLY
@@ -58,6 +59,20 @@ private fun createParentDirectories(path: String): Boolean {
 
     return true
 }
+
+@OptIn(ExperimentalForeignApi::class)
+internal actual fun writeBytesExclusively(path: String, contents: ByteArray) {
+    if (!createParentDirectories(path)) throw IllegalStateException("Could not create parent directories for $path")
+    val fd = open(path, O_WRONLY or O_CREAT or O_EXCL, 0x1A4)
+    if (fd < 0) throw IllegalStateException("Could not create temporary file: $path")
+    try {
+        writeAll(fd, contents)
+    } finally {
+        close(fd)
+    }
+}
+
+internal actual fun pathExists(path: String): Boolean = fileExists(path)
 
 @OptIn(ExperimentalForeignApi::class)
 private fun fileSize(path: String): Long? {
@@ -105,7 +120,18 @@ actual object File {
                     if (readBytes.toLong() == 0L) break
                     offset += readBytes.toInt()
                 }
-                return if (offset == buffer.size) buffer else buffer.copyOf(offset)
+                if (offset != buffer.size) return buffer.copyOf(offset)
+
+                val probe = ByteArray(1)
+                probe.usePinned { probePinned ->
+                    while (true) {
+                        val count = read(fd, probePinned.addressOf(0), 1.convert())
+                        if (count < 0 && errno == EINTR) continue
+                        if (count < 0) return null
+                        return if (count == 0L) buffer else null
+                    }
+                }
+                return null
             }
         } finally {
             close(fd)

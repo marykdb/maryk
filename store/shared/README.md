@@ -32,8 +32,8 @@ Not intended as a standalone store.
     restore through Maryk's normal replication path.
   - Snapshot capture waits for an in-flight mutation before fixing the read
     boundary. A backup is valid only after its writer completes successfully.
-  - Restore is streaming, not globally transactional. Restore into an empty
-    disposable store and publish it only after success.
+  - Restore replays bounded requests in source-version order and is not globally
+    transactional. Publish a disposable target only after success.
 
 ## Encryption rotation constraints
 
@@ -79,18 +79,33 @@ Requirements and operation:
   publish/rename step in the writer implementation.
 - Choose `batchSize` for memory and transport limits. It bounds records per
   chunk, not the size of one record's complete history.
-- Backups include historic data and the soft-delete transition/state visible at
-  the snapshot. A hard-deleted record is present in a pre-delete snapshot and
-  absent from a post-delete snapshot. Protect backups as sensitive production
-  data and retain them according to the same policy.
+- Backups include retained historic data and the soft-delete transition/state
+  visible at the snapshot. Hard deletion can permanently erase earlier history
+  in persistent engines: capturing a version does not preserve erased rows.
+  Coordinate hard deletion with backup creation, or use soft deletion until the
+  backup completes. Protect backups as sensitive production data and retain
+  them according to the same policy.
 - Restore requires matching registered model names and major model versions.
   Review minor/patch schema compatibility before restoring. By default it
   refuses non-empty target models. The target must retain all versions so the
   restored history is not silently collapsed to current state.
-- Restore validates creation history, ordering, and snapshot bounds before
-  applying each chunk, and rejects unexpected or incomplete backend responses.
-- Restore is streaming, so a failure can leave earlier chunks—and part of the
-  failing chunk—applied. Restore into a new disposable store, validate it, then
+- Restore validates creation history, ordering, and snapshot bounds before replay,
+  and rejects unexpected or incomplete backend responses.
+- Existing one-pass readers use serialized staging capped at 64 MiB and 100,000
+  records by default. Exceeding either bound fails before changing the target.
+  `restore(reader, requireEmpty, DataStoreRestoreOptions(...))` adjusts these bounds.
+- Large file/object-storage backups should implement `RepeatableDataStoreBackupReader`:
+  each `read` reopens the same immutable data and emits identical chunks/records in
+  the same order. Restore selects the next globally ordered batch on each pass,
+  retaining at most one input chunk plus a bounded batch. This trades repeated
+  input scans for bounded memory; the reader must also bound its decoded chunks.
+- Replay emits one atomic version per request, bounded to 8 MiB by default and
+  preserving source-version order even when models are interleaved. A version
+  cannot be split atomically; one exceeding `maxReplayBytes` fails explicitly.
+  Existing format version 2 and the original `restore(reader, requireEmpty)`
+  signature remain supported.
+- Replay is not globally transactional: backend or later replay failures can leave
+  earlier requests applied. Restore into a disposable store, validate it, then
   publish or switch to it only after success.
 
 ## Published API compatibility

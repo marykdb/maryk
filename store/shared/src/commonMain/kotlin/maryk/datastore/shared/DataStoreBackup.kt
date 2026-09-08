@@ -159,13 +159,20 @@ suspend fun IsDataStore.backup(
  * Restores versioned backup chunks through the normal replication path.
  *
  * By default the addressed models must be empty, avoiding accidental merges.
- * Restore validates and stages all chunks before applying each model's history in global version
- * order. Restore into an empty disposable store, then publish or replace that store only after
- * this function succeeds.
+ * Restore validates input before replaying bounded requests in global version order. One-pass
+ * readers use bounded serialized staging; repeatable readers are rescanned without staging.
+ * Restore into an empty disposable store and publish it only after this function succeeds.
  */
 suspend fun IsDataStore.restore(
     reader: DataStoreBackupReader,
     requireEmpty: Boolean = true,
+): DataStoreRestoreResult = restore(reader, requireEmpty, DataStoreRestoreOptions())
+
+/** Restore with explicit resource bounds. The original overload and backup format remain unchanged. */
+suspend fun IsDataStore.restore(
+    reader: DataStoreBackupReader,
+    requireEmpty: Boolean,
+    options: DataStoreRestoreOptions,
 ): DataStoreRestoreResult {
     if (!keepAllVersions) {
         throw RequestException("Portable backup restore requires keepAllVersions")
@@ -208,50 +215,51 @@ suspend fun IsDataStore.restore(
         }
     }
 
-    val recordsByModel = models.keys.associateWith {
-        mutableListOf<DataObjectVersionedChange<IsRootDataModel>>()
-    }
-    reader.read { chunk ->
-        recordsByModel[chunk.modelName]
-            ?: throw RequestException("Backup chunk references undeclared model `${chunk.modelName}`")
-        validateBackupRecords(chunk.modelName, chunk.records, manifest.snapshotVersion)
-        recordsByModel.getValue(chunk.modelName).addAll(chunk.records)
-    }
-
+    val codec = RestoreCodec(dataModelsById.values.associateBy { it.Meta.name })
+    val staged = if (reader is RepeatableDataStoreBackupReader) null else StagedBackupReader(manifest, codec, options)
     var restored = 0uL
-    for ((modelName, model) in models) {
-        val records = recordsByModel.getValue(modelName)
-        val changes = records
-            .flatMap { record ->
-                record.changes.map { versionedChange ->
-                    DataObjectVersionedChange(record.key, record.sortingKey, listOf(versionedChange))
+    reader.read { chunk ->
+        if (chunk.modelName !in models) {
+            throw RequestException("Backup chunk references undeclared model `${chunk.modelName}`")
+        }
+        validateBackupRecords(chunk.modelName, chunk.records, manifest.snapshotVersion)
+        for (record in chunk.records) {
+            for (change in record.changes) {
+                val size = codec.replaySize(chunk.modelName, manifest.snapshotVersion, listOf(record.copy(changes = listOf(change))))
+                if (size < 0 || size > options.maxReplayBytes) {
+                    throw RequestException("One backup version exceeds maxReplayBytes; a single atomic version cannot be split")
                 }
             }
-            .sortedBy { it.changes.single().version }
-        if (changes.isEmpty()) continue
-        val response = processUpdate(
-            UpdateResponse(
-                dataModel = model,
-                update = InitialChangesUpdate(manifest.snapshotVersion, changes),
-            )
-        )
-        val result = response.result as? AddOrChangeResponse<*>
-            ?: throw RequestException(
-                "Could not restore `$modelName`: unexpected ${response.result::class.simpleName} response"
-            )
-        val expectedStatuses = changes.sumOf { it.changes.size }
-        if (result.statuses.size != expectedStatuses) {
-            throw RequestException(
-                "Could not restore `$modelName`: expected $expectedStatuses statuses, " +
-                    "received ${result.statuses.size}"
-            )
+            staged?.add(chunk.modelName, record)
+            restored++
         }
-        val failures = result.statuses
-            .filterNot { it is AddSuccess<*> || it is ChangeSuccess<*> }
-        if (failures.isNotEmpty()) {
-            throw RequestException("Could not restore `$modelName`: ${failures.joinToString()}")
+    }
+    val replayReader = staged ?: reader as RepeatableDataStoreBackupReader
+    var after: RestoreEvent? = null
+    while (true) {
+        val batch = nextRestoreBatch(replayReader, after, codec, options)
+        if (batch.isEmpty()) break
+        var start = 0
+        while (start < batch.size) {
+            val modelName = batch[start].modelName
+            var end = start + 1
+            while (end < batch.size && batch[end].modelName == modelName) end++
+            val changes = batch.subList(start, end).map { it.record }
+            val response = processUpdate(
+                UpdateResponse(models.getValue(modelName), InitialChangesUpdate(manifest.snapshotVersion, changes))
+            )
+            val result = response.result as? AddOrChangeResponse<*>
+                ?: throw RequestException("Could not restore `$modelName`: unexpected ${response.result::class.simpleName} response")
+            if (result.statuses.size != changes.size) {
+                throw RequestException("Could not restore `$modelName`: expected ${changes.size} statuses, received ${result.statuses.size}")
+            }
+            val failures = result.statuses.filterNot { it is AddSuccess<*> || it is ChangeSuccess<*> }
+            if (failures.isNotEmpty()) {
+                throw RequestException("Could not restore `$modelName`: ${failures.joinToString()}")
+            }
+            start = end
         }
-        restored += records.size.toULong()
+        after = batch.last()
     }
 
     return DataStoreRestoreResult(models.size, restored)

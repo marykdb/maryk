@@ -17,11 +17,18 @@ import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.ValuesResponse
+import maryk.core.query.responses.updates.InitialChangesUpdate
 import maryk.core.query.responses.updates.ProcessResponse
 import maryk.datastore.shared.DataStoreBackupChunk
 import maryk.datastore.shared.DataStoreBackupManifest
 import maryk.datastore.shared.DataStoreBackupReader
 import maryk.datastore.shared.DataStoreBackupWriter
+import maryk.datastore.shared.DataStoreRestoreOptions
+import maryk.datastore.shared.RepeatableDataStoreBackupReader
+import maryk.core.protobuf.WriteCache
+import maryk.core.query.DefinitionsContext
+import maryk.core.query.RequestContext
+import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.datastore.shared.IsDataStore
 import maryk.datastore.shared.backup
 import maryk.datastore.shared.captureSnapshotVersion
@@ -37,6 +44,124 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class DataStoreBackupTest {
+    @Test
+    fun oversizedLateVersionIsRejectedBeforeAnyReplay() = runTest {
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        try {
+            source.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha small" }))
+            source.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha ${"x".repeat(1024)}" }))
+            val backup = CollectingBackup()
+            source.backup(backup, batchSize = 1u)
+            val repeatable = object : RepeatableDataStoreBackupReader {
+                override val manifest get() = backup.manifest
+                override suspend fun read(consumer: suspend (DataStoreBackupChunk) -> Unit) = backup.read(consumer)
+            }
+            for (reader in listOf(backup, repeatable)) {
+                assertFailsWith<RequestException> {
+                    target.restore(reader, true, DataStoreRestoreOptions(maxReplayBytes = 512))
+                }
+                assertTrue(target.execute(SimpleMarykModel.scan(allowTableScan = true)).values.isEmpty())
+            }
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
+    @Test
+    fun repeatableRestoreBoundsEncodedBatchesWithoutStagingInput() = runTest {
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        var requests = 0
+        var passes = 0
+        val boundedTarget = object : IsDataStore by target {
+            override suspend fun <DM : IsRootDataModel> processUpdate(updateResponse: UpdateResponse<DM>): ProcessResponse<DM> {
+                val size = UpdateResponse.Serializer.calculateObjectProtoBufLength(
+                    updateResponse, WriteCache(),
+                    RequestContext(DefinitionsContext(mutableMapOf(SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel))), SimpleMarykModel),
+                )
+                assertTrue(size <= 1024, "Restore exceeded transport bound: $size")
+                requests++
+                return target.processUpdate(updateResponse)
+            }
+        }
+        try {
+            repeat(25) { index ->
+                source.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha $index ${"x".repeat(200)}" }))
+            }
+            val backup = CollectingBackup()
+            source.backup(backup, batchSize = 2u)
+            val repeatable = object : RepeatableDataStoreBackupReader {
+                override val manifest get() = backup.manifest
+                override suspend fun read(consumer: suspend (DataStoreBackupChunk) -> Unit) {
+                    passes++
+                    backup.read(consumer)
+                }
+            }
+            assertEquals(25uL, boundedTarget.restore(repeatable, true,
+                DataStoreRestoreOptions(maxStagedBytes = 1, maxStagedRecords = 1, maxReplayBytes = 1024)).records)
+            assertTrue(passes > 2)
+            assertTrue(requests > 1)
+            assertEquals(25, target.execute(SimpleMarykModel.scan(allowTableScan = true)).values.size)
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
+    @Test
+    fun onePassRestoreRejectsStagingOverflowBeforeMutation() = runTest {
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        try {
+            repeat(2) { index -> source.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha $index" })) }
+            val backup = CollectingBackup()
+            source.backup(backup, batchSize = 1u)
+            assertFailsWith<RequestException> {
+                target.restore(backup, true, DataStoreRestoreOptions(maxStagedBytes = 1))
+            }
+            assertFailsWith<RequestException> {
+                target.restore(backup, true, DataStoreRestoreOptions(maxStagedRecords = 1))
+            }
+            assertTrue(target.execute(SimpleMarykModel.scan(allowTableScan = true)).values.isEmpty())
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
+    @Test
+    fun restoreBoundsReplicationRequests() = runTest {
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        var requests = 0
+        val boundedTarget = object : IsDataStore by target {
+            override suspend fun <DM : IsRootDataModel> processUpdate(updateResponse: UpdateResponse<DM>): ProcessResponse<DM> {
+                val update = updateResponse.update as InitialChangesUpdate<DM>
+                assertTrue(update.changes.size <= 128, "Restore accumulated a whole model in one request")
+                requests++
+                return target.processUpdate(updateResponse)
+            }
+        }
+        try {
+            repeat(260) { index ->
+                source.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha $index" }))
+            }
+            val backup = CollectingBackup()
+            source.backup(backup, batchSize = 10u)
+            assertEquals(260uL, boundedTarget.restore(backup).records)
+            assertTrue(requests >= 3)
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
     @Test
     fun automaticSnapshotRequiresAuthoritativeProvider() = runTest {
         val source = InMemoryDataStore.open(

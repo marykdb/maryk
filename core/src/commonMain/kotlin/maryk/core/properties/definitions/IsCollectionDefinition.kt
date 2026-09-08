@@ -250,8 +250,13 @@ interface IsCollectionDefinition<T : Any, C : Collection<T>, in CX : IsPropertyC
         val vt = (this.valueDefinition as? IsValueDefinition<*, *>)?.wireType
         return when (vt) {
             VAR_INT -> length >= 0
-            BIT_32  -> length > 0 && length % (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize == 0
-            BIT_64  -> length > 0 && length % (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize == 0
+            BIT_32, BIT_64 -> {
+                val byteSize = (this.valueDefinition as IsFixedStorageBytesEncodable<*>).byteSize
+                if (length >= 0 && length % byteSize != 0) {
+                    throw ParseException("Packed fixed-width collection has invalid length $length")
+                }
+                length >= 0
+            }
             else    -> false
         }
     }

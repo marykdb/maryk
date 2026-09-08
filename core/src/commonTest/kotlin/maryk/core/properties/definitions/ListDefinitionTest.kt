@@ -202,12 +202,56 @@ internal class ListDefinitionTest {
     }
 
     @Test
+    fun readsEmpty32BitPackedListBeforeFollowingField() {
+        val bytes = byteArrayOf(0x0a, 0x00, 0x10, 0x2a)
+        var index = 0
+
+        val key = ProtoBuf.readKey { bytes[index++] }
+        expect(1u) { key.tag }
+        expect(LENGTH_DELIMITED) { key.wireType }
+        expect(emptyList<Float>()) {
+            def32Int.readTransportBytes(ProtoBuf.getLength(key.wireType) { bytes[index++] }, { bytes[index++] })
+        }
+
+        val followingKey = ProtoBuf.readKey { bytes[index++] }
+        expect(2u) { followingKey.tag }
+        expect(0x2a.toByte()) { bytes[index++] }
+    }
+
+    @Test
+    fun readsEmpty64BitPackedListBeforeFollowingField() {
+        val bytes = byteArrayOf(0x0a, 0x00, 0x10, 0x2a)
+        var index = 0
+
+        val key = ProtoBuf.readKey { bytes[index++] }
+        expect(1u) { key.tag }
+        expect(LENGTH_DELIMITED) { key.wireType }
+        expect(emptyList<Double>()) {
+            def64Int.readTransportBytes(ProtoBuf.getLength(key.wireType) { bytes[index++] }, { bytes[index++] })
+        }
+
+        val followingKey = ProtoBuf.readKey { bytes[index++] }
+        expect(2u) { followingKey.tag }
+        expect(0x2a.toByte()) { bytes[index++] }
+    }
+
+    @Test
     fun rejectsMalformedPackedTransportLength() {
         val bytes = byteArrayOf(0x80.toByte())
         var index = 0
 
         assertFailsWith<ParseException> {
             defVarInt.readTransportBytes(bytes.size, { bytes[index++] })
+        }
+    }
+
+    @Test
+    fun rejectsMalformedFixedWidthPackedLengths() {
+        assertFailsWith<ParseException> {
+            def32Int.readTransportBytes(3, reader = { 0 })
+        }
+        assertFailsWith<ParseException> {
+            def64Int.readTransportBytes(7, reader = { 0 })
         }
     }
 

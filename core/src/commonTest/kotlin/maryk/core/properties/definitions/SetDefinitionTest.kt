@@ -8,6 +8,8 @@ import maryk.core.properties.exceptions.NotEnoughItemsException
 import maryk.core.properties.exceptions.RequiredException
 import maryk.core.properties.exceptions.TooManyItemsException
 import maryk.core.properties.exceptions.ValidationUmbrellaException
+import maryk.core.properties.types.numeric.Float32
+import maryk.core.properties.types.numeric.Float64
 import maryk.core.properties.types.numeric.UInt32
 import maryk.core.protobuf.ProtoBuf
 import maryk.core.protobuf.WireType.LENGTH_DELIMITED
@@ -40,6 +42,14 @@ internal class SetDefinitionTest {
         maxSize = 4u,
         valueDefinition = subDef,
         default = setOf("T1", "T2", "T3")
+    )
+
+    private val def32Float = SetDefinition(
+        valueDefinition = NumberDefinition(type = Float32)
+    )
+
+    private val def64Float = SetDefinition(
+        valueDefinition = NumberDefinition(type = Float64)
     )
 
     @Test
@@ -112,6 +122,40 @@ internal class SetDefinitionTest {
             readValue(mutableSet)
             assertTrue { mutableSet.contains(it) }
         }
+    }
+
+    @Test
+    fun readsEmpty32BitPackedSetBeforeFollowingField() {
+        val bytes = byteArrayOf(0x0a, 0x00, 0x10, 0x2a)
+        var index = 0
+
+        val key = ProtoBuf.readKey { bytes[index++] }
+        expect(1u) { key.tag }
+        expect(LENGTH_DELIMITED) { key.wireType }
+        expect(emptySet<Float>()) {
+            def32Float.readTransportBytes(ProtoBuf.getLength(key.wireType) { bytes[index++] }, { bytes[index++] })
+        }
+
+        val followingKey = ProtoBuf.readKey { bytes[index++] }
+        expect(2u) { followingKey.tag }
+        expect(0x2a.toByte()) { bytes[index++] }
+    }
+
+    @Test
+    fun readsEmpty64BitPackedSetBeforeFollowingField() {
+        val bytes = byteArrayOf(0x0a, 0x00, 0x10, 0x2a)
+        var index = 0
+
+        val key = ProtoBuf.readKey { bytes[index++] }
+        expect(1u) { key.tag }
+        expect(LENGTH_DELIMITED) { key.wireType }
+        expect(emptySet<Double>()) {
+            def64Float.readTransportBytes(ProtoBuf.getLength(key.wireType) { bytes[index++] }, { bytes[index++] })
+        }
+
+        val followingKey = ProtoBuf.readKey { bytes[index++] }
+        expect(2u) { followingKey.tag }
+        expect(0x2a.toByte()) { bytes[index++] }
     }
 
     @Test

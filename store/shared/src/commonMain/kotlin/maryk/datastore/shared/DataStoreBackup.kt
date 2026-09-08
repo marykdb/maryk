@@ -159,9 +159,9 @@ suspend fun IsDataStore.backup(
  * Restores versioned backup chunks through the normal replication path.
  *
  * By default the addressed models must be empty, avoiding accidental merges.
- * Restore is streaming rather than globally transactional: if reading or applying a later chunk
- * fails, earlier chunks remain applied. Restore into an empty disposable store, then publish or
- * replace that store only after this function succeeds.
+ * Restore validates and stages all chunks before applying each model's history in global version
+ * order. Restore into an empty disposable store, then publish or replace that store only after
+ * this function succeeds.
  */
 suspend fun IsDataStore.restore(
     reader: DataStoreBackupReader,
@@ -208,12 +208,27 @@ suspend fun IsDataStore.restore(
         }
     }
 
-    var restored = 0uL
+    val recordsByModel = models.keys.associateWith {
+        mutableListOf<DataObjectVersionedChange<IsRootDataModel>>()
+    }
     reader.read { chunk ->
-        val model = models[chunk.modelName]
+        recordsByModel[chunk.modelName]
             ?: throw RequestException("Backup chunk references undeclared model `${chunk.modelName}`")
-        val changes = chunk.records
-        validateBackupRecords(chunk.modelName, changes, manifest.snapshotVersion)
+        validateBackupRecords(chunk.modelName, chunk.records, manifest.snapshotVersion)
+        recordsByModel.getValue(chunk.modelName).addAll(chunk.records)
+    }
+
+    var restored = 0uL
+    for ((modelName, model) in models) {
+        val records = recordsByModel.getValue(modelName)
+        val changes = records
+            .flatMap { record ->
+                record.changes.map { versionedChange ->
+                    DataObjectVersionedChange(record.key, record.sortingKey, listOf(versionedChange))
+                }
+            }
+            .sortedBy { it.changes.single().version }
+        if (changes.isEmpty()) continue
         val response = processUpdate(
             UpdateResponse(
                 dataModel = model,
@@ -222,21 +237,21 @@ suspend fun IsDataStore.restore(
         )
         val result = response.result as? AddOrChangeResponse<*>
             ?: throw RequestException(
-                "Could not restore `${chunk.modelName}`: unexpected ${response.result::class.simpleName} response"
+                "Could not restore `$modelName`: unexpected ${response.result::class.simpleName} response"
             )
         val expectedStatuses = changes.sumOf { it.changes.size }
         if (result.statuses.size != expectedStatuses) {
             throw RequestException(
-                "Could not restore `${chunk.modelName}`: expected $expectedStatuses statuses, " +
+                "Could not restore `$modelName`: expected $expectedStatuses statuses, " +
                     "received ${result.statuses.size}"
             )
         }
         val failures = result.statuses
             .filterNot { it is AddSuccess<*> || it is ChangeSuccess<*> }
         if (failures.isNotEmpty()) {
-            throw RequestException("Could not restore `${chunk.modelName}`: ${failures.joinToString()}")
+            throw RequestException("Could not restore `$modelName`: ${failures.joinToString()}")
         }
-        restored += changes.size.toULong()
+        restored += records.size.toULong()
     }
 
     return DataStoreRestoreResult(models.size, restored)
@@ -305,6 +320,9 @@ private suspend fun IsDataStore.readCompleteChanges(
     val creationVersion = changesByVersion.values
         .firstOrNull { ObjectCreate in it.changes }
         ?.version
+    if (changesByVersion.values.count { ObjectCreate in it.changes } > 1) {
+        throw RequestException("Backup cannot represent hard-deleted and recreated records")
+    }
     if (creationVersion != null) {
         val values = execute(
             model.get(

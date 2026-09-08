@@ -6,12 +6,14 @@ import maryk.core.query.changes.change
 import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
+import maryk.core.models.key
 import maryk.core.properties.definitions.string
 import maryk.core.properties.types.Version
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
+import maryk.core.query.requests.get
 import maryk.core.query.requests.scan
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.ValuesResponse
@@ -25,6 +27,7 @@ import maryk.datastore.shared.backup
 import maryk.datastore.shared.captureSnapshotVersion
 import maryk.datastore.shared.restore
 import maryk.datastore.test.assertStatusIs
+import maryk.datastore.test.UniqueModel
 import maryk.test.models.SimpleMarykModel
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.DeleteSuccess
@@ -302,13 +305,14 @@ class DataStoreBackupTest {
             val add = assertStatusIs<AddSuccess<SimpleMarykModel>>(
                 source.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha hard delete" })).statuses.single()
             )
+            val beforeDeleteSnapshot = source.captureSnapshotVersion()
             val beforeDelete = CollectingBackup()
             val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
                 source.execute(SimpleMarykModel.delete(add.key, hardDelete = true)).statuses.single()
             )
             val afterDelete = CollectingBackup()
 
-            source.backup(beforeDelete, snapshotVersion = add.version + 1uL)
+            source.backup(beforeDelete, snapshotVersion = beforeDeleteSnapshot)
             source.backup(afterDelete, snapshotVersion = delete.version + 1uL)
 
             assertEquals(1uL, beforeDeleteTarget.restore(beforeDelete).records)
@@ -321,7 +325,57 @@ class DataStoreBackupTest {
     }
 
     @Test
-    fun interruptedRestoreKeepsEarlierChunksApplied() = runTest {
+    fun backupRejectsHardDeletedAndRecreatedKeyBeforeCompletion() = runTest {
+        val models = mapOf(1u to SimpleMarykModel)
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        try {
+            val key = SimpleMarykModel.key(validUuidV4Bytes(1))
+            source.execute(SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha original" }))
+            source.execute(SimpleMarykModel.delete(key, hardDelete = true))
+            source.execute(SimpleMarykModel.add(key to SimpleMarykModel.create { value with "ha replacement" }))
+            val backup = CollectingBackup()
+
+            assertFailsWith<RequestException> { source.backup(backup) }
+            assertTrue(!backup.completed)
+        } finally {
+            source.close()
+        }
+    }
+
+    @Test
+    fun restoreReplaysUniqueValueTransferChronologicallyAcrossChunks() = runTest {
+        val models = mapOf(1u to UniqueModel)
+        val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
+        try {
+            val ownerKey = UniqueModel.key(validUuidV4Bytes(2))
+            val receiverKey = UniqueModel.key(validUuidV4Bytes(1))
+            source.execute(UniqueModel.add(ownerKey to UniqueModel.create { email with "transfer@test.com" }))
+            source.execute(
+                UniqueModel.change(ownerKey.change(Change(UniqueModel { email::ref } with "released@test.com")))
+            )
+            source.execute(UniqueModel.add(receiverKey to UniqueModel.create { email with "transfer@test.com" }))
+            val backup = CollectingBackup()
+
+            source.backup(backup, batchSize = 1u)
+
+            assertEquals(2uL, target.restore(backup).records)
+            assertEquals(
+                "released@test.com",
+                target.execute(UniqueModel.get(ownerKey)).values.single().values { email },
+            )
+            assertEquals(
+                "transfer@test.com",
+                target.execute(UniqueModel.get(receiverKey)).values.single().values { email },
+            )
+        } finally {
+            source.close()
+            target.close()
+        }
+    }
+
+    @Test
+    fun interruptedRestoreDoesNotApplyStagedChunks() = runTest {
         val models = mapOf(1u to SimpleMarykModel)
         val source = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
         val target = InMemoryDataStore.open(keepAllVersions = true, dataModelsById = models)
@@ -339,10 +393,7 @@ class DataStoreBackupTest {
             assertFailsWith<RequestException> {
                 target.restore(FailAfterFirstChunkBackup(backup))
             }
-            assertEquals(
-                1,
-                target.execute(SimpleMarykModel.scan(allowTableScan = true)).values.size,
-            )
+            assertTrue(target.execute(SimpleMarykModel.scan(allowTableScan = true)).values.isEmpty())
         } finally {
             source.close()
             target.close()
@@ -360,6 +411,7 @@ private object IncompatibleSimpleMarykModel : RootDataModel<IncompatibleSimpleMa
 private class CollectingBackup : DataStoreBackupWriter, DataStoreBackupReader {
     private lateinit var storedManifest: DataStoreBackupManifest
     val chunks = mutableListOf<DataStoreBackupChunk>()
+    var completed = false
 
     override val manifest: DataStoreBackupManifest
         get() = storedManifest
@@ -372,12 +424,20 @@ private class CollectingBackup : DataStoreBackupWriter, DataStoreBackupReader {
         chunks += chunk
     }
 
-    override suspend fun complete() = Unit
+    override suspend fun complete() {
+        completed = true
+    }
 
     override suspend fun read(consumer: suspend (DataStoreBackupChunk) -> Unit) {
         chunks.forEach { consumer(it) }
     }
 }
+
+private fun validUuidV4Bytes(value: Int): ByteArray =
+    ByteArray(16) { value.toByte() }.apply {
+        this[6] = ((this[6].toInt() and 0x0F) or 0x40).toByte()
+        this[8] = ((this[8].toInt() and 0x3F) or 0x80).toByte()
+    }
 
 private class FailAfterFirstChunkBackup(
     private val backup: CollectingBackup,

@@ -630,13 +630,25 @@ class RemoteDataStore private constructor(
                                         @Suppress("UNCHECKED_CAST")
                                         val sendResult = trySend(update as IsUpdateResponse<DM>)
                                         if (sendResult.isFailure) {
-                                            // `first()` can close the callback channel after accepting this update
-                                            // but before this producer observes cancellation. That is normal
-                                            // collection completion, not a retryable flow failure.
+                                            // `first()` can close the callback channel after accepting this update,
+                                            // while this producer is still filling its small replay buffer. Yield once
+                                            // before classifying a full buffer as backpressure so cancellation can
+                                            // reach this producer instead of causing a spurious reconnect.
+                                            yield()
                                             if (isClosedForSend || !currentCoroutineContext().isActive) {
                                                 throw CancellationException("Remote store flow collector stopped")
                                             }
-                                            sendResult.exceptionOrNull()?.let { throw it }
+                                            val retriedSendResult = trySend(update)
+                                            if (retriedSendResult.isSuccess) {
+                                                yield()
+                                                reconnectAttempts = 0u
+                                                reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
+                                                return@forEach
+                                            }
+                                            if (isClosedForSend || !currentCoroutineContext().isActive) {
+                                                throw CancellationException("Remote store flow collector stopped")
+                                            }
+                                            retriedSendResult.exceptionOrNull()?.let { throw it }
                                             throw RemoteFlowBackpressureException(
                                                 "Remote store flow terminated because collector backpressure prevented update delivery"
                                             )

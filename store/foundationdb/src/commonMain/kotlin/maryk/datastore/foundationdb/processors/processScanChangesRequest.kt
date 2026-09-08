@@ -58,7 +58,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
                     key = key,
                     fromVersion = scanRequest.fromVersion,
                     objectChange = change,
-                    sortingKey = sortingKey
+                    sortingKey = sortingKey,
+                    toVersion = scanRequest.toVersion,
                 )
             } else {
                 change
@@ -85,4 +86,4 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanChangesRequ
 }
 
 private fun ScanChangesRequest<*>.needsSoftDeleteFallback() =
-    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)
+    maxVersions > 1u || !filterSoftDeleted

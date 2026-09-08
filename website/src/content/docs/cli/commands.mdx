@@ -121,9 +121,11 @@ migrations resume <model>
 migrations cancel <model> [reason]
 ```
 
-The command works with local RocksDB/FoundationDB stores and authenticated remote
-stores that expose migration administration. Status includes phase, attempt,
-estimated completion time, and counters when available.
+The CLI migration command works with local RocksDB/FoundationDB stores. Remote
+Store authorization and migration administration are available to programmatic
+server integrations, but the CLI currently has no Remote migration-admin
+connection path. Status includes phase, attempt, estimated completion time, and
+counters when available.
 
 ## Add
 

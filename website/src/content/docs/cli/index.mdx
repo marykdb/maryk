@@ -13,11 +13,18 @@ From the repo root:
 ./gradlew :cli:runJvm
 ```
 
-Release binary for your platform:
+Release-native CLI tasks are host-specific:
 
 ```bash
+# macOS Apple Silicon
 ./gradlew :cli:runReleaseExecutableMacosArm64
+
+# Linux x64
+./gradlew :cli:runReleaseExecutableLinuxX64
 ```
+
+Use `:cli:runJvm` on other hosts. Native CLI release binaries currently target
+macOS and Linux; this is not a generic command for every platform.
 
 ## Connect
 

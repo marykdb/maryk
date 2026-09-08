@@ -68,7 +68,10 @@ Then in app:
 
 Notes:
 
-- Remote transport is HTTP; use SSH if transport encryption needed.
+- Remote transport is HTTP. For direct public access, terminate HTTPS/TLS in a
+  reverse proxy and forward to a loopback-bound Maryk server. SSH tunneling is
+  an alternative for private or administrative access, not the only way to
+  encrypt transport.
 - If server binds to loopback (`127.0.0.1`) on remote host, set URL to that loopback URL and use SSH tunnel.
 
 ## UI map

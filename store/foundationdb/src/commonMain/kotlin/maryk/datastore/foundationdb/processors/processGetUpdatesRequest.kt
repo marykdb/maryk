@@ -117,7 +117,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
                                 tableDirs = tableDirs,
                                 key = key,
                                 fromVersion = getRequest.fromVersion,
-                                objectChange = objChanges
+                                objectChange = objChanges,
+                                toVersion = getRequest.toVersion,
                             )
                         } else {
                             objChanges
@@ -186,7 +187,7 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processGetUpdatesReque
 }
 
 private fun GetUpdatesRequest<*>.needsSoftDeleteFallback() =
-    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)
+    maxVersions > 1u || !filterSoftDeleted
 
 private fun <DM : IsRootDataModel> ValuesWithMetaData<DM>.withSoftDeleteState(
     tr: Transaction,

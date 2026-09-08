@@ -188,7 +188,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdatesRequ
                     key = key,
                     fromVersion = scanRequest.fromVersion,
                     objectChange = objectChange,
-                    sortingKey = sortingKey
+                    sortingKey = sortingKey,
+                    toVersion = scanRequest.toVersion,
                 )
             } else {
                 objectChange
@@ -396,7 +397,8 @@ private fun <DM : IsRootDataModel> FoundationDBDataStore.processUpdateHistorySca
                     tableDirs = tableDirs,
                     key = key,
                     fromVersion = scanRequest.fromVersion,
-                    objectChange = objectChange
+                    objectChange = objectChange,
+                    toVersion = scanRequest.toVersion,
                 )
             } else {
                 objectChange
@@ -587,7 +589,7 @@ private fun ScanUpdatesRequest<*>.canUseUpdateHistoryIndex() =
     order == null && startKey == null && includeStart && fromVersion == 0uL && toVersion == null && maxVersions == 1u
 
 private fun ScanUpdatesRequest<*>.needsSoftDeleteFallback() =
-    toVersion == null && (maxVersions > 1u || !filterSoftDeleted)
+    maxVersions > 1u || !filterSoftDeleted
 
 private fun <DM : IsRootDataModel> ValuesWithMetaData<DM>.withSoftDeleteState(
     tr: Transaction,

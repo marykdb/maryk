@@ -2,9 +2,8 @@
 
 This module can automatically install and run a local FoundationDB server for JVM tests.
 
-- **Install script:** `scripts/install-foundationdb.sh` (macOS/Linux) and `scripts/install-foundationdb.ps1` (Windows).
-- **Run script:** `scripts/run-fdb-for-tests.sh` starts `fdbserver` on `127.0.0.1:4500`, writes logs to `build/testdatastore/logs`, and PID to `build/testdatastore/fdbserver.pid`.
-- **Stop script:** `scripts/stop-fdb-for-tests.sh` stops the server and removes the test database directory.
+- **Automatic test lifecycle:** macOS/Linux only. `scripts/run-fdb-for-tests.sh` starts `fdbserver` on `127.0.0.1:4500`, writes logs to `build/testdatastore/logs`, and PID to `build/testdatastore/fdbserver.pid`; `scripts/stop-fdb-for-tests.sh` stops that managed server and removes the test database directory.
+- **Windows:** `scripts/install-foundationdb.ps1` can install FoundationDB prerequisites, but Maryk does not provide the shell-scripted automatic start/stop lifecycle there. Run a separately managed local FoundationDB service and configure its client library before JVM testing.
 - **Install location:** Binaries are placed under `store/foundationdb/bin` and native libs under `store/foundationdb/bin/lib`.
   The Gradle JVM test task sets `java.library.path` and `DYLD_LIBRARY_PATH`/`LD_LIBRARY_PATH` to this location.
 
@@ -29,11 +28,10 @@ This module can automatically install and run a local FoundationDB server for JV
 ### Manual Usage
 
 - **Install (macOS/Linux):** `bash scripts/install-foundationdb.sh`.
-- **Install (Windows):** `powershell -ExecutionPolicy Bypass -File scripts/install-foundationdb.ps1`.
-- **Start:** `bash scripts/run-fdb-for-tests.sh`.
-- **Stop and clean:** `bash scripts/stop-fdb-for-tests.sh` (respects `FDB_CLEAN_MODE`).
+- **Install (Windows):** `powershell -ExecutionPolicy Bypass -File scripts/install-foundationdb.ps1`; then manage the Windows FoundationDB service separately.
+- **Start/stop (macOS/Linux only):** `bash scripts/run-fdb-for-tests.sh` and `bash scripts/stop-fdb-for-tests.sh` (respects `FDB_CLEAN_MODE`).
 
 Notes:
 - On macOS, the installer downloads and extracts the FoundationDB `.pkg` from GitHub releases if `fdbserver` is not on the `PATH`, and copies `libfdb_c.*` into `bin/lib`.
 - On Linux, if no package manager is detected, the installer downloads and extracts `.deb` artifacts locally.
-- On Windows, the installer uses Chocolatey or Winget if available; starting/stopping the Windows service can also be used instead of the scripts.
+- On Windows, the installer uses Chocolatey or Winget if available. The Windows service is operator-managed; it is not controlled by Maryk's macOS/Linux test scripts.

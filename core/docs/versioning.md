@@ -18,6 +18,15 @@ Maryk uses two different ideas that are easy to confuse:
 
 This page is about data versions.
 
+## Published API compatibility
+
+For a published JVM module, the compatibility baseline is the latest released
+public API. Minor and patch releases keep public binary signatures compatible.
+An intentional removal or signature change needs a major release and migration
+notes. Check the released baseline before changing a public type, constructor,
+method, property, or serialized default; an unreleased branch is not itself a
+compatibility promise.
+
 ## Reading a previous state
 
 Most read requests can include `toVersion`.
@@ -129,9 +138,14 @@ For background, see the [Hybrid Logical Clocks paper](https://cse.buffalo.edu/te
   Stores without that capability reject the operation rather than exporting mixed
   pages. Without historic retention, a current-state export can include concurrent
   writes across pages instead.
-- A portable backup contains complete versioned changes, including soft-deleted
-  data. Keep its destination encrypted and access-controlled; writer
-  implementations should add integrity checks and publish only after completion.
+- A portable backup uses format version `2`. Restore accepts only the exact
+  manifest version, so a format change must increment the version and document
+  any compatibility reader; it must not silently reinterpret old data.
+- A portable backup contains complete versioned changes, including the
+  soft-delete transition/state at its snapshot. A hard-deleted record remains in
+  a pre-delete snapshot but is absent from a post-delete snapshot. Keep its
+  destination encrypted and access-controlled; writer implementations should
+  add integrity checks and publish only after completion.
 - Restore portable backups into an empty disposable store. Restore is streaming,
   not globally transactional, so validate and switch to the restored store only
   after it succeeds. Restore rejects a mismatched major model version; review

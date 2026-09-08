@@ -123,7 +123,8 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScanUpdateHisto
                         tableDirs = tableDirs,
                         key = key,
                         fromVersion = version,
-                        objectChange = objectChange
+                        objectChange = objectChange,
+                        toVersion = version,
                     )
                 } else {
                     objectChange

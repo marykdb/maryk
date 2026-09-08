@@ -60,6 +60,11 @@ cross-store transaction.
 snapshot version, and models; each chunk contains complete versioned changes for
 one model. It is not a filesystem or engine-level backup.
 
+The current portable format is version `2` (`DATA_STORE_BACKUP_FORMAT_VERSION`).
+Restore accepts only that exact manifest version; it never guesses how to read an
+older or newer format. A format change must increment the version, update both
+writer and reader, and document whether a compatibility reader is supplied.
+
 Requirements and operation:
 
 - Enable `keepAllVersions` before data is written. History cannot be recreated
@@ -74,8 +79,10 @@ Requirements and operation:
   publish/rename step in the writer implementation.
 - Choose `batchSize` for memory and transport limits. It bounds records per
   chunk, not the size of one record's complete history.
-- Backups include historic and soft-deleted data. Protect them as sensitive
-  production data and retain them according to the same policy.
+- Backups include historic data and the soft-delete transition/state visible at
+  the snapshot. A hard-deleted record is present in a pre-delete snapshot and
+  absent from a post-delete snapshot. Protect backups as sensitive production
+  data and retain them according to the same policy.
 - Restore requires matching registered model names and major model versions.
   Review minor/patch schema compatibility before restoring. By default it
   refuses non-empty target models. The target must retain all versions so the
@@ -85,6 +92,15 @@ Requirements and operation:
 - Restore is streaming, so a failure can leave earlier chunks—and part of the
   failing chunk—applied. Restore into a new disposable store, validate it, then
   publish or switch to it only after success.
+
+## Published API compatibility
+
+The baseline for a published JVM module is its latest released public API.
+Minor and patch releases preserve binary-compatible public signatures; an
+intentional incompatible removal or signature change requires a major release
+and migration notes. Check that released baseline before changing a public
+type, constructor, method, property, or serialized default. This policy does
+not promise that an arbitrary unreleased branch is a compatibility baseline.
 
 ## Where to use
 

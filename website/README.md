@@ -24,7 +24,7 @@ Hand-authored pages include the landing page, introduction pages, tutorials and 
 
 From `website/`:
 
-Requires Node.js 22.12.0 or newer and Yarn 1.22.22.
+Requires Node.js 22.23.2 or newer and Yarn 1.22.22.
 
 ```bash
 yarn install

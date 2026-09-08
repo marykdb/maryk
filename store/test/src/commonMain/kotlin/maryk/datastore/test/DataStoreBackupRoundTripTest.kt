@@ -11,10 +11,14 @@ import maryk.core.query.RequestContext
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
+import maryk.core.query.requests.delete
 import maryk.core.query.requests.get
 import maryk.core.query.requests.getChanges
+import maryk.core.query.requests.scan
+import maryk.core.query.changes.ObjectSoftDeleteChange
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.statuses.ChangeSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.datastore.shared.DataStoreBackupChunk
 import maryk.datastore.shared.DataStoreBackupManifest
 import maryk.datastore.shared.DataStoreBackupReader
@@ -41,16 +45,51 @@ class DataStoreBackupRoundTripTest(
                 key.change(Change(SimpleMarykModel { value::ref } with "ha after backup"))
             )
         )
-        val latestVersion = assertStatusIs<ChangeSuccess<SimpleMarykModel>>(change.statuses.single()).version
+        assertStatusIs<ChangeSuccess<SimpleMarykModel>>(change.statuses.single())
+        val softDeleted = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+            source.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "ha soft deleted" })
+            ).statuses.single()
+        )
+        val delete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+            source.execute(SimpleMarykModel.delete(softDeleted.key)).statuses.single()
+        )
+        assertStatusIs<ChangeSuccess<SimpleMarykModel>>(
+            source.execute(
+                SimpleMarykModel.change(softDeleted.key.change(ObjectSoftDeleteChange(false)))
+            ).statuses.single()
+        )
+        val finalDelete = assertStatusIs<DeleteSuccess<SimpleMarykModel>>(
+            source.execute(SimpleMarykModel.delete(softDeleted.key)).statuses.single()
+        )
+        val retained = assertStatusIs<AddSuccess<SimpleMarykModel>>(
+            source.execute(
+                SimpleMarykModel.add(SimpleMarykModel.create { value with "ha retained" })
+            ).statuses.single()
+        )
+        assertEquals(
+            listOf(true, false, true),
+            source.execute(
+                SimpleMarykModel.getChanges(
+                    softDeleted.key,
+                    toVersion = retained.version + 1uL,
+                    maxVersions = 100u,
+                    filterSoftDeleted = false,
+                )
+            ).changes.single().changes.flatMap { versioned ->
+                versioned.changes.filterIsInstance<ObjectSoftDeleteChange>().map(ObjectSoftDeleteChange::isDeleted)
+            },
+        )
 
         val backup = SerializedBackup(source)
         source.backup(
             backup,
-            snapshotVersion = if (useAutomaticSnapshot) null else latestVersion + 1uL,
+            snapshotVersion = if (useAutomaticSnapshot) null else retained.version + 1uL,
             batchSize = 1u,
         )
 
-        assertEquals(1uL, target.restore(backup).records)
+        assertEquals(3, backup.chunkCount)
+        assertEquals(3uL, target.restore(backup).records)
         assertEquals(
             "ha after backup",
             target.execute(SimpleMarykModel.get(key)).values.single().values { value },
@@ -59,6 +98,16 @@ class DataStoreBackupRoundTripTest(
             2,
             target.execute(SimpleMarykModel.getChanges(key)).changes.single().changes.size,
         )
+
+        val restored = target.execute(
+            SimpleMarykModel.scan(filterSoftDeleted = false, allowTableScan = true)
+        ).values.associateBy { it.key }
+        assertEquals(true, restored.getValue(softDeleted.key).isDeleted)
+        assertEquals(false, restored.getValue(retained.key).isDeleted)
+        assertEquals(4, target.execute(SimpleMarykModel.getChanges(softDeleted.key, maxVersions = 100u, filterSoftDeleted = false))
+            .changes.single().changes.size)
+        assertEquals(finalDelete.version, target.execute(SimpleMarykModel.getChanges(softDeleted.key, maxVersions = 100u, filterSoftDeleted = false))
+            .changes.single().changes.last().version)
     }
 }
 
@@ -71,6 +120,7 @@ private class SerializedBackup(
 ) : DataStoreBackupWriter, DataStoreBackupReader {
     private lateinit var storedManifest: DataStoreBackupManifest
     private val chunks = mutableListOf<SerializedBackupChunk>()
+    val chunkCount get() = chunks.size
 
     override val manifest: DataStoreBackupManifest
         get() = storedManifest

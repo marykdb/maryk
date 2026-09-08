@@ -68,8 +68,6 @@ yamlWriter.writeString("CAT")
 yamlWriter.writeEndObject()
 yamlWriter.writeEndArray()
 yamlWriter.writeEndObject()
-
-yamlWriter.writeEndObject()
 ```
 
 An example using the apply syntax in Kotlin
@@ -84,7 +82,6 @@ YamlWriter(
     writeString("John Smith")
     writeFieldName("age")
     writeInt(32)
-    writeEndObject()
     writeFieldName("pets")
     writeStartArray()
     writeStartObject()
@@ -97,6 +94,10 @@ YamlWriter(
     writeEndObject()
 }
 ```
+
+Open a root object once and close it once, after every field has been written.
+Do not close the root before a later field or close it twice; `YamlWriter`
+rejects both invalid writer states.
 
 The result:
 ```yaml

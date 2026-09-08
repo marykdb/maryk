@@ -1243,9 +1243,12 @@ class RocksDBDataStoreMigrationTest {
         val leaseProbe = RocksDBLocalMigrationLease(path)
         val leaseProbeMigrationId = "lease-release-probe"
         try {
-            withTimeout(5_000.milliseconds) {
-                while (!leaseProbe.tryAcquire(1u, leaseProbeMigrationId)) {
-                    delay(10.milliseconds)
+            // The filesystem-backed lease releases on a real worker, so this timeout must use real time.
+            withContext(Dispatchers.Default.limitedParallelism(1)) {
+                withTimeout(5_000.milliseconds) {
+                    while (!leaseProbe.tryAcquire(1u, leaseProbeMigrationId)) {
+                        delay(10.milliseconds)
+                    }
                 }
             }
         } finally {

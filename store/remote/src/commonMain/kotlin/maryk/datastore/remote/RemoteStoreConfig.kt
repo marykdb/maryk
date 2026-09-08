@@ -50,6 +50,11 @@ data class SshTarget(
 /** Active SSH tunnel. */
 interface SshTunnel {
     val localPort: Int
+
+    /** Whether this tunnel can still forward connections. */
+    val isActive: Boolean
+        get() = true
+
     fun close()
 }
 

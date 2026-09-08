@@ -30,6 +30,7 @@ import kotlinx.coroutines.withTimeout
 import kotlin.time.Duration.Companion.seconds
 import maryk.core.aggregations.Aggregations
 import maryk.core.aggregations.metric.ValueCount
+import maryk.core.exceptions.RequestException
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.RootDataModel
 import maryk.core.models.key
@@ -55,6 +56,7 @@ import maryk.core.query.filters.Matches
 import maryk.core.query.pairs.with
 import maryk.core.query.requests.CollectRequest
 import maryk.core.query.requests.IsFlowRequest
+import maryk.core.query.requests.IsStoreRequest
 import maryk.core.query.requests.RequestType
 import maryk.core.query.requests.Requests
 import maryk.core.query.requests.add
@@ -63,7 +65,9 @@ import maryk.core.query.requests.scan
 import maryk.core.query.requests.scanUpdates
 import maryk.core.query.responses.AddResponse
 import maryk.core.query.responses.IsDataResponse
+import maryk.core.query.responses.IsResponse
 import maryk.core.query.responses.UpdateResponse
+import maryk.core.query.responses.ValuesResponse
 import maryk.core.query.responses.statuses.AddSuccess
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.ChangeUpdate
@@ -148,6 +152,50 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun executeMapsDatastoreRequestExceptionToBadRequest() = runBoundedIntegrationTest {
+        val delegate = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        withServer(dataStore = RequestExceptionStore(delegate)) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(validExecutePayload())
+            }
+
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+        }
+    }
+
+    @Test
+    fun executeClosesConnectionWhenRejectingUnreadBody() = runBoundedIntegrationTest {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, "text/plain")
+                setBody(byteArrayOf(1))
+            }
+
+            assertEquals(HttpStatusCode.UnsupportedMediaType, response.status)
+            assertEquals("close", response.headers[HttpHeaders.Connection])
+        }
+    }
+
+    @Test
+    fun executeMarksMutationOutcomeUnknownWhenResponseEncodingFails() = runBoundedIntegrationTest {
+        val delegate = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val executions = AtomicInteger()
+        withServer(dataStore = MismatchedResponseStore(delegate, executions)) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(validExecutePayload())
+            }
+
+            assertEquals(HttpStatusCode.InternalServerError, response.status)
+            assertEquals("unknown", response.headers[RemoteStoreProtocol.mutationOutcomeHeader])
+            assertEquals(1, executions.get())
+        }
+    }
+
+    @Test
     fun rejectsNonPositiveConnectionIdleTimeout() {
         val exception = assertFailsWith<IllegalArgumentException> {
             validateRemoteStoreServerBinding(
@@ -188,6 +236,29 @@ class RemoteStoreServerTest {
                         assertEquals(HttpStatusCode.ServiceUnavailable, status)
                         delay(10)
                     }
+                }
+            } finally {
+                socket.close()
+            }
+        }
+    }
+
+    @Test
+    fun flowReauthenticatesCustomIdentityOnHeartbeat() = runBoundedIntegrationTest {
+        val authenticationAttempts = AtomicInteger()
+        withServer(
+            config = RemoteStoreServerConfig(
+                flowHeartbeatMillis = 50,
+                authenticator = RemoteStoreAuthenticator {
+                    authenticationAttempts.incrementAndGet()
+                    RemoteStorePrincipal("service")
+                },
+            ),
+        ) { baseUrl, _ ->
+            val socket = openRawFlow(baseUrl, resumable = true)
+            try {
+                withTimeout(2.seconds) {
+                    while (authenticationAttempts.get() < 2) delay(10)
                 }
             } finally {
                 socket.close()
@@ -604,7 +675,10 @@ class RemoteStoreServerTest {
             assertEquals(HttpStatusCode.OK, status)
         }
 
-        assertEquals(listOf<String?>(NamedIndexSourceModel.Meta.name), authorizedModels)
+        assertEquals(
+            listOf<String?>(NamedIndexSourceModel.Meta.name, NamedIndexSourceModel.Meta.name),
+            authorizedModels,
+        )
     }
 
     @Test
@@ -1232,6 +1306,27 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun processUpdateRestoreChangeRequiresChangeAuthorization() = runBoundedIntegrationTest {
+        val authorizedRequestTypes = mutableListOf<RequestType?>()
+        withServer(
+            RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    authorizedRequestTypes += request.requestType
+                    request.requestType != RequestType.Change
+                },
+            )
+        ) { baseUrl, client ->
+            client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                header(HttpHeaders.Accept, RemoteStoreProtocol.contentType)
+                setBody(restoreChangePayload())
+            }
+        }
+
+        assertEquals(listOf<RequestType?>(RequestType.Change), authorizedRequestTypes)
+    }
+
+    @Test
     fun processUpdateMixedInitialChangesRequiresAddChangeAndDeleteAuthorization() = runBoundedIntegrationTest {
         val authorizedRequestTypes = mutableListOf<RequestType?>()
         withServer(
@@ -1414,13 +1509,36 @@ private class FastLargeFlowStore(
     }
 }
 
+private class RequestExceptionStore(
+    private val delegate: IsDataStore,
+) : IsDataStore by delegate {
+    override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+        request: RQ,
+    ): RP = throw RequestException("Rejected by datastore")
+}
+
+private class MismatchedResponseStore(
+    private val delegate: IsDataStore,
+    private val executions: AtomicInteger,
+) : IsDataStore by delegate {
+    override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+        request: RQ,
+    ): RP {
+        delegate.execute(request)
+        executions.incrementAndGet()
+        @Suppress("UNCHECKED_CAST")
+        return ValuesResponse(request.dataModel, emptyList()) as RP
+    }
+}
+
 private suspend fun withServer(
     config: RemoteStoreServerConfig = RemoteStoreServerConfig(),
     limits: RemoteStoreServerLimits = RemoteStoreServerLimits(),
     dataModelsById: Map<UInt, IsRootDataModel> = mapOf(1u to SimpleMarykModel),
+    dataStore: IsDataStore? = null,
     block: suspend (String, HttpClient) -> Unit,
 ) {
-    val store = InMemoryDataStore.open(dataModelsById = dataModelsById)
+    val store = dataStore ?: InMemoryDataStore.open(dataModelsById = dataModelsById)
     val (server, port) = startTestServer {
         remoteStoreModule(store, config, limits)
     }
@@ -1724,6 +1842,21 @@ private fun softDeleteChangePayload(): ByteArray =
                 version = 1uL,
                 index = 0,
                 changes = listOf(ObjectSoftDeleteChange(true)),
+            ),
+        ),
+        testRequestContext(),
+    )
+
+private fun restoreChangePayload(): ByteArray =
+    RemoteStoreCodec.encode(
+        UpdateResponse.Serializer,
+        UpdateResponse(
+            dataModel = SimpleMarykModel,
+            update = ChangeUpdate(
+                key = SimpleMarykModel.key(ByteArray(16)),
+                version = 1uL,
+                index = 0,
+                changes = listOf(ObjectSoftDeleteChange(false)),
             ),
         ),
         testRequestContext(),

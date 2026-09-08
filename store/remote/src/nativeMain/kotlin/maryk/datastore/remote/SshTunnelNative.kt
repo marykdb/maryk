@@ -203,6 +203,9 @@ private class PosixSshTunnel(
     private val pid: Int,
     override val localPort: Int,
 ) : SshTunnel {
+    override val isActive: Boolean
+        get() = !hasExited(pid)
+
     override fun close() {
         terminateProcess(pid)
     }

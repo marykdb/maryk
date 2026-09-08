@@ -14,6 +14,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respondBytes
 import io.ktor.server.response.respondBytesWriter
+import io.ktor.server.response.header
 import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
@@ -344,12 +345,20 @@ internal fun Application.remoteStoreModule(
                     val dataModel = storeRequest.dataModel
                     val responseContext = RequestContext(requestContext.definitionsContext, dataModel = dataModel)
                     @Suppress("UNCHECKED_CAST")
-                    val responseBytes = RemoteStoreCodec.encode(
-                        executableRequest.responseModel.Serializer as IsObjectDataModelSerializer<Any, *, RequestContext, RequestContext>,
-                        response as Any,
-                        responseContext,
-                        MAX_FRAME_SIZE_BYTES,
-                    )
+                    val responseBytes = try {
+                        RemoteStoreCodec.encode(
+                            executableRequest.responseModel.Serializer as IsObjectDataModelSerializer<Any, *, RequestContext, RequestContext>,
+                            response as Any,
+                            responseContext,
+                            MAX_FRAME_SIZE_BYTES,
+                        )
+                    } catch (error: Throwable) {
+                        error.rethrowIfFatal()
+                        if (executableRequest.requestType.isMutationRequestType()) {
+                            throw MutationOutcomeUnknownException(error)
+                        }
+                        throw error
+                    }
                     if (responseBytes.isEmpty()) {
                         throw IllegalStateException("Remote execute response cannot be empty")
                     }
@@ -424,6 +433,17 @@ internal fun Application.remoteStoreModule(
                     call.request.headers[RemoteStoreProtocol.flowProtocolHeader] ==
                         RemoteStoreProtocol.resumableFlowProtocol
                 }
+                suspend fun isStillAuthorized(): Boolean {
+                    val renewedPrincipal = call.resolvePrincipal(config) ?: return false
+                    return call.authorizeRequestModels(
+                        config = config,
+                        principal = renewedPrincipal,
+                        operation = RemoteStoreOperation.Flow,
+                        request = fetchRequest,
+                        primaryModelName = fetchRequest.dataModel.Meta.name,
+                        respondOnFailure = false,
+                    )
+                }
 
                 val callPermit = call.attributes[RemoteStoreCallAdmissionPermitKey]
                 flowPermit.deferRelease()
@@ -442,11 +462,13 @@ internal fun Application.remoteStoreModule(
                                         }
                                     }
                                     if (updateResult == null) {
+                                        if (!isStillAuthorized()) break
                                         writeFully(RemoteStoreCodec.lengthPrefix(0))
                                         flush()
                                         continue
                                     }
                                     val update = updateResult.getOrNull() ?: break
+                                    if (!isStillAuthorized()) break
                                     val response = UpdatesResponse(fetchRequest.dataModel, listOf(update))
                                     val responseContext = RequestContext(requestContext.definitionsContext, dataModel = fetchRequest.dataModel)
                                     val responseBytes = RemoteStoreCodec.encode(UpdatesResponse.Serializer, response, responseContext, MAX_FRAME_SIZE_BYTES)
@@ -627,8 +649,19 @@ private fun RemoteMigrationRequest.requireModelId(): UInt =
 private suspend fun ApplicationCall.authenticate(
     config: RemoteStoreServerConfig,
 ): RemoteStorePrincipal? {
+    val principal = resolvePrincipal(config)
+    if (principal == null) {
+        response.header(HttpHeaders.Connection, "close")
+        respondText("Unauthorized", status = HttpStatusCode.Unauthorized)
+    }
+    return principal
+}
+
+private suspend fun ApplicationCall.resolvePrincipal(
+    config: RemoteStoreServerConfig,
+): RemoteStorePrincipal? {
     val supplied = request.headers[HttpHeaders.Authorization]
-    val principal = when {
+    return when {
         config.authenticator != null -> config.authenticator.authenticate(supplied)
         config.bearerToken != null && supplied != null &&
             bearerTokenMatches(supplied, config.bearerToken) ->
@@ -636,10 +669,6 @@ private suspend fun ApplicationCall.authenticate(
         config.bearerToken == null -> RemoteStorePrincipal("anonymous")
         else -> null
     }
-    if (principal == null) {
-        respondText("Unauthorized", status = HttpStatusCode.Unauthorized)
-    }
-    return principal
 }
 
 private data class PreparedExecuteRequest(
@@ -709,6 +738,7 @@ private suspend fun ApplicationCall.authorize(
         )
     ) ?: true
     if (!authorized && respondOnFailure) {
+        response.header(HttpHeaders.Connection, "close")
         respondText("Forbidden", status = HttpStatusCode.Forbidden)
     }
     return authorized
@@ -915,7 +945,7 @@ private fun authorizationRequestTypes(changes: List<IsChange>): Set<RequestType>
     changes.mapTo(mutableSetOf()) { change ->
         when {
             change === ObjectCreate -> RequestType.Add
-            change is ObjectSoftDeleteChange -> RequestType.Delete
+            change is ObjectSoftDeleteChange && change.isDeleted -> RequestType.Delete
             else -> RequestType.Change
         }
     }.ifEmpty { setOf(RequestType.Change) }
@@ -1041,6 +1071,8 @@ private class RequestValidationException(
     val mayNeedCollectedResult: Boolean = false,
 ) : IllegalArgumentException(message)
 
+private class MutationOutcomeUnknownException(cause: Throwable) : IllegalStateException(cause)
+
 private val RemoteStoreCallAdmissionPermitKey = AttributeKey<RequestAdmissionPermit>("RemoteStoreCallAdmissionPermit")
 
 private class RequestAdmission(maxConcurrentRequests: Int) {
@@ -1084,6 +1116,15 @@ private suspend inline fun ApplicationCall.respondValidationErrors(
     try {
         block()
     } catch (error: RequestValidationException) {
+        response.header(HttpHeaders.Connection, "close")
         respondText(error.message, status = error.status)
+    } catch (error: RequestException) {
+        respondText(error.message ?: "Remote request is invalid", status = HttpStatusCode.BadRequest)
+    } catch (_: MutationOutcomeUnknownException) {
+        response.header(RemoteStoreProtocol.mutationOutcomeHeader, "unknown")
+        respondText(
+            "Remote mutation may have committed, but its response could not be encoded",
+            status = HttpStatusCode.InternalServerError,
+        )
     }
 }

@@ -9,6 +9,7 @@ import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsChannel
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.HeadersBuilder
 import io.ktor.http.URLProtocol
 import io.ktor.http.URLBuilder
@@ -49,6 +50,7 @@ import maryk.core.models.IsTypedObjectDataModel
 import maryk.core.models.IsRootDataModel
 import maryk.core.models.migration.MigrationMetrics
 import maryk.core.models.migration.MigrationRuntimeStatus
+import maryk.core.models.migration.MigrationStatus
 import maryk.core.properties.definitions.contextual.DataModelReference
 import maryk.core.properties.definitions.contextual.IsDataModelReference
 import maryk.core.query.ContainsDefinitionsContext
@@ -86,12 +88,25 @@ private data class BatchRequestDescriptor(
     val dataModel: IsRootDataModel,
 )
 
+private class SshTunnelReconnect(
+    private val config: RemoteSshConfig,
+    private val target: SshTarget,
+    private val factory: SshTunnelFactory,
+) {
+    fun reopenIfInactive(tunnel: SshTunnel): SshTunnel {
+        if (tunnel.isActive) return tunnel
+        tunnel.close()
+        return factory.open(config.copy(localPort = tunnel.localPort), target)
+    }
+}
+
 class RemoteDataStore private constructor(
     private val httpClient: HttpClient,
     private val baseUrl: Url,
     private val definitionsContext: ContainsDefinitionsContext,
     private val listeners: RemoteListenerRegistry,
-    private val sshTunnel: SshTunnel?,
+    private var sshTunnel: SshTunnel?,
+    private val sshTunnelReconnect: SshTunnelReconnect?,
     private val ownsClient: Boolean,
     private val bearerToken: String?,
     private val flowRetryPolicy: RemoteFlowRetryPolicy,
@@ -102,6 +117,7 @@ class RemoteDataStore private constructor(
     override val supportsSubReferenceFiltering: Boolean,
 ) : IsDataStore, MigrationAdmin, SnapshotVersionProvider {
     private val definitionsMutex = Mutex()
+    private val sshTunnelMutex = Mutex()
     private val localDataModelsByName = mutableMapOf<String, IsRootDataModel>()
 
     override val dataModelIdsByString: Map<String, UInt> = dataModelsById.map { (id, model) ->
@@ -142,6 +158,7 @@ class RemoteDataStore private constructor(
             val client = config.httpClient ?: createDefaultHttpClient()
             val ownsClient = config.httpClient == null
             var tunnel: SshTunnel? = null
+            var tunnelReconnect: SshTunnelReconnect? = null
             return try {
                 val effectiveUrl = if (config.ssh != null) {
                     validateSshConfig(config.ssh)
@@ -152,6 +169,7 @@ class RemoteDataStore private constructor(
                     val factory = config.sshTunnelFactory
                         ?: throw IllegalArgumentException("SSH tunnel factory is not available on this platform")
                     tunnel = factory.open(config.ssh, target)
+                    tunnelReconnect = SshTunnelReconnect(config.ssh, target, factory)
                     URLBuilder(baseUrl).apply {
                         host = "127.0.0.1"
                         port = tunnel.localPort
@@ -180,6 +198,7 @@ class RemoteDataStore private constructor(
                     definitionsContext = infoResult.definitionsContext,
                     listeners = RemoteListenerRegistry(),
                     sshTunnel = tunnel,
+                    sshTunnelReconnect = tunnelReconnect,
                     ownsClient = ownsClient,
                     bearerToken = config.bearerToken,
                     flowRetryPolicy = config.flowRetryPolicy,
@@ -669,6 +688,7 @@ class RemoteDataStore private constructor(
                         ) {
                             throw error
                         }
+                        reopenInactiveSshTunnel()
                         reconnectAttempts++
                         if (reconnectDelayMillis > 0) {
                             delay(reconnectDelayMillis)
@@ -686,6 +706,13 @@ class RemoteDataStore private constructor(
             awaitClose {
                 job.cancel()
             }
+        }
+    }
+
+    private suspend fun reopenInactiveSshTunnel() {
+        sshTunnelMutex.withLock {
+            val tunnel = sshTunnel ?: return
+            sshTunnel = sshTunnelReconnect?.reopenIfInactive(tunnel) ?: tunnel
         }
     }
 
@@ -794,6 +821,7 @@ class RemoteDataStore private constructor(
                 if (isDecodedRemoteModel(model)) {
                     return@forEach
                 }
+                validateLocalModelCompatibility(model)
                 val existing = localDataModelsByName[model.Meta.name]
                 if (existing != null && existing !== model) {
                     throw IllegalArgumentException(
@@ -802,6 +830,17 @@ class RemoteDataStore private constructor(
                 }
                 localDataModelsByName[model.Meta.name] = model
             }
+        }
+    }
+
+    private fun validateLocalModelCompatibility(model: IsRootDataModel) {
+        val remoteModel = dataModelsById.values.firstOrNull { it.Meta.name == model.Meta.name } ?: return
+        val reasons = mutableListOf<String>()
+        if (model.isMigrationNeeded(remoteModel, migrationReasons = reasons) is MigrationStatus.NeedsMigration) {
+            throw IllegalArgumentException(
+                "Remote store model `${model.Meta.name}` is incompatible with the local definition: " +
+                    reasons.joinToString("; ")
+            )
         }
     }
 
@@ -828,7 +867,17 @@ class RemoteDataStore private constructor(
 }
 
 internal fun isRetryableRemoteFlowFailure(error: Throwable): Boolean =
-    error is RemoteFlowDisconnectedException || error is IOException
+    error is RemoteFlowDisconnectedException ||
+        error is IOException ||
+        (error is RemoteHttpStatusException && error.status == HttpStatusCode.ServiceUnavailable)
+
+private class RemoteHttpStatusException(
+    val status: HttpStatusCode,
+    message: String,
+) : IllegalStateException(message)
+
+/** The remote server reports that a mutation may have committed but its result is unavailable. */
+class RemoteMutationOutcomeUnknownException(message: String) : IllegalStateException(message)
 
 private fun HeadersBuilder.appendBearerToken(bearerToken: String?) {
     if (bearerToken != null) {
@@ -911,12 +960,19 @@ private data class InfoResult(
 
 private suspend fun requireSuccess(response: HttpResponse, operation: String) {
     if (response.status.value !in 200..299) {
+        if (response.headers[RemoteStoreProtocol.mutationOutcomeHeader] == "unknown") {
+            response.call.cancel()
+            throw RemoteMutationOutcomeUnknownException(
+                "Remote store $operation may have committed the mutation, but did not return a usable response"
+            )
+        }
         val bodyPreview = runCatchingNonFatal { readErrorPreview(response) }
             .getOrNull()
             ?.replace(Regex("\\s+"), " ")
             ?.take(200)
         val suffix = if (bodyPreview.isNullOrBlank()) "" else ": $bodyPreview"
-        throw IllegalStateException(
+        throw RemoteHttpStatusException(
+            response.status,
             "Remote store $operation failed with HTTP ${response.status.value} ${response.status.description}$suffix"
         )
     }

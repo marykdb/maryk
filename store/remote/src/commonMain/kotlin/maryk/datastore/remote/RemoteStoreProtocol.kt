@@ -7,6 +7,7 @@ internal object RemoteStoreProtocol {
     const val batchExecuteProtocol = "2"
     const val flowProtocolHeader = "X-Maryk-Flow-Protocol"
     const val resumableFlowProtocol = "2"
+    const val mutationOutcomeHeader = "X-Maryk-Mutation-Outcome"
 
     const val infoPath = "/v1/info"
     const val executePath = "/v1/execute"

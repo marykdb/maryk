@@ -116,6 +116,9 @@ private class ProcessSshTunnel(
     private val process: Process,
     override val localPort: Int,
 ) : SshTunnel {
+    override val isActive: Boolean
+        get() = process.isAlive
+
     override fun close() {
         destroyProcess(process)
     }

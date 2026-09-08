@@ -9,7 +9,9 @@ import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respondBytes
+import io.ktor.server.response.header
 import io.ktor.server.response.respondBytesWriter
+import io.ktor.server.response.respondText
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
@@ -336,6 +338,46 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun rejectsIncompatibleSameNameModelBeforeTransport() = runBoundedIntegrationTest {
+        val executeCalls = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            rejectingExecuteModule(executeCalls)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            assertFailsWith<IllegalArgumentException> {
+                remote.execute(SecondConflictingModel.SimpleMarykModel.get())
+            }
+            assertEquals(0, executeCalls.get())
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun executeExposesUnknownMutationOutcome() = runBoundedIntegrationTest {
+        val executeCalls = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            rejectingExecuteModule(executeCalls, mutationOutcomeUnknown = true)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+
+        try {
+            assertFailsWith<RemoteMutationOutcomeUnknownException> {
+                remote.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha" }))
+            }
+            assertEquals(1, executeCalls.get())
+        } finally {
+            remote.close()
+            engine.stop(500, 500)
+        }
+    }
+
+    @Test
     fun decodesRemoteResponseUsingCompatibleLocalModelInstance() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val port = ServerSocket(0).use { it.localPort }
@@ -505,6 +547,84 @@ class RemoteDataStoreTest {
 
             assertEquals(listOf(1uL, 2uL, 1uL), updates.map { it.version })
             assertTrue(connections.get() >= 2)
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun executeFlowReconnectsAfterServiceUnavailable() = runBoundedIntegrationTest {
+        val connections = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            reconnectingFlowModule(connections, rejectFirstConnection = true)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 1u,
+                    initialDelayMillis = 0,
+                    maxDelayMillis = 0,
+                ),
+            )
+        )
+
+        try {
+            val update = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
+            }
+
+            assertEquals(1uL, update.version)
+            assertEquals(2, connections.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
+    fun executeFlowReopensInactiveSshTunnelBeforeRetrying() = runBoundedIntegrationTest {
+        val connections = AtomicInteger()
+        val tunnelOpens = AtomicInteger()
+        val firstTunnelClosed = AtomicBoolean(false)
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            reconnectingFlowModule(connections, rejectFirstConnection = true)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://remote.example:8210",
+                ssh = RemoteSshConfig(host = "ssh.example"),
+                sshTunnelFactory = { _, _ ->
+                    val attempt = tunnelOpens.incrementAndGet()
+                    object : SshTunnel {
+                        override val localPort = port
+                        override val isActive = attempt > 1
+
+                        override fun close() {
+                            if (attempt == 1) {
+                                firstTunnelClosed.set(true)
+                            }
+                        }
+                    }
+                },
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 1u,
+                    initialDelayMillis = 0,
+                    maxDelayMillis = 0,
+                ),
+            )
+        )
+
+        try {
+            val update = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
+            }
+            assertEquals(1uL, update.version)
+            assertEquals(2, tunnelOpens.get())
+            assertTrue(firstTunnelClosed.get())
         } finally {
             remote.close()
             server.stop(500, 500)
@@ -1710,7 +1830,10 @@ class RemoteDataStoreTest {
     }
 }
 
-private fun Application.reconnectingFlowModule(connections: AtomicInteger) {
+private fun Application.reconnectingFlowModule(
+    connections: AtomicInteger,
+    rejectFirstConnection: Boolean = false,
+) {
     val infoBytes = defaultInfoBytes()
     routing {
         get(RemoteStoreProtocol.infoPath) {
@@ -1719,6 +1842,10 @@ private fun Application.reconnectingFlowModule(connections: AtomicInteger) {
         post(RemoteStoreProtocol.flowPath) {
             call.receiveChannel().readRemaining().readByteArray()
             val connection = connections.incrementAndGet()
+            if (rejectFirstConnection && connection == 1) {
+                call.respondText("busy", status = HttpStatusCode.ServiceUnavailable)
+                return@post
+            }
             call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
                 val context = RequestContext(
                     definitionsContext = DefinitionsContext(
@@ -2584,7 +2711,10 @@ private fun defaultInfoBytes(): ByteArray {
     return RemoteStoreCodec.encode(RemoteStoreInfo.Serializer, info, DefinitionsConversionContext())
 }
 
-private fun Application.rejectingExecuteModule(executeCalls: AtomicInteger) {
+private fun Application.rejectingExecuteModule(
+    executeCalls: AtomicInteger,
+    mutationOutcomeUnknown: Boolean = false,
+) {
     val infoBytes = defaultInfoBytes()
     routing {
         get(RemoteStoreProtocol.infoPath) {
@@ -2593,6 +2723,9 @@ private fun Application.rejectingExecuteModule(executeCalls: AtomicInteger) {
         post(RemoteStoreProtocol.executePath) {
             call.receiveChannel().readRemaining().readByteArray()
             executeCalls.incrementAndGet()
+            if (mutationOutcomeUnknown) {
+                call.response.header(RemoteStoreProtocol.mutationOutcomeHeader, "unknown")
+            }
             call.respondBytes(
                 "rejected".encodeToByteArray(),
                 ContentType.Text.Plain,

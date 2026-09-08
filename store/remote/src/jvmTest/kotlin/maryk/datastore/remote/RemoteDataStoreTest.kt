@@ -719,6 +719,40 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun executeFlowResetsRetryBudgetAfterDeliveredUpdateThenPayloadTimeout() = runBoundedIntegrationTest {
+        val connections = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            deliveredUpdateThenStalledPayloadFlowModule(connections, keepConnectionOpenAt = 3)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://127.0.0.1:$port",
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 1u,
+                    initialDelayMillis = 0,
+                    maxDelayMillis = 0,
+                    heartbeatTimeoutMillis = 100,
+                ),
+            )
+        )
+
+        try {
+            val updates = withTimeout(2_000.milliseconds) {
+                remote.executeFlow(
+                    SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
+                ).take(3).toList()
+            }
+
+            assertEquals(listOf(1uL, 2uL, 3uL), updates.map { it.version })
+            assertEquals(3, connections.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
     fun closeAllListenersStopsAReconnectableRemoteFlow() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val firstConnectionOpened = CompletableDeferred<Unit>()
@@ -2073,6 +2107,48 @@ private fun Application.stalledPayloadThenUpdateFlowModule(connections: AtomicIn
                     writeFully(payload)
                     flush()
                 }
+            }
+        }
+    }
+}
+
+private fun Application.deliveredUpdateThenStalledPayloadFlowModule(
+    connections: AtomicInteger,
+    keepConnectionOpenAt: Int,
+) {
+    val infoBytes = defaultInfoBytes()
+    routing {
+        get(RemoteStoreProtocol.infoPath) {
+            call.respondBytes(infoBytes, ContentType.parse(RemoteStoreProtocol.contentType))
+        }
+        post(RemoteStoreProtocol.flowPath) {
+            call.receiveChannel().readRemaining().readByteArray()
+            val connection = connections.incrementAndGet()
+            call.respondBytesWriter(ContentType.parse(RemoteStoreProtocol.streamContentType)) {
+                val context = RequestContext(
+                    definitionsContext = DefinitionsContext(
+                        dataModels = mutableMapOf(
+                            SimpleMarykModel.Meta.name to DataModelReference(SimpleMarykModel)
+                        )
+                    ),
+                    dataModel = SimpleMarykModel,
+                )
+                val payload = RemoteStoreCodec.encode(
+                    UpdatesResponse.Serializer,
+                    UpdatesResponse(
+                        SimpleMarykModel,
+                        listOf(OrderedKeysUpdate(listOf(SimpleMarykModel.key(ByteArray(16))), connection.toULong())),
+                    ),
+                    context,
+                )
+                writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
+                writeFully(payload)
+                flush()
+                if (connection < keepConnectionOpenAt) {
+                    writeFully(RemoteStoreCodec.lengthPrefix(1))
+                    flush()
+                }
+                awaitCancellation()
             }
         }
     }

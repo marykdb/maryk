@@ -535,7 +535,6 @@ class RemoteDataStore private constructor(
                 while (true) {
                     try {
                         var receivedFrame = false
-                        var deliveredUpdate = false
                         val statement = httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.flowPath)) {
                             headers {
                                 append(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
@@ -627,7 +626,8 @@ class RemoteDataStore private constructor(
                                             )
                                         }
                                         yield()
-                                        deliveredUpdate = true
+                                        reconnectAttempts = 0u
+                                        reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
                                     }
                                     receivedFrame = true
                                 }
@@ -669,10 +669,6 @@ class RemoteDataStore private constructor(
                                     flowExecution.cancel()
                                 }
                             }
-                        }
-                        if (deliveredUpdate) {
-                            reconnectAttempts = 0u
-                            reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
                         }
                         if (flowRetryPolicy.maxReconnectAttempts == 0u) {
                             return@launch

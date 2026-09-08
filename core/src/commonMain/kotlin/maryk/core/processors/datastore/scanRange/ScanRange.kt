@@ -39,7 +39,7 @@ data class ScanRange internal constructor(
     fun getDescendingStartKey(startKey: ByteArray? = null, inclusiveStartKey: Boolean = true): ByteArray? =
         when {
             startKey != null && (end == null || end.isEmpty() || startKey < end) ->
-                if (inclusiveStartKey) startKey else startKey.prevByteInSameLength()
+                if (inclusiveStartKey) startKey else startKey.takeUnless { key -> key.all { it == 0.toByte() } }?.prevByteInSameLength()
             endInclusive -> end?.nextByteInSameLength()
             else -> end
         }

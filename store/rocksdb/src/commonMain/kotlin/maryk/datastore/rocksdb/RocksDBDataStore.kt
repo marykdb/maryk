@@ -205,6 +205,7 @@ class RocksDBDataStore private constructor(
     override suspend fun captureSnapshotVersion(): ULong = captureLocalSnapshotVersion()
 
     private val storePath: String = relativePath
+    private val defaultMigrationLease = RocksDBLocalMigrationLease(storePath)
     private var storeMeta: StoreMeta = readStoreMetaFile(storePath).also { meta ->
         if (meta.indexKeyFormatVersion > CURRENT_INDEX_KEY_FORMAT_VERSION) {
             throw StorageException(
@@ -331,7 +332,7 @@ class RocksDBDataStore private constructor(
         }
 
         val startupStarted = TimeSource.Monotonic.markNow()
-        val effectiveMigrationLease = migrationConfiguration.migrationLease ?: RocksDBLocalMigrationLease(storePath)
+        val effectiveMigrationLease = migrationConfiguration.migrationLease ?: defaultMigrationLease
         val migrationStateStore = RocksDBMigrationStateStore(
             db,
             columnFamilyHandlesByDataModelIndex.mapValues { (_, tableColumnFamilies) -> tableColumnFamilies.model }
@@ -1144,6 +1145,9 @@ class RocksDBDataStore private constructor(
             try {
                 super.close()
             } finally {
+                // A native worker can be cancelled before its background migration finalizer runs.
+                // The default lease is process-local, so closing its owner can release it safely here.
+                defaultMigrationLease.releaseOwnedLeases()
                 closeResources()
             }
         }

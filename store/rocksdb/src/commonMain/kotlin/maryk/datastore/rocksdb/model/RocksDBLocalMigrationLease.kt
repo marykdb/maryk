@@ -37,6 +37,13 @@ internal class RocksDBLocalMigrationLease(
         }
     }
 
+    /** Releases every lease held by this datastore instance during close. */
+    suspend fun releaseOwnedLeases() {
+        leases.update { current ->
+            current.filterValues { it.ownerToken != ownerToken }
+        }
+    }
+
     private data class LocalLease(
         val ownerToken: String,
         val migrationId: String,

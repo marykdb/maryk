@@ -362,6 +362,7 @@ class RemoteDataStore private constructor(
 
     /** Execute an ordered request batch in one remote round trip. */
     suspend fun execute(requests: Requests): List<IsResponse> {
+        requireOpen()
         require(requests.requests.isNotEmpty()) { "Remote execute request list cannot be empty" }
         val descriptors = requests.requests.map(::batchRequestDescriptor)
         registerLocalDataModels(descriptors.map { it.dataModel })

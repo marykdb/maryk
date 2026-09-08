@@ -88,7 +88,18 @@ class RemoteDataStoreTest {
     fun closeMakesCallerOwnedClientRemoteStoreTerminal() = runBoundedIntegrationTest {
         val store = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
         val port = ServerSocket(0).use { it.localPort }
-        val server = RemoteStoreServer(store).start("127.0.0.1", port, wait = false)
+        val executeCalls = AtomicInteger()
+        val server = RemoteStoreServer(store).start(
+            "127.0.0.1",
+            port,
+            wait = false,
+            config = RemoteStoreServerConfig(
+                authorizer = RemoteStoreAuthorizer { request ->
+                    if (request.operation == RemoteStoreOperation.Execute) executeCalls.incrementAndGet()
+                    true
+                },
+            ),
+        )
         val client = HttpClient()
         val remote = RemoteDataStore.connect(
             RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port", httpClient = client),
@@ -101,6 +112,15 @@ class RemoteDataStoreTest {
                 remote.captureSnapshotVersion()
             }
             assertTrue(exception.message.orEmpty().contains("closed"))
+            val addException = assertFailsWith<IllegalStateException> {
+                remote.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "closed" }))
+            }
+            assertTrue(addException.message.orEmpty().contains("closed"))
+            val batchException = assertFailsWith<IllegalStateException> {
+                remote.execute(Requests(SimpleMarykModel.scan()))
+            }
+            assertTrue(batchException.message.orEmpty().contains("closed"))
+            assertEquals(0, executeCalls.get())
             assertEquals(HttpStatusCode.OK, client.get("http://127.0.0.1:$port${RemoteStoreProtocol.infoPath}").status)
         } finally {
             client.close()

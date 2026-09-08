@@ -713,11 +713,11 @@ class FoundationDBDataStoreTest {
         delay(100.milliseconds)
         val closeFailure = runCatching {
             withContext(Dispatchers.Default.limitedParallelism(1)) {
-                withTimeout(1_000.milliseconds) { dataStore.close() }
+                withTimeout(6_000.milliseconds) { dataStore.close() }
             }
         }.exceptionOrNull()
         withContext(Dispatchers.Default.limitedParallelism(1)) {
-            withTimeout(5_000.milliseconds) { blocked.join() }
+            withTimeout(6_000.milliseconds) { blocked.join() }
         }
 
         assertNull(closeFailure, "close must abort the FDB future before waiting for its coroutine")

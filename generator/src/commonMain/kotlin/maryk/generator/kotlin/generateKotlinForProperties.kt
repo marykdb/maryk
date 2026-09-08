@@ -26,7 +26,7 @@ internal fun IsTypedDataModel<*>.generateKotlin(
 
         if (definition.propertyDefinitionType == PropertyDefinitionType.Enum) {
             (definition as EnumDefinition<*>).enum.let { enumDefinition ->
-                if (generationContext?.enums?.contains(enumDefinition) != true) {
+                if (generationContext?.enums?.any { it.name == enumDefinition.name && it == enumDefinition } != true) {
                     addEnumDefinition?.invoke(
                         enumDefinition.generateKotlinClass(addImport)
                     )

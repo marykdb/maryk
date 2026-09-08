@@ -27,6 +27,22 @@ private object SecondExportSharedEnumModel : RootDataModel<SecondExportSharedEnu
     val kind by enum(index = 1u, enum = ExportSharedEnum)
 }
 
+private sealed class ExportSameCasesDifferentName(index: UInt) : IndexedEnumImpl<ExportSameCasesDifferentName>(index) {
+    object A : ExportSameCasesDifferentName(1u)
+
+    class UnknownExportSameCasesDifferentName(index: UInt, override val name: String) : ExportSameCasesDifferentName(index)
+
+    companion object : IndexedEnumDefinition<ExportSameCasesDifferentName>(
+        ExportSameCasesDifferentName::class,
+        values = { listOf(A) },
+        unknownCreator = ::UnknownExportSameCasesDifferentName,
+    )
+}
+
+private object ExportSameCasesDifferentNameModel : RootDataModel<ExportSameCasesDifferentNameModel>() {
+    val kind by enum(index = 1u, enum = ExportSameCasesDifferentName)
+}
+
 class ModelExportKotlinTest {
     @Test
     fun exportAllWritesSharedInlineEnumOnce() {
@@ -37,5 +53,17 @@ class ModelExportKotlinTest {
             .joinToString { it.second }
 
         assertEquals(1, Regex("sealed class ExportSharedEnum").findAll(generated).count())
+    }
+
+    @Test
+    fun exportAllWritesDistinctEnumsWithEqualCases() {
+        val models = listOf(FirstExportSharedEnumModel, ExportSameCasesDifferentNameModel)
+        val allModels = models.associateBy { it.Meta.name }
+
+        val generated = serializeModels(models, ModelExportFormat.KOTLIN, allModels)
+            .joinToString { it.second }
+
+        assertEquals(1, Regex("sealed class ExportSharedEnum").findAll(generated).count())
+        assertEquals(1, Regex("sealed class ExportSameCasesDifferentName").findAll(generated).count())
     }
 }

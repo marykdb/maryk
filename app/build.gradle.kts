@@ -106,10 +106,23 @@ dependencies {
     add(protocForJvmTests.name, "${libs.protoc.get()}:$protocPlatform@exe")
 }
 
-tasks.withType<Test>().configureEach {
+val prepareProtocForJvmTests by tasks.registering {
+    val destination = layout.buildDirectory.file("protoc/protoc.exe")
     inputs.files(protocForJvmTests)
+    outputs.file(destination)
+    doLast {
+        val executable = destination.get().asFile
+        executable.parentFile.mkdirs()
+        protocForJvmTests.singleFile.copyTo(executable, overwrite = true)
+        executable.setExecutable(true)
+    }
+}
+
+tasks.withType<Test>().configureEach {
+    dependsOn(prepareProtocForJvmTests)
+    inputs.file(prepareProtocForJvmTests.map { layout.buildDirectory.file("protoc/protoc.exe") })
     doFirst {
-        systemProperty("maryk.protoc.path", protocForJvmTests.singleFile.absolutePath)
+        systemProperty("maryk.protoc.path", layout.buildDirectory.file("protoc/protoc.exe").get().asFile.absolutePath)
     }
 }
 

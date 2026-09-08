@@ -167,7 +167,7 @@ abstract class AbstractDataStore(
     ): ProcessResponse<DM> {
         waitForInit()
         assertRequestModelReady(getDataModelId(updateResponse.dataModel))
-        requireSafeUpdateVersion(updateResponse.update.version)
+        requireSafeUpdateVersion(updateResponse.update)
 
         val response = CompletableDeferred<ProcessResponse<DM>>()
 

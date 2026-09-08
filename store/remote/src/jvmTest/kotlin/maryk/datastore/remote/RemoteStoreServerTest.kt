@@ -1299,6 +1299,17 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun processUpdateRejectsUnsafeNestedVersion() = runBoundedIntegrationTest {
+        withServer { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.processUpdatePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(initialChangesWithCreatePayload(ULong.MAX_VALUE))
+            }
+            assertEquals(HttpStatusCode.BadRequest, response.status)
+        }
+    }
+
+    @Test
     fun processUpdateInitialChangesHonorsAddAuthorization() = runBoundedIntegrationTest {
         withServer(
             RemoteStoreServerConfig(
@@ -1905,7 +1916,7 @@ private fun unsafeAdditionProcessUpdatePayload(): ByteArray =
         testRequestContext(),
     )
 
-private fun initialChangesWithCreatePayload(): ByteArray =
+private fun initialChangesWithCreatePayload(nestedVersion: ULong = 1uL): ByteArray =
     RemoteStoreCodec.encode(
         UpdateResponse.Serializer,
         UpdateResponse(
@@ -1917,7 +1928,7 @@ private fun initialChangesWithCreatePayload(): ByteArray =
                         key = SimpleMarykModel.key(ByteArray(16)),
                         changes = listOf(
                             VersionedChanges(
-                                version = 1uL,
+                                version = nestedVersion,
                                 changes = listOf(ObjectCreate),
                             )
                         ),

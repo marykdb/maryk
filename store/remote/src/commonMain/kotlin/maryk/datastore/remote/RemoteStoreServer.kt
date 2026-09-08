@@ -524,7 +524,7 @@ internal fun Application.remoteStoreModule(
                 @Suppress("UNCHECKED_CAST")
                 val updateRequest = decodedUpdateRequest as UpdateResponse<IsRootDataModel>
                 try {
-                    requireSafeUpdateVersion(updateRequest.update.version)
+                    requireSafeUpdateVersion(updateRequest.update)
                 } catch (error: RequestException) {
                     throw RequestValidationException(
                         HttpStatusCode.BadRequest,

@@ -94,9 +94,8 @@ Requirements and operation:
 - Restore uses serialized staging capped at 64 MiB and 100,000
   records by default. Exceeding either bound fails before changing the target.
   `restore(reader, requireEmpty, DataStoreRestoreOptions(...))` adjusts these bounds.
-- `RepeatableDataStoreBackupReader` remains useful to callers that reopen immutable
-  backup data, but restore stages it once before replay. This avoids repeated scans
-  for every atomic version while preserving global source-version order.
+- Restore stages every reader once before replay. This avoids repeated scans for every
+  atomic version while preserving global source-version order.
 - Replay emits one atomic version per request, bounded to 8 MiB by default and
   preserving source-version order even when models are interleaved. A version
   cannot be split atomically; one exceeding `maxReplayBytes` fails explicitly.

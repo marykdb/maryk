@@ -159,8 +159,8 @@ suspend fun IsDataStore.backup(
  * Restores versioned backup chunks through the normal replication path.
  *
  * By default the addressed models must be empty, avoiding accidental merges.
- * Restore validates input before replaying bounded requests in global version order. One-pass
- * readers use bounded serialized staging; repeatable readers are rescanned without staging.
+ * Restore validates input before replaying bounded requests in global version order. It uses
+ * bounded serialized staging so every reader is consumed exactly once before replay.
  * Restore into an empty disposable store and publish it only after this function succeeds.
  */
 suspend fun IsDataStore.restore(

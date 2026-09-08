@@ -10,12 +10,6 @@ import maryk.core.query.changes.DataObjectVersionedChange
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.InitialChangesUpdate
 
-/**
- * A reader that can reopen the same immutable backup on every [read] call.
- * Each call must emit identical chunks, records and versions in the same order.
- */
-interface RepeatableDataStoreBackupReader : DataStoreBackupReader
-
 /** Resource bounds for serialized input staging and replaying an atomic version. */
 data class DataStoreRestoreOptions(
     val maxStagedBytes: Int = 64 * 1024 * 1024,

@@ -14,6 +14,7 @@ internal object CommandLineParser {
         val current = StringBuilder()
 
         var inQuotes = false
+        var hasArgument = false
         var quoteChar = '"'
         var index = 0
         while (index < input.length) {
@@ -21,20 +22,29 @@ internal object CommandLineParser {
             when {
                 char == '\\' && inQuotes && input.getOrNull(index + 1) in setOf(quoteChar, '\\') -> {
                     current.append(input[++index])
+                    hasArgument = true
                 }
                 inQuotes && char == quoteChar -> inQuotes = false
-                inQuotes -> current.append(char)
+                inQuotes -> {
+                    current.append(char)
+                    hasArgument = true
+                }
                 char == '"' || char == '\'' -> {
                     inQuotes = true
                     quoteChar = char
+                    hasArgument = true
                 }
                 char.isWhitespace() -> {
-                    if (current.isNotEmpty()) {
+                    if (hasArgument) {
                         tokens.add(current.toString())
                         current.setLength(0)
+                        hasArgument = false
                     }
                 }
-                else -> current.append(char)
+                else -> {
+                    current.append(char)
+                    hasArgument = true
+                }
             }
             index++
         }
@@ -43,12 +53,10 @@ internal object CommandLineParser {
             return ParseResult.Error("Missing closing $quoteChar quote.")
         }
 
-        if (current.isNotEmpty()) {
+        if (hasArgument) {
             tokens.add(current.toString())
         }
 
         return ParseResult.Success(tokens)
     }
-
-    private fun StringBuilder.isNotEmpty(): Boolean = this.length > 0
 }

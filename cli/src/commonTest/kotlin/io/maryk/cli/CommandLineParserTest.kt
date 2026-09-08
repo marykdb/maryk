@@ -6,6 +6,15 @@ import kotlin.test.assertIs
 
 class CommandLineParserTest {
     @Test
+    fun preservesExplicitEmptyQuotedArguments() {
+        val result = assertIs<CommandLineParser.ParseResult.Success>(
+            CommandLineParser.parse("set value \"\" ''")
+        )
+
+        assertEquals(listOf("set", "value", "", ""), result.tokens)
+    }
+
+    @Test
     fun preservesWindowsPathBackslashes() {
         val result = assertIs<CommandLineParser.ParseResult.Success>(
             CommandLineParser.parse("connect rocksdb --dir C:\\maryk\\store")

@@ -242,7 +242,11 @@ private class PendingListenerRegistration(
     private val listener: PendingUpdateListener,
 ) : ListenerRegistration {
     fun setSnapshotBoundary(boundary: FlowSnapshotBoundary) = listener.setSnapshotBoundary(boundary)
-    override fun add(update: FlowUpdate) = listener.add(update)
+    override fun add(update: FlowUpdate): Boolean {
+        listener.add(update)
+        // Keep the pending registration until activation can report its stored failure.
+        return true
+    }
     override fun matches(listener: Any) = this.listener === listener
     override fun cancel(cause: Throwable?) = listener.cancel()
     override suspend fun join() = Unit

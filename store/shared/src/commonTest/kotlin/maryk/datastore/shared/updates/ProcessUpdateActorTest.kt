@@ -322,6 +322,31 @@ class ProcessUpdateActorTest {
     }
 
     @Test
+    fun pendingListenerOverflowIsReportedWhenActivationIsAttempted() = runTest {
+        val key = SimpleMarykModel.key(ByteArray(16))
+        val values = SimpleMarykModel.create { value with "value" }
+        val listener = CountingUpdateListener(key, values)
+        val pendingListener = PendingUpdateListener()
+        val activation = CompletableDeferred<Unit>()
+        val flow = flow {
+            emit(AddPendingUpdateListenerAction(1u, pendingListener))
+            repeat(UPDATE_LISTENER_MAILBOX_CAPACITY + 1) { index ->
+                emit(
+                    FlowUpdate(
+                        Update.Addition(SimpleMarykModel, key, (index + 1).toULong(), values),
+                        index.toLong(),
+                    )
+                )
+            }
+            emit(ActivatePendingUpdateListenerAction(1u, pendingListener, listener, completion = activation))
+        }
+
+        TestDataStore.startProcessUpdateFlow(flow, CompletableDeferred())
+
+        assertIs<UpdateListenerOverflowException>(assertFailsWith { activation.await() })
+    }
+
+    @Test
     fun activeListenerProcessesOutOfOrderLowerVersionForAnotherKey() = runTest {
         val key = SimpleMarykModel.key(ByteArray(16))
         val unrelatedKey = SimpleMarykModel.key(ByteArray(16) { 1 })

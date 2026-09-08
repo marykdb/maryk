@@ -37,6 +37,28 @@ class RunDataStoreTestsTest {
     }
 
     @Test
+    fun rejectsAmbiguousBareRunOnlyTestName() = runTest {
+        val testClass = object : IsDataStoreTest {
+            override val allTests: Map<String, suspend () -> Any> = mapOf("selected" to { Unit })
+            override suspend fun resetData() = Unit
+        }
+
+        val exception = assertFailsWith<IllegalArgumentException> {
+            runDataStoreTestClasses(
+                dataStore = NoOpDataStore,
+                testClasses = arrayOf(
+                    "FirstTest" to { testClass },
+                    "SecondTest" to { testClass },
+                ),
+                runOnlyTest = "selected",
+            )
+        }
+
+        assertTrue(exception.message?.contains("FirstTest.selected") == true)
+        assertTrue(exception.message?.contains("SecondTest.selected") == true)
+    }
+
+    @Test
     fun timesOutOneCaseAndContinuesWithTheNext() = runTest {
         var secondTestRan = false
         val testClass = object : IsDataStoreTest {

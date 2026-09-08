@@ -9,6 +9,7 @@ open class ByteCollector {
     val size: Int get() = bytes!!.size
 
     fun reserve(count: Int) {
+        reset()
         bytes.apply {
             if (this != null && this.size == count) {
                 // recycle

@@ -89,14 +89,40 @@ internal suspend fun runDataStoreTestClasses(
 ) {
     val exceptionList = mutableMapOf<String, Throwable>()
     var executedTests = 0
+    val testClassesWithInstances = testClasses.map { (testClassName, testClassConstructor) ->
+        testClassName to testClassConstructor(dataStore)
+    }
+    val selectedTestIdentifier = runOnlyTest?.let { requestedTestName ->
+        val matchingTestIdentifiers = testClassesWithInstances.flatMap { (testClassName, testClass) ->
+            testClass.allTests.keys.map { testName ->
+                "$testClassName.$testName"
+            }
+        }.filter { testIdentifier ->
+            if ('.' in requestedTestName) {
+                testIdentifier == requestedTestName
+            } else {
+                testIdentifier.substringAfterLast('.') == requestedTestName
+            }
+        }
+        require(matchingTestIdentifiers.size == 1) {
+            if (matchingTestIdentifiers.isEmpty()) {
+                "No datastore test found with name `$requestedTestName`."
+            } else {
+                "Datastore test name `$requestedTestName` is ambiguous. " +
+                    "Use one of: ${matchingTestIdentifiers.joinToString()}."
+            }
+        }
+        matchingTestIdentifiers.single()
+    }
 
-    for ((testClassName, testClassConstructor) in testClasses) {
-        val testClass = testClassConstructor(dataStore)
-
+    for ((testClassName, testClass) in testClassesWithInstances) {
         var hasPrintedTestClassName = false
 
         for ((testName, test) in testClass.allTests) {
-            if (runOnlyTest != null && testName != runOnlyTest) {
+            if (
+                selectedTestIdentifier != null &&
+                "$testClassName.$testName" != selectedTestIdentifier
+            ) {
                 continue
             }
             if (!hasPrintedTestClassName) {
@@ -121,9 +147,6 @@ internal suspend fun runDataStoreTestClasses(
                 }
             }
         }
-    }
-    if (runOnlyTest != null && executedTests == 0) {
-        throw IllegalArgumentException("No datastore test found with name `$runOnlyTest`.")
     }
     if (exceptionList.isNotEmpty()) {
         val messages = StringBuilder("DataStore Tests failed: (${exceptionList.size})[\n")

@@ -36,6 +36,7 @@ import maryk.datastore.shared.updates.Update
 import maryk.datastore.shared.updates.FlowUpdate
 import maryk.datastore.shared.updates.RemovePendingUpdateListenerAction
 import maryk.datastore.shared.updates.UPDATE_LISTENER_MAILBOX_CAPACITY
+import maryk.datastore.shared.updates.UpdateListenerOverflowException
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -409,7 +410,7 @@ class RequestExecutionTest {
                         }
                         store.releaseInitialRead.complete(Unit)
 
-                        assertFailsWith<IllegalStateException> {
+                        assertFailsWith<UpdateListenerOverflowException> {
                             withTimeout(2.seconds) { collector.await() }
                         }
                     }

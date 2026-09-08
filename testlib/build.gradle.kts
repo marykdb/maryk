@@ -22,5 +22,10 @@ kotlin {
                 api(npm("crypto-browserify", "3.12.1"))
             }
         }
+        jvmTest {
+            dependencies {
+                implementation(kotlin("test"))
+            }
+        }
     }
 }

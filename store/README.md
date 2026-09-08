@@ -70,7 +70,7 @@ The `store/shared` module provides the common abstraction and orchestration used
 - Base implementation: `AbstractDataStore` implements the coroutine actor and update flow wiring. It routes all requests through a single store channel, manages listener lifecycles, and exposes `executeFlow` to stream `Addition/Change/Removal` updates derived from writes.
 - Update streaming: The `updates/*` utilities maintain per‑request listeners:
     - `UpdateListenerForGet` and `UpdateListenerForScan` compute and emit `IsUpdateResponse` events (addition/change/removal) in response to live changes.
-    - `processUpdate` merges externally supplied `UpdateResponse` objects into the local store, enabling synchronization between engines or instances.
+    - `processUpdate` merges externally supplied `UpdateResponse` objects into the local store, enabling synchronization between engines or instances. Replication callers must submit updates in source-version order and await each call before sending the next update for that target. Stores serialize arrival order; they do not reorder, buffer, or guarantee convergence for independently retried or concurrently delivered updates.
 - Query optimization: `optimizeTableScan` converts eligible full‑table scans into index scans using equality filters, and enforces minimum key‑prefix requirements for efficient scans. This keeps scan behavior consistent across engines.
 - Caching: `Cache` provides a small LRU cache per model/key to reuse decoded values across reads, reducing allocations and decode work for repeated property access.
 

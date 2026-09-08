@@ -30,7 +30,13 @@ interface IsDataStore {
         request: RQ
     ): Flow<IsUpdateResponse<DM>>
 
-    /** Processes an update response to sync its results in this data store */
+    /**
+     * Processes an update response to sync its results in this data store.
+     *
+     * Callers must submit replication input in source-version order and await each call before
+     * submitting the next update for the same target store. Implementations serialize arrival
+     * order, but do not reorder, buffer, or provide a general unordered-delivery guarantee.
+     */
     suspend fun <DM : IsRootDataModel> processUpdate(
         updateResponse: UpdateResponse<DM>
     ): ProcessResponse<DM>

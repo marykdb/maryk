@@ -86,7 +86,8 @@ class StringTest {
 
     @Test
     fun testUnpairedHighSurrogateFails() {
-        val value = "\uD83D"
+        val value = 0xD83D.toChar().toString()
+        expect(0xD83D) { value.single().code }
         assertFailsWith<IllegalArgumentException> {
             value.calculateUTF8ByteLength()
         }
@@ -97,7 +98,8 @@ class StringTest {
 
     @Test
     fun testUnexpectedLowSurrogateFails() {
-        val value = "\uDC00"
+        val value = 0xDC00.toChar().toString()
+        expect(0xDC00) { value.single().code }
         assertFailsWith<IllegalArgumentException> {
             value.calculateUTF8ByteLength()
         }

@@ -17,7 +17,8 @@ printf '%s\n' '#!/usr/bin/env bash' \
 printf '%s\n' '#!/usr/bin/env bash' \
   'if [[ "${FAKE_GH_STATUS:-0}" != 0 ]]; then exit "$FAKE_GH_STATUS"; fi' \
   'printf "%s\\n" "${FAKE_GH_RESULT:-}"' > "$test_root/bin/gh"
-chmod +x "$test_root/bin/git" "$test_root/bin/gh"
+printf '%s\n' '#!/usr/bin/env bash' 'exit 0' > "$test_root/bin/sleep"
+chmod +x "$test_root/bin/git" "$test_root/bin/gh" "$test_root/bin/sleep"
 
 run_verifier() {
   env PATH="$test_root/bin:$PATH" \
@@ -40,6 +41,11 @@ fi
 
 if run_verifier GH_TOKEN=token FAKE_GH_STATUS=1; then
   echo 'Verifier accepted a GitHub API failure' >&2
+  exit 1
+fi
+
+if run_verifier GH_TOKEN=token FAKE_MERGE_STATUS=1 FAKE_GH_RESULT=123456; then
+  echo 'Verifier accepted an exact SHA not reachable from origin/main' >&2
   exit 1
 fi
 

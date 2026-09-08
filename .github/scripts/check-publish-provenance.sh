@@ -26,6 +26,10 @@ check_required "$build_verifier" \
 
 check_required "$publish_workflow" \
   'github.event.workflow_run.head_sha' \
+  'github.event.workflow_run.event == '\''push'\''' \
+  'github.event.workflow_run.repository.full_name == github.repository' \
+  'github.event.workflow_run.head_repository.full_name == github.repository' \
+  'github.event.workflow_run.head_branch == github.event.repository.default_branch' \
   'ref: ${{ env.EXPECTED_REF }}' \
   'EXPECTED_SHA="$EXPECTED_REF" bash .github/scripts/verify-build-provenance.sh' \
   'BUILD_RUN_ID: ${{ github.event_name == '\''workflow_run'\'' && github.event.workflow_run.id || '\'''\'' }}' \

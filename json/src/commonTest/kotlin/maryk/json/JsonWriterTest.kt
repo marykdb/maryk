@@ -91,9 +91,13 @@ internal class JsonWriterTest {
     @Test
     fun rejectsLoneSurrogates() {
         val writer = JsonWriter {}
+        val highSurrogate = 0xD800.toChar().toString()
+        val lowSurrogate = 0xDC00.toChar().toString()
 
-        assertFailsWith<IllegalJsonOperation> { writer.writeString("\uD800") }
-        assertFailsWith<IllegalJsonOperation> { writer.writeString("\uDC00") }
+        assertEquals(0xD800, highSurrogate.single().code)
+        assertEquals(0xDC00, lowSurrogate.single().code)
+        assertFailsWith<IllegalJsonOperation> { writer.writeString(highSurrogate) }
+        assertFailsWith<IllegalJsonOperation> { writer.writeString(lowSurrogate) }
     }
 
     private fun writeJson(writer: IsJsonLikeWriter) {

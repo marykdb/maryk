@@ -44,6 +44,8 @@ internal class PropertyReferenceTest {
     fun legacyReferenceMemberBackslashesRemainLiteral() {
         assertEquals("a\\b", "a\\b".unescapeReferenceSegment())
         assertEquals("a\\", "a\\".unescapeReferenceSegment())
+        assertEquals("\\0", "\\0".unescapeReferenceSegment())
+        assertFailsWith<IllegalArgumentException> { "".escapeReferenceSegment() }
     }
 
     @Test

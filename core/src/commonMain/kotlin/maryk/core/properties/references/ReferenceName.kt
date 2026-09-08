@@ -20,12 +20,12 @@ internal fun String.splitReferenceName() = buildList {
     add(segment.toString())
 }
 
-internal fun String.escapeReferenceSegment() =
-    if (isEmpty()) "\\0" else replace("\\", "\\\\").replace(".", "\\.")
+internal fun String.escapeReferenceSegment(): String {
+    require(isNotEmpty()) { "Empty reference members have no unambiguous text representation" }
+    return replace("\\", "\\\\").replace(".", "\\.")
+}
 
-internal fun String.unescapeReferenceSegment() = when (this) {
-    "\\0" -> ""
-    else -> buildString {
+internal fun String.unescapeReferenceSegment() = buildString {
         var index = 0
         while (index < this@unescapeReferenceSegment.length) {
             val character = this@unescapeReferenceSegment[index]
@@ -38,5 +38,4 @@ internal fun String.unescapeReferenceSegment() = when (this) {
             } else append(character)
             index++
         }
-    }
 }

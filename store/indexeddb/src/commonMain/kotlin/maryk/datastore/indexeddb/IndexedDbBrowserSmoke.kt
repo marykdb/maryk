@@ -45,7 +45,12 @@ suspend fun runIndexedDbBrowserSmoke(
     )
     try {
         val values = IndexedDbBrowserSmokeModel.create { value with "browser" }
-        dataStore.execute(IndexedDbBrowserSmokeModel.add(values))
+        // The default UUID key definition generates a key when values are converted to a key.
+        // Retain one explicit key so the reopened datastore reads the record we added.
+        val key = IndexedDbBrowserSmokeModel.key(
+            ByteArray(IndexedDbBrowserSmokeModel.Meta.keyByteSize) { 1 },
+        )
+        dataStore.execute(IndexedDbBrowserSmokeModel.add(key to values))
         // Reopen after close so this checks durable IndexedDB state rather than one connection's live view.
         dataStore.close()
 
@@ -54,7 +59,7 @@ suspend fun runIndexedDbBrowserSmoke(
             dataModelsById = mapOf(1u to IndexedDbBrowserSmokeModel),
         )
         try {
-            check(secondContext.execute(IndexedDbBrowserSmokeModel.get(IndexedDbBrowserSmokeModel.key(values))).values.isNotEmpty()) {
+            check(secondContext.execute(IndexedDbBrowserSmokeModel.get(key)).values.isNotEmpty()) {
                 "datastore cross-context read"
             }
         } finally {

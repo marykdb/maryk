@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -523,6 +524,7 @@ class RemoteDataStore private constructor(
         return BatchRequestDescriptor(responseModel, dataModel)
     }
 
+    @OptIn(DelicateCoroutinesApi::class)
     override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
         request: RQ,
     ): Flow<IsUpdateResponse<DM>> {
@@ -628,6 +630,12 @@ class RemoteDataStore private constructor(
                                         @Suppress("UNCHECKED_CAST")
                                         val sendResult = trySend(update as IsUpdateResponse<DM>)
                                         if (sendResult.isFailure) {
+                                            // `first()` can close the callback channel after accepting this update
+                                            // but before this producer observes cancellation. That is normal
+                                            // collection completion, not a retryable flow failure.
+                                            if (isClosedForSend || !currentCoroutineContext().isActive) {
+                                                throw CancellationException("Remote store flow collector stopped")
+                                            }
                                             sendResult.exceptionOrNull()?.let { throw it }
                                             throw RemoteFlowBackpressureException(
                                                 "Remote store flow terminated because collector backpressure prevented update delivery"

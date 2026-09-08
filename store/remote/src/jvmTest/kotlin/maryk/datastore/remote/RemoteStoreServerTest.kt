@@ -332,7 +332,10 @@ class RemoteStoreServerTest {
             delay(250)
 
             assertTrue(
-                emitted.get() <= 8,
+                // CIO retains up to eight queued MiB frames, while the response writer can hold
+                // one frame that is currently being flushed. The upstream flow must remain bounded
+                // by those nine frames rather than draining the source for a stalled socket.
+                emitted.get() <= 9,
                 "Remote flow buffered ${emitted.get()} large updates ahead of a client that read none",
             )
         } finally {

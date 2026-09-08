@@ -46,8 +46,8 @@ suspend fun runIndexedDbBrowserSmoke(
     try {
         val values = IndexedDbBrowserSmokeModel.create { value with "browser" }
         dataStore.execute(IndexedDbBrowserSmokeModel.add(values))
-        // WebKit exposes a completed write transaction to another connection on a later event-loop turn.
-        delay(100)
+        // Reopen after close so this checks durable IndexedDB state rather than one connection's live view.
+        dataStore.close()
 
         val secondContext = IndexedDbDataStore.open(
             databaseName = "$databaseName-datastore",

@@ -300,6 +300,7 @@ class FoundationDBDataStore private constructor(
         crossinline block: (Transaction) -> T,
     ): T {
         if (isClosing.value) throw CancellationException("Datastore closing")
+        readContext.requireUsable()
         // Check the current schema state before pinning an older read version. A
         // pinned context from before a rebuild may still safely see the complete
         // old index, but a context created during/after the transition must not

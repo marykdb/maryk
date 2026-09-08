@@ -438,6 +438,35 @@ class FoundationDBDataStoreTest {
     }
 
     @Test
+    fun expiredReadContextFailsBeforeFoundationDbRejectsItsSnapshot() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "expired-read-context", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+        )
+        try {
+            val key = packKey(
+                dataStore.getTableDirs(SimpleMarykModel).keysPrefix,
+                byteArrayOf(99),
+            )
+            dataStore.runTransaction { tr -> tr.set(key, byteArrayOf(1)) }
+            val readContext = dataStore.createReadContext()
+
+            withContext(Dispatchers.Default) {
+                delay(4_100.milliseconds)
+            }
+
+            val exception = assertFailsWith<FoundationDBSnapshotExpiredException> {
+                dataStore.runReadTransaction(readContext) { tr ->
+                    tr.get(key).awaitResult()
+                }
+            }
+            assertContains(exception.message.orEmpty(), "snapshot expired")
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun testDataStore() = runTest(timeout = 3.minutes) {
         val dataStore = FoundationDBDataStore.open(
             fdbClusterFilePath = "./fdb.cluster",

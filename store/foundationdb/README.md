@@ -180,10 +180,9 @@ Notes:
 - Uses FDB itself (append-only, sharded) and writes the log entry in the same transaction as the data mutation.
 - Retention is time-based. If a node is offline longer than the retention window, it will resume at the retention cutoff (no replay beyond retention).
 - Cluster HLC sync:
-  - writers record their latest emitted HLC under `__updates__/v1/hlc/<clusterUpdateLogConsumerId>`.
-  - writers also update `__updates__/v1/hlc_max/<shard>` using FDB atomic `BYTE_MAX` (8-byte big-endian HLC), so cluster max advances without read-modify-write contention.
-  - each node runs a background HLC syncer (independent from update listeners) which watches heads and refreshes `max(hlc_max/*, hlc/*)` to keep local version generation safely at/above cluster floor.
-- `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId` should be stable per node/process across restarts. Changing it creates a fresh cursor (possible duplicate delivery for up to retention) and a new HLC marker key.
+  - writers update `__updates__/v1/hlc_max/<shard>` using FDB atomic `BYTE_MAX` (8-byte big-endian HLC), so cluster max advances without read-modify-write contention or per-consumer marker growth.
+  - each node runs a background HLC syncer (independent from update listeners) which watches heads and refreshes the `hlc_max/*` values to keep local version generation safely at/above the cluster floor.
+- `clusterUpdateLogConfiguration.clusterUpdateLogConsumerId` should be stable per node/process across restarts. Changing it creates a fresh cursor and can duplicate delivery for up to the retention window.
 - Log keys include `modelId` early, so consumers can range-scan only the models they care about.
 - Upgrading from the legacy HLC-ordered cluster log to the commit-ordered log is a coordinated operation: stop or quiesce every reader and writer, upgrade all binaries, then restart them. Consumers drain persisted legacy entries before storing a one-way commit-ordered cursor. Do not run mixed old/new binaries or roll back after that cursor is stored; old binaries cannot enforce or understand the transition.
 
@@ -195,7 +194,7 @@ Observability:
 
 - Transactions: each add, change, or delete object is handled in its own FDB transaction; a multi-object request can therefore partially succeed. FDB retries conflicts, while Maryk returns validation errors (uniques, parent presence, etc.) as per-object statuses.
 - Close: active transactions and futures are canceled before the native handle closes. Because the JVM FoundationDB binding does not guarantee that an in-flight native commit responds to `Transaction.close()`, scope shutdown is bounded to five seconds. A timeout is reported as `StorageException`; native work may still be in flight and must not be assumed rolled back.
-- Scans: index scans are recommended for large filtered queries. Primary key scans are inexpensive for full‑range iteration.
+- Scans: index scans are recommended for large filtered queries. Primary key scans are inexpensive for full‑range iteration. A request keeps one coherent FoundationDB snapshot; after four seconds the store throws `FoundationDBSnapshotExpiredException` before FoundationDB can reject the old version. Retry with a smaller page and use the scan cursor to resume completed pages.
 - Historic queries: `toVersion` is supported for data, unique, and index reads. Historic index scanning is implemented and used when `toVersion` is provided.
 
 ## Development

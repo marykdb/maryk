@@ -624,6 +624,20 @@ class FoundationDBDataStoreTest {
     }
 
     @Test
+    fun geoRadiusScanWithinSnapshotWindow() = runTest(timeout = 3.minutes) {
+        val dataStore = FoundationDBDataStore.open(
+            directoryPath = listOf("maryk", "test", "geo-snapshot", Uuid.random().toString()),
+            dataModelsById = dataModelsForTests,
+            keepAllVersions = true,
+        )
+        try {
+            runDataStoreTests(dataStore, "executesGeoRadiusIndexScan")
+        } finally {
+            dataStore.close()
+        }
+    }
+
+    @Test
     fun testDataStoreWithKeepAllVersions() = runTest(timeout = 3.minutes) {
         val dataStore = FoundationDBDataStore.open(
             directoryPath = listOf("maryk", "test", "history", Uuid.random().toString()),

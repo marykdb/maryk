@@ -23,7 +23,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
@@ -41,7 +40,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.io.IOException
@@ -524,7 +522,6 @@ class RemoteDataStore private constructor(
         return BatchRequestDescriptor(responseModel, dataModel)
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     override suspend fun <DM : IsRootDataModel, RQ : IsFlowRequest<DM, RP>, RP : IsDataResponse<DM>> executeFlow(
         request: RQ,
     ): Flow<IsUpdateResponse<DM>> {
@@ -627,33 +624,19 @@ class RemoteDataStore private constructor(
                                         )
                                     }
                                     updatesResponse.updates.forEach { update ->
-                                        @Suppress("UNCHECKED_CAST")
-                                        val sendResult = trySend(update as IsUpdateResponse<DM>)
-                                        if (sendResult.isFailure) {
-                                            // `first()` can close the callback channel after accepting this update,
-                                            // while this producer is still filling its small replay buffer. Yield once
-                                            // before classifying a full buffer as backpressure so cancellation can
-                                            // reach this producer instead of causing a spurious reconnect.
-                                            yield()
-                                            if (isClosedForSend || !currentCoroutineContext().isActive) {
-                                                throw CancellationException("Remote store flow collector stopped")
+                                        try {
+                                            // Allow scheduling delays without dropping updates. A collector that
+                                            // stops accepting updates still fails within a bounded interval.
+                                            withTimeout(1_000) {
+                                                @Suppress("UNCHECKED_CAST")
+                                                send(update as IsUpdateResponse<DM>)
                                             }
-                                            val retriedSendResult = trySend(update)
-                                            if (retriedSendResult.isSuccess) {
-                                                yield()
-                                                reconnectAttempts = 0u
-                                                reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
-                                                return@forEach
-                                            }
-                                            if (isClosedForSend || !currentCoroutineContext().isActive) {
-                                                throw CancellationException("Remote store flow collector stopped")
-                                            }
-                                            retriedSendResult.exceptionOrNull()?.let { throw it }
+                                        } catch (error: TimeoutCancellationException) {
+                                            if (!currentCoroutineContext().isActive) throw error
                                             throw RemoteFlowBackpressureException(
                                                 "Remote store flow terminated because collector backpressure prevented update delivery"
                                             )
                                         }
-                                        yield()
                                         reconnectAttempts = 0u
                                         reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
                                     }

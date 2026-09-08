@@ -35,13 +35,26 @@ internal fun <DM : IsRootDataModel> FoundationDBDataStore.processScan(
     readContext: FoundationDBReadContext,
     scanSetup: ((ScanType) -> Unit)? = null,
     processRecord: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit
+): DataFetchType = runReadTransaction(readContext, getDataModelId(scanRequest.dataModel)) { transaction ->
+    processScanInTransaction(scanRequest, tableDirs, readContext, transaction, scanSetup, processRecord)
+}
+
+private fun <DM : IsRootDataModel> FoundationDBDataStore.processScanInTransaction(
+    scanRequest: IsScanRequest<DM, *>,
+    tableDirs: IsTableDirectories,
+    readContext: FoundationDBReadContext,
+    transaction: Transaction,
+    scanSetup: ((ScanType) -> Unit)?,
+    processRecord: (Transaction, Key<DM>, ULong, ByteArray?) -> Unit,
 ): DataFetchType {
     val dataModelId = getDataModelId(scanRequest.dataModel)
     val transactionRunner = object : TransactionRunner {
-        override fun <T> run(block: (Transaction) -> T): T =
-            runReadTransaction(readContext, dataModelId) { tr ->
-                block(tr)
-            }
+        override fun <T> run(block: (Transaction) -> T): T {
+            // All ranges belong to one pinned snapshot. Reuse its transaction and
+            // cached schema reads rather than repeating them for every geo cell.
+            readContext.requireUsable()
+            return block(transaction)
+        }
     }
     val continuation = (scanRequest as? ScanRequest<*>)?.resolveCursor()
     val keyScanRange = scanRequest.dataModel.createScanRange(

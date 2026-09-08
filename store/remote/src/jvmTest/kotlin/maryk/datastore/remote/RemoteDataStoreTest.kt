@@ -1054,6 +1054,29 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun executeFlowWaitsForTemporarilyBusyCollector() = runBoundedIntegrationTest {
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            backpressuredFlowModule()
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(RemoteStoreConfig(baseUrl = "http://127.0.0.1:$port"))
+        try {
+            var received = 0
+            withTimeout(5_000.milliseconds) {
+                remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16))))
+                    .take(10).collect {
+                        received++
+                        delay(50)
+                    }
+            }
+            assertEquals(10, received)
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
     fun executeFlowFailsInsteadOfSilentlyDroppingWhenCollectorBackpressures() = runBoundedIntegrationTest {
         val port = ServerSocket(0).use { it.localPort }
         val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
@@ -1067,7 +1090,7 @@ class RemoteDataStoreTest {
                     remote.executeFlow(
                         SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))
                     ).collect {
-                        delay(50)
+                        awaitCancellation()
                     }
                 }
             }
@@ -2051,6 +2074,8 @@ private fun Application.reconnectingFlowModule(
                     writeFully(payload)
                     flush()
                 }
+                // Only the first connection disconnects; the recovered stream stays live.
+                if (connection > 1) awaitCancellation()
             }
         }
     }
@@ -2151,6 +2176,7 @@ private fun Application.stalledHeaderThenUpdateFlowModule(
                 writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
                 writeFully(payload)
                 flush()
+                awaitCancellation()
             }
         }
     }
@@ -2191,6 +2217,7 @@ private fun Application.stalledPayloadThenUpdateFlowModule(connections: AtomicIn
                     writeFully(RemoteStoreCodec.lengthPrefix(payload.size))
                     writeFully(payload)
                     flush()
+                    awaitCancellation()
                 }
             }
         }

@@ -19,6 +19,7 @@ import maryk.test.ByteCollector
 import maryk.test.models.ComplexModel
 import maryk.test.models.TestMarykModel
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
@@ -39,6 +40,12 @@ private val ref = test.ref()
 private val subRef = test.ref(Model.embeddedObject.ref())
 
 internal class PropertyReferenceTest {
+    @Test
+    fun legacyReferenceMemberBackslashesRemainLiteral() {
+        assertEquals("a\\b", "a\\b".unescapeReferenceSegment())
+        assertEquals("a\\", "a\\".unescapeReferenceSegment())
+    }
+
     @Test
     fun cacheTest() {
         assertSame(ref, test.ref())

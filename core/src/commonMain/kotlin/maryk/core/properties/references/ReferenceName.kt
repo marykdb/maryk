@@ -1,7 +1,5 @@
 package maryk.core.properties.references
 
-import maryk.lib.exceptions.ParseException
-
 internal fun String.splitReferenceName() = buildList {
     val segment = StringBuilder()
     var escaped = false
@@ -18,7 +16,7 @@ internal fun String.splitReferenceName() = buildList {
             else -> segment.append(character)
         }
     }
-    if (escaped) throw ParseException("Property reference cannot end with an escape")
+    if (escaped) segment.append('\\')
     add(segment.toString())
 }
 
@@ -31,11 +29,12 @@ internal fun String.unescapeReferenceSegment() = when (this) {
         var index = 0
         while (index < this@unescapeReferenceSegment.length) {
             val character = this@unescapeReferenceSegment[index]
-            if (character == '\\') {
-                if (++index == this@unescapeReferenceSegment.length) {
-                    throw ParseException("Property reference contains an incomplete escape")
-                }
-                append(this@unescapeReferenceSegment[index])
+            if (character == '\\' && index + 1 < this@unescapeReferenceSegment.length) {
+                val escaped = this@unescapeReferenceSegment[index + 1]
+                if (escaped == '\\' || escaped == '.') {
+                    append(escaped)
+                    index++
+                } else append(character)
             } else append(character)
             index++
         }

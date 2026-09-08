@@ -38,6 +38,7 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
                     val addedValues = dataModel.fromChanges(null, versionedChange.changes)
 
                     changeStatuses += try {
+                        var updateToEmit: Update<DM>? = null
                         val response = processAdd(
                             dataModel = dataModel,
                             transaction = transaction,
@@ -47,8 +48,10 @@ internal suspend fun <DM : IsRootDataModel> RocksDBDataStore.processInitialChang
                             version = HLC(versionedChange.version),
                             objectToAdd = addedValues,
                             ignoreIfVersionNotNewer = true,
-                        )
+                        ) { updateToEmit = it }
                         transaction.commit()
+
+                        emitUpdate(updateToEmit)
 
                         response
                     } catch (e: Throwable) {

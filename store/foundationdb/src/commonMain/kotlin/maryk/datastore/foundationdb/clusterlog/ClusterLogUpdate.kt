@@ -21,6 +21,7 @@ internal data class ClusterLogAddition(
     override val keyBytes: Bytes,
     override val version: ULong,
     val values: Values<*>,
+    val isDeleted: Boolean = false,
 ) : ClusterLogUpdate {
     override val type: Byte = ClusterLogUpdate.TYPE_ADDITION
 }

@@ -265,7 +265,8 @@ internal class ClusterUpdateLog(
                         dataModel = dataModel,
                         key = Key(update.keyBytes.bytes),
                         version = update.version,
-                        values = values
+                        values = values,
+                        isDeleted = update.isDeleted,
                     )
                 }
                 is ClusterLogChange -> Update.Change(
@@ -296,7 +297,10 @@ internal class ClusterUpdateLog(
             is ClusterLogDeletion -> byteArrayOf(if (update.hardDelete) 1 else 0)
         }
 
+        // Preserve legacy bytes for live additions; deleted additions append one optional flag.
+        val hasDeletedAdditionFlag = update is ClusterLogAddition && update.isDeleted
         val total =
+            (if (hasDeletedAdditionFlag) 1 else 0) +
             2 + originLen + // origin
                 4 + // modelId
                 1 + // type
@@ -341,6 +345,7 @@ internal class ClusterUpdateLog(
         out[o++] = ((pl ushr 8) and 0xFF).toByte()
         out[o++] = (pl and 0xFF).toByte()
         payloadBytes.copyInto(out, o)
+        if (hasDeletedAdditionFlag) out[o + payloadBytes.size] = 1
 
         return out
     }
@@ -388,12 +393,23 @@ internal class ClusterUpdateLog(
                 ((value[o++].toInt() and 0xFF) shl 8) or
                 (value[o++].toInt() and 0xFF)
             )
-        if (payloadLen < 0 || payloadLen != value.size - o) return null
+        if (payloadLen < 0 || payloadLen > value.size - o) return null
+        val trailingLength = value.size - o - payloadLen
+        val isDeletedAddition = if (trailingLength == 0) {
+            false
+        } else {
+            if (type != ClusterLogUpdate.TYPE_ADDITION || trailingLength != 1) return null
+            when (value[o + payloadLen].toInt()) {
+                0 -> false
+                1 -> true
+                else -> return null
+            }
+        }
         val decodedUpdate = when (type) {
             ClusterLogUpdate.TYPE_ADDITION -> {
                 val valuesDecoded = decodeValuesBytes(ctx, dataModel, value, o, payloadLen)
                     ?: return null
-                ClusterLogAddition(keyBytes = keyBytes, version = version, values = valuesDecoded)
+                ClusterLogAddition(keyBytes = keyBytes, version = version, values = valuesDecoded, isDeleted = isDeletedAddition)
             }
             ClusterLogUpdate.TYPE_CHANGE -> {
                 val changes = decodeChangesBytes(ctx, value, o, payloadLen) ?: return null

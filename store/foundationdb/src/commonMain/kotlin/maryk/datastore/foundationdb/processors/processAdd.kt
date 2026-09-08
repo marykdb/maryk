@@ -76,14 +76,17 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
         if (existing != null) {
             AlreadyExists(key)
         } else {
-            val versionBytes = HLC.toStorageBytes(version)
+            val writeVersion = if (!ignoreIfVersionNotNewer && tombstoneVersion != null && version.timestamp <= tombstoneVersion) {
+                HLC(tombstoneVersion).increment()
+            } else version
+            val versionBytes = HLC.toStorageBytes(writeVersion)
             tr.clear(tombstoneKey)
 
             // Store first and last version markers
             setCreatedVersion(tr, tableDirs, key.bytes, versionBytes)
             setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
             tableDirs.updateHistoryPrefix?.let { prefix ->
-                tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
+                tr.set(packKey(prefix, writeVersion.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
             }
 
             val checks: MutableList<() -> Unit> = mutableListOf()
@@ -183,13 +186,13 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                 }
             }
 
-            persistDurableClockWatermark(tr, tableDirs, key.bytes, version)
+            persistDurableClockWatermark(tr, tableDirs, key.bytes, writeVersion)
 
             val finalValues = objectToAdd.change(emptyList())
             updateToEmit = Update.Addition(
                 dataModel,
                 key,
-                version.timestamp,
+                writeVersion.timestamp,
                 finalValues,
                 isDeleted,
             )
@@ -197,10 +200,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
             clusterUpdateLog?.append(
                 tr = tr,
                 modelId = dataModelId,
-                update = ClusterLogAddition(Bytes(key.bytes), version.timestamp, finalValues),
+                update = ClusterLogAddition(Bytes(key.bytes), writeVersion.timestamp, finalValues, isDeleted),
             )
 
-            AddSuccess(key, version.timestamp, emptyList())
+            AddSuccess(key, writeVersion.timestamp, emptyList())
         }
     }.also {
         if (it is AddSuccess<DM>) {

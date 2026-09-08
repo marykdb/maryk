@@ -169,7 +169,11 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
                 )
             }
 
-            val versionBytes = HLC.toStorageBytes(version)
+            // Recompute inside each retry: another writer may have committed a newer record.
+            val writeVersion = if (!ignoreIfVersionNotNewer && version.timestamp <= lastAppliedVersion) {
+                HLC(lastAppliedVersion).increment()
+            } else version
+            val versionBytes = HLC.toStorageBytes(writeVersion)
             val requestedChangedReferences = collectRequestedChangedReferences(changes)
             val currentIsDeleted = tr.getValue(
                 tableDirs,
@@ -796,7 +800,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             }
 
             // Update latest version if anything changed
-            if (version.timestamp > latestVersion) setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
+            if (writeVersion.timestamp > latestVersion) setLatestVersion(tr, tableDirs, key.bytes, versionBytes)
 
             // Process indexes
             var indexUpdates: MutableList<IsIndexUpdate>? = null
@@ -883,18 +887,18 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
 
             val finalChanges = changes + outChanges
             tableDirs.updateHistoryPrefix?.let { prefix ->
-                tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
+                tr.set(packKey(prefix, writeVersion.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
             }
-            persistDurableClockWatermark(tr, tableDirs, keyBytes, version)
-            updateToEmit = Update.Change(dataModel, key, version.timestamp, finalChanges)
+            persistDurableClockWatermark(tr, tableDirs, keyBytes, writeVersion)
+            updateToEmit = Update.Change(dataModel, key, writeVersion.timestamp, finalChanges)
 
             clusterUpdateLog?.append(
                 tr = tr,
                 modelId = dataModelId,
-                update = ClusterLogChange(Bytes(key.bytes), version.timestamp, finalChanges),
+                update = ClusterLogChange(Bytes(key.bytes), writeVersion.timestamp, finalChanges),
             )
 
-            ChangeSuccess(version.timestamp, outChanges)
+            ChangeSuccess(writeVersion.timestamp, outChanges)
         }.also {
             if (it is ChangeSuccess<DM>) {
                 emitUpdate(updateToEmit)

@@ -993,7 +993,7 @@ class FoundationDBDataStore private constructor(
                         if (storeAction.request.requestExecutionKind == RequestExecutionKind.Mutation) {
                             val observed = observedClusterHlc.value
                             val requestVersion = (storeAction.request as? UpdateResponse<*>)?.update?.version ?: 0uL
-                            val maxObserved = maxOf(observed, requestVersion)
+                            val maxObserved = maxOf(observed, requestVersion, durableVersionFloor.value)
                             clock = if (maxObserved != 0uL) {
                                 clock.calculateMaxTimeStamp(HLC(maxObserved))
                             } else clock.calculateMaxTimeStamp()
@@ -1366,6 +1366,8 @@ class FoundationDBDataStore private constructor(
 
     internal suspend fun emitUpdate(update: Update<*>?) {
         if (update == null) return
+        durableVersionFloor.update { maxOf(it, update.version) }
+        observeCommittedVersion(update.version)
         val flowUpdate = prepareFlowUpdate(update)
         beforeUpdateEmission.value?.invoke()
         emitFlowUpdate(flowUpdate)

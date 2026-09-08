@@ -67,11 +67,11 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         val exists = tr.get(packKey(tableDirs.keysPrefix, keyBytes)).awaitResult()
             ?.readHLCTimestampIfExact() != null
 
+        val currentVersion = if (exists) {
+            tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()?.readHLCTimestampIfExact()
+        } else null
+        val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
         if (ignoreIfVersionNotNewer) {
-            val currentVersion = if (exists) {
-                tr.get(packKey(tableDirs.tablePrefix, keyBytes)).awaitResult()?.readHLCTimestampIfExact()
-            } else null
-            val lastAppliedVersion = listOfNotNull(currentVersion, tombstoneVersion).maxOrNull()
             if (lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
                 return@runRequestTransaction DeleteSuccess(lastAppliedVersion)
             }
@@ -97,7 +97,10 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
             return@runRequestTransaction DoesNotExist(key)
         }
 
-        val versionBytes = HLC.toStorageBytes(version)
+        val writeVersion = if (!ignoreIfVersionNotNewer && lastAppliedVersion != null && version.timestamp <= lastAppliedVersion) {
+            HLC(lastAppliedVersion).increment()
+        } else version
+        val versionBytes = HLC.toStorageBytes(writeVersion)
 
         // Values getter to read current values by property reference for index computation
         val valuesGetter = object : IsValuesGetter {
@@ -295,20 +298,20 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
         }
 
         tableDirs.updateHistoryPrefix?.let { prefix ->
-            tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), if (hardDelete) byteArrayOf(1) else EMPTY_BYTEARRAY)
+            tr.set(packKey(prefix, writeVersion.timestamp.toReversedVersionBytes(), key.bytes), if (hardDelete) byteArrayOf(1) else EMPTY_BYTEARRAY)
         }
 
-        persistDurableClockWatermark(tr, tableDirs, keyBytes, version)
-        updateToEmit = Update.Deletion(dataModel, key, version.timestamp, hardDelete)
+        persistDurableClockWatermark(tr, tableDirs, keyBytes, writeVersion)
+        updateToEmit = Update.Deletion(dataModel, key, writeVersion.timestamp, hardDelete)
         afterDeleteUpdatePrepared.value?.invoke(tr)
 
         clusterUpdateLog?.append(
             tr = tr,
             modelId = dbIndex,
-            update = ClusterLogDeletion(Bytes(key.bytes), version.timestamp, hardDelete),
+            update = ClusterLogDeletion(Bytes(key.bytes), writeVersion.timestamp, hardDelete),
         )
 
-        DeleteSuccess(version.timestamp)
+        DeleteSuccess(writeVersion.timestamp)
     }.also { status ->
         if (status is DeleteSuccess<*>) {
             emitUpdate(updateToEmit)

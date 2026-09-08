@@ -4,6 +4,7 @@ import maryk.core.clock.HLC
 import maryk.core.properties.types.Bytes
 import maryk.core.query.changes.Change
 import maryk.core.query.pairs.with
+import maryk.datastore.shared.updates.Update
 import maryk.foundationdb.tuple.Tuple
 import maryk.foundationdb.tuple.Versionstamp
 import maryk.lib.bytes.combineToByteArray
@@ -11,6 +12,8 @@ import maryk.lib.extensions.compare.compareTo
 import maryk.test.models.SimpleMarykModel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -57,6 +60,22 @@ class ClusterUpdateLogCodecTest {
         assertEquals("node-a", decoded.header.origin)
         assertEquals(modelId, decoded.header.modelId)
         assertEquals(update, decoded.update)
+    }
+
+    @Test
+    fun additionDeletionFlagIsOptionalAndRoundTrips() {
+        val log = newLog()
+        val update = ClusterLogAddition(Bytes(ByteArray(16) { 7 }), 1uL, SimpleMarykModel.create { value with "happy deleted" })
+        val legacy = log.encodeValue(modelId, update, SimpleMarykModel)
+        val live = assertNotNull(log.decodeValue(legacy))
+        assertFalse(assertIs<Update.Addition<*>>(live.toInternalUpdate(SimpleMarykModel)).isDeleted)
+
+        // The optional flag follows the length-delimited legacy values payload.
+        val deleted = assertNotNull(log.decodeValue(legacy + byteArrayOf(1)))
+        assertTrue(assertIs<Update.Addition<*>>(deleted.toInternalUpdate(SimpleMarykModel)).isDeleted)
+        assertEquals(deleted, log.decodeValue(log.encodeValue(modelId, deleted.update, SimpleMarykModel)))
+        assertNull(log.decodeValue(legacy + byteArrayOf(2)))
+        assertNull(log.decodeValue(legacy + byteArrayOf(1, 0)))
     }
 
     @Test

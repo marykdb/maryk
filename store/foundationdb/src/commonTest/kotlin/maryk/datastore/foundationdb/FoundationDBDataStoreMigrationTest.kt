@@ -18,6 +18,7 @@ import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.models.RootDataModel
 import maryk.core.models.migration.MigrationConfiguration
+import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.models.migration.MigrationAuditEventType
 import maryk.core.models.migration.MigrationException
 import maryk.core.models.migration.MigrationLease
@@ -34,6 +35,7 @@ import maryk.datastore.foundationdb.model.modelMigrationAuditLogKey
 import maryk.datastore.foundationdb.model.FoundationDBMigrationLease
 import maryk.datastore.foundationdb.model.FoundationDBMigrationLeaseLostException
 import maryk.datastore.foundationdb.model.FoundationDBMigrationStateStore
+import maryk.datastore.foundationdb.model.FoundationDBMigrationAuditLogStore
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
 import maryk.datastore.foundationdb.model.modelVersionKey
@@ -78,6 +80,43 @@ import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreMigrationTest {
     class CustomException : Error()
+
+    @Test
+    fun migrationStateAndAuditEventCommitTogether() = runTest(timeout = 3.minutes) {
+        val store = FoundationDBDataStore.open(
+            fdbClusterFilePath = "fdb.cluster",
+            directoryPath = listOf("maryk", "test", "atomic-migration-audit", Uuid.random().toString()),
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+        try {
+            val modelPrefix = store.getTableDirs(1u).modelPrefix
+            val stateStore = FoundationDBMigrationStateStore(store.tc, mapOf(1u to modelPrefix))
+            val auditStore = FoundationDBMigrationAuditLogStore(store.tc, mapOf(1u to modelPrefix))
+            val state = MigrationState(
+                migrationId = "audit-atomicity",
+                phase = MigrationPhase.Backfill,
+                status = MigrationStateStatus.Running,
+                attempt = 1u,
+                fromVersion = "1.0",
+                toVersion = "2.0",
+            )
+            val event = MigrationAuditEvent(
+                timestampMs = 1L,
+                modelId = 1u,
+                migrationId = state.migrationId,
+                type = MigrationAuditEventType.Partial,
+                phase = state.phase,
+                attempt = state.attempt,
+            )
+
+            stateStore.writeWithAudit(1u, state, auditStore, event)
+
+            assertEquals(state, stateStore.read(1u))
+            assertEquals(listOf(event), auditStore.read(1u))
+        } finally {
+            store.close()
+        }
+    }
 
     @Test
     fun newModelDefinitionIsPublishedOnlyAfterVersionHandlerSucceeds() = runTest(timeout = 3.minutes) {

@@ -30,21 +30,26 @@ internal class FoundationDBMigrationAuditLogStore(
 
     suspend fun append(modelId: UInt, event: MigrationAuditEvent, guard: ((Transaction) -> Unit)?) {
         val modelPrefix = modelPrefixesById[modelId] ?: return
-        val key = packKey(modelPrefix, modelMigrationAuditLogKey)
         tc.run { tr ->
             guard?.invoke(tr)
-            val current = readStoredBytes(tr, modelPrefix, tr.get(key).awaitResult())
-                ?.decodeToString()
-                ?.lineSequence()
-                ?.filter { it.isNotBlank() }
-                ?.toMutableList()
-                ?: mutableListOf()
-            if (current.size >= maxEntries) {
-                current.subList(0, current.size - maxEntries + 1).clear()
-            }
-            current.add(event.toPersistedLine())
-            writeStoredBytes(tr, modelPrefix, key, current.joinToString("\n").encodeToByteArray())
+            append(tr, modelId, event)
         }
+    }
+
+    internal fun append(transaction: Transaction, modelId: UInt, event: MigrationAuditEvent) {
+        val modelPrefix = modelPrefixesById[modelId] ?: return
+        val key = packKey(modelPrefix, modelMigrationAuditLogKey)
+        val current = readStoredBytes(transaction, modelPrefix, transaction.get(key).awaitResult())
+            ?.decodeToString()
+            ?.lineSequence()
+            ?.filter { it.isNotBlank() }
+            ?.toMutableList()
+            ?: mutableListOf()
+        if (current.size >= maxEntries) {
+            current.subList(0, current.size - maxEntries + 1).clear()
+        }
+        current.add(event.toPersistedLine())
+        writeStoredBytes(transaction, modelPrefix, key, current.joinToString("\n").encodeToByteArray())
     }
 
     override suspend fun read(modelId: UInt, limit: Int): List<MigrationAuditEvent> {

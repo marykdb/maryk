@@ -23,7 +23,8 @@ class DataStoreSoftDeleteTimeTravelTest(
     private val keys = mutableListOf<Key<SimpleMarykModel>>()
 
     override val allTests = mapOf(
-        "softDeleteRespectsToVersion" to ::softDeleteRespectsToVersion
+        "softDeleteRespectsToVersion" to ::softDeleteRespectsToVersion,
+        "hardDeleteRespectsToVersion" to ::hardDeleteRespectsToVersion,
     )
 
     override suspend fun resetData() {
@@ -113,5 +114,38 @@ class DataStoreSoftDeleteTimeTravelTest(
         assertEquals(0, scanAtDeleteFiltered.values.size)
         assertEquals(1, scanAtDeleteAll.values.size)
         assertTrue(scanAtDeleteAll.values.first().isDeleted)
+    }
+
+    private suspend fun hardDeleteRespectsToVersion() {
+        if (!dataStore.keepAllVersions) return
+
+        val marker = "haha-hard-delete-time-travel"
+        val values = SimpleMarykModel.create { value with marker }
+        val key = SimpleMarykModel.key(values)
+        val addVersion = assertIs<AddSuccess<*>>(
+            dataStore.execute(SimpleMarykModel.add(key to values)).statuses.single()
+        ).version
+        val deleteVersion = assertIs<DeleteSuccess<*>>(
+            dataStore.execute(SimpleMarykModel.delete(key, hardDelete = true)).statuses.single()
+        ).version
+
+        val beforeDeletion = dataStore.execute(
+            SimpleMarykModel.scan(
+                toVersion = addVersion,
+                where = Equals(SimpleMarykModel.value.ref() with marker),
+                allowTableScan = true,
+            )
+        )
+        assertEquals(listOf(key), beforeDeletion.values.map { it.key })
+
+        val atDeletion = dataStore.execute(
+            SimpleMarykModel.scan(
+                toVersion = deleteVersion,
+                where = Equals(SimpleMarykModel.value.ref() with marker),
+                filterSoftDeleted = false,
+                allowTableScan = true,
+            )
+        )
+        assertTrue(atDeletion.values.isEmpty())
     }
 }

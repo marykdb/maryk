@@ -11,6 +11,7 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.Order.Companion.descending
 import maryk.core.query.orders.ascending
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.ScanCursor
 import maryk.core.query.requests.add
 import maryk.core.query.requests.delete
 import maryk.core.query.requests.scan
@@ -32,11 +33,13 @@ class DataStoreScanMultiTypeTest(
 ) : IsDataStoreTest {
     private val keys = mutableListOf<Key<Measurement>>()
     private var lowestVersion = ULong.MAX_VALUE
+    private var highestVersion = ULong.MIN_VALUE
 
     override val allTests = mapOf(
         "executeSimpleScanRequest" to ::executeSimpleScanRequest,
         "executeSimpleScanRequestReverseOrder" to ::executeSimpleScanRequestReverseOrder,
         "executeScanRequestWithLimit" to ::executeScanRequestWithLimit,
+        "resumeHistoricMultiTypeScanOneRecordAtATime" to ::resumeHistoricMultiTypeScanOneRecordAtATime,
         "executeScanRequestWithSelect" to ::executeScanRequestWithSelect,
         "executeSimpleScanFilterRequest" to ::executeSimpleScanFilterRequest,
         "executeSimpleScanFilterOnIndexRequest" to ::executeSimpleScanFilterOnIndexRequest,
@@ -89,6 +92,7 @@ class DataStoreScanMultiTypeTest(
                 // Add lowest version for scan test
                 lowestVersion = response.version
             }
+            highestVersion = maxOf(highestVersion, response.version)
         }
     }
 
@@ -100,6 +104,7 @@ class DataStoreScanMultiTypeTest(
         }
         keys.clear()
         lowestVersion = ULong.MAX_VALUE
+        highestVersion = ULong.MIN_VALUE
     }
 
     private suspend fun executeSimpleScanRequest() {
@@ -196,6 +201,34 @@ class DataStoreScanMultiTypeTest(
             expect(measurements[2]) { it.values }
             expect(keys[2]) { it.key }
         }
+    }
+
+    private suspend fun resumeHistoricMultiTypeScanOneRecordAtATime() {
+        if (!dataStore.keepAllVersions) return
+
+        val fullResult = dataStore.execute(
+            Measurement.scan(toVersion = highestVersion)
+        )
+        val pagedKeys = mutableListOf<Key<Measurement>>()
+        var cursor: ScanCursor? = null
+        do {
+            val page = dataStore.execute(
+                Measurement.scan(
+                    toVersion = highestVersion,
+                    cursor = cursor,
+                    limit = 1u,
+                )
+            )
+            if (page.values.isEmpty()) {
+                expect(null) { page.nextCursor }
+                break
+            }
+            expect(1) { page.values.size }
+            pagedKeys += page.values.single().key
+            cursor = page.nextCursor
+        } while (cursor != null)
+
+        expect(fullResult.values.map { it.key }) { pagedKeys }
     }
 
     private suspend fun executeScanRequestWithSelect() {

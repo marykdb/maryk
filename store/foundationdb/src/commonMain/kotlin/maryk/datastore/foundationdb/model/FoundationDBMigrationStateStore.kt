@@ -5,6 +5,7 @@ import maryk.core.models.migration.MigrationState
 import maryk.core.models.migration.MigrationStateStore
 import maryk.core.models.migration.MigrationPhase
 import maryk.core.models.migration.MigrationStateStatus
+import maryk.core.models.migration.MigrationAuditEvent
 import maryk.core.properties.types.Version
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
@@ -33,6 +34,22 @@ internal class FoundationDBMigrationStateStore(
         tc.run { tr ->
             guard?.invoke(tr)
             tr.set(key, state.toPersistedBytes())
+        }
+    }
+
+    internal suspend fun writeWithAudit(
+        modelId: UInt,
+        state: MigrationState,
+        auditStore: FoundationDBMigrationAuditLogStore,
+        event: MigrationAuditEvent,
+        guard: ((Transaction) -> Unit)? = null,
+    ) {
+        val modelPrefix = modelPrefixesById[modelId] ?: return
+        val key = packKey(modelPrefix, modelMigrationStateKey)
+        tc.run { transaction ->
+            guard?.invoke(transaction)
+            transaction.set(key, state.toPersistedBytes())
+            auditStore.append(transaction, modelId, event)
         }
     }
 

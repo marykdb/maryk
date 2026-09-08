@@ -14,6 +14,7 @@ import maryk.core.query.orders.Direction
 import maryk.core.query.orders.ascending
 import maryk.core.query.orders.descending
 import maryk.core.query.pairs.with
+import maryk.core.query.requests.ScanCursor
 import maryk.core.query.requests.add
 import maryk.core.query.requests.change
 import maryk.core.query.requests.delete
@@ -47,6 +48,7 @@ class DataStoreScanOnIndexTest(
         "executeIndexScanWithMultiRangeLimit" to ::executeIndexScanWithMultiRangeLimit,
         "executeIndexScanRequestWithToVersionAscending" to ::executeIndexScanRequestWithToVersionAscending,
         "executeIndexScanRequestWithToVersionDescending" to ::executeIndexScanRequestWithToVersionDescending,
+        "resumeHistoricIndexScanOneRecordAtATime" to ::resumeHistoricIndexScanOneRecordAtATime,
         "executeIndexScanRequestWithSelect" to ::executeIndexScanRequestWithSelect,
         "executeSimpleIndexFilterScanRequest" to ::executeSimpleIndexFilterScanRequest,
         "executeSimpleIndexFilterGreaterScanRequest" to ::executeSimpleIndexFilterGreaterScanRequest,
@@ -282,6 +284,43 @@ class DataStoreScanOnIndexTest(
                 dataStore.execute(scan)
             }
         }
+    }
+
+    private suspend fun resumeHistoricIndexScanOneRecordAtATime() {
+        if (!dataStore.keepAllVersions) {
+            assertFailsWith<RequestException> {
+                dataStore.execute(
+                    Log.scan(
+                        toVersion = highestCreationVersion,
+                        order = severity.ref().ascending(),
+                        limit = 1u,
+                    )
+                )
+            }
+            return
+        }
+
+        val scannedKeys = mutableListOf<Key<Log>>()
+        var cursor: ScanCursor? = null
+        do {
+            val page = dataStore.execute(
+                Log.scan(
+                    toVersion = highestCreationVersion,
+                    order = severity.ref().ascending(),
+                    cursor = cursor,
+                    limit = 1u,
+                )
+            )
+            if (page.values.isEmpty()) {
+                expect(null) { page.nextCursor }
+                break
+            }
+            expect(1) { page.values.size }
+            scannedKeys += page.values.single().key
+            cursor = page.nextCursor
+        } while (cursor != null)
+
+        expect(listOf(keys[2], keys[0], keys[1], keys[3])) { scannedKeys }
     }
 
     private suspend fun executeIndexScanRequestWithSelect() {

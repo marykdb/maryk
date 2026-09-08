@@ -4,6 +4,8 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.TestExecutable
 import org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest
 import org.jetbrains.kotlin.konan.target.Family
+import maryk.conventions.FoundationDbTestServerLeaseService
+import maryk.conventions.resetTestResultStore
 
 plugins {
     id("maryk.conventions.kotlin-multiplatform-jvm")
@@ -79,6 +81,13 @@ val os = OperatingSystem.current()
 
 val scriptsDir = rootProject.projectDir.resolve("store/foundationdb/scripts")
 
+val foundationDbTestServerLease = gradle.sharedServices.registerIfAbsent(
+    "foundationDbTestServerLease",
+    FoundationDbTestServerLeaseService::class,
+) {
+    parameters.lockFile.set(rootProject.layout.buildDirectory.file("testdatastore/fdbserver.lock"))
+}
+
 val installFoundationDB = tasks.register("installFoundationDB", Exec::class) {
     group = "foundationdb"
     description = "Install or link FoundationDB binaries into store/foundationdb/bin"
@@ -130,6 +139,7 @@ val resetFoundationDBTestData = tasks.register("resetFoundationDBTestData", Dele
         rootProject.layout.buildDirectory.file("testdatastore/fdbserver.pid")
     )
     doFirst {
+        foundationDbTestServerLease.get().acquire()
         stopFoundationDBForReset?.result?.get()
     }
 }
@@ -142,6 +152,9 @@ startFoundationDBForTests.configure {
 tasks.named("jvmTest").configure {
     dependsOn(resetFoundationDBTestData, startFoundationDBForTests)
     finalizedBy(stopFoundationDBForTests)
+    doFirst {
+        resetTestResultStore(layout.buildDirectory.dir("test-results/jvmTest/binary").get().asFile.toPath())
+    }
 }
 
 val kotlinExt = extensions.getByType<KotlinMultiplatformExtension>()

@@ -84,6 +84,8 @@ import maryk.datastore.foundationdb.model.requireModelSchemaRebuildOwner
 import maryk.datastore.foundationdb.model.modelUpdateHistoryBackfillCompleteKey
 import maryk.datastore.foundationdb.model.modelReplicationTombstoneBackfillCompleteKey
 import maryk.datastore.foundationdb.model.modelIndexRebuildScratchKey
+import maryk.datastore.foundationdb.model.modelHlcRecoveryWatermarkKey
+import maryk.datastore.foundationdb.model.modelHlcWatermarkPrefix
 import maryk.datastore.foundationdb.model.storeModelDefinition
 import maryk.datastore.foundationdb.processors.AnyAddStoreAction
 import maryk.datastore.foundationdb.processors.AnyChangeStoreAction
@@ -221,6 +223,7 @@ class FoundationDBDataStore private constructor(
 
     // Cluster HLC sync: store actor uses max(observedClusterHlc, local wall clock) when generating new versions.
     private val observedClusterHlc = atomic(0uL)
+    private val durableVersionFloor = atomic(0uL)
     private val uniqueIndicesByDataModelIndex = atomic(mapOf<UInt, List<ByteArray>>())
     private var clusterUpdateLogHeadGroupCount: Int = 0
     private val activeUpdateListenersByModelId = dataModelsById.keys.associateWith { atomic(0) }
@@ -559,6 +562,8 @@ class FoundationDBDataStore private constructor(
                 "Cluster update log cannot be enabled for models with sensitive properties because update payloads are persisted unencrypted"
             )
         }
+
+        initializeDurableClockWatermark()
 
         if (clusterUpdateLogConfiguration.enableClusterUpdateLog) {
             val consumerId = clusterUpdateLogConfiguration.clusterUpdateLogConsumerId
@@ -917,7 +922,7 @@ class FoundationDBDataStore private constructor(
         super.startFlows()
 
         this.launch {
-            var clock = HLC()
+            var clock = HLC(durableVersionFloor.value)
             storeActorHasStarted.complete(Unit)
             try {
                 processStoreActions(
@@ -1311,6 +1316,101 @@ class FoundationDBDataStore private constructor(
         beforeUpdateEmission.value?.invoke()
         emitFlowUpdate(flowUpdate)
     }
+
+    /**
+     * Persist a model-local HLC high-water mark in the same transaction as the
+     * mutation. Existing stores have no marker, so [initializeDurableClockWatermark]
+     * first recovers one from current record and tombstone versions.
+     */
+    internal fun persistDurableClockWatermark(
+        transaction: Transaction,
+        tableDirectories: IsTableDirectories,
+        recordKey: ByteArray,
+        version: HLC,
+    ) {
+        val watermarkKey = packKey(tableDirectories.modelPrefix, watermarkKeyFor(recordKey))
+        val current = transaction.get(watermarkKey).awaitResult()?.readHLCTimestampIfExact()
+        if (current == null || version.timestamp > current) {
+            transaction.set(watermarkKey, HLC.toStorageBytes(version))
+        }
+    }
+
+    private fun initializeDurableClockWatermark() {
+        var storeWatermark = 0uL
+        for ((modelId, tableDirectories) in directoriesByDataModelIndex) {
+            val watermark = runTransaction(modelId) { transaction ->
+                readMaximumStoredWatermark(transaction, tableDirectories)
+            }.takeIf { it > 0uL } ?: recoverMaximumStoredVersion(tableDirectories).also { recovered ->
+                if (recovered > 0uL) {
+                    runTransaction(modelId) { transaction ->
+                        transaction.set(
+                            packKey(tableDirectories.modelPrefix, modelHlcRecoveryWatermarkKey),
+                            HLC.toStorageBytes(HLC(recovered)),
+                        )
+                    }
+                }
+            }
+            storeWatermark = maxOf(storeWatermark, watermark)
+        }
+        durableVersionFloor.value = storeWatermark
+        observeCommittedVersion(storeWatermark)
+    }
+
+    private fun readMaximumStoredWatermark(
+        transaction: Transaction,
+        tableDirectories: IsTableDirectories,
+    ): ULong {
+        val iterator = transaction.getRange(
+            Range.startsWith(packKey(tableDirectories.modelPrefix, modelHlcWatermarkPrefix))
+        ).iterator()
+        var maximum = 0uL
+        while (iterator.hasNext()) {
+            iterator.nextBlocking().value.readHLCTimestampIfExact()?.let { version ->
+                maximum = maxOf(maximum, version)
+            }
+        }
+        return maximum
+    }
+
+    private fun recoverMaximumStoredVersion(tableDirectories: IsTableDirectories): ULong {
+        val keyByteSize = dataModelsById.getValue(tableDirectories.modelId).Meta.keyByteSize
+        var maximum = 0uL
+
+        fun recoverFrom(prefix: ByteArray) {
+            var start = prefix
+            val end = prefix.nextByteInSameLength()
+            while (true) {
+                val next = runTransaction(tableDirectories.modelId) { transaction ->
+                    // Values under tablePrefix can contain full property payloads. Keep this
+                    // well below FoundationDB's transaction result-size limit.
+                    val iterator = transaction.getRange(Range(start, end), 64, false).iterator()
+                    var lastKey: ByteArray? = null
+                    while (iterator.hasNext()) {
+                        val entry = iterator.nextBlocking()
+                        lastKey = entry.key
+                        if (entry.key.size == prefix.size + keyByteSize) {
+                            entry.value.readHLCTimestampIfExact()?.let { version ->
+                                maximum = maxOf(maximum, version)
+                            }
+                        }
+                    }
+                    lastKey?.let { it + nextKeySuffix }
+                }
+                start = next ?: break
+            }
+        }
+
+        recoverFrom(tableDirectories.keysPrefix)
+        recoverFrom(tableDirectories.tablePrefix)
+        recoverFrom(tableDirectories.replicationTombstonePrefix)
+        return maximum
+    }
+
+    private fun watermarkKeyFor(recordKey: ByteArray): ByteArray = byteArrayOf(
+        modelHlcWatermarkPrefix[0],
+        1,
+        recordKey.fold(0) { hash, byte -> (hash * 31) xor byte.toInt() }.toByte(),
+    )
 
     override suspend fun compactReplicationTombstones(upToVersionInclusive: ULong) {
         for ((modelId, tableDirectories) in directoriesByDataModelIndex) {

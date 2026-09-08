@@ -58,6 +58,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
     var updateToEmit: Update<DM>? = null
 
     runRequestTransaction(dataModelId) { tr ->
+        updateToEmit = null
         val packedKey = packKey(tableDirs.keysPrefix, key.bytes)
         val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, key.bytes)
 
@@ -181,6 +182,8 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processAdd(
                     setUniqueIndexValue(tr, tableDirs, uniqueRef, versionBytes, key.bytes)
                 }
             }
+
+            persistDurableClockWatermark(tr, tableDirs, key.bytes, version)
 
             val finalValues = objectToAdd.change(emptyList())
             updateToEmit = Update.Addition(

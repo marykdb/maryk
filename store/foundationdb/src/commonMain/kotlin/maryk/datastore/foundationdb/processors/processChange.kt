@@ -139,6 +139,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
         var updateToEmit: Update<DM>? = null
 
         runRequestTransaction(dataModelId) { tr ->
+            updateToEmit = null
             val keyBytes = key.bytes
             val tombstoneVersion = if (ignoreIfVersionNotNewer) {
                 tr.get(packKey(tableDirs.replicationTombstonePrefix, keyBytes))
@@ -884,6 +885,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processChange(
             tableDirs.updateHistoryPrefix?.let { prefix ->
                 tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), EMPTY_BYTEARRAY)
             }
+            persistDurableClockWatermark(tr, tableDirs, keyBytes, version)
             updateToEmit = Update.Change(dataModel, key, version.timestamp, finalChanges)
 
             clusterUpdateLog?.append(

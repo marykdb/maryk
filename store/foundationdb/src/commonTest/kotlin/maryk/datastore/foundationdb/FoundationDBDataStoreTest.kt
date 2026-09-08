@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.datetime.LocalDateTime
+import maryk.core.clock.HLC
 import maryk.core.exceptions.RequestException
 import maryk.core.exceptions.StorageException
 import maryk.core.properties.types.Key
@@ -30,7 +31,10 @@ import maryk.core.query.requests.scan
 import maryk.core.query.responses.UpdateResponse
 import maryk.core.query.responses.updates.AdditionUpdate
 import maryk.core.query.responses.updates.InitialValuesUpdate
+import maryk.core.query.responses.updates.RemovalReason.SoftDelete
+import maryk.core.query.responses.updates.RemovalUpdate
 import maryk.core.query.responses.statuses.AddSuccess
+import maryk.core.query.responses.statuses.DeleteSuccess
 import maryk.core.query.responses.statuses.DoesNotExist
 import maryk.core.query.responses.statuses.ValidationFail
 import maryk.datastore.shared.DataStoreBackupChunk
@@ -45,8 +49,11 @@ import maryk.datastore.test.UniqueModel
 import maryk.datastore.test.UniqueOwnershipTest
 import maryk.datastore.foundationdb.processors.helpers.awaitResult
 import maryk.datastore.foundationdb.processors.helpers.packKey
+import maryk.datastore.foundationdb.processors.helpers.readHLCTimestampIfExact
+import maryk.datastore.foundationdb.model.modelHlcWatermarkPrefix
 import maryk.foundationdb.Transaction
 import maryk.foundationdb.TransactionContext
+import maryk.foundationdb.Range
 import maryk.test.models.Log
 import maryk.test.models.SimpleMarykModel
 import maryk.test.models.TestMarykModel
@@ -63,6 +70,60 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.uuid.Uuid
 
 class FoundationDBDataStoreTest {
+    @Test
+    fun reopenAdvancesLocalMutationClockBeyondStoredVersion() = runTest(timeout = 3.minutes) {
+        val directoryPath = listOf("maryk", "test", "reopen-clock-floor", Uuid.random().toString())
+        var store = FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+        val key = try {
+            assertIs<AddSuccess<SimpleMarykModel>>(
+                store.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha clock floor" })).statuses.single()
+            ).key.also { key ->
+                val future = HLC(HLC().toPhysicalUnixTime() + 60_000uL, 0u)
+                store.runTransaction { transaction ->
+                    transaction.set(
+                        packKey(store.getTableDirs(SimpleMarykModel).tablePrefix, key.bytes),
+                        HLC.toStorageBytes(future),
+                    )
+                    transaction.clear(
+                        Range.startsWith(
+                            packKey(store.getTableDirs(SimpleMarykModel).modelPrefix, modelHlcWatermarkPrefix)
+                        )
+                    )
+                }
+            }
+        } finally {
+            store.close()
+        }
+
+        store = FoundationDBDataStore.open(
+            directoryPath = directoryPath,
+            dataModelsById = mapOf(1u to SimpleMarykModel),
+        )
+        try {
+            val storedBeforeDelete: ULong = store.runTransaction { transaction ->
+                transaction.get(packKey(store.getTableDirs(SimpleMarykModel).tablePrefix, key.bytes))
+                    .awaitResult()!!
+                    .readHLCTimestampIfExact()!!
+            }
+            val delete = assertIs<DeleteSuccess<SimpleMarykModel>>(
+                store.execute(SimpleMarykModel.delete(key)).statuses.single()
+            )
+            val storedAfterDelete: ULong = store.runTransaction { transaction ->
+                transaction.get(packKey(store.getTableDirs(SimpleMarykModel).tablePrefix, key.bytes))
+                    .awaitResult()!!
+                    .readHLCTimestampIfExact()!!
+            }
+
+            assertTrue(delete.version > storedBeforeDelete)
+            assertTrue(storedAfterDelete > storedBeforeDelete)
+        } finally {
+            store.close()
+        }
+    }
+
     @Test
     fun closeReportsTimeoutWhenNativeWorkCannotBeCancelled() = runTest(timeout = 3.minutes) {
         val dataStore = FoundationDBDataStore.open(
@@ -256,6 +317,51 @@ class FoundationDBDataStoreTest {
 
                     assertIs<DoesNotExist<SimpleMarykModel>>(
                         store.execute(SimpleMarykModel.delete(key, hardDelete = true)).statuses.single()
+                    )
+                    assertNull(withTimeoutOrNull(500) { updates.receive() })
+                } finally {
+                    updates.cancel()
+                }
+            } finally {
+                store.afterDeleteUpdatePrepared.value = null
+                store.close()
+            }
+        }
+    }
+
+    @Test
+    fun retryToStaleReplicatedDeleteDoesNotEmitAbortedDeletion() = runTest(timeout = 3.minutes) {
+        withContext(Dispatchers.Default) {
+            val store = FoundationDBDataStore.open(
+                directoryPath = listOf("maryk", "test", "aborted-stale-delete-emission", Uuid.random().toString()),
+                dataModelsById = mapOf(1u to SimpleMarykModel),
+            )
+            try {
+                val added = assertIs<AddSuccess<SimpleMarykModel>>(
+                    store.execute(SimpleMarykModel.add(SimpleMarykModel.create { value with "ha stale retry" })).statuses.single()
+                )
+                val deletionVersion = HLC(added.version).increment().timestamp
+                val competingVersion = HLC(deletionVersion).increment().timestamp
+                val updates = store.executeFlow(SimpleMarykModel.scan(allowTableScan = true)).produceIn(this)
+                try {
+                    assertIs<InitialValuesUpdate<SimpleMarykModel>>(withTimeout(10_000) { updates.receive() })
+                    val conflictOnce = atomic(true)
+                    store.afterDeleteUpdatePrepared.value = {
+                        if (conflictOnce.getAndSet(false)) {
+                            store.runTransaction { transaction ->
+                                transaction.set(
+                                    packKey(store.getTableDirs(SimpleMarykModel).tablePrefix, added.key.bytes),
+                                    HLC.toStorageBytes(HLC(competingVersion)),
+                                )
+                            }
+                        }
+                    }
+
+                    store.processUpdate(
+                        UpdateResponse(
+                            SimpleMarykModel,
+                            RemovalUpdate(added.key, deletionVersion, SoftDelete),
+                        )
                     )
                     assertNull(withTimeoutOrNull(500) { updates.receive() })
                 } finally {

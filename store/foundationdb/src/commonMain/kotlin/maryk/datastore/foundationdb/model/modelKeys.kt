@@ -19,3 +19,7 @@ internal val modelIndexRebuildScratchKey = byteArrayOf(9)
 /** Versioned chunks for migration audit logs which exceed FoundationDB's value limit. */
 internal val modelMigrationAuditLogChunksKey = byteArrayOf(10)
 internal val modelReplicationTombstoneBackfillCompleteKey = byteArrayOf(11)
+/** Namespace for sharded local mutation-clock watermarks. */
+internal val modelHlcWatermarkPrefix = byteArrayOf(12)
+/** Legacy-store recovery floor, retained after the initial bounded migration scan. */
+internal val modelHlcRecoveryWatermarkKey = byteArrayOf(12, 0)

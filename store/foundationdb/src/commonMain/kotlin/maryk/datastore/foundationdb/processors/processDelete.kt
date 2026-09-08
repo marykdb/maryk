@@ -60,6 +60,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
 ): IsDeleteResponseStatus<DM> = try {
     var updateToEmit: Update<DM>? = null
     runRequestTransaction(dbIndex) { tr ->
+        updateToEmit = null
         val keyBytes = key.bytes
         val tombstoneKey = packKey(tableDirs.replicationTombstonePrefix, keyBytes)
         val tombstoneVersion = tr.get(tombstoneKey).awaitResult()?.readHLCTimestampIfExact()
@@ -80,6 +81,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
                 tableDirs.updateHistoryPrefix?.let { prefix ->
                     tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), byteArrayOf(1))
                 }
+                persistDurableClockWatermark(tr, tableDirs, keyBytes, version)
                 updateToEmit = Update.Deletion(dataModel, key, version.timestamp, true)
                 afterDeleteUpdatePrepared.value?.invoke(tr)
                 clusterUpdateLog?.append(
@@ -296,6 +298,7 @@ internal suspend fun <DM : IsRootDataModel> FoundationDBDataStore.processDelete(
             tr.set(packKey(prefix, version.timestamp.toReversedVersionBytes(), key.bytes), if (hardDelete) byteArrayOf(1) else EMPTY_BYTEARRAY)
         }
 
+        persistDurableClockWatermark(tr, tableDirs, keyBytes, version)
         updateToEmit = Update.Deletion(dataModel, key, version.timestamp, hardDelete)
         afterDeleteUpdatePrepared.value?.invoke(tr)
 

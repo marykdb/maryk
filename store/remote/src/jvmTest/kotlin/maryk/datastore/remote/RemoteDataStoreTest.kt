@@ -686,6 +686,70 @@ class RemoteDataStoreTest {
     }
 
     @Test
+    fun executeFlowRetriesFailedSshReopens() = runBoundedIntegrationTest {
+        verifyFailedSshReopens(failedReopens = 2, expectRecovery = true)
+    }
+
+    @Test
+    fun executeFlowBoundsFailedSshReopens() = runBoundedIntegrationTest {
+        verifyFailedSshReopens(failedReopens = Int.MAX_VALUE, expectRecovery = false)
+    }
+
+    private suspend fun verifyFailedSshReopens(failedReopens: Int, expectRecovery: Boolean) {
+        val connections = AtomicInteger()
+        val tunnelOpens = AtomicInteger()
+        val port = ServerSocket(0).use { it.localPort }
+        val server = embeddedServer(CIO, host = "127.0.0.1", port = port) {
+            reconnectingFlowModule(connections, rejectFirstConnection = true)
+        }.start(wait = false)
+        val remote = RemoteDataStore.connect(
+            RemoteStoreConfig(
+                baseUrl = "http://remote.example:8210",
+                ssh = RemoteSshConfig(host = "ssh.example"),
+                sshTunnelFactory = { _, _ ->
+                    val attempt = tunnelOpens.incrementAndGet()
+                    if (attempt > 1 && attempt - 1 <= failedReopens) {
+                        throw IllegalStateException("SSH tunnel unavailable")
+                    }
+                    object : SshTunnel {
+                        override val localPort = port
+                        override val isActive = attempt > 1
+                        override fun close() = Unit
+                    }
+                },
+                flowRetryPolicy = RemoteFlowRetryPolicy(
+                    maxReconnectAttempts = 3u,
+                    initialDelayMillis = 1,
+                    maxDelayMillis = 4,
+                ),
+            )
+        )
+        try {
+            if (expectRecovery) {
+                val update = withTimeout(2_000.milliseconds) {
+                    remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
+                }
+                assertEquals(1uL, update.version)
+                assertEquals(2, connections.get())
+            } else {
+                val error = assertFailsWith<RemoteFlowDisconnectedException> {
+                    withTimeout(2_000.milliseconds) {
+                        remote.executeFlow(SimpleMarykModel.get(SimpleMarykModel.key(ByteArray(16)))).first()
+                    }
+                }
+                assertTrue(generateSequence(error as Throwable) { it.cause }.any {
+                    it.message == "SSH tunnel unavailable"
+                })
+                assertEquals(1, connections.get())
+            }
+            assertEquals(4, tunnelOpens.get())
+        } finally {
+            remote.close()
+            server.stop(500, 500)
+        }
+    }
+
+    @Test
     fun executeFlowResetsRetryBudgetAfterDeliveringNewUpdates() = runBoundedIntegrationTest {
         val connections = AtomicInteger()
         val port = ServerSocket(0).use { it.localPort }

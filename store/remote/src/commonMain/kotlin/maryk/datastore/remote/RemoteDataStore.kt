@@ -97,7 +97,13 @@ private class SshTunnelReconnect(
     fun reopenIfInactive(tunnel: SshTunnel): SshTunnel {
         if (tunnel.isActive) return tunnel
         tunnel.close()
-        return factory.open(config.copy(localPort = tunnel.localPort), target)
+        return try {
+            factory.open(config.copy(localPort = tunnel.localPort), target)
+        } catch (error: Throwable) {
+            if (error is CancellationException) throw error
+            error.rethrowIfFatal()
+            throw RemoteFlowDisconnectedException("Remote store SSH tunnel reconnect failed", error)
+        }
     }
 }
 
@@ -534,6 +540,7 @@ class RemoteDataStore private constructor(
                 var reconnectDelayMillis = flowRetryPolicy.initialDelayMillis
                 while (true) {
                     try {
+                        if (reconnectAttempts > 0u) reopenInactiveSshTunnel()
                         var receivedFrame = false
                         val statement = httpClient.preparePost(buildUrl(baseUrl, RemoteStoreProtocol.flowPath)) {
                             headers {
@@ -689,7 +696,6 @@ class RemoteDataStore private constructor(
                         ) {
                             throw error
                         }
-                        reopenInactiveSshTunnel()
                         reconnectAttempts++
                         if (reconnectDelayMillis > 0) {
                             delay(reconnectDelayMillis)

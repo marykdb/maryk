@@ -153,7 +153,8 @@ private fun waitForLocalPort(pid: Int, localPort: Int) {
 
 private fun hasExited(pid: Int): Boolean = memScoped {
     val status = alloc<IntVar>()
-    waitpid(pid, status.ptr, WNOHANG) == pid
+    val result = waitpid(pid, status.ptr, WNOHANG)
+    result == pid || (result < 0 && errno == ECHILD)
 }
 
 @OptIn(UnsafeNumber::class)

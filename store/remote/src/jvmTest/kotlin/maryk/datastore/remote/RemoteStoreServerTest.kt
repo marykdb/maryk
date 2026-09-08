@@ -196,6 +196,28 @@ class RemoteStoreServerTest {
     }
 
     @Test
+    fun executeCountsCurrentMutationWhenBatchResponseLimitIsExceeded() = runBoundedIntegrationTest {
+        val delegate = InMemoryDataStore.open(dataModelsById = mapOf(1u to SimpleMarykModel))
+        val executions = AtomicInteger()
+        withServer(dataStore = LargeAddResponseStore(delegate, executions)) { baseUrl, client ->
+            val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
+                header(HttpHeaders.ContentType, RemoteStoreProtocol.contentType)
+                setBody(RemoteStoreCodec.encode(
+                    Requests.Serializer,
+                    Requests(List(7) { index ->
+                        SimpleMarykModel.add(SimpleMarykModel.create { value with "ha-batch$index" })
+                    }),
+                    testRequestContext(),
+                ))
+            }
+
+            assertEquals(HttpStatusCode.PayloadTooLarge, response.status)
+            assertEquals(6, executions.get())
+            assertEquals("6", response.headers[RemoteStoreProtocol.completedRequestCountHeader])
+        }
+    }
+
+    @Test
     fun executeClosesConnectionWhenRejectingUnreadBody() = runBoundedIntegrationTest {
         withServer { baseUrl, client ->
             val response = client.post("$baseUrl${RemoteStoreProtocol.executePath}") {
@@ -1572,6 +1594,27 @@ private class MismatchedResponseStore(
         executions.incrementAndGet()
         @Suppress("UNCHECKED_CAST")
         return ValuesResponse(request.dataModel, emptyList()) as RP
+    }
+}
+
+private class LargeAddResponseStore(
+    private val delegate: IsDataStore,
+    private val executions: AtomicInteger,
+) : IsDataStore by delegate {
+    private val generatedValue = "x".repeat(12 * 1024 * 1024)
+
+    override suspend fun <DM : IsRootDataModel, RQ : IsStoreRequest<DM, RP>, RP : IsResponse> execute(
+        request: RQ,
+    ): RP {
+        @Suppress("UNCHECKED_CAST")
+        val response = delegate.execute(request) as AddResponse<DM>
+        executions.incrementAndGet()
+        val status = response.statuses.single() as AddSuccess<DM>
+        // Model a large server-generated change without inflating the request body.
+        @Suppress("UNCHECKED_CAST")
+        return response.copy(statuses = listOf(status.copy(
+            changes = listOf(Change(SimpleMarykModel { value::ref } with generatedValue)),
+        ))) as RP
     }
 }
 

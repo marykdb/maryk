@@ -3,6 +3,7 @@
 package maryk.datastore.remote
 
 import kotlinx.cinterop.toKString
+import maryk.file.File
 import platform.posix.chmod
 import platform.posix.getenv
 import platform.posix.mkdir
@@ -13,7 +14,9 @@ import kotlin.random.Random
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class SshTunnelNativeTest {
     @Test
@@ -46,7 +49,7 @@ class SshTunnelNativeTest {
         val originalPath = getenv("PATH")?.toKString().orEmpty()
 
         check(mkdir(directory, 0x1C0u) == 0)
-        maryk.file.File.writeText(sshPath, "#!/bin/sh\nexit 73\n")
+        File.writeText(sshPath, "#!/bin/sh\nexit 73\n")
         check(chmod(sshPath, 0x1EDu) == 0)
         check(setenv("PATH", "$directory:$originalPath", 1) == 0)
 
@@ -73,7 +76,7 @@ class SshTunnelNativeTest {
         val originalPath = getenv("PATH")?.toKString().orEmpty()
 
         check(mkdir(directory, 0x1C0u) == 0)
-        maryk.file.File.writeText(
+        File.writeText(
             sshPath,
             """
             #!/bin/sh
@@ -101,7 +104,10 @@ class SshTunnelNativeTest {
                 RemoteSshConfig(host = "ssh.example"),
                 SshTarget(host = "127.0.0.1", port = 1),
             )
+            assertTrue(tunnel.isActive)
             tunnel.close()
+            assertFalse(tunnel.isActive)
+            assertFalse(tunnel.isActive)
 
             factory.open(
                 RemoteSshConfig(host = "ssh.example", localPort = tunnel.localPort),

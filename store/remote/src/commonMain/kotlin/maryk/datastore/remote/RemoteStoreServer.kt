@@ -380,7 +380,7 @@ internal fun Application.remoteStoreModule(
                     if (totalSize > MAX_BATCH_RESPONSE_BODY_BYTES - chunkSize) {
                         if (index > 0) {
                             throw PartialBatchRequestException(
-                                index,
+                                index + 1,
                                 RequestValidationException(
                                     HttpStatusCode.PayloadTooLarge,
                                     "Remote execute response exceeds max size: ${totalSize + chunkSize} > $MAX_BATCH_RESPONSE_BODY_BYTES",
